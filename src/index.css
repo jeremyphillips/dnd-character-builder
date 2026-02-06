@@ -46,12 +46,19 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+button.btn-sm {
+  padding: 0.63em 6em;
+  font-size: .6em;
+}
 button:hover {
   border-color: #646cff;
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+button.selected {
+  background-color: #646cff;
 }
 
 @media (prefers-color-scheme: light) {

@@ -25,14 +25,17 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": "./src",
     "paths": {
+      "@/characterBuilder": ["characterBuilder/index.ts"],
       "@/components/elements": ["components/elements/index.ts"],
       "@/components/elements/*": ["components/elements/*"],
       "@/components/modules": ["components/modules/index.ts"],
       "@/components/modules/*": ["components/modules/*"],
       "@/data": ["data/index.ts"],
+      "@/data/*": ["data/*"],
       "@/helpers": ["helpers/index.ts"],
       "@/services": ["services/index.ts"],
       "@/services/*": ["services/*"],
+      "@/steps": ["steps/index.ts"],
       "@/hooks": ["hooks/index.ts"],
       "@/hooks/*": ["hooks/*"]
     }  

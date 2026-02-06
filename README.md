@@ -45,13 +45,13 @@ yarn dev
 ### Run frontend only
 Runs frontend (Vite) and backend (Express) concurrently:
 ```bash
-npm run dev:frontend
+yarn dev:frontend
 ```
 
 ### Run backend only
 Runs frontend (Vite) and backend (Express) concurrently:
 ```bash
-npm run dev:backend
+yarn dev:backend
 ```
 
 ## Project Structure (High-Level)

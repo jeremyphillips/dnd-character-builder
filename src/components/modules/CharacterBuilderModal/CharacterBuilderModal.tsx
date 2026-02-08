@@ -18,23 +18,25 @@ const CharacterBuilderModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <StepComponent />
+        <div className="modal-content-inner">
+          <StepComponent />
 
-        <div className="modal-footer">
-          {currentStepIndex > 0 && <button onClick={prevStep}>Back</button>}
+          <div className="modal-footer">
+            {currentStepIndex > 0 && <button onClick={prevStep}>Back</button>}
 
-          {currentStepIndex < STEP_CONFIG.length - 1 && (
-            <button onClick={nextStep} disabled={isNextDisabled}>
-              Next
-            </button>
-          )}
+            {currentStepIndex < STEP_CONFIG.length - 1 && (
+              <button onClick={nextStep} disabled={isNextDisabled}>
+                Next
+              </button>
+            )}
 
-          {currentStepIndex === STEP_CONFIG.length - 1 && (
-            <button onClick={onClose} disabled={!isComplete}>
-              Finish
-            </button>
-          )}
-        </div>
+            {currentStepIndex === STEP_CONFIG.length - 1 && (
+              <button onClick={onClose} disabled={!isComplete}>
+                Finish
+              </button>
+            )}
+          </div>
+        </div>  
       </div>
     </div>
   );

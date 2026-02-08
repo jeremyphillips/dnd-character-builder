@@ -13,6 +13,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -46,9 +50,14 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button.btn-sm {
-  padding: 0.63em 6em;
-  font-size: .6em;
+button.btn-size-sm {
+  padding: 0.4em .9em;
+  font-size: .8em;
+}
+button.btn-theme-secondary {
+  border-color: #1a1a1a;
+  background-color: transparent;
+  color: #1a1a1a;
 }
 button:hover {
   border-color: #646cff;

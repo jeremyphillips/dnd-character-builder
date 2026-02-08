@@ -13,6 +13,7 @@ type ButtonGroupProps<T extends string | string[] | number> = {
   multiSelect?: boolean
   autoSelectSingle?: boolean
   size?: 'sm' | 'md'
+  theme?: 'primary' | 'secondary'
 }
 
 const ButtonGroup = <T extends string | string[] | number>({
@@ -21,7 +22,8 @@ const ButtonGroup = <T extends string | string[] | number>({
   onChange,
   multiSelect = false,
   autoSelectSingle = true,
-  size = 'md'
+  size = 'md',
+  theme = 'primary'
 }: ButtonGroupProps<T>) => {
   // Auto-select when only one option exists
   useEffect(() => {
@@ -65,7 +67,7 @@ const ButtonGroup = <T extends string | string[] | number>({
         <button
           key={opt.id}
           disabled={opt.disabled}
-          className={`btn-${size} ${isSelected(opt.id) ? 'selected' : ''}`}
+          className={`btn-theme-${theme} btn-size-${size} ${isSelected(opt.id) ? 'selected' : ''}`}
           onClick={() => toggle(opt.id)}
         >
           {opt.label}

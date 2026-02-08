@@ -7,22 +7,36 @@ const LevelStep = () => {
   const { state, setTotalLevels } = useCharacterBuilder()
   const { 
     step,
-    totalLevels: selectedTotalLevel
+    classes: selectedClasses,
+    totalLevel: selectedTotalLevel
   } = state
 
-  return (
-    <>
-      <h2>Choose {step.name}</h2>
-      <ButtonGroup
-        options={LEVEL_OPTIONS.map(level => ({
-          id: level,
-          label: `Level ${level.toString()}`
-        }))}
-        value={selectedTotalLevel}
-        onChange={setTotalLevels}
-      />
-    </>
-  )
+  // const totalAllocatedLevels = selectedClasses.reduce(
+  //   (sum, c) => sum + c.level,
+  //   0
+  // )
+
+  const isMulticlassing = selectedClasses.length > 1
+
+  if (isMulticlassing) {
+    return (
+      <h2>You are level {selectedTotalLevel}</h2>
+    )
+  } else {
+    return (
+      <>
+        <h2>Choose {step.name}</h2>
+        <ButtonGroup
+          options={LEVEL_OPTIONS.map(level => ({
+            id: level,
+            label: `Level ${level.toString()}`
+          }))}
+          value={selectedTotalLevel}
+          onChange={setTotalLevels}
+        />
+      </>
+    )
+  }
 }
 
 export default LevelStep

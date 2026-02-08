@@ -10,14 +10,14 @@ export async function sendChatMessage(prompt: string): Promise<ChatMessage> {
 		method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt })
-  });
+  })
 
   if (!res.ok) {
-    throw new Error(`Failed to send chat message: ${res.status}`);
+    throw new Error(`Failed to send chat message: ${res.status}`)
   }
 
   const data = await res.json();
-  return { role: 'assistant', content: data.reply };
+  return { role: 'assistant', content: data.reply }
 }
 
 

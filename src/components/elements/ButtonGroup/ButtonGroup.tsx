@@ -32,10 +32,10 @@ const ButtonGroup = <T extends string | string[] | number>({
 
     if (multiSelect) {
       if (Array.isArray(value) && value.length > 0) return
-      onChange([options[0].id])
+      onChange([options[0].id] as T)
     } else {
       if (value === options[0].id) return
-      onChange(options[0].id)
+      onChange(options[0].id as T)
     }
   }, [options, value, multiSelect, autoSelectSingle, onChange])
 
@@ -47,17 +47,14 @@ const ButtonGroup = <T extends string | string[] | number>({
 
   const toggle = (id: string) => {
     if (multiSelect) {
-      // Treat value as string[]
-      const current = (value || []) as string[];
-
+      const current = (value || []) as string[]
       onChange(
-        current.includes(id)
+        (current.includes(id)
           ? current.filter(v => v !== id)
-          : [...current, id]
+          : [...current, id]) as T
       )
     } else {
-      // Single select: just set the id
-      onChange(id)
+      onChange(id as T)
     }
   }
 

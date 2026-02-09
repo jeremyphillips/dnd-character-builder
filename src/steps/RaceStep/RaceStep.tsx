@@ -11,7 +11,7 @@ const RaceStep = () => {
 
   const allowedRaces = allowedRaceIds
     .map(id => races.find(r => r.id === id))
-    .filter(Boolean)
+    .filter((r): r is (typeof races)[number] => r != null)
 
   return (
     <>

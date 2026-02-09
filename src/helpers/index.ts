@@ -1,22 +1,17 @@
-export * from './data/applyOverrides'
-export * from './data/getClassOptions'
-export * from './data/getClassChoicesForEdition'
-export * from './data/getRaceOptions'
-export * from './data/getById'
-export * from './data/getByName'
-export * from './data/getClassDefinitions'
-export * from './data/getNameById'
-export * from './data/getOptions'
-export * from './data/getAllowedEquipment'
-export * from './data/getClassRequirement'
-export * from './data/getEquipmentNotes'
-export * from './data/getSubclassUnlockLevel'
-export * from './data/meetsClassRequirements'
-export * from './data/wealth'
-export * from './data/getEquipmentCostByEdition'
-export * from './data/parseWeight'
-export * from './data/calculateEquipmentWeight'
-export * from './data/calculateEquipmentCost'
-export * from './data/parseCurrencyToGold'
-export * from './data/getItemCostGp'
-export * from './data/getAlignmentsByEdition'
+/**
+ * Helpers by purpose:
+ * - lookups:   getById, getByName, getNameById
+ * - overrides: applyOverrides
+ * - options:   getOptions, getRaceOptions, getClassOptions, getClassChoicesForEdition, getAlignmentsByEdition
+ * - class:     getClassDefinitions, getClassRequirement, getSubclassUnlockLevel, meetsClassRequirements
+ * - equipment: getAllowedEquipment, getEquipmentNotes, getEquipmentCostByEdition, getItemCostGp,
+ *              parseWeight, calculateEquipmentWeight, calculateEquipmentCost
+ * - wealth:    parseCurrencyToGold, calculateWealth5e, getEditionStartingWealth
+ */
+export * from './lookups'
+export * from './overrides'
+export * from './options'
+export * from './class'
+export * from './equipment'
+export * from './wealth'
+export type { CalculateWealth5eStartingWealth } from './wealth'

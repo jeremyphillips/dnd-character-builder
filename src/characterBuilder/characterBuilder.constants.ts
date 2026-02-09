@@ -69,6 +69,7 @@ export const INITIAL_CHARACTER_BUILDER_STATE: CharacterBuilderState = {
   equipment: {
     armor: [],
     weapons: [],
+    gear: [],
     weight: 0
   },
   alignment: undefined,

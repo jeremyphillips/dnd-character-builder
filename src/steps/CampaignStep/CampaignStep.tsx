@@ -8,7 +8,7 @@ const CampaignStep = () => {
   const { step, edition, campaign: selectedCampaign } = state
 
   // Find the edition object
-  const editionData = getById(editions, edition)
+  const editionData = edition ? getById(editions, edition) : undefined
 
   // Only include campaigns allowed by the edition
   const allowedCampaigns = editionData?.campaigns

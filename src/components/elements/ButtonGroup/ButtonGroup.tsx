@@ -43,7 +43,7 @@ const ButtonGroup = <T extends string | string[] | number>({
   const isSelected = (id: string) =>
     multiSelect
       ? Array.isArray(value) && value.includes(id)
-      : value === id
+      : String(value) === id
 
   const toggle = (id: string) => {
     if (multiSelect) {

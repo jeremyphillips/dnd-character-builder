@@ -1,0 +1,24 @@
+// Global typography & element overrides that complement MUI's CssBaseline.
+// Use MUI CSS variables for consistency with the theme.
+
+body {
+  font-family: var(--mui-typography-fontFamily);
+  background: var(--mui-palette-background-default);
+  color: var(--mui-palette-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mui-palette-divider);
+  border-radius: 4px;
+}

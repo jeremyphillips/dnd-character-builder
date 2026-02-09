@@ -1,15 +1,16 @@
-import { editions, campaigns } from '@/data'
+import { editions, settings } from '@/data'
+import type { OverrideConfig } from '@/data'
 
 type OptionType = 'races' | 'classes'
 
 /**
- * Get available options for a given edition and campaign.
- * Handles edition defaults + campaign overrides (only, add, remove)
+ * Get available options for a given edition and setting.
+ * Handles edition defaults + setting overrides (only, add, remove)
  */
 export const getOptions = (
   type: OptionType,
   editionId?: string,
-  campaignId?: string
+  settingId?: string
 ): string[] => {
   if (!editionId) return []
 
@@ -19,13 +20,15 @@ export const getOptions = (
   // Start with the edition's base list
   let options = [...(edition[type] || [])]
 
-  const campaign = campaignId ? campaigns.find(c => c.id === campaignId) : null
-  const overrides = type === 'races' ? campaign?.raceOverrides : campaign?.classOverrides
+  const setting = settingId ? settings.find(c => c.id === settingId) : null
+
+  const overrides: OverrideConfig | undefined =
+    type === 'races' ? setting?.raceOverrides : setting?.classOverrides
 
   if (!overrides) return options
 
   // "only" takes priority
-  if (overrides.only) return overrides.only
+  if (overrides.only) return [...overrides.only]
 
   // Remove any options listed in "remove"
   if (overrides.remove) {

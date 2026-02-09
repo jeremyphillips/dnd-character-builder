@@ -1,0 +1,57 @@
+// =============================================================================
+// MUI Bridge — Use MUI theme CSS variables in custom SCSS
+// =============================================================================
+//
+// MUI v6 with `cssVariables: true` injects CSS variables like:
+//   --mui-palette-primary-main
+//   --mui-palette-secondary-main
+//   --mui-palette-background-default
+//   --mui-palette-text-primary
+//   --mui-typography-fontFamily
+//   --mui-shape-borderRadius
+//
+// This file provides examples and utility classes that bridge
+// custom SCSS with the MUI theme — no `!important` needed.
+// =============================================================================
+
+// Example: A custom card using MUI theme variables
+.custom-card {
+  background: var(--mui-palette-background-paper);
+  color: var(--mui-palette-text-primary);
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+  padding: 16px;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Example: Text colored by theme palette
+.text-primary {
+  color: var(--mui-palette-primary-main);
+}
+
+.text-secondary {
+  color: var(--mui-palette-secondary-main);
+}
+
+.text-muted {
+  color: var(--mui-palette-text-secondary);
+}
+
+// Example: Background utilities using MUI theme
+.bg-paper {
+  background: var(--mui-palette-background-paper);
+}
+
+.bg-primary {
+  background: var(--mui-palette-primary-main);
+  color: var(--mui-palette-primary-contrastText);
+}
+
+.bg-secondary {
+  background: var(--mui-palette-secondary-main);
+  color: var(--mui-palette-secondary-contrastText);
+}

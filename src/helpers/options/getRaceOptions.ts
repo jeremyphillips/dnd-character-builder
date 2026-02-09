@@ -1,8 +1,8 @@
-import { editions, campaigns } from '@/data'
+import { editions, settings } from '@/data'
 
 export const getRaceOptions = (
   editionId?: string,
-  campaignId?: string
+  settingId?: string
 ): string[] => {
   if (!editionId) return []
 
@@ -11,14 +11,14 @@ export const getRaceOptions = (
 
   let races = [...edition.races]
 
-  const campaign = campaignId
-    ? campaigns.find(c => c.id === campaignId)
+  const setting = settingId
+    ? settings.find(c => c.id === settingId)
     : null
 
-  const overrides = campaign?.raceOverrides
+  const overrides = setting?.raceOverrides
 
   if (overrides?.only) {
-    return overrides.only
+    return [...overrides.only]
   }
 
   if (overrides?.remove) {

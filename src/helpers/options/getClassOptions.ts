@@ -1,7 +1,7 @@
-import { classes, campaigns, type EditionType } from '@/data'
+import { classes, settings, type EditionType } from '@/data'
 import { applyOverrides } from '../overrides'
 
-export const getClassOptions = (edition?: EditionType, campaignId?: string) => {
+export const getClassOptions = (edition?: EditionType, settingId?: string) => {
   if (!edition) return []
 
   const classList = Object.values(classes)
@@ -10,10 +10,10 @@ export const getClassOptions = (edition?: EditionType, campaignId?: string) => {
     //.filter(cls => cls.choicesByEdition?.[edition])
     .filter(cls => cls.rolesByEdition?.[edition])
     .map(cls => cls.id)
-console.log('baseClassIds',baseClassIds)
-  const campaign = campaignId ? campaigns.find(c => c.id === campaignId) : null
 
-  const finalClassIds = applyOverrides(baseClassIds, campaign?.classOverrides)
+  const setting = settingId ? settings.find(c => c.id === settingId) : null
+
+  const finalClassIds = applyOverrides(baseClassIds, setting?.classOverrides)
 
   console.log('finalClassIds',finalClassIds)
 

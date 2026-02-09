@@ -1,0 +1,10 @@
+// =============================================================================
+// Main SCSS Entry — imports all partials
+// =============================================================================
+
+// Base: resets and global styles
+@use 'base/reset';
+@use 'base/global';
+
+// Utilities: MUI bridge + custom helpers
+@use 'utilities/mui-bridge';

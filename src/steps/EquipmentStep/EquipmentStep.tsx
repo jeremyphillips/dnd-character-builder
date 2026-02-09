@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder'
 import { ButtonGroup } from '@/components/elements'
-import { classes, equipment } from '@/data'
+import { classes, equipment, type ClassRequirement, type EditionId } from '@/data'
 import {
   calculateEquipmentCost,
   calculateWealth5e,
+  type CalculateWealth5eStartingWealth,
   getAllowedEquipment,
-  getById, 
-  getClassRequirement, 
+  getById,
+  getClassRequirement,
   getEquipmentNotes,
-  getEquipmentCostByEdition,
   getItemCostGp
 } from '@/helpers'
 
@@ -19,8 +19,9 @@ const EquipmentStep = () => {
   const {
     state,
     setWealth,
-    updateWeapons, 
-    updateArmor
+    updateWeapons,
+    updateArmor,
+    updateGear
   } = useCharacterBuilder()
 
   const { 
@@ -47,7 +48,7 @@ const EquipmentStep = () => {
 
     const resolved = calculateWealth5e(
       totalLevel,
-      wealthReq.startingWealth
+      wealthReq.startingWealth as CalculateWealth5eStartingWealth
     )
 
     if (!resolved) return
@@ -64,6 +65,7 @@ const EquipmentStep = () => {
   const { 
     weapons: selectedWeapons = [], 
     armor: selectedArmor = [], 
+    gear: selectedGear = [],
     weight: currentWeight 
   } = selectedEquipment || {}
 
@@ -78,17 +80,19 @@ const EquipmentStep = () => {
     // level: selectedLevel
   } = activeClass ?? {}
 
-  const classReq = getClassRequirement(selectedClassId, edition)
+  const classReq = getClassRequirement(selectedClassId, edition as EditionId)
 
-  if (!classReq) return null
-  
+  if (!classReq || !edition) return null
+
   const baseGp = wealth?.baseGp ?? 0
 
   const currentCost = calculateEquipmentCost(
     selectedWeapons,
     selectedArmor,
+    selectedGear,
     equipment.weapons,
     equipment.armor,
+    equipment.gear,
     edition
   )
 
@@ -138,22 +142,49 @@ const EquipmentStep = () => {
     }
   })
 
-  const cls = getById(classes, selectedClassId)
+  const gearRequirement = classReq.equipment.tools ?? {
+    categories: 'all' as const,
+    individuals: 'none' as const
+  }
+  const allowedGear = getAllowedEquipment({
+    items: equipment.gear,
+    edition,
+    requirement: gearRequirement
+  })
 
-  const armorNotes = cls
-    ? getEquipmentNotes({
-        requirements: cls.requirements,
-        edition,
-        slot: 'armor'
-      })
+  const gearOptions = allowedGear.map(g => {
+    const cost = getItemCostGp(g, edition)
+    const isSelected = selectedGear.includes(g.id)
+
+    const costWithoutThis = isSelected
+      ? currentCost - cost
+      : currentCost
+
+    const wouldExceedGold = costWithoutThis + cost > baseGp
+
+    return {
+      id: g.id,
+      label: `${g.name} (${g.editionData.find(d => d.edition === edition)?.cost ?? '—'})`,
+      disabled: !isSelected && wouldExceedGold
+    }
+  })
+
+  const cls = selectedClassId ? getById(classes, selectedClassId) : undefined
+  const requirements =
+    cls && 'requirements' in cls && cls.requirements
+      ? (cls.requirements as ClassRequirement[])
+      : undefined
+
+  const armorNotes = requirements
+    ? getEquipmentNotes({ requirements, edition, slot: 'armor' })
     : []
 
-  const weaponNotes = cls
-    ? getEquipmentNotes({
-        requirements: cls.requirements,
-        edition,
-        slot: 'weapons'
-      })
+  const weaponNotes = requirements
+    ? getEquipmentNotes({ requirements, edition, slot: 'weapons' })
+    : []
+
+  const gearNotes = requirements
+    ? getEquipmentNotes({ requirements, edition, slot: 'tools' })
     : []
 
   return (
@@ -198,6 +229,24 @@ const EquipmentStep = () => {
       {armorNotes.length > 0 && (
         <ul className="equipment-notes">
           {armorNotes.map((note: { id: string, text: string }) => (
+            <li key={note.id}>{note.text}</li>
+          ))}
+        </ul>
+      )}
+
+      <h4>Gear</h4>
+      <ButtonGroup
+        options={gearOptions}
+        value={selectedGear}
+        onChange={updateGear}
+        multiSelect
+        autoSelectSingle={false}
+        size="sm"
+      />
+
+      {gearNotes.length > 0 && (
+        <ul className="equipment-notes">
+          {gearNotes.map((note: { id: string, text: string }) => (
             <li key={note.id}>{note.text}</li>
           ))}
         </ul>

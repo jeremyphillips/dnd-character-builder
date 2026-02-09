@@ -1,12 +1,11 @@
-import { useMemo, useEffect, useState } from "react"
+import { useMemo, useEffect, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState } from './characterBuilder.types'
 import { 
   getById, 
   getOptions, 
   getSubclassUnlockLevel,
-  calculateEquipmentCost,
-  calculateEquipmentWeight 
+  getEquipmentWeightAndCost
 } from "@/helpers"
 import { races, equipment } from "@/data"
 import {
@@ -17,10 +16,11 @@ import {
 
 const { 
   weapons: weaponsData, 
-  armor: armorData 
+  armor: armorData,
+  gear: gearData
 } = equipment
 
-export const CharacterBuilderProvider = ({ children }) => {
+export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const [state, setState] = useState<CharacterBuilderState>(
     INITIAL_CHARACTER_BUILDER_STATE
   )
@@ -135,7 +135,7 @@ export const CharacterBuilderProvider = ({ children }) => {
   const allocateRemainingLevels = () => {
     setState(s => {
       const index = s.activeClassIndex
-      if (index === undefined) return s // nothing active
+      if (index == null) return s // nothing active
 
       const allocatedLevels = s.classes.reduce(
         (sum, cls) => sum + (cls.level ?? 0),
@@ -154,7 +154,7 @@ export const CharacterBuilderProvider = ({ children }) => {
     })
   }
 
-  const isEmptySecondaryClass = (cls, index: number) =>
+  const isEmptySecondaryClass = (cls: CharacterClassInfo, index: number) =>
     index > 0 &&
     !cls.classId &&
     !cls.classDefinitionId &&
@@ -282,23 +282,18 @@ export const CharacterBuilderProvider = ({ children }) => {
 
   const updateWeapons = (weaponIds: string[]) => {
     setState(prev => {
+      if (!prev.edition) return prev
       const armorIds = prev.equipment?.armor ?? []
-
-      const weight = calculateEquipmentWeight(
+      const gearIds = prev.equipment?.gear ?? []
+      const { weight, equipmentCost } = getEquipmentWeightAndCost(
         weaponIds,
         armorIds,
-        weaponsData,
-        armorData
-      )
-
-      const equipmentCost = calculateEquipmentCost(
-        weaponIds,
-        armorIds,
+        gearIds,
         weaponsData,
         armorData,
+        gearData,
         prev.edition
       )
-
       const baseGp = prev.wealth?.baseGp ?? 0
       const remainingGp = Math.max(baseGp - equipmentCost, 0)
 
@@ -319,23 +314,18 @@ export const CharacterBuilderProvider = ({ children }) => {
 
   const updateArmor = (armorIds: string[]) => {
     setState(prev => {
+      if (!prev.edition) return prev
       const weaponIds = prev.equipment?.weapons ?? []
-
-      const weight = calculateEquipmentWeight(
+      const gearIds = prev.equipment?.gear ?? []
+      const { weight, equipmentCost } = getEquipmentWeightAndCost(
         weaponIds,
         armorIds,
-        weaponsData,
-        armorData
-      )
-
-      const equipmentCost = calculateEquipmentCost(
-        weaponIds,
-        armorIds,
+        gearIds,
         weaponsData,
         armorData,
+        gearData,
         prev.edition
       )
-
       const baseGp = prev.wealth?.baseGp ?? 0
       const remainingGp = Math.max(baseGp - equipmentCost, 0)
 
@@ -344,6 +334,38 @@ export const CharacterBuilderProvider = ({ children }) => {
         equipment: {
           ...prev.equipment,
           armor: armorIds,
+          weight
+        },
+        wealth: {
+          ...prev.wealth,
+          gp: remainingGp
+        }
+      }
+    })
+  }
+
+  const updateGear = (gearIds: string[]) => {
+    setState(prev => {
+      if (!prev.edition) return prev
+      const weaponIds = prev.equipment?.weapons ?? []
+      const armorIds = prev.equipment?.armor ?? []
+      const { weight, equipmentCost } = getEquipmentWeightAndCost(
+        weaponIds,
+        armorIds,
+        gearIds,
+        weaponsData,
+        armorData,
+        gearData,
+        prev.edition
+      )
+      const baseGp = prev.wealth?.baseGp ?? 0
+      const remainingGp = Math.max(baseGp - equipmentCost, 0)
+
+      return {
+        ...prev,
+        equipment: {
+          ...prev.equipment,
+          gear: gearIds,
           weight
         },
         wealth: {
@@ -420,6 +442,7 @@ export const CharacterBuilderProvider = ({ children }) => {
         
         updateWeapons,
         updateArmor,
+        updateGear,
         setWeight,
 
         setAlignment,

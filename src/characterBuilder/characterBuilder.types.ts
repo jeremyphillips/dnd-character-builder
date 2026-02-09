@@ -1,8 +1,8 @@
-export type StepId = 'edition' | 'campaign' | 'class' | 'equipment' | 'race' | 'level'
+export type StepId = 'edition' | 'campaign' | 'class' | 'equipment' | 'race' | 'level' | 'alignment'
 
 export type CharacterClassInfo = {
-  classId?: string;          // Formerly characterClass
-  classDefinitionId?: string // Formerly classDefinition
+  classId?: string;
+  classDefinitionId?: string
   level: number
 }
 
@@ -26,6 +26,7 @@ export type CharacterBuilderState = {
   equipment?: {
     armor?: string[]
     weapons?: string[]
+    gear?: string[]
     weight?: number
   }
   alignment?: string
@@ -54,7 +55,6 @@ export type CharacterBuilderContextValue = {
   updateClassLevel: (index: number, level: number) => void
   removeClass: (index: number) => void
   updateClassDefinition: (index: number, subclassId?: string) => void
-  updateSubclass: (index: number, subclassId?: string) => void
   allocateRemainingLevels: () => void
   
   // wealth
@@ -67,6 +67,7 @@ export type CharacterBuilderContextValue = {
   // equipment
   updateWeapons: (ids: string[]) => void
   updateArmor: (ids: string[]) => void
+  updateGear: (ids: string[]) => void
   setWeight: (lbs: number) => void
 
   // flow control

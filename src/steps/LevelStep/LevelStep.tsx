@@ -28,11 +28,11 @@ const LevelStep = () => {
         <h2>Choose {step.name}</h2>
         <ButtonGroup
           options={LEVEL_OPTIONS.map(level => ({
-            id: level,
-            label: `Level ${level.toString()}`
+            id: String(level),
+            label: `Level ${level}`
           }))}
-          value={selectedTotalLevel}
-          onChange={setTotalLevels}
+          value={String(selectedTotalLevel)}
+          onChange={v => setTotalLevels(Number(v))}
         />
       </>
     )

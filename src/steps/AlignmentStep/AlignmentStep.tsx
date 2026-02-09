@@ -1,26 +1,28 @@
 import { useCharacterBuilder } from '@/characterBuilder'
-// import { editions } from '@/data'
+import type { EditionId } from '@/data'
 import { ButtonGroup } from '@/components/elements'
-import { getAlignmentsByEdition } from '@/helpers'
+import { getAlignmentOptions } from '@/helpers'
 
 const AlignmentStep = () => {
   const { state, setAlignment } = useCharacterBuilder()
-  const { 
-    alignment: selectedAlignment, 
+  const {
+    alignment: selectedAlignment,
     classes: selectedClasses,
     edition: selectedEdition,
     step
   } = state
 
-  const alignments = getAlignmentsByEdition(selectedEdition)
+  const classIds = selectedClasses.map((c) => c.classId).filter(Boolean) as string[]
+  const alignmentOptions = getAlignmentOptions(
+    selectedEdition as EditionId | undefined,
+    classIds
+  )
+
   return (
     <>
       <h2>Choose {step.name}</h2>
       <ButtonGroup
-        options={alignments.map(a => ({
-          id: a.id,
-          label: a.name
-        }))}
+        options={alignmentOptions}
         value={selectedAlignment}
         onChange={setAlignment}
       />

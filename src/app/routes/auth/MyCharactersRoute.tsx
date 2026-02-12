@@ -1,0 +1,198 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import type { CharacterClassInfo, CharacterDoc } from '@/shared'
+import { classes as classesData } from '@/data'
+import { apiFetch } from '../../api'
+
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardActions from '@mui/material/CardActions'
+import Avatar from '@mui/material/Avatar'
+import Stack from '@mui/material/Stack'
+import CircularProgress from '@mui/material/CircularProgress'
+import Alert from '@mui/material/Alert'
+
+import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
+import PersonIcon from '@mui/icons-material/Person'
+import { CharacterBuilderLauncher } from '@/characterBuilder'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatClassLine(
+  cls: CharacterClassInfo,
+  isPrimary: boolean,
+  isMulticlass: boolean,
+): string {
+  const classData = classesData.find((c) => c.id === cls.classId)
+  const name = classData?.name ?? cls.classId ?? 'Unknown'
+
+  let subclassName = ''
+  if (cls.classDefinitionId && classData) {
+    const sub = (classData as { definitions?: { id: string; name?: string }[] }).definitions?.find(
+      (d) => d.id === cls.classDefinitionId,
+    )
+    if (sub?.name) subclassName = sub.name
+  }
+
+  let line = name
+  if (subclassName) line += `, ${subclassName}`
+  line += ` Level ${cls.level}`
+  if (isPrimary && isMulticlass) line += ' (primary)'
+  return line
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function MyCharactersRoute() {
+  const [characters, setCharacters] = useState<CharacterDoc[]>([])
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    fetchCharacters()
+  }, [])
+
+  async function fetchCharacters() {
+    try {
+      const data = await apiFetch<{ characters: CharacterDoc[] }>('/api/characters')
+      setCharacters(data.characters ?? [])
+    } catch {
+      setCharacters([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleCreate() {
+    const name = prompt('Character name:')
+    if (!name) return
+
+    setCreating(true)
+    try {
+      await apiFetch('/api/characters', { method: 'POST', body: { name } })
+      await fetchCharacters()
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  return (
+    <Box>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+        <Typography variant="h4">My Characters</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate} disabled={creating}>
+          {creating ? 'Creating…' : 'New Character'}
+        </Button>
+      </Stack>
+
+      {characters.length === 0 ? (
+        <Alert severity="info">
+          <h2>You have no characters.</h2>
+          <p>Create your first one!</p>
+          <CharacterBuilderLauncher />
+        </Alert>
+      ) : (
+        <Stack spacing={1.5}>
+          {characters.map((c) => {
+            const filledClasses = (c.classes ?? []).filter((cls) => cls.classId)
+            const isMulticlass = filledClasses.length > 1
+            const hasClasses = filledClasses.length > 0
+
+            return (
+              <Card key={c._id} variant="outlined">
+                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                  <Stack direction="row" spacing={2} alignItems="flex-start">
+                    {/* Avatar / thumbnail */}
+                    <Avatar
+                      src={c.imageUrl ?? undefined}
+                      sx={{
+                        width: 64,
+                        height: 64,
+                        bgcolor: 'var(--mui-palette-primary-main)',
+                        fontSize: '1.5rem',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {c.imageUrl ? null : <PersonIcon fontSize="large" />}
+                    </Avatar>
+
+                    {/* Info */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {/* Name */}
+                      <Typography variant="h6" fontWeight={700} noWrap>
+                        {c.name || 'Unnamed Character'}
+                      </Typography>
+
+                      {/* Classes */}
+                      {hasClasses ? (
+                        filledClasses.map((cls, i) => (
+                          <Typography key={i} variant="body2" color="text.secondary">
+                            {formatClassLine(cls, i === 0, isMulticlass)}
+                          </Typography>
+                        ))
+                      ) : (
+                        c.class && (
+                          <Typography variant="body2" color="text.secondary">
+                            {c.class} Level {c.level ?? c.totalLevel ?? 1}
+                          </Typography>
+                        )
+                      )}
+
+                      {/* Race */}
+                      {c.race && (
+                        <Typography variant="body2" color="text.secondary">
+                          {c.race}
+                        </Typography>
+                      )}
+
+                      {/* Date */}
+                      {c.createdAt && (
+                        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
+                          Created: {formatDate(c.createdAt)}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Edit button */}
+                    <CardActions sx={{ p: 0, flexShrink: 0 }}>
+                      <Button
+                        component={Link}
+                        to={`/characters/${c._id}`}
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                      >
+                        Edit
+                      </Button>
+                    </CardActions>
+                  </Stack>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </Stack>
+      )}
+    </Box>
+  )
+}

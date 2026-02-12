@@ -1,0 +1,146 @@
+---
+alwaysApply: true
+--- 
+
+# Project Architecture & Code Organization Directives
+
+This project follows a **domain-first architecture**.
+
+The goal is to clearly separate:
+- game rules & business logic
+- UI and feature orchestration
+- static rule data
+- infrastructure concerns
+
+Cursor should follow the rules below when generating or refactoring code.
+
+---
+
+## 1. Domain Layer (`src/domain`)
+
+### Purpose
+The `domain` layer contains **pure game rules and business logic**.
+
+Code in `src/domain`:
+- MUST be framework-agnostic
+- MUST NOT import from React, MUI, hooks, context, or UI components
+- SHOULD be reusable by frontend and backend
+- SHOULD be deterministic and side-effect free
+
+### What belongs here
+- XP rules
+- class requirements
+- level progression
+- equipment cost, weight, and transfer rules
+- visibility and permission rules (non-auth)
+- lookup helpers that are not UI-specific
+
+### File conventions
+- One file per rule concept
+- Prefer simple, semantic names:
+  - `xp.ts`
+  - `classRequirements.ts`
+  - `levelProgression.ts`
+  - `transfer.ts`
+- Group by domain concept:
+  - `domain/character/*`
+  - `domain/equipment/*`
+  - `domain/lookups/*`
+
+### Example
+```ts
+domain/character/xp.ts
+domain/equipment/transfer.ts
+```
+
+## 2. Data vs Domain
+### Static rule data
+
+Static, rule-defining constants may live in `domain/*/*.data.ts`.
+
+Examples:
+- XP tables
+- Level caps
+- Alignment enums
+
+### Large catalogs
+
+Large catalogs (classes, races, equipment lists) may remain in `src/data` for now.
+
+Cursor SHOULD NOT aggressively move large datasets unless explicitly instructed.
+
+## 3. Helpers vs Domain
+
+`src/helpers` is being phased out.
+
+When refactoring:
+- If a helper encodes a rule, move it to `src/domain`
+- If a helper is UI-specific or formatting-related, keep it outside `src/domain`
+
+Examples:
+```
+helpers/options/getXpByLevelAndEdition.ts → domain/character/xp.ts
+helpers/class/meetsClassRequirements.ts → domain/character/classRequirements.ts
+```
+
+## 4. Features Layer (`src/features`)
+### Purpose
+
+Features coordinate:
+- UI
+- state
+- domain logic
+- API calls
+
+Features MAY import from:
+- `src/domain`
+- `src/data`
+- shared UI components
+
+Features MUST NOT:
+- reimplement domain rules
+- contain business logic that belongs in `src/domain`
+
+## 5. Shared Components
+### Atomic components
+
+Reusable, UI-only components belong in:
+- `src/components`
+
+These:
+- MUST NOT contain business rules
+- MUST NOT import from `src/domain`
+
+## 6. Backend Alignment
+
+Domain logic is expected to be portable to backend services.
+
+Cursor should prefer:
+
+pure functions
+- explicit inputs and outputs
+- no reliance on browser APIs
+
+## 7. Naming & Intent
+
+Prioritize intent-based naming over technical naming.
+
+Good:
+- xp.ts
+- transfer.ts
+- classRequirements.ts
+
+Avoid:
+- utils.ts
+- helpers.ts
+- misc.ts
+
+## 8. When Unsure
+
+If a file’s responsibility is ambiguous:
+- Default to not placing it in domain
+- Ask for clarification instead of guessing
+
+Do not invent new architectural layers without instruction.
+
+

@@ -62,7 +62,7 @@ yarn dev:backend
 ## Project Structure (High-Level)
 ```
 /src
-  /data        # Editions, campaigns, races, classes
+  /data        # Editions, settings, races, classes
   /helpers     # Option resolution, overrides, lookup helpers
   /components  # React components (Form, selects, etc.)
 server/

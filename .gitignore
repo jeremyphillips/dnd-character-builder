@@ -81,6 +81,7 @@ playwright-report/
 # Backend specific
 # =========================
 uploads/
+assets/uploads/
 tmp/
 temp/
 

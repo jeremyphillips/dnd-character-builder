@@ -4,25 +4,46 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  // server: {
-  //   proxy: {
-  //     '/api': {
-  //       target: 'http://localhost:5000',
-  //       changeOrigin: true,
-  //       secure: false
-  //     }
-  //   }
-  // },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/socket.io': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+    },
+  },
   resolve: {
     alias: {
-      '@/characterBuilder': path.resolve(__dirname, './src/characterBuilder'),
-      "@/components/elements": path.resolve(__dirname, "src/components/elements"),
-      "@/components/modules": path.resolve(__dirname, "src/components/modules"),
+      '@/app': path.resolve(__dirname, './src/app'),
+      '@/characterBuilder': path.resolve(__dirname, './src/features/characterBuilder'),
+      '@/characterBuilder/context': path.resolve(__dirname, './src/features/characterBuilder/context'),
+      "@/ui/elements": path.resolve(__dirname, "src/ui/elements"),
+      "@/ui/forms": path.resolve(__dirname, "src/ui/forms"),
+      "@/ui/components": path.resolve(__dirname, "src/ui/components"),
       "@/data": path.resolve(__dirname, "src/data"),
-      "@/helpers": path.resolve(__dirname, "src/helpers"),
+      "@/domain/shared": path.resolve(__dirname, "src/domain/shared"),
+      "@/domain": path.resolve(__dirname, "src/domain"),
+      "@/chat": path.resolve(__dirname, "src/features/chat"),
+      "@/features/messaging": path.resolve(__dirname, "src/features/messaging"),
       "@/hooks": path.resolve(__dirname, "src/hooks"),
       "@/services": path.resolve(__dirname, "src/services"),
+      "@/shared": path.resolve(__dirname, "shared/types"),
       "@/steps": path.resolve(__dirname, "src/steps"),
+      "@/ui/badges": path.resolve(__dirname, "src/ui/badges"),
+      "@/ui/avatar": path.resolve(__dirname, "src/ui/avatar"),
+      "@/ui/cards": path.resolve(__dirname, "src/ui/cards"),
     }
   }
 })

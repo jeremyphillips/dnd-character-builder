@@ -1,22 +1,16 @@
-import { useState } from 'react'
-import { CharacterBuilderShell } from '@/characterBuilder'
-import { ChatContainer } from '@/chat'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import { CharacterBuilderLauncher } from '@/characterBuilder'
 
 export default function CharacterBuilderRoute() {
-  const [isModalOpen, setModalOpen] = useState(false)
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Dungeon &amp; Dragons Character Generator</h1>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" fontWeight={700} gutterBottom>
+        Dungeon &amp; Dragons Character Generator
+      </Typography>
 
-      <button onClick={() => setModalOpen(true)}>Create Character</button>
-
-      <CharacterBuilderShell
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-      />
-
-      <ChatContainer />
-    </div>
+      <CharacterBuilderLauncher />
+    </Box>
   )
 }

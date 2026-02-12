@@ -1,2 +1,25 @@
 export { PublicLayout, HomeRoute, CharacterBuilderRoute, LoginRoute } from './public'
-export { AuthLayout, DashboardRoute, CharactersRoute, CampaignsRoute, CampaignRoute } from './auth'
+export {
+  AuthLayout,
+  DashboardRoute,
+  UsersRoute,
+  MyCharactersRoute,
+  CharacterDetailRoute,
+  CampaignsRoute,
+  CampaignRoute,
+  InviteRoute,
+  RulesRoute,
+  PartyRoute,
+  SessionsRoute,
+  SessionRoute,
+  MessagingRoute,
+  WorldRoute,
+  LocationsRoute,
+  LocationRoute,
+  NpcsRoute,
+  NpcRoute,
+  MonstersRoute,
+  MonsterRoute,
+  EquipmentRoute,
+  EquipmentDetailsRoute,
+} from './auth'

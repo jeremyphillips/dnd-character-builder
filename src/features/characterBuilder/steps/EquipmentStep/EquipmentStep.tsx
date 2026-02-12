@@ -1,17 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
-import { ButtonGroup } from '@/components/elements'
+import { ButtonGroup } from '@/ui/elements'
 import { classes, equipment, type ClassRequirement, type EditionId } from '@/data'
+import { getById } from '@/domain/lookups'
+import { getClassRequirement } from '@/domain/character'
 import {
   calculateEquipmentCost,
-  calculateWealth5e,
-  type CalculateWealth5eStartingWealth,
   getAllowedEquipment,
-  getById,
-  getClassRequirement,
   getEquipmentNotes,
   getItemCostGp
-} from '@/helpers'
+} from '@/domain/equipment'
+import { calculateWealth5e, type CalculateWealth5eStartingWealth } from '@/domain/wealth'
 
 const EquipmentStep = () => {
   const initializedRef = useRef(false)

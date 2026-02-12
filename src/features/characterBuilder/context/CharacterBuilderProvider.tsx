@@ -5,14 +5,18 @@ import {
   STEP_CONFIG,
   INITIAL_CHARACTER_BUILDER_STATE
 } from '../constants'
+import { getById } from '@/domain/lookups'
+import { getOptions } from '@/domain/options'
 import {
-  getById,
-  getOptions,
   getSubclassUnlockLevel,
-  getEquipmentWeightAndCost,
   getXpByLevelAndEdition
-} from "@/helpers"
+} from '@/domain/character'
+import {
+  calculateEquipmentWeight,
+  calculateEquipmentCost
+} from '@/domain/equipment'
 import { races, equipment } from "@/data"
+import type { CharacterType } from "@/shared/types/character.core"
 
 const {
   weapons: weaponsData,
@@ -45,6 +49,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const updateState = (
     updater: (state: CharacterBuilderState) => CharacterBuilderState
   ) => setState(updater)
+
+  const setCharacterType = (type: CharacterType) =>
+    updateState(s => ({ ...s, type }))
+
+
+  const setName = (name: string) =>
+    updateState(s => ({ ...s, name }))
 
   const setEdition = (edition: string) =>
     updateState(s => ({ ...s, edition }))
@@ -292,34 +303,29 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     }))
   }
 
+  const computeEquipmentTotals = (
+    weaponIds: string[],
+    armorIds: string[],
+    gearIds: string[],
+    edition: string
+  ) => ({
+    weight: calculateEquipmentWeight(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData),
+    equipmentCost: calculateEquipmentCost(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData, edition),
+  })
+
   const updateWeapons = (weaponIds: string[]) => {
     setState(prev => {
       if (!prev.edition) return prev
       const armorIds = prev.equipment?.armor ?? []
       const gearIds = prev.equipment?.gear ?? []
-      const { weight, equipmentCost } = getEquipmentWeightAndCost(
-        weaponIds,
-        armorIds,
-        gearIds,
-        weaponsData,
-        armorData,
-        gearData,
-        prev.edition
-      )
+      const { weight, equipmentCost } = computeEquipmentTotals(weaponIds, armorIds, gearIds, prev.edition)
       const baseGp = prev.wealth?.baseGp ?? 0
       const remainingGp = Math.max(baseGp - equipmentCost, 0)
 
       return {
         ...prev,
-        equipment: {
-          ...prev.equipment,
-          weapons: weaponIds,
-          weight
-        },
-        wealth: {
-          ...prev.wealth,
-          gp: remainingGp
-        }
+        equipment: { ...prev.equipment, weapons: weaponIds, weight },
+        wealth: { ...prev.wealth, gp: remainingGp }
       }
     })
   }
@@ -329,29 +335,14 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       if (!prev.edition) return prev
       const weaponIds = prev.equipment?.weapons ?? []
       const gearIds = prev.equipment?.gear ?? []
-      const { weight, equipmentCost } = getEquipmentWeightAndCost(
-        weaponIds,
-        armorIds,
-        gearIds,
-        weaponsData,
-        armorData,
-        gearData,
-        prev.edition
-      )
+      const { weight, equipmentCost } = computeEquipmentTotals(weaponIds, armorIds, gearIds, prev.edition)
       const baseGp = prev.wealth?.baseGp ?? 0
       const remainingGp = Math.max(baseGp - equipmentCost, 0)
 
       return {
         ...prev,
-        equipment: {
-          ...prev.equipment,
-          armor: armorIds,
-          weight
-        },
-        wealth: {
-          ...prev.wealth,
-          gp: remainingGp
-        }
+        equipment: { ...prev.equipment, armor: armorIds, weight },
+        wealth: { ...prev.wealth, gp: remainingGp }
       }
     })
   }
@@ -361,29 +352,14 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       if (!prev.edition) return prev
       const weaponIds = prev.equipment?.weapons ?? []
       const armorIds = prev.equipment?.armor ?? []
-      const { weight, equipmentCost } = getEquipmentWeightAndCost(
-        weaponIds,
-        armorIds,
-        gearIds,
-        weaponsData,
-        armorData,
-        gearData,
-        prev.edition
-      )
+      const { weight, equipmentCost } = computeEquipmentTotals(weaponIds, armorIds, gearIds, prev.edition)
       const baseGp = prev.wealth?.baseGp ?? 0
       const remainingGp = Math.max(baseGp - equipmentCost, 0)
 
       return {
         ...prev,
-        equipment: {
-          ...prev.equipment,
-          gear: gearIds,
-          weight
-        },
-        wealth: {
-          ...prev.wealth,
-          gp: remainingGp
-        }
+        equipment: { ...prev.equipment, gear: gearIds, weight },
+        wealth: { ...prev.wealth, gp: remainingGp }
       }
     })
   }
@@ -400,7 +376,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     return { id: step.id, name: step.label }
   }
 
-  const getCurrentStepIndex = (stepId?: string) =>
+  const getCurrentStepIndex = (stepId?: string) => 
     STEP_CONFIG.findIndex(step => step.id === stepId)
 
   const start = () =>
@@ -424,6 +400,17 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     setActiveClassIndex(null)
   }
 
+  const goToStep = (stepId: string) => {
+    const index = stepConfig.findIndex(s => s.id === stepId)
+    if (index < 0) return
+    setState(s => ({ ...s, step: getStepByIndex(index) }))
+    setActiveClassIndex(null)
+  }
+
+  const resetState = () => {
+    setState(INITIAL_CHARACTER_BUILDER_STATE)
+  }
+
   const isComplete = (state: CharacterBuilderState) =>
     STEP_CONFIG.every(step => step.selector(state))
 
@@ -435,6 +422,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         allocatedLevels,
         remainingLevels,
 
+        setCharacterType,
+        setName,
         setEdition,
         setSetting,
         setRace,
@@ -464,6 +453,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         start,
         nextStep,
         prevStep,
+        goToStep,
+        resetState,
         isComplete,
 
         raceOptions,

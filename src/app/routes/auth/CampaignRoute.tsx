@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, Outlet, useMatch, Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { editions, settings } from '@/data'
-import CampaignForm, { type CampaignFormData } from '../../components/CampaignForm'
+import { getById } from '@/domain/lookups'
+// import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
+import { getPartyMembers } from '@/domain/party'
+import type { PartyMember } from '@/domain/party'
+import { Hero } from '@/ui/elements'
+import CharacterMediaTopCard from '@/domain/character/components/CharacterMediaTopCard/CharacterMediaTopCard'
 import { ROUTES } from '../../routes'
+import Box from '@mui/material/Box'
+import { apiFetch } from '../../api'
+
+interface CampaignMember {
+  userId: string
+  role: 'dm' | 'player' | 'observer'
+  joinedAt: string
+}
 
 interface Campaign {
   _id: string
@@ -12,15 +25,16 @@ interface Campaign {
   edition: string
   description: string
   adminId: string
-  members: string[]
+  members: CampaignMember[]
 }
 
 export default function CampaignRoute() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const navigate = useNavigate()
+  const isExactCampaign = useMatch({ path: '/campaigns/:id', end: true })
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
+  const [partyCharacters, setPartyCharacters] = useState<PartyMember[]>([])
   const [loading, setLoading] = useState(true)
   const [inviting, setInviting] = useState(false)
 
@@ -30,14 +44,23 @@ export default function CampaignRoute() {
     fetchCampaign()
   }, [id])
 
+  useEffect(() => {
+    if (!id || !campaign) {
+      setPartyCharacters([])
+      return
+    }
+    getPartyMembers(id, (campaignId) =>
+      apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
+        `/api/campaigns/${campaignId}/party`
+      )
+    )
+      .then(setPartyCharacters)
+      .catch(() => setPartyCharacters([]))
+  }, [id, campaign])
+
   async function fetchCampaign() {
     try {
-      const res = await fetch(`/api/campaigns/${id}`, { credentials: 'include' })
-      if (!res.ok) {
-        setCampaign(null)
-        return
-      }
-      const data = await res.json()
+      const data = await apiFetch<{ campaign: Campaign }>(`/api/campaigns/${id}`)
       setCampaign(data.campaign)
     } catch {
       setCampaign(null)
@@ -46,113 +69,99 @@ export default function CampaignRoute() {
     }
   }
 
-  async function handleSave(data: CampaignFormData) {
-    await fetch(`/api/campaigns/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-    await fetchCampaign()
-  }
-
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this campaign?')) return
-
-    await fetch(`/api/campaigns/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-    navigate(ROUTES.CAMPAIGNS)
-  }
-
   async function handleInvite() {
     const email = prompt('Enter the email of the user to invite:')
     if (!email) return
 
     setInviting(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}/members`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email }),
-      })
-
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        alert(data.error || 'Failed to invite user')
-        return
-      }
+      const data = await apiFetch<{ message?: string }>(
+        `/api/campaigns/${id}/members`,
+        { method: 'POST', body: { email } }
+      )
 
       if (data.message) {
         alert(data.message)
       }
 
       await fetchCampaign()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to invite user')
     } finally {
       setInviting(false)
     }
   }
 
-  function getSettingName(settingId: string) {
-    return settings.find(s => s.id === settingId)?.name ?? settingId
-  }
-
-  function getEditionName(editionId: string) {
-    return editions.find(e => e.id === editionId)?.name ?? editionId
-  }
+  const getSettingName = (settingId: string) =>
+    getById(settings as unknown as { id: string; name: string }[], settingId)?.name ?? settingId
+  const getEditionName = (editionId: string) =>
+    getById(editions as unknown as { id: string; name: string }[], editionId)?.name ?? editionId
 
   if (loading) return <p>Loading campaign…</p>
   if (!campaign) return <p>Campaign not found.</p>
 
+  // Render child route (e.g. sessions) when URL goes deeper than /campaigns/:id
+  if (!isExactCampaign) return <Outlet />
+
+  const subheadline = [
+    getEditionName(campaign.edition),
+    getSettingName(campaign.setting),
+    `${campaign.members.length} member${campaign.members.length !== 1 ? 's' : ''}`,
+  ].join(' · ')
+
   return (
     <div>
-      <div className="page-header">
-        <h1>{campaign.name}</h1>
-      </div>
+      <Hero
+        headline={campaign.name}
+        subheadline={subheadline}
+        image={(campaign as { imageUrl?: string }).imageUrl}
+      />
 
-      <p>
-        {getEditionName(campaign.edition)} · {getSettingName(campaign.setting)}
-        {' · '}
-        {campaign.members.length} member{campaign.members.length !== 1 ? 's' : ''}
-      </p>
+      <h3>Campaign</h3>
+      {/* <CampaignForm
+        initial={{
+          name: campaign.name,
+          edition: campaign.edition,
+          setting: campaign.setting,
+        }}
+        onSubmit={handleSave}
+        onCancel={() => navigate(ROUTES.CAMPAIGNS)}
+        submitLabel="Save"
+        submittingLabel="Saving…"
+        canEdit={isOwner}
+      /> */}
 
       {isOwner && (
-        <>
-          <h3>Edit Campaign</h3>
-          <CampaignForm
-            initial={{
-              name: campaign.name,
-              edition: campaign.edition,
-              setting: campaign.setting,
-            }}
-            onSubmit={handleSave}
-            onCancel={() => navigate(ROUTES.CAMPAIGNS)}
-            submitLabel="Save"
-            submittingLabel="Saving…"
-          />
-
-          <hr />
-
-          <div className="form-actions">
-            <button
-              onClick={handleInvite}
-              disabled={inviting}
-            >
-              {inviting ? 'Inviting…' : 'Invite User'}
-            </button>
-
-            <button
-              className="btn-theme-danger"
-              onClick={handleDelete}
-            >
-              Delete Campaign
-            </button>
-          </div>
-        </>
+        <button onClick={handleInvite} disabled={inviting}>
+          {inviting ? 'Inviting…' : 'Invite User'}
+        </button>
       )}
+
+      <h3>Sessions</h3>
+      <Link to={ROUTES.SESSIONS.replace(':id', id!)}>View Sessions</Link>
+
+      <h3>Party</h3>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
+          gap: 2,
+        }}
+      >
+        {partyCharacters.map((char) => (
+          <CharacterMediaTopCard
+            key={char._id}
+            characterId={char._id}
+            name={char.name}
+            race={char.race}
+            class={char.class}
+            level={char.level}
+            status={char.status}
+            attribution={char.ownerName}
+            link={`/characters/${char._id}`}
+          />
+        ))}
+      </Box>
     </div>
   )
 }

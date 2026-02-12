@@ -49,3 +49,20 @@ export async function getMe(req: Request, res: Response) {
     res.json({ user: null })
   }
 }
+
+/** Returns the token for Socket.io auth. Client must call with credentials. */
+export async function getSocketToken(req: Request, res: Response) {
+  const token = req.cookies?.token
+
+  if (!token) {
+    res.status(401).json({ error: 'Not authenticated' })
+    return
+  }
+
+  try {
+    verifyToken(token)
+    res.json({ token })
+  } catch {
+    res.status(401).json({ error: 'Invalid token' })
+  }
+}

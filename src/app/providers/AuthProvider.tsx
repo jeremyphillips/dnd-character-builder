@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
+import { apiFetch, ApiError } from '../api'
 
 interface AuthUser {
   id: string
@@ -22,36 +23,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
+    apiFetch<{ user: AuthUser | null }>('/api/auth/me')
       .then((data) => setUser(data?.user ?? null))
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.error || 'Login failed')
+    try {
+      const data = await apiFetch<{ user: AuthUser }>('/api/auth/login', {
+        method: 'POST',
+        body: { email, password },
+      })
+      setUser(data.user)
+    } catch (err) {
+      throw new Error(err instanceof ApiError ? err.message : 'Login failed')
     }
-
-    const data = await res.json()
-    setUser(data.user)
   }, [])
 
   const signOut = useCallback(async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    })
-    setUser(null)
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      setUser(null)
+    }
   }, [])
 
   return (

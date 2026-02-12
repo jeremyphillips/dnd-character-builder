@@ -1,1 +1,2 @@
 export { default as CharacterBuilderShell } from './CharacterBuilderShell/CharacterBuilderShell'
+export { default as CharacterBuilderLauncher } from './CharacterBuilderLauncher/CharacterBuilderLauncher'

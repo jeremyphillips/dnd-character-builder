@@ -3,6 +3,6 @@ import { chatController } from '../controllers/chat.controller'
 
 const router = Router()
 
-router.post('/chat', chatController)
+router.post('/', chatController)
 
 export default router

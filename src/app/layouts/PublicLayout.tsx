@@ -6,8 +6,11 @@ import Container from '@mui/material/Container'
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import { ROUTES } from '../routes'
+import { useAuth } from '../providers/AuthProvider'
 
 export default function PublicLayout() {
+  const { user, signOut } = useAuth()
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static" color="default" elevation={0}>
@@ -25,9 +28,15 @@ export default function PublicLayout() {
           >
             D&D Character Builder
           </Typography>
-          <Button component={Link} to={ROUTES.LOGIN} variant="outlined" size="small">
-            Sign In
-          </Button>
+          {user ? (
+            <Button onClick={() => signOut()} variant="outlined" size="small">
+              Log Out
+            </Button>
+          ) : (
+            <Button component={Link} to={ROUTES.LOGIN} variant="outlined" size="small">
+              Sign In
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 

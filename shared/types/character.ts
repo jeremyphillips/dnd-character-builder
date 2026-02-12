@@ -1,28 +1,21 @@
-export type CharacterClassInfo = {
-  classId?: string
-  classDefinitionId?: string
-  level: number
+import type { Character } from "./character.core"
+
+/** API/document shape for a character (extends CharacterSheet with stored fields). */
+export type CharacterDoc = Character & {
+  _id: string
+  userId?: string
+  imageUrl?: string | null
+
+  ai?: Record<string, unknown>
+
+  generation?: {
+    model?: string
+    promptVersion?: string
+    messageId?: string
+    createdAt?: string
+  }
+
+  createdAt: string
+  updatedAt: string
 }
 
-export type CharacterSheet = {
-  classes: CharacterClassInfo[]
-  xp: number
-  totalLevel: number
-  levelUpPending?: boolean
-  edition?: string
-  setting?: string
-  race?: string
-  wealth?: {
-    gp?: number | null
-    sp?: number | null
-    cp?: number | null
-    baseGp?: number | null
-  }
-  equipment?: {
-    armor?: string[]
-    weapons?: string[]
-    gear?: string[]
-    weight?: number
-  }
-  alignment?: string
-}

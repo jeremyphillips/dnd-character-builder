@@ -7,6 +7,16 @@ export async function getCharacters(req: Request, res: Response) {
   res.json({ characters })
 }
 
+export async function getCharactersAvailableForCampaign(req: Request, res: Response) {
+  try {
+    const characters = await characterService.getCharactersAvailableForCampaign(req.userId!)
+    res.json({ characters })
+  } catch (err) {
+    console.error('Failed to get available characters:', err)
+    res.status(500).json({ error: 'Failed to load characters' })
+  }
+}
+
 export async function getCharacter(req: Request, res: Response) {
   const character = await characterService.getCharacterById(req.params.id)
 
@@ -15,12 +25,22 @@ export async function getCharacter(req: Request, res: Response) {
     return
   }
 
-  if (!character.userId.equals(new mongoose.Types.ObjectId(req.userId!))) {
+  // Owner or admin/superadmin can view
+  const isOwner = character.userId.equals(new mongoose.Types.ObjectId(req.userId!))
+  const isAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+
+  if (!isOwner && !isAdmin) {
     res.status(403).json({ error: 'Forbidden' })
     return
   }
 
-  res.json({ character })
+  // Also fetch campaigns this character's user belongs to
+  const campaigns = await characterService.getCampaignsForCharacter(req.params.id)
+
+  // Pending memberships this user can approve/reject (when they are campaign admin)
+  const pendingMemberships = await characterService.getPendingMembershipsForAdmin(req.params.id, req.userId!)
+
+  res.json({ character, campaigns, isOwner, isAdmin, pendingMemberships })
 }
 
 export async function createCharacter(req: Request, res: Response) {
@@ -31,8 +51,13 @@ export async function createCharacter(req: Request, res: Response) {
     return
   }
 
-  const character = await characterService.createCharacter(req.userId!, req.body)
-  res.status(201).json({ character })
+  try {
+    const character = await characterService.createCharacter(req.userId!, req.body)
+    res.status(201).json({ character })
+  } catch (err) {
+    console.error('Failed to create character:', err)
+    res.status(500).json({ error: 'Failed to create character' })
+  }
 }
 
 export async function updateCharacter(req: Request, res: Response) {
@@ -43,13 +68,31 @@ export async function updateCharacter(req: Request, res: Response) {
     return
   }
 
-  if (!character.userId.equals(new mongoose.Types.ObjectId(req.userId!))) {
+  const isOwner = character.userId.equals(new mongoose.Types.ObjectId(req.userId!))
+  const isAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+
+  if (!isOwner && !isAdmin) {
     res.status(403).json({ error: 'Forbidden' })
     return
   }
 
-  const updated = await characterService.updateCharacter(req.params.id, req.body)
-  res.json({ character: updated })
+  // Non-admins can only update name, imageUrl, and narrative
+  let updateData = req.body
+  if (!isAdmin) {
+    const { name, imageUrl, narrative } = req.body
+    updateData = {} as any
+    if (name !== undefined) updateData.name = name
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl
+    if (narrative !== undefined) updateData.narrative = narrative
+  }
+
+  try {
+    const updated = await characterService.updateCharacter(req.params.id, updateData)
+    res.json({ character: updated })
+  } catch (err) {
+    console.error('Failed to update character:', err)
+    res.status(500).json({ error: 'Failed to update character' })
+  }
 }
 
 export async function deleteCharacter(req: Request, res: Response) {
@@ -60,7 +103,10 @@ export async function deleteCharacter(req: Request, res: Response) {
     return
   }
 
-  if (!character.userId.equals(new mongoose.Types.ObjectId(req.userId!))) {
+  const isOwner = character.userId.equals(new mongoose.Types.ObjectId(req.userId!))
+  const isAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+
+  if (!isOwner && !isAdmin) {
     res.status(403).json({ error: 'Forbidden' })
     return
   }

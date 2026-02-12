@@ -1,6 +1,6 @@
 import { useCharacterBuilder } from '@/characterBuilder/context'
 import { editions } from '@/data'
-import { ButtonGroup } from '@/components/elements'
+import { ButtonGroup } from '@/ui/elements'
 
 const EditionStep = () => {
   const { state, setEdition } = useCharacterBuilder()

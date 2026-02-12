@@ -1,1 +1,1 @@
-export { default as useAutoSelect } from './useAutoSelect'
+export { useActiveCampaign } from './useActiveCampaign'

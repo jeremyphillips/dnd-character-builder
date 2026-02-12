@@ -17,10 +17,75 @@ body {
   min-height: 100vh;
 }
 
-/* --------------------------------------------------------------------------
-   Character Builder — custom button group (non-MUI component)
-   Uses MUI CSS variables for consistent theming.
-   -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Global button base — all <button> elements get a consistent default.
+   MUI components (Button, IconButton) override these via Emotion.
+   ========================================================================== */
+
+button {
+  border-radius: 8px;
+  border: 1px solid var(--mui-palette-divider);
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: var(--mui-typography-fontFamily, inherit);
+  background-color: var(--mui-palette-primary-main);
+  color: var(--mui-palette-primary-contrastText);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Size variants ---------- */
+
+button.btn-size-sm {
+  padding: 0.3em 0.75em;
+  font-size: 0.8em;
+}
+
+/* ---------- Theme variants ---------- */
+
+button.btn-theme-secondary {
+  background-color: transparent;
+  color: var(--mui-palette-text-primary);
+  border-color: var(--mui-palette-divider);
+}
+
+button.btn-theme-secondary:hover {
+  border-color: var(--mui-palette-primary-main);
+  background-color: transparent;
+  opacity: 1;
+}
+
+button.btn-theme-danger {
+  background-color: transparent;
+  color: var(--mui-palette-error-main);
+  border-color: var(--mui-palette-error-main);
+}
+
+button.btn-theme-danger:hover {
+  background-color: var(--mui-palette-error-main);
+  color: var(--mui-palette-error-contrastText);
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Button group — character builder step selections
+   ========================================================================== */
 
 .button-group {
   display: flex;
@@ -29,36 +94,14 @@ body {
 }
 
 .button-group button {
-  border-radius: 8px;
-  border: 1px solid var(--mui-palette-divider);
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: var(--mui-typography-fontFamily, inherit);
   background-color: var(--mui-palette-background-paper);
   color: var(--mui-palette-text-primary);
-  cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
-}
-
-.button-group button.btn-size-sm {
-  padding: 0.4em 0.9em;
-  font-size: 0.8em;
-}
-
-.button-group button.btn-theme-secondary {
   border-color: var(--mui-palette-divider);
-  background-color: transparent;
 }
 
 .button-group button:hover {
   border-color: var(--mui-palette-primary-main);
-}
-
-.button-group button:focus,
-.button-group button:focus-visible {
-  outline: 2px solid var(--mui-palette-primary-main);
-  outline-offset: 2px;
+  opacity: 1;
 }
 
 .button-group button.selected {
@@ -67,9 +110,9 @@ body {
   border-color: var(--mui-palette-primary-main);
 }
 
-/* --------------------------------------------------------------------------
+/* ==========================================================================
    Form utilities (campaign create/edit form, etc.)
-   -------------------------------------------------------------------------- */
+   ========================================================================== */
 
 .create-form {
   display: flex;
@@ -111,9 +154,9 @@ body {
   gap: 8px;
 }
 
-/* --------------------------------------------------------------------------
+/* ==========================================================================
    List / card utilities (shared by Characters & Campaigns pages)
-   -------------------------------------------------------------------------- */
+   ========================================================================== */
 
 .page-header {
   display: flex;

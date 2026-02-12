@@ -1,28 +1,21 @@
 import type { Request, Response } from 'express'
 import * as noteService from '../services/note.service'
-import { requireCampaignAdmin, requireCampaignMember } from './campaign.controller'
 
 export async function getNotes(req: Request, res: Response) {
-  const campaign = await requireCampaignMember(req, res)
-  if (!campaign) return
-
+  // req.campaign attached by requireCampaignRole('observer')
   const notes = await noteService.getNotesByCampaign(req.params.id)
   res.json({ notes })
 }
 
 export async function createNote(req: Request, res: Response) {
-  const campaign = await requireCampaignAdmin(req, res)
-  if (!campaign) return
-
+  // req.campaign attached by requireCampaignRole('admin')
   const { title, body } = req.body
   const note = await noteService.createNote(req.params.id, req.userId!, { title, body })
   res.status(201).json({ note })
 }
 
 export async function updateNote(req: Request, res: Response) {
-  const campaign = await requireCampaignAdmin(req, res)
-  if (!campaign) return
-
+  // req.campaign attached by requireCampaignRole('admin')
   const existing = await noteService.getNoteById(req.params.noteId)
   if (!existing) {
     res.status(404).json({ error: 'Note not found' })
@@ -35,9 +28,7 @@ export async function updateNote(req: Request, res: Response) {
 }
 
 export async function deleteNote(req: Request, res: Response) {
-  const campaign = await requireCampaignAdmin(req, res)
-  if (!campaign) return
-
+  // req.campaign attached by requireCampaignRole('admin')
   const existing = await noteService.getNoteById(req.params.noteId)
   if (!existing) {
     res.status(404).json({ error: 'Note not found' })

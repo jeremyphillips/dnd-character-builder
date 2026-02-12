@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/requireAuth'
 import {
   getCharacters,
   getCharacter,
+  getCharactersAvailableForCampaign,
   createCharacter,
   updateCharacter,
   deleteCharacter,
@@ -13,6 +14,7 @@ const router = Router()
 router.use(requireAuth)
 
 router.get('/', getCharacters)
+router.get('/available-for-campaign', getCharactersAvailableForCampaign)
 router.post('/', createCharacter)
 
 router.get('/:id', getCharacter)

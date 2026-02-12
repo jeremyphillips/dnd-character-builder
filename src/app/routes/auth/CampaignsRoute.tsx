@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { editions, settings } from '@/data'
-import CampaignForm, { type CampaignFormData } from '../../components/CampaignForm'
+import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
+import { apiFetch, ApiError } from '../../api'
+
+interface CampaignMember {
+  userId: string
+  role: 'dm' | 'player' | 'observer'
+  joinedAt: string
+}
 
 interface Campaign {
   _id: string
@@ -11,7 +18,7 @@ interface Campaign {
   edition: string
   description: string
   adminId: string
-  members: string[]
+  members: CampaignMember[]
 }
 
 export default function CampaignsRoute() {
@@ -29,8 +36,7 @@ export default function CampaignsRoute() {
 
   async function fetchCampaigns() {
     try {
-      const res = await fetch('/api/campaigns', { credentials: 'include' })
-      const data = await res.json()
+      const data = await apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
       setCampaigns(data.campaigns ?? [])
     } catch {
       setCampaigns([])
@@ -40,14 +46,13 @@ export default function CampaignsRoute() {
   }
 
   async function handleCreate(data: CampaignFormData) {
-    await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-    setShowCreateForm(false)
-    await fetchCampaigns()
+    try {
+      await apiFetch('/api/campaigns', { method: 'POST', body: data })
+      setShowCreateForm(false)
+      await fetchCampaigns()
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to create campaign')
+    }
   }
 
   function getSettingName(id: string) {

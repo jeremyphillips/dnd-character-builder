@@ -1,5 +1,5 @@
 import { useCharacterBuilder } from '@/characterBuilder/context'
-import { ButtonGroup } from '@/components/elements'
+import { ButtonGroup } from '@/ui/elements'
 
 const LEVEL_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1)
 

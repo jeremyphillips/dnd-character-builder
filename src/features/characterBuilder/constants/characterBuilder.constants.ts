@@ -1,5 +1,6 @@
 import {
   AlignmentStep,
+  ConfirmationStep,
   SettingStep,
   ClassStep,
   EditionStep,
@@ -52,8 +53,77 @@ export const STEP_CONFIG = [
     label: 'Equipment',
     component: EquipmentStep,
     selector: (state: any) => state.equipment
+  },
+  {
+    id: 'confirmation',
+    label: 'Confirmation',
+    component: ConfirmationStep,
+    selector: () => true // always valid — it's a review step
   }
 ] as const
+
+export function getStepConfig(mode: 'pc' | 'npc') {
+  const baseSteps = [
+    {
+      id: 'race',
+      label: 'Race',
+      component: RaceStep,
+      selector: (state: CharacterBuilderState) => state.race
+    },
+    {
+      id: 'level',
+      label: 'Level',
+      component: LevelStep,
+      selector: (state: CharacterBuilderState) => state.totalLevel
+    },
+    {
+      id: 'class',
+      label: 'Class',
+      component: ClassStep,
+      selector: (state: CharacterBuilderState) =>
+        state.classes[0]?.classId
+    },
+    {
+      id: 'alignment',
+      label: 'Alignment',
+      component: AlignmentStep,
+      selector: (state: CharacterBuilderState) => state.alignment
+    },
+    {
+      id: 'equipment',
+      label: 'Equipment',
+      component: EquipmentStep,
+      selector: (state: CharacterBuilderState) => state.equipment
+    },
+    {
+      id: 'confirmation',
+      label: 'Confirmation',
+      component: ConfirmationStep,
+      selector: () => true
+    }
+  ]
+
+  if (mode === 'pc') {
+    return [
+      {
+        id: 'edition',
+        label: 'Edition',
+        component: EditionStep,
+        selector: (state: CharacterBuilderState) => state.edition
+      },
+      {
+        id: 'setting',
+        label: 'Setting',
+        component: SettingStep,
+        selector: (state: CharacterBuilderState) => state.setting,
+        optional: true
+      },
+      ...baseSteps
+    ]
+  }
+
+  return baseSteps
+}
 
 export const INITIAL_CHARACTER_BUILDER_STATE: CharacterBuilderState = {
   step: {

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { settings, worlds } from '@/data'
 import type { Location, LocationType, Visibility } from '@/data/types'
 import { useAuth } from '../../providers/AuthProvider'
-import { ImageUploadField, VisibilityField, VisibilityChip } from '@/ui/forms'
+import { ImageUploadField, VisibilityField, VisibilityChip } from '@/ui/fields'
 import { apiFetch } from '../../api'
 
 import Box from '@mui/material/Box'

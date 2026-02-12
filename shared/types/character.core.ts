@@ -105,7 +105,6 @@ export type CharacterCore = {
   narrative?: CharacterNarrative
 }
 
-
 export type Rules2e = {
   stats?: AbilityScores2e
   thac0?: number
@@ -134,6 +133,7 @@ export type NonPlayerCharacter = CharacterCore & {
   type: 'npc'
   source?: 'generated' | 'legacy'
   legacyEdition?: '2e'
+  id: string
 }
 
 export type Character =

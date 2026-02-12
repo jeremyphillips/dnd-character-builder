@@ -6,6 +6,56 @@ const campaignsCollection = () => db().collection('campaigns')
 const campaignMembersCollection = () => db().collection('campaignMembers')
 
 // ---------------------------------------------------------------------------
+// Normalization — old flat docs → new nested shape for frontend consumption
+// ---------------------------------------------------------------------------
+
+export function normalizeCampaign(campaign: any) {
+  if (!campaign) return null
+
+  return {
+    _id: campaign._id,
+
+    identity: campaign.identity ?? {
+      name: campaign.name,
+      description: campaign.description,
+      setting: campaign.setting,
+      edition: campaign.edition
+    },
+
+    configuration: campaign.configuration ?? {
+      allowLegacyEditionNpcs: campaign.allowLegacyEditionNpcs ?? false,
+      rules: {}
+    },
+
+    membership: campaign.membership ?? {
+      adminId: campaign.adminId,
+      members: campaign.members ?? []
+    },
+
+    participation: campaign.participation ?? {
+      characters: (campaign.party ?? []).map((id: any) => ({
+        characterId: id,
+        status: 'active'
+      }))
+    },
+
+    // Preserve flat accessors for backward compatibility during migration.
+    // Downstream code (middleware, controllers, other services) that reads
+    // campaign.adminId / campaign.name etc. will still work.
+    name: campaign.identity?.name ?? campaign.name,
+    description: campaign.identity?.description ?? campaign.description,
+    setting: campaign.identity?.setting ?? campaign.setting,
+    edition: campaign.identity?.edition ?? campaign.edition,
+    adminId: campaign.membership?.adminId ?? campaign.adminId,
+    members: campaign.membership?.members ?? campaign.members ?? [],
+    party: campaign.party ?? [],
+
+    createdAt: campaign.createdAt,
+    updatedAt: campaign.updatedAt,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Campaign CRUD
 // ---------------------------------------------------------------------------
 
@@ -16,20 +66,25 @@ export async function getCampaignsForUser(userId: string, role: string) {
   const memberCampaignIds = await campaignMembersCollection()
     .distinct('campaignId', { userId: oid })
 
-  return campaignsCollection()
+  const campaigns = await campaignsCollection()
     .find({
       $or: [
+        // Match old flat adminId or new nested membership.adminId
         { adminId: oid },
+        { 'membership.adminId': oid },
         { _id: { $in: memberCampaignIds } },
       ],
     })
     .toArray()
+
+  return campaigns.map(normalizeCampaign)
 }
 
 export async function getCampaignById(id: string) {
-  return campaignsCollection().findOne({
+  const campaign = await campaignsCollection().findOne({
     _id: new mongoose.Types.ObjectId(id),
   })
+  return normalizeCampaign(campaign)
 }
 
 export async function createCampaign(
@@ -37,30 +92,84 @@ export async function createCampaign(
   data: { name: string; setting: string; edition: string; description?: string }
 ) {
   const now = new Date()
+  const adminOid = new mongoose.Types.ObjectId(adminId)
+
   const result = await campaignsCollection().insertOne({
+    // New nested structure
+    identity: {
+      name: data.name,
+      description: data.description ?? '',
+      setting: data.setting,
+      edition: data.edition
+    },
+    configuration: {
+      allowLegacyEditionNpcs: false,
+      rules: {}
+    },
+    membership: {
+      adminId: adminOid,
+      members: []
+    },
+    participation: {
+      characters: []
+    },
+
+    // Old flat fields (for backward compat until migration completes)
     name: data.name,
+    description: data.description ?? '',
     setting: data.setting,
     edition: data.edition,
-    description: data.description ?? '',
     party: [],
-    adminId: new mongoose.Types.ObjectId(adminId),
+    adminId: adminOid,
     members: [],
+
     createdAt: now,
     updatedAt: now,
   })
 
-  return campaignsCollection().findOne({ _id: result.insertedId })
+  const campaign = await campaignsCollection().findOne({ _id: result.insertedId })
+  return normalizeCampaign(campaign)
 }
 
 export async function updateCampaign(
   id: string,
-  data: { name?: string; setting?: string; edition?: string; description?: string }
+  data: {
+    name?: string
+    setting?: string
+    edition?: string
+    description?: string
+    allowLegacyEditionNpcs?: boolean
+  }
 ) {
-  return campaignsCollection().findOneAndUpdate(
+  const $set: Record<string, unknown> = { updatedAt: new Date() }
+
+  // Write to both old flat fields and new nested fields
+  if (data.name !== undefined) {
+    $set.name = data.name
+    $set['identity.name'] = data.name
+  }
+  if (data.description !== undefined) {
+    $set.description = data.description
+    $set['identity.description'] = data.description
+  }
+  if (data.setting !== undefined) {
+    $set.setting = data.setting
+    $set['identity.setting'] = data.setting
+  }
+  if (data.edition !== undefined) {
+    $set.edition = data.edition
+    $set['identity.edition'] = data.edition
+  }
+  if (data.allowLegacyEditionNpcs !== undefined) {
+    $set['configuration.allowLegacyEditionNpcs'] = data.allowLegacyEditionNpcs
+  }
+
+  const campaign = await campaignsCollection().findOneAndUpdate(
     { _id: new mongoose.Types.ObjectId(id) },
-    { $set: { ...data, updatedAt: new Date() } },
+    { $set },
     { returnDocument: 'after' },
   )
+  return normalizeCampaign(campaign)
 }
 
 export async function deleteCampaign(id: string) {
@@ -106,7 +215,7 @@ export async function getMembersForMessaging(campaignId: string) {
   if (!campaign) return []
 
   const usersCollection = () => db().collection('users')
-  const adminId = (campaign as { adminId: mongoose.Types.ObjectId }).adminId
+  const adminId = campaign.adminId as mongoose.Types.ObjectId
 
   const approvedMembers = await campaignMembersCollection()
     .find({

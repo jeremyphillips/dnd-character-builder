@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import * as notificationService from './notification.service'
-
+import type { CampaignMemberStatus } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const invitesCollection = () => db().collection('campaignInvites')
 
@@ -17,7 +17,7 @@ export interface CampaignInviteDoc {
   invitedUserId: mongoose.Types.ObjectId
   invitedByUserId: mongoose.Types.ObjectId
   role: InviteRole
-  status: InviteStatus
+  status: CampaignMemberStatus
   createdAt: Date
   respondedAt: Date | null
 }
@@ -112,7 +112,7 @@ export async function respondToInvite(
     throw new Error('characterId is required when accepting an invite')
   }
 
-  const newStatus: InviteStatus = accept ? 'accepted' : 'declined'
+  const newStatus: Omit<CampaignMemberStatus, 'declined'> = accept ? 'accepted' : 'declined'
 
   const updatePayload: Record<string, unknown> = {
     status: newStatus,

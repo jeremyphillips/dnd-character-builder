@@ -2,8 +2,8 @@ import { useMemo, useEffect, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState, CharacterClassInfo } from '../types'
 import {
-  STEP_CONFIG,
-  INITIAL_CHARACTER_BUILDER_STATE
+  getStepConfig,
+  createInitialBuilderState
 } from '../constants'
 import { getById } from '@/domain/lookups'
 import { getOptions } from '@/domain/options'
@@ -26,7 +26,7 @@ const {
 
 export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const [state, setState] = useState<CharacterBuilderState>(
-    INITIAL_CHARACTER_BUILDER_STATE
+    () => createInitialBuilderState('pc')
   )
 
   useEffect(() => {
@@ -52,6 +52,14 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setCharacterType = (type: CharacterType) =>
     updateState(s => ({ ...s, type }))
+
+  const openBuilder = (
+    mode: CharacterType,
+    campaignEdition?: string,
+    campaignSetting?: string
+  ) => {
+    setState(createInitialBuilderState(mode, campaignEdition, campaignSetting))
+  }
 
 
   const setName = (name: string) =>
@@ -371,13 +379,15 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     }))
   }
 
+  const stepConfig = getStepConfig(state.type ?? 'pc')
+
   const getStepByIndex = (index: number) => {
-    const step = STEP_CONFIG[Math.max(0, Math.min(index, STEP_CONFIG.length - 1))]
+    const step = stepConfig[Math.max(0, Math.min(index, stepConfig.length - 1))]
     return { id: step.id, name: step.label }
   }
 
-  const getCurrentStepIndex = (stepId?: string) => 
-    STEP_CONFIG.findIndex(step => step.id === stepId)
+  const getCurrentStepIndex = (stepId?: string) =>
+    stepConfig.findIndex(step => step.id === stepId)
 
   const start = () =>
     updateState(s => ({ ...s, step: getStepByIndex(0) }))
@@ -401,18 +411,25 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   }
 
   const goToStep = (stepId: string) => {
-    const index = stepConfig.findIndex(s => s.id === stepId)
+    const config = getStepConfig(state.type ?? 'pc')
+    const index = config.findIndex(s => s.id === stepId)
     if (index < 0) return
     setState(s => ({ ...s, step: getStepByIndex(index) }))
     setActiveClassIndex(null)
   }
 
   const resetState = () => {
-    setState(INITIAL_CHARACTER_BUILDER_STATE)
+    setState(
+      createInitialBuilderState(
+        state.type ?? 'pc',
+        state.edition,
+        state.setting
+      )
+    )
   }
 
   const isComplete = (state: CharacterBuilderState) =>
-    STEP_CONFIG.every(step => step.selector(state))
+    getStepConfig(state.type ?? 'pc').every(step => step.selector(state))
 
   return (
     <CharacterBuilderContext.Provider
@@ -423,6 +440,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         remainingLevels,
 
         setCharacterType,
+        openBuilder,
         setName,
         setEdition,
         setSetting,

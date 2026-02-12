@@ -5,7 +5,7 @@ import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { useCharacterBuilder } from '../../context'
-import { STEP_CONFIG } from '../../constants'
+import { getStepConfig } from '../../constants'
 
 type CharacterBuilderShellProps = {
   isOpen: boolean
@@ -17,12 +17,12 @@ type CharacterBuilderShellProps = {
 const CharacterBuilderShell = ({ isOpen, onClose, onGenerate, isGenerating = false }: CharacterBuilderShellProps) => {
   const { state, nextStep, prevStep } = useCharacterBuilder()
 
-  const currentStepIndex = STEP_CONFIG.findIndex(step => step.id === state.step.id)
-  const currentStep = STEP_CONFIG[currentStepIndex]
+  const stepConfig = getStepConfig(state.type ?? 'pc')
+  const currentStepIndex = Math.max(0, stepConfig.findIndex(step => step.id === state.step.id))
+  const currentStep = stepConfig[currentStepIndex]
   const StepComponent = currentStep.component
-
   const isNextDisabled = !currentStep.selector(state)
-  const isLastStep = currentStepIndex === STEP_CONFIG.length - 1
+  const isLastStep = currentStepIndex === stepConfig.length - 1
 
   return (
     <Dialog

@@ -22,10 +22,12 @@ const CharacterBuilderLauncher = ({
   buttonLabel = 'Create Character',
   variant = 'contained',
   size = 'large',
-  onCharacterCreated
+  onCharacterCreated,
+  campaignEdition,
+  campaignSetting
 }: CharacterBuilderLauncherProps) => {
   const [isModalOpen, setModalOpen] = useState(false)
-  const { setCharacterType } = useCharacterBuilder()
+  const { openBuilder } = useCharacterBuilder()
 
   return (
     <>
@@ -34,7 +36,7 @@ const CharacterBuilderLauncher = ({
         size={size}
         startIcon={<AutoFixHighIcon />}
         onClick={() => {
-          setCharacterType(characterType)
+          openBuilder(characterType, campaignEdition, campaignSetting)
           setModalOpen(true)
         }}
       >

@@ -20,12 +20,16 @@ interface CampaignMember {
 
 interface Campaign {
   _id: string
-  name: string
-  setting: string
-  edition: string
-  description: string
-  adminId: string
-  members: CampaignMember[]
+  identity: {
+    name: string
+    setting: string
+    edition: string
+    description: string
+  }
+  membership: {
+    adminId: string
+    members: CampaignMember[]
+  }
 }
 
 export default function CampaignRoute() {
@@ -38,7 +42,7 @@ export default function CampaignRoute() {
   const [loading, setLoading] = useState(true)
   const [inviting, setInviting] = useState(false)
 
-  const isOwner = campaign?.adminId === user?.id
+  const isOwner = campaign?.membership.adminId === user?.id
 
   useEffect(() => {
     fetchCampaign()
@@ -104,15 +108,15 @@ export default function CampaignRoute() {
   if (!isExactCampaign) return <Outlet />
 
   const subheadline = [
-    getEditionName(campaign.edition),
-    getSettingName(campaign.setting),
-    `${campaign.members.length} member${campaign.members.length !== 1 ? 's' : ''}`,
+    getEditionName(campaign.identity.edition),
+    getSettingName(campaign.identity.setting),
+    `${campaign.membership.members.length} member${campaign.membership.members.length !== 1 ? 's' : ''}`,
   ].join(' · ')
 
   return (
     <div>
       <Hero
-        headline={campaign.name}
+        headline={campaign.identity.name}
         subheadline={subheadline}
         image={(campaign as { imageUrl?: string }).imageUrl}
       />
@@ -120,9 +124,9 @@ export default function CampaignRoute() {
       <h3>Campaign</h3>
       {/* <CampaignForm
         initial={{
-          name: campaign.name,
-          edition: campaign.edition,
-          setting: campaign.setting,
+          name: campaign.identity.name,
+          edition: campaign.identity.edition,
+          setting: campaign.identity.setting,
         }}
         onSubmit={handleSave}
         onCancel={() => navigate(ROUTES.CAMPAIGNS)}

@@ -22,4 +22,9 @@ export {
   MonsterRoute,
   EquipmentRoute,
   EquipmentDetailsRoute,
+  AdminGuard,
+  AdminRoute,
+  AdminInvitesRoute,
+  AdminBrainstormingRoute,
+  AdminSettingsRoute,
 } from './auth'

@@ -10,7 +10,7 @@ import {
   EditableTextField,
   EditableSelect,
   EditableNumberField,
-} from '@/ui/forms'
+} from '@/ui/fields'
 import { StatCircle } from '@/ui/elements'
 import { apiFetch } from '../../api'
 

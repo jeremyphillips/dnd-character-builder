@@ -8,21 +8,32 @@ const campaignMemberSchema = new Schema({
 
 const campaignSchema = new Schema(
   {
-    name: { type: String, required: true },
-    description: { type: String, default: '' },
-    setting: { type: String, required: true },
-    edition: { type: String, required: true },
+    identity: {
+      name: String,
+      description: String,
+      setting: String,
+      edition: String
+    },
 
-    party: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Character'
-      }
-    ],
+    configuration: {
+      allowLegacyEditionNpcs: { type: Boolean, default: false },
+      rules: { type: Schema.Types.Mixed, default: {} }
+    },
 
-    adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    membership: {
+      adminId: { type: Schema.Types.ObjectId, ref: 'User' },
+      members: { type: [campaignMemberSchema], default: [] }
+    },
 
-    members: { type: [campaignMemberSchema], default: [] }
+    participation: {
+      characters: [
+        {
+          characterId: { type: Schema.Types.ObjectId, ref: 'Character' },
+          status: { type: String, enum: ['active', 'inactive', 'deceased'], default: 'active' },
+          joinedAt: Date
+        }
+      ]
+    }
   },
   { timestamps: true }
 )

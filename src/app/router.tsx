@@ -31,6 +31,11 @@ import {
   MonsterRoute,
   EquipmentRoute,
   EquipmentDetailsRoute,
+  AdminGuard,
+  AdminRoute,
+  AdminInvitesRoute,
+  AdminBrainstormingRoute,
+  AdminSettingsRoute,
 } from './routes/index'
 
 function RootLayout() {
@@ -89,6 +94,21 @@ export const router = createBrowserRouter([
             ],
           },
           { path: ROUTES.INVITE, element: <InviteRoute /> },
+          {
+            path: ROUTES.ADMIN,
+            element: <AdminGuard />,
+            children: [
+              {
+                element: <AdminRoute />,
+                children: [
+                  { index: true, element: <Navigate to={ROUTES.ADMIN_INVITES} replace /> },
+                  { path: 'invites', element: <AdminInvitesRoute /> },
+                  { path: 'brainstorming', element: <AdminBrainstormingRoute /> },
+                  { path: 'settings', element: <AdminSettingsRoute /> },
+                ],
+              },
+            ],
+          },
         ],
       },
     ],

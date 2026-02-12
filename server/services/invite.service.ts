@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import * as notificationService from './notification.service'
-
+import type { CampaignMemberStatus } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const invitesCollection = () => db().collection('campaignInvites')
 
@@ -17,7 +17,7 @@ export interface CampaignInviteDoc {
   invitedUserId: mongoose.Types.ObjectId
   invitedByUserId: mongoose.Types.ObjectId
   role: InviteRole
-  status: InviteStatus
+  status: CampaignMemberStatus
   createdAt: Date
   respondedAt: Date | null
 }
@@ -112,7 +112,7 @@ export async function respondToInvite(
     throw new Error('characterId is required when accepting an invite')
   }
 
-  const newStatus: InviteStatus = accept ? 'accepted' : 'declined'
+  const newStatus: Omit<CampaignMemberStatus, 'declined'> = accept ? 'accepted' : 'declined'
 
   const updatePayload: Record<string, unknown> = {
     status: newStatus,
@@ -144,7 +144,7 @@ export async function respondToInvite(
     const campaign = await db().collection('campaigns').findOne({ _id: invite.campaignId })
     const character = await db().collection('characters').findOne({ _id: new mongoose.Types.ObjectId(characterId) })
     const invitedUser = await db().collection('users').findOne({ _id: invite.invitedUserId })
-    const adminId = campaign?.adminId
+    const adminId = campaign?.membership?.adminId
     if (adminId && member && character && invitedUser) {
       await notificationService.createNotification({
         userId: adminId,
@@ -159,7 +159,7 @@ export async function respondToInvite(
         payload: {
           characterName: character.name,
           userName: invitedUser.username,
-          campaignName: campaign.name,
+          campaignName: campaign.identity?.name,
         },
       })
     }

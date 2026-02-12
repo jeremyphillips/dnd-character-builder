@@ -37,8 +37,8 @@ export async function getSessionsForUser(userId: string, role: string) {
   const campaigns = await campaignsCollection()
     .find({
       $or: [
-        { adminId: oid },
-        { 'members.userId': oid },
+        { 'membership.adminId': oid },
+        { 'membership.members.userId': oid },
       ],
     })
     .project({ _id: 1 })
@@ -97,8 +97,8 @@ export async function createSession(
     _id: new mongoose.Types.ObjectId(data.campaignId),
   })
 
-  if (campaign?.members?.length) {
-    const memberUserIds = (campaign.members as { userId: mongoose.Types.ObjectId }[])
+  if (campaign?.membership?.members?.length) {
+    const memberUserIds = (campaign.membership.members as { userId: mongoose.Types.ObjectId }[])
       .map((m) => m.userId.toString())
       .filter((uid) => uid !== adminUserId)
 

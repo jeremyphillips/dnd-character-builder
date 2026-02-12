@@ -7,10 +7,10 @@ import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
 import type { AppNotification } from '@/domain/notification'
 import {
+  EditableField,
   EditableTextField,
   EditableSelect,
-} from '@/ui/forms'
-import EditableField from '@/ui/forms/EditableField/EditableField'
+} from '@/ui/fields'
 import { InviteConfirmationBox } from '@/ui/components'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'

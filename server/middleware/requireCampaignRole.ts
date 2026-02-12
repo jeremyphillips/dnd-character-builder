@@ -43,7 +43,7 @@ export function requireCampaignRole(...requiredRoles: Array<'admin' | 'dm' | 'pl
     }
 
     const uid = new mongoose.Types.ObjectId(req.userId!)
-    const isOwner = campaign.adminId.equals(uid)
+    const isOwner = campaign.membership.adminId.equals(uid)
 
     let campaignRole: 'admin' | 'dm' | 'player' | 'observer' | null = null
 

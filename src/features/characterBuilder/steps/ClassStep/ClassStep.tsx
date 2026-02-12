@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
 import { classes } from '@/data'
 import { getOptions } from '@/domain/options'
@@ -46,6 +47,12 @@ const ClassStep = () => {
     activeClassIndex,
     totalLevel
   } = state
+
+  useEffect(() => {
+    if (selectedClasses[0]?.classId === undefined && activeClassIndex !== 0) {
+      setActiveClassIndex(0)
+    }
+  }, [selectedClasses[0]?.classId, activeClassIndex, setActiveClassIndex])
 
   const activeClass =
     typeof activeClassIndex === 'number'

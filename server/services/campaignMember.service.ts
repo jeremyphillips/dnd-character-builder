@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
-
+import type { CampaignMemberStatus } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignMembersCollection = () => db().collection('campaignMembers')
 
@@ -9,7 +9,6 @@ const campaignMembersCollection = () => db().collection('campaignMembers')
 // ---------------------------------------------------------------------------
 
 export type CampaignMemberRole = 'player' | 'dm'
-export type CampaignMemberStatus = 'pending' | 'approved' | 'rejected'
 
 export interface CampaignMemberDoc {
   _id: mongoose.Types.ObjectId

@@ -6,6 +6,26 @@ const campaignsCollection = () => db().collection('campaigns')
 const campaignMembersCollection = () => db().collection('campaignMembers')
 
 // ---------------------------------------------------------------------------
+// Normalization
+// ---------------------------------------------------------------------------
+
+export function normalizeCampaign(campaign: any) {
+  if (!campaign) return null
+
+  return {
+    _id: campaign._id,
+
+    identity: campaign.identity,
+    configuration: campaign.configuration,
+    membership: campaign.membership,
+    participation: campaign.participation,
+
+    createdAt: campaign.createdAt,
+    updatedAt: campaign.updatedAt,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Campaign CRUD
 // ---------------------------------------------------------------------------
 
@@ -16,20 +36,23 @@ export async function getCampaignsForUser(userId: string, role: string) {
   const memberCampaignIds = await campaignMembersCollection()
     .distinct('campaignId', { userId: oid })
 
-  return campaignsCollection()
+  const campaigns = await campaignsCollection()
     .find({
       $or: [
-        { adminId: oid },
+        { 'membership.adminId': oid },
         { _id: { $in: memberCampaignIds } },
       ],
     })
     .toArray()
+
+  return campaigns.map(normalizeCampaign)
 }
 
 export async function getCampaignById(id: string) {
-  return campaignsCollection().findOne({
+  const campaign = await campaignsCollection().findOne({
     _id: new mongoose.Types.ObjectId(id),
   })
+  return normalizeCampaign(campaign)
 }
 
 export async function createCampaign(
@@ -37,30 +60,68 @@ export async function createCampaign(
   data: { name: string; setting: string; edition: string; description?: string }
 ) {
   const now = new Date()
+  const adminOid = new mongoose.Types.ObjectId(adminId)
+
   const result = await campaignsCollection().insertOne({
-    name: data.name,
-    setting: data.setting,
-    edition: data.edition,
-    description: data.description ?? '',
-    party: [],
-    adminId: new mongoose.Types.ObjectId(adminId),
-    members: [],
+    identity: {
+      name: data.name,
+      description: data.description ?? '',
+      setting: data.setting,
+      edition: data.edition
+    },
+    configuration: {
+      allowLegacyEditionNpcs: false,
+      rules: {}
+    },
+    membership: {
+      adminId: adminOid,
+      members: []
+    },
+    participation: {
+      characters: []
+    },
     createdAt: now,
     updatedAt: now,
   })
 
-  return campaignsCollection().findOne({ _id: result.insertedId })
+  const campaign = await campaignsCollection().findOne({ _id: result.insertedId })
+  return normalizeCampaign(campaign)
 }
 
 export async function updateCampaign(
   id: string,
-  data: { name?: string; setting?: string; edition?: string; description?: string }
+  data: {
+    name?: string
+    setting?: string
+    edition?: string
+    description?: string
+    allowLegacyEditionNpcs?: boolean
+  }
 ) {
-  return campaignsCollection().findOneAndUpdate(
+  const $set: Record<string, unknown> = { updatedAt: new Date() }
+
+  if (data.name !== undefined) {
+    $set['identity.name'] = data.name
+  }
+  if (data.description !== undefined) {
+    $set['identity.description'] = data.description
+  }
+  if (data.setting !== undefined) {
+    $set['identity.setting'] = data.setting
+  }
+  if (data.edition !== undefined) {
+    $set['identity.edition'] = data.edition
+  }
+  if (data.allowLegacyEditionNpcs !== undefined) {
+    $set['configuration.allowLegacyEditionNpcs'] = data.allowLegacyEditionNpcs
+  }
+
+  const campaign = await campaignsCollection().findOneAndUpdate(
     { _id: new mongoose.Types.ObjectId(id) },
-    { $set: { ...data, updatedAt: new Date() } },
+    { $set },
     { returnDocument: 'after' },
   )
+  return normalizeCampaign(campaign)
 }
 
 export async function deleteCampaign(id: string) {
@@ -106,7 +167,7 @@ export async function getMembersForMessaging(campaignId: string) {
   if (!campaign) return []
 
   const usersCollection = () => db().collection('users')
-  const adminId = (campaign as { adminId: mongoose.Types.ObjectId }).adminId
+  const adminId = campaign.membership.adminId as mongoose.Types.ObjectId
 
   const approvedMembers = await campaignMembersCollection()
     .find({

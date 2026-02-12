@@ -29,7 +29,7 @@ export async function approveCampaignMember(req: Request, res: Response) {
     return
   }
 
-  const isAdmin = campaign.adminId.equals(new mongoose.Types.ObjectId(userId))
+  const isAdmin = campaign.membership.adminId.equals(new mongoose.Types.ObjectId(userId))
   if (!isAdmin) {
     res.status(403).json({ error: 'Only the campaign admin can approve characters' })
     return
@@ -43,7 +43,6 @@ export async function approveCampaignMember(req: Request, res: Response) {
 
   const u = updated as { userId: mongoose.Types.ObjectId; characterId: mongoose.Types.ObjectId }
   const character = await db().collection('characters').findOne({ _id: u.characterId })
-  const campaignDoc = await db().collection('campaigns').findOne({ _id: m.campaignId })
 
   await notificationService.createNotification({
     userId: u.userId,
@@ -55,7 +54,7 @@ export async function approveCampaignMember(req: Request, res: Response) {
     },
     payload: {
       characterName: character?.name,
-      campaignName: campaignDoc?.name,
+      campaignName: campaign.identity.name,
     },
   })
 
@@ -75,7 +74,7 @@ export async function approveCampaignMember(req: Request, res: Response) {
       },
       payload: {
         characterName: character?.name,
-        campaignName: campaignDoc?.name,
+        campaignName: campaign.identity.name,
       },
     })
   }
@@ -105,7 +104,7 @@ export async function rejectCampaignMember(req: Request, res: Response) {
     return
   }
 
-  const isAdmin = campaign.adminId.equals(new mongoose.Types.ObjectId(userId))
+  const isAdmin = campaign.membership.adminId.equals(new mongoose.Types.ObjectId(userId))
   if (!isAdmin) {
     res.status(403).json({ error: 'Only the campaign admin can reject characters' })
     return
@@ -119,7 +118,6 @@ export async function rejectCampaignMember(req: Request, res: Response) {
 
   const u = updated as { userId: mongoose.Types.ObjectId; characterId: mongoose.Types.ObjectId }
   const character = await db().collection('characters').findOne({ _id: u.characterId })
-  const campaignDoc = await db().collection('campaigns').findOne({ _id: m.campaignId })
 
   await notificationService.createNotification({
     userId: u.userId,
@@ -131,7 +129,7 @@ export async function rejectCampaignMember(req: Request, res: Response) {
     },
     payload: {
       characterName: character?.name,
-      campaignName: campaignDoc?.name,
+      campaignName: campaign.identity.name,
     },
   })
 

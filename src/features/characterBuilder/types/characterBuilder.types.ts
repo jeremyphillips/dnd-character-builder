@@ -19,6 +19,7 @@ export type CharacterBuilderContextValue = {
 
   // basic character info
   setCharacterType: (type: CharacterType) => void
+  openBuilder: (mode: CharacterType, campaignEdition?: string, campaignSetting?: string) => void
   setName: (name: string) => void
   setEdition: (id: string) => void
   setSetting: (id: string) => void

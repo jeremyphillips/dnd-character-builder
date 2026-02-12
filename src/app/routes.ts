@@ -24,4 +24,8 @@ export const ROUTES = {
   WORLD_MONSTER: '/campaigns/:id/world/monsters/:monsterId',
   EQUIPMENT: '/campaigns/:id/equipment',
   EQUIPMENT_DETAILS: '/campaigns/:id/equipment/:equipmentId',
+  ADMIN: '/admin',
+  ADMIN_INVITES: '/admin/invites',
+  ADMIN_BRAINSTORMING: '/admin/brainstorming',
+  ADMIN_SETTINGS: '/admin/settings',
 } as const

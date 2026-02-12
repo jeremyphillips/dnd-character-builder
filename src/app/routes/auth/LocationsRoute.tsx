@@ -136,9 +136,9 @@ export default function LocationsRoute() {
   const { user } = useAuth()
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin'
 
-  const [campaign, setCampaign] = useState<{ setting: string } | null>(null)
+  const [campaign, setCampaign] = useState<{ identity?: { setting?: string } } | null>(null)
   const [campaignLoading, setCampaignLoading] = useState(true)
-  const activeSetting = campaign?.setting ?? ''
+  const activeSetting = campaign?.identity?.setting ?? ''
   const world = getWorldForSetting(activeSetting)
 
   const [loading, setLoading] = useState(true)
@@ -170,9 +170,9 @@ export default function LocationsRoute() {
     }
     let cancelled = false
     setCampaignLoading(true)
-    apiFetch<{ campaign?: { setting: string } }>(`/api/campaigns/${campaignId}`)
-      .then((data: { campaign?: { setting: string } }) => {
-        if (!cancelled && data.campaign) setCampaign(data.campaign)
+    apiFetch<{ campaign?: { identity?: { setting?: string } } }>(`/api/campaigns/${campaignId}`)
+      .then((data) => {
+        if (!cancelled && data.campaign) setCampaign({ identity: data.campaign.identity })
       })
       .catch(() => {})
       .finally(() => {
@@ -365,7 +365,7 @@ export default function LocationsRoute() {
     )
   }
 
-  if (!campaign?.setting) {
+  if (!campaign?.identity?.setting) {
     return (
       <Typography color="text.secondary">Campaign has no setting configured.</Typography>
     )

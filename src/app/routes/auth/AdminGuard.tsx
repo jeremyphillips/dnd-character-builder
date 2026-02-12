@@ -5,7 +5,7 @@ import { ROUTES } from '../../routes'
 import { apiFetch } from '../../api'
 import { useState, useEffect } from 'react'
 
-type CampaignWithAdmin = { _id: string; adminId?: string }
+type CampaignWithAdmin = { _id: string; membership?: { adminId?: string } }
 
 export default function AdminGuard() {
   const { user } = useAuth()
@@ -21,7 +21,7 @@ export default function AdminGuard() {
     }
     apiFetch<{ campaign?: CampaignWithAdmin }>(`/api/campaigns/${activeCampaignId}`)
       .then((data) => {
-        const adminId = data.campaign?.adminId
+        const adminId = data.campaign?.membership?.adminId
         setIsCampaignOwner(String(adminId) === user.id)
       })
       .catch(() => setIsCampaignOwner(false))

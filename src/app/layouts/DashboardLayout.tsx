@@ -72,8 +72,8 @@ const NAV_ITEMS: NavItem[] = [
 
 interface Campaign {
   _id: string
-  name: string
-  adminId?: string
+  identity: { name?: string }
+  membership?: { adminId?: string }
 }
 
 export default function DashboardLayout() {
@@ -89,7 +89,7 @@ export default function DashboardLayout() {
   const [worldExpanded, setWorldExpanded] = useState(false)
   const popoverOpen = Boolean(anchorEl)
 
-  const canAccessAdmin = user?.role === 'superadmin' || (activeCampaignId && user && String(campaigns.find((c) => c._id === activeCampaignId)?.adminId) === user.id)
+  const canAccessAdmin = user?.role === 'superadmin' || (activeCampaignId && user && String(campaigns.find((c) => c._id === activeCampaignId)?.membership?.adminId) === user.id)
 
   useEffect(() => {
     apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
@@ -180,7 +180,7 @@ export default function DashboardLayout() {
               disabled={!campaignsLoading && campaigns.length === 0}
               renderValue={(value) => {
                 if (!value) return campaignsLoading ? 'Select Campaign' : campaigns.length === 0 ? 'No Campaigns' : 'Select Campaign'
-                return campaigns.find((c) => c._id === value)?.name ?? value
+                return campaigns.find((c) => c._id === value)?.identity?.name ?? value
               }}
               sx={{ fontSize: '0.9rem' }}
             >
@@ -191,7 +191,7 @@ export default function DashboardLayout() {
               ) : (
                 campaigns.map((c) => (
                   <MenuItem key={c._id} value={c._id}>
-                    {c.name}
+                    {c.identity?.name ?? c._id}
                   </MenuItem>
                 ))
               )}

@@ -86,9 +86,9 @@ export async function getCampaignsForCharacter(characterId: string) {
   return db()
     .collection('campaigns')
     .find({
-      $or: [{ adminId: userId }, { _id: { $in: memberCampaignIds } }],
+      $or: [{ 'membership.adminId': userId }, { _id: { $in: memberCampaignIds } }],
     })
-    .project({ name: 1, setting: 1, edition: 1 })
+    .project({ identity: 1 })
     .toArray()
 }
 
@@ -112,11 +112,11 @@ export async function getPendingMembershipsForAdmin(
   const result: { campaignId: string; campaignName: string; campaignMemberId: string }[] = []
   for (const m of members as { _id: mongoose.Types.ObjectId; campaignId: mongoose.Types.ObjectId }[]) {
     const campaign = await campaignsCol.findOne({ _id: m.campaignId })
-    const isAdmin = campaign?.adminId?.equals(new mongoose.Types.ObjectId(adminUserId))
+    const isAdmin = campaign?.membership?.adminId?.equals(new mongoose.Types.ObjectId(adminUserId))
     if (isAdmin && campaign) {
       result.push({
         campaignId: m.campaignId.toString(),
-        campaignName: campaign.name as string,
+        campaignName: campaign.identity?.name as string,
         campaignMemberId: m._id.toString(),
       })
     }

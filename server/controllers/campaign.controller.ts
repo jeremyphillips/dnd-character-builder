@@ -110,12 +110,12 @@ export async function addMember(req: Request, res: Response) {
     // User doesn't exist yet — send a placeholder invite email
     const { sendCampaignInvite } = await import('../services/email.service')
     const adminUser = await db.collection('users').findOne(
-      { _id: campaign.adminId },
+      { _id: campaign.membership.adminId },
       { projection: { username: 1 } },
     )
     await sendCampaignInvite({
       to: email,
-      campaignName: campaign.name as string,
+      campaignName: campaign.identity.name as string,
       invitedBy: (adminUser?.username as string) ?? 'A dungeon master',
     })
     res.status(200).json({ message: `Invite email sent to ${email}` })
@@ -126,7 +126,7 @@ export async function addMember(req: Request, res: Response) {
   try {
     const { createInvite } = await import('../services/invite.service')
     const adminUser = await db.collection('users').findOne(
-      { _id: campaign.adminId },
+      { _id: campaign.membership.adminId },
       { projection: { username: 1 } },
     )
 
@@ -135,7 +135,7 @@ export async function addMember(req: Request, res: Response) {
       invitedUserId: user._id.toString(),
       invitedByUserId: req.userId!,
       role: memberRole,
-      campaignName: campaign.name as string,
+      campaignName: campaign.identity.name as string,
       invitedByName: (adminUser?.username as string) ?? 'A dungeon master',
     })
 

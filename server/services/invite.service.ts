@@ -144,7 +144,7 @@ export async function respondToInvite(
     const campaign = await db().collection('campaigns').findOne({ _id: invite.campaignId })
     const character = await db().collection('characters').findOne({ _id: new mongoose.Types.ObjectId(characterId) })
     const invitedUser = await db().collection('users').findOne({ _id: invite.invitedUserId })
-    const adminId = campaign?.adminId
+    const adminId = campaign?.membership?.adminId
     if (adminId && member && character && invitedUser) {
       await notificationService.createNotification({
         userId: adminId,
@@ -159,7 +159,7 @@ export async function respondToInvite(
         payload: {
           characterName: character.name,
           userName: invitedUser.username,
-          campaignName: campaign.name,
+          campaignName: campaign.identity?.name,
         },
       })
     }

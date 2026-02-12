@@ -14,7 +14,7 @@ import type { Character } from '@/shared/types'
 
 type NpcWithId = Character & { id: string }
 
-type CampaignPayload = { campaign?: { edition?: string; setting?: string } }
+type CampaignPayload = { campaign?: { identity?: { edition?: string; setting?: string } } }
 
 const filterNpcsByCampaign = (
   npcsList: readonly Character[],
@@ -32,7 +32,7 @@ const filterNpcsByCampaign = (
 
 export default function NpcsRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
-  const [campaign, setCampaign] = useState<{ edition?: string; setting?: string } | null>(null)
+  const [campaign, setCampaign] = useState<{ identity?: { edition?: string; setting?: string } } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -41,14 +41,14 @@ export default function NpcsRoute() {
       return
     }
     apiFetch<CampaignPayload>(`/api/campaigns/${campaignId}`)
-      .then((data) => setCampaign(data.campaign ?? null))
+      .then((data) => setCampaign(data.campaign ? { identity: data.campaign.identity } : null))
       .catch(() => setCampaign(null))
       .finally(() => setLoading(false))
   }, [campaignId])
 
   const filteredNpcs = useMemo(
-    () => filterNpcsByCampaign(npcs, campaign?.edition, campaign?.setting),
-    [campaign?.edition, campaign?.setting]
+    () => filterNpcsByCampaign(npcs, campaign?.identity?.edition, campaign?.identity?.setting),
+    [campaign?.identity?.edition, campaign?.identity?.setting]
   )
 
   const gridSx = {

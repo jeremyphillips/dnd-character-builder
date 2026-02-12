@@ -17,8 +17,8 @@ export default function EquipmentRoute() {
 
   useEffect(() => {
     if (!campaignId) return
-    apiFetch<{ campaign?: { edition: string } }>(`/api/campaigns/${campaignId}`)
-      .then((data) => (data.campaign?.edition ? setEdition(data.campaign.edition) : undefined))
+    apiFetch<{ campaign?: { identity: { edition?: string } } }>(`/api/campaigns/${campaignId}`)
+      .then((data) => (data.campaign?.identity?.edition ? setEdition(data.campaign.identity.edition) : undefined))
       .catch(() => {})
   }, [campaignId])
 

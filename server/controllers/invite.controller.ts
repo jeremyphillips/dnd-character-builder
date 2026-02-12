@@ -23,7 +23,7 @@ export async function getInvite(req: Request, res: Response) {
     // Enrich with campaign & inviter details
     const campaign = await db().collection('campaigns').findOne(
       { _id: invite.campaignId },
-      { projection: { name: 1, setting: 1, edition: 1, description: 1, 'members': { $size: '$members' } } },
+      { projection: { identity: 1 } },
     )
 
     const invitedBy = await db().collection('users').findOne(
@@ -36,10 +36,10 @@ export async function getInvite(req: Request, res: Response) {
         ...invite,
         campaign: campaign ? {
           _id: campaign._id,
-          name: campaign.name,
-          setting: campaign.setting,
-          edition: campaign.edition,
-          description: campaign.description,
+          name: campaign.identity?.name,
+          setting: campaign.identity?.setting,
+          edition: campaign.identity?.edition,
+          description: campaign.identity?.description,
         } : null,
         invitedByName: invitedBy?.username ?? 'Unknown',
       },

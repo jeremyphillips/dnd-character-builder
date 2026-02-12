@@ -8,7 +8,6 @@ const campaignMemberSchema = new Schema({
 
 const campaignSchema = new Schema(
   {
-    // ── New nested structure ──────────────────────────────────────────────
     identity: {
       name: String,
       description: String,
@@ -34,16 +33,7 @@ const campaignSchema = new Schema(
           joinedAt: Date
         }
       ]
-    },
-
-    // ── Old flat fields (kept for backward compatibility) ────────────────
-    name: String,
-    description: String,
-    setting: String,
-    edition: String,
-    party: [{ type: Schema.Types.ObjectId, ref: 'Character' }],
-    adminId: { type: Schema.Types.ObjectId, ref: 'User' },
-    members: { type: [campaignMemberSchema], default: [] }
+    }
   },
   { timestamps: true }
 )

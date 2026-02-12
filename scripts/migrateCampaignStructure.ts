@@ -1,8 +1,9 @@
 /**
  * One-time migration: restructure flat campaign documents into
- * the new nested shape (identity, configuration, membership, participation).
+ * the new nested shape (identity, configuration, membership, participation)
+ * and remove the old flat fields.
  *
- * Safe to run multiple times — only touches documents that lack `identity`.
+ * Safe to run multiple times — only touches documents that still have old flat fields.
  *
  * Usage:
  *   npx tsx scripts/migrateCampaignStructure.ts
@@ -15,15 +16,18 @@ dotenv.config()
 const MONGO_URI = process.env.MONGO_URI ?? 'mongodb://localhost:27017'
 const DB_NAME = process.env.DB_NAME ?? 'dnd'
 
+const OLD_FIELDS = ['name', 'description', 'setting', 'edition', 'party', 'adminId', 'members']
+
 async function migrate() {
   await mongoose.connect(MONGO_URI)
   const db = mongoose.connection.useDb(DB_NAME)
   const campaigns = db.collection('campaigns')
 
-  const cursor = campaigns.find({ identity: { $exists: false } })
-  let migrated = 0
+  // Phase 1 — Backfill nested structure on docs that lack it
+  const needsNested = campaigns.find({ identity: { $exists: false } })
+  let backfilled = 0
 
-  for await (const doc of cursor) {
+  for await (const doc of needsNested) {
     await campaigns.updateOne(
       { _id: doc._id },
       {
@@ -52,10 +56,23 @@ async function migrate() {
         }
       }
     )
-    migrated++
+    backfilled++
   }
 
-  console.log(`Migration complete. ${migrated} campaign(s) updated.`)
+  console.log(`Phase 1: ${backfilled} campaign(s) backfilled with nested structure.`)
+
+  // Phase 2 — Remove old flat fields from all documents
+  const $unset: Record<string, ''> = {}
+  for (const field of OLD_FIELDS) $unset[field] = ''
+
+  const removeResult = await campaigns.updateMany(
+    { $or: OLD_FIELDS.map((f) => ({ [f]: { $exists: true } })) },
+    { $unset }
+  )
+
+  console.log(`Phase 2: ${removeResult.modifiedCount} campaign(s) had old flat fields removed.`)
+  console.log('Migration complete.')
+
   await mongoose.disconnect()
   process.exit(0)
 }

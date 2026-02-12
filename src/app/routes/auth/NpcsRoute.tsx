@@ -29,10 +29,11 @@ export default function NpcsRoute() {
 
   return (
     <Box>
-      <Typography variant="h4" component="h1">
+      <Typography variant="h1" component="h1">
         NPCs
       </Typography>
       <CharacterBuilderLauncher
+        buttonLabel="Create NPC"
         characterType="npc"
         campaignEdition={campaign?.edition as EditionId | undefined}
         campaignSetting={campaign?.setting as SettingId | undefined}

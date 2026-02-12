@@ -1,5 +1,20 @@
 // shared/types/character.core.ts
 
+import type { EditionId, SettingId } from "@/data"
+
+// 2e specific
+export type AbilityScores2e = AbilityScores & {
+  strengthPercentile?: number
+}
+
+export type SavingThrows2e = {
+  paralyzationPoisonDeath?: number
+  rodStaffWand?: number
+  petrificationPolymorph?: number
+  breathWeapon?: number
+  spell?: number
+}
+
 export type AbilityScores = {
   strength?: number | null
   dexterity?: number | null
@@ -48,13 +63,29 @@ export type ArmorClass = {
   calculation?: string
 }
 
+export type Proficiency = {
+  id: string
+  name: string
+  edition: EditionId
+  taxonomy: 'Proficiencies' | 'NWP'
+  choiceCount?: number
+  canSpecialize?: boolean // 2e specific
+  option: {
+    id: string
+    name: string
+    // 2e specific
+    relevantStatId?: string
+    checkModifier?: number
+  }
+}
+
 export type CharacterType = 'pc' | 'npc'
 
 export type CharacterCore = {
   name: string
   type: CharacterType
-  edition: string
-  setting?: string
+  edition: EditionId
+  setting?: SettingId
 
   race?: string
   alignment?: string
@@ -68,11 +99,31 @@ export type CharacterCore = {
   hitPoints?: HitPoints
   armorClass?: ArmorClass
 
-  proficiencies?: string[]
+  proficiencies?: Proficiency[]
   equipment?: Equipment
   wealth?: Wealth
   narrative?: CharacterNarrative
 }
+
+
+export type Rules2e = {
+  stats?: AbilityScores2e
+  thac0?: number
+  savingThrows?: SavingThrows2e
+}
+
+// export type Character5e = CharacterCore & {
+//   edition: '5e'
+// }
+
+// export type Character2e = Omit<CharacterCore,
+//   | 'stats'
+// > & {
+//   edition: '2e'
+//   stats?: AbilityScores2e
+//   savingThrows?: SavingThrows2e
+//   thac0?: number
+// }
 
 
 export type PlayerCharacter = CharacterCore & {
@@ -85,4 +136,6 @@ export type NonPlayerCharacter = CharacterCore & {
   legacyEdition?: '2e'
 }
 
-export type Character = PlayerCharacter | NonPlayerCharacter
+export type Character =
+  | (CharacterCore & { edition: '5e' })
+  | (CharacterCore & { edition: '2e'; rules?: Rules2e })

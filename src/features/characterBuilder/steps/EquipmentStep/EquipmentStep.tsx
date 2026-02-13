@@ -36,6 +36,12 @@ const EquipmentStep = () => {
     if (initializedRef.current) return
     if (edition !== '5e') return
 
+    // If baseGp is already set, wealth was initialized on a previous mount — don't reset
+    if (wealth?.baseGp) {
+      initializedRef.current = true
+      return
+    }
+
     const primaryClass = classes[0]
     if (!primaryClass?.requirements) return
 
@@ -59,7 +65,7 @@ const EquipmentStep = () => {
     })
 
     initializedRef.current = true
-  }, [edition, totalLevel, classes, setWealth])
+  }, [edition, totalLevel, classes, setWealth, wealth?.baseGp])
 
   const { 
     weapons: selectedWeapons = [], 
@@ -169,10 +175,7 @@ const EquipmentStep = () => {
   })
 
   const cls = selectedClassId ? getById(classes, selectedClassId) : undefined
-  const requirements =
-    cls && 'requirements' in cls && cls.requirements
-      ? (cls.requirements as ClassRequirement[])
-      : undefined
+  const requirements = cls?.requirements
 
   const armorNotes = requirements
     ? getEquipmentNotes({ requirements, edition, slot: 'armor' })

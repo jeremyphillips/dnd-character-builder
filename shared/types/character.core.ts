@@ -63,11 +63,19 @@ export type ArmorClass = {
   calculation?: string
 }
 
+export type ProficiencyTaxonomy =
+  | 'Skill'               // 5e skill proficiency
+  | 'Tool'                // 5e tool proficiency
+  | 'Proficiencies'       // generic / 3e
+  | 'NWP'                 // 2e non-weapon proficiency
+  | 'Weapon Proficiency'  // 2e weapon proficiency
+  | 'Trained Skill'       // 4e trained skill
+
 export type Proficiency = {
   id: string
   name: string
   edition: EditionId
-  taxonomy: 'Proficiencies' | 'NWP'
+  taxonomy: ProficiencyTaxonomy
   choiceCount?: number
   canSpecialize?: boolean // 2e specific
   option: {

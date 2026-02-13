@@ -5,8 +5,10 @@ import { getOptions } from '@/domain/options'
 import {
   getClassDefinitions,
   getSubclassUnlockLevel,
-  meetsClassRequirements
+  meetsClassRequirements,
+  getClassProgression,
 } from '@/domain/character'
+import type { ClassProgression } from '@/data/classes/types'
 import { ButtonGroup } from '@/ui/elements'
 
 import Box from '@mui/material/Box'
@@ -25,6 +27,31 @@ import RemoveIcon from '@mui/icons-material/Remove'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+
+// ---------------------------------------------------------------------------
+// Formatting helpers
+// ---------------------------------------------------------------------------
+
+function formatHitDie(prog: ClassProgression): string {
+  if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
+  return `d${prog.hitDie}`
+}
+
+function formatSpellcasting(prog: ClassProgression): string | null {
+  if (!prog.spellcasting || prog.spellcasting === 'none') return null
+  const labels: Record<string, string> = {
+    full: 'Full caster',
+    half: 'Half caster',
+    third: 'Third caster',
+    pact: 'Pact magic',
+  }
+  return labels[prog.spellcasting] ?? prog.spellcasting
+}
+
+function formatSavingThrows(prog: ClassProgression): string | null {
+  if (!prog.savingThrows || prog.savingThrows.length === 0) return null
+  return prog.savingThrows.map((s) => s.toUpperCase()).join(', ')
+}
 
 const ClassStep = () => {
   const {
@@ -201,6 +228,36 @@ const ClassStep = () => {
                       onChange={id => setClassId(id)}
                       autoSelectSingle
                     />
+
+                    {/* Progression info panel */}
+                    {cls.classId && (() => {
+                      const prog = getClassProgression(cls.classId, edition)
+                      if (!prog) return null
+                      const spellLabel = formatSpellcasting(prog)
+                      const savesLabel = formatSavingThrows(prog)
+                      const previewFeatures = (prog.features ?? []).slice(0, 4)
+                      return (
+                        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
+                          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap alignItems="center">
+                            <Chip label={`Hit Die: ${formatHitDie(prog)}`} size="small" variant="outlined" />
+                            {prog.role && (
+                              <Chip
+                                label={`${prog.role}${prog.powerSource ? ` (${prog.powerSource})` : ''}`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                            {spellLabel && <Chip label={spellLabel} size="small" variant="outlined" />}
+                            {savesLabel && <Chip label={`Saves: ${savesLabel}`} size="small" variant="outlined" />}
+                          </Stack>
+                          {previewFeatures.length > 0 && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                              {previewFeatures.map((f) => `Lv ${f.level}: ${f.name}`).join(', ')}
+                            </Typography>
+                          )}
+                        </Box>
+                      )
+                    })()}
 
                     {/* Level spinner */}
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 3 }}>

@@ -1,6 +1,7 @@
 import {
   AlignmentStep,
   ConfirmationStep,
+  DetailsStep,
   SettingStep,
   ClassStep,
   EditionStep,
@@ -43,6 +44,13 @@ export function getStepConfig(mode: CharacterType) {
       label: 'Equipment',
       component: EquipmentStep,
       selector: (state: CharacterBuilderState) => state.equipment
+    },
+    {
+      id: 'details',
+      label: 'Details',
+      component: DetailsStep,
+      selector: (state: CharacterBuilderState) =>
+        (state.proficiencies?.length ?? 0) > 0
     },
     {
       id: 'confirmation',
@@ -97,6 +105,7 @@ export function createInitialBuilderState(
       weight: 0
     },
     alignment: undefined,
+    proficiencies: [],
     totalLevel: 0,
     wealth: {
       gp: 0,

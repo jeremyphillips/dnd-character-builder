@@ -7,3 +7,11 @@ export { getXpByLevelAndEdition } from './xp'
 export { getAlignmentsByEdition, getAllowedAlignmentIdsByClass, type AlignmentOption } from './alignment'
 export { getAlignmentOptionsForCharacter } from './alignmentOptions'
 export { getAllowedRaces } from './races'
+export {
+  getClassProgression,
+  getClassProgressionsByClass,
+  progressionToCore,
+  classToCore,
+  compareClassAcrossEditions,
+} from './classProgression'
+export type { CoreClassProgression, CoreFeature } from './classProgression'

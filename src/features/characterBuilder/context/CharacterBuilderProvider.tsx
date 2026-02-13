@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState, CharacterClassInfo } from '../types'
+import type { Proficiency } from '@/shared/types/character.core'
 import {
   getStepConfig,
   createInitialBuilderState
@@ -295,6 +296,9 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const setAlignment = (alignment: string) =>
     updateState(s => ({ ...s, alignment }))
 
+  const setProficiencies = (proficiencies: Proficiency[]) =>
+    updateState(s => ({ ...s, proficiencies }))
+
   const setWealth = (wealth: {
     gp?: number | null
     sp?: number | null
@@ -457,6 +461,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         updateSubclass: updateClassDefinition,
         allocateRemainingLevels,
 
+        setProficiencies,
         setWealth,
 
         updateWeapons,

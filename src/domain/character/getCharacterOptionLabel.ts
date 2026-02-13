@@ -33,7 +33,7 @@ export function getCharacterOptionLabel(c: CharacterForLabel): string {
 
 function getClassName(classId?: string, classDefinitionId?: string): string {
   if (!classId) return 'Unknown'
-  const cls = getById(classes as unknown as { id: string; name?: string }[], classId)
+  const cls = getById(classes, classId)
   const baseName = cls?.name ?? classId
   if (classDefinitionId) {
     const subName = getSubclassNameById(classId, classDefinitionId)

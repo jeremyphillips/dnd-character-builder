@@ -1,9 +1,9 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
-import type { CharacterType } from '@/shared/types/character.core'
+import type { CharacterType, Proficiency } from '@/shared/types/character.core'
 
 export type { CharacterClassInfo, CharacterSheet }
 
-export type StepId = 'edition' | 'setting' | 'class' | 'equipment' | 'race' | 'level' | 'alignment' | 'confirmation'
+export type StepId = 'edition' | 'setting' | 'class' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
 
 export type CharacterBuilderState = CharacterSheet & {
   name?: string
@@ -50,6 +50,9 @@ export type CharacterBuilderContextValue = {
     sp?: number | null
     cp?: number | null
   }) => void
+
+  // proficiencies
+  setProficiencies: (proficiencies: Proficiency[]) => void
 
   // equipment
   updateWeapons: (ids: string[]) => void

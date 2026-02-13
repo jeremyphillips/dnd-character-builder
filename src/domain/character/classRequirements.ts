@@ -1,7 +1,7 @@
 // domain/character/classRequirements.ts
 import { classes } from '@/data'
 import { getById } from '../lookups'
-import type { ClassRequirement } from '@/data/classes/types'
+import type { CharacterClass, ClassRequirement } from '@/data/classes/types'
 import type { EditionId } from '@/data'
 import { type CharacterBuilderState } from '@/characterBuilder'
 
@@ -12,22 +12,22 @@ export const getClassRequirement = (
   if (!classId || !edition) return undefined
 
   const cls = getById(classes, classId)
-  if (!cls || !('requirements' in cls) || !cls.requirements) return undefined
+  if (!cls) return undefined
 
-  return cls.requirements.find(req => req.edition === edition) as ClassRequirement | undefined
+  return cls.requirements.find(req => req.edition === edition)
 }
 
 export const meetsClassRequirements = (
-  cls: any,
+  cls: CharacterClass,
   state: CharacterBuilderState
 ): { allowed: boolean; reason?: string } => {
   const { edition, race, alignment } = state
 
-  if (!cls.requirements || !edition) {
+  if (cls.requirements.length === 0 || !edition) {
     return { allowed: true }
   }
 
-  const req = cls.requirements.find((r: any) => r.edition === edition)
+  const req = cls.requirements.find((r) => r.edition === edition)
   if (!req) {
     return { allowed: true }
   }
@@ -40,20 +40,21 @@ export const meetsClassRequirements = (
   }
 
   // Alignment
-  if (req.alignments && alignment) {
-    if (!req.alignments.includes(alignment)) {
+  if (req.allowedAlignments !== 'any' && alignment) {
+    if (!req.allowedAlignments.includes(alignment)) {
       return { allowed: false, reason: 'Alignment restriction' }
     }
   }
 
   // Minimum stats
-//   if (req.minimumStats && stats) {
-//     for (const [stat, min] of Object.entries(req.minimumStats)) {
-//       if ((stats as any)[stat] < min) {
-//         return { allowed: false, reason: 'Stat requirement not met' }
-//       }
-//     }
-//   }
+  // TODO: re-enable once stats are wired into CharacterBuilderState
+  // if (req.minStats && stats) {
+  //   for (const [stat, min] of Object.entries(req.minStats)) {
+  //     if ((stats as Record<string, number>)[stat] < min) {
+  //       return { allowed: false, reason: 'Stat requirement not met' }
+  //     }
+  //   }
+  // }
 
   return { allowed: true }
 }

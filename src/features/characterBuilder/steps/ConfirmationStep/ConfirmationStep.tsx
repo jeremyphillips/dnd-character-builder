@@ -2,6 +2,8 @@ import { useCharacterBuilder } from '../../context'
 import { editions, settings, races, classes } from '@/data'
 import { standardAlignments, fourEAlignments, basicAlignments } from '@/data/alignments'
 import { getNameById } from '@/domain/lookups'
+import { getClassProgression } from '@/domain/character'
+import type { ClassProgression } from '@/data/classes/types'
 import type { StepId } from '../../types'
 
 import Box from '@mui/material/Box'
@@ -23,7 +25,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 function getAlignmentName(alignmentId: string | undefined): string {
   if (!alignmentId) return '—'
 
-  // Try all alignment lists
   const allAlignments = [...standardAlignments, ...fourEAlignments, ...basicAlignments]
   const found = allAlignments.find((a) => a.id === alignmentId)
   return found?.name ?? alignmentId
@@ -40,11 +41,9 @@ function getClassLine(
 
   let subclassName = ''
   if (cls.classDefinitionId && classData) {
-    const subclass = (classData as any).definitions?.find(
-      (d: any) => d.id === cls.classDefinitionId,
-    )
-    if (subclass?.name) {
-      subclassName = subclass.name
+    for (const def of classData.definitions) {
+      const opt = def.options.find((o) => o.id === cls.classDefinitionId)
+      if (opt) { subclassName = opt.name; break }
     }
   }
 
@@ -54,6 +53,22 @@ function getClassLine(
   if (isPrimary && isMulticlass) line += ' (primary)'
 
   return line
+}
+
+function formatHitDie(prog: ClassProgression): string {
+  if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/lvl`
+  return `d${prog.hitDie}`
+}
+
+function formatSpellcasting(prog: ClassProgression): string | null {
+  if (!prog.spellcasting || prog.spellcasting === 'none') return null
+  const labels: Record<string, string> = {
+    full: 'Full caster',
+    half: 'Half caster',
+    third: 'Third caster',
+    pact: 'Pact magic',
+  }
+  return labels[prog.spellcasting] ?? prog.spellcasting
 }
 
 // ---------------------------------------------------------------------------
@@ -217,11 +232,35 @@ const ConfirmationStep = () => {
           value={
             classLines.length > 0 ? (
               <Box>
-                {classLines.map((line, i) => (
-                  <Typography key={i} variant="body1" fontWeight={600}>
-                    {line}
-                  </Typography>
-                ))}
+                {filledClasses.map((cls, i) => {
+                  const prog = getClassProgression(cls.classId, state.edition)
+                  const spellLabel = prog ? formatSpellcasting(prog) : null
+                  return (
+                    <Box key={i} sx={{ mb: i < filledClasses.length - 1 ? 1 : 0 }}>
+                      <Typography variant="body1" fontWeight={600}>
+                        {classLines[i]}
+                      </Typography>
+                      {prog && (
+                        <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }} flexWrap="wrap" useFlexGap>
+                          <Chip label={formatHitDie(prog)} size="small" variant="outlined" />
+                          {prog.role && (
+                            <Chip label={prog.role} size="small" variant="outlined" />
+                          )}
+                          {spellLabel && (
+                            <Chip label={spellLabel} size="small" variant="outlined" />
+                          )}
+                          {prog.savingThrows && prog.savingThrows.length > 0 && (
+                            <Chip
+                              label={`Saves: ${prog.savingThrows.map((s) => s.toUpperCase()).join(', ')}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Stack>
+                      )}
+                    </Box>
+                  )
+                })}
               </Box>
             ) : (
               <Typography variant="body1" color="text.secondary">—</Typography>

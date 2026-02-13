@@ -8,10 +8,10 @@ export const getSubclassUnlockLevel = (
   if (!classId || !edition) return null
 
   const cls = getById(classes, classId)
-  if (!cls || !('definitions' in cls) || !cls.definitions) return null
+  if (!cls) return null
 
   const definition = cls.definitions.find(
-    d => d.edition === edition && typeof d.selectionLevel === 'number'
+    (d) => d.edition === edition && typeof d.selectionLevel === 'number'
   )
 
   return definition?.selectionLevel ?? null

@@ -4,7 +4,8 @@ import { useAuth } from '../../providers/AuthProvider'
 import type { CharacterDoc } from '@/shared'
 import { classes as classesData, editions, settings, races, type EditionId, type SettingId } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
-import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces } from '@/domain/character'
+import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression } from '@/domain/character'
+import type { ClassProgression } from '@/data/classes/types'
 import {
   ImageUploadField,
   EditableTextField,
@@ -54,6 +55,23 @@ const getClassName = (classId?: string): string => {
   if (!classId) return 'Unknown'
   const c = getById(classesData, classId)
   return c?.name ?? classId
+}
+
+function formatHitDie(prog: ClassProgression): string {
+  if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
+  return `d${prog.hitDie}`
+}
+
+function formatSpellcasting(prog: ClassProgression): string | null {
+  if (!prog.spellcasting || prog.spellcasting === 'none') return null
+  const labels: Record<string, string> = {
+    full: 'Full caster', half: 'Half caster', third: 'Third caster', pact: 'Pact magic',
+  }
+  return labels[prog.spellcasting] ?? prog.spellcasting
+}
+
+function formatAttackProg(prog: ClassProgression): string {
+  return prog.attackProgression.charAt(0).toUpperCase() + prog.attackProgression.slice(1)
 }
 
 // ---------------------------------------------------------------------------
@@ -471,6 +489,78 @@ export default function CharacterDetailRoute() {
           </Stack>
         </CardContent>
       </Card>
+
+      {/* ================================================================ */}
+      {/* Class Progression                                                 */}
+      {/* ================================================================ */}
+      {filledClasses.some((cls) => getClassProgression(cls.classId, character.edition)) && (
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+              Class Progression
+            </Typography>
+
+            {filledClasses.map((cls, i) => {
+              const prog = getClassProgression(cls.classId, character.edition)
+              if (!prog) return null
+
+              const spellLabel = formatSpellcasting(prog)
+              const currentLevel = cls.level ?? character.totalLevel ?? 1
+              const activeFeatures = (prog.features ?? []).filter((f) => f.level <= currentLevel)
+
+              return (
+                <Box key={i} sx={{ mb: i < filledClasses.length - 1 ? 3 : 0 }}>
+                  {isMulticlass && (
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      {getClassName(cls.classId)} (Level {cls.level})
+                    </Typography>
+                  )}
+
+                  {/* Quick stats */}
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
+                    <Chip label={`Hit Die: ${formatHitDie(prog)}`} size="small" variant="outlined" />
+                    <Chip label={`Attack: ${formatAttackProg(prog)}`} size="small" variant="outlined" />
+                    {prog.savingThrows && prog.savingThrows.length > 0 && (
+                      <Chip
+                        label={`Saves: ${prog.savingThrows.map((s) => s.toUpperCase()).join(', ')}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                    {spellLabel && <Chip label={spellLabel} size="small" variant="outlined" />}
+                    {prog.role && (
+                      <Chip
+                        label={`${prog.role}${prog.powerSource ? ` (${prog.powerSource})` : ''}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                  </Stack>
+
+                  {/* Features list */}
+                  {activeFeatures.length > 0 && (
+                    <Box>
+                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        Features (up to Level {currentLevel})
+                      </Typography>
+                      <Stack spacing={0.25} sx={{ mt: 0.5 }}>
+                        {activeFeatures.map((f, fi) => (
+                          <Typography key={fi} variant="body2">
+                            <Typography component="span" variant="body2" color="text.secondary" sx={{ minWidth: 36, display: 'inline-block' }}>
+                              Lv {f.level}
+                            </Typography>
+                            {' '}{f.name}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </Box>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ================================================================ */}
       {/* Stats (AI-generated)                                              */}

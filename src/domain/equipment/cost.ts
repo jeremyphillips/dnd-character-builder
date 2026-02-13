@@ -1,12 +1,14 @@
 import type { ArmorItem, GearItem, WeaponItem } from '@/data'
 import { parseCurrencyToGold } from '../wealth'
+import { resolveEquipmentEdition } from './editionMap'
 
 /** Returns the cost string for an item in a given edition (e.g. "10 gp"). */
 export const getEquipmentCostByEdition = (
   item: { editionData?: { edition: string; cost?: string }[] },
   edition: string
 ): string => {
-  const data = item.editionData?.find(d => d.edition === edition)
+  const eff = resolveEquipmentEdition(edition)
+  const data = item.editionData?.find(d => d.edition === eff)
   return data?.cost ?? ''
 }
 
@@ -14,7 +16,8 @@ export const getItemCostGp = (
   item: { editionData: any[] },
   edition: string
 ): number => {
-  const data = item.editionData.find((d: any) => d.edition === edition)
+  const eff = resolveEquipmentEdition(edition)
+  const data = item.editionData.find((d: any) => d.edition === eff)
   return data?.cost ? parseCurrencyToGold(data.cost) : 0
 }
 

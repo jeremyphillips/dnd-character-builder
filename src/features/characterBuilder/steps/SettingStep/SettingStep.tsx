@@ -11,9 +11,9 @@ const SettingStep = () => {
   const editionData = edition ? getById(editions, edition) : undefined
 
   // Only include settings allowed by the edition
-  const allowedSettings = editionData?.settings
+  const allowedSettings = (editionData?.settings ?? [])
     .map(id => settings.find(c => c.id === id))
-    .filter(Boolean) ?? []
+    .filter((s): s is NonNullable<typeof s> => Boolean(s))
 
   return (
     <>

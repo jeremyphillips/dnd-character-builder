@@ -1,7 +1,7 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
 import type { CharacterType, Proficiency } from '@/shared/types/character.core'
 
-export type { CharacterClassInfo, CharacterSheet }
+export type { CharacterClassInfo, CharacterSheet, Proficiency }
 
 export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
 

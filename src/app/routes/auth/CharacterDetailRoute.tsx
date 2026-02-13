@@ -652,7 +652,7 @@ export default function CharacterDetailRoute() {
                 <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Proficiencies</Typography>
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
                   {(character.proficiencies ?? []).map((p, i) => (
-                    <Chip key={i} label={p} size="small" variant="outlined" />
+                    <Chip key={i} label={typeof p === 'string' ? p : p.name} size="small" variant="outlined" />
                   ))}
                 </Stack>
               </Box>

@@ -1,6 +1,6 @@
 export { getCharacterOptionLabel } from './getCharacterOptionLabel'
 export type { CharacterForLabel } from './getCharacterOptionLabel'
-export { meetsClassRequirements, getClassRequirement } from './classRequirements'
+export { meetsClassRequirements, getClassRequirement, getClassRestrictionNotes } from './classRequirements'
 export { getClassDefinitions, getSubclassNameById } from './classDefinitions'
 export { getSubclassUnlockLevel } from './subclassUnlock'
 export { getXpByLevelAndEdition } from './xp'

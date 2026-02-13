@@ -4,7 +4,6 @@
 import { classes } from '@/data'
 import type { EditionId } from '@/data'
 import type {
-  CharacterClass,
   ClassProgression,
   AttackProgression,
   ClassFeature,

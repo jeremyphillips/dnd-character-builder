@@ -7,6 +7,7 @@ import {
   getSubclassUnlockLevel,
   meetsClassRequirements,
   getClassProgression,
+  getClassRestrictionNotes,
 } from '@/domain/character'
 import type { ClassProgression } from '@/data/classes/types'
 import { ButtonGroup } from '@/ui/elements'
@@ -86,7 +87,7 @@ const ClassStep = () => {
       ? selectedClasses[activeClassIndex]
       : null
 
-  const remainingLevels = totalLevel - allocatedLevels
+  const remainingLevels = (totalLevel ?? 0) - allocatedLevels
 
   /* ---------- Primary class options ---------- */
   const allowedClassIds = getOptions('classes', edition, setting)
@@ -106,12 +107,28 @@ const ClassStep = () => {
 
   const primaryClassSelected = Boolean(selectedClasses[0]?.classId)
 
+  const restrictionNotes = edition
+    ? getClassRestrictionNotes(edition, allowedClassIds)
+    : []
+
   return (
     <div>
       <header>
         <h2>Choose {step.name}</h2>
+        {restrictionNotes.length > 0 && restrictionNotes.map((note, i) => (
+          <Typography
+            key={i}
+            component="small"
+            variant="caption"
+            display="block"
+            color="text.secondary"
+            sx={{ mt: 0.5 }}
+          >
+            {note}
+          </Typography>
+        ))}
         <Typography variant="body2" sx={{ mb: 1 }}>
-          Allocate your {totalLevel} total level{totalLevel > 1 ? 's' : ''} across one or more classes.
+          Allocate your {totalLevel ?? 0} total level{(totalLevel ?? 0) > 1 ? 's' : ''} across one or more classes.
         </Typography>
         <Typography variant="body2">
           <strong>Levels Allocated:</strong> {allocatedLevels} / {totalLevel}
@@ -221,7 +238,7 @@ const ClassStep = () => {
                       options={classOptions.map(opt => {
                         const primaryClassId = selectedClasses[0]?.classId
                         const disabled =
-                          index !== 0 && opt.id === primaryClassId
+                          opt.disabled || (index !== 0 && opt.id === primaryClassId)
 
                         return { ...opt, disabled }
                       })}
@@ -341,7 +358,7 @@ const ClassStep = () => {
       {/* Add class */}
       {primaryClassSelected &&
         selectedClasses.length < 2 &&
-        selectedClasses.length < totalLevel && (
+        selectedClasses.length < (totalLevel ?? 0) && (
         <CardActions sx={{ px: 0, pt: 2 }}>
           <Button
             variant="outlined"

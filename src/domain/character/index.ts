@@ -21,3 +21,4 @@ export {
   resolveClassId,
   getClassGroup2e,
 } from './classAliases'
+export { canAddClass, type CanMulticlassResult } from './multiclass'

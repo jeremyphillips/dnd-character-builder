@@ -35,6 +35,7 @@ export type Equipment = {
   armor?: string[]
   weapons?: string[]
   gear?: string[]
+  magicItems?: string[]
   weight?: number
 }
 

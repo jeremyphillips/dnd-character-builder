@@ -61,6 +61,7 @@ export type CharacterBuilderContextValue = {
   updateWeapons: (ids: string[]) => void
   updateArmor: (ids: string[]) => void
   updateGear: (ids: string[]) => void
+  updateMagicItems: (ids: string[]) => void
   setWeight: (lbs: number) => void
 
   // flow control

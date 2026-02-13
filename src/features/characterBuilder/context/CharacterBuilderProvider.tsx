@@ -409,6 +409,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     })
   }
 
+  const updateMagicItems = (magicItemIds: string[]) => {
+    setState(prev => ({
+      ...prev,
+      equipment: { ...prev.equipment, magicItems: magicItemIds }
+    }))
+  }
+
   const setWeight = (weight: number) => {
     updateState(s => ({
       ...s,
@@ -511,6 +518,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         updateWeapons,
         updateArmor,
         updateGear,
+        updateMagicItems,
         setWeight,
 
         setAlignment,

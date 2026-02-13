@@ -17,6 +17,7 @@ import {
   calculateEquipmentCost
 } from '@/domain/equipment'
 import { races, equipment } from "@/data"
+import type { EditionId, SettingId } from "@/data"
 import type { CharacterType } from "@/shared/types/character.core"
 
 const {
@@ -67,10 +68,10 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     updateState(s => ({ ...s, name }))
 
   const setEdition = (edition: string) =>
-    updateState(s => ({ ...s, edition }))
+    updateState(s => ({ ...s, edition: edition as EditionId }))
 
   const setSetting = (setting: string) =>
-    updateState(s => ({ ...s, setting }))
+    updateState(s => ({ ...s, setting: setting as SettingId }))
 
   const setRace = (race: string) =>
     updateState(s => ({ ...s, race }))
@@ -108,7 +109,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         s.classes.reduce((sum, cls, i) =>
           i === index ? sum : sum + (cls.level ?? 0), 0)
 
-      if (currentAllocated + nextLevel > s.totalLevel) {
+      if (currentAllocated + nextLevel > (s.totalLevel ?? 0)) {
         return s // reject change
       }
 
@@ -130,7 +131,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         0
       )
 
-      if (otherLevels + level > s.totalLevel) return s
+      if (otherLevels + level > (s.totalLevel ?? 0)) return s
 
       const unlockLevel = getSubclassUnlockLevel(
         cls.classId,
@@ -161,7 +162,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         (sum, cls) => sum + (cls.level ?? 0),
         0
       )
-      const remaining = s.totalLevel - allocatedLevels
+      const remaining = (s.totalLevel ?? 0) - allocatedLevels
       if (remaining <= 0) return s // nothing to allocate
 
       const updatedClasses = [...s.classes]
@@ -231,7 +232,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         0
       )
 
-      if (allocated >= s.totalLevel) return s
+      if (allocated >= (s.totalLevel ?? 0)) return s
 
       const newClass: CharacterClassInfo = {
         level: 1
@@ -272,7 +273,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   )
 
   const remainingLevels = useMemo(
-    () => Math.max(0, state.totalLevel - allocatedLevels),
+    () => Math.max(0, (state.totalLevel ?? 0) - allocatedLevels),
     [state.totalLevel, allocatedLevels]
   )
 
@@ -281,7 +282,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setTotalLevels = (totalLevel: number) =>
     updateState(s => {
-      const newXp = getXpByLevelAndEdition(totalLevel, s.edition)
+      const newXp = s.edition ? getXpByLevelAndEdition(totalLevel, s.edition) : 0
 
       // Clamp existing class allocations so they don't exceed the new total
       let budget = totalLevel

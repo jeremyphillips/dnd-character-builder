@@ -1,10 +1,10 @@
-import { classes, type EditionType } from "@/data"
+import { classes, type EditionId } from "@/data"
 import type { SubclassOption } from '@/data/classes/types'
 import { getById } from '../lookups'
 
 export const getClassChoicesForEdition = (
   classId?: string,
-  edition?: EditionType,
+  edition?: EditionId,
   campaignClassOverrides?: { subclassOverrides?: Record<string, { remove?: string[]; add?: string[] }> }
 ) => {
   if (!classId || !edition) return null

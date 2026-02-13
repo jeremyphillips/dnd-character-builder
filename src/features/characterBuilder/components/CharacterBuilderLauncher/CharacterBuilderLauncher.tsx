@@ -22,7 +22,6 @@ const CharacterBuilderLauncher = ({
   buttonLabel = 'Create Character',
   variant = 'contained',
   size = 'large',
-  onCharacterCreated,
   campaignEdition,
   campaignSetting
 }: CharacterBuilderLauncherProps) => {
@@ -46,7 +45,6 @@ const CharacterBuilderLauncher = ({
       <ChatContainer
         isModalOpen={isModalOpen}
         onCloseModal={() => setModalOpen(false)}
-        onCharacterCreated={onCharacterCreated}
       />
     </>
   )

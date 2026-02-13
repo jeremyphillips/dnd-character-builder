@@ -18,7 +18,7 @@ export function StatusBadge({
 }: StatusBadgeProps) {
   const config: Record<
     StatusType,
-    { label: string; color: ChipProps['color']; icon?: React.ReactNode }
+    { label: string; color: ChipProps['color']; icon?: React.ReactElement }
   > = {
     pending: {
       label: 'Pending',

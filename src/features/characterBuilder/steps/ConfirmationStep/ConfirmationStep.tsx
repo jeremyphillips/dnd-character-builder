@@ -217,8 +217,8 @@ const ConfirmationStep = () => {
               <Typography variant="body1" fontWeight={600}>
                 Level {state.totalLevel || '—'}
               </Typography>
-              {state.xp > 0 && (
-                <Chip label={`${state.xp.toLocaleString()} XP`} size="small" variant="outlined" />
+              {(state.xp ?? 0) > 0 && (
+                <Chip label={`${(state.xp ?? 0).toLocaleString()} XP`} size="small" variant="outlined" />
               )}
             </Stack>
           }

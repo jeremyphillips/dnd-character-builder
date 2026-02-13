@@ -145,6 +145,16 @@ export type NonPlayerCharacter = CharacterCore & {
   id: string
 }
 
+/**
+ * Working state used by the character builder.
+ * Fields that are required on the final CharacterCore are optional here
+ * because they're filled in progressively during the build flow.
+ */
+export type CharacterSheet = Omit<Partial<CharacterCore>, 'classes'> & {
+  classes: CharacterClassInfo[]
+}
+
 export type Character =
   | (CharacterCore & { edition: '5e' })
   | (CharacterCore & { edition: '2e'; rules?: Rules2e })
+  | CharacterCore

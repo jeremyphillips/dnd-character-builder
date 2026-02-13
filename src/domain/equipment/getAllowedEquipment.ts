@@ -1,4 +1,5 @@
 import type { EquipmentRequirement } from '@/data'
+import { resolveEquipmentEdition } from './editionMap'
 
 export const getAllowedEquipment = ({
   items,
@@ -9,6 +10,7 @@ export const getAllowedEquipment = ({
   edition: string
   requirement: EquipmentRequirement
 }) => {
+  const effectiveEdition = resolveEquipmentEdition(edition)
 
   // Explicitly nothing allowed
   if (
@@ -24,7 +26,7 @@ export const getAllowedEquipment = ({
     }
 
     const editionEntry = item.editionData.find(
-      (e: any) => e.edition === edition
+      (e: any) => e.edition === effectiveEdition
     )
 
     if (!editionEntry) {

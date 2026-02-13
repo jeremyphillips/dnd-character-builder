@@ -10,9 +10,23 @@ import {
   RaceStep,
   SpellStep
 } from '../steps'
-import { type CharacterBuilderState } from '../types'
+import { type CharacterBuilderState, type StepId } from '../types'
 import type { CharacterType } from '@/shared/types/character.core'
+import type { EditionId, SettingId } from '@/data'
 import { getClassProgression } from '@/domain/character'
+
+// ---------------------------------------------------------------------------
+// Step config
+// ---------------------------------------------------------------------------
+
+export interface StepConfig {
+  id: StepId
+  label: string
+  component: () => React.JSX.Element | null
+  selector: (state: CharacterBuilderState) => unknown
+  shouldSkip?: (state: CharacterBuilderState) => boolean
+  optional?: boolean
+}
 
 /** Returns true if at least one selected class has a spellProgression for the current edition. */
 function isSpellcaster(state: CharacterBuilderState): boolean {
@@ -23,8 +37,8 @@ function isSpellcaster(state: CharacterBuilderState): boolean {
   })
 }
 
-export function getStepConfig(mode: CharacterType) {
-  const baseSteps = [
+export function getStepConfig(mode: CharacterType): StepConfig[] {
+  const baseSteps: StepConfig[] = [
     {
       id: 'race',
       label: 'Race',
@@ -80,7 +94,7 @@ export function getStepConfig(mode: CharacterType) {
   ]
 
   if (mode === 'pc') {
-    return [
+    const pcSteps: StepConfig[] = [
       {
         id: 'edition',
         label: 'Edition',
@@ -96,6 +110,7 @@ export function getStepConfig(mode: CharacterType) {
       },
       ...baseSteps
     ]
+    return pcSteps
   }
 
   return baseSteps
@@ -112,8 +127,8 @@ export function createInitialBuilderState(
     type: mode,
     name: undefined,
     xp: 0,
-    edition: mode === 'npc' ? campaignEdition : undefined,
-    setting: mode === 'npc' ? campaignSetting : undefined,
+    edition: (mode === 'npc' ? campaignEdition : undefined) as EditionId | undefined,
+    setting: (mode === 'npc' ? campaignSetting : undefined) as SettingId | undefined,
     race: undefined,
     classes: [{ level: 1 }],
     activeClassIndex: 0,

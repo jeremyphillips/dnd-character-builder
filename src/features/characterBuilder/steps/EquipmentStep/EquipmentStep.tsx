@@ -1,16 +1,17 @@
 import { useEffect, useRef } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
 import { ButtonGroup } from '@/ui/elements'
-import { classes, equipment, type ClassRequirement, type EditionId } from '@/data'
+import { classes, equipment, type EditionId } from '@/data'
 import { getById } from '@/domain/lookups'
 import { getClassRequirement } from '@/domain/character'
 import {
   calculateEquipmentCost,
   getAllowedEquipment,
   getEquipmentNotes,
-  getItemCostGp
+  getItemCostGp,
+  resolveEquipmentEdition
 } from '@/domain/equipment'
-import { calculateWealth5e, type CalculateWealth5eStartingWealth } from '@/domain/wealth'
+import { calculateWealth } from '@/domain/wealth'
 
 const EquipmentStep = () => {
   const initializedRef = useRef(false)
@@ -34,7 +35,7 @@ const EquipmentStep = () => {
 
   useEffect(() => {
     if (initializedRef.current) return
-    if (edition !== '5e') return
+    if (!edition) return
 
     // If baseGp is already set, wealth was initialized on a previous mount — don't reset
     if (wealth?.baseGp) {
@@ -42,18 +43,17 @@ const EquipmentStep = () => {
       return
     }
 
-    const primaryClass = classes[0]
-    if (!primaryClass?.requirements) return
+    // Look up the selected primary class's requirements (with edition fallback)
+    const primaryClassId = selectedClasses[0]?.classId
+    if (!primaryClassId) return
 
-    const wealthReq = primaryClass.requirements.find(
-      r => r.edition === '5e' && r.startingWealth
-    )
-
+    const wealthReq = getClassRequirement(primaryClassId, edition as EditionId)
     if (!wealthReq?.startingWealth) return
 
-    const resolved = calculateWealth5e(
-      totalLevel,
-      wealthReq.startingWealth as CalculateWealth5eStartingWealth
+    const resolved = calculateWealth(
+      totalLevel ?? 0,
+      edition as EditionId,
+      wealthReq.startingWealth
     )
 
     if (!resolved) return
@@ -65,7 +65,7 @@ const EquipmentStep = () => {
     })
 
     initializedRef.current = true
-  }, [edition, totalLevel, classes, setWealth, wealth?.baseGp])
+  }, [edition, totalLevel, selectedClasses, setWealth, wealth?.baseGp])
 
   const { 
     weapons: selectedWeapons = [], 
@@ -85,9 +85,17 @@ const EquipmentStep = () => {
     // level: selectedLevel
   } = activeClass ?? {}
 
-  const classReq = getClassRequirement(selectedClassId, edition as EditionId)
+  if (!edition) return null
 
-  if (!classReq || !edition) return null
+  const classReq = getClassRequirement(selectedClassId, edition as EditionId)
+  const equipEdition = resolveEquipmentEdition(edition)
+
+  // When no class-specific equipment requirements exist for this edition,
+  // fall back to allowing everything.
+  const defaultReq = { categories: 'all' as const, individuals: 'none' as const }
+  const weaponReq = classReq?.equipment?.weapons ?? defaultReq
+  const armorReq  = classReq?.equipment?.armor   ?? defaultReq
+  const gearReq   = classReq?.equipment?.tools   ?? defaultReq
 
   const baseGp = wealth?.baseGp ?? 0
 
@@ -104,7 +112,7 @@ const EquipmentStep = () => {
   const allowedWeapons = getAllowedEquipment({
     items: equipment.weapons,
     edition,
-    requirement: classReq.equipment.weapons
+    requirement: weaponReq
   })
 
   const weaponOptions = allowedWeapons.map(w => {
@@ -119,7 +127,7 @@ const EquipmentStep = () => {
 
     return {
       id: w.id,
-      label: `${w.name} (${w.editionData.find(d => d.edition === edition)?.cost ?? '—'})`,
+      label: `${w.name} (${w.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
       disabled: !isSelected && wouldExceedGold
     }
   })
@@ -127,7 +135,7 @@ const EquipmentStep = () => {
   const allowedArmor = getAllowedEquipment({
     items: equipment.armor,
     edition,
-    requirement: classReq.equipment.armor
+    requirement: armorReq
   })
 
   const armorOptions = allowedArmor.map(a => {
@@ -142,19 +150,15 @@ const EquipmentStep = () => {
 
     return {
       id: a.id,
-      label: `${a.name} (${a.editionData.find(d => d.edition === edition)?.cost ?? '—'})`,
+      label: `${a.name} (${a.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
       disabled: !isSelected && wouldExceedGold
     }
   })
 
-  const gearRequirement = classReq.equipment.tools ?? {
-    categories: 'all' as const,
-    individuals: 'none' as const
-  }
   const allowedGear = getAllowedEquipment({
     items: equipment.gear,
     edition,
-    requirement: gearRequirement
+    requirement: gearReq
   })
 
   const gearOptions = allowedGear.map(g => {
@@ -169,7 +173,7 @@ const EquipmentStep = () => {
 
     return {
       id: g.id,
-      label: `${g.name} (${g.editionData.find(d => d.edition === edition)?.cost ?? '—'})`,
+      label: `${g.name} (${g.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
       disabled: !isSelected && wouldExceedGold
     }
   })
@@ -194,7 +198,7 @@ const EquipmentStep = () => {
       <h2>Choose {step.name}</h2>
       {wealth &&
       <>
-        <p>Gold remaining: {Math.round(wealth.gp * 100) / 100} gp / {wealth.baseGp} gp</p>
+        <p>Gold remaining: {Math.round((wealth.gp ?? 0) * 100) / 100} gp / {wealth.baseGp} gp</p>
         {/* <p>Wealth: {wealth.gp} gp, {wealth.sp} sp, {wealth.cp} cp</p> */}
       </>
       }

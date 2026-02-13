@@ -71,8 +71,8 @@ export default function NpcsRoute() {
         <CharacterBuilderLauncher
           buttonLabel="Create NPC"
           characterType="npc"
-          campaignEdition={campaign?.edition as EditionId | undefined}
-          campaignSetting={campaign?.setting as SettingId | undefined}
+          campaignEdition={campaign?.identity?.edition as EditionId | undefined}
+          campaignSetting={campaign?.identity?.setting as SettingId | undefined}
         />
       </Stack>
 

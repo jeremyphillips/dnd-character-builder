@@ -1,7 +1,7 @@
-import { classes, settings, type EditionType } from '@/data'
+import { classes, settings, type EditionId } from '@/data'
 import { applyOverrides } from '../rules'
 
-export const getClassOptions = (edition?: EditionType, settingId?: string) => {
+export const getClassOptions = (edition?: EditionId, settingId?: string) => {
   if (!edition) return []
 
   const classList = Object.values(classes)

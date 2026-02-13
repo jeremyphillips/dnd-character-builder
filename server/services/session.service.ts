@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import * as notificationService from './notification.service'
+import * as sessionInviteService from './sessionInvite.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const sessionsCollection = () => db().collection('sessions')
@@ -102,6 +103,14 @@ export async function createSession(
       .map((m) => m.userId.toString())
       .filter((uid) => uid !== adminUserId)
 
+    // Create trackable session invite records
+    await sessionInviteService.createSessionInvites({
+      sessionId: result.insertedId.toString(),
+      campaignId: data.campaignId,
+      memberUserIds,
+    })
+
+    // Send session invite notifications
     await notificationService.createSessionInviteNotifications({
       sessionId: result.insertedId.toString(),
       campaignId: data.campaignId,
@@ -126,6 +135,45 @@ export async function updateSession(
   )
 }
 
-export async function deleteSession(id: string) {
-  return sessionsCollection().deleteOne({ _id: new mongoose.Types.ObjectId(id) })
+export async function deleteSession(id: string, adminUserId: string) {
+  const sessionOid = new mongoose.Types.ObjectId(id)
+
+  // Fetch session before deleting so we can include details in the notification
+  const session = await sessionsCollection().findOne({ _id: sessionOid })
+  if (!session) return { deletedCount: 0 }
+
+  // Find all invited members for this session
+  const invites = await db()
+    .collection('sessionInvites')
+    .find({ sessionId: sessionOid })
+    .toArray()
+
+  const memberUserIds = invites
+    .map((inv) => inv.userId.toString())
+    .filter((uid: string) => uid !== adminUserId)
+
+  // Send cancellation notifications
+  if (memberUserIds.length > 0) {
+    const notifications = memberUserIds.map((userId: string) => ({
+      userId: new mongoose.Types.ObjectId(userId),
+      type: 'session.cancelled' as const,
+      readAt: null,
+      requiresAction: false,
+      actionTakenAt: null,
+      createdAt: new Date(),
+      context: {
+        campaignId: session.campaignId,
+      },
+      payload: {
+        sessionTitle: session.title ?? 'a session',
+        sessionDate: session.date,
+      },
+    }))
+    await db().collection('notifications').insertMany(notifications)
+  }
+
+  // Clean up session invites
+  await db().collection('sessionInvites').deleteMany({ sessionId: sessionOid })
+
+  return sessionsCollection().deleteOne({ _id: sessionOid })
 }

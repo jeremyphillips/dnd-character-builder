@@ -6,6 +6,8 @@ import { classes as classesData, editions, settings, races, type EditionId, type
 import { getNameById, getById } from '@/domain/lookups'
 import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression } from '@/domain/character'
 import type { ClassProgression } from '@/data/classes/types'
+import { spells as spellCatalog } from '@/data/classes/spells'
+import { SpellHorizontalCard } from '@/domain/spells/components'
 import {
   ImageUploadField,
   EditableTextField,
@@ -558,6 +560,37 @@ export default function CharacterDetailRoute() {
                 </Box>
               )
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ================================================================ */}
+      {/* Spells                                                             */}
+      {/* ================================================================ */}
+      {(character.spells ?? []).length > 0 && (
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+              Spells
+            </Typography>
+            <Stack spacing={1}>
+              {(character.spells ?? []).map(spellId => {
+                const spell = spellCatalog.find(s => s.id === spellId)
+                if (!spell) {
+                  return (
+                    <Chip key={spellId} label={spellId} size="small" variant="outlined" />
+                  )
+                }
+                const editionEntry = spell.editions.find(e => e.edition === character.edition)
+                return (
+                  <SpellHorizontalCard
+                    key={spellId}
+                    spell={spell}
+                    editionEntry={editionEntry}
+                  />
+                )
+              })}
+            </Stack>
           </CardContent>
         </Card>
       )}

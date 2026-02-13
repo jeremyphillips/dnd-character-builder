@@ -1,28 +1,53 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { useNotifications } from '../../providers/NotificationProvider'
 import { apiFetch } from '../../api'
 import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
-import type { AppNotification } from '@/domain/notification'
 import {
   EditableField,
   EditableTextField,
   EditableSelect,
 } from '@/ui/fields'
-import { InviteConfirmationBox } from '@/ui/components'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CircularProgress from '@mui/material/CircularProgress'
+import Alert from '@mui/material/Alert'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import Stack from '@mui/material/Stack'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import dayjs, { type Dayjs } from 'dayjs'
 import SaveIcon from '@mui/icons-material/Save'
+import EventAvailableIcon from '@mui/icons-material/EventAvailable'
+import EventBusyIcon from '@mui/icons-material/EventBusy'
+import DeleteIcon from '@mui/icons-material/Delete'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type SessionInvite = {
+  id: string
+  sessionId: string
+  campaignId: string
+  userId: string
+  status: 'pending' | 'accepted' | 'declined' | 'expired'
+  createdAt: string
+  respondedAt: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Date editor sub-component
+// ---------------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
   { id: 'scheduled', label: 'Scheduled' },
@@ -57,7 +82,7 @@ function SessionDateEdit({
           onClick={() => local && onSave(local.toISOString())}
           disabled={saving}
         >
-          {saving ? '…' : 'Save'}
+          {saving ? '...' : 'Save'}
         </Button>
         <Button size="small" onClick={onClose}>
           Cancel
@@ -67,25 +92,25 @@ function SessionDateEdit({
   )
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function SessionRoute() {
-  const { sessionId } = useParams<{ id: string; sessionId: string }>()
+  const { id: campaignId, sessionId } = useParams<{ id: string; sessionId: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { notifications, markAsRead, refresh: refreshNotifications } = useNotifications()
+  const { refresh: refreshNotifications } = useNotifications()
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [invite, setInvite] = useState<SessionInvite | null>(null)
   const [responding, setResponding] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
 
-  // Find a pending session.invite notification for this session
-  const sessionInvite: AppNotification | undefined = notifications.find(
-    (n) =>
-      n.type === 'session.invite' &&
-      n.context.type === 'sessionInvite' &&
-      n.context.sessionInviteId === sessionId &&
-      !n.actionTakenAt,
-  )
-
+  // Load session
   useEffect(() => {
     if (!sessionId) return
     setLoading(true)
@@ -93,6 +118,14 @@ export default function SessionRoute() {
       .then((data) => setSession(data.session))
       .catch(() => setSession(null))
       .finally(() => setLoading(false))
+  }, [sessionId])
+
+  // Load current user's session invite
+  useEffect(() => {
+    if (!sessionId) return
+    apiFetch<{ invite: SessionInvite | null }>(`/api/session-invites/session/${sessionId}/mine`)
+      .then((data) => setInvite(data.invite))
+      .catch(() => setInvite(null))
   }, [sessionId])
 
   const saveSession = async (partial: Partial<Session>) => {
@@ -104,16 +137,38 @@ export default function SessionRoute() {
     setSession(data.session)
   }
 
-  async function handleSessionInviteRespond(_action: 'accept' | 'decline') {
-    if (!sessionInvite) return
+  const handleRsvp = async (accept: boolean) => {
+    if (!invite) return
     setResponding(true)
     try {
-      await markAsRead(sessionInvite._id)
+      const data = await apiFetch<{ invite: SessionInvite }>(
+        `/api/session-invites/${invite.id}/respond`,
+        { method: 'POST', body: { accept } },
+      )
+      setInvite(data.invite)
       await refreshNotifications()
+    } catch (err) {
+      console.error('RSVP failed:', err)
     } finally {
       setResponding(false)
     }
   }
+
+  const handleDelete = async () => {
+    if (!sessionId) return
+    setDeleting(true)
+    try {
+      await apiFetch(`/api/sessions/${sessionId}`, { method: 'DELETE' })
+      setDeleteDialogOpen(false)
+      navigate(`/campaigns/${campaignId}/sessions`)
+    } catch (err) {
+      console.error('Delete failed:', err)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -131,39 +186,76 @@ export default function SessionRoute() {
     )
   }
 
+  const dateLabel = formatSessionDateTime(session.date)
+
   return (
     <Box sx={{ maxWidth: 640, mx: 'auto' }}>
-      {sessionInvite && (
-        <InviteConfirmationBox
-          headline="Session Invite"
-          description={sessionInvite.payload.sessionNotes as string | undefined}
-          subtitle={formatSessionDateTime(sessionInvite.payload.sessionDate as string)}
-          detailTitle={sessionInvite.payload.sessionTitle as string | undefined}
-          status="pending"
-          responding={responding}
-          onRespond={handleSessionInviteRespond}
-        />
+      {/* ── RSVP Alert ──────────────────────────────────────────────── */}
+      {invite?.status === 'pending' && (
+        <Alert
+          severity="info"
+          sx={{ mb: 3 }}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                color="success"
+                variant="contained"
+                startIcon={<EventAvailableIcon />}
+                onClick={() => handleRsvp(true)}
+                disabled={responding}
+              >
+                RSVP
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                variant="outlined"
+                startIcon={<EventBusyIcon />}
+                onClick={() => handleRsvp(false)}
+                disabled={responding}
+              >
+                Decline
+              </Button>
+            </Stack>
+          }
+        >
+          You have been invited to this session on <strong>{dateLabel}</strong>. RSVP requested.
+        </Alert>
       )}
 
+      {invite?.status === 'accepted' && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          You accepted this session invitation.
+        </Alert>
+      )}
+
+      {invite?.status === 'declined' && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          You declined this session invitation.
+        </Alert>
+      )}
+
+      {/* ── Session details ─────────────────────────────────────────── */}
       <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
         Session
       </Typography>
 
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box>
-            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-              ID
-            </Typography>
-            <Typography variant="body1">{session.id}</Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-              Campaign ID
-            </Typography>
-            <Typography variant="body1">{session.campaignId}</Typography>
-          </Box>
+          {isAdmin && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                color="error"
+                variant="outlined"
+                startIcon={<DeleteIcon />}
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                Delete
+              </Button>
+            </Box>
+          )}
 
           <EditableTextField
             label="Title"
@@ -186,7 +278,7 @@ export default function SessionRoute() {
               label="Date & time"
               value={session.date}
               onSave={async (v) => saveSession({ date: v })}
-              renderDisplay={() => formatSessionDateTime(session.date)}
+              renderDisplay={() => dateLabel}
               renderEdit={({ value, onSave, onClose, saving }) => (
                 <SessionDateEdit
                   value={value}
@@ -201,7 +293,7 @@ export default function SessionRoute() {
               <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
                 Date & time
               </Typography>
-              <Typography variant="body1">{formatSessionDateTime(session.date)}</Typography>
+              <Typography variant="body1">{dateLabel}</Typography>
             </Box>
           )}
 
@@ -214,6 +306,29 @@ export default function SessionRoute() {
           />
         </CardContent>
       </Card>
+
+      {/* ── Delete confirmation dialog ──────────────────────────────── */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete session?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            This will permanently delete the session and notify all invited members that it has been cancelled.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

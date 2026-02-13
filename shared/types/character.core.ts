@@ -108,6 +108,7 @@ export type CharacterCore = {
   armorClass?: ArmorClass
 
   proficiencies?: Proficiency[]
+  spells?: string[]              // selected spell IDs from the spell catalog
   equipment?: Equipment
   wealth?: Wealth
   narrative?: CharacterNarrative

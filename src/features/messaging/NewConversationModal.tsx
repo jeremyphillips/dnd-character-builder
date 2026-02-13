@@ -40,7 +40,7 @@ export const NewConversationModal = ({
   onConversationCreated,
 }: NewConversationModalProps) => {
   const { user } = useAuth()
-  const { createConversation, createGroupConversation } = useMessaging()
+  const { createGroupConversation, conversations, setDraftTarget } = useMessaging()
   const [members, setMembers] = useState<CampaignMember[]>([])
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -62,17 +62,21 @@ export const NewConversationModal = ({
 
   const otherMembers = members.filter((m) => m._id !== user?.id)
 
-  const handleDirectSelect = async (targetUserId: string) => {
-    setCreating(true)
-    try {
-      const conv = await createConversation(campaignId, targetUserId)
-      if (conv) {
-        onConversationCreated(conv._id)
-        onClose()
-      }
-    } finally {
-      setCreating(false)
+  const handleDirectSelect = (member: CampaignMember) => {
+    // If a conversation with this user already exists, navigate to it
+    const existing = conversations.find(
+      (c) => c.isDirect && c.otherParticipant?._id === member._id
+    )
+    if (existing) {
+      onConversationCreated(existing._id)
+      onClose()
+      return
     }
+
+    // No existing conversation — set draft target so the conversation
+    // is only created on the backend when the first message is sent
+    setDraftTarget({ campaignId, userId: member._id, username: member.username })
+    onClose()
   }
 
   const toggleGroupMember = (memberId: string) => {
@@ -124,8 +128,7 @@ export const NewConversationModal = ({
               {otherMembers.map((m) => (
                 <ListItemButton
                   key={m._id}
-                  onClick={() => handleDirectSelect(m._id)}
-                  disabled={creating}
+                  onClick={() => handleDirectSelect(m)}
                 >
                   <ListItemText primary={m.username} />
                 </ListItemButton>

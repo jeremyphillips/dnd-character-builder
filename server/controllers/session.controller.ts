@@ -107,7 +107,7 @@ export async function updateSession(req: Request, res: Response) {
 
 export async function deleteSession(req: Request, res: Response) {
   try {
-    await sessionService.deleteSession(req.params.id)
+    await sessionService.deleteSession(req.params.id, req.userId!)
     res.json({ message: 'Session deleted' })
   } catch (err) {
     console.error('Failed to delete session:', err)

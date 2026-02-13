@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography'
 
 import { ConversationList } from './ConversationList'
 import { ConversationView } from './ConversationView'
+import { MessageInput } from './MessageInput'
 import { NewConversationModal } from './NewConversationModal'
 
 export const MessagingLayout = () => {
@@ -25,8 +26,12 @@ export const MessagingLayout = () => {
     getConversation,
     loadMessages,
     selectConversation,
+    sendMessage,
+    createConversation,
     setNewConversationModalOpen,
     newConversationModalOpen,
+    draftTarget,
+    setDraftTarget,
   } = useMessaging()
 
   useEffect(() => {
@@ -61,10 +66,27 @@ export const MessagingLayout = () => {
   }, [selectedConversationId, loadMessages])
 
   const handleConversationCreated = (conversationId: string) => {
+    setDraftTarget(null)
     selectConversation(conversationId)
     loadMessages(conversationId)
     if (campaignId) {
       navigate(ROUTES.MESSAGING_CONVERSATION.replace(':id', campaignId).replace(':conversationId', conversationId))
+    }
+  }
+
+  // Clear draft when a conversation is selected via the sidebar
+  useEffect(() => {
+    if (selectedConversationId && draftTarget) {
+      setDraftTarget(null)
+    }
+  }, [selectedConversationId, draftTarget, setDraftTarget])
+
+  const handleDraftSend = async (content: string) => {
+    if (!draftTarget) return
+    const conv = await createConversation(draftTarget.campaignId, draftTarget.userId)
+    if (conv) {
+      await sendMessage(conv._id, content)
+      handleConversationCreated(conv._id)
     }
   }
 
@@ -94,6 +116,20 @@ export const MessagingLayout = () => {
             conversation={selectedConversation}
             displayName={getConversationDisplayName(selectedConversation, user?.id ?? '')}
           />
+        ) : draftTarget ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {draftTarget.username}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Send a message to start the conversation
+              </Typography>
+            </Box>
+            <MessageInput onSend={handleDraftSend} />
+          </Box>
         ) : (
           <Box
             sx={{

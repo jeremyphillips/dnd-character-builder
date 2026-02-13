@@ -281,16 +281,22 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setTotalLevels = (totalLevel: number) =>
     updateState(s => {
-      // 1. Calculate the new base XP for this level and edition
-      // Note: s.edition must be the EditionId string
-      const newXp = getXpByLevelAndEdition(totalLevel, s.edition);
+      const newXp = getXpByLevelAndEdition(totalLevel, s.edition)
 
-      // 2. Return the updated state with both values synced
-      return { 
-        ...s, 
-        totalLevel, 
-        xp: newXp 
-      };
+      // Clamp existing class allocations so they don't exceed the new total
+      let budget = totalLevel
+      const classes = s.classes
+        .map((cls, i) => {
+          // Primary class always keeps at least 1 level
+          const min = i === 0 ? 1 : 0
+          const level = Math.max(min, Math.min(cls.level, budget))
+          budget -= level
+          return { ...cls, level }
+        })
+        // Drop secondary classes that ended up with 0 levels
+        .filter((cls, i) => i === 0 || cls.level > 0)
+
+      return { ...s, totalLevel, xp: newXp, classes }
     })
 
   const setAlignment = (alignment: string) =>
@@ -298,6 +304,9 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setProficiencies = (proficiencies: Proficiency[]) =>
     updateState(s => ({ ...s, proficiencies }))
+
+  const setSpells = (spells: string[]) =>
+    updateState(s => ({ ...s, spells }))
 
   const setWealth = (wealth: {
     gp?: number | null
@@ -398,7 +407,11 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const nextStep = () => {
     setState(s => {
-      const nextIndex = getCurrentStepIndex(s.step?.id) + 1
+      let nextIndex = getCurrentStepIndex(s.step?.id) + 1
+      // Skip steps that should be skipped (e.g. SpellStep for non-casters)
+      while (nextIndex < stepConfig.length && stepConfig[nextIndex]?.shouldSkip?.(s)) {
+        nextIndex++
+      }
       const nextStep = getStepByIndex(nextIndex)
       return { ...s, step: nextStep }
     })
@@ -407,7 +420,11 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const prevStep = () => {
     setState(s => {
-      const prevIndex = getCurrentStepIndex(s.step?.id) - 1
+      let prevIndex = getCurrentStepIndex(s.step?.id) - 1
+      // Skip steps that should be skipped (e.g. SpellStep for non-casters)
+      while (prevIndex > 0 && stepConfig[prevIndex]?.shouldSkip?.(s)) {
+        prevIndex--
+      }
       const prevStep = getStepByIndex(prevIndex)
       return { ...s, step: prevStep }
     })
@@ -433,7 +450,9 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   }
 
   const isComplete = (state: CharacterBuilderState) =>
-    getStepConfig(state.type ?? 'pc').every(step => step.selector(state))
+    getStepConfig(state.type ?? 'pc').every(step =>
+      step.shouldSkip?.(state) || step.selector(state)
+    )
 
   return (
     <CharacterBuilderContext.Provider
@@ -462,6 +481,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         allocateRemainingLevels,
 
         setProficiencies,
+        setSpells,
         setWealth,
 
         updateWeapons,

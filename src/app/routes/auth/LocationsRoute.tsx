@@ -4,6 +4,7 @@ import { settings, worlds } from '@/data'
 import type { Location, LocationType, Visibility } from '@/data/types'
 import { useAuth } from '../../providers/AuthProvider'
 import { ImageUploadField, VisibilityField, VisibilityChip } from '@/ui/fields'
+import { getPartyMembers } from '@/domain/party'
 import { apiFetch } from '../../api'
 
 import Box from '@mui/material/Box'
@@ -162,6 +163,24 @@ export default function LocationsRoute() {
   const [newDescription, setNewDescription] = useState('')
   const [newImageUrl, setNewImageUrl] = useState<string | null>(null)
   const [newVisibility, setNewVisibility] = useState<Visibility>(DEFAULT_VISIBILITY)
+  const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
+
+  // Load party members for VisibilityField character selection
+  useEffect(() => {
+    if (!campaignId) {
+      setPartyMembers([])
+      return
+    }
+    getPartyMembers(campaignId, (cId) =>
+      apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
+        `/api/campaigns/${cId}/party`
+      )
+    )
+      .then((members) =>
+        setPartyMembers(members.map((m) => ({ id: m._id, name: m.name })))
+      )
+      .catch(() => setPartyMembers([]))
+  }, [campaignId])
 
   useEffect(() => {
     if (!campaignId) {
@@ -633,7 +652,7 @@ export default function LocationsRoute() {
                     </Typography>
                   </Box>
                 )}
-                <VisibilityField value={canEdit ? editVisibility : editLocation.visibility} onChange={setEditVisibility} disabled={!canEdit} />
+                <VisibilityField value={canEdit ? editVisibility : editLocation.visibility} onChange={setEditVisibility} disabled={!canEdit} characters={partyMembers} />
               </Stack>
             </DialogContent>
             <DialogActions>
@@ -658,7 +677,7 @@ export default function LocationsRoute() {
               ))}
             </TextField>
             <TextField label="Description" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} size="small" fullWidth multiline minRows={3} placeholder="Describe this location…" />
-            <VisibilityField value={newVisibility} onChange={setNewVisibility} />
+            <VisibilityField value={newVisibility} onChange={setNewVisibility} characters={partyMembers} />
           </Stack>
         </DialogContent>
         <DialogActions>

@@ -24,6 +24,27 @@ export function getNotificationLabel(n: AppNotification): string {
       return (n.payload.message as string) ?? 'System notification'
     case 'system.warning':
       return (n.payload.message as string) ?? 'System warning'
+    case 'session.invite': {
+      const date = n.payload.sessionDate
+        ? new Date(n.payload.sessionDate as string).toLocaleDateString()
+        : 'TBD'
+      return `New session scheduled for ${date}. RSVP requested.`
+    }
+    case 'session.rsvp': {
+      const who = (n.payload.userName as string) ?? 'A player'
+      const action = (n.payload.action as string) === 'accepted' ? 'accepted' : 'declined'
+      const rsvpDate = n.payload.sessionDate
+        ? new Date(n.payload.sessionDate as string).toLocaleDateString()
+        : 'TBD'
+      return `${who} ${action} session scheduled for ${rsvpDate}.`
+    }
+    case 'session.cancelled': {
+      const cancelDate = n.payload.sessionDate
+        ? new Date(n.payload.sessionDate as string).toLocaleDateString()
+        : 'TBD'
+      const title = (n.payload.sessionTitle as string) ?? 'A session'
+      return `${title} scheduled for ${cancelDate} has been cancelled.`
+    }
     default:
       return n.type
   }

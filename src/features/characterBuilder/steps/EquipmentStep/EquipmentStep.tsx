@@ -10,7 +10,7 @@ import {
   getEquipmentNotes,
   getItemCostGp
 } from '@/domain/equipment'
-import { calculateWealth5e, type CalculateWealth5eStartingWealth } from '@/domain/wealth'
+import { calculateWealth } from '@/domain/wealth'
 
 const EquipmentStep = () => {
   const initializedRef = useRef(false)
@@ -34,7 +34,7 @@ const EquipmentStep = () => {
 
   useEffect(() => {
     if (initializedRef.current) return
-    if (edition !== '5e') return
+    if (!edition) return
 
     // If baseGp is already set, wealth was initialized on a previous mount — don't reset
     if (wealth?.baseGp) {
@@ -42,18 +42,23 @@ const EquipmentStep = () => {
       return
     }
 
-    const primaryClass = classes[0]
+    // Look up the selected primary class from the global catalog by its ID
+    const primaryClassId = selectedClasses[0]?.classId
+    if (!primaryClassId) return
+
+    const primaryClass = classes.find(c => c.id === primaryClassId)
     if (!primaryClass?.requirements) return
 
     const wealthReq = primaryClass.requirements.find(
-      r => r.edition === '5e' && r.startingWealth
+      (r: ClassRequirement) => r.edition === edition && r.startingWealth
     )
 
     if (!wealthReq?.startingWealth) return
 
-    const resolved = calculateWealth5e(
+    const resolved = calculateWealth(
       totalLevel,
-      wealthReq.startingWealth as CalculateWealth5eStartingWealth
+      edition as EditionId,
+      wealthReq.startingWealth
     )
 
     if (!resolved) return
@@ -65,7 +70,7 @@ const EquipmentStep = () => {
     })
 
     initializedRef.current = true
-  }, [edition, totalLevel, classes, setWealth, wealth?.baseGp])
+  }, [edition, totalLevel, selectedClasses, setWealth, wealth?.baseGp])
 
   const { 
     weapons: selectedWeapons = [], 

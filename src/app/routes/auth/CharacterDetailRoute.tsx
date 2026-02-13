@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import type { CharacterDoc } from '@/shared'
-import { classes as classesData, editions, settings, races, type EditionId, type SettingId } from '@/data'
+import { classes as classesData, editions, settings, races, equipment, type EditionId, type SettingId } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
-import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression } from '@/domain/character'
+import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression, getXpByLevelAndEdition } from '@/domain/character'
+import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
+import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
 import type { ClassProgression } from '@/data/classes/types'
 import { spells as spellCatalog } from '@/data/classes/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'
@@ -32,6 +34,7 @@ import Grid from '@mui/material/Grid'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,6 +77,23 @@ function formatSpellcasting(prog: ClassProgression): string | null {
 
 function formatAttackProg(prog: ClassProgression): string {
   return prog.attackProgression.charAt(0).toUpperCase() + prog.attackProgression.slice(1)
+}
+
+function formatAttunement(val: boolean | string | undefined): string | null {
+  if (val === true) return 'Requires attunement'
+  if (typeof val === 'string') return `Attunement ${val}`
+  return null
+}
+
+function formatRarity(rarity: string): string {
+  return rarity
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+function formatSlot(slot: string): string {
+  return slot.charAt(0).toUpperCase() + slot.slice(1)
 }
 
 // ---------------------------------------------------------------------------
@@ -397,19 +417,45 @@ export default function CharacterDetailRoute() {
               )}
             </Grid>
             <Grid size={{ xs: 6 }}>
-              {canEditAll ? (
-                <EditableNumberField
-                  label="XP"
-                  value={xp}
-                  onSave={(v: number) => saveCharacter({ xp: v })}
-                  formatDisplay={(n) => n.toLocaleString()}
-                />
-              ) : (
-                <>
-                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
-                  <Typography variant="body1">{(character.xp ?? 0).toLocaleString()}</Typography>
-                </>
-              )}
+              {(() => {
+                const currentLevel = character.totalLevel ?? character.level ?? 1
+                const primaryClassId = filledClasses[0]?.classId
+                const editionObj = editions.find(e => e.id === character.edition)
+                const maxLevel = editionObj?.progression?.maxLevel ?? 20
+                const nextLevel = currentLevel + 1
+
+                let xpDescription: string | undefined
+                if (currentLevel >= maxLevel) {
+                  xpDescription = `Max level (${maxLevel}) reached`
+                } else {
+                  const nextLevelXp = getXpByLevelAndEdition(
+                    nextLevel,
+                    character.edition as EditionId,
+                    primaryClassId
+                  )
+                  if (nextLevelXp > 0) {
+                    xpDescription = `${nextLevelXp.toLocaleString()} XP required for level ${nextLevel}`
+                  }
+                }
+
+                return canEditAll ? (
+                  <EditableNumberField
+                    label="XP"
+                    value={xp}
+                    onSave={(v: number) => saveCharacter({ xp: v })}
+                    formatDisplay={(n) => n.toLocaleString()}
+                    description={xpDescription}
+                  />
+                ) : (
+                  <>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
+                    <Typography variant="body1">{(character.xp ?? 0).toLocaleString()}</Typography>
+                    {xpDescription && (
+                      <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
+                    )}
+                  </>
+                )
+              })()}
             </Grid>
           </Grid>
 
@@ -480,6 +526,128 @@ export default function CharacterDetailRoute() {
               Total weight: {character.equipment?.weight ?? 0} lbs
             </Typography>
           )}
+
+          {/* Magic Items */}
+          {(() => {
+            const charMagicItemIds = character.equipment?.magicItems ?? []
+            const effectiveEdition = character.edition ? resolveEquipmentEdition(character.edition) : undefined
+            const charLevel = character.totalLevel ?? character.level ?? 1
+            const budget = getMagicItemBudget(character.edition as EditionId, charLevel)
+
+            // Resolve each magic item ID to its catalog entry + edition data
+            const resolvedItems = charMagicItemIds
+              .map(itemId => {
+                const item = equipment.magicItems.find((m: MagicItem) => m.id === itemId)
+                if (!item) return null
+                const datum = effectiveEdition
+                  ? item.editionData.find((d: MagicItemEditionDatum) => d.edition === effectiveEdition)
+                  : undefined
+                return { item, datum }
+              })
+              .filter(Boolean) as { item: MagicItem; datum?: MagicItemEditionDatum }[]
+
+            const permanentCount = resolvedItems.filter(r => !r.item.consumable).length
+            const consumableCount = resolvedItems.filter(r => r.item.consumable).length
+
+            // Budget availability check
+            const hasBudget = budget != null
+            const permanentSlotsAvailable = hasBudget
+              ? budget.permanentSlots - permanentCount
+              : 0
+            const consumableSlotsAvailable = hasBudget
+              ? budget.consumableSlots - consumableCount
+              : 0
+            const hasAvailableSlots = permanentSlotsAvailable > 0 || consumableSlotsAvailable > 0
+
+            return (
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                  Magic Items
+                </Typography>
+
+                {resolvedItems.length > 0 ? (
+                  <Stack spacing={1.5} sx={{ mt: 1 }}>
+                    {resolvedItems.map(({ item, datum }) => {
+                      const attunement = formatAttunement(datum?.requiresAttunement)
+                      return (
+                        <Box key={item.id}>
+                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                            <Typography variant="body2" fontWeight={600}>
+                              {item.name}
+                            </Typography>
+                            {datum?.rarity && (
+                              <Chip label={formatRarity(datum.rarity)} size="small" variant="outlined" />
+                            )}
+                            <Chip label={formatSlot(item.slot)} size="small" variant="outlined" />
+                            {item.consumable && (
+                              <Chip label="Consumable" size="small" color="warning" variant="outlined" />
+                            )}
+                            {attunement && (
+                              <Chip label={attunement} size="small" color="info" variant="outlined" />
+                            )}
+                            {datum?.bonus != null && (
+                              <Chip label={`+${datum.bonus}`} size="small" variant="outlined" />
+                            )}
+                          </Stack>
+                          {datum?.effect && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+                              {datum.effect}
+                            </Typography>
+                          )}
+                          {datum?.charges != null && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Charges: {datum.charges}
+                              {datum.recharges ? ` (recharges ${datum.recharges})` : ''}
+                            </Typography>
+                          )}
+                          {datum?.cost && datum.cost !== '—' && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Value: {datum.cost}
+                            </Typography>
+                          )}
+                        </Box>
+                      )
+                    })}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>—</Typography>
+                )}
+
+                {/* Budget summary + available slots note */}
+                {hasBudget && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Budget: {permanentCount} / {budget.permanentSlots} permanent
+                      {' · '}{consumableCount} / {budget.consumableSlots} consumable
+                      {budget.maxAttunement != null && (
+                        <> · {budget.maxAttunement} attunement slots</>
+                      )}
+                    </Typography>
+                    {hasAvailableSlots && (
+                      <Alert
+                        severity="info"
+                        icon={<InfoOutlinedIcon fontSize="small" />}
+                        sx={{ mt: 1, py: 0.25 }}
+                      >
+                        <Typography variant="caption">
+                          This character can acquire
+                          {permanentSlotsAvailable > 0 && (
+                            <> <strong>{permanentSlotsAvailable}</strong> more permanent item{permanentSlotsAvailable !== 1 ? 's' : ''}</>
+                          )}
+                          {permanentSlotsAvailable > 0 && consumableSlotsAvailable > 0 && ' and'}
+                          {consumableSlotsAvailable > 0 && (
+                            <> <strong>{consumableSlotsAvailable}</strong> more consumable{consumableSlotsAvailable !== 1 ? 's' : ''}</>
+                          )}
+                          {' '}based on their level progression.
+                        </Typography>
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+              </>
+            )
+          })()}
 
           {/* Wealth */}
           <Divider sx={{ my: 2 }} />

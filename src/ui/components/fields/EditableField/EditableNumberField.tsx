@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import SaveIcon from '@mui/icons-material/Save'
 import EditableField from './EditableField'
@@ -12,6 +13,8 @@ export type EditableNumberFieldProps = {
   className?: string
   /** How to format the value in display mode (e.g. toLocaleString for XP) */
   formatDisplay?: (n: number) => string
+  /** Optional helper text shown below the display value */
+  description?: string
 }
 
 export default function EditableNumberField({
@@ -21,6 +24,7 @@ export default function EditableNumberField({
   disabled = false,
   className,
   formatDisplay = (n) => String(n),
+  description,
 }: EditableNumberFieldProps) {
   const [local, setLocal] = useState(String(value))
 
@@ -36,7 +40,16 @@ export default function EditableNumberField({
       label={label}
       value={value}
       onSave={onSave}
-      renderDisplay={(v) => formatDisplay(v)}
+      renderDisplay={(v) => (
+        <>
+          {formatDisplay(v)}
+          {description && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {description}
+            </Typography>
+          )}
+        </>
+      )}
       renderEdit={({ onSave: save, onClose, saving }) => (
         <>
           <TextField

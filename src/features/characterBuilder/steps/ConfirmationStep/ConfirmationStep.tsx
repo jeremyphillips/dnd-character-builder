@@ -35,9 +35,10 @@ function getClassLine(
   allClasses: typeof classes,
   isPrimary: boolean,
   isMulticlass: boolean,
+  edition?: string,
 ): string {
   const classData = allClasses.find((c) => c.id === cls.classId)
-  const name = classData?.name ?? cls.classId ?? 'Unknown'
+  const name = (edition && classData?.displayNameByEdition?.[edition]) ?? classData?.name ?? cls.classId ?? 'Unknown'
 
   let subclassName = ''
   if (cls.classDefinitionId && classData) {
@@ -129,7 +130,7 @@ const ConfirmationStep = () => {
   const filledClasses = state.classes.filter((cls) => cls.classId)
   const isMulticlass = filledClasses.length > 1
   const classLines = filledClasses.map((cls, i) =>
-    getClassLine(cls, classes, i === 0, isMulticlass),
+    getClassLine(cls, classes, i === 0, isMulticlass, state.edition),
   )
 
   const equipmentCount =

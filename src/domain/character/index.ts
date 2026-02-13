@@ -15,3 +15,9 @@ export {
   compareClassAcrossEditions,
 } from './classProgression'
 export type { CoreClassProgression, CoreFeature } from './classProgression'
+export {
+  CLASS_ALIASES,
+  CLASS_GROUPS_2E,
+  resolveClassId,
+  getClassGroup2e,
+} from './classAliases'

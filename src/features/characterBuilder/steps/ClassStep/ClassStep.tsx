@@ -96,9 +96,10 @@ const ClassStep = () => {
     .filter(Boolean)
     .map(cls => {
       const { allowed } = meetsClassRequirements(cls!, state)
+      const label = (edition && cls!.displayNameByEdition?.[edition]) ?? cls!.name
       return {
         id: cls!.id,
-        label: cls!.name,
+        label,
         disabled: !allowed
       }
     })

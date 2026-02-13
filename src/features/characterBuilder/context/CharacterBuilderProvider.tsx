@@ -91,7 +91,25 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     })
 
   const setClassId = (classId: string) =>
-    updateActiveClass(cls => ({ ...cls, classId }))
+    setState(s => {
+      const index = s.activeClassIndex
+      if (index == null || !s.classes[index]) return s
+
+      const classes = [...s.classes]
+      classes[index] = { ...classes[index], classId }
+
+      // Recalculate XP when the *primary* class changes.
+      // Pre-3e editions have class-specific XP tables, so XP can only be
+      // resolved once we know which class the character is.  The Level step
+      // runs before the Class step, so setTotalLevels may have set xp to 0
+      // if classId wasn't available yet — this corrects it.
+      const isPrimaryClass = index === 0
+      const xp = isPrimaryClass && s.edition && s.totalLevel
+        ? getXpByLevelAndEdition(s.totalLevel, s.edition, classId)
+        : s.xp
+
+      return { ...s, classes, xp: xp ?? s.xp }
+    })
 
   const setClassDefinitionId = (classDefinitionId: string) =>
     updateActiveClass(cls => ({ ...cls, classDefinitionId }))
@@ -282,7 +300,12 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setTotalLevels = (totalLevel: number) =>
     updateState(s => {
-      const newXp = s.edition ? getXpByLevelAndEdition(totalLevel, s.edition) : 0
+      // Pass primary class ID so pre-3e editions resolve to the correct
+      // class-specific XP table.  Universal-table editions ignore it.
+      const primaryClassId = s.classes[0]?.classId
+      const newXp = s.edition
+        ? getXpByLevelAndEdition(totalLevel, s.edition, primaryClassId)
+        : 0
 
       // Clamp existing class allocations so they don't exceed the new total
       let budget = totalLevel

@@ -8,6 +8,7 @@ import {
   meetsClassRequirements,
   getClassProgression,
   getClassRestrictionNotes,
+  canAddClass,
 } from '@/domain/character'
 import type { ClassProgression } from '@/data/classes/types'
 import { ButtonGroup } from '@/ui/elements'
@@ -89,6 +90,18 @@ const ClassStep = () => {
 
   const remainingLevels = (totalLevel ?? 0) - allocatedLevels
 
+  // Does this edition support multiclassing at all? (ignoring current class
+  // count / remaining levels — just the edition-level rule)
+  const editionAllowsMulticlass = canAddClass(edition, 1, 1).allowed
+
+  // When multiclassing is disabled, auto-allocate all levels to the primary
+  // class so the user doesn't need to interact with a level spinner.
+  useEffect(() => {
+    if (!editionAllowsMulticlass && remainingLevels > 0) {
+      allocateRemainingLevels()
+    }
+  }, [editionAllowsMulticlass, remainingLevels, allocateRemainingLevels])
+
   /* ---------- Primary class options ---------- */
   const allowedClassIds = getOptions('classes', edition, setting)
 
@@ -115,37 +128,31 @@ const ClassStep = () => {
     <div>
       <header>
         <h2>Choose {step.name}</h2>
-        {restrictionNotes.length > 0 && restrictionNotes.map((note, i) => (
-          <Typography
-            key={i}
-            component="small"
-            variant="caption"
-            display="block"
-            color="text.secondary"
-            sx={{ mt: 0.5 }}
-          >
-            {note}
-          </Typography>
-        ))}
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Allocate your {totalLevel ?? 0} total level{(totalLevel ?? 0) > 1 ? 's' : ''} across one or more classes.
-        </Typography>
-        <Typography variant="body2">
-          <strong>Levels Allocated:</strong> {allocatedLevels} / {totalLevel}
-          {remainingLevels > 0 && (
-            <>
-              {' — '}
-              <Typography component="span" variant="body2" color="text.secondary">
-                {remainingLevels} level{remainingLevels > 1 ? 's' : ''} remaining
-              </Typography>
-            </>
-          )}
-        </Typography>
-        {remainingLevels === 0 && (
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
-            <CheckCircleIcon color="success" fontSize="small" />
-            <Typography variant="body2" color="success.main">All levels allocated</Typography>
-          </Stack>
+
+        {/* Level allocation summary — only relevant for multiclass editions */}
+        {editionAllowsMulticlass && (
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Allocate your {totalLevel ?? 0} total level{(totalLevel ?? 0) > 1 ? 's' : ''} across one or more classes.
+            </Typography>
+            <Typography variant="body2">
+              <strong>Levels Allocated:</strong> {allocatedLevels} / {totalLevel}
+              {remainingLevels > 0 && (
+                <>
+                  {' — '}
+                  <Typography component="span" variant="body2" color="text.secondary">
+                    {remainingLevels} level{remainingLevels > 1 ? 's' : ''} remaining
+                  </Typography>
+                </>
+              )}
+            </Typography>
+            {remainingLevels === 0 && (
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
+                <CheckCircleIcon color="success" fontSize="small" />
+                <Typography variant="body2" color="success.main">All levels allocated</Typography>
+              </Stack>
+            )}
+          </Box>
         )}
       </header>
 
@@ -200,9 +207,21 @@ const ClassStep = () => {
                       {cls.classId || 'Choose a class'}
                       {cls.classDefinitionId && ` — ${cls.classDefinitionId}`}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" my={1.5}>
                       Level {cls.level}
                     </Typography>
+                    {restrictionNotes.length > 0 && restrictionNotes.map((note, i) => (
+                      <Typography
+                        key={i}
+                        component="small"
+                        variant="caption"
+                        display="block"
+                        color="text.secondary"
+                        sx={{ mt: 0.5 }}
+                      >
+                        {note}
+                      </Typography>
+                    ))}
                   </Box>
 
                   {!isActive && (
@@ -277,53 +296,55 @@ const ClassStep = () => {
                       )
                     })()}
 
-                    {/* Level spinner */}
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 3 }}>
-                      <IconButton
-                        size="medium"
-                        disabled={cls.level <= 1}
-                        onClick={() => updateClassLevel(index, cls.level - 1)}
-                        color="primary"
-                      >
-                        <RemoveIcon />
-                      </IconButton>
+                    {/* Level spinner — only shown when multiclassing is available */}
+                    {editionAllowsMulticlass && (
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 3 }}>
+                        <IconButton
+                          size="medium"
+                          disabled={cls.level <= 1}
+                          onClick={() => updateClassLevel(index, cls.level - 1)}
+                          color="primary"
+                        >
+                          <RemoveIcon />
+                        </IconButton>
 
-                      <TextField
-                        value={cls.level}
-                        size="small"
-                        type="number"
-                        slotProps={{
-                          input: {
-                            readOnly: true,
-                            sx: { textAlign: 'center', width: 72 },
-                          },
-                          htmlInput: {
-                            min: 1,
-                            max: totalLevel,
-                            style: { textAlign: 'center' },
-                          },
-                        }}
-                        label="Level"
-                      />
+                        <TextField
+                          value={cls.level}
+                          size="small"
+                          type="number"
+                          slotProps={{
+                            input: {
+                              readOnly: true,
+                              sx: { textAlign: 'center', width: 72 },
+                            },
+                            htmlInput: {
+                              min: 1,
+                              max: totalLevel,
+                              style: { textAlign: 'center' },
+                            },
+                          }}
+                          label="Level"
+                        />
 
-                      <IconButton
-                        size="medium"
-                        disabled={remainingLevels <= 0}
-                        onClick={() => updateClassLevel(index, cls.level + 1)}
-                        color="primary"
-                      >
-                        <AddIcon />
-                      </IconButton>
+                        <IconButton
+                          size="medium"
+                          disabled={remainingLevels <= 0}
+                          onClick={() => updateClassLevel(index, cls.level + 1)}
+                          color="primary"
+                        >
+                          <AddIcon />
+                        </IconButton>
 
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={allocateRemainingLevels}
-                        disabled={remainingLevels <= 0}
-                      >
-                        Allocate remaining
-                      </Button>
-                    </Stack>
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={allocateRemainingLevels}
+                          disabled={remainingLevels <= 0}
+                        >
+                          Allocate remaining
+                        </Button>
+                      </Stack>
+                    )}
 
                     {/* Subclass */}
                     {subclassOptions.length > 0 && (
@@ -355,20 +376,21 @@ const ClassStep = () => {
         })}
       </Stack>
 
-      {/* Add class */}
-      {primaryClassSelected &&
-        selectedClasses.length < 2 &&
-        selectedClasses.length < (totalLevel ?? 0) && (
-        <CardActions sx={{ px: 0, pt: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={addClass}
-          >
-            Add another class
-          </Button>
-        </CardActions>
-      )}
+      {/* Add class — gated by edition multiclassing rules */}
+      {primaryClassSelected && (() => {
+        const mc = canAddClass(edition, selectedClasses.length, remainingLevels)
+        return mc.allowed ? (
+          <CardActions sx={{ px: 0, pt: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={addClass}
+            >
+              Add another class
+            </Button>
+          </CardActions>
+        ) : null
+      })()}
     </div>
   )
 }

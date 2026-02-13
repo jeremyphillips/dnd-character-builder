@@ -28,6 +28,7 @@ export default function MonstersRoute() {
             type={monster.type}
             subtype={monster.subtype}
             sizeCategory={monster.sizeCategory}
+            description={monster.description?.short}
             link={campaignId ? ROUTES.WORLD_MONSTER.replace(':id', campaignId).replace(':monsterId', monster.id) : undefined}
           />
         ))}

@@ -13,12 +13,16 @@ interface CampaignMember {
 
 interface Campaign {
   _id: string
-  name: string
-  setting: string
-  edition: string
-  description: string
-  adminId: string
-  members: CampaignMember[]
+  identity: {
+    name?: string
+    setting?: string
+    edition?: string
+    description?: string
+  }
+  membership: {
+    adminId: string
+    members: CampaignMember[]
+  }
 }
 
 export default function CampaignsRoute() {
@@ -96,11 +100,11 @@ export default function CampaignsRoute() {
           {campaigns.map((c) => (
             <div key={c._id} className="item-card">
               <div className="item-card-info">
-                <strong>{c.name}</strong>
+                <strong>{c.identity.name}</strong>
                 <span>
-                  {getEditionName(c.edition)} · {getSettingName(c.setting)}
+                  {getEditionName(c.identity.edition ?? '')} · {getSettingName(c.identity.setting ?? '')}
                   {' · '}
-                  {c.members.length} member{c.members.length !== 1 ? 's' : ''}
+                  {c.membership.members.length} member{c.membership.members.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <Link to={`/campaigns/${c._id}`} className="btn-size-sm btn-theme-secondary">

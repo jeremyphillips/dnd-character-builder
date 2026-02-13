@@ -1,3 +1,4 @@
+import Button from '@mui/material/Button'
 import { MediaTopCard } from '@/ui/cards'
 import type { CardBadgeItem } from '@/ui/cards'
 
@@ -32,6 +33,17 @@ const MonsterMediaTopCard = ({
 }: MonsterMediaTopCardProps) => {
   const subheadline = [type, subtype, sizeCategory].filter(Boolean).join(' · ')
 
+  const cardActions = (
+    <>
+      {actions}
+      {link && (
+        <Button component="span" size="small" variant="outlined">
+          View Detail
+        </Button>
+      )}
+    </>
+  )
+
   return (
     <MediaTopCard
       image={imageUrl}
@@ -43,7 +55,7 @@ const MonsterMediaTopCard = ({
       link={link}
       isEditable={isEditable}
       onEdit={onEdit}
-      actions={actions}
+      actions={cardActions}
     />
   )
 }

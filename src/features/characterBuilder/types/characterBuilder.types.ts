@@ -3,7 +3,7 @@ import type { CharacterType, Proficiency } from '@/shared/types/character.core'
 
 export type { CharacterClassInfo, CharacterSheet }
 
-export type StepId = 'edition' | 'setting' | 'class' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
+export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
 
 export type CharacterBuilderState = CharacterSheet & {
   name?: string
@@ -53,6 +53,9 @@ export type CharacterBuilderContextValue = {
 
   // proficiencies
   setProficiencies: (proficiencies: Proficiency[]) => void
+
+  // spells
+  setSpells: (spells: string[]) => void
 
   // equipment
   updateWeapons: (ids: string[]) => void

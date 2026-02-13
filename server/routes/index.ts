@@ -9,6 +9,7 @@ import settingDataRoutes from './settingData.routes'
 import notificationRoutes from './notification.routes'
 import inviteRoutes from './invite.routes'
 import sessionRoutes from './session.routes'
+import sessionInviteRoutes from './sessionInvite.routes'
 import campaignMemberRoutes from './campaignMember.routes'
 import messageRoutes from './message.routes'
 
@@ -23,6 +24,7 @@ export function registerRoutes(app: Express) {
   app.use('/api/notifications', notificationRoutes)
   app.use('/api/invites', inviteRoutes)
   app.use('/api/sessions', sessionRoutes)
+  app.use('/api/session-invites', sessionInviteRoutes)
   app.use('/api/campaign-members', campaignMemberRoutes)
   app.use('/api/messages', messageRoutes)
 }

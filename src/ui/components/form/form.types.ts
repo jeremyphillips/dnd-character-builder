@@ -55,6 +55,9 @@ export type FieldConfig =
       maxHeight?: number
     }
   | BaseFieldConfig & {
+      type: 'datetime'
+    }
+  | BaseFieldConfig & {
       type: 'visibility'
       characters?: { id: string; name: string }[]
       allowHidden?: boolean

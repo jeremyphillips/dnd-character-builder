@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { apiFetch } from '../../api'
@@ -6,8 +6,8 @@ import { ROUTES } from '../../routes'
 import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
 import { getPartyMembers } from '@/domain/party'
-import type { Visibility } from '@/data/types'
-import { VisibilityField } from '@/ui/fields'
+import { AppForm, DynamicFormRenderer } from '@/ui/components/form'
+import type { FieldConfig } from '@/ui/components/form'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -15,13 +15,7 @@ import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
-import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 
 import AddIcon from '@mui/icons-material/Add'
@@ -33,10 +27,6 @@ export default function SessionsRoute() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [formTitle, setFormTitle] = useState('')
-  const [formNotes, setFormNotes] = useState('')
-  const [formDateTime, setFormDateTime] = useState<Dayjs | null>(dayjs())
-  const [formVisibility, setFormVisibility] = useState<Visibility>({ allCharacters: true, characterIds: [] })
   const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
@@ -76,31 +66,39 @@ export default function SessionsRoute() {
       .catch(() => setPartyMembers([]))
   }, [campaignId])
 
-  const openModal = () => {
-    setFormTitle('')
-    setFormNotes('')
-    setFormDateTime(dayjs())
-    setFormVisibility({ allCharacters: true, characterIds: [] })
-    setModalOpen(true)
+  const openModal = () => setModalOpen(true)
+
+  const formFields: FieldConfig[] = useMemo(() => [
+    { type: 'text', name: 'title', label: 'Name' },
+    { type: 'textarea', name: 'notes', label: 'Notes', rows: 3 },
+    { type: 'datetime', name: 'date', label: 'Date & time', required: true },
+    { type: 'visibility', name: 'visibility', label: 'Visibility', characters: partyMembers, allowHidden: false },
+  ], [partyMembers])
+
+  const defaultValues = {
+    title: '',
+    notes: '',
+    date: dayjs().toISOString(),
+    visibility: { allCharacters: true, characterIds: [] },
   }
 
-  const handleCreate = async () => {
-    if (!formDateTime || !campaignId) return
+  const handleCreate = async (data: Record<string, unknown>) => {
+    if (!campaignId) return
     setCreating(true)
     try {
       await apiFetch('/api/sessions', {
         method: 'POST',
         body: {
           campaignId,
-          date: formDateTime.toISOString(),
-          title: formTitle || undefined,
-          notes: formNotes || undefined,
-          visibility: formVisibility,
+          date: data.date,
+          title: (data.title as string) || undefined,
+          notes: (data.notes as string) || undefined,
+          visibility: data.visibility,
         },
       })
       setModalOpen(false)
-      const data = await apiFetch<{ sessions: Session[] }>('/api/sessions')
-      const campaignSessions = (data.sessions ?? []).filter(
+      const res = await apiFetch<{ sessions: Session[] }>('/api/sessions')
+      const campaignSessions = (res.sessions ?? []).filter(
         (s) => s.campaignId === campaignId,
       )
       setSessions(campaignSessions)
@@ -167,49 +165,21 @@ export default function SessionsRoute() {
 
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Create session</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          <TextField
-            label="Name"
-            value={formTitle}
-            onChange={(e) => setFormTitle(e.target.value)}
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="Notes"
-            value={formNotes}
-            onChange={(e) => setFormNotes(e.target.value)}
-            fullWidth
-            multiline
-            minRows={3}
-            size="small"
-          />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DateTimePicker
-              label="Date & time"
-              value={formDateTime}
-              onChange={(v) => setFormDateTime(v)}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </LocalizationProvider>
-          <VisibilityField
-            value={formVisibility}
-            onChange={setFormVisibility}
-            allowHidden={false}
-            defaultValue={{ allCharacters: true, characterIds: [] }}
-            characters={partyMembers}
-          />
+        <DialogContent sx={{ pt: 2 }}>
+          <AppForm defaultValues={defaultValues} onSubmit={handleCreate} spacing={2}>
+            <DynamicFormRenderer fields={formFields} spacing={2} />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 1 }}>
+              <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={creating || !campaignId}
+              >
+                {creating ? 'Creating...' : 'Create session'}
+              </Button>
+            </Box>
+          </AppForm>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleCreate}
-            disabled={creating || !formDateTime || !campaignId}
-          >
-            {creating ? 'Creating…' : 'Create session'}
-          </Button>
-        </DialogActions>
       </Dialog>
     </Box>
   )

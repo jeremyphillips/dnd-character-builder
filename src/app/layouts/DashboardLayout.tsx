@@ -161,12 +161,12 @@ export default function DashboardLayout() {
         {/* Campaign section */}
         <Box
           sx={{
-            px: 2,
-            py: 2,
+            // px: 2,
+            // py: 2,
             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
             borderRadius: 2,
-            mx: 1,
-            my: 1,
+            // mx: 1,
+            // my: 1,
           }}
         >
           <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.7rem' }}>

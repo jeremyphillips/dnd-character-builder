@@ -12,6 +12,12 @@ import { apiFetch } from '../api'
 
 const SOCKET_URL = import.meta.env.DEV ? '' : window.location.origin
 
+export interface DraftTarget {
+  campaignId: string
+  userId: string
+  username: string
+}
+
 interface Conversation {
   _id: string
   campaignId?: string
@@ -50,6 +56,8 @@ interface MessagingContextType {
   ) => Promise<Conversation | null>
   newConversationModalOpen: boolean
   setNewConversationModalOpen: (open: boolean) => void
+  draftTarget: DraftTarget | null
+  setDraftTarget: (target: DraftTarget | null) => void
 }
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined)
@@ -60,6 +68,7 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [newConversationModalOpen, setNewConversationModalOpen] = useState(false)
+  const [draftTarget, setDraftTarget] = useState<DraftTarget | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const campaignIdRef = useRef<string | null>(null)
 
@@ -215,6 +224,8 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
     createGroupConversation,
     newConversationModalOpen,
     setNewConversationModalOpen,
+    draftTarget,
+    setDraftTarget,
   }
 
   return (

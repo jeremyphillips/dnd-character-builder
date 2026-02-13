@@ -7,10 +7,21 @@ import {
   EditionStep,
   EquipmentStep,
   LevelStep,
-  RaceStep
+  RaceStep,
+  SpellStep
 } from '../steps'
 import { type CharacterBuilderState } from '../types'
 import type { CharacterType } from '@/shared/types/character.core'
+import { getClassProgression } from '@/domain/character'
+
+/** Returns true if at least one selected class has a spellProgression for the current edition. */
+function isSpellcaster(state: CharacterBuilderState): boolean {
+  return state.classes.some(cls => {
+    if (!cls.classId || !state.edition) return false
+    const prog = getClassProgression(cls.classId, state.edition)
+    return prog?.spellProgression != null
+  })
+}
 
 export function getStepConfig(mode: CharacterType) {
   const baseSteps = [
@@ -32,6 +43,14 @@ export function getStepConfig(mode: CharacterType) {
       component: ClassStep,
       selector: (state: CharacterBuilderState) =>
         state.classes[0]?.classId
+    },
+    {
+      id: 'spells',
+      label: 'Spells',
+      component: SpellStep,
+      selector: (state: CharacterBuilderState) =>
+        (state.spells?.length ?? 0) > 0,
+      shouldSkip: (state: CharacterBuilderState) => !isSpellcaster(state)
     },
     {
       id: 'alignment',
@@ -106,6 +125,7 @@ export function createInitialBuilderState(
     },
     alignment: undefined,
     proficiencies: [],
+    spells: [],
     totalLevel: 0,
     wealth: {
       gp: 0,

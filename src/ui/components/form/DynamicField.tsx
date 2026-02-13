@@ -4,6 +4,7 @@ import FormSelectField from './FormSelectField'
 import FormRadioField from './FormRadioField'
 import FormCheckboxField from './FormCheckboxField'
 import FormImageUploadField from './FormImageUploadField'
+import FormDateTimeField from './FormDateTimeField'
 import FormVisibilityField from './FormVisibilityField'
 
 type DynamicFieldProps = {
@@ -93,6 +94,16 @@ export default function DynamicField({ field }: DynamicFieldProps) {
           required={field.required}
           disabled={field.disabled}
           maxHeight={field.maxHeight}
+        />
+      )
+
+    case 'datetime':
+      return (
+        <FormDateTimeField
+          name={field.name}
+          label={field.label}
+          required={field.required}
+          disabled={field.disabled}
         />
       )
 

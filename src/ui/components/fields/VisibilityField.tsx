@@ -1,8 +1,8 @@
+import { useState, useEffect } from 'react'
 import type { Visibility } from '@/data/types'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import FormControl from '@mui/material/FormControl'
 import RadioGroup from '@mui/material/RadioGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Radio from '@mui/material/Radio'
@@ -54,10 +54,24 @@ export default function VisibilityField({
   allowHidden = true,
   defaultValue: _defaultValue = DEFAULT_VISIBILITY_HIDDEN,
 }: VisibilityFieldProps) {
-  const mode = getMode(value)
-  const effectiveModes: VisibilityMode[] = allowHidden ? ['hidden', 'all', 'selected'] : ['all', 'selected']
+  // Local mode state so "selected with 0 characters" doesn't snap back to "hidden"
+  const [mode, setMode] = useState<VisibilityMode>(() => getMode(value))
+
+  // Sync from parent when it changes to a clearly distinguishable mode
+  useEffect(() => {
+    const parentMode = getMode(value)
+    if (parentMode === 'all' || parentMode === 'selected') {
+      setMode(parentMode)
+    }
+    // When parent resets to hidden AND we're not holding "selected" open
+    if (parentMode === 'hidden' && mode !== 'selected') {
+      setMode('hidden')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.allCharacters, value.characterIds.length])
 
   function handleModeChange(newMode: VisibilityMode) {
+    setMode(newMode)
     switch (newMode) {
       case 'all':
         onChange({ allCharacters: true, characterIds: [] })
@@ -116,9 +130,8 @@ export default function VisibilityField({
   }
 
   return (
-    <FormControl component="fieldset" sx={{ display: 'block' }}>
+    <Box>
       <Typography
-        component="label"
         variant="overline"
         sx={{ display: 'block', mb: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary' }}
       >
@@ -126,14 +139,13 @@ export default function VisibilityField({
       </Typography>
 
       <RadioGroup
-        value={effectiveModes.includes(mode) ? mode : effectiveModes[0]}
+        value={mode}
         onChange={(e) => handleModeChange(e.target.value as VisibilityMode)}
-        sx={{ '& .MuiRadio-root': { transition: 'none' } }}
       >
         {allowHidden && (
           <FormControlLabel
             value="hidden"
-            control={<Radio size="small" disableRipple />}
+            control={<Radio size="small" />}
             label={
               <Stack direction="row" spacing={1} alignItems="center">
                 <VisibilityOffIcon fontSize="small" />
@@ -144,7 +156,7 @@ export default function VisibilityField({
         )}
         <FormControlLabel
           value="all"
-          control={<Radio size="small" disableRipple />}
+          control={<Radio size="small" />}
           label={
             <Stack direction="row" spacing={1} alignItems="center">
               <VisibilityIcon fontSize="small" />
@@ -154,7 +166,7 @@ export default function VisibilityField({
         />
         <FormControlLabel
           value="selected"
-          control={<Radio size="small" disableRipple />}
+          control={<Radio size="small" />}
           label={
             <Stack direction="row" spacing={1} alignItems="center">
               <LockIcon fontSize="small" />
@@ -189,7 +201,7 @@ export default function VisibilityField({
           )}
         </Box>
       )}
-    </FormControl>
+    </Box>
   )
 }
 

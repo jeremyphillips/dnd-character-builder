@@ -4,13 +4,10 @@ import type { ChatMessage } from '../types'
 import { useCharacterBuilder, CharacterBuilderShell, type CharacterBuilderState } from '@/characterBuilder'
 import { apiFetch } from '@/app/api'
 import { type CharacterClassInfo } from '@/shared'
+import { LoadingOverlay } from '@/ui/elements'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
-import Stack from '@mui/material/Stack'
-import Dialog from '@mui/material/Dialog'
-import DialogContent from '@mui/material/DialogContent'
 
 // ---------------------------------------------------------------------------
 // ChatMessageItem
@@ -224,10 +221,6 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
       },
     }
 
-    // if (s.edition === '2e') {
-    //   (baseCharacter.character as any).thac0 = 20
-    // }
-
     return `You are an expert D&D GM. Return a character object in valid JSON format exactly matching this structure: 
 
     ${JSON.stringify(baseCharacter, null, 2)}
@@ -276,33 +269,11 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
       />
 
       {/* Generation loader overlay inside the modal */}
-      <Dialog
+      <LoadingOverlay
         open={generating && isModalOpen}
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: 'transparent',
-              boxShadow: 'none',
-              overflow: 'visible',
-            },
-          },
-          backdrop: {
-            sx: { bgcolor: 'rgba(0,0,0,0.7)' },
-          },
-        }}
-      >
-        <DialogContent>
-          <Stack alignItems="center" spacing={2}>
-            <CircularProgress size={48} sx={{ color: '#fff' }} />
-            <Typography variant="h6" sx={{ color: '#fff' }} fontWeight={600}>
-              Generating character…
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-              Consulting the sages at OpenAI
-            </Typography>
-          </Stack>
-        </DialogContent>
-      </Dialog>
+        headline="Generating character…"
+        subtext="Consulting the sages"
+      />
 
       {/* Errors */}
       {(error || genError) && (

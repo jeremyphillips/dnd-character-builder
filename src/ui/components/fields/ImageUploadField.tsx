@@ -5,14 +5,12 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
-import Dialog from '@mui/material/Dialog'
-import DialogContent from '@mui/material/DialogContent'
-import IconButton from '@mui/material/IconButton'
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ImageIcon from '@mui/icons-material/Image'
-import CloseIcon from '@mui/icons-material/Close'
+
+import { Lightbox } from '@/ui/elements'
 
 interface ImageUploadFieldProps {
   /** Current image URL (local or remote) */
@@ -166,58 +164,12 @@ export default function ImageUploadField({
         )}
 
         {/* Lightbox modal */}
-        <Dialog
+        <Lightbox
           open={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
-          maxWidth={false}
-          slotProps={{
-            paper: {
-              sx: {
-                bgcolor: 'transparent',
-                boxShadow: 'none',
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-                overflow: 'visible',
-              },
-            },
-          }}
-        >
-          <DialogContent
-            sx={{
-              p: 0,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <IconButton
-              onClick={() => setLightboxOpen(false)}
-              sx={{
-                position: 'absolute',
-                top: -16,
-                right: -16,
-                bgcolor: 'var(--mui-palette-background-paper)',
-                boxShadow: 2,
-                '&:hover': { bgcolor: 'var(--mui-palette-action-hover)' },
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-
-            <Box
-              component="img"
-              src={value}
-              alt={label}
-              sx={{
-                maxWidth: '85vw',
-                maxHeight: '85vh',
-                objectFit: 'contain',
-                borderRadius: 1,
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+          src={value}
+          alt={label}
+        />
       </Box>
     )
   }

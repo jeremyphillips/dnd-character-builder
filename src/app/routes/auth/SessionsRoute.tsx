@@ -6,16 +6,15 @@ import { ROUTES } from '../../routes'
 import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
 import { getPartyMembers } from '@/domain/party'
-import { AppForm, DynamicFormRenderer } from '@/ui/components/form'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
+import { FormModal } from '@/ui/modals'
+import { AppDataGrid } from '@/ui/components'
+import type { AppDataGridColumn } from '@/ui/components'
+import type { FilterOption } from '@/ui/components/FilterableCardGroup/FilterableCardGroup'
 import type { FieldConfig } from '@/ui/components/form'
-import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import CircularProgress from '@mui/material/CircularProgress'
 import dayjs from 'dayjs'
 
 import AddIcon from '@mui/icons-material/Add'
@@ -26,8 +25,8 @@ export default function SessionsRoute() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
   const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
+  const breadcrumbs = useBreadcrumbs()
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
 
@@ -84,33 +83,25 @@ export default function SessionsRoute() {
 
   const handleCreate = async (data: Record<string, unknown>) => {
     if (!campaignId) return
-    setCreating(true)
-    try {
-      await apiFetch('/api/sessions', {
-        method: 'POST',
-        body: {
-          campaignId,
-          date: data.date,
-          title: (data.title as string) || undefined,
-          notes: (data.notes as string) || undefined,
-          visibility: data.visibility,
-        },
-      })
-      setModalOpen(false)
-      const res = await apiFetch<{ sessions: Session[] }>('/api/sessions')
-      const campaignSessions = (res.sessions ?? []).filter(
-        (s) => s.campaignId === campaignId,
-      )
-      setSessions(campaignSessions)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create session')
-    } finally {
-      setCreating(false)
-    }
+    await apiFetch('/api/sessions', {
+      method: 'POST',
+      body: {
+        campaignId,
+        date: data.date,
+        title: (data.title as string) || undefined,
+        notes: (data.notes as string) || undefined,
+        visibility: data.visibility,
+      },
+    })
+    const res = await apiFetch<{ sessions: Session[] }>('/api/sessions')
+    const campaignSessions = (res.sessions ?? []).filter(
+      (s) => s.campaignId === campaignId,
+    )
+    setSessions(campaignSessions)
   }
 
-  const columns: GridColDef<Session>[] = [
-    { field: 'title', headerName: 'Title', flex: 1, minWidth: 120 },
+  const columns: AppDataGridColumn<Session>[] = [
+    { field: 'title', headerName: 'Title', flex: 1, minWidth: 120, linkColumn: true },
     {
       field: 'date',
       headerName: 'Date & time',
@@ -118,69 +109,53 @@ export default function SessionsRoute() {
       valueFormatter: (value) => (value ? formatSessionDateTime(value as string) : '—'),
     },
     { field: 'status', headerName: 'Status', width: 120 },
-    {
-      field: 'id',
-      headerName: ' ',
-      width: 100,
-      sortable: false,
-      renderCell: (params) => (
-        <Button
-          size="small"
-          href={ROUTES.SESSION.replace(':id', campaignId!).replace(':sessionId', params.value as string)}
-        >
-          View
-        </Button>
-      ),
-    },
   ]
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    )
-  }
+  const statusFilterOptions: FilterOption[] = [
+    { value: '', label: 'All statuses' },
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ]
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h4">Sessions</Typography>
-        {isAdmin && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openModal}>
-            Create session
-          </Button>
-        )}
-      </Box>
+      <Breadcrumbs items={breadcrumbs} />
 
-      <Box sx={{ height: 400, width: '100%' }}>
-        <DataGrid
-          rows={sessions}
-          columns={columns}
-          getRowId={(row) => row.id}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-        />
-      </Box>
+      <AppDataGrid<Session>
+        rows={sessions}
+        columns={columns}
+        getRowId={(row) => row.id}
+        getDetailLink={(row) =>
+          ROUTES.SESSION.replace(':id', campaignId!).replace(':sessionId', row.id)
+        }
+        filterColumn="status"
+        filterOptions={statusFilterOptions}
+        filterLabel="Status"
+        searchable
+        searchPlaceholder="Search sessions…"
+        searchColumns={['title']}
+        loading={loading}
+        emptyMessage="No sessions yet."
+        toolbar={
+          isAdmin ? (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={openModal}>
+              Create session
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create session</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <AppForm defaultValues={defaultValues} onSubmit={handleCreate} spacing={2}>
-            <DynamicFormRenderer fields={formFields} spacing={2} />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 1 }}>
-              <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={creating || !campaignId}
-              >
-                {creating ? 'Creating...' : 'Create session'}
-              </Button>
-            </Box>
-          </AppForm>
-        </DialogContent>
-      </Dialog>
+      <FormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleCreate}
+        headline="Create session"
+        fields={formFields}
+        defaultValues={defaultValues}
+        submitLabel="Create session"
+        size="standard"
+      />
     </Box>
   )
 }

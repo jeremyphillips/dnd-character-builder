@@ -1,24 +1,23 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { FormProvider, useForm } from 'react-hook-form'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
 import Alert from '@mui/material/Alert'
-import FormControl from '@mui/material/FormControl'
-import FormLabel from '@mui/material/FormLabel'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
 
 import GroupIcon from '@mui/icons-material/Group'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+
+import { DynamicFormRenderer } from '@/ui/components/form'
+import type { FieldConfig } from '@/ui/components/form/form.types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,24 +32,20 @@ export interface InviteConfirmationBoxProps {
   description?: ReactNode
   /** Optional subtitle rendered above the detail card */
   subtitle?: ReactNode
-  /** Detail card content — campaign/session preview chips & text */
-  detailTitle?: string
-  detailChips?: { label: string; color?: 'default' | 'primary' }[]
-  detailDescription?: string
+  /** Rendered in the detail preview area (e.g. CampaignHorizontalCard) */
+  campaignCard?: ReactNode
   /** Invite status */
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   /** Whether an accept/decline request is in flight */
   responding?: boolean
   /** Called when the user clicks Accept or Decline */
   onRespond?: (action: 'accept' | 'decline') => void
-  /** Character options for accept (value: characterId, label: display string). Only shown when pending. */
-  characterOptions?: { value: string; label: string }[]
-  /** Message explaining character restriction (e.g. setting requirement). Shown above character select when pending. */
-  characterRestrictionMessage?: string
-  /** Selected character ID when accepting */
-  selectedCharacterId?: string
-  /** Called when user selects a character */
-  onCharacterChange?: (characterId: string) => void
+  /** Form field configs rendered via DynamicFormRenderer when pending */
+  formFields?: FieldConfig[]
+  /** Default values for the form fields */
+  formDefaultValues?: Record<string, unknown>
+  /** Called whenever a form value changes */
+  onFormValuesChange?: (values: Record<string, unknown>) => void
   /** Link shown in the accepted alert (e.g. navigate to campaign) */
   acceptedLink?: { to: string; label: string }
   /** Accepted alert message */
@@ -70,24 +65,32 @@ const InviteConfirmationBox = ({
   invitedByLabel,
   description,
   subtitle,
-  detailTitle,
-  detailChips,
-  detailDescription,
+  campaignCard,
   status,
   responding = false,
   onRespond,
+  formFields,
+  formDefaultValues,
+  onFormValuesChange,
   acceptedLink,
   acceptedMessage = 'You have accepted this invite!',
   declinedMessage = 'You have declined this invite.',
   footer,
-  characterOptions = [],
-  characterRestrictionMessage,
-  selectedCharacterId = '',
-  onCharacterChange,
 }: InviteConfirmationBoxProps) => {
   const isPending = status === 'pending'
   const isAccepted = status === 'accepted'
   const isDeclined = status === 'declined'
+
+  const methods = useForm({ defaultValues: formDefaultValues })
+
+  // Sync form values to parent whenever they change
+  useEffect(() => {
+    if (!onFormValuesChange) return
+    const sub = methods.watch((values) =>
+      onFormValuesChange(values as Record<string, unknown>),
+    )
+    return () => sub.unsubscribe()
+  }, [methods, onFormValuesChange])
 
   return (
     <Box sx={{ maxWidth: 560, mx: 'auto', mt: 4 }}>
@@ -124,72 +127,16 @@ const InviteConfirmationBox = ({
             </Typography>
           )}
 
-          {/* Detail preview card */}
-          {detailTitle && (
-            <Card
-              variant="outlined"
-              sx={{
-                mb: 3,
-                bgcolor: 'var(--mui-palette-action-hover)',
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" fontWeight={600}>
-                  {detailTitle}
-                </Typography>
+          {/* Campaign detail card */}
+          {campaignCard && <Box sx={{ mb: 3 }}>{campaignCard}</Box>}
 
-                {detailChips && detailChips.length > 0 && (
-                  <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1 }}>
-                    {detailChips.map((chip) => (
-                      <Chip
-                        key={chip.label}
-                        label={chip.label}
-                        size="small"
-                        color={chip.color ?? 'default'}
-                        variant={chip.color === 'primary' ? 'filled' : 'outlined'}
-                        sx={chip.color === 'primary' ? { textTransform: 'capitalize' } : undefined}
-                      />
-                    ))}
-                  </Stack>
-                )}
-
-                {detailDescription && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    {detailDescription}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Character select — only when pending and options provided */}
-          {isPending && (characterOptions.length > 0 || characterRestrictionMessage) && (
-            <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-              {characterRestrictionMessage && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {characterRestrictionMessage}
-                </Typography>
-              )}
-              <FormLabel sx={{ mb: 1, fontSize: '0.75rem' }}>Character to join with</FormLabel>
-              <Select
-                value={selectedCharacterId}
-                onChange={(e) => onCharacterChange?.(e.target.value)}
-                displayEmpty
-                disabled={characterOptions.length === 0}
-                renderValue={(v) => characterOptions.find((o) => o.value === v)?.label ?? (characterOptions.length === 0 ? 'No characters for this setting' : 'Select a character')}
-                sx={{ fontSize: '0.9rem' }}
-              >
-                {characterOptions.length === 0 ? (
-                  <MenuItem disabled>No characters for this setting</MenuItem>
-                ) : (
-                  characterOptions.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-            </FormControl>
+          {/* Form fields — rendered when pending */}
+          {isPending && formFields && formFields.length > 0 && (
+            <FormProvider {...methods}>
+              <Box sx={{ mb: 3 }}>
+                <DynamicFormRenderer fields={formFields} />
+              </Box>
+            </FormProvider>
           )}
 
           {/* Status / Actions */}
@@ -209,7 +156,7 @@ const InviteConfirmationBox = ({
                 color="primary"
                 startIcon={<CheckCircleIcon />}
                 onClick={() => onRespond('accept')}
-                disabled={responding || (characterOptions.length === 0 || !selectedCharacterId)}
+                disabled={responding}
               >
                 {responding ? 'Processing…' : 'Accept Invite'}
               </Button>

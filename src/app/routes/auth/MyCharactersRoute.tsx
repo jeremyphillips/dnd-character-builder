@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { CharacterClassInfo, CharacterDoc } from '@/shared'
 import { classes as classesData } from '@/data'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { apiFetch } from '../../api'
 
 import Box from '@mui/material/Box'
@@ -60,6 +62,7 @@ export default function MyCharactersRoute() {
   const [characters, setCharacters] = useState<CharacterDoc[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const breadcrumbs = useBreadcrumbs()
 
   useEffect(() => {
     fetchCharacters()
@@ -99,6 +102,8 @@ export default function MyCharactersRoute() {
 
   return (
     <Box>
+      <Breadcrumbs items={breadcrumbs} />
+
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Typography variant="h4">My Player Characters</Typography>
         <CharacterBuilderLauncher characterType="pc" />

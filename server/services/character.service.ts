@@ -83,13 +83,27 @@ export async function getCampaignsForCharacter(characterId: string) {
 
   const memberCampaignIds = campaignIds as mongoose.Types.ObjectId[]
 
-  return db()
+  const campaigns = await db()
     .collection('campaigns')
     .find({
       $or: [{ 'membership.adminId': userId }, { _id: { $in: memberCampaignIds } }],
     })
-    .project({ identity: 1 })
+    .project({ identity: 1, 'membership.adminId': 1 })
     .toArray()
+
+  // Resolve DM names
+  const adminIds = [...new Set(campaigns.map(c => c.membership?.adminId?.toString()).filter(Boolean))]
+  const usersCol = db().collection('users')
+  const admins = adminIds.length > 0
+    ? await usersCol.find({ _id: { $in: adminIds.map(id => new mongoose.Types.ObjectId(id)) } }).project({ name: 1 }).toArray()
+    : []
+  const adminNameMap = new Map(admins.map(u => [u._id.toString(), u.name]))
+
+  return campaigns.map(c => ({
+    _id: c._id,
+    identity: c.identity,
+    dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
+  }))
 }
 
 /**

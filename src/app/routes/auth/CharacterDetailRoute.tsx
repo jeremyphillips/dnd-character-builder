@@ -10,6 +10,7 @@ import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicIte
 import type { ClassProgression } from '@/data/classes/types'
 import { spells as spellCatalog } from '@/data/classes/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'
+import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
 import {
   ImageUploadField,
   EditableTextField,
@@ -42,9 +43,14 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
 interface CampaignSummary {
   _id: string
-  name: string
-  setting: string
-  edition: string
+  identity: {
+    name: string
+    setting?: string
+    edition?: string
+    description?: string
+    imageUrl?: string
+  }
+  dmName?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +145,7 @@ export default function CharacterDetailRoute() {
     setLoading(true)
     apiFetch<{
       character: CharacterDoc
-      campaigns: { _id: string; name: string; setting: string; edition: string }[]
+      campaigns: CampaignSummary[]
       isOwner: boolean
       isAdmin: boolean
       pendingMemberships?: { campaignId: string; campaignName: string; campaignMemberId: string }[]
@@ -275,22 +281,73 @@ export default function CharacterDetailRoute() {
   const editionName = getNameById(editions as unknown as { id: string; name: string }[], character.edition) ?? character.edition ?? '—'
   const settingName = getNameById(settings as unknown as { id: string; name: string }[], character.setting) ?? character.setting ?? '—'
 
+  // ── Pre-compute data for render ──────────────────────────────────────
+  const raceName = (getNameById(races as unknown as { id: string; name: string }[], character.race) ?? character.race) || '—'
+  const alignmentName = getAlignmentName(alignmentOptions, character.alignment)
+  const currentLevel = character.totalLevel ?? character.level ?? 1
+  const primaryClassId = filledClasses[0]?.classId
+  const editionObj = editions.find(e => e.id === character.edition)
+  const maxLevel = editionObj?.progression?.maxLevel ?? 20
+
+  // Class summary line: "Fighter 9 / Wizard 3" or "Fighter 9"
+  const classSummary = filledClasses.length > 0
+    ? filledClasses.map(cls => {
+        const sub = getSubclassNameById(cls.classId, cls.classDefinitionId)
+        return `${getClassName(cls.classId)}${sub ? ` (${sub})` : ''} ${cls.level}`
+      }).join(' / ')
+    : character.class
+      ? `${character.class} ${character.level}`
+      : '—'
+
+  // XP description
+  let xpDescription: string | undefined
+  if (currentLevel >= maxLevel) {
+    xpDescription = `Max level (${maxLevel}) reached`
+  } else {
+    const nextLevelXp = getXpByLevelAndEdition(currentLevel + 1, character.edition as EditionId, primaryClassId)
+    if (nextLevelXp > 0) {
+      xpDescription = `${nextLevelXp.toLocaleString()} XP required for level ${currentLevel + 1}`
+    }
+  }
+
+  // Magic items
+  const charMagicItemIds = character.equipment?.magicItems ?? []
+  const effectiveEdition = character.edition ? resolveEquipmentEdition(character.edition) : undefined
+  const magicItemBudget = getMagicItemBudget(character.edition as EditionId, currentLevel)
+
+  const resolvedMagicItems = charMagicItemIds
+    .map(itemId => {
+      const item = equipment.magicItems.find((m: MagicItem) => m.id === itemId)
+      if (!item) return null
+      const datum = effectiveEdition
+        ? item.editionData.find((d: MagicItemEditionDatum) => d.edition === effectiveEdition)
+        : undefined
+      return { item, datum }
+    })
+    .filter(Boolean) as { item: MagicItem; datum?: MagicItemEditionDatum }[]
+
+  const permanentMagicCount = resolvedMagicItems.filter(r => !r.item.consumable).length
+  const consumableMagicCount = resolvedMagicItems.filter(r => r.item.consumable).length
+
+  const hasMagicBudget = magicItemBudget != null
+  const permanentSlotsAvail = hasMagicBudget ? magicItemBudget.permanentSlots - permanentMagicCount : 0
+  const consumableSlotsAvail = hasMagicBudget ? magicItemBudget.consumableSlots - consumableMagicCount : 0
+  const hasAvailableMagicSlots = permanentSlotsAvail > 0 || consumableSlotsAvail > 0
+
+  const hasStats = character.stats && Object.values(character.stats).some(v => v != null)
+  const hasCombat = character.hitPoints?.total != null || character.armorClass?.current != null
+
   return (
-    <Box sx={{ maxWidth: 860, mx: 'auto' }}>
+    <Box sx={{ maxWidth: 920, mx: 'auto' }}>
       {/* Back link */}
-      <Button
-        component={Link}
-        to="/characters"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 2 }}
-      >
+      <Button component={Link} to="/characters" startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
         Back to Characters
       </Button>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-      {/* Pending approval alert — campaign admin can approve/reject */}
+      {/* Pending approval alerts */}
       {pendingMemberships.map((m) => (
         <Alert
           key={m.campaignMemberId}
@@ -298,22 +355,10 @@ export default function CharacterDetailRoute() {
           sx={{ mb: 2 }}
           action={
             <Stack direction="row" spacing={1}>
-              <Button
-                size="small"
-                color="success"
-                startIcon={<CheckCircleIcon />}
-                onClick={() => handleApprove(m.campaignMemberId)}
-                disabled={approvingId !== null}
-              >
+              <Button size="small" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleApprove(m.campaignMemberId)} disabled={approvingId !== null}>
                 Approve
               </Button>
-              <Button
-                size="small"
-                color="error"
-                startIcon={<CancelIcon />}
-                onClick={() => handleReject(m.campaignMemberId)}
-                disabled={approvingId !== null}
-              >
+              <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleReject(m.campaignMemberId)} disabled={approvingId !== null}>
                 Reject
               </Button>
             </Stack>
@@ -324,407 +369,416 @@ export default function CharacterDetailRoute() {
       ))}
 
       {/* ================================================================ */}
-      {/* Header: Image + Name                                              */}
+      {/* IDENTITY BANNER                                                   */}
       {/* ================================================================ */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="overline" color="text.secondary">Character Portrait</Typography>
-          <ImageUploadField
-            value={imageUrl}
-            onChange={(url) => {
-              setImageUrl(url)
-              saveCharacter({ imageUrl: url })
-            }}
-            label=""
-            disabled={!canEdit}
-            maxHeight={320}
-          />
+      <Card variant="outlined" sx={{ mb: 2 }}>
+        <CardContent sx={{ pb: '16px !important' }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5}>
+            {/* Portrait */}
+            <Box sx={{ width: { xs: '100%', sm: 160 }, flexShrink: 0 }}>
+              <ImageUploadField
+                value={imageUrl}
+                onChange={(url) => { setImageUrl(url); saveCharacter({ imageUrl: url }) }}
+                label=""
+                disabled={!canEdit}
+                maxHeight={180}
+              />
+            </Box>
 
-          <Box sx={{ mt: 2 }}>
-            <EditableTextField
-              label="Character Name"
-              value={name}
-              onSave={(v: string) => saveCharacter({ name: v })}
-              disabled={!canEdit}
-            />
-          </Box>
-        </CardContent>
-      </Card>
+            {/* Identity text */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <EditableTextField
+                label="Character Name"
+                value={name}
+                onSave={(v: string) => saveCharacter({ name: v })}
+                disabled={!canEdit}
+              />
 
-      {/* ================================================================ */}
-      {/* Character Sheet                                                   */}
-      {/* ================================================================ */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-            Character Sheet
-          </Typography>
+              <Typography variant="body1" sx={{ mt: 0.5 }}>
+                {classSummary}
+              </Typography>
 
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Edition</Typography>
-              <Typography variant="body1">{editionName}</Typography>
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Setting</Typography>
-              <Typography variant="body1">{settingName}</Typography>
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              {canEditAll ? (
-                <EditableSelect
-                  label="Race"
-                  value={race}
-                  onSave={(v: string) => saveCharacter({ race: v })}
-                  options={raceOptions}
-                />
-              ) : (
-                <>
-                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Race</Typography>
-                  <Typography variant="body1">
-                    {(getNameById(races as unknown as { id: string; name: string }[], character.race) ?? character.race) || '—'}
-                  </Typography>
-                </>
-              )}
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              {canEditAll ? (
-                <EditableSelect
-                  label="Alignment"
-                  value={alignment}
-                  onSave={(v: string) => saveCharacter({ alignment: v })}
-                  options={alignmentOptions}
-                  emptyLabel="—"
-                />
-              ) : (
-                <>
-                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Alignment</Typography>
-                  <Typography variant="body1">{getAlignmentName(alignmentOptions, character.alignment)}</Typography>
-                </>
-              )}
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              {canEditAll ? (
-                <EditableNumberField
-                  label="Level"
-                  value={totalLevel}
-                  onSave={(v: number) => saveCharacter({ totalLevel: v, level: v })}
-                />
-              ) : (
-                <>
-                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Level</Typography>
-                  <Typography variant="body1">{character.totalLevel ?? character.level ?? '—'}</Typography>
-                </>
-              )}
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              {(() => {
-                const currentLevel = character.totalLevel ?? character.level ?? 1
-                const primaryClassId = filledClasses[0]?.classId
-                const editionObj = editions.find(e => e.id === character.edition)
-                const maxLevel = editionObj?.progression?.maxLevel ?? 20
-                const nextLevel = currentLevel + 1
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                <Chip label={raceName} size="small" variant="outlined" />
+                <Chip label={alignmentName} size="small" variant="outlined" />
+                <Chip label={editionName} size="small" variant="outlined" />
+                <Chip label={settingName} size="small" variant="outlined" />
+              </Stack>
 
-                let xpDescription: string | undefined
-                if (currentLevel >= maxLevel) {
-                  xpDescription = `Max level (${maxLevel}) reached`
-                } else {
-                  const nextLevelXp = getXpByLevelAndEdition(
-                    nextLevel,
-                    character.edition as EditionId,
-                    primaryClassId
-                  )
-                  if (nextLevelXp > 0) {
-                    xpDescription = `${nextLevelXp.toLocaleString()} XP required for level ${nextLevel}`
-                  }
-                }
-
-                return canEditAll ? (
-                  <EditableNumberField
-                    label="XP"
-                    value={xp}
-                    onSave={(v: number) => saveCharacter({ xp: v })}
-                    formatDisplay={(n) => n.toLocaleString()}
-                    description={xpDescription}
-                  />
-                ) : (
-                  <>
-                    <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
-                    <Typography variant="body1">{(character.xp ?? 0).toLocaleString()}</Typography>
-                    {xpDescription && (
-                      <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
-                    )}
-                  </>
-                )
-              })()}
-            </Grid>
-          </Grid>
-
-          {/* Classes */}
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Classes</Typography>
-          {filledClasses.length > 0 ? (
-            filledClasses.map((cls, i) => {
-              const subName = getSubclassNameById(cls.classId, cls.classDefinitionId)
-              return (
-                <Typography key={i} variant="body1">
-                  {getClassName(cls.classId)}
-                  {subName ? `, ${subName}` : ''}
-                  {' '}Level {cls.level}
-                  {i === 0 && isMulticlass ? ' (primary)' : ''}
-                </Typography>
-              )
-            })
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              {character.class ? `${character.class} Level ${character.level}` : '—'}
-            </Typography>
-          )}
-
-          {/* Equipment */}
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Equipment</Typography>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 4 }}>
-              <Typography variant="caption" color="text.secondary">Weapons</Typography>
-              {(character.equipment?.weapons ?? []).length > 0 ? (
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {(character.equipment?.weapons ?? []).map((w, i) => (
-                    <Chip key={i} label={w} size="small" variant="outlined" />
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2">—</Typography>
-              )}
-            </Grid>
-            <Grid size={{ xs: 4 }}>
-              <Typography variant="caption" color="text.secondary">Armor</Typography>
-              {(character.equipment?.armor ?? []).length > 0 ? (
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {(character.equipment?.armor ?? []).map((a, i) => (
-                    <Chip key={i} label={a} size="small" variant="outlined" />
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2">—</Typography>
-              )}
-            </Grid>
-            <Grid size={{ xs: 4 }}>
-              <Typography variant="caption" color="text.secondary">Gear</Typography>
-              {(character.equipment?.gear ?? []).length > 0 ? (
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {(character.equipment?.gear ?? []).map((g, i) => (
-                    <Chip key={i} label={g} size="small" variant="outlined" />
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2">—</Typography>
-              )}
-            </Grid>
-          </Grid>
-          {(character.equipment?.weight ?? 0) > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Total weight: {character.equipment?.weight ?? 0} lbs
-            </Typography>
-          )}
-
-          {/* Magic Items */}
-          {(() => {
-            const charMagicItemIds = character.equipment?.magicItems ?? []
-            const effectiveEdition = character.edition ? resolveEquipmentEdition(character.edition) : undefined
-            const charLevel = character.totalLevel ?? character.level ?? 1
-            const budget = getMagicItemBudget(character.edition as EditionId, charLevel)
-
-            // Resolve each magic item ID to its catalog entry + edition data
-            const resolvedItems = charMagicItemIds
-              .map(itemId => {
-                const item = equipment.magicItems.find((m: MagicItem) => m.id === itemId)
-                if (!item) return null
-                const datum = effectiveEdition
-                  ? item.editionData.find((d: MagicItemEditionDatum) => d.edition === effectiveEdition)
-                  : undefined
-                return { item, datum }
-              })
-              .filter(Boolean) as { item: MagicItem; datum?: MagicItemEditionDatum }[]
-
-            const permanentCount = resolvedItems.filter(r => !r.item.consumable).length
-            const consumableCount = resolvedItems.filter(r => r.item.consumable).length
-
-            // Budget availability check
-            const hasBudget = budget != null
-            const permanentSlotsAvailable = hasBudget
-              ? budget.permanentSlots - permanentCount
-              : 0
-            const consumableSlotsAvailable = hasBudget
-              ? budget.consumableSlots - consumableCount
-              : 0
-            const hasAvailableSlots = permanentSlotsAvailable > 0 || consumableSlotsAvailable > 0
-
-            return (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                  Magic Items
-                </Typography>
-
-                {resolvedItems.length > 0 ? (
-                  <Stack spacing={1.5} sx={{ mt: 1 }}>
-                    {resolvedItems.map(({ item, datum }) => {
-                      const attunement = formatAttunement(datum?.requiresAttunement)
-                      return (
-                        <Box key={item.id}>
-                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                            <Typography variant="body2" fontWeight={600}>
-                              {item.name}
-                            </Typography>
-                            {datum?.rarity && (
-                              <Chip label={formatRarity(datum.rarity)} size="small" variant="outlined" />
-                            )}
-                            <Chip label={formatSlot(item.slot)} size="small" variant="outlined" />
-                            {item.consumable && (
-                              <Chip label="Consumable" size="small" color="warning" variant="outlined" />
-                            )}
-                            {attunement && (
-                              <Chip label={attunement} size="small" color="info" variant="outlined" />
-                            )}
-                            {datum?.bonus != null && (
-                              <Chip label={`+${datum.bonus}`} size="small" variant="outlined" />
-                            )}
-                          </Stack>
-                          {datum?.effect && (
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
-                              {datum.effect}
-                            </Typography>
-                          )}
-                          {datum?.charges != null && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Charges: {datum.charges}
-                              {datum.recharges ? ` (recharges ${datum.recharges})` : ''}
-                            </Typography>
-                          )}
-                          {datum?.cost && datum.cost !== '—' && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Value: {datum.cost}
-                            </Typography>
-                          )}
-                        </Box>
-                      )
-                    })}
-                  </Stack>
-                ) : (
-                  <Typography variant="body2" sx={{ mt: 0.5 }}>—</Typography>
-                )}
-
-                {/* Budget summary + available slots note */}
-                {hasBudget && (
-                  <Box sx={{ mt: 1.5 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      Budget: {permanentCount} / {budget.permanentSlots} permanent
-                      {' · '}{consumableCount} / {budget.consumableSlots} consumable
-                      {budget.maxAttunement != null && (
-                        <> · {budget.maxAttunement} attunement slots</>
+              {/* Level + XP inline */}
+              <Stack direction="row" spacing={3} sx={{ mt: 1.5 }}>
+                <Box>
+                  {canEditAll ? (
+                    <EditableNumberField
+                      label="Level"
+                      value={totalLevel}
+                      onSave={(v: number) => saveCharacter({ totalLevel: v, level: v })}
+                    />
+                  ) : (
+                    <>
+                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Level</Typography>
+                      <Typography variant="body1" fontWeight={600}>{currentLevel}</Typography>
+                    </>
+                  )}
+                </Box>
+                <Box>
+                  {canEditAll ? (
+                    <EditableNumberField
+                      label="XP"
+                      value={xp}
+                      onSave={(v: number) => saveCharacter({ xp: v })}
+                      formatDisplay={(n) => n.toLocaleString()}
+                      description={xpDescription}
+                    />
+                  ) : (
+                    <>
+                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
+                      <Typography variant="body1" fontWeight={600}>{(character.xp ?? 0).toLocaleString()}</Typography>
+                      {xpDescription && (
+                        <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
                       )}
-                    </Typography>
-                    {hasAvailableSlots && (
-                      <Alert
-                        severity="info"
-                        icon={<InfoOutlinedIcon fontSize="small" />}
-                        sx={{ mt: 1, py: 0.25 }}
-                      >
-                        <Typography variant="caption">
-                          This character can acquire
-                          {permanentSlotsAvailable > 0 && (
-                            <> <strong>{permanentSlotsAvailable}</strong> more permanent item{permanentSlotsAvailable !== 1 ? 's' : ''}</>
-                          )}
-                          {permanentSlotsAvailable > 0 && consumableSlotsAvailable > 0 && ' and'}
-                          {consumableSlotsAvailable > 0 && (
-                            <> <strong>{consumableSlotsAvailable}</strong> more consumable{consumableSlotsAvailable !== 1 ? 's' : ''}</>
-                          )}
-                          {' '}based on their level progression.
-                        </Typography>
-                      </Alert>
-                    )}
-                  </Box>
-                )}
-              </>
-            )
-          })()}
+                    </>
+                  )}
+                </Box>
+              </Stack>
 
-          {/* Wealth */}
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Wealth</Typography>
-          <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-            <Typography variant="body2">{character.wealth?.gp ?? 0} gp</Typography>
-            <Typography variant="body2">{character.wealth?.sp ?? 0} sp</Typography>
-            <Typography variant="body2">{character.wealth?.cp ?? 0} cp</Typography>
+              {/* Campaigns */}
+              {campaigns.length > 0 && (
+                <Stack spacing={1} sx={{ mt: 2 }}>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                    Campaigns
+                  </Typography>
+                  {campaigns.map(c => (
+                    <CampaignHorizontalCard
+                      key={c._id}
+                      campaignId={c._id}
+                      name={c.identity.name}
+                      description={c.identity.description}
+                      imageUrl={c.identity.imageUrl}
+                      dmName={c.dmName}
+                      edition={c.identity.edition}
+                      setting={c.identity.setting}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Box>
           </Stack>
         </CardContent>
       </Card>
 
       {/* ================================================================ */}
-      {/* Class Progression                                                 */}
+      {/* ROW 2: Ability Scores | Combat + Class Stats | Proficiencies      */}
       {/* ================================================================ */}
-      {filledClasses.some((cls) => getClassProgression(cls.classId, character.edition)) && (
-        <Card variant="outlined" sx={{ mb: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {/* ── Ability Scores (left sidebar) ── */}
+        {hasStats && (
+          <Grid size={{ xs: 12, md: 2 }}>
+            <Card variant="outlined" sx={{ height: '100%' }}>
+              <CardContent sx={{ px: 1.5, py: 2, '&:last-child': { pb: 2 } }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', display: 'block', textAlign: 'center', mb: 1 }}>
+                  Ability Scores
+                </Typography>
+                <Stack spacing={1} alignItems="center">
+                  <StatCircle label="Strength" value={character.stats!.strength} />
+                  <StatCircle label="Dexterity" value={character.stats!.dexterity} />
+                  <StatCircle label="Constitution" value={character.stats!.constitution} />
+                  <StatCircle label="Intelligence" value={character.stats!.intelligence} />
+                  <StatCircle label="Wisdom" value={character.stats!.wisdom} />
+                  <StatCircle label="Charisma" value={character.stats!.charisma} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* ── Combat + Class Quick Stats (center) ── */}
+        <Grid size={{ xs: 12, md: hasStats ? 6 : 7 }}>
+          <Card variant="outlined" sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                Combat
+              </Typography>
+
+              {hasCombat ? (
+                <Stack direction="row" spacing={3} sx={{ mt: 0.5, mb: 2 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight={700}>{character.armorClass?.current ?? character.armorClass?.base ?? '—'}</Typography>
+                    <Typography variant="caption" color="text.secondary">AC</Typography>
+                    {character.armorClass?.calculation && (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+                        {character.armorClass.calculation}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" fontWeight={700}>{character.hitPoints?.total ?? '—'}</Typography>
+                    <Typography variant="caption" color="text.secondary">HP</Typography>
+                    {character.hitPoints?.generationMethod && (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+                        {character.hitPoints.generationMethod}
+                      </Typography>
+                    )}
+                  </Box>
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>—</Typography>
+              )}
+
+              {/* Class quick stats (hit die, attack, saves, spellcasting) */}
+              {filledClasses.map((cls, i) => {
+                const prog = getClassProgression(cls.classId, character.edition)
+                if (!prog) return null
+                const spellLabel = formatSpellcasting(prog)
+                return (
+                  <Box key={i} sx={{ mb: i < filledClasses.length - 1 ? 1.5 : 0 }}>
+                    {isMulticlass && (
+                      <Typography variant="caption" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>
+                        {getClassName(cls.classId)} {cls.level}
+                      </Typography>
+                    )}
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      <Chip label={`Hit Die: ${formatHitDie(prog)}`} size="small" variant="outlined" />
+                      <Chip label={`Attack: ${formatAttackProg(prog)}`} size="small" variant="outlined" />
+                      {prog.savingThrows && prog.savingThrows.length > 0 && (
+                        <Chip label={`Saves: ${prog.savingThrows.map(s => s.toUpperCase()).join(', ')}`} size="small" variant="outlined" />
+                      )}
+                      {spellLabel && <Chip label={spellLabel} size="small" variant="outlined" />}
+                      {prog.role && (
+                        <Chip label={`${prog.role}${prog.powerSource ? ` (${prog.powerSource})` : ''}`} size="small" variant="outlined" />
+                      )}
+                    </Stack>
+                  </Box>
+                )
+              })}
+
+              {/* Admin-editable race + alignment */}
+              {canEditAll && (
+                <>
+                  <Divider sx={{ my: 1.5 }} />
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 6 }}>
+                      <EditableSelect
+                        label="Race"
+                        value={race}
+                        onSave={(v: string) => saveCharacter({ race: v })}
+                        options={raceOptions}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <EditableSelect
+                        label="Alignment"
+                        value={alignment}
+                        onSave={(v: string) => saveCharacter({ alignment: v })}
+                        options={alignmentOptions}
+                        emptyLabel="—"
+                      />
+                    </Grid>
+                  </Grid>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* ── Proficiencies (right) ── */}
+        <Grid size={{ xs: 12, md: hasStats ? 4 : 5 }}>
+          <Card variant="outlined" sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                Proficiencies
+              </Typography>
+              {(character.proficiencies ?? []).length > 0 ? (
+                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                  {(character.proficiencies ?? []).map((p, i) => (
+                    <Chip key={i} label={typeof p === 'string' ? p : p.name} size="small" variant="outlined" />
+                  ))}
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>—</Typography>
+              )}
+
+              {/* Wealth */}
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                Wealth
+              </Typography>
+              <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+                <Typography variant="body2" fontWeight={600}>{character.wealth?.gp ?? 0} gp</Typography>
+                <Typography variant="body2">{character.wealth?.sp ?? 0} sp</Typography>
+                <Typography variant="body2">{character.wealth?.cp ?? 0} cp</Typography>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* ================================================================ */}
+      {/* ROW 3: Equipment | Magic Items                                    */}
+      {/* ================================================================ */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {/* ── Equipment (left) ── */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card variant="outlined" sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                Equipment
+              </Typography>
+
+              {/* Weapons */}
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>Weapons</Typography>
+                {(character.equipment?.weapons ?? []).length > 0 ? (
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                    {(character.equipment?.weapons ?? []).map((w, i) => (
+                      <Chip key={i} label={w} size="small" variant="outlined" />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">—</Typography>
+                )}
+              </Box>
+
+              {/* Armor */}
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>Armor</Typography>
+                {(character.equipment?.armor ?? []).length > 0 ? (
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                    {(character.equipment?.armor ?? []).map((a, i) => (
+                      <Chip key={i} label={a} size="small" variant="outlined" />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">—</Typography>
+                )}
+              </Box>
+
+              {/* Gear */}
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>Gear</Typography>
+                {(character.equipment?.gear ?? []).length > 0 ? (
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                    {(character.equipment?.gear ?? []).map((g, i) => (
+                      <Chip key={i} label={g} size="small" variant="outlined" />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">—</Typography>
+                )}
+              </Box>
+
+              {(character.equipment?.weight ?? 0) > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
+                  Total weight: {character.equipment?.weight ?? 0} lbs
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* ── Magic Items (right) ── */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card variant="outlined" sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                Magic Items
+              </Typography>
+
+              {resolvedMagicItems.length > 0 ? (
+                <Stack spacing={1.5} sx={{ mt: 1 }}>
+                  {resolvedMagicItems.map(({ item, datum }) => {
+                    const attunement = formatAttunement(datum?.requiresAttunement)
+                    return (
+                      <Box key={item.id}>
+                        <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                          <Typography variant="body2" fontWeight={600}>{item.name}</Typography>
+                          {datum?.rarity && <Chip label={formatRarity(datum.rarity)} size="small" variant="outlined" />}
+                          <Chip label={formatSlot(item.slot)} size="small" variant="outlined" />
+                          {item.consumable && <Chip label="Consumable" size="small" color="warning" variant="outlined" />}
+                          {attunement && <Chip label={attunement} size="small" color="info" variant="outlined" />}
+                          {datum?.bonus != null && <Chip label={`+${datum.bonus}`} size="small" variant="outlined" />}
+                        </Stack>
+                        {datum?.effect && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>{datum.effect}</Typography>
+                        )}
+                        {datum?.charges != null && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Charges: {datum.charges}{datum.recharges ? ` (recharges ${datum.recharges})` : ''}
+                          </Typography>
+                        )}
+                        {datum?.cost && datum.cost !== '—' && (
+                          <Typography variant="caption" color="text.secondary" display="block">Value: {datum.cost}</Typography>
+                        )}
+                      </Box>
+                    )
+                  })}
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>—</Typography>
+              )}
+
+              {/* Budget summary */}
+              {hasMagicBudget && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Budget: {permanentMagicCount} / {magicItemBudget.permanentSlots} permanent
+                    {' · '}{consumableMagicCount} / {magicItemBudget.consumableSlots} consumable
+                    {magicItemBudget.maxAttunement != null && <> · {magicItemBudget.maxAttunement} attunement slots</>}
+                  </Typography>
+                  {hasAvailableMagicSlots && (
+                    <Alert severity="info" icon={<InfoOutlinedIcon fontSize="small" />} sx={{ mt: 1, py: 0.25 }}>
+                      <Typography variant="caption">
+                        This character can acquire
+                        {permanentSlotsAvail > 0 && <> <strong>{permanentSlotsAvail}</strong> more permanent item{permanentSlotsAvail !== 1 ? 's' : ''}</>}
+                        {permanentSlotsAvail > 0 && consumableSlotsAvail > 0 && ' and'}
+                        {consumableSlotsAvail > 0 && <> <strong>{consumableSlotsAvail}</strong> more consumable{consumableSlotsAvail !== 1 ? 's' : ''}</>}
+                        {' '}based on their level progression.
+                      </Typography>
+                    </Alert>
+                  )}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* ================================================================ */}
+      {/* CLASS FEATURES (full width)                                       */}
+      {/* ================================================================ */}
+      {filledClasses.some(cls => getClassProgression(cls.classId, character.edition)) && (
+        <Card variant="outlined" sx={{ mb: 2 }}>
           <CardContent>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-              Class Progression
+            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+              Class Features
             </Typography>
 
             {filledClasses.map((cls, i) => {
               const prog = getClassProgression(cls.classId, character.edition)
               if (!prog) return null
-
-              const spellLabel = formatSpellcasting(prog)
-              const currentLevel = cls.level ?? character.totalLevel ?? 1
-              const activeFeatures = (prog.features ?? []).filter((f) => f.level <= currentLevel)
+              const clsLevel = cls.level ?? character.totalLevel ?? 1
+              const activeFeatures = (prog.features ?? []).filter(f => f.level <= clsLevel)
+              if (activeFeatures.length === 0) return null
 
               return (
-                <Box key={i} sx={{ mb: i < filledClasses.length - 1 ? 3 : 0 }}>
+                <Box key={i} sx={{ mt: 1, mb: i < filledClasses.length - 1 ? 2 : 0 }}>
                   {isMulticlass && (
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                       {getClassName(cls.classId)} (Level {cls.level})
                     </Typography>
                   )}
-
-                  {/* Quick stats */}
-                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-                    <Chip label={`Hit Die: ${formatHitDie(prog)}`} size="small" variant="outlined" />
-                    <Chip label={`Attack: ${formatAttackProg(prog)}`} size="small" variant="outlined" />
-                    {prog.savingThrows && prog.savingThrows.length > 0 && (
-                      <Chip
-                        label={`Saves: ${prog.savingThrows.map((s) => s.toUpperCase()).join(', ')}`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                    {spellLabel && <Chip label={spellLabel} size="small" variant="outlined" />}
-                    {prog.role && (
-                      <Chip
-                        label={`${prog.role}${prog.powerSource ? ` (${prog.powerSource})` : ''}`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                  </Stack>
-
-                  {/* Features list */}
-                  {activeFeatures.length > 0 && (
-                    <Box>
-                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                        Features (up to Level {currentLevel})
-                      </Typography>
-                      <Stack spacing={0.25} sx={{ mt: 0.5 }}>
-                        {activeFeatures.map((f, fi) => (
-                          <Typography key={fi} variant="body2">
-                            <Typography component="span" variant="body2" color="text.secondary" sx={{ minWidth: 36, display: 'inline-block' }}>
-                              Lv {f.level}
-                            </Typography>
-                            {' '}{f.name}
+                  <Grid container spacing={0.25}>
+                    {activeFeatures.map((f, fi) => (
+                      <Grid key={fi} size={{ xs: 12, sm: 6 }}>
+                        <Typography variant="body2">
+                          <Typography component="span" variant="body2" color="text.secondary" sx={{ minWidth: 36, display: 'inline-block' }}>
+                            Lv {f.level}
                           </Typography>
-                        ))}
-                      </Stack>
-                    </Box>
-                  )}
+                          {' '}{f.name}
+                        </Typography>
+                      </Grid>
+                    ))}
+                  </Grid>
                 </Box>
               )
             })}
@@ -733,30 +787,20 @@ export default function CharacterDetailRoute() {
       )}
 
       {/* ================================================================ */}
-      {/* Spells                                                             */}
+      {/* SPELLS (full width)                                               */}
       {/* ================================================================ */}
       {(character.spells ?? []).length > 0 && (
-        <Card variant="outlined" sx={{ mb: 3 }}>
+        <Card variant="outlined" sx={{ mb: 2 }}>
           <CardContent>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
               Spells
             </Typography>
-            <Stack spacing={1}>
+            <Stack spacing={1} sx={{ mt: 0.5 }}>
               {(character.spells ?? []).map(spellId => {
                 const spell = spellCatalog.find(s => s.id === spellId)
-                if (!spell) {
-                  return (
-                    <Chip key={spellId} label={spellId} size="small" variant="outlined" />
-                  )
-                }
+                if (!spell) return <Chip key={spellId} label={spellId} size="small" variant="outlined" />
                 const editionEntry = spell.editions.find(e => e.edition === character.edition)
-                return (
-                  <SpellHorizontalCard
-                    key={spellId}
-                    spell={spell}
-                    editionEntry={editionEntry}
-                  />
-                )
+                return <SpellHorizontalCard key={spellId} spell={spell} editionEntry={editionEntry} />
               })}
             </Stack>
           </CardContent>
@@ -764,168 +808,73 @@ export default function CharacterDetailRoute() {
       )}
 
       {/* ================================================================ */}
-      {/* Stats (AI-generated)                                              */}
+      {/* NARRATIVE (grid layout)                                           */}
       {/* ================================================================ */}
-      {character.stats && Object.values(character.stats).some((v) => v != null) && (
-        <Card variant="outlined" sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-              Ability Scores
-            </Typography>
-            <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" useFlexGap>
-              <StatCircle label="STR" value={character.stats.strength} />
-              <StatCircle label="DEX" value={character.stats.dexterity} />
-              <StatCircle label="CON" value={character.stats.constitution} />
-              <StatCircle label="INT" value={character.stats.intelligence} />
-              <StatCircle label="WIS" value={character.stats.wisdom} />
-              <StatCircle label="CHA" value={character.stats.charisma} />
-            </Stack>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ================================================================ */}
-      {/* Combat: HP + AC                                                   */}
-      {/* ================================================================ */}
-      {(character.hitPoints?.total != null || character.armorClass?.current != null) && (
-        <Card variant="outlined" sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-              Combat
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Hit Points</Typography>
-                <Typography variant="h4" fontWeight={700}>{character.hitPoints?.total ?? '—'}</Typography>
-                {character.hitPoints?.generationMethod && (
-                  <Typography variant="caption" color="text.secondary">
-                    Method: {character.hitPoints.generationMethod}
-                  </Typography>
-                )}
-              </Grid>
-              <Grid size={{ xs: 6 }}>
-                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Armor Class</Typography>
-                <Typography variant="h4" fontWeight={700}>{character.armorClass?.current ?? character.armorClass?.base ?? '—'}</Typography>
-                {character.armorClass?.calculation && (
-                  <Typography variant="caption" color="text.secondary">
-                    {character.armorClass.calculation}
-                  </Typography>
-                )}
-              </Grid>
-            </Grid>
-
-            {/* Proficiencies */}
-            {(character.proficiencies ?? []).length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Proficiencies</Typography>
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {(character.proficiencies ?? []).map((p, i) => (
-                    <Chip key={i} label={typeof p === 'string' ? p : p.name} size="small" variant="outlined" />
-                  ))}
-                </Stack>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ================================================================ */}
-      {/* Narrative (editable by owner + admins)                            */}
-      {/* ================================================================ */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
+      <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
             Narrative
           </Typography>
 
-          <Stack spacing={2}>
-            <EditableTextField
-              label="Personality Traits"
-              value={narrative.personalityTraits.join(', ')}
-              onSave={(v: string) =>
-                saveCharacter({
-                  narrative: {
-                    ...narrative,
-                    personalityTraits: v.split(',').map((s: string) => s.trim()).filter(Boolean),
-                  },
-                })
-              }
-              disabled={!canEdit}
-              multiline
-              minRows={2}
-              helperText="Comma-separated"
-            />
-            <EditableTextField
-              label="Ideals"
-              value={narrative.ideals}
-              onSave={(v: string) => saveCharacter({ narrative: { ...narrative, ideals: v } })}
-              disabled={!canEdit}
-              multiline
-              minRows={2}
-            />
-            <EditableTextField
-              label="Bonds"
-              value={narrative.bonds}
-              onSave={(v: string) => saveCharacter({ narrative: { ...narrative, bonds: v } })}
-              disabled={!canEdit}
-              multiline
-              minRows={2}
-            />
-            <EditableTextField
-              label="Flaws"
-              value={narrative.flaws}
-              onSave={(v: string) => saveCharacter({ narrative: { ...narrative, flaws: v } })}
-              disabled={!canEdit}
-              multiline
-              minRows={2}
-            />
-            <EditableTextField
-              label="Backstory"
-              value={narrative.backstory}
-              onSave={(v: string) => saveCharacter({ narrative: { ...narrative, backstory: v } })}
-              disabled={!canEdit}
-              multiline
-              minRows={4}
-            />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <EditableTextField
+                label="Personality Traits"
+                value={narrative.personalityTraits.join(', ')}
+                onSave={(v: string) =>
+                  saveCharacter({
+                    narrative: { ...narrative, personalityTraits: v.split(',').map((s: string) => s.trim()).filter(Boolean) },
+                  })
+                }
+                disabled={!canEdit}
+                multiline
+                minRows={2}
+                helperText="Comma-separated"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <EditableTextField
+                label="Ideals"
+                value={narrative.ideals}
+                onSave={(v: string) => saveCharacter({ narrative: { ...narrative, ideals: v } })}
+                disabled={!canEdit}
+                multiline
+                minRows={2}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <EditableTextField
+                label="Bonds"
+                value={narrative.bonds}
+                onSave={(v: string) => saveCharacter({ narrative: { ...narrative, bonds: v } })}
+                disabled={!canEdit}
+                multiline
+                minRows={2}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <EditableTextField
+                label="Flaws"
+                value={narrative.flaws}
+                onSave={(v: string) => saveCharacter({ narrative: { ...narrative, flaws: v } })}
+                disabled={!canEdit}
+                multiline
+                minRows={2}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <EditableTextField
+                label="Backstory"
+                value={narrative.backstory}
+                onSave={(v: string) => saveCharacter({ narrative: { ...narrative, backstory: v } })}
+                disabled={!canEdit}
+                multiline
+                minRows={3}
+              />
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
-
-      {/* ================================================================ */}
-      {/* Campaigns                                                         */}
-      {/* ================================================================ */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-            Campaigns
-          </Typography>
-          {campaigns.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              Not part of any campaigns.
-            </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {campaigns.map((c) => (
-                <Stack key={c._id} direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body1" fontWeight={600}>
-                    {c.name}
-                  </Typography>
-                  <Chip label={c.setting} size="small" variant="outlined" />
-                  <Chip label={c.edition} size="small" variant="outlined" />
-                  <Button
-                    component={Link}
-                    to={`/campaigns/${c._id}`}
-                    size="small"
-                  >
-                    View
-                  </Button>
-                </Stack>
-              ))}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
-
     </Box>
   )
 }

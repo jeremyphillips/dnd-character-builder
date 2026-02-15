@@ -56,7 +56,17 @@ export function getSpellLimits(prog: ClassProgression, classLevel: number): Spel
   const cantrips = sp.cantripsKnown?.[idx] ?? 0
   const totalKnown = sp.spellsKnown?.[idx] ?? 0
   const slots = idx >= 0 ? sp.spellSlots[idx] : []
-  const maxSpellLevel = sp.maxSpellLevel
+
+  // Derive max spell level from the character's current slot table:
+  // the highest spell level (1-indexed) for which they have ≥1 slot.
+  // Cantrips (level 0) are always allowed if cantripsKnown > 0.
+  let maxSpellLevel = 0
+  for (let i = slots.length - 1; i >= 0; i--) {
+    if (slots[i] > 0) {
+      maxSpellLevel = i + 1 // slots[0] = 1st level, slots[1] = 2nd, etc.
+      break
+    }
+  }
 
   return { cantrips, totalKnown, maxSpellLevel, slotsByLevel: slots }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
 import { classes } from '@/data'
 import { getClassProgression } from '@/domain/character'
@@ -6,6 +6,8 @@ import { getAvailableSpells, groupSpellsByLevel, getSpellLimits } from '@/domain
 import type { SpellWithEntry } from '@/domain/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'
 
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
@@ -55,62 +57,163 @@ const SpellStep = () => {
     return { availableByLevel: groupSpellsByLevel(allAvailable), limits: classLimits }
   }, [selectedClasses, edition])
 
-  // Aggregate limits across all classes
-  const aggregatedLimits = useMemo(() => {
-    let cantrips = 0
-    let totalKnown = 0
-    let maxSpellLevel = 0
+  // Build per-level limits: level → max selectable spells
+  // Cantrips (level 0) use cantripsKnown; leveled spells use slot counts.
+  // For "known" casters totalKnown also serves as an overall cap.
+  const { perLevelMax, maxSpellLevel, totalKnown } = useMemo(() => {
+    const map = new Map<number, number>()
+    let maxLvl = 0
+    let known = 0
 
     for (const l of limits) {
-      cantrips += l.cantrips
-      totalKnown += l.totalKnown
-      maxSpellLevel = Math.max(maxSpellLevel, l.maxSpellLevel)
+      // Cantrips
+      if (l.cantrips > 0) {
+        map.set(0, (map.get(0) ?? 0) + l.cantrips)
+      }
+      // Leveled spell slots
+      for (let i = 0; i < l.slotsByLevel.length; i++) {
+        const spellLevel = i + 1
+        if (l.slotsByLevel[i] > 0) {
+          map.set(spellLevel, (map.get(spellLevel) ?? 0) + l.slotsByLevel[i])
+        }
+      }
+      maxLvl = Math.max(maxLvl, l.maxSpellLevel)
+      known += l.totalKnown
     }
 
-    // For prepared casters (totalKnown = 0), allow selecting any number up to catalog size
-    const isPreparedOnly = limits.length > 0 && limits.every(l => l.totalKnown === 0)
-
-    return { cantrips, totalKnown, maxSpellLevel, isPreparedOnly }
+    return { perLevelMax: map, maxSpellLevel: maxLvl, totalKnown: known }
   }, [limits])
 
-  // Split selected spells into cantrips and leveled
-  const selectedCantrips = useMemo(() => {
-    const cantripIds = new Set<string>()
+  // Count selected spells per level
+  const selectedPerLevel = useMemo(() => {
+    const map = new Map<number, number>()
+    const selected = new Set(selectedSpells)
+
     for (const [level, spells] of availableByLevel) {
-      if (level === 0) {
-        for (const s of spells) cantripIds.add(s.spell.id)
+      let count = 0
+      for (const s of spells) {
+        if (selected.has(s.spell.id)) count++
       }
+      if (count > 0) map.set(level, count)
     }
-    return selectedSpells.filter((id: string) => cantripIds.has(id))
+
+    return map
   }, [selectedSpells, availableByLevel])
 
-  const selectedLeveled = useMemo(() => {
-    const cantripIds = new Set<string>()
+  const totalSelected = useMemo(() => {
+    let sum = 0
+    for (const [level, count] of selectedPerLevel) {
+      if (level !== 0) sum += count // cantrips tracked separately
+    }
+    return sum
+  }, [selectedPerLevel])
+
+  // ---------------------------------------------------------------------------
+  // Prune stale spell selections when limits change (e.g. level changed)
+  // ---------------------------------------------------------------------------
+  const [removedNotice, setRemovedNotice] = useState<string[]>([])
+
+  // Refs let the effect read current values without depending on them,
+  // preventing infinite loops (setSpells → selectedSpells changes → effect re-fires).
+  const selectedSpellsRef = useRef(selectedSpells)
+  selectedSpellsRef.current = selectedSpells
+  const setSpellsRef = useRef(setSpells)
+  setSpellsRef.current = setSpells
+
+  useEffect(() => {
+    const currentSpells = selectedSpellsRef.current
+    if (currentSpells.length === 0) return
+
+    // Build lookup maps from available spell catalog
+    const spellLevelMap = new Map<string, number>()
+    const spellNameMap = new Map<string, string>()
     for (const [level, spells] of availableByLevel) {
-      if (level === 0) {
-        for (const s of spells) cantripIds.add(s.spell.id)
+      for (const s of spells) {
+        spellLevelMap.set(s.spell.id, level)
+        spellNameMap.set(s.spell.id, s.spell.name)
       }
     }
-    return selectedSpells.filter((id: string) => !cantripIds.has(id))
-  }, [selectedSpells, availableByLevel])
+
+    const kept: string[] = []
+    const removed: string[] = []
+    const keptPerLevel = new Map<number, number>()
+    let keptLeveledCount = 0
+
+    for (const id of currentSpells) {
+      const level = spellLevelMap.get(id)
+
+      // Spell no longer in available catalog
+      if (level === undefined) {
+        removed.push(spellNameMap.get(id) ?? id)
+        continue
+      }
+
+      // Spell level exceeds current max
+      if (level > 0 && level > maxSpellLevel) {
+        removed.push(spellNameMap.get(id) ?? id)
+        continue
+      }
+
+      // Cantrips no longer granted
+      if (level === 0 && (perLevelMax.get(0) ?? 0) === 0) {
+        removed.push(spellNameMap.get(id) ?? id)
+        continue
+      }
+
+      // Per-level slot cap exceeded
+      const max = perLevelMax.get(level) ?? 0
+      const currentCount = keptPerLevel.get(level) ?? 0
+      if (max > 0 && currentCount >= max) {
+        removed.push(spellNameMap.get(id) ?? id)
+        continue
+      }
+
+      // Overall totalKnown cap for leveled spells (known casters)
+      if (level > 0 && totalKnown > 0 && keptLeveledCount >= totalKnown) {
+        removed.push(spellNameMap.get(id) ?? id)
+        continue
+      }
+
+      kept.push(id)
+      keptPerLevel.set(level, currentCount + 1)
+      if (level > 0) keptLeveledCount++
+    }
+
+    if (removed.length > 0) {
+      setRemovedNotice(removed)
+      setSpellsRef.current(kept)
+    }
+    // Re-run when limits change (component also remounts on step navigation).
+    // selectedSpells read from ref to avoid infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perLevelMax, maxSpellLevel, totalKnown, availableByLevel])
+
+  /** Check whether a given spell level is full (no more selections allowed). */
+  const isLevelFull = useCallback(
+    (spellLevel: number) => {
+      const max = perLevelMax.get(spellLevel) ?? 0
+      const count = selectedPerLevel.get(spellLevel) ?? 0
+      if (max > 0 && count >= max) return true
+      // For "known" casters, also enforce overall totalKnown cap on leveled spells
+      if (spellLevel > 0 && totalKnown > 0 && totalSelected >= totalKnown) return true
+      return false
+    },
+    [perLevelMax, selectedPerLevel, totalKnown, totalSelected]
+  )
 
   const toggleSpell = useCallback(
-    (spellId: string, isCantrip: boolean) => {
+    (spellId: string, spellLevel: number) => {
       const current = selectedSpells ?? []
       if (current.includes(spellId)) {
         // Deselect
         setSpells(current.filter((id: string) => id !== spellId))
       } else {
-        // Check limits
-        if (isCantrip) {
-          if (aggregatedLimits.cantrips > 0 && selectedCantrips.length >= aggregatedLimits.cantrips) return
-        } else {
-          if (aggregatedLimits.totalKnown > 0 && selectedLeveled.length >= aggregatedLimits.totalKnown) return
-        }
+        // Enforce per-level limit
+        if (isLevelFull(spellLevel)) return
         setSpells([...current, spellId])
       }
     },
-    [selectedSpells, setSpells, aggregatedLimits, selectedCantrips.length, selectedLeveled.length]
+    [selectedSpells, setSpells, isLevelFull]
   )
 
   if (availableByLevel.size === 0) {
@@ -139,36 +242,65 @@ const SpellStep = () => {
         Select spells for <strong>{classNames}</strong>.
       </Typography>
 
-      {/* Limits summary */}
+      {/* Notice: spells removed due to changed limits */}
+      {removedNotice.length > 0 && (
+        <Alert
+          severity="warning"
+          onClose={() => setRemovedNotice([])}
+          sx={{ mb: 2 }}
+        >
+          <AlertTitle>Spell selections updated</AlertTitle>
+          The following spells were removed because they exceed your current level's limits:
+          <Box component="ul" sx={{ mt: 0.5, mb: 0, pl: 2 }}>
+            {removedNotice.map((name) => (
+              <li key={name}>
+                <Typography variant="body2">{name}</Typography>
+              </li>
+            ))}
+          </Box>
+        </Alert>
+      )}
+
+      {/* Per-level limits summary */}
       <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
-        {aggregatedLimits.cantrips > 0 && (
+        {[...perLevelMax.entries()]
+          .sort(([a], [b]) => a - b)
+          .filter(([level]) =>
+            level === 0
+              ? (perLevelMax.get(0) ?? 0) > 0
+              : level <= maxSpellLevel
+          )
+          .map(([level, max]) => {
+            const count = selectedPerLevel.get(level) ?? 0
+            const full = count >= max
+            return (
+              <Chip
+                key={level}
+                label={`${levelHeading(level)}: ${count} / ${max}`}
+                size="small"
+                color={full ? 'success' : 'default'}
+                variant="outlined"
+              />
+            )
+          })}
+        {totalKnown > 0 && (
           <Chip
-            label={`Cantrips: ${selectedCantrips.length} / ${aggregatedLimits.cantrips}`}
+            label={`Total Known: ${totalSelected} / ${totalKnown}`}
             size="small"
-            color={selectedCantrips.length >= aggregatedLimits.cantrips ? 'success' : 'default'}
-            variant="outlined"
-          />
-        )}
-        {aggregatedLimits.totalKnown > 0 && (
-          <Chip
-            label={`Spells Known: ${selectedLeveled.length} / ${aggregatedLimits.totalKnown}`}
-            size="small"
-            color={selectedLeveled.length >= aggregatedLimits.totalKnown ? 'success' : 'default'}
-            variant="outlined"
-          />
-        )}
-        {aggregatedLimits.isPreparedOnly && (
-          <Chip
-            label={`Prepared caster — ${selectedLeveled.length} spell${selectedLeveled.length !== 1 ? 's' : ''} selected`}
-            size="small"
+            color={totalSelected >= totalKnown ? 'success' : 'default'}
             variant="outlined"
           />
         )}
       </Stack>
 
-      {/* Spell list by level */}
-      {[...availableByLevel.entries()].map(([level, spells]) => {
-        const isCantrip = level === 0
+      {/* Spell list by level — only show levels the character can cast */}
+      {[...availableByLevel.entries()]
+        .filter(([level]) => level === 0
+          ? (perLevelMax.get(0) ?? 0) > 0  // show cantrips if the class grants any
+          : level <= maxSpellLevel
+        )
+        .map(([level, spells]) => {
+        const levelFull = isLevelFull(level)
 
         return (
           <Box key={level} sx={{ mb: 3 }}>
@@ -183,15 +315,19 @@ const SpellStep = () => {
             <Stack spacing={1}>
               {spells
                 .sort((a, b) => a.spell.name.localeCompare(b.spell.name))
-                .map(({ spell, entry }) => (
-                  <SpellHorizontalCard
-                    key={spell.id}
-                    spell={spell}
-                    editionEntry={entry}
-                    selected={selectedSpells.includes(spell.id)}
-                    onToggle={() => toggleSpell(spell.id, isCantrip)}
-                  />
-                ))}
+                .map(({ spell, entry }) => {
+                  const isSelected = selectedSpells.includes(spell.id)
+                  return (
+                    <SpellHorizontalCard
+                      key={spell.id}
+                      spell={spell}
+                      editionEntry={entry}
+                      selected={isSelected}
+                      disabled={levelFull && !isSelected}
+                      onToggle={() => toggleSpell(spell.id, level)}
+                    />
+                  )
+                })}
             </Stack>
           </Box>
         )

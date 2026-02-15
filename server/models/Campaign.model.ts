@@ -12,7 +12,8 @@ const campaignSchema = new Schema(
       name: String,
       description: String,
       setting: String,
-      edition: String
+      edition: String,
+      imageUrl: String
     },
 
     configuration: {

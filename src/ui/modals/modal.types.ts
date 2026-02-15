@@ -108,7 +108,9 @@ export interface ConfirmModalProps {
   onCancel: () => void
   headline: string
   headlineIcon?: ReactNode
-  description: string
+  description?: string
+  /** Rich content rendered below the description */
+  children?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   confirmColor?: ButtonProps['color']

@@ -17,7 +17,8 @@ import {
   EditableSelect,
   EditableNumberField,
 } from '@/ui/fields'
-import { StatCircle } from '@/ui/elements'
+import { StatCircle, Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { apiFetch } from '../../api'
 
 import Box from '@mui/material/Box'
@@ -32,7 +33,6 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
 import Grid from '@mui/material/Grid'
 
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -138,6 +138,7 @@ export default function CharacterDetailRoute() {
   const [alignment, setAlignment] = useState('')
   const [totalLevel, setTotalLevel] = useState(0)
   const [xp, setXp] = useState(0)
+  const breadcrumbs = useBreadcrumbs()
 
   // ── Load ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -339,10 +340,7 @@ export default function CharacterDetailRoute() {
 
   return (
     <Box sx={{ maxWidth: 920, mx: 'auto' }}>
-      {/* Back link */}
-      <Button component={Link} to="/characters" startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
-        Back to Characters
-      </Button>
+      <Breadcrumbs items={breadcrumbs} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}

@@ -1,9 +1,7 @@
-import Dialog from '@mui/material/Dialog'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import { AppModal } from '@/ui/modals'
 import { useCharacterBuilder } from '../../context'
 import { getStepConfig } from '../../constants'
 import InvalidationConfirmDialog from '../InvalidationConfirmDialog/InvalidationConfirmDialog'
@@ -34,50 +32,44 @@ const CharacterBuilderShell = ({ isOpen, onClose, onGenerate, isGenerating = fal
 
   return (
     <>
-      <Dialog
+      <AppModal
         open={isOpen}
-        onClose={isGenerating ? undefined : onClose}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              maxHeight: '90vh',
-              borderRadius: 3,
-            },
-          },
-        }}
+        onClose={onClose ?? (() => {})}
+        size="full"
+        showCloseButton={!!onClose && !isGenerating}
+        closeOnBackdropClick={!isGenerating}
+        closeOnEsc={!isGenerating}
+        loading={isGenerating}
+        actions={
+          <>
+            {currentStepIndex > 0 && (
+              <Button onClick={prevStep} variant="outlined" color="secondary" disabled={isGenerating}>
+                Back
+              </Button>
+            )}
+
+            {!isLastStep && (
+              <Button onClick={nextStep} disabled={isNextDisabled || isGenerating} variant="contained">
+                Next
+              </Button>
+            )}
+
+            {isLastStep && (
+              <Button
+                onClick={onGenerate}
+                variant="contained"
+                color="primary"
+                disabled={isGenerating}
+                startIcon={isGenerating ? <CircularProgress size={18} color="inherit" /> : undefined}
+              >
+                {isGenerating ? 'Generating…' : 'Generate Character'}
+              </Button>
+            )}
+          </>
+        }
       >
-        <DialogContent sx={{ pb: 10, opacity: isGenerating ? 0.4 : 1, pointerEvents: isGenerating ? 'none' : 'auto' }}>
-          <StepComponent />
-        </DialogContent>
-
-        <DialogActions sx={{ borderTop: '1px solid var(--mui-palette-divider)', px: 3, py: 2 }}>
-          {currentStepIndex > 0 && (
-            <Button onClick={prevStep} variant="outlined" color="secondary" disabled={isGenerating}>
-              Back
-            </Button>
-          )}
-
-          {!isLastStep && (
-            <Button onClick={nextStep} disabled={isNextDisabled || isGenerating} variant="contained">
-              Next
-            </Button>
-          )}
-
-          {isLastStep && (
-            <Button
-              onClick={onGenerate}
-              variant="contained"
-              color="primary"
-              disabled={isGenerating}
-              startIcon={isGenerating ? <CircularProgress size={18} color="inherit" /> : undefined}
-            >
-              {isGenerating ? 'Generating…' : 'Generate Character'}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        <StepComponent />
+      </AppModal>
 
       {/* Invalidation confirmation dialog — renders above the builder */}
       <InvalidationConfirmDialog

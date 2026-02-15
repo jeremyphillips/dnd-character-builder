@@ -15,6 +15,7 @@ const ConfirmModal = ({
   headline,
   headlineIcon,
   description,
+  children,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   confirmColor = 'primary',
@@ -55,7 +56,9 @@ const ConfirmModal = ({
         </Button>
       </>
     }
-  />
+  >
+    {children}
+  </AppModal>
 )
 
 export default ConfirmModal

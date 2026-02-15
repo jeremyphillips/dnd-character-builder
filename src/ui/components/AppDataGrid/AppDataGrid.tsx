@@ -1,7 +1,7 @@
 import { useState, useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -31,8 +31,12 @@ export interface AppDataGridColumn<T> {
   flex?: number
   /** Minimum width when using flex */
   minWidth?: number
+  /** Column data type (e.g. 'number' for right-aligned numeric columns) */
+  type?: string
   /** Custom value formatter — receives the raw cell value */
   valueFormatter?: (value: unknown) => string
+  /** Custom cell renderer — escape hatch for rich cell content (e.g. Chips) */
+  renderCell?: (params: GridRenderCellParams) => ReactNode
 }
 
 export interface AppDataGridProps<T> {
@@ -140,12 +144,14 @@ export default function AppDataGrid<T>({
         width: col.width,
         flex: col.flex,
         minWidth: col.minWidth,
+        type: col.type,
         valueFormatter: col.valueFormatter
           ? (value: unknown) => col.valueFormatter!(value)
           : undefined,
+        renderCell: col.renderCell,
       }
 
-      // Render link column cells as router Links
+      // Render link column cells as router Links (overrides renderCell)
       if (col.linkColumn && getDetailLink) {
         def.renderCell = (params) => {
           const row = params.row as T

@@ -1,17 +1,20 @@
 import { useCharacterBuilder } from '@/characterBuilder/context'
+import { InvalidationNotice } from '@/characterBuilder/components'
 import type { EditionId, SettingId } from '@/data'
 import { ButtonGroup } from '@/ui/elements'
 import { getAllowedRaces } from '@/domain/character/races'
 
 const RaceStep = () => {
-  const { state, setRace } = useCharacterBuilder()
+  const { state, setRace, stepNotices, dismissNotice } = useCharacterBuilder()
   const { step, edition, setting, race: selectedRace } = state
 
   const allowedRaces = getAllowedRaces(edition as EditionId, setting as SettingId)
+  const notices = stepNotices.get('race') ?? []
 
   return (
     <>
       <h2>Choose {step.name}</h2>
+      <InvalidationNotice items={notices} onDismiss={() => dismissNotice('race')} />
       <ButtonGroup
         options={allowedRaces.map(race => ({
           id: race.id,

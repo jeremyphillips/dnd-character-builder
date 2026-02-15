@@ -1,5 +1,6 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
 import type { CharacterType, Proficiency } from '@/shared/types/character.core'
+import type { InvalidationResult } from '../validation/types'
 
 export type { CharacterClassInfo, CharacterSheet, Proficiency }
 
@@ -71,6 +72,18 @@ export type CharacterBuilderContextValue = {
   goToStep: (stepId: StepId) => void
   resetState: () => void
   isComplete: (state: CharacterBuilderState) => boolean
+
+  // invalidation
+  /** Per-step invalidation notices, keyed by StepId. */
+  stepNotices: Map<StepId, string[]>
+  /** Pending invalidation result awaiting user confirmation.  Null when idle. */
+  pendingInvalidations: InvalidationResult | null
+  /** Confirm the pending change — apply it and store step notices. */
+  confirmChange: () => void
+  /** Cancel the pending change — discard it. */
+  cancelChange: () => void
+  /** Dismiss a step's invalidation notice. */
+  dismissNotice: (stepId: StepId) => void
 
   // options
   raceOptions: any[]

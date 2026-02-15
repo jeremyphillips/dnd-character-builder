@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
+import { InvalidationNotice } from '@/characterBuilder/components'
 import { classes } from '@/data'
 import { getOptions } from '@/domain/options'
 import {
@@ -65,7 +66,9 @@ const ClassStep = () => {
     updateClassLevel,
     removeClass,
     updateClassDefinition,
-    allocateRemainingLevels
+    allocateRemainingLevels,
+    stepNotices,
+    dismissNotice
   } = useCharacterBuilder()  
 
   const {
@@ -124,10 +127,13 @@ const ClassStep = () => {
     ? getClassRestrictionNotes(edition, allowedClassIds)
     : []
 
+  const classNotices = stepNotices.get('class') ?? []
+
   return (
     <div>
       <header>
         <h2>Choose {step.name}</h2>
+        <InvalidationNotice items={classNotices} onDismiss={() => dismissNotice('class')} />
 
         {/* Level allocation summary — only relevant for multiclass editions */}
         {editionAllowsMulticlass && (

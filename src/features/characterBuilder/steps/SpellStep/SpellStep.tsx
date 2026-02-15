@@ -1,13 +1,12 @@
-import { useMemo, useCallback, useEffect, useRef, useState } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
 import { classes } from '@/data'
 import { getClassProgression } from '@/domain/character'
 import { getAvailableSpells, groupSpellsByLevel, getSpellLimits } from '@/domain/spells'
 import type { SpellWithEntry } from '@/domain/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'
+import { InvalidationNotice } from '@/characterBuilder/components'
 
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
@@ -28,8 +27,10 @@ function levelHeading(level: number): string {
 // ---------------------------------------------------------------------------
 
 const SpellStep = () => {
-  const { state, setSpells } = useCharacterBuilder()
+  const { state, setSpells, stepNotices, dismissNotice } = useCharacterBuilder()
   const { classes: selectedClasses, edition, spells: selectedSpells = [], step } = state
+
+  const notices = stepNotices.get('spells') ?? []
 
   // Merge available spells from all selected classes
   const { availableByLevel, limits } = useMemo(() => {
@@ -108,86 +109,6 @@ const SpellStep = () => {
     return sum
   }, [selectedPerLevel])
 
-  // ---------------------------------------------------------------------------
-  // Prune stale spell selections when limits change (e.g. level changed)
-  // ---------------------------------------------------------------------------
-  const [removedNotice, setRemovedNotice] = useState<string[]>([])
-
-  // Refs let the effect read current values without depending on them,
-  // preventing infinite loops (setSpells → selectedSpells changes → effect re-fires).
-  const selectedSpellsRef = useRef(selectedSpells)
-  selectedSpellsRef.current = selectedSpells
-  const setSpellsRef = useRef(setSpells)
-  setSpellsRef.current = setSpells
-
-  useEffect(() => {
-    const currentSpells = selectedSpellsRef.current
-    if (currentSpells.length === 0) return
-
-    // Build lookup maps from available spell catalog
-    const spellLevelMap = new Map<string, number>()
-    const spellNameMap = new Map<string, string>()
-    for (const [level, spells] of availableByLevel) {
-      for (const s of spells) {
-        spellLevelMap.set(s.spell.id, level)
-        spellNameMap.set(s.spell.id, s.spell.name)
-      }
-    }
-
-    const kept: string[] = []
-    const removed: string[] = []
-    const keptPerLevel = new Map<number, number>()
-    let keptLeveledCount = 0
-
-    for (const id of currentSpells) {
-      const level = spellLevelMap.get(id)
-
-      // Spell no longer in available catalog
-      if (level === undefined) {
-        removed.push(spellNameMap.get(id) ?? id)
-        continue
-      }
-
-      // Spell level exceeds current max
-      if (level > 0 && level > maxSpellLevel) {
-        removed.push(spellNameMap.get(id) ?? id)
-        continue
-      }
-
-      // Cantrips no longer granted
-      if (level === 0 && (perLevelMax.get(0) ?? 0) === 0) {
-        removed.push(spellNameMap.get(id) ?? id)
-        continue
-      }
-
-      // Per-level slot cap exceeded
-      const max = perLevelMax.get(level) ?? 0
-      const currentCount = keptPerLevel.get(level) ?? 0
-      if (max > 0 && currentCount >= max) {
-        removed.push(spellNameMap.get(id) ?? id)
-        continue
-      }
-
-      // Overall totalKnown cap for leveled spells (known casters)
-      if (level > 0 && totalKnown > 0 && keptLeveledCount >= totalKnown) {
-        removed.push(spellNameMap.get(id) ?? id)
-        continue
-      }
-
-      kept.push(id)
-      keptPerLevel.set(level, currentCount + 1)
-      if (level > 0) keptLeveledCount++
-    }
-
-    if (removed.length > 0) {
-      setRemovedNotice(removed)
-      setSpellsRef.current(kept)
-    }
-    // Re-run when limits change (component also remounts on step navigation).
-    // selectedSpells read from ref to avoid infinite loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perLevelMax, maxSpellLevel, totalKnown, availableByLevel])
-
   /** Check whether a given spell level is full (no more selections allowed). */
   const isLevelFull = useCallback(
     (spellLevel: number) => {
@@ -242,24 +163,8 @@ const SpellStep = () => {
         Select spells for <strong>{classNames}</strong>.
       </Typography>
 
-      {/* Notice: spells removed due to changed limits */}
-      {removedNotice.length > 0 && (
-        <Alert
-          severity="warning"
-          onClose={() => setRemovedNotice([])}
-          sx={{ mb: 2 }}
-        >
-          <AlertTitle>Spell selections updated</AlertTitle>
-          The following spells were removed because they exceed your current level's limits:
-          <Box component="ul" sx={{ mt: 0.5, mb: 0, pl: 2 }}>
-            {removedNotice.map((name) => (
-              <li key={name}>
-                <Typography variant="body2">{name}</Typography>
-              </li>
-            ))}
-          </Box>
-        </Alert>
-      )}
+      {/* Centralized invalidation notice */}
+      <InvalidationNotice items={notices} onDismiss={() => dismissNotice('spells')} />
 
       {/* Per-level limits summary */}
       <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>

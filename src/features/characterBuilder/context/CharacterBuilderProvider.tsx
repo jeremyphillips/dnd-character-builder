@@ -1,7 +1,8 @@
-import { useMemo, useEffect, useState, type PropsWithChildren } from "react"
+import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
-import type { CharacterBuilderState, CharacterClassInfo } from '../types'
+import type { CharacterBuilderState, CharacterClassInfo, StepId } from '../types'
 import type { Proficiency } from '@/shared/types/character.core'
+import type { InvalidationResult } from '../validation/types'
 import {
   getStepConfig,
   createInitialBuilderState
@@ -16,6 +17,11 @@ import {
   calculateEquipmentWeight,
   calculateEquipmentCost
 } from '@/domain/equipment'
+import {
+  detectInvalidations,
+  resolveInvalidations,
+  INVALIDATION_RULES,
+} from '../validation'
 import { races, equipment } from "@/data"
 import type { EditionId, SettingId } from "@/data"
 import type { CharacterType } from "@/shared/types/character.core"
@@ -52,6 +58,96 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     updater: (state: CharacterBuilderState) => CharacterBuilderState
   ) => setState(updater)
 
+  // ---------------------------------------------------------------------------
+  // Invalidation guard
+  // ---------------------------------------------------------------------------
+
+  /** Pending state change awaiting user confirmation. */
+  const [pendingChange, setPendingChange] = useState<{
+    updater: (s: CharacterBuilderState) => CharacterBuilderState
+    invalidations: InvalidationResult
+  } | null>(null)
+
+  /** Per-step notices from the most recent confirmed invalidation. */
+  const [stepNotices, setStepNotices] = useState<Map<StepId, string[]>>(
+    () => new Map()
+  )
+
+  /**
+   * Wrap a state updater with invalidation detection.
+   *
+   * If the proposed change would invalidate downstream data, the change is
+   * held in `pendingChange` and the confirmation dialog opens.  Otherwise
+   * the change is applied immediately.
+   */
+  const guardedUpdate = useCallback(
+    (updater: (s: CharacterBuilderState) => CharacterBuilderState) => {
+      setState(prev => {
+        const next = updater(prev)
+
+        // If the updater returned the same reference, nothing changed
+        if (next === prev) return prev
+
+        const result = detectInvalidations(INVALIDATION_RULES, prev, next)
+
+        if (result.hasInvalidations) {
+          // Don't apply yet — queue for user confirmation.
+          // Use setTimeout so we don't call setState inside setState.
+          setTimeout(() => setPendingChange({ updater, invalidations: result }), 0)
+          return prev
+        }
+
+        return next
+      })
+    },
+    []
+  )
+
+  /** User confirmed the pending change — apply it and resolve invalidations. */
+  const confirmChange = useCallback(() => {
+    if (!pendingChange) return
+
+    setState(prev => {
+      const next = pendingChange.updater(prev)
+      const result = detectInvalidations(INVALIDATION_RULES, prev, next)
+      const resolved = resolveInvalidations(INVALIDATION_RULES, next, result)
+
+      // Build per-step notices from the invalidation result.
+      // Multiple rules can target the same step (e.g. level→spells and
+      // class→spells), so deduplicate items within each step.
+      const notices = new Map<StepId, string[]>()
+      for (const inv of result.affected) {
+        const existing = notices.get(inv.stepId) ?? []
+        notices.set(inv.stepId, [...existing, ...inv.items])
+      }
+      // Deduplicate per step
+      for (const [stepId, items] of notices) {
+        notices.set(stepId, [...new Set(items)])
+      }
+
+      // Replace (not merge) — each confirmation represents a fresh set of notices
+      setStepNotices(notices)
+
+      return resolved
+    })
+
+    setPendingChange(null)
+  }, [pendingChange])
+
+  /** User cancelled the pending change. */
+  const cancelChange = useCallback(() => {
+    setPendingChange(null)
+  }, [])
+
+  /** Dismiss the invalidation notice for a specific step. */
+  const dismissNotice = useCallback((stepId: StepId) => {
+    setStepNotices(prev => {
+      const next = new Map(prev)
+      next.delete(stepId)
+      return next
+    })
+  }, [])
+
   const setCharacterType = (type: CharacterType) =>
     updateState(s => ({ ...s, type }))
 
@@ -68,13 +164,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     updateState(s => ({ ...s, name }))
 
   const setEdition = (edition: string) =>
-    updateState(s => ({ ...s, edition: edition as EditionId }))
+    guardedUpdate(s => ({ ...s, edition: edition as EditionId }))
 
   const setSetting = (setting: string) =>
-    updateState(s => ({ ...s, setting: setting as SettingId }))
+    guardedUpdate(s => ({ ...s, setting: setting as SettingId }))
 
   const setRace = (race: string) =>
-    updateState(s => ({ ...s, race }))
+    guardedUpdate(s => ({ ...s, race }))
 
   const updateActiveClass = (
     updater: (cls: CharacterClassInfo) => CharacterClassInfo
@@ -91,7 +187,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     })
 
   const setClassId = (classId: string) =>
-    setState(s => {
+    guardedUpdate(s => {
       const index = s.activeClassIndex
       if (index == null || !s.classes[index]) return s
 
@@ -299,7 +395,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     updateState(s => ({ ...s, xp }))
 
   const setTotalLevels = (totalLevel: number) =>
-    updateState(s => {
+    guardedUpdate(s => {
       // Pass primary class ID so pre-3e editions resolve to the correct
       // class-specific XP table.  Universal-table editions ignore it.
       const primaryClassId = s.classes[0]?.classId
@@ -324,7 +420,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     })
 
   const setAlignment = (alignment: string) =>
-    updateState(s => ({ ...s, alignment }))
+    guardedUpdate(s => ({ ...s, alignment }))
 
   const setProficiencies = (proficiencies: Proficiency[]) =>
     updateState(s => ({ ...s, proficiencies }))
@@ -437,6 +533,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     updateState(s => ({ ...s, step: getStepByIndex(0) }))
 
   const nextStep = () => {
+    // Clear notice for the step we're leaving
+    dismissNotice(state.step.id)
     setState(s => {
       let nextIndex = getCurrentStepIndex(s.step?.id) + 1
       // Skip steps that should be skipped (e.g. SpellStep for non-casters)
@@ -450,6 +548,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   }
 
   const prevStep = () => {
+    // Clear notice for the step we're leaving
+    dismissNotice(state.step.id)
     setState(s => {
       let prevIndex = getCurrentStepIndex(s.step?.id) - 1
       // Skip steps that should be skipped (e.g. SpellStep for non-casters)
@@ -463,6 +563,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   }
 
   const goToStep = (stepId: string) => {
+    // Clear notice for the step we're leaving
+    dismissNotice(state.step.id)
     const config = getStepConfig(state.type ?? 'pc')
     const index = config.findIndex(s => s.id === stepId)
     if (index < 0) return
@@ -531,6 +633,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         goToStep,
         resetState,
         isComplete,
+
+        // invalidation
+        stepNotices,
+        pendingInvalidations: pendingChange?.invalidations ?? null,
+        confirmChange,
+        cancelChange,
+        dismissNotice,
 
         raceOptions,
         classOptions

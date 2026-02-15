@@ -46,6 +46,7 @@ export default defineConfig({
       "@/ui/badges": path.resolve(__dirname, "src/ui/badges"),
       "@/ui/avatar": path.resolve(__dirname, "src/ui/avatar"),
       "@/ui/cards": path.resolve(__dirname, "src/ui/cards"),
+      "@/ui/modals": path.resolve(__dirname, "src/ui/modals"),
     }
   }
 })

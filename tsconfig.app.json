@@ -45,6 +45,8 @@
       "@/ui/cards/*": ["ui/cards/*"],
       "@/ui/badges": ["ui/badges/index.ts"],
       "@/ui/badges/*": ["ui/badges/*"],
+      "@/ui/modals": ["ui/modals/index.ts"],
+      "@/ui/modals/*": ["ui/modals/*"],
       "@/data": ["data/index.ts"],
       "@/data/*": ["data/*"],
       "@/domain/*": ["domain/*"],

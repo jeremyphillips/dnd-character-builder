@@ -2,6 +2,8 @@ export { PartyCardGroup } from './PartyCardGroup'
 export type { PartyCardGroupProps, PartyCharacterCard } from './PartyCardGroup'
 export { InviteConfirmationBox } from './InviteConfirmationBox'
 export type { InviteConfirmationBoxProps } from './InviteConfirmationBox'
+export { FilterableCardGroup } from './FilterableCardGroup'
+export type { FilterableCardGroupProps, FilterOption } from './FilterableCardGroup'
 export {
   ImageUploadField,
   VisibilityField,

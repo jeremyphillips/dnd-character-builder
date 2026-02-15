@@ -1,3 +1,5 @@
+export { default as Breadcrumbs } from './Breadcrumbs/Breadcrumbs'
+export type { BreadcrumbItem, BreadcrumbsProps } from './Breadcrumbs/Breadcrumbs'
 export { default as ButtonGroup } from './ButtonGroup/ButtonGroup'
 export { default as Hero } from './Hero/Hero'
 export { default as StatCircle } from './StatCircle/StatCircle'

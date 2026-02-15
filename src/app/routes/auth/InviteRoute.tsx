@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { ROUTES } from '../../routes'
 import { apiFetch } from '../../api'
@@ -6,6 +6,8 @@ import { InviteConfirmationBox } from '@/ui/components'
 import { getCharacterOptionLabel } from '@/domain/character'
 import { getNameById } from '@/domain/lookups'
 import { settings, editions } from '@/data'
+import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import type { FieldConfig } from '@/ui/components/form/form.types'
 
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -87,6 +89,15 @@ export default function InviteRoute() {
     }))
   }, [availableCharacters, invite?.campaign?.setting, invite?.campaign?.edition])
 
+  // ── Sync form values back to local state ───────────────────────────
+  const handleFormValuesChange = useCallback(
+    (values: Record<string, unknown>) => {
+      const charId = (values.characterId as string) ?? ''
+      if (charId !== selectedCharacterId) setSelectedCharacterId(charId)
+    },
+    [selectedCharacterId],
+  )
+
   // ── Respond ────────────────────────────────────────────────────────
   async function handleRespond(action: 'accept' | 'decline') {
     if (!inviteId) return
@@ -100,11 +111,6 @@ export default function InviteRoute() {
         { method: 'POST', body },
       )
       setInvite((prev) => (prev ? { ...prev, status: data.invite.status, respondedAt: data.invite.respondedAt } : prev))
-
-      // If accepted, character is pending DM approval — optionally navigate to campaign to view
-      if (action === 'accept' && invite?.campaign?._id) {
-        // Keep user on invite page to see "pending approval" message; link available to go to campaign
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
     } finally {
@@ -129,13 +135,7 @@ export default function InviteRoute() {
     )
   }
 
-  const campaignChips = invite.campaign
-    ? [
-        { label: invite.campaign.setting },
-        { label: invite.campaign.edition },
-        { label: `Role: ${invite.role}`, color: 'primary' as const },
-      ]
-    : undefined
+  // ── Derived display values ─────────────────────────────────────────
 
   const settingName = invite.campaign?.setting
     ? getNameById(settings as unknown as { id: string; name: string }[], invite.campaign!.setting) ?? invite.campaign.setting
@@ -154,6 +154,35 @@ export default function InviteRoute() {
           ? `This campaign only allows characters generated for ${editionName}.`
           : undefined
 
+  // ── Build form fields for character select ─────────────────────────
+
+  const formFields: FieldConfig[] =
+    characterOptions.length > 0
+      ? [
+          {
+            type: 'select' as const,
+            name: 'characterId',
+            label: 'Character to join with',
+            options: characterOptions,
+            placeholder: 'Select a character',
+            required: true,
+            helperText: characterRestrictionMessage,
+          },
+        ]
+      : characterRestrictionMessage
+        ? [
+            {
+              type: 'select' as const,
+              name: 'characterId',
+              label: 'Character to join with',
+              options: [],
+              placeholder: 'No characters for this setting',
+              disabled: true,
+              helperText: characterRestrictionMessage,
+            },
+          ]
+        : []
+
   return (
     <InviteConfirmationBox
       headline="Campaign Invite"
@@ -161,13 +190,20 @@ export default function InviteRoute() {
       status={invite.status}
       responding={responding}
       onRespond={handleRespond}
-      characterOptions={characterOptions}
-      selectedCharacterId={selectedCharacterId}
-      onCharacterChange={setSelectedCharacterId}
-      characterRestrictionMessage={characterRestrictionMessage}
-      detailTitle={invite.campaign?.name}
-      detailChips={campaignChips}
-      detailDescription={invite.campaign?.description}
+      formFields={formFields}
+      formDefaultValues={{ characterId: '' }}
+      onFormValuesChange={handleFormValuesChange}
+      campaignCard={
+        invite.campaign ? (
+          <CampaignHorizontalCard
+            campaignId={invite.campaign._id}
+            name={invite.campaign.name}
+            description={invite.campaign.description}
+            edition={editionName}
+            setting={settingName}
+          />
+        ) : undefined
+      }
       acceptedLink={
         invite.campaign
           ? { to: ROUTES.CAMPAIGN.replace(':id', invite.campaign._id), label: 'Go to Campaign' }

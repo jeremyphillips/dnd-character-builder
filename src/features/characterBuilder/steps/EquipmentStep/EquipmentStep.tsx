@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useCharacterBuilder } from '@/characterBuilder/context'
+import { InvalidationNotice } from '@/characterBuilder/components'
 import { ButtonGroup } from '@/ui/elements'
 import { classes, equipment, type EditionId } from '@/data'
 import { getById } from '@/domain/lookups'
@@ -24,7 +25,9 @@ const EquipmentStep = () => {
     updateWeapons,
     updateArmor,
     updateGear,
-    updateMagicItems
+    updateMagicItems,
+    stepNotices,
+    dismissNotice
   } = useCharacterBuilder()
 
   const { 
@@ -238,9 +241,12 @@ const EquipmentStep = () => {
     }
   })
 
+  const equipmentNotices = stepNotices.get('equipment') ?? []
+
   return (
     <>
       <h2>Choose {step.name}</h2>
+      <InvalidationNotice items={equipmentNotices} onDismiss={() => dismissNotice('equipment')} />
       {wealth &&
       <>
         <p>Gold remaining: {Math.round((wealth.gp ?? 0) * 100) / 100} gp / {wealth.baseGp} gp</p>

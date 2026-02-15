@@ -10,6 +10,8 @@ import {
   EditableTextField,
   EditableSelect,
 } from '@/ui/fields'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
@@ -17,10 +19,7 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
+import { ConfirmModal } from '@/ui/modals'
 import Stack from '@mui/material/Stack'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -107,6 +106,7 @@ export default function SessionRoute() {
   const [responding, setResponding] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const breadcrumbs = useBreadcrumbs()
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
 
@@ -190,6 +190,8 @@ export default function SessionRoute() {
 
   return (
     <Box sx={{ maxWidth: 640, mx: 'auto' }}>
+      <Breadcrumbs items={breadcrumbs} />
+
       {/* ── RSVP Alert ──────────────────────────────────────────────── */}
       {invite?.status === 'pending' && (
         <Alert
@@ -237,8 +239,8 @@ export default function SessionRoute() {
       )}
 
       {/* ── Session details ─────────────────────────────────────────── */}
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
-        Session
+      <Typography variant="h1" fontWeight={700} sx={{ mb: 3 }}>
+        {session.title || 'Untitled Session'}
       </Typography>
 
       <Card variant="outlined" sx={{ mb: 2 }}>
@@ -307,28 +309,17 @@ export default function SessionRoute() {
         </CardContent>
       </Card>
 
-      {/* ── Delete confirmation dialog ──────────────────────────────── */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Delete session?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            This will permanently delete the session and notify all invited members that it has been cancelled.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDelete}
-            disabled={deleting}
-          >
-            {deleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* ── Delete confirmation ────────────────────────────────────── */}
+      <ConfirmModal
+        open={deleteDialogOpen}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        headline="Delete session?"
+        description="This will permanently delete the session and notify all invited members that it has been cancelled."
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+      />
     </Box>
   )
 }

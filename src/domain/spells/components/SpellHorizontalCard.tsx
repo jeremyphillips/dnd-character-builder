@@ -12,6 +12,8 @@ export interface SpellHorizontalCardProps {
   editionEntry?: SpellEditionEntry
   /** Whether the spell is currently selected */
   selected?: boolean
+  /** Whether the spell card is disabled (level cap reached) */
+  disabled?: boolean
   /** Called when the card is clicked */
   onToggle?: () => void
 }
@@ -37,6 +39,7 @@ const SpellHorizontalCard = ({
   spell,
   editionEntry,
   selected = false,
+  disabled = false,
   onToggle,
 }: SpellHorizontalCardProps) => {
   const entry = editionEntry ?? spell.editions[0]
@@ -56,8 +59,12 @@ const SpellHorizontalCard = ({
 
   return (
     <div
-      onClick={onToggle}
-      style={{ cursor: onToggle ? 'pointer' : undefined }}
+      onClick={disabled ? undefined : onToggle}
+      style={{
+        cursor: disabled ? 'default' : onToggle ? 'pointer' : undefined,
+        opacity: disabled ? 0.4 : 1,
+        transition: 'opacity 0.15s ease',
+      }}
     >
       <HorizontalCompactCard
         headline={spell.name}

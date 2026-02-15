@@ -100,15 +100,13 @@ export default function MyCharactersRoute() {
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4">My Characters</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate} disabled={creating}>
-          {creating ? 'Creating…' : 'New Character'}
-        </Button>
+        <Typography variant="h4">My Player Characters</Typography>
+        <CharacterBuilderLauncher characterType="pc" />
       </Stack>
 
       {characters.length === 0 ? (
         <Alert severity="info">
-          <h2>You have no characters.</h2>
+          <h2>You have no player characters.</h2>
           <p>Create your first one!</p>
           <CharacterBuilderLauncher />
         </Alert>

@@ -7,25 +7,12 @@ import { getCharacterOptionLabel } from '@/domain/character'
 import { getNameById } from '@/domain/lookups'
 import { settings, editions } from '@/data'
 import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import { useAvailableCharacters } from '@/features/character/hooks'
 import type { FieldConfig } from '@/ui/components/form/form.types'
 
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-interface CharacterForOption {
-  _id: string
-  name: string
-  level?: number
-  totalLevel?: number
-  class?: string
-  classes?: { classId?: string; classDefinitionId?: string; level: number }[]
-  edition?: string
-  setting?: string
-}
 
 interface InviteData {
   _id: string
@@ -51,7 +38,6 @@ export default function InviteRoute() {
   const { inviteId } = useParams<{ inviteId: string }>()
 
   const [invite, setInvite] = useState<InviteData | null>(null)
-  const [availableCharacters, setAvailableCharacters] = useState<CharacterForOption[]>([])
   const [selectedCharacterId, setSelectedCharacterId] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,12 +54,7 @@ export default function InviteRoute() {
   }, [inviteId])
 
   // ── Load available characters when invite is pending ─────────────────
-  useEffect(() => {
-    if (!invite || invite.status !== 'pending') return
-    apiFetch<{ characters: CharacterForOption[] }>('/api/characters/available-for-campaign')
-      .then((data) => setAvailableCharacters(data.characters ?? []))
-      .catch(() => setAvailableCharacters([]))
-  }, [invite?.status])
+  const { availableCharacters } = useAvailableCharacters(invite?.status === 'pending')
 
   const characterOptions = useMemo(() => {
     const campaignSettingId = invite?.campaign?.setting

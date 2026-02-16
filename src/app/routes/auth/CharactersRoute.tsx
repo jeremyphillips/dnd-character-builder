@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { CharacterClassInfo, CharacterDoc } from '@/shared'
+import type { CharacterClassInfo } from '@/shared'
 import { classes as classesData } from '@/data'
+import { resolveImageUrl } from '@/utils/image'
 import { Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
-import { apiFetch } from '@/app/api'
+import { useCharacters } from '@/features/character/hooks'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -17,7 +17,6 @@ import Stack from '@mui/material/Stack'
 import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
 
-import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import PersonIcon from '@mui/icons-material/Person'
 import { CharacterBuilderLauncher } from '@/characterBuilder'
@@ -59,38 +58,8 @@ function formatDate(iso: string): string {
 // ---------------------------------------------------------------------------
 
 export default function CharactersRoute() {
-  const [characters, setCharacters] = useState<CharacterDoc[]>([])
-  const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
+  const { characters, loading } = useCharacters()
   const breadcrumbs = useBreadcrumbs()
-
-  useEffect(() => {
-    fetchCharacters()
-  }, [])
-
-  async function fetchCharacters() {
-    try {
-      const data = await apiFetch<{ characters: CharacterDoc[] }>('/api/characters')
-      setCharacters(data.characters ?? [])
-    } catch {
-      setCharacters([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleCreate() {
-    const name = prompt('Character name:')
-    if (!name) return
-
-    setCreating(true)
-    try {
-      await apiFetch('/api/characters', { method: 'POST', body: { name } })
-      await fetchCharacters()
-    } finally {
-      setCreating(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -121,6 +90,7 @@ export default function CharactersRoute() {
             const filledClasses = (c.classes ?? []).filter((cls) => cls.classId)
             const isMulticlass = filledClasses.length > 1
             const hasClasses = filledClasses.length > 0
+            const avatarUrl = resolveImageUrl(c.imageKey)
 
             return (
               <Card key={c._id} variant="outlined">
@@ -128,7 +98,7 @@ export default function CharactersRoute() {
                   <Stack direction="row" spacing={2} alignItems="flex-start">
                     {/* Avatar / thumbnail */}
                     <Avatar
-                      src={c.imageUrl ?? undefined}
+                      src={avatarUrl}
                       sx={{
                         width: 64,
                         height: 64,
@@ -137,7 +107,7 @@ export default function CharactersRoute() {
                         flexShrink: 0,
                       }}
                     >
-                      {c.imageUrl ? null : <PersonIcon fontSize="large" />}
+                      {avatarUrl ? null : <PersonIcon fontSize="large" />}
                     </Avatar>
 
                     {/* Info */}

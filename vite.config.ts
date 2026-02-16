@@ -37,6 +37,7 @@ export default defineConfig({
       "@/domain/shared": path.resolve(__dirname, "src/domain/shared"),
       "@/domain": path.resolve(__dirname, "src/domain"),
       "@/chat": path.resolve(__dirname, "src/features/chat"),
+      "@/features/account": path.resolve(__dirname, "src/features/account"),
       "@/features/levelUp": path.resolve(__dirname, "src/features/levelUp"),
       "@/features/campaign": path.resolve(__dirname, "src/features/campaign"),
       "@/features/messaging": path.resolve(__dirname, "src/features/messaging"),
@@ -48,6 +49,7 @@ export default defineConfig({
       "@/ui/avatar": path.resolve(__dirname, "src/ui/avatar"),
       "@/ui/cards": path.resolve(__dirname, "src/ui/cards"),
       "@/ui/modals": path.resolve(__dirname, "src/ui/modals"),
+      "@/utils": path.resolve(__dirname, "src/utils"),
     }
   }
 })

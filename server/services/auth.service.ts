@@ -2,10 +2,36 @@ import bcrypt from 'bcrypt'
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import { signToken } from '../utils/jwt'
+import { getPublicUrl } from './image.service'
+
+interface NotificationPreferences {
+  sessionScheduled: boolean
+  inviteReceived: boolean
+  mentionedInChat: boolean
+}
+
+interface AuthUserPayload {
+  id: string
+  username: string
+  email: string
+  role: string
+  firstName?: string
+  lastName?: string
+  avatarUrl?: string
+  bio?: string
+  website?: string
+  notificationPreferences: NotificationPreferences
+}
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
+  sessionScheduled: true,
+  inviteReceived: true,
+  mentionedInChat: true,
+}
 
 interface LoginResult {
   token: string
-  user: { id: string; username: string; email: string; role: string }
+  user: AuthUserPayload
 }
 
 export async function loginUser(email: string, password: string): Promise<LoginResult | null> {
@@ -26,6 +52,15 @@ export async function loginUser(email: string, password: string): Promise<LoginR
       username: user.username as string,
       email: user.email as string,
       role: user.role as string,
+      firstName: (user.firstName as string) ?? undefined,
+      lastName: (user.lastName as string) ?? undefined,
+      avatarUrl: getPublicUrl(user.avatarKey as string),
+      bio: (user.bio as string) ?? undefined,
+      website: (user.website as string) ?? undefined,
+      notificationPreferences: {
+        ...DEFAULT_NOTIFICATION_PREFS,
+        ...(user.notificationPreferences as Partial<NotificationPreferences> | undefined),
+      },
     },
   }
 }
@@ -44,5 +79,56 @@ export async function getUserById(userId: string) {
     username: user.username as string,
     email: user.email as string,
     role: user.role as string,
+    firstName: (user.firstName as string) ?? undefined,
+    lastName: (user.lastName as string) ?? undefined,
+    avatarUrl: getPublicUrl(user.avatarKey as string),
+    bio: (user.bio as string) ?? undefined,
+    website: (user.website as string) ?? undefined,
+    notificationPreferences: {
+      ...DEFAULT_NOTIFICATION_PREFS,
+      ...(user.notificationPreferences as Partial<NotificationPreferences> | undefined),
+    },
   }
+}
+
+export async function updateProfile(
+  userId: string,
+  data: {
+    firstName?: string
+    lastName?: string
+    username?: string
+    avatarKey?: string | null
+    bio?: string
+    website?: string
+    email?: string
+    notificationPreferences?: Partial<NotificationPreferences>
+  },
+) {
+  const db = mongoose.connection.useDb(env.DB_NAME)
+  const $set: Record<string, unknown> = {}
+
+  if (data.firstName !== undefined) $set.firstName = data.firstName
+  if (data.lastName !== undefined) $set.lastName = data.lastName
+  if (data.username !== undefined) $set.username = data.username
+  if (data.avatarKey !== undefined) $set.avatarKey = data.avatarKey
+  if (data.bio !== undefined) $set.bio = data.bio
+  if (data.website !== undefined) $set.website = data.website
+  if (data.email !== undefined) $set.email = data.email
+
+  if (data.notificationPreferences) {
+    for (const [key, val] of Object.entries(data.notificationPreferences)) {
+      if (val !== undefined) {
+        $set[`notificationPreferences.${key}`] = val
+      }
+    }
+  }
+
+  if (Object.keys($set).length === 0) return getUserById(userId)
+
+  await db.collection('users').updateOne(
+    { _id: new mongoose.Types.ObjectId(userId) },
+    { $set },
+  )
+
+  return getUserById(userId)
 }

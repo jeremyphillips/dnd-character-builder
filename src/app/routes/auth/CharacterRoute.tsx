@@ -133,7 +133,7 @@ export default function CharacterRoute() {
 
   // Editable fields
   const [name, setName] = useState('')
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageKey, setImageKey] = useState<string | null>(null)
   const [narrative, setNarrative] = useState({
     personalityTraits: [] as string[],
     ideals: '',
@@ -182,7 +182,7 @@ export default function CharacterRoute() {
 
         // Init editable state
         setName(c.name ?? '')
-        setImageUrl(c.imageUrl ?? null)
+        setImageKey(c.imageKey ?? null)
         setNarrative({
           personalityTraits: c.narrative?.personalityTraits ?? [],
           ideals: c.narrative?.ideals ?? '',
@@ -215,7 +215,7 @@ export default function CharacterRoute() {
 
   const syncFromCharacter = (c: CharacterDoc) => {
     setName(c.name ?? '')
-    setImageUrl(c.imageUrl ?? null)
+    setImageKey(c.imageKey ?? null)
     setNarrative({
       personalityTraits: c.narrative?.personalityTraits ?? [],
       ideals: c.narrative?.ideals ?? '',
@@ -573,8 +573,8 @@ export default function CharacterRoute() {
             {/* Portrait */}
             <Box sx={{ width: { xs: '100%', sm: 160 }, flexShrink: 0 }}>
               <ImageUploadField
-                value={imageUrl}
-                onChange={(url) => { setImageUrl(url); saveCharacter({ imageUrl: url }) }}
+                value={imageKey}
+                onChange={(key) => { setImageKey(key); saveCharacter({ imageKey: key }) }}
                 label=""
                 disabled={!canEdit}
                 maxHeight={180}

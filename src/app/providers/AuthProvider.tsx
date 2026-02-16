@@ -7,6 +7,16 @@ interface AuthUser {
   username: string
   email: string
   role: string
+  firstName?: string
+  lastName?: string
+  avatarUrl?: string
+  bio?: string
+  website?: string
+  notificationPreferences?: {
+    sessionScheduled: boolean
+    inviteReceived: boolean
+    mentionedInChat: boolean
+  }
 }
 
 interface AuthContextType {

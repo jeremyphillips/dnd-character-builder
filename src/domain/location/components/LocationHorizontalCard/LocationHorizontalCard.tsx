@@ -30,7 +30,7 @@ const LocationHorizontalCard = ({
     { type: 'tag', value: type },
   ]
   if (isCustom) {
-    badges.push({ type: 'status', value: 'Custom' })
+    badges.push({ type: 'tag', value: 'Custom' })
   }
 
   const subheadline = parentName ? `Inside: ${parentName}` : undefined

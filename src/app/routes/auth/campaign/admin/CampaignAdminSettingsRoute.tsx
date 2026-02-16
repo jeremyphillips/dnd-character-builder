@@ -40,6 +40,12 @@ const buildFields = (edition?: string): FieldConfig[] => [
     section: 'general'
   },
   {
+    type: 'imageUpload',
+    name: 'imageKey',
+    label: 'Campaign Image',
+    section: 'general'
+  },
+  {
     type: 'checkbox',
     name: 'allowLegacyEditionNpcs',
     label: 'Allow legacy edition NPCs?',

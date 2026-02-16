@@ -4,6 +4,7 @@ import { apiFetch } from '@/app/api'
 export type CampaignSettings = {
   name: string
   description: string
+  imageKey?: string | null
   allowLegacyEditionNpcs: boolean
 }
 
@@ -14,6 +15,7 @@ type CampaignResponse = {
       description?: string
       setting?: string
       edition?: string
+      imageUrl?: string
     }
     configuration: {
       allowLegacyEditionNpcs?: boolean
@@ -39,6 +41,7 @@ export function useCampaignSettings(campaignId: string | null) {
         setData({
           name: identity.name ?? '',
           description: identity.description ?? '',
+          imageKey: identity.imageUrl ?? null,
           allowLegacyEditionNpcs: configuration.allowLegacyEditionNpcs ?? false
         })
         setEdition(identity.edition)

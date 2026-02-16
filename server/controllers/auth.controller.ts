@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { loginUser, getUserById } from '../services/auth.service'
+import { loginUser, getUserById, updateProfile } from '../services/auth.service'
 import { setTokenCookie, clearTokenCookie } from '../utils/cookies'
 import { verifyToken } from '../utils/jwt'
 
@@ -47,6 +47,29 @@ export async function getMe(req: Request, res: Response) {
     res.json({ user })
   } catch {
     res.json({ user: null })
+  }
+}
+
+export async function updateMe(req: Request, res: Response) {
+  if (!req.userId) {
+    res.status(401).json({ error: 'Not authenticated' })
+    return
+  }
+
+  const {
+    firstName, lastName, username, avatarKey,
+    bio, website, email, notificationPreferences,
+  } = req.body
+
+  try {
+    const user = await updateProfile(req.userId, {
+      firstName, lastName, username, avatarKey,
+      bio, website, email, notificationPreferences,
+    })
+    res.json({ user })
+  } catch (err) {
+    console.error('Failed to update profile:', err)
+    res.status(500).json({ error: 'Failed to update profile' })
   }
 }
 

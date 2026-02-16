@@ -1,19 +1,31 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import type { CharacterCore, CharacterDoc } from '../../shared/types'
+import { getPublicUrl } from '../services/image.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const charactersCollection = () => db().collection('characters')
 
+/** Add resolved imageUrl from imageKey for API responses. */
+function normalizeCharacter(doc: any) {
+  if (!doc) return doc
+  return { ...doc, imageUrl: getPublicUrl(doc.imageKey) }
+}
+
 export async function getCharactersByUser(userId: string) {
-  return charactersCollection()
+  const docs = await charactersCollection()
     .find({ userId: new mongoose.Types.ObjectId(userId), deletedAt: { $exists: false } })
     .sort({ createdAt: -1 })
     .toArray()
+  return docs.map(normalizeCharacter)
 }
 
 export async function getCharacterById(id: string) {
   return charactersCollection().findOne({ _id: new mongoose.Types.ObjectId(id) })
+}
+
+export function getCharacterByIdNormalized(id: string) {
+  return getCharacterById(id).then(normalizeCharacter)
 }
 
 export async function createCharacter(userId: string, data: CharacterDoc) {
@@ -22,7 +34,7 @@ export async function createCharacter(userId: string, data: CharacterDoc) {
     userId: new mongoose.Types.ObjectId(userId),
     name: data.name,
     type: data.type ?? 'pc',
-    imageUrl: data.imageUrl ?? null,
+    imageKey: data.imageKey ?? null,
     race: data.race ?? '',
     classes: data.classes ?? [],
     totalLevel: data.totalLevel ?? 1,
@@ -43,7 +55,8 @@ export async function createCharacter(userId: string, data: CharacterDoc) {
     updatedAt: now,
   })
 
-  return charactersCollection().findOne({ _id: result.insertedId })
+  const created = await charactersCollection().findOne({ _id: result.insertedId })
+  return normalizeCharacter(created)
 }
 
 export async function updateCharacter(id: string, data: Partial<CharacterData>) {
@@ -51,11 +64,12 @@ export async function updateCharacter(id: string, data: Partial<CharacterData>) 
   const cleaned = Object.fromEntries(
     Object.entries(data).filter(([_, v]) => v !== undefined)
   )
-  return charactersCollection().findOneAndUpdate(
+  const doc = await charactersCollection().findOneAndUpdate(
     { _id: new mongoose.Types.ObjectId(id) },
     { $set: { ...cleaned, updatedAt: new Date() } },
     { returnDocument: 'after' },
   )
+  return normalizeCharacter(doc)
 }
 
 export async function deleteCharacter(id: string) {
@@ -125,9 +139,10 @@ export async function getCampaignsForCharacter(characterId: string) {
 
   return campaigns.map(c => {
     const member = memberByCampaignId.get(c._id.toString())
+    const { imageKey: campImageKey, ...identityRest } = c.identity ?? {}
     return {
       _id: c._id,
-      identity: c.identity,
+      identity: { ...identityRest, imageUrl: getPublicUrl(campImageKey) },
       dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
       campaignMemberId: member?._id?.toString(),
       characterStatus: (member?.characterStatus ?? 'active') as string,

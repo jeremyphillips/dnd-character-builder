@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -11,12 +11,13 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ImageIcon from '@mui/icons-material/Image'
 
 import { Lightbox } from '@/ui/elements'
+import { resolveImageUrl } from '@/utils/image'
 
 interface ImageUploadFieldProps {
-  /** Current image URL (local or remote) */
+  /** Current storage key or legacy URL */
   value?: string | null
-  /** Called with the uploaded URL from the server */
-  onChange: (url: string | null) => void
+  /** Called with the storage key from the upload endpoint (or null on remove) */
+  onChange: (key: string | null) => void
   /** Label shown above the field */
   label?: string
   /** Whether the user can interact with the field */
@@ -31,6 +32,8 @@ interface ImageUploadFieldProps {
  * - No image: shows drag-and-drop upload zone
  * - Has image: shows preview with Replace / Remove buttons
  * - Click image: opens full-size lightbox modal
+ *
+ * Stores the raw storage key via onChange; resolves to a display URL internally.
  */
 export default function ImageUploadField({
   value,
@@ -43,6 +46,8 @@ export default function ImageUploadField({
   const [uploading, setUploading] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const displayUrl = useMemo(() => resolveImageUrl(value), [value])
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -60,7 +65,7 @@ export default function ImageUploadField({
           return
         }
         const data = await res.json()
-        onChange(data.url)
+        onChange(data.key)
       } catch (err) {
         console.error('Upload error:', err)
       } finally {
@@ -106,7 +111,7 @@ export default function ImageUploadField({
   )
 
   // ── Has image ──────────────────────────────────────────────────────────
-  if (value) {
+  if (displayUrl) {
     return (
       <Box>
         {label && (
@@ -118,7 +123,7 @@ export default function ImageUploadField({
         {/* Clickable image preview */}
         <Box
           component="img"
-          src={value}
+          src={displayUrl}
           alt={label}
           onClick={() => setLightboxOpen(true)}
           sx={{
@@ -167,7 +172,7 @@ export default function ImageUploadField({
         <Lightbox
           open={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
-          src={value}
+          src={displayUrl}
           alt={label}
         />
       </Box>

@@ -36,6 +36,7 @@ import {
   CampaignAdminInvitesRoute,
   CampaignAdminBrainstormingRoute,
   CampaignAdminSettingsRoute,
+  AccountSettingsRoute,
 } from './routes/index'
 
 function RootLayout() {
@@ -94,6 +95,7 @@ export const router = createBrowserRouter([
             ],
           },
           { path: ROUTES.INVITE, element: <InviteRoute /> },
+          { path: ROUTES.ACCOUNT_SETTINGS, element: <AccountSettingsRoute /> },
           {
             path: ROUTES.ADMIN,
             element: <AdminGuard />,

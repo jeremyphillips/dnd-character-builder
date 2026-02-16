@@ -16,7 +16,7 @@ export interface LocationDoc {
   name: string
   type: string
   description?: string
-  imageUrl?: string
+  imageKey?: string
   parentLocationId?: string
   visibility: { allCharacters: boolean; characterIds: string[] }
   isCustom?: boolean
@@ -26,7 +26,7 @@ export interface LocationOverride {
   name?: string
   type?: string
   description?: string
-  imageUrl?: string | null
+  imageKey?: string | null
   visibility?: { allCharacters: boolean; characterIds: string[] }
 }
 

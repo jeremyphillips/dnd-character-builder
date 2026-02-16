@@ -148,9 +148,19 @@ export default function AuthLayout() {
       >
         {/* User header */}
         <Box sx={{ p: 2.5, pb: 1.5 }}>
-          <Typography variant="subtitle1" fontWeight={700}>
-            {user.username}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              {user.username}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => navigate(ROUTES.ACCOUNT_SETTINGS)}
+              aria-label="Account settings"
+              sx={{ color: 'var(--mui-palette-text-secondary)' }}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Box>
           <Typography variant="caption" sx={{ color: 'var(--mui-palette-text-secondary)', textTransform: 'capitalize' }}>
             {user.role}
           </Typography>

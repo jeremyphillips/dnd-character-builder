@@ -12,6 +12,7 @@ import { LocationHorizontalCard } from '@/domain/location/components/LocationHor
 import { getPartyMembers } from '@/domain/party'
 import { useBreadcrumbs } from '@/hooks'
 import { apiFetch } from '@/app/api'
+import { resolveImageUrl } from '@/utils/image'
 import type { FieldConfig } from '@/ui/components/form/form.types'
 
 import Box from '@mui/material/Box'
@@ -194,6 +195,14 @@ export default function LocationsRoute() {
     [mergedDataLocations, customLocations]
   )
 
+  const createFormDefaults = useMemo(() => ({
+    imageKey: '',
+    name: '',
+    type: 'other' as LocationType,
+    description: '',
+    visibility: DEFAULT_VISIBILITY,
+  }), [])
+
   function openCreate() {
     setShowCreateForm(true)
   }
@@ -228,7 +237,7 @@ export default function LocationsRoute() {
 
   // ── Form fields for Create Location modal ──────────────────────────
   const createFormFields: FieldConfig[] = [
-    { type: 'imageUpload', name: 'imageUrl', label: 'Image', maxHeight: 200 },
+    { type: 'imageUpload', name: 'imageKey', label: 'Image', maxHeight: 200 },
     { type: 'text', name: 'name', label: 'Name', required: true, placeholder: 'Location name' },
     {
       type: 'select',
@@ -240,29 +249,28 @@ export default function LocationsRoute() {
     { type: 'visibility', name: 'visibility', label: 'Visibility', characters: partyMembers },
   ]
 
-  const createFormDefaults = {
-    imageUrl: '',
-    name: '',
-    type: 'other' as LocationType,
-    description: '',
-    visibility: DEFAULT_VISIBILITY,
-  }
-
   async function handleCreateSubmit(data: Record<string, unknown>) {
     const name = data.name as string
     if (!name) return
-    const newLoc: Location = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    const imageKey = (data.imageKey as string) || undefined
+    const locId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const apiBody = {
+      id: locId,
       settingId: activeSetting,
       name,
       type: (data.type as LocationType) ?? 'other',
       description: (data.description as string) || undefined,
-      imageUrl: (data.imageUrl as string) || undefined,
+      imageKey,
       visibility: (data.visibility as Visibility) ?? DEFAULT_VISIBILITY,
       isCustom: true,
     }
-    await apiCreateLocation(activeSetting, newLoc)
-    setCustomLocations((prev) => [...prev, newLoc])
+    await apiCreateLocation(activeSetting, apiBody as unknown as Location)
+    // Add to local state with resolved imageUrl for display
+    const displayLoc: Location = {
+      ...apiBody,
+      imageUrl: resolveImageUrl(imageKey),
+    }
+    setCustomLocations((prev) => [...prev, displayLoc])
   }
 
   return (

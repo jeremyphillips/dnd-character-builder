@@ -32,6 +32,7 @@
       "@/features/levelUp": ["features/levelUp/index.ts"],
       "@/features/levelUp/*": ["features/levelUp/*"],
       "@/features/account/*": ["features/account/*"],
+      "@/features/character/*": ["features/character/*"],
       "@/features/campaign/*": ["features/campaign/*"],
       "@/characterBuilder/context": ["features/characterBuilder/context/index.ts"],
       "@/ui/elements": ["ui/elements/index.ts"],

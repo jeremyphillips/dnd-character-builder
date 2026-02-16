@@ -38,6 +38,7 @@ export default defineConfig({
       "@/domain": path.resolve(__dirname, "src/domain"),
       "@/chat": path.resolve(__dirname, "src/features/chat"),
       "@/features/account": path.resolve(__dirname, "src/features/account"),
+      "@/features/character": path.resolve(__dirname, "src/features/character"),
       "@/features/levelUp": path.resolve(__dirname, "src/features/levelUp"),
       "@/features/campaign": path.resolve(__dirname, "src/features/campaign"),
       "@/features/messaging": path.resolve(__dirname, "src/features/messaging"),

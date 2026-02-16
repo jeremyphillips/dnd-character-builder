@@ -143,4 +143,74 @@ If a file’s responsibility is ambiguous:
 
 Do not invent new architectural layers without instruction.
 
+## 9. Route Responsibilities & Hook Extraction Rules
+Route Components (*Route.tsx)
 
+Route components are orchestration layers.
+
+They MAY:
+- Read route params
+- Call authentication hooks
+- Compose feature hooks
+
+Pass data into UI components
+
+They SHOULD NOT:
+- Contain large useEffect blocks with data-fetching logic
+- Contain complex mutation logic
+- Own large groups of related state fields
+- Contain business logic
+
+If a route exceeds ~150 lines OR contains:
+- More than 1 data-fetching useEffect
+- More than 5 pieces of related state
+- More than 3 async mutation handlers
+
+Cursor MUST extract logic into a feature hook.
+
+## 10. Presentation Layer & Route Size Limits
+Route Rendering Rules
+
+Route components (*Route.tsx) are orchestration layers.
+
+Routes MUST NOT contain large JSX blocks.
+
+If a route contains more than ~150 lines of JSX OR more than 3 major UI sections, Cursor MUST extract presentation into a feature-level view component.
+
+### Feature View Components
+Presentation for a feature MUST live in:
+`src/features/<feature-name>/`
+
+Example:
+`features/character/CharacterView.tsx`
+
+Feature view components:
+- MAY render complex JSX
+- MAY import shared UI components
+- MAY receive state + actions as props
+- MUST NOT perform data fetching
+- MUST NOT contain business logic
+- SHOULD be mostly declarative
+
+### Extraction Pattern
+When a route becomes large:
+1. Move all JSX into XxxView.tsx
+2. Pass required state and actions as props
+3. Keep the route focused on:
+  - Params
+  - Guards
+  - Hook composition
+  - Loading and error states
+
+After extraction, routes should typically be under 75–100 lines.
+
+### Component Granularity
+
+Large feature views SHOULD be broken into smaller components when:
+- A section exceeds ~150 lines
+- A section has independent logic
+- A section could be reused
+
+Do not create tiny components for trivial markup.
+
+Prioritize readability and cohesion.

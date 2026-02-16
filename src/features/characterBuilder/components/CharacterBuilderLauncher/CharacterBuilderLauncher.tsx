@@ -35,7 +35,7 @@ const CharacterBuilderLauncher = ({
         size={size}
         startIcon={<AutoFixHighIcon />}
         onClick={() => {
-          openBuilder(characterType, campaignEdition, campaignSetting)
+          openBuilder(characterType, { edition: campaignEdition, setting: campaignSetting })
           setModalOpen(true)
         }}
       >

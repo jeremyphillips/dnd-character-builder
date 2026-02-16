@@ -13,6 +13,16 @@ export type CharacterBuilderState = CharacterSheet & {
     name: string
   }
   activeClassIndex: number | null
+  /** Fields pre-filled via overrides — their corresponding steps are skipped and locked. */
+  lockedFields?: Set<StepId>
+}
+
+/** Fields that can be pre-filled when launching the builder. */
+export type BuilderOverrides = {
+  edition?: import('@/data').EditionId
+  setting?: import('@/data').SettingId
+  race?: string
+  alignment?: string
 }
 
 export type CharacterBuilderContextValue = {
@@ -20,7 +30,7 @@ export type CharacterBuilderContextValue = {
 
   // basic character info
   setCharacterType: (type: CharacterType) => void
-  openBuilder: (mode: CharacterType, campaignEdition?: string, campaignSetting?: string) => void
+  openBuilder: (mode: CharacterType, overrides?: BuilderOverrides) => void
   setName: (name: string) => void
   setEdition: (id: string) => void
   setSetting: (id: string) => void

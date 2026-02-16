@@ -10,7 +10,7 @@ import {
   RaceStep,
   SpellStep
 } from '../steps'
-import { type CharacterBuilderState, type StepId } from '../types'
+import { type CharacterBuilderState, type StepId, type BuilderOverrides } from '../types'
 import type { CharacterType } from '@/shared/types/character.core'
 import type { EditionId, SettingId } from '@/data'
 import { getClassProgression } from '@/domain/character'
@@ -37,13 +37,19 @@ function isSpellcaster(state: CharacterBuilderState): boolean {
   })
 }
 
+/** Returns true if a step is locked via overrides. */
+function isLocked(state: CharacterBuilderState, stepId: StepId): boolean {
+  return state.lockedFields?.has(stepId) ?? false
+}
+
 export function getStepConfig(mode: CharacterType): StepConfig[] {
   const baseSteps: StepConfig[] = [
     {
       id: 'race',
       label: 'Race',
       component: RaceStep,
-      selector: (state: CharacterBuilderState) => state.race
+      selector: (state: CharacterBuilderState) => state.race,
+      shouldSkip: (state) => isLocked(state, 'race'),
     },
     {
       id: 'level',
@@ -70,7 +76,8 @@ export function getStepConfig(mode: CharacterType): StepConfig[] {
       id: 'alignment',
       label: 'Alignment',
       component: AlignmentStep,
-      selector: (state: CharacterBuilderState) => state.alignment
+      selector: (state: CharacterBuilderState) => state.alignment,
+      shouldSkip: (state) => isLocked(state, 'alignment'),
     },
     {
       id: 'equipment',
@@ -99,14 +106,16 @@ export function getStepConfig(mode: CharacterType): StepConfig[] {
         id: 'edition',
         label: 'Edition',
         component: EditionStep,
-        selector: (state: CharacterBuilderState) => state.edition
+        selector: (state: CharacterBuilderState) => state.edition,
+        shouldSkip: (state) => isLocked(state, 'edition'),
       },
       {
         id: 'setting',
         label: 'Setting',
         component: SettingStep,
         selector: (state: CharacterBuilderState) => state.setting,
-        optional: true
+        optional: true,
+        shouldSkip: (state) => isLocked(state, 'setting'),
       },
       ...baseSteps
     ]
@@ -118,18 +127,26 @@ export function getStepConfig(mode: CharacterType): StepConfig[] {
 
 export function createInitialBuilderState(
   mode: CharacterType,
-  campaignEdition?: string,
-  campaignSetting?: string
+  overrides?: BuilderOverrides,
 ): CharacterBuilderState {
+  // Build the set of locked (pre-filled) step IDs
+  const lockedFields = new Set<StepId>()
+  if (overrides?.edition) lockedFields.add('edition')
+  if (overrides?.setting) lockedFields.add('setting')
+  if (overrides?.race) lockedFields.add('race')
+  if (overrides?.alignment) lockedFields.add('alignment')
+
   const steps = getStepConfig(mode)
-  return {
+
+  // Build a temporary state so shouldSkip can read lockedFields
+  const tempState: CharacterBuilderState = {
     step: { id: steps[0].id, name: steps[0].label },
     type: mode,
     name: undefined,
     xp: 0,
-    edition: (mode === 'npc' ? campaignEdition : undefined) as EditionId | undefined,
-    setting: (mode === 'npc' ? campaignSetting : undefined) as SettingId | undefined,
-    race: undefined,
+    edition: (overrides?.edition ?? undefined) as EditionId | undefined,
+    setting: (overrides?.setting ?? undefined) as SettingId | undefined,
+    race: overrides?.race ?? undefined,
     classes: [{ level: 1 }],
     activeClassIndex: 0,
     equipment: {
@@ -138,7 +155,7 @@ export function createInitialBuilderState(
       gear: [],
       weight: 0
     },
-    alignment: undefined,
+    alignment: overrides?.alignment ?? undefined,
     proficiencies: [],
     spells: [],
     totalLevel: 0,
@@ -146,6 +163,15 @@ export function createInitialBuilderState(
       gp: 0,
       sp: 0,
       cp: 0
-    }
+    },
+    lockedFields,
+  }
+
+  // Find the first non-skipped step
+  const firstStep = steps.find(s => !s.shouldSkip?.(tempState)) ?? steps[0]
+
+  return {
+    ...tempState,
+    step: { id: firstStep.id, name: firstStep.label },
   }
 }

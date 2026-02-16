@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import useChat from '../hooks/useChat'
 import type { ChatMessage } from '../types'
-import { useCharacterBuilder, CharacterBuilderShell, type CharacterBuilderState } from '@/characterBuilder'
+import { useCharacterBuilder, CharacterBuilderWizard, type CharacterBuilderState } from '@/characterBuilder'
+import { AppModal } from '@/ui/modals'
 import { apiFetch } from '@/app/api'
 import { type CharacterClassInfo } from '@/shared'
 import { LoadingOverlay } from '@/ui/elements'
@@ -261,12 +262,22 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
   // ── Render ───────────────────────────────────────────────────────────
   return (
     <>
-      <CharacterBuilderShell
-        isOpen={isModalOpen}
-        onClose={generating ? undefined : onCloseModal}
-        onGenerate={handleGenerate}
-        isGenerating={generating}
-      />
+      <CharacterBuilderWizard onGenerate={handleGenerate} isGenerating={generating}>
+        {({ content, actions }) => (
+          <AppModal
+            open={isModalOpen}
+            onClose={generating ? () => {} : onCloseModal}
+            size="full"
+            showCloseButton={!generating}
+            closeOnBackdropClick={!generating}
+            closeOnEsc={!generating}
+            loading={generating}
+            actions={actions}
+          >
+            {content}
+          </AppModal>
+        )}
+      </CharacterBuilderWizard>
 
       {/* Generation loader overlay inside the modal */}
       <LoadingOverlay

@@ -153,10 +153,9 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const openBuilder = (
     mode: CharacterType,
-    campaignEdition?: string,
-    campaignSetting?: string
+    overrides?: import('../types').BuilderOverrides,
   ) => {
-    setState(createInitialBuilderState(mode, campaignEdition, campaignSetting))
+    setState(createInitialBuilderState(mode, overrides))
   }
 
 
@@ -574,11 +573,10 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const resetState = () => {
     setState(
-      createInitialBuilderState(
-        state.type ?? 'pc',
-        state.edition,
-        state.setting
-      )
+      createInitialBuilderState(state.type ?? 'pc', {
+        edition: state.edition,
+        setting: state.setting,
+      })
     )
   }
 

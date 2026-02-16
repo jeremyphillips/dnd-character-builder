@@ -1,74 +1,84 @@
 import { useState } from 'react'
-import { useAuth } from '../../providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ROUTES } from '../../routes'
+import { ROUTES } from '@/app/routes'
+import {
+  AppForm,
+  DynamicFormRenderer,
+  FormActions,
+  type FieldConfig,
+} from '@/ui/components/form'
+
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Alert from '@mui/material/Alert'
+import CircularProgress from '@mui/material/CircularProgress'
+
+type LoginFormData = {
+  email: string
+  password: string
+}
+
+const fields: FieldConfig[] = [
+  {
+    type: 'text',
+    name: 'email',
+    label: 'Email',
+    inputType: 'email',
+    required: true,
+    placeholder: 'you@example.com',
+  },
+  {
+    type: 'text',
+    name: 'password',
+    label: 'Password',
+    inputType: 'password',
+    required: true,
+    placeholder: 'Enter your password',
+  },
+]
+
+const defaultValues: LoginFormData = { email: '', password: '' }
 
 export default function LoginRoute() {
   const { user, loading, signIn } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Loading...</div>
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    )
   }
 
   if (user) {
     return <Navigate to={ROUTES.DASHBOARD} replace />
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(data: LoginFormData) {
     setError('')
-    setSubmitting(true)
-
     try {
-      await signIn(email, password)
+      await signIn(data.email, data.password)
       navigate(ROUTES.DASHBOARD, { replace: true })
     } catch {
       setError('Invalid email or password.')
-    } finally {
-      setSubmitting(false)
     }
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 400 }}>
-      <h1>Sign In</h1>
+    <Box sx={{ p: 3, maxWidth: 400, mx: 'auto' }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        Sign In
+      </Typography>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            style={{ display: 'block', width: '100%', marginTop: 4, padding: 8 }}
-          />
-        </label>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            style={{ display: 'block', width: '100%', marginTop: 4, padding: 8 }}
-          />
-        </label>
-
-        {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
-
-        <button type="submit" disabled={submitting} style={{ padding: '8px 16px' }}>
-          {submitting ? 'Signing in...' : 'Sign In'}
-        </button>
-      </form>
-    </div>
+      <AppForm<LoginFormData> defaultValues={defaultValues} onSubmit={handleSubmit}>
+        <DynamicFormRenderer fields={fields} />
+        <FormActions submitLabel="Sign In" />
+      </AppForm>
+    </Box>
   )
 }

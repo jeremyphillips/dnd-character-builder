@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import { CardBadge } from './CardBadge'
+import UserAvatar from '@/domain/user/components/UserAvatar/UserAvatar'
 
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 
@@ -18,11 +19,13 @@ export interface CardBadgeItem {
 
 export interface MediaTopCardProps {
   image?: string
+  /** Rendered in place of CardMedia when `image` is falsy */
+  imageFallback?: React.ReactNode
   headline: string
   subheadline?: string
   description?: string
   badges?: CardBadgeItem[]
-  attribution?: string
+  attribution?: string | { name: string; imageUrl?: string }
   link?: string
   isEditable?: boolean
   onEdit?: () => void
@@ -31,6 +34,7 @@ export interface MediaTopCardProps {
 
 const MediaTopCard = ({
   image,
+  imageFallback,
   headline,
   subheadline,
   description,
@@ -43,7 +47,7 @@ const MediaTopCard = ({
 }: MediaTopCardProps) => {
   const content = (
     <Card sx={{ overflow: 'hidden' }}>
-      {image && (
+      {image ? (
         <CardMedia
           component="img"
           height="180"
@@ -51,7 +55,9 @@ const MediaTopCard = ({
           alt={headline}
           sx={{ objectFit: 'cover' }}
         />
-      )}
+      ) : imageFallback ? (
+        imageFallback
+      ) : null}
       <CardContent>
         <Typography variant="h6" component="h2" fontWeight={600}>
           {headline}
@@ -81,9 +87,14 @@ const MediaTopCard = ({
       <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {attribution && (
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {attribution}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0 }}>
+              {typeof attribution === 'object' && attribution.imageUrl && (
+                <UserAvatar username={attribution.name} avatarUrl={attribution.imageUrl} size="xs" />
+              )}
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {typeof attribution === 'string' ? attribution : attribution.name}
+              </Typography>
+            </Stack>
           )}
         </Box>
         <Stack direction="row" alignItems="center" spacing={0.5}>

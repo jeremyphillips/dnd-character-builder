@@ -5,7 +5,9 @@ export type PartyMemberApiRow = {
   race?: string
   class?: string
   level?: number
+  imageKey?: string | null
   ownerName?: string
+  ownerAvatarUrl?: string
   status?: 'pending' | 'approved'
   campaignMemberId?: string
 }
@@ -17,7 +19,9 @@ export type PartyMember = {
   race: string
   class: string
   level: number
+  imageKey?: string | null
   ownerName: string
+  ownerAvatarUrl?: string
   status?: 'pending' | 'approved'
   campaignMemberId?: string
 }

@@ -92,6 +92,50 @@ export async function getMembersForMessaging(req: Request, res: Response) {
   res.json({ members })
 }
 
+export async function preCheckMember(req: Request, res: Response) {
+  const campaign = req.campaign!
+  const { email } = req.body
+
+  if (!email) {
+    res.status(400).json({ error: 'email is required' })
+    return
+  }
+
+  const db = mongoose.connection.useDb(process.env.DB_NAME ?? 'dnd')
+  const user = await db.collection('users').findOne({ email })
+
+  if (!user) {
+    res.json({ status: 'no_account' })
+    return
+  }
+
+  const userName = (user.username as string) ?? email
+
+  // Check if user is already a campaign member
+  const member = await db.collection('campaignMembers').findOne({
+    campaignId: new mongoose.Types.ObjectId(req.params.id),
+    userId: user._id,
+    status: { $in: ['pending', 'approved'] },
+  })
+
+  if (!member) {
+    res.json({ status: 'ok', userName })
+    return
+  }
+
+  // Check if their character is active in this campaign
+  const characterStatus = (member as { characterStatus?: string }).characterStatus ?? 'active'
+  if (characterStatus === 'active') {
+    res.json({
+      status: 'active_character',
+      userName,
+    })
+    return
+  }
+
+  res.json({ status: 'already_member', userName })
+}
+
 export async function addMember(req: Request, res: Response) {
   const campaign = req.campaign!
   const { email, role } = req.body

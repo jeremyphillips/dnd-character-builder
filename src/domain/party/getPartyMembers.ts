@@ -23,7 +23,9 @@ export async function getPartyMembers(
     race: c.race ?? '—',
     class: c.class ?? '—',
     level: c.level ?? 1,
+    imageKey: c.imageKey ?? null,
     ownerName: c.ownerName ?? 'Unknown',
+    ownerAvatarUrl: c.ownerAvatarUrl,
     status: c.status ?? 'approved',
     campaignMemberId: c.campaignMemberId,
   }))

@@ -3,13 +3,18 @@ import { useParams, Outlet, useMatch, Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { editions, settings } from '@/data'
 import { getById } from '@/domain/lookups'
-// import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
 import { getPartyMembers } from '@/domain/party'
 import type { PartyMember } from '@/domain/party'
 import { Hero } from '@/ui/elements'
 import CharacterMediaTopCard from '@/domain/character/components/CharacterMediaTopCard/CharacterMediaTopCard'
+import { resolveImageUrl } from '@/utils/image'
+import { FormModal, ConfirmModal } from '@/ui/modals'
+import type { FieldConfig } from '@/ui/components/form'
 import { ROUTES } from '@/app/routes'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Alert from '@mui/material/Alert'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import { apiFetch } from '@/app/api'
 
 interface Campaign {
@@ -26,6 +31,26 @@ interface Campaign {
   memberCount: number
 }
 
+type InviteFormData = { email: string }
+
+type PreCheckResult = {
+  status: 'ok' | 'no_account' | 'active_character' | 'already_member'
+  userName?: string
+}
+
+const inviteFields: FieldConfig[] = [
+  {
+    type: 'text',
+    name: 'email',
+    label: 'Email Address',
+    inputType: 'email',
+    required: true,
+    placeholder: 'player@example.com',
+  },
+]
+
+const inviteDefaults: InviteFormData = { email: '' }
+
 export default function CampaignRoute() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
@@ -34,7 +59,17 @@ export default function CampaignRoute() {
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [partyCharacters, setPartyCharacters] = useState<PartyMember[]>([])
   const [loading, setLoading] = useState(true)
-  const [inviting, setInviting] = useState(false)
+
+  // Invite modal state
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null)
+
+  // Confirm modal state (for active-character warning)
+  const [confirmState, setConfirmState] = useState<{
+    email: string
+    userName: string
+  } | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
   const isOwner = campaign?.membership.adminId === user?.id
 
@@ -67,26 +102,47 @@ export default function CampaignRoute() {
     }
   }
 
-  async function handleInvite() {
-    const email = prompt('Enter the email of the user to invite:')
-    if (!email) return
+  async function sendInvite(email: string) {
+    const data = await apiFetch<{ message?: string }>(
+      `/api/campaigns/${id}/members`,
+      { method: 'POST', body: { email } }
+    )
+    setInviteSuccess(data.message ?? 'Invite sent')
+    await fetchCampaign()
+  }
 
-    setInviting(true)
+  async function handleInviteSubmit({ email }: InviteFormData) {
+    // Pre-check before sending
+    const check = await apiFetch<PreCheckResult>(
+      `/api/campaigns/${id}/members/pre-check`,
+      { method: 'POST', body: { email } }
+    )
+
+    if (check.status === 'already_member') {
+      throw new Error(`${check.userName ?? email} is already a member of this campaign.`)
+    }
+
+    if (check.status === 'active_character') {
+      // Close form modal, open confirm modal
+      setInviteOpen(false)
+      setConfirmState({ email, userName: check.userName ?? email })
+      return
+    }
+
+    // 'ok' or 'no_account' — proceed directly
+    await sendInvite(email)
+  }
+
+  async function handleConfirmInvite() {
+    if (!confirmState) return
+    setConfirming(true)
     try {
-      const data = await apiFetch<{ message?: string }>(
-        `/api/campaigns/${id}/members`,
-        { method: 'POST', body: { email } }
-      )
-
-      if (data.message) {
-        alert(data.message)
-      }
-
-      await fetchCampaign()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to invite user')
+      await sendInvite(confirmState.email)
+      setConfirmState(null)
+    } catch {
+      setConfirmState(null)
     } finally {
-      setInviting(false)
+      setConfirming(false)
     }
   }
 
@@ -116,23 +172,21 @@ export default function CampaignRoute() {
       />
 
       <h3>Campaign</h3>
-      {/* <CampaignForm
-        initial={{
-          name: campaign.identity.name,
-          edition: campaign.identity.edition,
-          setting: campaign.identity.setting,
-        }}
-        onSubmit={handleSave}
-        onCancel={() => navigate(ROUTES.CAMPAIGNS)}
-        submitLabel="Save"
-        submittingLabel="Saving…"
-        canEdit={isOwner}
-      /> */}
 
       {isOwner && (
-        <button onClick={handleInvite} disabled={inviting}>
-          {inviting ? 'Inviting…' : 'Invite User'}
-        </button>
+        <Button
+          variant="outlined"
+          startIcon={<PersonAddIcon />}
+          onClick={() => { setInviteSuccess(null); setInviteOpen(true) }}
+        >
+          Invite User
+        </Button>
+      )}
+
+      {inviteSuccess && (
+        <Alert severity="success" onClose={() => setInviteSuccess(null)} sx={{ mt: 2 }}>
+          {inviteSuccess}
+        </Alert>
       )}
 
       <h3>Sessions</h3>
@@ -154,12 +208,44 @@ export default function CampaignRoute() {
             race={char.race}
             class={char.class}
             level={char.level}
+            imageUrl={resolveImageUrl(char.imageKey)}
             status={char.status}
-            attribution={char.ownerName}
+            attribution={{ name: char.ownerName, imageUrl: char.ownerAvatarUrl }}
             link={`/characters/${char._id}`}
           />
         ))}
       </Box>
+
+      {/* Invite User modal */}
+      <FormModal<InviteFormData>
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onSubmit={handleInviteSubmit}
+        headline="Invite User"
+        description="Enter the email address of the player you'd like to invite to this campaign."
+        fields={inviteFields}
+        defaultValues={inviteDefaults}
+        submitLabel="Invite"
+        cancelLabel="Cancel"
+        size="compact"
+      />
+
+      {/* Active character confirmation */}
+      <ConfirmModal
+        open={!!confirmState}
+        onCancel={() => setConfirmState(null)}
+        onConfirm={handleConfirmInvite}
+        headline="Player Already Active"
+        description={
+          confirmState
+            ? `${confirmState.userName} already has an active character in ${campaign.identity.name}. Do you want to proceed?`
+            : ''
+        }
+        confirmLabel="Proceed"
+        cancelLabel="Cancel"
+        confirmColor="warning"
+        loading={confirming}
+      />
     </div>
   )
 }

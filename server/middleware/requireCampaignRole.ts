@@ -58,8 +58,8 @@ export function requireCampaignRole(...requiredRoles: Array<CampaignRole | 'admi
         })
         .toArray()
 
-      const memberDocs = members as { role: string; status?: string }[]
-      const approvedMembers = memberDocs.filter((m) => (m.status ?? 'approved') === 'approved')
+      const memberDocs = members as { role: string; status: string }[]
+      const approvedMembers = memberDocs.filter((m) => m.status === 'approved')
       const hasAnyMember = memberDocs.length > 0
 
       if (hasAnyMember) {

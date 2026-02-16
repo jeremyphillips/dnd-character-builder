@@ -4,7 +4,7 @@ import type { CharacterClassInfo, CharacterDoc } from '@/shared'
 import { classes as classesData } from '@/data'
 import { Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
-import { apiFetch } from '../../api'
+import { apiFetch } from '@/app/api'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -58,7 +58,7 @@ function formatDate(iso: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function MyCharactersRoute() {
+export default function CharactersRoute() {
   const [characters, setCharacters] = useState<CharacterDoc[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)

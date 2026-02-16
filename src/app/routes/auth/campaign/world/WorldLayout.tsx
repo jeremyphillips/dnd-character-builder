@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom'
 
 import Box from '@mui/material/Box'
 
-export default function WorldRoute() {
+export default function WorldLayout() {
   return (
     <Box>
       <Outlet />

@@ -1,11 +1,11 @@
-import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 
-export default function AdminBrainstormingRoute() {
+export default function AccountRoute() {
   return (
     <Box>
       <Typography variant="h4" component="h1">
-        Brainstorming
+        Account
       </Typography>
     </Box>
   )

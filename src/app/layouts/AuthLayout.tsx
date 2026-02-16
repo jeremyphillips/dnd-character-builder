@@ -76,7 +76,7 @@ interface Campaign {
   membership?: { adminId?: string }
 }
 
-export default function DashboardLayout() {
+export default function AuthLayout() {
   const { user, loading, signOut } = useAuth()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { activeCampaignId, setActiveCampaign, clearActiveCampaign } = useActiveCampaign()
@@ -157,7 +157,53 @@ export default function DashboardLayout() {
         </Box>
 
         <Divider />
+        {/* Navigation */}
+        <List component="nav" sx={{ flex: 1, py: 1 }}>
+          {NAV_ITEMS.filter((item) => !item.superadminOnly || user.role === 'superadmin').map(({ label, to, icon, children }) => (
+            <Box key={to}>
+              <ListItemButton
+                component={NavLink}
+                to={to}
+                end={to === ROUTES.DASHBOARD || !!children}
+                selected={
+                  to === ROUTES.DASHBOARD
+                    ? location.pathname === to
+                    : !children
+                      ? location.pathname.startsWith(to)
+                      : location.pathname === to
+                }
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
+                <ListItemText
+                  primary={label}
+                  slotProps={{ primary: { fontSize: '0.9rem' } }}
+                />
+              </ListItemButton>
 
+              {children && (
+                <List component="div" disablePadding>
+                  {children.map((child) => (
+                    <ListItemButton
+                      key={child.to}
+                      component={NavLink}
+                      to={child.to}
+                      selected={location.pathname === child.to}
+                      sx={{ pl: 4 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}>{child.icon}</ListItemIcon>
+                      <ListItemText
+                        primary={child.label}
+                        slotProps={{ primary: { fontSize: '0.85rem' } }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              )}
+            </Box>
+          ))}
+        </List>
+
+        <Divider />
         {/* Campaign section */}
         <Box
           sx={{
@@ -323,54 +369,6 @@ export default function DashboardLayout() {
             </List>
           )}
         </Box>
-
-        <Divider />
-
-        {/* Navigation */}
-        <List component="nav" sx={{ flex: 1, py: 1 }}>
-          {NAV_ITEMS.filter((item) => !item.superadminOnly || user.role === 'superadmin').map(({ label, to, icon, children }) => (
-            <Box key={to}>
-              <ListItemButton
-                component={NavLink}
-                to={to}
-                end={to === ROUTES.DASHBOARD || !!children}
-                selected={
-                  to === ROUTES.DASHBOARD
-                    ? location.pathname === to
-                    : !children
-                      ? location.pathname.startsWith(to)
-                      : location.pathname === to
-                }
-              >
-                <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
-                <ListItemText
-                  primary={label}
-                  slotProps={{ primary: { fontSize: '0.9rem' } }}
-                />
-              </ListItemButton>
-
-              {children && (
-                <List component="div" disablePadding>
-                  {children.map((child) => (
-                    <ListItemButton
-                      key={child.to}
-                      component={NavLink}
-                      to={child.to}
-                      selected={location.pathname === child.to}
-                      sx={{ pl: 4 }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 36 }}>{child.icon}</ListItemIcon>
-                      <ListItemText
-                        primary={child.label}
-                        slotProps={{ primary: { fontSize: '0.85rem' } }}
-                      />
-                    </ListItemButton>
-                  ))}
-                </List>
-              )}
-            </Box>
-          ))}
-        </List>
 
         <Divider />
 

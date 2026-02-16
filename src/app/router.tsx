@@ -4,7 +4,7 @@ import { AppProviders } from './providers'
 
 // MUI Layouts
 import PublicLayout from './layouts/PublicLayout'
-import DashboardLayout from './layouts/DashboardLayout'
+import AuthLayout from './layouts/AuthLayout'
 
 // Route components
 import {
@@ -12,8 +12,8 @@ import {
   LoginRoute,
   DashboardRoute,
   UsersRoute,
-  MyCharactersRoute,
-  CharacterDetailRoute,
+  CharactersRoute,
+  CharacterRoute,
   CampaignsRoute,
   CampaignRoute,
   InviteRoute,
@@ -22,7 +22,7 @@ import {
   SessionsRoute,
   SessionRoute,
   MessagingRoute,
-  WorldRoute,
+  WorldLayout,
   LocationsRoute,
   LocationRoute,
   NpcsRoute,
@@ -32,10 +32,10 @@ import {
   EquipmentRoute,
   EquipmentDetailsRoute,
   AdminGuard,
-  AdminRoute,
-  AdminInvitesRoute,
-  AdminBrainstormingRoute,
-  AdminSettingsRoute,
+  CampaignAdminRoute,
+  CampaignAdminInvitesRoute,
+  CampaignAdminBrainstormingRoute,
+  CampaignAdminSettingsRoute,
 } from './routes/index'
 
 function RootLayout() {
@@ -59,12 +59,12 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        element: <DashboardLayout />,
+        element: <AuthLayout />,
         children: [
           { path: ROUTES.DASHBOARD, element: <DashboardRoute /> },
           { path: ROUTES.USERS, element: <UsersRoute /> },
-          { path: ROUTES.CHARACTERS, element: <MyCharactersRoute /> },
-          { path: ROUTES.CHARACTER, element: <CharacterDetailRoute /> },
+          { path: ROUTES.CHARACTERS, element: <CharactersRoute /> },
+          { path: ROUTES.CHARACTER, element: <CharacterRoute /> },
           { path: ROUTES.CAMPAIGNS, element: <CampaignsRoute /> },
           { path: ROUTES.RULES, element: <RulesRoute /> },
           { path: ROUTES.PARTY, element: <PartyRoute /> },
@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
               { path: 'equipment/:equipmentId', element: <EquipmentDetailsRoute /> },
               {
                 path: 'world',
-                element: <WorldRoute />,
+                element: <WorldLayout />,
                 children: [
                   { index: true, element: <Navigate to="locations" replace /> },
                   { path: 'locations', element: <LocationsRoute /> },
@@ -99,12 +99,12 @@ export const router = createBrowserRouter([
             element: <AdminGuard />,
             children: [
               {
-                element: <AdminRoute />,
+                element: <CampaignAdminRoute />,
                 children: [
                   { index: true, element: <Navigate to={ROUTES.ADMIN_INVITES} replace /> },
-                  { path: 'invites', element: <AdminInvitesRoute /> },
-                  { path: 'brainstorming', element: <AdminBrainstormingRoute /> },
-                  { path: 'settings', element: <AdminSettingsRoute /> },
+                  { path: 'invites', element: <CampaignAdminInvitesRoute /> },
+                  { path: 'brainstorming', element: <CampaignAdminBrainstormingRoute /> },
+                  { path: 'settings', element: <CampaignAdminSettingsRoute /> },
                 ],
               },
             ],

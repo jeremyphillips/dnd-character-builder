@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { equipment } from '@/data/equipment'
 import { getEquipmentCostByEdition } from '@/domain/equipment/cost'
 import EquipmentMediaTopCard from '@/domain/equipment/components/EquipmentMediaTopCard/EquipmentMediaTopCard'
-import { ROUTES } from '../../routes'
-import { apiFetch } from '../../api'
+import { ROUTES } from '@/app/routes'
+import { apiFetch } from '@/app/api'
 
 export default function EquipmentRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
@@ -25,6 +27,8 @@ export default function EquipmentRoute() {
   const equipmentLink = (itemId: string) =>
     campaignId ? ROUTES.EQUIPMENT_DETAILS.replace(':id', campaignId).replace(':equipmentId', itemId) : undefined
 
+  const breadcrumbs = useBreadcrumbs()
+
   const gridSx = {
     display: 'grid',
     gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
@@ -33,6 +37,7 @@ export default function EquipmentRoute() {
 
   return (
     <Box>
+      <Breadcrumbs items={breadcrumbs} />
       <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
         Equipment
       </Typography>

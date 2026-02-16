@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from '../../providers/AuthProvider'
-import { useActiveCampaign } from '../../providers/ActiveCampaignProvider'
-import { ROUTES } from '../../routes'
-import { apiFetch } from '../../api'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
+import { ROUTES } from '@/app/routes'
+import { apiFetch } from '@/app/api'
 import { useState, useEffect } from 'react'
 
 type CampaignWithAdmin = { _id: string; membership?: { adminId?: string } }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { apiFetch, ApiError } from '../../api'
+import { apiFetch, ApiError } from '@/app/api'
 import { FormModal } from '@/ui/modals'
 import { AppDataGrid } from '@/ui/components'
 import type { AppDataGridColumn } from '@/ui/components'

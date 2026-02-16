@@ -4,11 +4,13 @@ import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { CharacterBuilderLauncher } from '@/characterBuilder'
 import NpcMediaTopCard from '@/domain/npc/components/NpcMediaTopCard/NpcMediaTopCard'
 import { npcs } from '@/data/npcs/npcs'
-import { ROUTES } from '../../routes'
-import { apiFetch } from '../../api'
+import { ROUTES } from '@/app/routes'
+import { apiFetch } from '@/app/api'
 import type { EditionId, SettingId } from '@/data'
 import type { Character } from '@/shared/types'
 
@@ -60,10 +62,13 @@ export default function NpcsRoute() {
   const npcLink = (npcId: string) =>
     campaignId ? ROUTES.WORLD_NPC.replace(':id', campaignId).replace(':npcId', npcId) : undefined
 
+  const breadcrumbs = useBreadcrumbs()
+
   if (loading) return <CircularProgress />
 
   return (
     <Box>
+      <Breadcrumbs items={breadcrumbs} />
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1">
           NPCs

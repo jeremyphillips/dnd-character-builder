@@ -1,4 +1,4 @@
-import { useAuth } from '../../providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function DashboardRoute() {
   const { user } = useAuth()

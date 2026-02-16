@@ -1,4 +1,4 @@
-import { useAuth } from '../../providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { MessagingLayout } from '@/features/messaging'
 
 export default function MessagingRoute() {

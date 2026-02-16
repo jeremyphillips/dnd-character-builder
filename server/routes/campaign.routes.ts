@@ -11,6 +11,7 @@ import {
   getPartyCharacters,
   getMembers,
   getMembersForMessaging,
+  preCheckMember,
   addMember,
   updateMember,
   removeMember,
@@ -44,6 +45,7 @@ router.get('/:id/party', requireCampaignRole('observer'), getPartyCharacters)
 // Members — admin/dm can view, admin can manage
 router.get('/:id/members', requireCampaignRole('dm'), getMembers)
 router.get('/:id/members-for-messaging', requireCampaignRole('observer'), getMembersForMessaging)
+router.post('/:id/members/pre-check', requireCampaignRole('admin'), preCheckMember)
 router.post('/:id/members', requireCampaignRole('admin'), addMember)
 router.patch('/:id/members/:userId', requireCampaignRole('admin'), updateMember)
 router.delete('/:id/members/:userId', requireCampaignRole('admin'), removeMember)

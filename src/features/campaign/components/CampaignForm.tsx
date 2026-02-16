@@ -1,5 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
+import { useWatch, useFormContext } from 'react-hook-form'
 import { editions, settings } from '@/data'
+import {
+  AppForm,
+  DynamicFormRenderer,
+  FormActions,
+  type FieldConfig,
+} from '@/ui/components/form'
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
 
 export interface CampaignFormData {
   name: string
@@ -7,113 +16,103 @@ export interface CampaignFormData {
   setting: string
 }
 
+// ---------------------------------------------------------------------------
+// Inner component — watches edition and renders dynamic fields
+// ---------------------------------------------------------------------------
+
+function CampaignFields({ canEdit }: { canEdit: boolean }) {
+  const { setValue } = useFormContext<CampaignFormData>()
+  const edition = useWatch<CampaignFormData, 'edition'>({ name: 'edition' })
+  const prevEdition = useRef(edition)
+
+  // Reset setting when the edition changes (skip initial render)
+  useEffect(() => {
+    if (prevEdition.current !== edition) {
+      setValue('setting', '')
+      prevEdition.current = edition
+    }
+  }, [edition, setValue])
+
+  const selectedEdition = editions.find(e => e.id === edition)
+
+  const settingOptions = useMemo(() => {
+    if (!selectedEdition) return []
+    return selectedEdition.settings
+      .map((id: string) => settings.find(s => s.id === id))
+      .filter(Boolean)
+      .map(s => ({ value: s!.id, label: s!.name }))
+  }, [selectedEdition])
+
+  const fields: FieldConfig[] = useMemo(() => [
+    {
+      type: 'text' as const,
+      name: 'name',
+      label: 'Name',
+      placeholder: 'Campaign name',
+      required: true,
+      disabled: !canEdit,
+    },
+    {
+      type: 'select' as const,
+      name: 'edition',
+      label: 'Edition',
+      options: editions.map(ed => ({ value: ed.id, label: ed.name })),
+      placeholder: 'Select edition…',
+      required: true,
+      disabled: !canEdit,
+    },
+    {
+      type: 'select' as const,
+      name: 'setting',
+      label: 'Setting',
+      options: settingOptions,
+      placeholder: edition ? 'Select setting…' : 'Choose an edition first',
+      required: true,
+      disabled: !edition || !canEdit,
+    },
+  ], [canEdit, edition, settingOptions])
+
+  return <DynamicFormRenderer fields={fields} />
+}
+
+// ---------------------------------------------------------------------------
+// CampaignForm
+// ---------------------------------------------------------------------------
+
 export default function CampaignForm({
   initial,
   onSubmit,
   onCancel,
   submitLabel,
-  submittingLabel,
   canEdit = true,
 }: {
   initial: CampaignFormData
   onSubmit: (data: CampaignFormData) => Promise<void>
   onCancel: () => void
   submitLabel: string
-  submittingLabel: string
-  /** When false, fields are read-only and form actions are hidden. */
+  /** @deprecated Handled automatically by FormActions via react-hook-form isSubmitting state */
+  submittingLabel?: string
   canEdit?: boolean
 }) {
-  const [name, setName] = useState(initial.name)
-  const [edition, setEdition] = useState(initial.edition)
-  const [setting, setSetting] = useState(initial.setting)
-  const [submitting, setSubmitting] = useState(false)
-
-  const selectedEdition = editions.find(e => e.id === edition)
-  const availableSettings = selectedEdition
-    ? selectedEdition.settings
-        .map((id: string) => settings.find(s => s.id === id))
-        .filter(Boolean)
-    : []
-
-  // Reset setting when edition changes (only if edition actually changed from initial)
-  useEffect(() => {
-    if (edition !== initial.edition) {
-      setSetting('')
-    }
-  }, [edition, initial.edition])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name || !edition || !setting) return
-
-    setSubmitting(true)
-    try {
-      await onSubmit({ name, edition, setting })
-    } catch (err) {
-      console.error('Campaign form submit error:', err)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="create-form">
-      <label>
-        Name
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Campaign name"
-          required
-          autoFocus
-          disabled={!canEdit}
-          readOnly={!canEdit}
-        />
-      </label>
-
-      <label>
-        Edition
-        <select
-          value={edition}
-          onChange={e => setEdition(e.target.value)}
-          required
-          disabled={!canEdit}
-        >
-          <option value="">Select edition…</option>
-          {editions.map(ed => (
-            <option key={ed.id} value={ed.id}>{ed.name}</option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        Setting
-        <select
-          value={setting}
-          onChange={e => setSetting(e.target.value)}
-          required
-          disabled={!edition || !canEdit}
-        >
-          <option value="">
-            {edition ? 'Select setting…' : 'Choose an edition first'}
-          </option>
-          {availableSettings.map(s => (
-            <option key={s!.id} value={s!.id}>{s!.name}</option>
-          ))}
-        </select>
-      </label>
+    <AppForm<CampaignFormData>
+      defaultValues={initial}
+      onSubmit={onSubmit}
+    >
+      <CampaignFields canEdit={canEdit} />
 
       {canEdit && (
-        <div className="form-actions">
-          <button type="submit" disabled={submitting || !name || !edition || !setting}>
-            {submitting ? submittingLabel : submitLabel}
-          </button>
-          <button type="button" className="btn-theme-secondary" onClick={onCancel}>
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={onCancel}
+          >
             Cancel
-          </button>
-        </div>
+          </Button>
+          <FormActions submitLabel={submitLabel} />
+        </Stack>
       )}
-    </form>
+    </AppForm>
   )
 }

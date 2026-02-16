@@ -6,6 +6,6 @@ import { uploadImage } from '../controllers/upload.controller'
 const router = Router()
 
 router.use(requireAuth)
-router.post('/', requireRole('admin', 'superadmin'), uploadImage)
+router.post('/', requireRole('user', 'admin', 'superadmin'), uploadImage)
 
 export default router

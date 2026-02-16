@@ -36,6 +36,24 @@ export function getPublicUrl(key: string | null | undefined): string | undefined
 }
 
 /**
+ * Normalize an image key by stripping known URL prefixes.
+ *
+ * Accepts raw keys, `/uploads/`-prefixed paths, and full URLs.
+ * Returns the bare filename key suitable for DB storage, or `null` for empty values.
+ * Pass-through for `undefined` so callers can distinguish "not provided" from "cleared".
+ */
+export function normalizeImageKey(val: string | null | undefined): string | null | undefined {
+  if (val === undefined) return undefined
+  if (!val) return null
+  if (val.startsWith('/uploads/')) return val.slice('/uploads/'.length)
+  if (val.startsWith('http')) {
+    const idx = val.lastIndexOf('/uploads/')
+    if (idx !== -1) return val.slice(idx + '/uploads/'.length)
+  }
+  return val
+}
+
+/**
  * Store an image buffer to local disk and return the storage key (filename only).
  *
  * When migrating to a CDN (e.g. Cloudflare R2), replace the fs write with an

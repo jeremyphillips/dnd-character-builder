@@ -5,6 +5,7 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
+import Alert from '@mui/material/Alert'
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -44,6 +45,7 @@ export default function ImageUploadField({
 }: ImageUploadFieldProps) {
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,6 +54,7 @@ export default function ImageUploadField({
   const uploadFile = useCallback(
     async (file: File) => {
       setUploading(true)
+      setUploadError(null)
       try {
         const res = await fetch('/api/uploads', {
           method: 'POST',
@@ -61,13 +64,14 @@ export default function ImageUploadField({
         })
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
-          console.error('Upload failed:', body.error)
+          const message = body.error ?? `Upload failed (${res.status})`
+          setUploadError(message)
           return
         }
         const data = await res.json()
         onChange(data.key)
-      } catch (err) {
-        console.error('Upload error:', err)
+      } catch {
+        setUploadError('Upload failed. Please check your connection and try again.')
       } finally {
         setUploading(false)
       }
@@ -118,6 +122,12 @@ export default function ImageUploadField({
           <Typography variant="overline" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
             {label}
           </Typography>
+        )}
+
+        {uploadError && (
+          <Alert severity="error" onClose={() => setUploadError(null)} sx={{ mb: 1 }}>
+            {uploadError}
+          </Alert>
         )}
 
         {/* Clickable image preview */}
@@ -186,6 +196,11 @@ export default function ImageUploadField({
         <Typography variant="overline" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
           {label}
         </Typography>
+      )}
+      {uploadError && (
+        <Alert severity="error" onClose={() => setUploadError(null)} sx={{ mb: 1 }}>
+          {uploadError}
+        </Alert>
       )}
       <Card
         variant="outlined"

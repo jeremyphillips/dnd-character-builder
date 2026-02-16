@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt'
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import { signToken } from '../utils/jwt'
-import { getPublicUrl } from './image.service'
+import { getPublicUrl, normalizeImageKey } from './image.service'
 
 interface NotificationPreferences {
   sessionScheduled: boolean
@@ -17,6 +17,7 @@ interface AuthUserPayload {
   role: string
   firstName?: string
   lastName?: string
+  avatarKey?: string | null
   avatarUrl?: string
   bio?: string
   website?: string
@@ -54,6 +55,7 @@ export async function loginUser(email: string, password: string): Promise<LoginR
       role: user.role as string,
       firstName: (user.firstName as string) ?? undefined,
       lastName: (user.lastName as string) ?? undefined,
+      avatarKey: (user.avatarKey as string) ?? null,
       avatarUrl: getPublicUrl(user.avatarKey as string),
       bio: (user.bio as string) ?? undefined,
       website: (user.website as string) ?? undefined,
@@ -81,6 +83,7 @@ export async function getUserById(userId: string) {
     role: user.role as string,
     firstName: (user.firstName as string) ?? undefined,
     lastName: (user.lastName as string) ?? undefined,
+    avatarKey: (user.avatarKey as string) ?? null,
     avatarUrl: getPublicUrl(user.avatarKey as string),
     bio: (user.bio as string) ?? undefined,
     website: (user.website as string) ?? undefined,
@@ -110,7 +113,7 @@ export async function updateProfile(
   if (data.firstName !== undefined) $set.firstName = data.firstName
   if (data.lastName !== undefined) $set.lastName = data.lastName
   if (data.username !== undefined) $set.username = data.username
-  if (data.avatarKey !== undefined) $set.avatarKey = data.avatarKey
+  if (data.avatarKey !== undefined) $set.avatarKey = normalizeImageKey(data.avatarKey)
   if (data.bio !== undefined) $set.bio = data.bio
   if (data.website !== undefined) $set.website = data.website
   if (data.email !== undefined) $set.email = data.email

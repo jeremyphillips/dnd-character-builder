@@ -1,5 +1,7 @@
 import { MediaTopCard } from '@/ui/cards'
 import type { CardBadgeItem } from '@/ui/cards'
+import Box from '@mui/material/Box'
+import PersonIcon from '@mui/icons-material/Person'
 
 interface CharacterMediaTopCardProps {
   characterId: string
@@ -10,7 +12,7 @@ interface CharacterMediaTopCardProps {
   description?: string
   imageUrl?: string
   status?: 'pending' | 'approved'
-  attribution?: string
+  attribution?: string | { name: string; imageUrl?: string }
   link?: string
   isEditable?: boolean
   onEdit?: () => void
@@ -37,9 +39,24 @@ const CharacterMediaTopCard = ({
     .join(' · ')
   const badges: CardBadgeItem[] = status ? [{ type: 'status', value: status }] : []
 
+  const placeholder = (
+    <Box
+      sx={{
+        height: 180,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'action.hover',
+      }}
+    >
+      <PersonIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+    </Box>
+  )
+
   return (
     <MediaTopCard
       image={imageUrl}
+      imageFallback={placeholder}
       headline={name}
       subheadline={subheadline}
       description={description}

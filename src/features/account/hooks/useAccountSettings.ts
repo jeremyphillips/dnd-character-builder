@@ -25,6 +25,7 @@ type MeResponse = {
     email?: string
     firstName?: string
     lastName?: string
+    avatarKey?: string | null
     avatarUrl?: string
     bio?: string
     website?: string
@@ -58,7 +59,7 @@ export function useAccountSettings() {
           firstName: u.firstName ?? '',
           lastName: u.lastName ?? '',
           username: u.username ?? '',
-          avatarKey: u.avatarUrl ?? null,
+          avatarKey: u.avatarKey ?? null,
           bio: u.bio ?? '',
           website: u.website ?? '',
           email: u.email ?? '',

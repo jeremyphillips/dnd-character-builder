@@ -264,18 +264,25 @@ export async function getPartyCharacters(campaignId: string) {
   const users = await usersCol()
     .find(
       { _id: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) } },
-      { projection: { username: 1 } },
+      { projection: { username: 1, avatarKey: 1 } },
     )
     .toArray()
 
-  const userMap = new Map(users.map((u) => [u._id.toString(), u.username as string]))
+  const userMap = new Map(
+    users.map((u) => [
+      u._id.toString(),
+      { username: u.username as string, avatarUrl: getPublicUrl(u.avatarKey as string) },
+    ]),
+  )
 
   return characters.map((c) => {
     const m = memberByCharId.get(c._id.toString())
     const status = (m?.status ?? 'approved') as 'pending' | 'approved'
+    const owner = userMap.get((c.userId as mongoose.Types.ObjectId).toString())
     return {
       ...c,
-      ownerName: userMap.get((c.userId as mongoose.Types.ObjectId).toString()) ?? 'Unknown',
+      ownerName: owner?.username ?? 'Unknown',
+      ownerAvatarUrl: owner?.avatarUrl,
       status,
       campaignMemberId: m?._id?.toString(),
     }

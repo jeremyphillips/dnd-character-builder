@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Outlet, useMatch, Link } from 'react-router-dom'
-import { useAuth } from '../../providers/AuthProvider'
-import type { CampaignRole } from '@/shared'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { editions, settings } from '@/data'
 import { getById } from '@/domain/lookups'
 // import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
@@ -9,15 +8,9 @@ import { getPartyMembers } from '@/domain/party'
 import type { PartyMember } from '@/domain/party'
 import { Hero } from '@/ui/elements'
 import CharacterMediaTopCard from '@/domain/character/components/CharacterMediaTopCard/CharacterMediaTopCard'
-import { ROUTES } from '../../routes'
+import { ROUTES } from '@/app/routes'
 import Box from '@mui/material/Box'
-import { apiFetch } from '../../api'
-
-interface CampaignMember {
-  userId: string
-  role: CampaignRole
-  joinedAt: string
-}
+import { apiFetch } from '@/app/api'
 
 interface Campaign {
   _id: string
@@ -29,8 +22,8 @@ interface Campaign {
   }
   membership: {
     adminId: string
-    members: CampaignMember[]
   }
+  memberCount: number
 }
 
 export default function CampaignRoute() {
@@ -111,7 +104,7 @@ export default function CampaignRoute() {
   const subheadline = [
     getEditionName(campaign.identity.edition),
     getSettingName(campaign.identity.setting),
-    `${campaign.membership.members.length} member${campaign.membership.members.length !== 1 ? 's' : ''}`,
+    `${campaign.memberCount} member${campaign.memberCount !== 1 ? 's' : ''}`,
   ].join(' · ')
 
   return (

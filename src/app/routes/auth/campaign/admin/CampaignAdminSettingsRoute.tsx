@@ -3,7 +3,7 @@ import Box from '@mui/material/Box'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
-import { useActiveCampaign } from '../../providers/ActiveCampaignProvider'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import {
   useCampaignSettings,
   useUpdateCampaignSettings,
@@ -48,7 +48,7 @@ const buildFields = (edition?: string): FieldConfig[] => [
   }
 ]
 
-export default function AdminSettingsRoute() {
+export default function CampaignAdminSettingsRoute() {
   const { activeCampaignId } = useActiveCampaign()
 
   const { data, edition, loading, error: fetchError } =

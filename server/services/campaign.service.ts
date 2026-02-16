@@ -10,7 +10,7 @@ const campaignMembersCollection = () => db().collection('campaignMembers')
 // Normalization
 // ---------------------------------------------------------------------------
 
-export function normalizeCampaign(campaign: any) {
+export function normalizeCampaign(campaign: any, memberCount?: number) {
   if (!campaign) return null
 
   return {
@@ -18,8 +18,11 @@ export function normalizeCampaign(campaign: any) {
 
     identity: campaign.identity,
     configuration: campaign.configuration,
-    membership: campaign.membership,
+    membership: {
+      adminId: campaign.membership?.adminId,
+    },
     participation: campaign.participation,
+    memberCount: memberCount ?? 0,
 
     createdAt: campaign.createdAt,
     updatedAt: campaign.updatedAt,
@@ -46,14 +49,31 @@ export async function getCampaignsForUser(userId: string, role: string) {
     })
     .toArray()
 
-  return campaigns.map(normalizeCampaign)
+  // Batch-count approved members per campaign
+  const campaignIds = campaigns.map((c) => c._id)
+  const memberCounts = await campaignMembersCollection()
+    .aggregate([
+      { $match: { campaignId: { $in: campaignIds }, status: 'approved' } },
+      { $group: { _id: '$campaignId', count: { $sum: 1 } } },
+    ])
+    .toArray()
+
+  const countMap = new Map(memberCounts.map((mc) => [mc._id.toString(), mc.count as number]))
+
+  return campaigns.map((c) => normalizeCampaign(c, countMap.get(c._id.toString()) ?? 0))
 }
 
 export async function getCampaignById(id: string) {
-  const campaign = await campaignsCollection().findOne({
-    _id: new mongoose.Types.ObjectId(id),
+  const campaignId = new mongoose.Types.ObjectId(id)
+  const campaign = await campaignsCollection().findOne({ _id: campaignId })
+  if (!campaign) return null
+
+  const memberCount = await campaignMembersCollection().countDocuments({
+    campaignId,
+    status: 'approved',
   })
-  return normalizeCampaign(campaign)
+
+  return normalizeCampaign(campaign, memberCount)
 }
 
 export async function createCampaign(
@@ -76,7 +96,6 @@ export async function createCampaign(
     },
     membership: {
       adminId: adminOid,
-      members: []
     },
     participation: {
       characters: []
@@ -173,7 +192,7 @@ export async function getMembersForMessaging(campaignId: string) {
   const approvedMembers = await campaignMembersCollection()
     .find({
       campaignId: new mongoose.Types.ObjectId(campaignId),
-      $or: [{ status: 'approved' }, { status: { $exists: false } }],
+      status: 'approved',
     })
     .toArray()
 
@@ -203,15 +222,11 @@ export async function getPartyCharacters(campaignId: string) {
   const campaign = await getCampaignById(campaignId)
   if (!campaign) return []
 
-  // Get CampaignMembers for this campaign (pending + approved; excluded rejected; legacy docs without status count as approved)
+  // Get CampaignMembers for this campaign (pending + approved; excluded rejected)
   const members = await campaignMembersCollection()
     .find({
       campaignId: new mongoose.Types.ObjectId(campaignId),
-      $or: [
-        { status: 'pending' },
-        { status: 'approved' },
-        { status: { $exists: false } },
-      ],
+      status: { $in: ['pending', 'approved'] },
     })
     .sort({ joinedAt: 1, requestedAt: 1 })
     .toArray()
@@ -219,7 +234,7 @@ export async function getPartyCharacters(campaignId: string) {
   const memberDocs = members as unknown as {
     _id: mongoose.Types.ObjectId
     characterId: mongoose.Types.ObjectId
-    status?: string
+    status: string
     joinedAt?: Date
     requestedAt?: Date
   }[]

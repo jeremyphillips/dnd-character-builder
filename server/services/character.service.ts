@@ -84,11 +84,7 @@ export async function getCampaignsForCharacter(characterId: string) {
   const memberDocs = await campaignMembersCol
     .find({
       characterId: new mongoose.Types.ObjectId(characterId),
-      $or: [
-        { status: 'pending' },
-        { status: 'approved' },
-        { status: { $exists: false } },
-      ],
+      status: { $in: ['pending', 'approved'] },
     })
     .toArray() as { _id: mongoose.Types.ObjectId; campaignId: mongoose.Types.ObjectId; characterStatus?: string }[]
 
@@ -115,6 +111,18 @@ export async function getCampaignsForCharacter(characterId: string) {
     memberDocs.map(m => [m.campaignId.toString(), m]),
   )
 
+  // Batch-count approved members per campaign
+  const campaignIds = campaigns.map(c => c._id)
+  const memberCounts = campaignIds.length > 0
+    ? await campaignMembersCol
+        .aggregate([
+          { $match: { campaignId: { $in: campaignIds }, status: 'approved' } },
+          { $group: { _id: '$campaignId', count: { $sum: 1 } } },
+        ])
+        .toArray()
+    : []
+  const countMap = new Map(memberCounts.map(mc => [mc._id.toString(), mc.count as number]))
+
   return campaigns.map(c => {
     const member = memberByCampaignId.get(c._id.toString())
     return {
@@ -123,6 +131,7 @@ export async function getCampaignsForCharacter(characterId: string) {
       dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
       campaignMemberId: member?._id?.toString(),
       characterStatus: (member?.characterStatus ?? 'active') as string,
+      memberCount: countMap.get(c._id.toString()) ?? 0,
     }
   })
 }
@@ -173,11 +182,7 @@ export async function isCampaignAdminForCharacter(
   // Find campaigns this character is a member of
   const campaignIds = await campaignMembersCol.distinct('campaignId', {
     characterId: new mongoose.Types.ObjectId(characterId),
-    $or: [
-      { status: 'approved' },
-      { status: 'pending' },
-      { status: { $exists: false } },
-    ],
+    status: { $in: ['pending', 'approved'] },
   })
 
   if (campaignIds.length === 0) return false

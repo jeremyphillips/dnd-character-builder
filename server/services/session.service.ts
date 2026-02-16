@@ -6,6 +6,7 @@ import * as sessionInviteService from './sessionInvite.service'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const sessionsCollection = () => db().collection('sessions')
 const campaignsCollection = () => db().collection('campaigns')
+const campaignMembersCollection = () => db().collection('campaignMembers')
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,12 +35,15 @@ export interface SessionDoc {
 export async function getSessionsForUser(userId: string, role: string) {
   const oid = new mongoose.Types.ObjectId(userId)
 
-  // Find campaigns the user belongs to
+  // Find campaigns the user belongs to (admin or member)
+  const memberCampaignIds = await campaignMembersCollection()
+    .distinct('campaignId', { userId: oid })
+
   const campaigns = await campaignsCollection()
     .find({
       $or: [
         { 'membership.adminId': oid },
-        { 'membership.members.userId': oid },
+        { _id: { $in: memberCampaignIds } },
       ],
     })
     .project({ _id: 1 })
@@ -94,14 +98,16 @@ export async function createSession(
   const session = await sessionsCollection().findOne({ _id: result.insertedId })
 
   // Notify all campaign members (excluding the admin who created it)
-  const campaign = await campaignsCollection().findOne({
-    _id: new mongoose.Types.ObjectId(data.campaignId),
-  })
+  const approvedMembers = await campaignMembersCollection()
+    .find({ campaignId: new mongoose.Types.ObjectId(data.campaignId), status: 'approved' })
+    .project({ userId: 1 })
+    .toArray()
 
-  if (campaign?.membership?.members?.length) {
-    const memberUserIds = (campaign.membership.members as { userId: mongoose.Types.ObjectId }[])
-      .map((m) => m.userId.toString())
-      .filter((uid) => uid !== adminUserId)
+  const memberUserIds = approvedMembers
+    .map((m) => (m.userId as mongoose.Types.ObjectId).toString())
+    .filter((uid) => uid !== adminUserId)
+
+  if (memberUserIds.length > 0) {
 
     // Create trackable session invite records
     await sessionInviteService.createSessionInvites({

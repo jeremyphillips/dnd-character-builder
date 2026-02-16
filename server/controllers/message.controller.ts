@@ -44,9 +44,9 @@ async function getCampaignMemberUserIds(campaignId: string): Promise<string[]> {
   const adminId = campaign?.membership?.adminId ? campaign.membership.adminId.toString() : null
   const members = await campaignMemberService.getCampaignMembersByCampaign(campaignId)
   const memberIds = (
-    members as { userId: mongoose.Types.ObjectId; status?: string }[]
+    members as { userId: mongoose.Types.ObjectId; status: string }[]
   )
-    .filter((m) => (m.status ?? 'approved') === 'approved')
+    .filter((m) => m.status === 'approved')
     .map((m) => m.userId.toString())
   const all = new Set(memberIds)
   if (adminId) all.add(adminId)

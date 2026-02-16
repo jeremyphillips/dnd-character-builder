@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { ROUTES } from '../../routes'
-import { apiFetch } from '../../api'
+import { ROUTES } from '@/app/routes'
+import { apiFetch } from '@/app/api'
 import { InviteConfirmationBox } from '@/ui/components'
 import { getCharacterOptionLabel } from '@/domain/character'
 import { getNameById } from '@/domain/lookups'
@@ -199,8 +199,8 @@ export default function InviteRoute() {
             campaignId={invite.campaign._id}
             name={invite.campaign.name}
             description={invite.campaign.description}
-            edition={editionName}
-            setting={settingName}
+            edition={invite.campaign.edition}
+            setting={invite.campaign.setting}
           />
         ) : undefined
       }

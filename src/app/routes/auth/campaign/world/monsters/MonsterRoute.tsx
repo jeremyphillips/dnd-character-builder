@@ -7,11 +7,13 @@ import Stack from '@mui/material/Stack'
 import Alert from '@mui/material/Alert'
 import Divider from '@mui/material/Divider'
 
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { monsters, settings, editions, MONSTER_LABELS } from '@/data'
 import type { Monster, EditionRule } from '@/data'
 import { getNameById } from '@/domain/lookups'
 import { resolveEditionRule } from '@/domain/monsters/monsters.conversions'
-import { apiFetch } from '../../api'
+import { apiFetch } from '@/app/api'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -264,6 +266,8 @@ export default function MonsterRoute() {
   const campaignEdition = campaign?.identity?.edition
   const allowLegacy = campaign?.configuration?.allowLegacyEditionNpcs ?? false
 
+  const breadcrumbs = useBreadcrumbs()
+
   const monster: Monster | undefined = monsters.find((m) => m.id === monsterId)
 
   if (!monster) {
@@ -284,6 +288,7 @@ export default function MonsterRoute() {
 
   return (
     <Box sx={{ maxWidth: 720 }}>
+      <Breadcrumbs items={breadcrumbs} />
       {/* Header */}
       <Typography variant="overline" color="text.secondary">
         Monster

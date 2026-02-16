@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../providers/AuthProvider'
-import { useNotifications } from '../../providers/NotificationProvider'
-import { apiFetch } from '../../api'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { useNotifications } from '@/app/providers/NotificationProvider'
+import { apiFetch } from '@/app/api'
 import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
 import {

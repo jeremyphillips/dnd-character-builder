@@ -1,11 +1,5 @@
 import mongoose, { Schema } from 'mongoose'
 
-const campaignMemberSchema = new Schema({
-  userId:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  role:     { type: String, enum: ['dm', 'pc', 'observer'], default: 'pc' },
-  joinedAt: { type: Date, default: Date.now },
-}, { _id: false })
-
 const campaignSchema = new Schema(
   {
     identity: {
@@ -23,7 +17,6 @@ const campaignSchema = new Schema(
 
     membership: {
       adminId: { type: Schema.Types.ObjectId, ref: 'User' },
-      members: { type: [campaignMemberSchema], default: [] }
     },
 
     participation: {

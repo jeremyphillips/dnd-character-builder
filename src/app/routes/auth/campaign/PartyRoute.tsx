@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../providers/AuthProvider'
-import { apiFetch } from '../../api'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { apiFetch } from '@/app/api'
 import { getPartyMembers } from '@/domain/party'
 import type { PartyMember } from '@/domain/party'
 import { PartyCardGroup } from '@/ui/components'

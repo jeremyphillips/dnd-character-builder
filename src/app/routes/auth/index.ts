@@ -1,27 +1,34 @@
 export { default as AuthLayout } from './AuthLayout'
 export { default as DashboardRoute } from './DashboardRoute'
 export { default as UsersRoute } from './UsersRoute'
-export { default as MyCharactersRoute } from './MyCharactersRoute'
-export { default as CharacterDetailRoute } from './CharacterDetailRoute'
+export { default as CharactersRoute } from './CharactersRoute'
+export { default as CharacterRoute } from './CharacterRoute'
 export { default as CampaignsRoute } from './CampaignsRoute'
-export { default as CampaignRoute } from './CampaignRoute'
 export { default as InviteRoute } from './InviteRoute'
-export { default as RulesRoute } from './RulesRoute'
-export { default as PartyRoute } from './PartyRoute'
-export { default as SessionsRoute } from './SessionsRoute'
-export { default as SessionRoute } from './SessionRoute'
-export { default as MessagingRoute } from './MessagingRoute'
-export { default as WorldRoute } from './WorldRoute'
-export { default as LocationsRoute } from './LocationsRoute'
-export { default as LocationRoute } from './LocationRoute'
-export { default as NpcsRoute } from './NpcsRoute'
-export { default as NpcRoute } from './NpcRoute'
-export { default as MonstersRoute } from './MonstersRoute'
-export { default as MonsterRoute } from './MonsterRoute'
-export { default as EquipmentRoute } from './EquipmentRoute'
-export { default as EquipmentDetailsRoute } from './EquipmentDetailsRoute'
-export { default as AdminGuard } from './AdminGuard'
-export { default as AdminRoute } from './AdminRoute'
-export { default as AdminInvitesRoute } from './AdminInvitesRoute'
-export { default as AdminBrainstormingRoute } from './AdminBrainstormingRoute'
-export { default as AdminSettingsRoute } from './AdminSettingsRoute'
+
+// Account
+export { AccountRoute, AccountSettingsRoute } from './account'
+
+// Campaign tree
+export {
+  CampaignRoute,
+  PartyRoute,
+  RulesRoute,
+  WorldLayout,
+  LocationsRoute,
+  LocationRoute,
+  NpcsRoute,
+  NpcRoute,
+  MonstersRoute,
+  MonsterRoute,
+  EquipmentRoute,
+  EquipmentDetailsRoute,
+  SessionsRoute,
+  SessionRoute,
+  MessagingRoute,
+  AdminGuard,
+  CampaignAdminRoute,
+  CampaignAdminSettingsRoute,
+  CampaignAdminInvitesRoute,
+  CampaignAdminBrainstormingRoute,
+} from './campaign'

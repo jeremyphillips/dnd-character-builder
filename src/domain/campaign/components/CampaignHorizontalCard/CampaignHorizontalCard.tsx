@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import Typography from '@mui/material/Typography'
 import { HorizontalCompactCard, type CardBadgeItem } from '@/ui/cards'
+import { getNameById } from '@/domain/lookups'
+import { editions, settings } from '@/data'
 
 interface CampaignHorizontalCardProps {
   campaignId: string
@@ -9,8 +11,12 @@ interface CampaignHorizontalCardProps {
   imageUrl?: string
   /** DM / admin display name */
   dmName?: string
+  /** Edition ID — resolved to display name internally */
   edition?: string
+  /** Setting ID — resolved to display name internally */
   setting?: string
+  /** Number of approved campaign members */
+  memberCount?: number
   /** Character's in-campaign status ('active' | 'inactive' | 'deceased') */
   characterStatus?: string
   /** Custom actions rendered in the card's action area (replaces default "View details") */
@@ -30,10 +36,21 @@ const CampaignHorizontalCard = ({
   dmName,
   edition,
   setting,
+  memberCount,
   characterStatus,
   actions: customActions,
 }: CampaignHorizontalCardProps) => {
-  const subheadline = [edition, setting].filter(Boolean).join(' · ')
+  const editionName = edition
+    ? getNameById(editions as unknown as { id: string; name: string }[], edition) ?? edition
+    : undefined
+  const settingName = setting
+    ? getNameById(settings as unknown as { id: string; name: string }[], setting) ?? setting
+    : undefined
+  const memberLabel = memberCount != null
+    ? `${memberCount} member${memberCount !== 1 ? 's' : ''}`
+    : undefined
+
+  const subheadline = [editionName, settingName, memberLabel].filter(Boolean).join(' · ')
 
   const badges: CardBadgeItem[] = []
   if (dmName) badges.push({ type: 'role', value: `DM: ${dmName}` })

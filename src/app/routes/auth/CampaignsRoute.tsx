@@ -1,16 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../providers/AuthProvider'
-import type { CampaignRole } from '@/shared'
-import { editions, settings } from '@/data'
-import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
-import { apiFetch, ApiError } from '../../api'
-
-interface CampaignMember {
-  userId: string
-  role: CampaignRole
-  joinedAt: string
-}
+import { useAuth } from '@/app/providers/AuthProvider'
+import CampaignForm, { type CampaignFormData } from '@/features/campaign/components/CampaignForm'
+import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import { apiFetch, ApiError } from '@/app/api'
 
 interface Campaign {
   _id: string
@@ -22,8 +14,8 @@ interface Campaign {
   }
   membership: {
     adminId: string
-    members: CampaignMember[]
   }
+  memberCount: number
 }
 
 export default function CampaignsRoute() {
@@ -60,14 +52,6 @@ export default function CampaignsRoute() {
     }
   }
 
-  function getSettingName(id: string) {
-    return settings.find(s => s.id === id)?.name ?? id
-  }
-
-  function getEditionName(id: string) {
-    return editions.find(e => e.id === id)?.name ?? id
-  }
-
   if (loading) return <p>Loading campaigns...</p>
 
   return (
@@ -99,19 +83,15 @@ export default function CampaignsRoute() {
       ) : (
         <div className="item-list">
           {campaigns.map((c) => (
-            <div key={c._id} className="item-card">
-              <div className="item-card-info">
-                <strong>{c.identity.name}</strong>
-                <span>
-                  {getEditionName(c.identity.edition ?? '')} · {getSettingName(c.identity.setting ?? '')}
-                  {' · '}
-                  {c.membership.members.length} member{c.membership.members.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <Link to={`/campaigns/${c._id}`} className="btn-size-sm btn-theme-secondary">
-                Edit
-              </Link>
-            </div>
+            <CampaignHorizontalCard
+              key={c._id}
+              campaignId={c._id}
+              name={c.identity.name ?? ''}
+              description={c.identity.description}
+              edition={c.identity.edition}
+              setting={c.identity.setting}
+              memberCount={c.memberCount}
+            />
           ))}
         </div>
       )}

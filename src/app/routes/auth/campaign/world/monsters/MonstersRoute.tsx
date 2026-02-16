@@ -1,16 +1,20 @@
 import { useParams } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import { Breadcrumbs } from '@/ui/elements'
+import { useBreadcrumbs } from '@/hooks'
 import { monsters } from '@/data/monsters'
 import MonsterMediaTopCard from '@/domain/monsters/components/MonsterMediaTopCard/MonsterMediaTopCard'
-import { ROUTES } from '../../routes'
+import { ROUTES } from '@/app/routes'
 
 export default function MonstersRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
+  const breadcrumbs = useBreadcrumbs()
   const first12 = monsters.slice(0, 12)
 
   return (
     <Box>
+      <Breadcrumbs items={breadcrumbs} />
       <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
         Monsters
       </Typography>

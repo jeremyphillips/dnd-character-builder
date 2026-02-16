@@ -173,16 +173,13 @@ export async function deleteCharacter(req: Request, res: Response) {
     .collection('campaignMembers')
     .find({
       characterId: new mongoose.Types.ObjectId(characterId),
-      $or: [
-        { status: 'approved' },
-        { status: { $exists: false } },
-      ],
+      status: 'approved',
     })
     .toArray() as {
       _id: mongoose.Types.ObjectId
       campaignId: mongoose.Types.ObjectId
       characterStatus?: string
-      status?: string
+      status: string
     }[]
 
   if (memberships.length === 0) {
@@ -211,10 +208,10 @@ export async function deleteCharacter(req: Request, res: Response) {
       const allMembers = await campaignMemberService.getCampaignMembersByCampaign(
         membership.campaignId.toString(),
       )
-      const partyUserIds = (allMembers as { userId: mongoose.Types.ObjectId; status?: string }[])
+      const partyUserIds = (allMembers as { userId: mongoose.Types.ObjectId; status: string }[])
         .filter(
           (mbr) =>
-            (mbr.status ?? 'approved') === 'approved' &&
+            mbr.status === 'approved' &&
             !mbr.userId.equals(new mongoose.Types.ObjectId(userId)),
         )
         .map((mbr) => mbr.userId)

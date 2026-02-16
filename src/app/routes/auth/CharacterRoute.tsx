@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../providers/AuthProvider'
+import { useAuth } from '@/app/providers/AuthProvider'
 import type { CharacterDoc } from '@/shared'
 import { classes as classesData, editions, settings, races, equipment, type EditionId, type SettingId } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
@@ -23,8 +23,8 @@ import {
 } from '@/ui/fields'
 import { StatCircle, Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
-import { apiFetch } from '../../api'
-import { ROUTES } from '../../routes'
+import { apiFetch } from '@/app/api'
+import { ROUTES } from '@/app/routes'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -58,6 +58,7 @@ interface CampaignSummary {
   dmName?: string
   campaignMemberId?: string
   characterStatus?: string
+  memberCount?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +114,7 @@ function formatSlot(slot: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function CharacterDetailRoute() {
+export default function CharacterRoute() {
   const { id } = useParams<{ id: string }>()
   useAuth()
 
@@ -711,6 +712,7 @@ export default function CharacterDetailRoute() {
                         dmName={c.dmName}
                         edition={c.identity.edition}
                         setting={c.identity.setting}
+                        memberCount={c.memberCount}
                         characterStatus={charStatus !== 'active' ? charStatus : undefined}
                         actions={campaignActions}
                       />

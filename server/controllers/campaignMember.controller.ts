@@ -18,7 +18,7 @@ export async function approveCampaignMember(req: Request, res: Response) {
     return
   }
 
-  const m = member as { status?: string; campaignId: mongoose.Types.ObjectId }
+  const m = member as { status: string; campaignId: mongoose.Types.ObjectId }
   if (m.status !== 'pending') {
     res.status(400).json({ error: 'Campaign member is not pending approval' })
     return
@@ -60,8 +60,8 @@ export async function approveCampaignMember(req: Request, res: Response) {
   })
 
   const approvedMembers = await campaignMemberService.getCampaignMembersByCampaign(m.campaignId.toString())
-  const partyMemberUserIds = (approvedMembers as { userId: mongoose.Types.ObjectId; status?: string }[])
-    .filter((mbr) => (mbr.status ?? 'approved') === 'approved' && !mbr.userId.equals(u.userId))
+  const partyMemberUserIds = (approvedMembers as { userId: mongoose.Types.ObjectId; status: string }[])
+    .filter((mbr) => mbr.status === 'approved' && !mbr.userId.equals(u.userId))
     .map((mbr) => mbr.userId)
 
   for (const memberUserId of partyMemberUserIds) {
@@ -93,7 +93,7 @@ export async function rejectCampaignMember(req: Request, res: Response) {
     return
   }
 
-  const m = member as { status?: string; campaignId: mongoose.Types.ObjectId }
+  const m = member as { status: string; campaignId: mongoose.Types.ObjectId }
   if (m.status !== 'pending') {
     res.status(400).json({ error: 'Campaign member is not pending approval' })
     return
@@ -163,7 +163,7 @@ export async function updateCharacterStatus(req: Request, res: Response) {
     campaignId: mongoose.Types.ObjectId
     characterId: mongoose.Types.ObjectId
     userId: mongoose.Types.ObjectId
-    status?: string
+    status: string
     characterStatus?: string
   }
 
@@ -201,8 +201,8 @@ export async function updateCharacterStatus(req: Request, res: Response) {
 
   // Notify all approved party members (excluding the user who initiated)
   const approvedMembers = await campaignMemberService.getCampaignMembersByCampaign(m.campaignId.toString())
-  const partyMemberUserIds = (approvedMembers as { userId: mongoose.Types.ObjectId; status?: string }[])
-    .filter((mbr) => (mbr.status ?? 'approved') === 'approved' && !mbr.userId.equals(new mongoose.Types.ObjectId(userId)))
+  const partyMemberUserIds = (approvedMembers as { userId: mongoose.Types.ObjectId; status: string }[])
+    .filter((mbr) => mbr.status === 'approved' && !mbr.userId.equals(new mongoose.Types.ObjectId(userId)))
     .map((mbr) => mbr.userId)
 
   const notificationType = characterStatus === 'deceased'

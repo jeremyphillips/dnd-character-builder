@@ -48,6 +48,12 @@ export function getNotificationRoute(
   ) {
     return routeMap.SESSIONS.replace(':id', String(n.context.campaignId))
   }
+  if (n.type === 'levelUp.cancelled' && 'characterId' in n.context && n.context.characterId && routeMap.CHARACTER) {
+    return routeMap.CHARACTER.replace(':id', String(n.context.characterId))
+  }
+  if ((n.type === 'character.deceased' || n.type === 'character.left') && 'characterId' in n.context && n.context.characterId && routeMap.CHARACTER) {
+    return routeMap.CHARACTER.replace(':id', String(n.context.characterId))
+  }
   if ('campaignId' in n.context && n.context.campaignId) {
     return routeMap.CAMPAIGN.replace(':id', String(n.context.campaignId))
   }

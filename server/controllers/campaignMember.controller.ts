@@ -4,6 +4,7 @@ import * as campaignMemberService from '../services/campaignMember.service'
 import { getCampaignById } from '../services/campaign.service'
 import * as notificationService from '../services/notification.service'
 import { env } from '../config/env'
+import type { CampaignCharacterStatus } from '../../shared/types'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 
@@ -132,6 +133,97 @@ export async function rejectCampaignMember(req: Request, res: Response) {
       campaignName: campaign.identity.name,
     },
   })
+
+  res.json({ campaignMember: updated })
+}
+
+// ---------------------------------------------------------------------------
+// Update character status (active / inactive / deceased)
+// ---------------------------------------------------------------------------
+
+const VALID_CHARACTER_STATUSES: CampaignCharacterStatus[] = ['active', 'inactive', 'deceased']
+
+export async function updateCharacterStatus(req: Request, res: Response) {
+  const memberId = req.params.id
+  const userId = req.userId!
+  const { characterStatus } = req.body as { characterStatus?: string }
+
+  if (!characterStatus || !VALID_CHARACTER_STATUSES.includes(characterStatus as CampaignCharacterStatus)) {
+    res.status(400).json({ error: `Invalid characterStatus. Must be one of: ${VALID_CHARACTER_STATUSES.join(', ')}` })
+    return
+  }
+
+  const member = await campaignMemberService.getCampaignMemberById(memberId)
+  if (!member) {
+    res.status(404).json({ error: 'Campaign member not found' })
+    return
+  }
+
+  const m = member as {
+    campaignId: mongoose.Types.ObjectId
+    characterId: mongoose.Types.ObjectId
+    userId: mongoose.Types.ObjectId
+    status?: string
+    characterStatus?: string
+  }
+
+  const campaign = await getCampaignById(m.campaignId.toString())
+  if (!campaign) {
+    res.status(404).json({ error: 'Campaign not found' })
+    return
+  }
+
+  const isCampaignAdmin = campaign.membership.adminId.equals(new mongoose.Types.ObjectId(userId))
+  const isCharacterOwner = m.userId.equals(new mongoose.Types.ObjectId(userId))
+
+  // Campaign admin can set any status; character owner can only set 'inactive' (leave)
+  if (!isCampaignAdmin && !isCharacterOwner) {
+    res.status(403).json({ error: 'You do not have permission to update this character\'s status' })
+    return
+  }
+
+  if (isCharacterOwner && !isCampaignAdmin && characterStatus !== 'inactive') {
+    res.status(403).json({ error: 'You can only set your character to inactive (leave campaign)' })
+    return
+  }
+
+  const updated = await campaignMemberService.updateCharacterStatus(
+    memberId,
+    characterStatus as CampaignCharacterStatus,
+  )
+  if (!updated) {
+    res.status(400).json({ error: 'Failed to update character status' })
+    return
+  }
+
+  const character = await db().collection('characters').findOne({ _id: m.characterId })
+  const characterName = (character?.name as string) ?? 'Unknown'
+
+  // Notify all approved party members (excluding the user who initiated)
+  const approvedMembers = await campaignMemberService.getCampaignMembersByCampaign(m.campaignId.toString())
+  const partyMemberUserIds = (approvedMembers as { userId: mongoose.Types.ObjectId; status?: string }[])
+    .filter((mbr) => (mbr.status ?? 'approved') === 'approved' && !mbr.userId.equals(new mongoose.Types.ObjectId(userId)))
+    .map((mbr) => mbr.userId)
+
+  const notificationType = characterStatus === 'deceased'
+    ? 'character.deceased'
+    : 'character.left'
+
+  for (const memberUserId of partyMemberUserIds) {
+    await notificationService.createNotification({
+      userId: memberUserId,
+      type: notificationType,
+      requiresAction: false,
+      context: {
+        characterId: m.characterId,
+        campaignId: m.campaignId,
+      },
+      payload: {
+        characterName,
+        campaignName: campaign.identity.name,
+      },
+    })
+  }
 
   res.json({ campaignMember: updated })
 }

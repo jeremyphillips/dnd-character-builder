@@ -39,6 +39,56 @@ import { resolveClassId } from './classAliases'
  *                    are resolved internally.  When omitted in a class-
  *                    specific edition, returns 0 (no way to pick a table).
  */
+/**
+ * Given a total XP amount, returns the highest level the character qualifies
+ * for in the given edition.
+ *
+ * This is the reverse of `getXpByLevelAndEdition`.  It walks the XP
+ * thresholds from the top down and returns the first level whose
+ * requirement is met.
+ *
+ * @param xp        - Total experience points
+ * @param editionId - Edition to look up
+ * @param classId   - Optional class ID — required for pre-3e editions
+ *                    where each class has a different XP table.
+ */
+export const getLevelForXp = (
+  xp: number,
+  editionId: EditionId,
+  classId?: string,
+): number => {
+  const edition = getById<Edition>(editions, editionId)
+  if (!edition?.progression) return 1
+
+  const { progression } = edition
+  const maxLevel = progression.maxLevel ?? 20
+
+  // --- Class-specific table (pre-3e editions) ---
+  if (progression.classExperience && classId) {
+    const canonicalId = resolveClassId(classId)
+    const classTable = progression.classExperience[canonicalId]
+
+    if (classTable) {
+      // Walk from highest level down to find the first one the XP qualifies for
+      for (let lvl = maxLevel; lvl >= 1; lvl--) {
+        const entry = classTable.find(e => e.level === lvl)
+        if (entry && xp >= entry.xpRequired) return lvl
+      }
+      return 1
+    }
+  }
+
+  // --- Universal table (3e+ editions) ---
+  if (progression.experience) {
+    for (let lvl = maxLevel; lvl >= 1; lvl--) {
+      const entry = progression.experience.find(e => e.level === lvl)
+      if (entry && xp >= entry.xpRequired) return lvl
+    }
+  }
+
+  return 1
+}
+
 export const getXpByLevelAndEdition = (
   level: number,
   editionId: EditionId,

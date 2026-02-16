@@ -45,6 +45,12 @@ export function getNotificationLabel(n: AppNotification): string {
       const title = (n.payload.sessionTitle as string) ?? 'A session'
       return `${title} scheduled for ${cancelDate} has been cancelled.`
     }
+    case 'levelUp.cancelled':
+      return `Level-up to ${n.payload.pendingLevel ?? 'next level'} for "${n.payload.characterName ?? 'your character'}" was cancelled by the campaign owner.`
+    case 'character.deceased':
+      return `\u26B0\uFE0F ${n.payload.characterName ?? 'A character'} has deceased.`
+    case 'character.left':
+      return `${n.payload.characterName ?? 'A character'} has left your party.`
     default:
       return n.type
   }

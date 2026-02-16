@@ -103,6 +103,7 @@ export type CharacterCore = {
   xp: number
   totalLevel: number
   levelUpPending?: boolean
+  pendingLevel?: number
 
   stats?: AbilityScores
   hitPoints?: HitPoints

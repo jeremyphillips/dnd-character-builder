@@ -1,14 +1,8 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
-import type { CampaignMemberStatus } from '../../shared/types'
+import type { CampaignMemberStatus, CampaignMemberRole, CampaignCharacterStatus } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignMembersCollection = () => db().collection('campaignMembers')
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type CampaignMemberRole = 'player' | 'dm'
 
 export interface CampaignMemberDoc {
   _id: mongoose.Types.ObjectId
@@ -17,6 +11,8 @@ export interface CampaignMemberDoc {
   userId: mongoose.Types.ObjectId
   role: CampaignMemberRole
   status: CampaignMemberStatus
+  /** Character's in-campaign status (active by default, can be set to inactive/deceased) */
+  characterStatus?: CampaignCharacterStatus
   requestedAt: Date
   approvedAt?: Date
   approvedBy?: mongoose.Types.ObjectId
@@ -119,6 +115,17 @@ export async function rejectCampaignMember(id: string) {
     { returnDocument: 'after' },
   )
   return updated
+}
+
+export async function updateCharacterStatus(
+  id: string,
+  characterStatus: CampaignCharacterStatus,
+) {
+  return campaignMembersCollection().findOneAndUpdate(
+    { _id: new mongoose.Types.ObjectId(id) },
+    { $set: { characterStatus } },
+    { returnDocument: 'after' },
+  )
 }
 
 export async function deleteCampaignMember(campaignId: string, characterId: string) {

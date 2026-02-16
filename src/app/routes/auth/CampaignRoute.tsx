@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Outlet, useMatch, Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
+import type { CampaignRole } from '@/shared'
 import { editions, settings } from '@/data'
 import { getById } from '@/domain/lookups'
 // import CampaignForm, { type CampaignFormData } from '../../../features/campaign/components/CampaignForm'
@@ -14,7 +15,7 @@ import { apiFetch } from '../../api'
 
 interface CampaignMember {
   userId: string
-  role: 'dm' | 'player' | 'observer'
+  role: CampaignRole
   joinedAt: string
 }
 

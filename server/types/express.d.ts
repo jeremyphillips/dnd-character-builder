@@ -1,3 +1,5 @@
+import type { CampaignRole } from '../../shared/types'
+
 declare namespace Express {
   interface Request {
     userId?: string
@@ -5,7 +7,7 @@ declare namespace Express {
 
     /** Attached by requireCampaignRole middleware */
     campaign?: import('mongodb').WithId<import('mongodb').Document>
-    /** The user's role within the attached campaign ('dm' | 'player' | 'observer' | 'admin') */
-    campaignRole?: 'admin' | 'dm' | 'player' | 'observer'
+    /** The user's effective role within the attached campaign */
+    campaignRole?: CampaignRole | 'admin'
   }
 }

@@ -1,10 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import type { CharacterDoc } from '@/shared'
 import { classes as classesData, editions, settings, races, equipment, type EditionId, type SettingId } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
-import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression, getXpByLevelAndEdition } from '@/domain/character'
+import { getAlignmentOptionsForCharacter, getSubclassNameById, getAllowedRaces, getClassProgression, getXpByLevelAndEdition, getLevelForXp } from '@/domain/character'
+import { AwardXpModal } from '@/domain/character/components/AwardXpModal'
+import { ConfirmModal } from '@/ui/modals'
+import { LevelUpWizard } from '@/features/levelUp'
+import type { LevelUpResult } from '@/features/levelUp'
 import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
 import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
 import type { ClassProgression } from '@/data/classes/types'
@@ -20,6 +24,7 @@ import {
 import { StatCircle, Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
 import { apiFetch } from '../../api'
+import { ROUTES } from '../../routes'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -51,6 +56,8 @@ interface CampaignSummary {
     imageUrl?: string
   }
   dmName?: string
+  campaignMemberId?: string
+  characterStatus?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +121,7 @@ export default function CharacterDetailRoute() {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
   const [isOwner, setIsOwner] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [ownerName, setOwnerName] = useState<string | undefined>()
   const [pendingMemberships, setPendingMemberships] = useState<
     { campaignId: string; campaignName: string; campaignMemberId: string }[]
   >([])
@@ -138,6 +146,16 @@ export default function CharacterDetailRoute() {
   const [alignment, setAlignment] = useState('')
   const [totalLevel, setTotalLevel] = useState(0)
   const [xp, setXp] = useState(0)
+  const [awardXpOpen, setAwardXpOpen] = useState(false)
+  const [levelUpOpen, setLevelUpOpen] = useState(false)
+  const [cancelLevelUpOpen, setCancelLevelUpOpen] = useState(false)
+  const [statusAction, setStatusAction] = useState<{
+    campaignMemberId: string
+    campaignName: string
+    newStatus: 'inactive' | 'deceased'
+  } | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const navigate = useNavigate()
   const breadcrumbs = useBreadcrumbs()
 
   // ── Load ────────────────────────────────────────────────────────────
@@ -150,6 +168,7 @@ export default function CharacterDetailRoute() {
       isOwner: boolean
       isAdmin: boolean
       pendingMemberships?: { campaignId: string; campaignName: string; campaignMemberId: string }[]
+      ownerName?: string
     }>(`/api/characters/${id}`)
       .then((data) => {
         const c = data.character
@@ -158,6 +177,7 @@ export default function CharacterDetailRoute() {
         setIsOwner(data.isOwner)
         setIsAdmin(data.isAdmin)
         setPendingMemberships(data.pendingMemberships ?? [])
+        setOwnerName(data.ownerName)
 
         // Init editable state
         setName(c.name ?? '')
@@ -254,6 +274,121 @@ export default function CharacterDetailRoute() {
     }
   }
 
+  const handleAwardXp = async (params: {
+    newXp: number
+    triggersLevelUp: boolean
+    pendingLevel?: number
+  }) => {
+    if (!id) return
+    const body: Record<string, unknown> = { xp: params.newXp }
+    if (params.triggersLevelUp && params.pendingLevel) {
+      body.levelUpPending = true
+      body.pendingLevel = params.pendingLevel
+    }
+    const data = await apiFetch<{ character: CharacterDoc }>(`/api/characters/${id}`, {
+      method: 'PATCH',
+      body,
+    })
+    setCharacter(data.character)
+    syncFromCharacter(data.character)
+  }
+
+  const handleCancelLevelUp = async () => {
+    if (!id || !character) return
+    // Revert XP to the threshold for the current level
+    const revertedXp = getXpByLevelAndEdition(currentLevel, character.edition as EditionId, primaryClassId)
+    const data = await apiFetch<{ character: CharacterDoc }>(`/api/characters/${id}`, {
+      method: 'PATCH',
+      body: {
+        xp: revertedXp,
+        levelUpPending: false,
+        pendingLevel: null,
+      },
+    })
+    setCharacter(data.character)
+    syncFromCharacter(data.character)
+    setCancelLevelUpOpen(false)
+    setSuccess('Level-up cancelled. XP has been reverted.')
+  }
+
+  const handleCharacterStatusChange = async () => {
+    if (!statusAction) return
+    try {
+      await apiFetch(`/api/campaign-members/${statusAction.campaignMemberId}/character-status`, {
+        method: 'PATCH',
+        body: { characterStatus: statusAction.newStatus },
+      })
+      // Update local campaign list
+      setCampaigns(prev =>
+        prev.map(c =>
+          c.campaignMemberId === statusAction.campaignMemberId
+            ? { ...c, characterStatus: statusAction.newStatus }
+            : c,
+        ),
+      )
+      const label = statusAction.newStatus === 'deceased' ? 'marked as deceased' : 'set to inactive'
+      setSuccess(`${character?.name ?? 'Character'} has been ${label} in ${statusAction.campaignName}.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update character status')
+    } finally {
+      setStatusAction(null)
+    }
+  }
+
+  const handleReactivate = async (campaignMemberId: string, campaignName: string) => {
+    try {
+      await apiFetch(`/api/campaign-members/${campaignMemberId}/character-status`, {
+        method: 'PATCH',
+        body: { characterStatus: 'active' },
+      })
+      setCampaigns(prev =>
+        prev.map(c =>
+          c.campaignMemberId === campaignMemberId
+            ? { ...c, characterStatus: 'active' }
+            : c,
+        ),
+      )
+      setSuccess(`${character?.name ?? 'Character'} has been reactivated in ${campaignName}.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reactivate character')
+    }
+  }
+
+  const handleDeleteCharacter = async () => {
+    if (!id) return
+    try {
+      await apiFetch(`/api/characters/${id}`, { method: 'DELETE' })
+      navigate(ROUTES.CHARACTERS)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete character')
+      setDeleteOpen(false)
+    }
+  }
+
+  const handleLevelUpComplete = async (result: LevelUpResult) => {
+    if (!id) return
+    const body: Record<string, unknown> = {
+      totalLevel: result.totalLevel,
+      classes: result.classes,
+      hitPoints: result.hitPoints,
+      spells: result.spells,
+      levelUpPending: false,
+      pendingLevel: null,
+    }
+    if (result.classDefinitionId) {
+      // Update the primary class's subclass in the classes array already,
+      // but also persist at the document level if needed
+      body.classDefinitionId = result.classDefinitionId
+    }
+    const data = await apiFetch<{ character: CharacterDoc }>(`/api/characters/${id}`, {
+      method: 'PATCH',
+      body,
+    })
+    setCharacter(data.character)
+    syncFromCharacter(data.character)
+    setSuccess(`${character?.name ?? 'Character'} has been advanced to level ${result.totalLevel}!`)
+  }
+
   // ── Render ──────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -275,6 +410,7 @@ export default function CharacterDetailRoute() {
 
   const canEditAll = isAdmin
   const canEdit = isOwner || isAdmin
+  const activeCampaignCount = campaigns.filter(c => (c.characterStatus ?? 'active') === 'active').length
 
   const filledClasses = (character.classes ?? []).filter((c) => c.classId)
   const isMulticlass = filledClasses.length > 1
@@ -300,9 +436,22 @@ export default function CharacterDetailRoute() {
       ? `${character.class} ${character.level}`
       : '—'
 
-  // XP description
+  // XP description — context-aware for pending level-ups
+  const isPendingLevelUp = character.levelUpPending && character.pendingLevel
   let xpDescription: string | undefined
-  if (currentLevel >= maxLevel) {
+  if (isPendingLevelUp) {
+    // Character already has the XP — show the pending target instead of the
+    // stale "XP required for next level" message
+    const effectiveLevel = character.pendingLevel!
+    if (effectiveLevel >= maxLevel) {
+      xpDescription = `Level-up to ${effectiveLevel} pending · Max level`
+    } else {
+      const beyondPendingXp = getXpByLevelAndEdition(effectiveLevel + 1, character.edition as EditionId, primaryClassId)
+      xpDescription = beyondPendingXp > 0
+        ? `Level-up to ${effectiveLevel} pending · ${beyondPendingXp.toLocaleString()} XP for level ${effectiveLevel + 1}`
+        : `Level-up to ${effectiveLevel} pending`
+    }
+  } else if (currentLevel >= maxLevel) {
     xpDescription = `Max level (${maxLevel}) reached`
   } else {
     const nextLevelXp = getXpByLevelAndEdition(currentLevel + 1, character.edition as EditionId, primaryClassId)
@@ -366,6 +515,54 @@ export default function CharacterDetailRoute() {
         </Alert>
       ))}
 
+      {/* Level-up pending banner */}
+      {character.levelUpPending && character.pendingLevel && (
+        <Alert
+          severity="info"
+          sx={{ mb: 2 }}
+          action={
+            isOwner ? (
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => setLevelUpOpen(true)}
+              >
+                Begin Level-Up
+              </Button>
+            ) : undefined
+          }
+        >
+          {isOwner ? (
+            <>
+              <strong>{character.name}</strong> is pending advancement to level{' '}
+              <strong>{character.pendingLevel}</strong>. Complete your level-up to
+              choose new features, spells, and abilities.
+            </>
+          ) : (
+            <>
+              <strong>{character.name}</strong> is pending advancement to level{' '}
+              <strong>{character.pendingLevel}</strong>. Waiting for{' '}
+              <strong>{ownerName ?? 'the character owner'}</strong> to complete
+              the level-up process.
+              {canEditAll && (
+                <>
+                  {' '}
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="primary"
+                    sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => setCancelLevelUpOpen(true)}
+                  >
+                    Cancel level-up
+                  </Typography>
+                </>
+              )}
+            </>
+          )}
+        </Alert>
+      )}
+
       {/* ================================================================ */}
       {/* IDENTITY BANNER                                                   */}
       {/* ================================================================ */}
@@ -415,27 +612,34 @@ export default function CharacterDetailRoute() {
                   ) : (
                     <>
                       <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Level</Typography>
-                      <Typography variant="body1" fontWeight={600}>{currentLevel}</Typography>
+                      <Stack direction="row" spacing={0.5} alignItems="baseline">
+                        <Typography variant="body1" fontWeight={600}>{currentLevel}</Typography>
+                        {isPendingLevelUp && (
+                          <Typography variant="body2" color="info.main" fontWeight={500}>
+                            &rarr; {character.pendingLevel}
+                          </Typography>
+                        )}
+                      </Stack>
                     </>
                   )}
                 </Box>
                 <Box>
-                  {canEditAll ? (
-                    <EditableNumberField
-                      label="XP"
-                      value={xp}
-                      onSave={(v: number) => saveCharacter({ xp: v })}
-                      formatDisplay={(n) => n.toLocaleString()}
-                      description={xpDescription}
-                    />
-                  ) : (
-                    <>
-                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
-                      <Typography variant="body1" fontWeight={600}>{(character.xp ?? 0).toLocaleString()}</Typography>
-                      {xpDescription && (
-                        <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
-                      )}
-                    </>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="body1" fontWeight={600}>{(character.xp ?? 0).toLocaleString()}</Typography>
+                    {canEditAll && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setAwardXpOpen(true)}
+                        disabled={!!isPendingLevelUp}
+                      >
+                        Award XP
+                      </Button>
+                    )}
+                  </Stack>
+                  {xpDescription && (
+                    <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
                   )}
                 </Box>
               </Stack>
@@ -446,18 +650,72 @@ export default function CharacterDetailRoute() {
                   <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
                     Campaigns
                   </Typography>
-                  {campaigns.map(c => (
-                    <CampaignHorizontalCard
-                      key={c._id}
-                      campaignId={c._id}
-                      name={c.identity.name}
-                      description={c.identity.description}
-                      imageUrl={c.identity.imageUrl}
-                      dmName={c.dmName}
-                      edition={c.identity.edition}
-                      setting={c.identity.setting}
-                    />
-                  ))}
+                  {campaigns.map(c => {
+                    const charStatus = (c.characterStatus ?? 'active') as string
+                    const isActive = charStatus === 'active'
+
+                    const campaignActions = (
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        {/* Campaign admin: set inactive / deceased / reactivate */}
+                        {isAdmin && c.campaignMemberId && isActive && (
+                          <>
+                            <Typography
+                              variant="body2"
+                              color="warning.main"
+                              sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                              onClick={(e) => { e.preventDefault(); setStatusAction({ campaignMemberId: c.campaignMemberId!, campaignName: c.identity.name, newStatus: 'inactive' }) }}
+                            >
+                              Set inactive
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="error.main"
+                              sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                              onClick={(e) => { e.preventDefault(); setStatusAction({ campaignMemberId: c.campaignMemberId!, campaignName: c.identity.name, newStatus: 'deceased' }) }}
+                            >
+                              Mark deceased
+                            </Typography>
+                          </>
+                        )}
+                        {isAdmin && c.campaignMemberId && !isActive && (
+                          <Typography
+                            variant="body2"
+                            color="primary"
+                            sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            onClick={(e) => { e.preventDefault(); handleReactivate(c.campaignMemberId!, c.identity.name) }}
+                          >
+                            Reactivate
+                          </Typography>
+                        )}
+                        {/* Character owner (non-admin): leave campaign */}
+                        {isOwner && !isAdmin && c.campaignMemberId && isActive && (
+                          <Typography
+                            variant="body2"
+                            color="warning.main"
+                            sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            onClick={(e) => { e.preventDefault(); setStatusAction({ campaignMemberId: c.campaignMemberId!, campaignName: c.identity.name, newStatus: 'inactive' }) }}
+                          >
+                            Leave campaign
+                          </Typography>
+                        )}
+                      </Stack>
+                    )
+
+                    return (
+                      <CampaignHorizontalCard
+                        key={c._id}
+                        campaignId={c._id}
+                        name={c.identity.name}
+                        description={c.identity.description}
+                        imageUrl={c.identity.imageUrl}
+                        dmName={c.dmName}
+                        edition={c.identity.edition}
+                        setting={c.identity.setting}
+                        characterStatus={charStatus !== 'active' ? charStatus : undefined}
+                        actions={campaignActions}
+                      />
+                    )
+                  })}
                 </Stack>
               )}
             </Box>
@@ -873,6 +1131,98 @@ export default function CharacterDetailRoute() {
           </Grid>
         </CardContent>
       </Card>
+
+      {/* Delete character (owner only) */}
+      {isOwner && (
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Divider sx={{ mb: 3 }} />
+          <Button
+            variant="text"
+            color="error"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete Character
+          </Button>
+        </Box>
+      )}
+
+      {/* Award XP modal */}
+      <AwardXpModal
+        open={awardXpOpen}
+        onClose={() => setAwardXpOpen(false)}
+        characterName={character.name}
+        currentXp={character.xp ?? 0}
+        currentLevel={currentLevel}
+        editionId={character.edition as EditionId}
+        primaryClassId={primaryClassId}
+        maxLevel={maxLevel}
+        onAward={handleAwardXp}
+      />
+
+      {/* Level-up wizard */}
+      {character.levelUpPending && character.pendingLevel && (
+        <LevelUpWizard
+          open={levelUpOpen}
+          onClose={() => setLevelUpOpen(false)}
+          character={character}
+          onComplete={handleLevelUpComplete}
+        />
+      )}
+
+      {/* Cancel level-up confirmation */}
+      <ConfirmModal
+        open={cancelLevelUpOpen}
+        onCancel={() => setCancelLevelUpOpen(false)}
+        onConfirm={handleCancelLevelUp}
+        headline="Cancel Level-Up"
+        description={`This will cancel the pending advancement to level ${character.pendingLevel} and revert ${character.name}'s XP to the level ${currentLevel} threshold. You can re-award XP afterward.`}
+        confirmLabel="Cancel Level-Up"
+        confirmColor="error"
+      />
+
+      {/* Delete character confirmation */}
+      <ConfirmModal
+        open={deleteOpen}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteCharacter}
+        headline="Delete Character"
+        description={
+          activeCampaignCount > 0
+            ? `This will remove ${character.name} from ${activeCampaignCount} active campaign${activeCampaignCount !== 1 ? 's' : ''} and notify party members. Campaign history will be preserved, but you will no longer be able to access this character.`
+            : `This will permanently delete ${character.name}. This action cannot be undone.`
+        }
+        confirmLabel="Delete Character"
+        confirmColor="error"
+      />
+
+      {/* Character status change confirmation */}
+      <ConfirmModal
+        open={!!statusAction}
+        onCancel={() => setStatusAction(null)}
+        onConfirm={handleCharacterStatusChange}
+        headline={
+          statusAction?.newStatus === 'deceased'
+            ? 'Mark Character as Deceased'
+            : isOwner && !isAdmin
+              ? 'Leave Campaign'
+              : 'Set Character Inactive'
+        }
+        description={
+          statusAction?.newStatus === 'deceased'
+            ? `This will mark ${character.name} as deceased in ${statusAction?.campaignName ?? 'the campaign'}. All party members will be notified.`
+            : isOwner && !isAdmin
+              ? `This will remove ${character.name} from ${statusAction?.campaignName ?? 'the campaign'}. All party members will be notified.`
+              : `This will set ${character.name} as inactive in ${statusAction?.campaignName ?? 'the campaign'}. All party members will be notified.`
+        }
+        confirmLabel={
+          statusAction?.newStatus === 'deceased'
+            ? 'Mark Deceased'
+            : isOwner && !isAdmin
+              ? 'Leave Campaign'
+              : 'Set Inactive'
+        }
+        confirmColor={statusAction?.newStatus === 'deceased' ? 'error' : 'warning'}
+      />
     </Box>
   )
 }

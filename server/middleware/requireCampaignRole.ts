@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import { getCampaignById } from '../services/campaign.service'
+import type { CampaignRole } from '../../shared/types'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignMembersCollection = () => db().collection('campaignMembers')
@@ -20,11 +21,11 @@ const campaignMembersCollection = () => db().collection('campaignMembers')
  * Usage:
  *   requireCampaignRole('admin')          — only the campaign owner
  *   requireCampaignRole('admin', 'dm')    — owner or DMs
- *   requireCampaignRole('player')         — any member (admin/dm/player implicitly pass)
+ *   requireCampaignRole('pc')             — any member (admin/dm/pc implicitly pass)
  *   requireCampaignRole('observer')       — anyone with access (all roles pass)
  */
-export function requireCampaignRole(...requiredRoles: Array<'admin' | 'dm' | 'player' | 'observer'>) {
-  const hierarchy = ['observer', 'player', 'dm', 'admin'] as const
+export function requireCampaignRole(...requiredRoles: Array<CampaignRole | 'admin'>) {
+  const hierarchy: Array<CampaignRole | 'admin'> = ['observer', 'pc', 'dm', 'admin']
   const minLevel = Math.min(...requiredRoles.map((r) => hierarchy.indexOf(r)))
 
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -45,7 +46,7 @@ export function requireCampaignRole(...requiredRoles: Array<'admin' | 'dm' | 'pl
     const uid = new mongoose.Types.ObjectId(req.userId!)
     const isOwner = campaign.membership.adminId.equals(uid)
 
-    let campaignRole: 'admin' | 'dm' | 'player' | 'observer' | null = null
+    let campaignRole: CampaignRole | 'admin' | null = null
 
     if (isOwner) {
       campaignRole = 'admin'
@@ -68,7 +69,7 @@ export function requireCampaignRole(...requiredRoles: Array<'admin' | 'dm' | 'pl
         } else {
           // Use highest role among approved members
           const hasDm = approvedMembers.some((m) => m.role === 'dm')
-          campaignRole = hasDm ? 'dm' : 'player'
+          campaignRole = hasDm ? 'dm' : 'pc'
         }
       }
     }

@@ -9,4 +9,4 @@ export type Session = {
   status: SessionStatus
 }
 
-export type CampaignRole = 'admin' | 'player' | 'observer'
+export type { CampaignRole } from '@/shared'

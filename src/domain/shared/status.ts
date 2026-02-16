@@ -5,3 +5,5 @@ export type StatusType =
   | 'draft'
   | 'archived'
   | 'active'
+  | 'inactive'
+  | 'deceased'

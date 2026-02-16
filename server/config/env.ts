@@ -10,4 +10,5 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   AUTH_SECRET: process.env.AUTH_SECRET ?? '',
   CLIENT_URL: process.env.CLIENT_URL ?? 'http://localhost:5173',
+  IMAGE_BASE_URL: process.env.IMAGE_BASE_URL ?? '/uploads/',
 } as const

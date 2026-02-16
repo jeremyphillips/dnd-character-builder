@@ -28,4 +28,6 @@ export const ROUTES = {
   ADMIN_INVITES: '/admin/invites',
   ADMIN_BRAINSTORMING: '/admin/brainstorming',
   ADMIN_SETTINGS: '/admin/settings',
+  ACCOUNT: '/account',
+  ACCOUNT_SETTINGS: '/account/settings',
 } as const

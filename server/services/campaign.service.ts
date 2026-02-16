@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import type { CampaignRole } from '../../shared/types'
+import { getPublicUrl } from '../services/image.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignsCollection = () => db().collection('campaigns')
@@ -13,10 +14,15 @@ const campaignMembersCollection = () => db().collection('campaignMembers')
 export function normalizeCampaign(campaign: any, memberCount?: number) {
   if (!campaign) return null
 
+  const { imageKey, ...identityRest } = campaign.identity ?? {}
+
   return {
     _id: campaign._id,
 
-    identity: campaign.identity,
+    identity: {
+      ...identityRest,
+      imageUrl: getPublicUrl(imageKey),
+    },
     configuration: campaign.configuration,
     membership: {
       adminId: campaign.membership?.adminId,
@@ -115,6 +121,7 @@ export async function updateCampaign(
     setting?: string
     edition?: string
     description?: string
+    imageKey?: string | null
     allowLegacyEditionNpcs?: boolean
   }
 ) {
@@ -131,6 +138,9 @@ export async function updateCampaign(
   }
   if (data.edition !== undefined) {
     $set['identity.edition'] = data.edition
+  }
+  if (data.imageKey !== undefined) {
+    $set['identity.imageKey'] = data.imageKey
   }
   if (data.allowLegacyEditionNpcs !== undefined) {
     $set['configuration.allowLegacyEditionNpcs'] = data.allowLegacyEditionNpcs

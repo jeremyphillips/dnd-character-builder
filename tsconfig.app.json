@@ -31,6 +31,7 @@
       "@/features/messaging": ["features/messaging/index.ts"],
       "@/features/levelUp": ["features/levelUp/index.ts"],
       "@/features/levelUp/*": ["features/levelUp/*"],
+      "@/features/account/*": ["features/account/*"],
       "@/features/campaign/*": ["features/campaign/*"],
       "@/characterBuilder/context": ["features/characterBuilder/context/index.ts"],
       "@/ui/elements": ["ui/elements/index.ts"],
@@ -60,7 +61,8 @@
       "@/hooks": ["hooks/index.ts"],
       "@/hooks/*": ["hooks/*"],
       "@/shared": ["../shared/types/index.ts"],
-      "@/shared/*": ["../shared/*"]
+      "@/shared/*": ["../shared/*"],
+      "@/utils/*": ["utils/*"]
     }  
   },
   "include": ["src"]

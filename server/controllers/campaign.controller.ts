@@ -46,12 +46,13 @@ export async function createCampaign(req: Request, res: Response) {
 
 export async function updateCampaign(req: Request, res: Response) {
   // req.campaign attached by requireCampaignRole('admin')
-  const { name, setting, edition, description, allowLegacyEditionNpcs } = req.body
+  const { name, setting, edition, description, imageKey, allowLegacyEditionNpcs } = req.body
   const updated = await campaignService.updateCampaign(req.params.id, {
     name,
     setting,
     edition,
     description,
+    imageKey,
     allowLegacyEditionNpcs
   })
   res.json({ campaign: updated })

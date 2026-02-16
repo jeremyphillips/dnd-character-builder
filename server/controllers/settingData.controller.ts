@@ -1,5 +1,20 @@
 import type { Request, Response } from 'express'
 import * as settingDataService from '../services/settingData.service'
+import { getPublicUrl } from '../services/image.service'
+
+function normalizeLocation(loc: any) {
+  const { imageKey, ...rest } = loc ?? {}
+  return { ...rest, imageUrl: getPublicUrl(imageKey) }
+}
+
+function normalizeOverrides(overrides: Record<string, any>) {
+  const result: Record<string, any> = {}
+  for (const [id, o] of Object.entries(overrides)) {
+    const { imageKey, ...rest } = o ?? {}
+    result[id] = { ...rest, imageUrl: getPublicUrl(imageKey) }
+  }
+  return result
+}
 
 // GET /api/setting-data/:settingId
 export async function getSettingData(req: Request, res: Response) {
@@ -9,8 +24,8 @@ export async function getSettingData(req: Request, res: Response) {
 
     res.json({
       worldMapUrl: data?.worldMapUrl ?? null,
-      customLocations: data?.customLocations ?? [],
-      locationOverrides: data?.locationOverrides ?? {},
+      customLocations: (data?.customLocations ?? []).map(normalizeLocation),
+      locationOverrides: normalizeOverrides(data?.locationOverrides ?? {}),
     })
   } catch (err) {
     console.error('Failed to get setting data:', err)

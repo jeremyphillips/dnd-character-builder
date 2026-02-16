@@ -4,7 +4,7 @@ import type { Character } from "./character.core"
 export type CharacterDoc = Character & {
   _id: string
   userId?: string
-  imageUrl?: string | null
+  imageKey?: string | null
 
   ai?: Record<string, unknown>
 

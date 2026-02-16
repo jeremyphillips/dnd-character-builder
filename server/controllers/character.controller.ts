@@ -59,7 +59,9 @@ export async function getCharacter(req: Request, res: Response) {
   // Pending memberships this user can approve/reject (when they are campaign admin)
   const pendingMemberships = await characterService.getPendingMembershipsForAdmin(req.params.id, req.userId!)
 
-  res.json({ character, campaigns, isOwner, isAdmin: isCampaignAdmin, pendingMemberships, ownerName })
+  const normalizedCharacter = await characterService.getCharacterByIdNormalized(req.params.id)
+
+  res.json({ character: normalizedCharacter, campaigns, isOwner, isAdmin: isCampaignAdmin, pendingMemberships, ownerName })
 }
 
 export async function createCharacter(req: Request, res: Response) {
@@ -97,13 +99,13 @@ export async function updateCharacter(req: Request, res: Response) {
   }
 
   // Only campaign admins can update admin-scoped fields (xp, level, classes, etc.)
-  // Character owners can update name, imageUrl, narrative, and level-up completion fields
+  // Character owners can update name, imageKey, narrative, and level-up completion fields
   let updateData = req.body
   if (!isCampaignAdmin) {
-    const { name, imageUrl, narrative, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, classDefinitionId } = req.body
+    const { name, imageKey, narrative, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, classDefinitionId } = req.body
     updateData = {} as any
     if (name !== undefined) updateData.name = name
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl
+    if (imageKey !== undefined) updateData.imageKey = imageKey
     if (narrative !== undefined) updateData.narrative = narrative
     // Allow character owners to complete a pending level-up
     if (character.levelUpPending) {

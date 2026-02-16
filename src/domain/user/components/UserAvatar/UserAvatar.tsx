@@ -1,10 +1,11 @@
 import { AppAvatar } from '@/ui/avatar'
+import type { CampaignMemberRole } from '@/shared'
 
 interface UserAvatarProps {
   userId?: string
   username?: string
   avatarUrl?: string
-  role?: 'dm' | 'player'
+  role?: CampaignMemberRole
   status?: 'online' | 'offline' | 'pending'
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }

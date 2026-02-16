@@ -7,7 +7,7 @@ const charactersCollection = () => db().collection('characters')
 
 export async function getCharactersByUser(userId: string) {
   return charactersCollection()
-    .find({ userId: new mongoose.Types.ObjectId(userId) })
+    .find({ userId: new mongoose.Types.ObjectId(userId), deletedAt: { $exists: false } })
     .sort({ createdAt: -1 })
     .toArray()
 }
@@ -62,6 +62,14 @@ export async function deleteCharacter(id: string) {
   return charactersCollection().deleteOne({ _id: new mongoose.Types.ObjectId(id) })
 }
 
+export async function softDeleteCharacter(id: string) {
+  return charactersCollection().findOneAndUpdate(
+    { _id: new mongoose.Types.ObjectId(id) },
+    { $set: { deletedAt: new Date() } },
+    { returnDocument: 'after' },
+  )
+}
+
 /**
  * Get campaigns a character is part of (via CampaignMember) or owner's campaigns.
  */
@@ -72,16 +80,19 @@ export async function getCampaignsForCharacter(characterId: string) {
   const userId = character.userId as mongoose.Types.ObjectId
   const campaignMembersCol = db().collection('campaignMembers')
 
-  const campaignIds = await campaignMembersCol.distinct('campaignId', {
-    characterId: new mongoose.Types.ObjectId(characterId),
-    $or: [
-      { status: 'pending' },
-      { status: 'approved' },
-      { status: { $exists: false } },
-    ],
-  })
+  // Fetch campaign member docs for this character
+  const memberDocs = await campaignMembersCol
+    .find({
+      characterId: new mongoose.Types.ObjectId(characterId),
+      $or: [
+        { status: 'pending' },
+        { status: 'approved' },
+        { status: { $exists: false } },
+      ],
+    })
+    .toArray() as { _id: mongoose.Types.ObjectId; campaignId: mongoose.Types.ObjectId; characterStatus?: string }[]
 
-  const memberCampaignIds = campaignIds as mongoose.Types.ObjectId[]
+  const memberCampaignIds = memberDocs.map(m => m.campaignId)
 
   const campaigns = await db()
     .collection('campaigns')
@@ -95,15 +106,25 @@ export async function getCampaignsForCharacter(characterId: string) {
   const adminIds = [...new Set(campaigns.map(c => c.membership?.adminId?.toString()).filter(Boolean))]
   const usersCol = db().collection('users')
   const admins = adminIds.length > 0
-    ? await usersCol.find({ _id: { $in: adminIds.map(id => new mongoose.Types.ObjectId(id)) } }).project({ name: 1 }).toArray()
+    ? await usersCol.find({ _id: { $in: adminIds.map(id => new mongoose.Types.ObjectId(id)) } }).project({ username: 1 }).toArray()
     : []
-  const adminNameMap = new Map(admins.map(u => [u._id.toString(), u.name]))
+  const adminNameMap = new Map(admins.map(u => [u._id.toString(), u.username]))
 
-  return campaigns.map(c => ({
-    _id: c._id,
-    identity: c.identity,
-    dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
-  }))
+  // Build member lookup by campaignId
+  const memberByCampaignId = new Map(
+    memberDocs.map(m => [m.campaignId.toString(), m]),
+  )
+
+  return campaigns.map(c => {
+    const member = memberByCampaignId.get(c._id.toString())
+    return {
+      _id: c._id,
+      identity: c.identity,
+      dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
+      campaignMemberId: member?._id?.toString(),
+      characterStatus: (member?.characterStatus ?? 'active') as string,
+    }
+  })
 }
 
 /**
@@ -136,6 +157,40 @@ export async function getPendingMembershipsForAdmin(
     }
   }
   return result
+}
+
+/**
+ * Check whether a user is the campaign admin (DM) for any campaign
+ * this character belongs to.
+ */
+export async function isCampaignAdminForCharacter(
+  characterId: string,
+  userId: string,
+): Promise<boolean> {
+  const uid = new mongoose.Types.ObjectId(userId)
+  const campaignMembersCol = db().collection('campaignMembers')
+
+  // Find campaigns this character is a member of
+  const campaignIds = await campaignMembersCol.distinct('campaignId', {
+    characterId: new mongoose.Types.ObjectId(characterId),
+    $or: [
+      { status: 'approved' },
+      { status: 'pending' },
+      { status: { $exists: false } },
+    ],
+  })
+
+  if (campaignIds.length === 0) return false
+
+  // Check if the user is the adminId of any of those campaigns
+  const match = await db()
+    .collection('campaigns')
+    .findOne({
+      _id: { $in: campaignIds },
+      'membership.adminId': uid,
+    })
+
+  return match !== null
 }
 
 /**

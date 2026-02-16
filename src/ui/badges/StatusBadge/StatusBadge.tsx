@@ -47,6 +47,15 @@ export function StatusBadge({
       label: 'Active',
       color: 'primary',
     },
+    inactive: {
+      label: 'Inactive',
+      color: 'default',
+    },
+    deceased: {
+      label: 'Deceased',
+      color: 'error',
+      icon: <CancelIcon fontSize="small" />,
+    },
   }
 
   const { label, color, icon } = config[status]

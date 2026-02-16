@@ -2,7 +2,7 @@ import mongoose, { Schema } from 'mongoose'
 
 const campaignMemberSchema = new Schema({
   userId:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  role:     { type: String, enum: ['dm', 'player', 'observer'], default: 'player' },
+  role:     { type: String, enum: ['dm', 'pc', 'observer'], default: 'pc' },
   joinedAt: { type: Date, default: Date.now },
 }, { _id: false })
 

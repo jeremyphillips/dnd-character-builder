@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import mongoose from 'mongoose'
+import type { CampaignRole } from '../../shared/types'
 import * as campaignService from '../services/campaign.service'
 
 // ---------------------------------------------------------------------------
@@ -99,8 +100,8 @@ export async function addMember(req: Request, res: Response) {
     return
   }
 
-  const validRoles = ['dm', 'player', 'observer']
-  const memberRole = validRoles.includes(role) ? role : 'player'
+  const validRoles: CampaignRole[] = ['dm', 'pc', 'observer']
+  const memberRole = validRoles.includes(role) ? role : 'pc'
 
   // Look up user by email
   const db = mongoose.connection.useDb(process.env.DB_NAME ?? 'dnd')
@@ -149,7 +150,7 @@ export async function addMember(req: Request, res: Response) {
 export async function updateMember(req: Request, res: Response) {
   const { role } = req.body
 
-  const validRoles = ['dm', 'player', 'observer']
+  const validRoles: CampaignRole[] = ['dm', 'pc', 'observer']
   if (!role || !validRoles.includes(role)) {
     res.status(400).json({ error: `role must be one of: ${validRoles.join(', ')}` })
     return

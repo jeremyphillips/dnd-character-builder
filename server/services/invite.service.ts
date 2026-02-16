@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import * as notificationService from './notification.service'
-import type { CampaignMemberStatus } from '../../shared/types'
+import type { CampaignMemberStatus, CampaignRole } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const invitesCollection = () => db().collection('campaignInvites')
 
@@ -10,13 +10,12 @@ const invitesCollection = () => db().collection('campaignInvites')
 // ---------------------------------------------------------------------------
 
 export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
-export type InviteRole = 'player' | 'dm' | 'observer'
 
 export interface CampaignInviteDoc {
   campaignId: mongoose.Types.ObjectId
   invitedUserId: mongoose.Types.ObjectId
   invitedByUserId: mongoose.Types.ObjectId
-  role: InviteRole
+  role: CampaignRole
   status: CampaignMemberStatus
   createdAt: Date
   respondedAt: Date | null
@@ -58,7 +57,7 @@ export async function createInvite(data: {
   campaignId: string
   invitedUserId: string
   invitedByUserId: string
-  role: InviteRole
+  role: CampaignRole
   campaignName: string
   invitedByName: string
 }) {
@@ -131,7 +130,7 @@ export async function respondToInvite(
   // If accepted, create CampaignMember with status pending (awaiting DM approval)
   if (accept && characterId) {
     const campaignMemberService = await import('./campaignMember.service')
-    const role = invite.role === 'dm' ? 'dm' : 'player'
+    const role = invite.role === 'dm' ? 'dm' : 'pc'
     const member = await campaignMemberService.createCampaignMember({
       campaignId: invite.campaignId.toString(),
       characterId,

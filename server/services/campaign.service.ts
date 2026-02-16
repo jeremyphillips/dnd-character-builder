@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
+import type { CampaignRole } from '../../shared/types'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignsCollection = () => db().collection('campaigns')
@@ -156,7 +157,7 @@ export async function getMembers(campaignId: string) {
     )
     return {
       ...u,
-      campaignRole: membership?.role ?? 'player',
+      campaignRole: membership?.role ?? 'pc',
       joinedAt: membership?.joinedAt ?? null,
     }
   })
@@ -260,7 +261,7 @@ export async function getPartyCharacters(campaignId: string) {
 export async function addMember(
   _campaignId: string,
   _userId: string,
-  _role: 'dm' | 'player' | 'observer' = 'player'
+  _role: CampaignRole = 'pc'
 ) {
   return null
 }
@@ -268,7 +269,7 @@ export async function addMember(
 export async function updateMemberRole(
   campaignId: string,
   userId: string,
-  role: 'dm' | 'player' | 'observer'
+  role: CampaignRole
 ) {
   const uid = new mongoose.Types.ObjectId(userId)
   await campaignMembersCollection().updateMany(

@@ -34,11 +34,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // AbortController prevents StrictMode from completing both duplicate
+  // /api/auth/me fetches, which would create two distinct user object
+  // references and cascade unnecessary re-renders through every consumer.
   useEffect(() => {
-    apiFetch<{ user: AuthUser | null }>('/api/auth/me')
-      .then((data) => setUser(data?.user ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
+    const controller = new AbortController()
+    apiFetch<{ user: AuthUser | null }>('/api/auth/me', { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setUser(data?.user ?? null)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setUser(null)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+    return () => controller.abort()
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {

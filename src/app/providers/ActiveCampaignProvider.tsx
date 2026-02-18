@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from 'react'  
@@ -43,7 +44,6 @@ export const ActiveCampaignProvider = ({
   const location = useLocation()
   const navigate = useNavigate()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
-  const [loading, setLoading] = useState(false)
 
   const [campaignId, setActiveCampaignId] =
     useState<string | null>(() => {
@@ -51,11 +51,18 @@ export const ActiveCampaignProvider = ({
       return stored && isValidObjectId(stored) ? stored : null
     })
 
-  // Auto-select when user has only one campaign
+  // Start loading as true when a campaignId is already known (from localStorage
+  // or URL sync) so consumers see a loading state instead of a brief flash of
+  // "Campaign not found" before the fetch effect fires.
+  const [loading, setLoading] = useState(() => !!campaignId)
+
+  // Auto-select when user has only one campaign.
+  // AbortController prevents StrictMode from completing both duplicate fetches.
   useEffect(() => {
-    console.log("CampaignProvider autoselect");
-    apiFetch<{ campaigns: { _id: string }[] }>('/api/campaigns')
+    const controller = new AbortController()
+    apiFetch<{ campaigns: { _id: string }[] }>('/api/campaigns', { signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) return
         const list = data.campaigns ?? []
         if (list.length !== 1) return
         setActiveCampaignId((prev) => {
@@ -66,10 +73,10 @@ export const ActiveCampaignProvider = ({
         })
       })
       .catch(() => {})
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
-    console.log("CampaignProvider match");
     const match = matchPath(
       { path: '/campaigns/:campaignId/*' },
       location.pathname
@@ -89,12 +96,18 @@ export const ActiveCampaignProvider = ({
     }
   }, [location.pathname, campaignId])
 
-  // Stable callback so consumers don't re-render when the provider re-renders
+  // Hold navigate in a ref so setActiveCampaign never changes identity.
+  // React Router v7's useNavigate() may return a new function when the router
+  // context updates; putting it in useCallback deps would cascade a new context
+  // value to every consumer on each location change.
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
+
   const setActiveCampaign = useCallback((id: string) => {
     setActiveCampaignId(id)
     localStorage.setItem(STORAGE_KEY, id)
-    navigate(`/campaigns/${id}`)
-  }, [navigate])
+    navigateRef.current(`/campaigns/${id}`)
+  }, [])
 
   // Stable callback — clear stored campaign without navigation
   const clearActiveCampaign = useCallback(() => {
@@ -103,7 +116,6 @@ export const ActiveCampaignProvider = ({
   }, [])
 
   useEffect(() => {
-    console.log("CampaignProvider fetch");
     if (!campaignId) {
       setCampaign(null)
       return
@@ -111,12 +123,14 @@ export const ActiveCampaignProvider = ({
 
     // Abort stale request on cleanup (prevents duplicate fetches in StrictMode)
     const controller = new AbortController()
-  
+
     setLoading(true)
-  
+
     apiFetch<{ campaign: Campaign }>(`/api/campaigns/${campaignId}`, { signal: controller.signal })
       .then((data) => {
-        setCampaign(data.campaign ?? null)
+        // Guard: on fast localhost the response may arrive before StrictMode's
+        // cleanup abort fires, so check the signal before applying state.
+        if (!controller.signal.aborted) setCampaign(data.campaign ?? null)
       })
       .catch(() => {
         if (!controller.signal.aborted) setCampaign(null)
@@ -127,8 +141,8 @@ export const ActiveCampaignProvider = ({
 
     return () => controller.abort()
   }, [campaignId])
-  
-  
+
+
   // Memoize context value so consumers only re-render when campaign state changes
   const value = useMemo(() => ({
     campaignId,

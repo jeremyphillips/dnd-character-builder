@@ -86,11 +86,22 @@ export default function AuthLayout() {
 
   const canAccessAdmin = user?.role === 'superadmin' || (activeCampaignId && user && String(campaigns.find((c) => c._id === activeCampaignId)?.membership?.adminId) === user.id)
 
+  // AbortController prevents StrictMode from completing both duplicate fetches,
+  // which would overwrite campaigns state with a second object reference and
+  // trigger an unnecessary re-render of the sidebar campaign selector.
   useEffect(() => {
-    apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
-      .then((data) => setCampaigns(data.campaigns ?? []))
-      .catch(() => setCampaigns([]))
-      .finally(() => setCampaignsLoading(false))
+    const controller = new AbortController()
+    apiFetch<{ campaigns: Campaign[] }>('/api/campaigns', { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setCampaigns(data.campaigns ?? [])
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCampaigns([])
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCampaignsLoading(false)
+      })
+    return () => controller.abort()
   }, [])
 
   const handleCampaignChange = (value: string) => {

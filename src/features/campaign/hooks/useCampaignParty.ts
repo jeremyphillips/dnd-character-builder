@@ -11,7 +11,6 @@ export function useCampaignParty(status: string = 'approved') {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("useCampaignParty render");
     if (!campaignId) {
       setParty([]);
       setLoading(false);
@@ -32,6 +31,10 @@ export function useCampaignParty(status: string = 'approved') {
       { signal: controller.signal }
     )
       .then((data) => {
+        // Guard: on fast localhost the response may arrive before StrictMode's
+        // cleanup abort fires, so check the signal before applying state.
+        if (controller.signal.aborted) return;
+
         const rows = data.characters ?? [];
 
         const mapped = rows.map((c) => ({

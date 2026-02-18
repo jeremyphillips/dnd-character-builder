@@ -1,9 +1,11 @@
+import crypto from 'crypto'
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import * as notificationService from './notification.service'
 import type { CampaignMemberStatus, CampaignRole } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const invitesCollection = () => db().collection('campaignInvites')
+const inviteTokensCollection = () => db().collection('inviteTokens')
 
 // ---------------------------------------------------------------------------
 // Types
@@ -175,4 +177,58 @@ export async function respondToInvite(
   }
 
   return updated
+}
+
+// ---------------------------------------------------------------------------
+// Invite Tokens — for users who don't have an account yet
+// ---------------------------------------------------------------------------
+
+export interface InviteTokenDoc {
+  token: string
+  campaignId: mongoose.Types.ObjectId
+  email: string
+  invitedByUserId: mongoose.Types.ObjectId
+  role: CampaignRole
+  expiresAt: Date
+  usedAt: Date | null
+  usedByUserId: mongoose.Types.ObjectId | null
+}
+
+export async function createInviteToken(data: {
+  campaignId: string
+  email: string
+  invitedByUserId: string
+  role?: CampaignRole
+}): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + env.INVITE_TOKEN_EXPIRY_DAYS)
+
+  await inviteTokensCollection().insertOne({
+    token,
+    campaignId: new mongoose.Types.ObjectId(data.campaignId),
+    email: data.email,
+    invitedByUserId: new mongoose.Types.ObjectId(data.invitedByUserId),
+    role: data.role ?? 'pc',
+    expiresAt,
+    usedAt: null,
+    usedByUserId: null,
+  } satisfies InviteTokenDoc)
+
+  return token
+}
+
+export async function validateInviteToken(token: string) {
+  const doc = await inviteTokensCollection().findOne({ token, usedAt: null })
+  if (!doc) return null
+  if (new Date() > (doc.expiresAt as Date)) return null
+  return doc as unknown as InviteTokenDoc & { _id: mongoose.Types.ObjectId }
+}
+
+export async function consumeInviteToken(token: string, userId: string) {
+  return inviteTokensCollection().findOneAndUpdate(
+    { token, usedAt: null },
+    { $set: { usedAt: new Date(), usedByUserId: new mongoose.Types.ObjectId(userId) } },
+    { returnDocument: 'after' },
+  )
 }

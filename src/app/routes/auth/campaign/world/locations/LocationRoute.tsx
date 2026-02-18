@@ -5,9 +5,10 @@ import type { Location, LocationType, Visibility } from '@/data/types'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROUTES } from '@/app/routes'
 import { apiFetch } from '@/app/api'
-import { getPartyMembers } from '@/domain/party'
+//import { getPartyMembers } from '@/domain/party'
 import { Hero, Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
+import { useCampaigns } from '@/features/campaign/hooks/useCampaigns'
 import {
   EditableTextField,
   EditableSelect,
@@ -21,7 +22,6 @@ import Chip from '@mui/material/Chip'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
-
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 // ---------------------------------------------------------------------------
@@ -91,37 +91,26 @@ export default function LocationRoute() {
   const { id: campaignId, locationId } = useParams<{ id: string; locationId: string }>()
   const { user } = useAuth()
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin'
-
-  const [campaign, setCampaign] = useState<{ identity?: { setting?: string } } | null>(null)
+  const { campaigns } = useCampaigns({ campaignId })
   const [loading, setLoading] = useState(true)
   const [location, setLocation] = useState<Location | null>(null)
   const [allLocations, setAllLocations] = useState<Location[]>([])
   const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
   const breadcrumbs = useBreadcrumbs()
-
-  const activeSetting = campaign?.identity?.setting ?? ''
-
-  // ── Load campaign ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!campaignId) return
-    apiFetch<{ campaign?: { identity?: { setting?: string } } }>(`/api/campaigns/${campaignId}`)
-      .then((data) => {
-        if (data.campaign) setCampaign({ identity: data.campaign.identity })
-      })
-      .catch(() => {})
-  }, [campaignId])
+  const campaign = campaigns?.[0] ?? null
+  const activeSetting = campaign?.identity.setting ?? ''
 
   // ── Load party members ───────────────────────────────────────────────
-  useEffect(() => {
-    if (!campaignId) return
-    getPartyMembers(campaignId, (cId) =>
-      apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
-        `/api/campaigns/${cId}/party`,
-      ),
-    )
-      .then((members) => setPartyMembers(members.map((m) => ({ id: m._id, name: m.name }))))
-      .catch(() => setPartyMembers([]))
-  }, [campaignId])
+  // useEffect(() => {
+  //   if (!campaignId) return
+  //   getPartyMembers(campaignId, (cId) =>
+  //     apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
+  //       `/api/campaigns/${cId}/party`,
+  //     ),
+  //   )
+  //     .then((members) => setPartyMembers(members.map((m) => ({ id: m._id, name: m.name }))))
+  //     .catch(() => setPartyMembers([]))
+  // }, [campaignId])
 
   // ── Load location data ───────────────────────────────────────────────
   useEffect(() => {

@@ -1,6 +1,7 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useBreadcrumbs } from '@/hooks'
+import { ROUTES } from '@/app/routes'
 
 import { useCharacter } from '@/features/character/hooks'
 import { useCharacterForm } from '@/features/character/hooks'
@@ -10,11 +11,16 @@ import CharacterView from '@/features/character/CharacterView'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
+import MuiLink from '@mui/material/Link'
 
 export default function CharacterRoute() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   useAuth()
   const breadcrumbs = useBreadcrumbs()
+
+  const welcomeState = location.state as { welcomeCampaign?: string; campaignId?: string } | null
 
   // ── Data + form + action hooks ──────────────────────────────────────
   const state = useCharacter(id)
@@ -50,6 +56,21 @@ export default function CharacterRoute() {
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
+    <>
+      {welcomeState?.welcomeCampaign && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          <AlertTitle>Welcome to {welcomeState.welcomeCampaign}!</AlertTitle>
+          Your character activation is pending review from the DM.{' '}
+          {welcomeState.campaignId && (
+            <MuiLink
+              component={Link}
+              to={ROUTES.CAMPAIGN.replace(':id', welcomeState.campaignId)}
+            >
+              View campaign
+            </MuiLink>
+          )}
+        </Alert>
+      )}
     <CharacterView
       character={state.character}
       campaigns={state.campaigns}
@@ -72,5 +93,6 @@ export default function CharacterRoute() {
       actions={actions}
       breadcrumbs={breadcrumbs}
     />
+    </>
   )
 }

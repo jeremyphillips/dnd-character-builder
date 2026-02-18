@@ -10,12 +10,12 @@ import { ROUTES } from '@/app/routes'
 export default function MonstersRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
   const breadcrumbs = useBreadcrumbs()
-  const first12 = monsters.slice(0, 12)
+  const first100 = monsters.slice(0, 100)
 
   return (
     <Box>
       <Breadcrumbs items={breadcrumbs} />
-      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+      <Typography variant="h1" sx={{ mb: 4 }}>
         Monsters
       </Typography>
       <Box
@@ -25,10 +25,12 @@ export default function MonstersRoute() {
           gap: 2,
         }}
       >
-        {first12.map((monster) => (
+        {first100.map((monster) => (
           <MonsterMediaTopCard
             key={monster.id}
             name={monster.name}
+            // TODO: Add campaign badge
+            // badges={[{ type: 'type', value: monster }]}
             type={monster.type}
             subtype={monster.subtype}
             sizeCategory={monster.sizeCategory}

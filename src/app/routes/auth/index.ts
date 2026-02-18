@@ -3,6 +3,7 @@ export { default as DashboardRoute } from './DashboardRoute'
 export { default as UsersRoute } from './UsersRoute'
 export { default as CharactersRoute } from './CharactersRoute'
 export { default as CharacterRoute } from './CharacterRoute'
+export { default as NewCharacterRoute } from './NewCharacterRoute'
 export { default as CampaignsRoute } from './CampaignsRoute'
 export { default as InviteRoute } from './InviteRoute'
 

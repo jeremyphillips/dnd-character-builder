@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import {
   AppForm,
@@ -43,6 +43,8 @@ const defaultValues: LoginFormData = { email: '', password: '' }
 export default function LoginRoute() {
   const { user, loading, signIn } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   const [error, setError] = useState('')
 
   if (loading) {
@@ -54,14 +56,14 @@ export default function LoginRoute() {
   }
 
   if (user) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />
+    return <Navigate to={redirectTo ?? ROUTES.DASHBOARD} replace />
   }
 
   async function handleSubmit(data: LoginFormData) {
     setError('')
     try {
       await signIn(data.email, data.password)
-      navigate(ROUTES.DASHBOARD, { replace: true })
+      navigate(redirectTo ?? ROUTES.DASHBOARD, { replace: true })
     } catch {
       setError('Invalid email or password.')
     }

@@ -65,7 +65,7 @@ export async function getCharacter(req: Request, res: Response) {
 }
 
 export async function createCharacter(req: Request, res: Response) {
-  const { name } = req.body
+  const { name, campaignId } = req.body
 
   if (!name) {
     res.status(400).json({ error: 'Character name is required' })
@@ -74,6 +74,84 @@ export async function createCharacter(req: Request, res: Response) {
 
   try {
     const character = await characterService.createCharacter(req.userId!, req.body)
+
+    // If campaignId provided, link character to the user's pending campaign membership
+    if (campaignId && character?._id) {
+      const mongoose = await import('mongoose')
+      const { env } = await import('../config/env')
+      const db = mongoose.default.connection.useDb(env.DB_NAME)
+      const characterId = character._id.toString()
+
+      // Find or create the campaign member record
+      const campaignMemberService = await import('../services/campaignMember.service')
+      const existing = await db.collection('campaignMembers').findOne({
+        campaignId: new mongoose.default.Types.ObjectId(campaignId),
+        userId: new mongoose.default.Types.ObjectId(req.userId!),
+      })
+
+      if (existing) {
+        await db.collection('campaignMembers').updateOne(
+          { _id: existing._id },
+          { $set: { characterId: new mongoose.default.Types.ObjectId(characterId) } },
+        )
+      } else {
+        await campaignMemberService.createCampaignMember({
+          campaignId,
+          characterId,
+          userId: req.userId!,
+          role: 'pc',
+          status: 'pending',
+        })
+      }
+
+      // Send pending-character notifications
+      const notificationService = await import('../services/notification.service')
+      const campaign = await db.collection('campaigns').findOne(
+        { _id: new mongoose.default.Types.ObjectId(campaignId) },
+        { projection: { identity: 1, membership: 1 } },
+      )
+      const user = await db.collection('users').findOne(
+        { _id: new mongoose.default.Types.ObjectId(req.userId!) },
+        { projection: { username: 1 } },
+      )
+
+      if (campaign && user) {
+        const adminId = campaign.membership?.adminId
+        const campaignName = campaign.identity?.name as string
+
+        if (adminId) {
+          await notificationService.createNotification({
+            userId: adminId,
+            type: 'character_pending_approval',
+            requiresAction: true,
+            context: {
+              campaignId: new mongoose.default.Types.ObjectId(campaignId),
+              characterId: new mongoose.default.Types.ObjectId(characterId),
+            },
+            payload: {
+              characterName: name,
+              userName: user.username,
+              campaignName,
+            },
+          })
+        }
+
+        await notificationService.createNotification({
+          userId: new mongoose.default.Types.ObjectId(req.userId!),
+          type: 'character_pending_approval',
+          requiresAction: false,
+          context: {
+            campaignId: new mongoose.default.Types.ObjectId(campaignId),
+            characterId: new mongoose.default.Types.ObjectId(characterId),
+          },
+          payload: {
+            characterName: name,
+            campaignName,
+          },
+        })
+      }
+    }
+
     res.status(201).json({ character })
   } catch (err) {
     console.error('Failed to create character:', err)

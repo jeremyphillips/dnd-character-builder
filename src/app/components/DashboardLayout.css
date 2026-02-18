@@ -1,11 +1,11 @@
-.dashboard-layout {
+/* .dashboard-layout {
   display: flex;
   min-height: 100vh;
   width: 100%;
 }
 
 /* Sidebar */
-.dashboard-sidebar {
+/* .dashboard-sidebar {
   width: 240px;
   min-height: 100vh;
   display: flex;
@@ -170,4 +170,4 @@
     border-color: #ddd;
     background-color: #fafafa;
   }
-}
+}  */

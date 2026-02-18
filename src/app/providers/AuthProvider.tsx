@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { apiFetch, ApiError } from '../api'
 
@@ -24,6 +24,8 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  /** Re-fetch the current user from the server (e.g. after registration sets a cookie). */
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -59,8 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    const data = await apiFetch<{ user: AuthUser | null }>('/api/auth/me')
+    setUser(data?.user ?? null)
+  }, [])
+
+  // Memoize so consumers only re-render when auth state actually changes
+  const value = useMemo(
+    () => ({ user, loading, signIn, signOut, refreshUser }),
+    [user, loading, signIn, signOut, refreshUser],
+  )
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

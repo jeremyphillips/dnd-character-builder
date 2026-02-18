@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react'
+//import { useState, useEffect } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { apiFetch } from '@/app/api'
-import { getPartyMembers } from '@/domain/party'
-import type { PartyMember } from '@/domain/party'
+//import { apiFetch } from '@/app/api'
+//import { getPartyMembers } from '@/domain/party'
+// import type { PartyMember } from '@/domain/party'
 import { PartyCardGroup } from '@/ui/components'
-
+import { useCampaignParty } from '@/features/campaign/hooks'
+// import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
+// import MenuItem from '@mui/material/MenuItem'
+//import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import Alert from '@mui/material/Alert'
@@ -19,10 +20,10 @@ import GroupIcon from '@mui/icons-material/Group'
 // Types
 // ---------------------------------------------------------------------------
 
-interface Campaign {
-  _id: string
-  name: string
-}
+// interface Campaign {
+//   _id: string
+//   name: string
+// }
 
 // ---------------------------------------------------------------------------
 // Component
@@ -31,68 +32,74 @@ interface Campaign {
 export default function PartyRoute() {
   useAuth()
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('')
-  const [characters, setCharacters] = useState<PartyMember[]>([])
-  const [loadingCampaigns, setLoadingCampaigns] = useState(true)
-  const [loadingParty, setLoadingParty] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  // const [selectedCampaignId, setSelectedCampaignId] = useState<string>('')
+  // const [characters, setCharacters] = useState<PartyMember[]>([])
+  // const [loadingCampaigns, setLoadingCampaigns] = useState(true)
+  // const [loadingParty, setLoadingParty] = useState(false)
+  // const [error, setError] = useState<string | null>(null)
 
-  // ── Load campaigns ──────────────────────────────────────────────────
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
-        const list = data.campaigns ?? []
-        setCampaigns(list)
 
-        // Auto-select first campaign
-        if (list.length > 0) {
-          setSelectedCampaignId(list[0]._id)
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load campaigns')
-      } finally {
-        setLoadingCampaigns(false)
-      }
-    }
-    load()
-  }, [])
+  const { 
+    party: approvedPartyCharacters,
+    loading: approvedPartyCharactersLoading
+  } = useCampaignParty('approved')
 
-  // ── Load party when campaign changes ────────────────────────────────
-  useEffect(() => {
-    if (!selectedCampaignId) {
-      setCharacters([])
-      return
-    }
+  // // ── Load campaigns ──────────────────────────────────────────────────
+  // useEffect(() => {
+  //   async function load() {
+  //     try {
+  //       const data = await apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
+  //       const list = data.campaigns ?? []
+  //       setCampaigns(list)
 
-    async function loadParty() {
-      setLoadingParty(true)
-      setError(null)
-      try {
-        const members = await getPartyMembers(selectedCampaignId, (campaignId) =>
-          apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
-            `/api/campaigns/${campaignId}/party`
-          )
-        )
-        setCharacters(members)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load party')
-      } finally {
-        setLoadingParty(false)
-      }
-    }
-    loadParty()
-  }, [selectedCampaignId])
+  //       // Auto-select first campaign
+  //       if (list.length > 0) {
+  //         setSelectedCampaignId(list[0]._id)
+  //       }
+  //     } catch (err) {
+  //       setError(err instanceof Error ? err.message : 'Failed to load campaigns')
+  //     } finally {
+  //       setLoadingCampaigns(false)
+  //     }
+  //   }
+  //   load()
+  // }, [])
+
+  // // ── Load party when campaign changes ────────────────────────────────
+  // useEffect(() => {
+  //   if (!selectedCampaignId) {
+  //     setCharacters([])
+  //     return
+  //   }
+
+  //   async function loadParty() {
+  //     setLoadingParty(true)
+  //     setError(null)
+  //     try {
+  //       const members = await getPartyMembers(selectedCampaignId, (campaignId) =>
+  //         apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
+  //           `/api/campaigns/${campaignId}/party`
+  //         )
+  //       )
+  //       setCharacters(members)
+  //     } catch (err) {
+  //       setError(err instanceof Error ? err.message : 'Failed to load party')
+  //     } finally {
+  //       setLoadingParty(false)
+  //     }
+  //   }
+  //   loadParty()
+  // }, [selectedCampaignId])
 
   // ── Render ──────────────────────────────────────────────────────────
-  if (loadingCampaigns) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    )
-  }
+  // if (loadingCampaigns) {
+  //   return (
+  //     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+  //       <CircularProgress />
+  //     </Box>
+  //   )
+  // }
 
   return (
     <Box>
@@ -103,7 +110,7 @@ export default function PartyRoute() {
       </Stack>
 
       {/* Campaign selector */}
-      {campaigns.length === 0 ? (
+      {/* {campaigns.length === 0 ? (
         <Alert severity="info">You are not part of any campaigns yet.</Alert>
       ) : (
         <TextField
@@ -126,17 +133,17 @@ export default function PartyRoute() {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-      )}
+      )} */}
 
       {/* Party characters */}
-      {loadingParty ? (
+      {approvedPartyCharactersLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
           <CircularProgress />
         </Box>
-      ) : characters.length === 0 && selectedCampaignId ? (
+      ) : approvedPartyCharacters.length === 0 ? (
         <Alert severity="info">No characters in this campaign's party yet.</Alert>
       ) : (
-        <PartyCardGroup characters={characters} />
+        <PartyCardGroup characters={approvedPartyCharacters} />
       )}
     </Box>
   )

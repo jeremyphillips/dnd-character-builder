@@ -7,11 +7,12 @@ import { getNotificationLabel, getNotificationRoute, timeAgo } from '@/domain/no
 import type { AppNotification } from '@/domain/notification'
 import { ROUTES } from '../routes'
 import { apiFetch } from '../api'
+import UserAvatar from '@/domain/user/components/UserAvatar/UserAvatar'
 
 import { alpha } from '@mui/material/styles'
 import Box from '@mui/material/Box'
-import AppBar from '@mui/material/AppBar'
-import Toolbar from '@mui/material/Toolbar'
+// import AppBar from '@mui/material/AppBar'
+// import Toolbar from '@mui/material/Toolbar'
 import Drawer from '@mui/material/Drawer'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -45,10 +46,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import ChatIcon from '@mui/icons-material/Chat'
 import LogoutIcon from '@mui/icons-material/Logout'
-import NotificationsIcon from '@mui/icons-material/Notifications'
+// import NotificationsIcon from '@mui/icons-material/Notifications'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import MailOutlineIcon from '@mui/icons-material/MailOutline'
-
+import type { Campaign } from '@/shared/types/campaign.types'
 const DRAWER_WIDTH = 260
 const HEADER_HEIGHT = 48
 
@@ -70,16 +71,10 @@ const NAV_ITEMS: NavItem[] = [
 // Component
 // ---------------------------------------------------------------------------
 
-interface Campaign {
-  _id: string
-  identity: { name?: string }
-  membership?: { adminId?: string }
-}
-
 export default function AuthLayout() {
   const { user, loading, signOut } = useAuth()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
-  const { activeCampaignId, setActiveCampaign, clearActiveCampaign } = useActiveCampaign()
+  const { campaignId:activeCampaignId, setActiveCampaign, clearActiveCampaign } = useActiveCampaign()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -141,29 +136,37 @@ export default function AuthLayout() {
             boxSizing: 'border-box',
             bgcolor: 'var(--mui-palette-background-paper)',
             borderRight: '1px solid var(--mui-palette-divider)',
-            top: HEADER_HEIGHT,
+            // top: HEADER_HEIGHT,
             height: `calc(100vh - ${HEADER_HEIGHT}px)`,
           },
         }}
       >
         {/* User header */}
         <Box sx={{ p: 2.5, pb: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {user.username}
-            </Typography>
-            <IconButton
-              size="small"
-              onClick={() => navigate(ROUTES.ACCOUNT_SETTINGS)}
-              aria-label="Account settings"
-              sx={{ color: 'var(--mui-palette-text-secondary)' }}
-            >
-              <SettingsIcon fontSize="small" />
-            </IconButton>
+          <Box sx={{ display: 'flex',  justifyContent: 'space-between', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+            <UserAvatar
+              username={user.username}
+              avatarUrl={user.avatarUrl}
+              //role={user.role}
+              //status={user.status}
+            />
+            <Box sx={{ flex: 1}}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {user.firstName} {user.lastName}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => navigate(ROUTES.ACCOUNT_SETTINGS)}
+                aria-label="Account settings"
+                sx={{ color: 'var(--mui-palette-text-secondary)' }}
+              >
+                <SettingsIcon fontSize="small" />
+              </IconButton>
+              <Typography variant="caption" sx={{ color: 'var(--mui-palette-text-secondary)', textTransform: 'capitalize' }}>
+                {user.role}
+              </Typography>
+            </Box>  
           </Box>
-          <Typography variant="caption" sx={{ color: 'var(--mui-palette-text-secondary)', textTransform: 'capitalize' }}>
-            {user.role}
-          </Typography>
         </Box>
 
         <Divider />
@@ -211,174 +214,184 @@ export default function AuthLayout() {
               )}
             </Box>
           ))}
+        
+          <Divider />
+          {/* Campaign section */}
+          <Box
+            sx={{
+              px: 2,
+              py: 2,
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            }}
+          >
+            <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.7rem' }}>
+              Campaign
+            </Typography>
+
+            <FormControl fullWidth size="small">
+              <Select
+                value={activeCampaignId ?? ''}
+                onChange={(e) => handleCampaignChange(e.target.value)}
+                displayEmpty
+                disabled={!campaignsLoading && campaigns.length === 0}
+                renderValue={(value) => {
+                  if (!value) return campaignsLoading ? 'Loading…' : campaigns.length === 0 ? 'No Campaigns' : 'Select Campaign'
+                  return campaigns.find((c) => c._id === value)?.identity?.name ?? 'Select Campaign'
+                }}
+                sx={{ fontSize: '0.9rem' }}
+              >
+                {campaignsLoading ? (
+                  <MenuItem disabled>Loading…</MenuItem>
+                ) : campaigns.length === 0 ? (
+                  <MenuItem disabled>No Campaigns</MenuItem>
+                ) : (
+                  campaigns.map((c) => (
+                    <MenuItem key={c._id} value={c._id}>
+                      {c.identity?.name ?? c._id}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+
+            {/* Campaign child pages — only when user has campaigns */}
+            {campaigns.length > 0 && (
+              <List component="nav" disablePadding sx={{ mt: 1 }}>
+                {/* Overview */}
+                <ListItemButton
+                  component={NavLink}
+                  to={activeCampaignId ? ROUTES.CAMPAIGN.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
+                  selected={activeCampaignId ? location.pathname === `/campaigns/${activeCampaignId}` : false}
+                  disabled={!activeCampaignId}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><DashboardIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="Overview" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                </ListItemButton>
+                {/* World */}
+                <ListItemButton
+                  onClick={() => activeCampaignId && setWorldExpanded((v) => !v)}
+                  disabled={!activeCampaignId}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><PlaceIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="World" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                  {activeCampaignId && (worldExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />)}
+                </ListItemButton>
+                {activeCampaignId && (
+                  <Collapse in={worldExpanded} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      <ListItemButton
+                        component={NavLink}
+                        to={ROUTES.WORLD_LOCATIONS.replace(':id', activeCampaignId)}
+                        selected={location.pathname === `/campaigns/${activeCampaignId}/world/locations`}
+                        sx={{ pl: 2 }}
+                      >
+                        <ListItemText primary="Locations" slotProps={{ primary: { fontSize: '0.8rem' } }} />
+                      </ListItemButton>
+                      <ListItemButton
+                        component={NavLink}
+                        to={ROUTES.WORLD_NPCS.replace(':id', activeCampaignId)}
+                        selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/npcs`)}
+                        sx={{ pl: 2 }}
+                      >
+                        <ListItemText primary="NPCs" slotProps={{ primary: { fontSize: '0.8rem' } }} />
+                      </ListItemButton>
+                      <ListItemButton
+                        component={NavLink}
+                        to={ROUTES.WORLD_MONSTERS.replace(':id', activeCampaignId)}
+                        selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/monsters`)}
+                        sx={{ pl: 2 }}
+                      >
+                        <ListItemText primary="Monsters" slotProps={{ primary: { fontSize: '0.8rem' } }} />
+                      </ListItemButton>
+                    </List>
+                  </Collapse>
+                )}
+                <ListItemButton
+                  component={NavLink}
+                  to={activeCampaignId ? ROUTES.EQUIPMENT.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
+                  selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/equipment`) : false}
+                  disabled={!activeCampaignId}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><Inventory2Icon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="Equipment" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                </ListItemButton>
+                <ListItemButton
+                  component={NavLink}
+                  to={activeCampaignId ? ROUTES.SESSIONS.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
+                  selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/sessions`) : false}
+                  disabled={!activeCampaignId}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><EventIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="Sessions" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                </ListItemButton>
+                {/* <ListItemButton
+                  component={NavLink}
+                  to={ROUTES.PARTY}
+                  selected={location.pathname === ROUTES.PARTY}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><GroupsIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="Party" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                </ListItemButton> */}
+                <ListItemButton
+                  component={NavLink}
+                  to={activeCampaignId ? ROUTES.MESSAGING.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
+                  selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/messages`) : false}
+                  disabled={!activeCampaignId}
+                  sx={{ pl: 0 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}><ChatIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText primary="Messages" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                  <Badge badgeContent={unreadCount} color="error" max={99} />
+                  {/* <IconButton
+                    size="small"
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                    sx={{ color: 'var(--mui-palette-text-primary)' }}
+                  >
+                    <Badge badgeContent={unreadCount} color="error" max={99}>
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton> */}
+                </ListItemButton>
+                {canAccessAdmin && (
+                  <>
+                    <ListItemButton
+                      component={NavLink}
+                      to={ROUTES.ADMIN_INVITES}
+                      selected={location.pathname.startsWith(ROUTES.ADMIN)}
+                      sx={{ pl: 0 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}><GroupAddIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Invites" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={NavLink}
+                      to={ROUTES.ADMIN_BRAINSTORMING}
+                      selected={location.pathname === ROUTES.ADMIN_BRAINSTORMING}
+                      sx={{ pl: 0 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}><LightbulbIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Brainstorming" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                    </ListItemButton>
+                    <ListItemButton
+                      component={NavLink}
+                      to={ROUTES.ADMIN_SETTINGS}
+                      selected={location.pathname === ROUTES.ADMIN_SETTINGS}
+                      sx={{ pl: 0 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}><SettingsIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Settings" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                    </ListItemButton>
+                  </>
+                )}
+              </List>
+            )}
+          </Box>
         </List>
-
-        <Divider />
-        {/* Campaign section */}
-        <Box
-          sx={{
-            // px: 2,
-            // py: 2,
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-            borderRadius: 2,
-            // mx: 1,
-            // my: 1,
-          }}
-        >
-          <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.7rem' }}>
-            Campaign
-          </Typography>
-          <FormControl fullWidth size="small">
-            <Select
-              value={activeCampaignId ?? ''}
-              onChange={(e) => handleCampaignChange(e.target.value)}
-              displayEmpty
-              disabled={!campaignsLoading && campaigns.length === 0}
-              renderValue={(value) => {
-                if (!value) return campaignsLoading ? 'Select Campaign' : campaigns.length === 0 ? 'No Campaigns' : 'Select Campaign'
-                return campaigns.find((c) => c._id === value)?.identity?.name ?? value
-              }}
-              sx={{ fontSize: '0.9rem' }}
-            >
-              {campaignsLoading ? (
-                <MenuItem disabled>Loading…</MenuItem>
-              ) : campaigns.length === 0 ? (
-                <MenuItem disabled>No Campaigns</MenuItem>
-              ) : (
-                campaigns.map((c) => (
-                  <MenuItem key={c._id} value={c._id}>
-                    {c.identity?.name ?? c._id}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
-
-          {/* Campaign child pages — only when user has campaigns */}
-          {campaigns.length > 0 && (
-            <List component="nav" disablePadding sx={{ mt: 1 }}>
-              <ListItemButton
-                component={NavLink}
-                to={activeCampaignId ? ROUTES.CAMPAIGN.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
-                selected={activeCampaignId ? location.pathname === `/campaigns/${activeCampaignId}` : false}
-                disabled={!activeCampaignId}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><DashboardIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Overview" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-              </ListItemButton>
-              <ListItemButton
-                component={NavLink}
-                to={activeCampaignId ? ROUTES.EQUIPMENT.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
-                selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/equipment`) : false}
-                disabled={!activeCampaignId}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><Inventory2Icon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Equipment" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-              </ListItemButton>
-              <ListItemButton
-                component={NavLink}
-                to={activeCampaignId ? ROUTES.SESSIONS.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
-                selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/sessions`) : false}
-                disabled={!activeCampaignId}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><EventIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Sessions" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-              </ListItemButton>
-              <ListItemButton
-                component={NavLink}
-                to={ROUTES.PARTY}
-                selected={location.pathname === ROUTES.PARTY}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><GroupsIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Party" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-              </ListItemButton>
-              <ListItemButton
-                onClick={() => activeCampaignId && setWorldExpanded((v) => !v)}
-                disabled={!activeCampaignId}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><PlaceIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="World" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-                {activeCampaignId && (worldExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />)}
-              </ListItemButton>
-              {activeCampaignId && (
-                <Collapse in={worldExpanded} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    <ListItemButton
-                      component={NavLink}
-                      to={ROUTES.WORLD_LOCATIONS.replace(':id', activeCampaignId)}
-                      selected={location.pathname === `/campaigns/${activeCampaignId}/world/locations`}
-                      sx={{ pl: 2 }}
-                    >
-                      <ListItemText primary="Locations" slotProps={{ primary: { fontSize: '0.8rem' } }} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={NavLink}
-                      to={ROUTES.WORLD_NPCS.replace(':id', activeCampaignId)}
-                      selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/npcs`)}
-                      sx={{ pl: 2 }}
-                    >
-                      <ListItemText primary="NPCs" slotProps={{ primary: { fontSize: '0.8rem' } }} />
-                    </ListItemButton>
-                    <ListItemButton
-                      component={NavLink}
-                      to={ROUTES.WORLD_MONSTERS.replace(':id', activeCampaignId)}
-                      selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/monsters`)}
-                      sx={{ pl: 2 }}
-                    >
-                      <ListItemText primary="Monsters" slotProps={{ primary: { fontSize: '0.8rem' } }} />
-                    </ListItemButton>
-                  </List>
-                </Collapse>
-              )}
-              <ListItemButton
-                component={NavLink}
-                to={activeCampaignId ? ROUTES.MESSAGING.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
-                selected={activeCampaignId ? location.pathname.startsWith(`/campaigns/${activeCampaignId}/messages`) : false}
-                disabled={!activeCampaignId}
-                sx={{ pl: 0 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}><ChatIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Messages" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-              </ListItemButton>
-              {canAccessAdmin && (
-                <>
-                  <ListItemButton
-                    component={NavLink}
-                    to={ROUTES.ADMIN_INVITES}
-                    selected={location.pathname.startsWith(ROUTES.ADMIN)}
-                    sx={{ pl: 0 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 36 }}><GroupAddIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary="Invites" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={NavLink}
-                    to={ROUTES.ADMIN_BRAINSTORMING}
-                    selected={location.pathname === ROUTES.ADMIN_BRAINSTORMING}
-                    sx={{ pl: 0 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 36 }}><LightbulbIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary="Brainstorming" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-                  </ListItemButton>
-                  <ListItemButton
-                    component={NavLink}
-                    to={ROUTES.ADMIN_SETTINGS}
-                    selected={location.pathname === ROUTES.ADMIN_SETTINGS}
-                    sx={{ pl: 0 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 36 }}><SettingsIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary="Settings" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-                  </ListItemButton>
-                </>
-              )}
-            </List>
-          )}
-        </Box>
 
         <Divider />
 
@@ -398,7 +411,7 @@ export default function AuthLayout() {
       </Drawer>
 
       {/* Top header bar */}
-      <AppBar
+      {/* <AppBar
         position="fixed"
         elevation={0}
         sx={{
@@ -416,17 +429,9 @@ export default function AuthLayout() {
             pr: 2,
           }}
         >
-          <IconButton
-            size="small"
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{ color: 'var(--mui-palette-text-primary)' }}
-          >
-            <Badge badgeContent={unreadCount} color="error" max={99}>
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
+
         </Toolbar>
-      </AppBar>
+      </AppBar> */}
 
       {/* Notification popover */}
       <Popover
@@ -528,7 +533,7 @@ export default function AuthLayout() {
         sx={{
           flex: 1,
           p: 4,
-          pt: `calc(${HEADER_HEIGHT}px + 32px)`,
+          pt: 3, // `calc(${HEADER_HEIGHT}px + 32px)`,
           overflow: 'auto',
           bgcolor: 'var(--mui-palette-background-default)',
         }}

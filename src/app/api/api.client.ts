@@ -4,6 +4,7 @@ export type ApiRequest<TBody = unknown> = {
   method?: ApiMethod
   body?: TBody
   headers?: HeadersInit
+  signal?: AbortSignal
 }
 
 export class ApiError extends Error {
@@ -21,7 +22,7 @@ export async function apiFetch<TResponse, TBody = unknown>(
   url: string,
   options: ApiRequest<TBody> = {}
 ): Promise<TResponse> {
-  const { method = 'GET', body, headers } = options
+  const { method = 'GET', body, headers, signal } = options
   const res = await fetch(url, {
     method,
     credentials: 'include',
@@ -30,6 +31,7 @@ export async function apiFetch<TResponse, TBody = unknown>(
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal,
   })
 
   let payload: unknown = null

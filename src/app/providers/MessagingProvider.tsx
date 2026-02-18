@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useCallback,
@@ -210,7 +211,8 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  const value: MessagingContextType = {
+  // Memoize so consumers only re-render when messaging state changes
+  const value = useMemo<MessagingContextType>(() => ({
     conversations,
     messages,
     selectedConversationId,
@@ -226,7 +228,21 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
     setNewConversationModalOpen,
     draftTarget,
     setDraftTarget,
-  }
+  }), [
+    conversations,
+    messages,
+    selectedConversationId,
+    loading,
+    loadConversations,
+    getConversation,
+    selectConversation,
+    loadMessages,
+    sendMessage,
+    createConversation,
+    createGroupConversation,
+    newConversationModalOpen,
+    draftTarget,
+  ])
 
   return (
     <MessagingContext.Provider value={value}>

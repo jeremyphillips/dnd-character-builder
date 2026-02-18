@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { useAuth } from './AuthProvider'
 import { apiFetch } from '../api'
@@ -63,10 +63,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Memoize so consumers only re-render when notification state changes
+  const value = useMemo(
+    () => ({ notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead }),
+    [notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead],
+  )
+
   return (
-    <NotificationContext.Provider
-      value={{ notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   )

@@ -62,3 +62,7 @@ export type FieldConfig =
       characters?: { id: string; name: string }[]
       allowHidden?: boolean
     }
+  | Omit<BaseFieldConfig, 'label'> & {
+      type: 'hidden'
+      label?: string
+    }

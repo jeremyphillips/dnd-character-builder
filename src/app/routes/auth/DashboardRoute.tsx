@@ -1,12 +1,36 @@
 import { useAuth } from '@/app/providers/AuthProvider'
+import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import { useCampaigns } from '@/features/campaign/hooks'
+import { Typography } from '@mui/material'
 
 export default function DashboardRoute() {
   const { user } = useAuth()
+  const { campaigns } = useCampaigns()
 
   return (
     <div>
-      <h1>Welcome, {user?.username}</h1>
-      <p>Manage your characters and campaigns from the sidebar.</p>
+      <Typography variant="h1" sx={{ mb: 4 }}>Welcome, {user?.firstName ? user?.firstName : user?.username}</Typography>
+
+      <Typography variant="h2" sx={{ mb: 4 }}>Your Campaigns</Typography>
+      
+      {campaigns.length === 0 ? (
+        <p className="empty-state">No campaigns yet.</p>
+      ) : (
+        <div className="item-list">
+          {campaigns.map((c) => (
+            <CampaignHorizontalCard
+              key={c._id}
+              campaignId={c._id}
+              name={c.identity.name ?? ''}
+              description={c.identity.description}
+              edition={c.identity.edition}
+              setting={c.identity.setting}
+              memberCount={c.memberCount}
+              imageUrl={c.identity?.imageUrl}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

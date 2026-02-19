@@ -25,5 +25,8 @@ export interface Campaign {
   membership: {
     adminId: string
   }
-  memberCount: number
+  memberCount: number,
+  configuration?: {
+    allowLegacyEditionNpcs?: boolean
+  }
 }

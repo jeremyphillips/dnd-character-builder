@@ -24,10 +24,11 @@ export function useCampaignParty(status: string = 'approved') {
 
     // TODO: have api filter by status
     const params = new URLSearchParams();
-    if (status) params.append("status", status);
+    params.append("status", status);
+    const url = `/api/campaigns/${campaignId}/party?${params.toString()}`;
 
     apiFetch<{ characters?: PartyMemberApiRow[] }>(
-      `/api/campaigns/${campaignId}/party?status='approved'`, //?${params.toString()
+      url,
       { signal: controller.signal }
     )
       .then((data) => {

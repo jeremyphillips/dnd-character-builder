@@ -1,0 +1,1 @@
+export { default as NpcGallerySection } from './NpcGallerySection/NpcGallerySection'

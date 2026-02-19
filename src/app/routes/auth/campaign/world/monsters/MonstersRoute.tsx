@@ -6,9 +6,13 @@ import { useBreadcrumbs } from '@/hooks'
 import { monsters } from '@/data/monsters'
 import MonsterMediaTopCard from '@/domain/monsters/components/MonsterMediaTopCard/MonsterMediaTopCard'
 import { ROUTES } from '@/app/routes'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 
 export default function MonstersRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
+  
+  const { settingName } = useActiveCampaign()
+
   const breadcrumbs = useBreadcrumbs()
   const first100 = monsters.slice(0, 100)
 
@@ -29,8 +33,7 @@ export default function MonstersRoute() {
           <MonsterMediaTopCard
             key={monster.id}
             name={monster.name}
-            // TODO: Add campaign badge
-            // badges={[{ type: 'type', value: monster }]}
+            badges={[{ type: 'tag', value: settingName ?? '' }]}
             type={monster.type}
             subtype={monster.subtype}
             sizeCategory={monster.sizeCategory}

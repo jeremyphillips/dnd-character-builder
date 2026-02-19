@@ -1,0 +1,1 @@
+export { default as NpcMediaTopCard } from './NpcMediaTopCard/NpcMediaTopCard'

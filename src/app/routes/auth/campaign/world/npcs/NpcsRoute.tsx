@@ -1,57 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
-import Stack from '@mui/material/Stack'
-import { Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
 import { CharacterBuilderLauncher } from '@/characterBuilder'
-import NpcMediaTopCard from '@/domain/npc/components/NpcMediaTopCard/NpcMediaTopCard'
-import { npcs } from '@/data/npcs/npcs'
-import { ROUTES } from '@/app/routes'
-import { apiFetch } from '@/app/api'
+// import NpcMediaTopCard from '@/domain/npc/components/NpcMediaTopCard/NpcMediaTopCard'
+//import { npcs } from '@/data/npcs/npcs'
 import type { EditionId, SettingId } from '@/data'
-import type { Character } from '@/shared/types'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
+import { NpcGallerySection } from '@/features/npc/sections' 
 
-type NpcWithId = Character & { id: string }
-
-type CampaignPayload = { campaign?: { identity?: { edition?: string; setting?: string } } }
-
-const filterNpcsByCampaign = (
-  npcsList: readonly Character[],
-  edition?: string,
-  setting?: string
-): NpcWithId[] => {
-  if (!edition) return []
-  return npcsList.filter((npc): npc is NpcWithId => {
-    if (npc.edition !== edition) return false
-    if (!('id' in npc) || !npc.id) return false
-    if (!npc.setting) return true
-    return npc.setting === setting
-  })
-}
+import { Breadcrumbs } from '@/ui/elements'
+import Typography from '@mui/material/Typography'
+import Stack from '@mui/material/Stack'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
 
 export default function NpcsRoute() {
-  const { id: campaignId } = useParams<{ id: string }>()
-  const [campaign, setCampaign] = useState<{ identity?: { edition?: string; setting?: string } } | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!campaignId) {
-      setLoading(false)
-      return
-    }
-    apiFetch<CampaignPayload>(`/api/campaigns/${campaignId}`)
-      .then((data) => setCampaign(data.campaign ? { identity: data.campaign.identity } : null))
-      .catch(() => setCampaign(null))
-      .finally(() => setLoading(false))
-  }, [campaignId])
-
-  const filteredNpcs = useMemo(
-    () => filterNpcsByCampaign(npcs, campaign?.identity?.edition, campaign?.identity?.setting),
-    [campaign?.identity?.edition, campaign?.identity?.setting]
-  )
+  const {
+    campaignId: activeCampaignId, 
+    loading: activeCampaignLoading,
+    editionId: activeEditionId,
+    settingId: activeSettingId,
+  } = useActiveCampaign()
 
   const gridSx = {
     display: 'grid',
@@ -59,12 +26,9 @@ export default function NpcsRoute() {
     gap: 2,
   } as const
 
-  const npcLink = (npcId: string) =>
-    campaignId ? ROUTES.WORLD_NPC.replace(':id', campaignId).replace(':npcId', npcId) : undefined
-
   const breadcrumbs = useBreadcrumbs()
 
-  if (loading) return <CircularProgress />
+  if (activeCampaignLoading) return <CircularProgress />
 
   return (
     <Box>
@@ -76,20 +40,12 @@ export default function NpcsRoute() {
         <CharacterBuilderLauncher
           buttonLabel="Create NPC"
           characterType="npc"
-          campaignEdition={campaign?.identity?.edition as EditionId | undefined}
-          campaignSetting={campaign?.identity?.setting as SettingId | undefined}
+          campaignEdition={activeEditionId as EditionId | undefined}
+          campaignSetting={activeSettingId as SettingId | undefined}
         />
       </Stack>
 
-      <Box sx={gridSx}>
-        {filteredNpcs.map((npc) => (
-          <NpcMediaTopCard
-            key={npc.id}
-            npc={npc}
-            link={npcLink(npc.id)}
-          />
-        ))}
-      </Box>
+      <NpcGallerySection />
     </Box>
   )
 }

@@ -142,8 +142,7 @@ export type PlayerCharacter = CharacterCore & {
 
 export type NonPlayerCharacter = CharacterCore & {
   type: 'npc'
-  source?: 'generated' | 'legacy'
-  legacyEdition?: '2e'
+  source?: 'generated' | 'platform'
   id: string
 }
 

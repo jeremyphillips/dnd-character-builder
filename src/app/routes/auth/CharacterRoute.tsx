@@ -6,13 +6,14 @@ import { ROUTES } from '@/app/routes'
 import { useCharacter } from '@/features/character/hooks'
 import { useCharacterForm } from '@/features/character/hooks'
 import { useCharacterActions } from '@/features/character/hooks'
-import CharacterView from '@/features/character/CharacterView'
+import { CharacterView } from '@/features/character/CharacterView'
 
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import MuiLink from '@mui/material/Link'
+import Breadcrumbs from '@/ui/elements/Breadcrumbs/Breadcrumbs'
 
 export default function CharacterRoute() {
   const { id } = useParams<{ id: string }>()
@@ -57,6 +58,8 @@ export default function CharacterRoute() {
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <>
+      <Breadcrumbs items={breadcrumbs} />
+      
       {welcomeState?.welcomeCampaign && (
         <Alert severity="success" sx={{ mb: 2 }}>
           <AlertTitle>Welcome to {welcomeState.welcomeCampaign}!</AlertTitle>

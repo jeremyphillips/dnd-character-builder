@@ -43,6 +43,8 @@ export default defineConfig({
       "@/features/levelUp": path.resolve(__dirname, "src/features/levelUp"),
       "@/features/campaign": path.resolve(__dirname, "src/features/campaign"),
       "@/features/messaging": path.resolve(__dirname, "src/features/messaging"),
+      "@/features/monster": path.resolve(__dirname, "src/features/monster"),
+      "@/features/npc": path.resolve(__dirname, "src/features/npc"),
       "@/hooks": path.resolve(__dirname, "src/hooks"),
       "@/services": path.resolve(__dirname, "src/services"),
       "@/shared": path.resolve(__dirname, "shared/types"),
@@ -51,6 +53,7 @@ export default defineConfig({
       "@/ui/avatar": path.resolve(__dirname, "src/ui/avatar"),
       "@/ui/cards": path.resolve(__dirname, "src/ui/cards"),
       "@/ui/modals": path.resolve(__dirname, "src/ui/modals"),
+      "@/ui/stats": path.resolve(__dirname, "src/ui/stats"),
       "@/utils": path.resolve(__dirname, "src/utils"),
     }
   }

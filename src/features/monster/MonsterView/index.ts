@@ -1,0 +1,1 @@
+export { default as MonsterView } from './MonsterView'

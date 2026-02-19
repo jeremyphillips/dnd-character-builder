@@ -250,12 +250,13 @@ const AppModal = ({
             opacity: loading ? 0.4 : 1,
             pointerEvents: loading ? 'none' : 'auto',
             transition: 'opacity 0.15s ease',
-            ...(dividers && headerPosition === 'static' && hasHeaderContent && {
-              borderTop: '1px solid var(--mui-palette-divider)',
-            }),
-            ...(dividers && footerPosition === 'static' && hasFooter && {
-              borderBottom: '1px solid var(--mui-palette-divider)',
-            }),
+            // TODO: decide if we want to use dividers
+            // ...(dividers && headerPosition === 'static' && hasHeaderContent && {
+            //   borderTop: '1px solid var(--mui-palette-divider)',
+            // }),
+            // ...(dividers && footerPosition === 'static' && hasFooter && {
+            //   borderBottom: '1px solid var(--mui-palette-divider)',
+            // }),
             ...(headerPosition === 'floating' && { pt: hasHeader ? 8 : undefined }),
             ...(footerPosition === 'floating' && { pb: hasFooter ? 10 : undefined }),
           }}

@@ -1,10 +1,19 @@
-export { PublicLayout, HomeRoute, CharacterBuilderRoute, LoginRoute } from './public'
+export { 
+  PublicLayout, 
+  HomeRoute, 
+  CharacterBuilderRoute, 
+  LoginRoute, 
+  RegisterRoute,  
+  AcceptInviteRoute
+} from './public'
+
 export {
   AuthLayout,
   DashboardRoute,
   UsersRoute,
   CharactersRoute,
   CharacterRoute,
+  NewCharacterRoute,
   CampaignsRoute,
   CampaignRoute,
   InviteRoute,
@@ -28,5 +37,5 @@ export {
   CampaignAdminBrainstormingRoute,
   CampaignAdminSettingsRoute,
   AccountRoute,
-  AccountSettingsRoute,
+  AccountSettingsRoute
 } from './auth'

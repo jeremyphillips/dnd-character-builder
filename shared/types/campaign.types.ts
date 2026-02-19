@@ -13,3 +13,17 @@ export type CampaignCharacterStatus =
   | 'active'
   | 'inactive'
   | 'deceased'
+
+export interface Campaign {
+  _id: string
+  identity: {
+    name?: string
+    setting?: string
+    edition?: string
+    description?: string
+  }
+  membership: {
+    adminId: string
+  }
+  memberCount: number
+}

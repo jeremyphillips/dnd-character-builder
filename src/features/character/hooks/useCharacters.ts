@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CharacterDoc } from '@/shared'
 import { apiFetch } from '@/app/api'
+import type { CharacterType } from '@/shared/types/character.core'
 
 export interface UseCharactersReturn {
   characters: CharacterDoc[]
@@ -8,13 +9,21 @@ export interface UseCharactersReturn {
   refetch: () => Promise<void>
 }
 
-export function useCharacters(): UseCharactersReturn {
+export function useCharacters(filters?: {
+  type?: CharacterType
+}) {
   const [characters, setCharacters] = useState<CharacterDoc[]>([])
   const [loading, setLoading] = useState(true)
+  const type = filters?.type ?? 'pc'
+  const params = new URLSearchParams()
+
+  if (type) params.append("type", type)
+
+  const url = `/api/characters?${params.toString()}`
 
   const refetch = useCallback(async () => {
     try {
-      const data = await apiFetch<{ characters: CharacterDoc[] }>('/api/characters')
+      const data = await apiFetch<{ characters: CharacterDoc[] }>(url)
       setCharacters(data.characters ?? [])
     } catch {
       setCharacters([])

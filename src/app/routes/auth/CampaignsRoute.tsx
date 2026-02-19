@@ -1,61 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import CampaignForm, { type CampaignFormData } from '@/features/campaign/components/CampaignForm'
 import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
-import { apiFetch, ApiError } from '@/app/api'
-
-interface Campaign {
-  _id: string
-  identity: {
-    name?: string
-    setting?: string
-    edition?: string
-    description?: string
-  }
-  membership: {
-    adminId: string
-  }
-  memberCount: number
-}
+import Box from '@mui/material/Box'
+import { useCampaigns } from '@/features/campaign/hooks'
 
 export default function CampaignsRoute() {
   const { user } = useAuth()
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [loading, setLoading] = useState(true)
+  const { 
+    campaigns, 
+    loading: loadingCampaigns, 
+    createCampaign
+  } = useCampaigns()
 
   const [showCreateForm, setShowCreateForm] = useState(false)
 
   const canCreate = user?.role === 'admin' || user?.role === 'superadmin'
 
-  useEffect(() => {
-    fetchCampaigns()
-  }, [])
-
-  async function fetchCampaigns() {
-    try {
-      const data = await apiFetch<{ campaigns: Campaign[] }>('/api/campaigns')
-      setCampaigns(data.campaigns ?? [])
-    } catch {
-      setCampaigns([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
   async function handleCreate(data: CampaignFormData) {
-    try {
-      await apiFetch('/api/campaigns', { method: 'POST', body: data })
-      setShowCreateForm(false)
-      await fetchCampaigns()
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Failed to create campaign')
-    }
+    await createCampaign(data)
+    setShowCreateForm(false)
   }
 
-  if (loading) return <p>Loading campaigns...</p>
+  if (loadingCampaigns) return <p>Loading campaigns...</p>
 
   return (
-    <div>
+    <Box>
       <div className="page-header">
         <h1>Campaigns</h1>
         {canCreate && !showCreateForm && (
@@ -91,10 +61,11 @@ export default function CampaignsRoute() {
               edition={c.identity.edition}
               setting={c.identity.setting}
               memberCount={c.memberCount}
+              imageUrl={c.identity?.imageUrl}
             />
           ))}
         </div>
       )}
-    </div>
+    </Box>
   )
 }

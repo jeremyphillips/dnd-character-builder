@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import { Breadcrumbs } from '@/ui/elements'
@@ -9,23 +8,28 @@ import { getEquipmentCostByEdition } from '@/domain/equipment/cost'
 import EquipmentMediaTopCard from '@/domain/equipment/components/EquipmentMediaTopCard/EquipmentMediaTopCard'
 import { ROUTES } from '@/app/routes'
 import { apiFetch } from '@/app/api'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 
 export default function EquipmentRoute() {
-  const { id: campaignId } = useParams<{ id: string }>()
+  const { 
+    campaignId: activeCampaignId, 
+    editionId: activeEditionId
+  } = useActiveCampaign()
   const [edition, setEdition] = useState<string>('5e')
   const weaponsFirst12 = equipment.weapons.slice(0, 12)
   const armorFirst12 = equipment.armor.slice(0, 12)
   const gearFirst12 = equipment.gear.slice(0, 12)
+  
 
   useEffect(() => {
-    if (!campaignId) return
-    apiFetch<{ campaign?: { identity: { edition?: string } } }>(`/api/campaigns/${campaignId}`)
-      .then((data) => (data.campaign?.identity?.edition ? setEdition(data.campaign.identity.edition) : undefined))
+    if (!activeCampaignId) return
+    apiFetch<{ campaign?: { identity: { edition?: string } } }>(`/api/campaigns/${activeCampaignId}`)
+      .then((data) => (data.campaign?.identity?.edition ? setEdition(activeEditionId) : undefined))
       .catch(() => {})
-  }, [campaignId])
+  }, [activeCampaignId])
 
   const equipmentLink = (itemId: string) =>
-    campaignId ? ROUTES.EQUIPMENT_DETAILS.replace(':id', campaignId).replace(':equipmentId', itemId) : undefined
+    activeCampaignId ? ROUTES.EQUIPMENT_DETAILS.replace(':id', activeCampaignId).replace(':equipmentId', itemId) : undefined
 
   const breadcrumbs = useBreadcrumbs()
 

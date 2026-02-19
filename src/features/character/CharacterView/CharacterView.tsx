@@ -27,14 +27,14 @@ import {
   SpellsCard,
   NarrativeCard,
   CharacterModals,
-} from '@/features/character/components'
+} from '@/features/character/CharacterView/sections'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 import Alert from '@mui/material/Alert'
-import { Breadcrumbs } from '@/ui/elements'
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -92,10 +92,10 @@ export default function CharacterView({
   totalLevel,
   alignmentOptions,
   raceOptions,
-  actions,
-  breadcrumbs,
+  actions
 }: CharacterViewProps) {
   const navigate = useNavigate()
+console.log('CharacterView character', character)
 
   // ── UI toggle state ────────────────────────────────────────────────
   const [awardXpOpen, setAwardXpOpen] = useState(false)
@@ -165,7 +165,7 @@ export default function CharacterView({
 
   return (
     <Box sx={{ maxWidth: 920, mx: 'auto' }}>
-      <Breadcrumbs items={breadcrumbs} />
+      
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -261,11 +261,13 @@ export default function CharacterView({
       />
 
       {/* Narrative */}
-      <NarrativeCard
-        narrative={narrative}
-        canEdit={canEdit}
-        onSave={actions.saveCharacter}
-      />
+      {narrative && (
+        <NarrativeCard
+          narrative={narrative}
+          canEdit={canEdit}
+          onSave={actions.saveCharacter}
+        />
+      )}
 
       {/* Delete character (owner only) */}
       {isOwner && (

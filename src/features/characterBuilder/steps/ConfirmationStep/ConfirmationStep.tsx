@@ -168,43 +168,49 @@ const ConfirmationStep = () => {
   
 
         {/* Edition */}
-        <SummaryCard
-          label="Edition"
-          stepId="edition"
-          filled={!!state.edition}
-          onEdit={goToStep}
-          value={
-            <Typography variant="body1" fontWeight={600}>
-              {editionName}
-            </Typography>
-          }
-        />
+        {!state.lockedFields?.has('edition') && (
+          <SummaryCard
+            label="Edition"
+            stepId="edition"
+            filled={!!state.edition}
+            onEdit={goToStep}
+            value={
+              <Typography variant="body1" fontWeight={600}>
+                {editionName}
+              </Typography>
+            }
+          />
+        )}
 
         {/* Setting */}
-        <SummaryCard
-          label="Setting"
-          stepId="setting"
-          filled={!!state.setting}
-          onEdit={goToStep}
-          value={
-            <Typography variant="body1" fontWeight={600}>
-              {settingName}
-            </Typography>
-          }
-        />
+        {!state.lockedFields?.has('setting') && (
+          <SummaryCard
+            label="Setting"
+            stepId="setting"
+            filled={!!state.setting}
+            onEdit={goToStep}
+            value={
+              <Typography variant="body1" fontWeight={600}>
+                {settingName}
+              </Typography>
+            }
+          />
+        )}
 
         {/* Race */}
-        <SummaryCard
-          label="Race"
-          stepId="race"
-          filled={!!state.race}
-          onEdit={goToStep}
-          value={
-            <Typography variant="body1" fontWeight={600}>
-              {raceName}
-            </Typography>
-          }
-        />
+        {!state.lockedFields?.has('race') && (
+          <SummaryCard
+            label="Race"
+            stepId="race"
+            filled={!!state.race}
+            onEdit={goToStep}
+            value={
+              <Typography variant="body1" fontWeight={600}>
+                {raceName}
+              </Typography>
+            }
+          />
+        )}
 
         {/* Level */}
         <SummaryCard
@@ -270,17 +276,19 @@ const ConfirmationStep = () => {
         />
 
         {/* Alignment */}
-        <SummaryCard
-          label="Alignment"
-          stepId="alignment"
-          filled={!!state.alignment}
-          onEdit={goToStep}
-          value={
-            <Typography variant="body1" fontWeight={600}>
-              {alignmentName}
-            </Typography>
-          }
-        />
+        {!state.lockedFields?.has('alignment') && (
+          <SummaryCard
+            label="Alignment"
+            stepId="alignment"
+            filled={!!state.alignment}
+            onEdit={goToStep}
+            value={
+              <Typography variant="body1" fontWeight={600}>
+                {alignmentName}
+              </Typography>
+            }
+          />
+        )}
 
         {/* Equipment */}
         <SummaryCard

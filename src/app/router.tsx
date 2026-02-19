@@ -10,6 +10,8 @@ import AuthLayout from './layouts/AuthLayout'
 import {
   CharacterBuilderRoute,
   LoginRoute,
+  RegisterRoute,
+  AcceptInviteRoute,
   DashboardRoute,
   UsersRoute,
   CharactersRoute,
@@ -37,6 +39,7 @@ import {
   CampaignAdminBrainstormingRoute,
   CampaignAdminSettingsRoute,
   AccountSettingsRoute,
+  NewCharacterRoute,
 } from './routes/index'
 
 function RootLayout() {
@@ -57,6 +60,8 @@ export const router = createBrowserRouter([
           { path: ROUTES.HOME, element: <CharacterBuilderRoute /> },
           { path: ROUTES.CHARACTER_BUILDER, element: <CharacterBuilderRoute /> },
           { path: ROUTES.LOGIN, element: <LoginRoute /> },
+          { path: ROUTES.REGISTER, element: <RegisterRoute /> },
+          { path: ROUTES.ACCEPT_INVITE, element: <AcceptInviteRoute /> },
         ],
       },
       {
@@ -65,6 +70,7 @@ export const router = createBrowserRouter([
           { path: ROUTES.DASHBOARD, element: <DashboardRoute /> },
           { path: ROUTES.USERS, element: <UsersRoute /> },
           { path: ROUTES.CHARACTERS, element: <CharactersRoute /> },
+          { path: ROUTES.NEW_CHARACTER, element: <NewCharacterRoute /> },
           { path: ROUTES.CHARACTER, element: <CharacterRoute /> },
           { path: ROUTES.CAMPAIGNS, element: <CampaignsRoute /> },
           { path: ROUTES.RULES, element: <RulesRoute /> },

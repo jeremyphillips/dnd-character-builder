@@ -42,6 +42,7 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbRouteConfig> = {
   // Top-level
   '/dashboard':                                    { label: 'Dashboard' },
   '/characters':                                   { label: 'Characters' },
+  '/characters/new':                               { label: 'New Character' },
   '/characters/:id':                               { label: 'Character' },
   '/campaigns':                                    { label: 'Campaigns' },
 

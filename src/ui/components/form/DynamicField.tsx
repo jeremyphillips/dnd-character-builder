@@ -1,3 +1,4 @@
+import { useFormContext } from 'react-hook-form'
 import type { FieldConfig } from './form.types'
 import FormTextField from './FormTextField'
 import FormSelectField from './FormSelectField'
@@ -12,6 +13,8 @@ type DynamicFieldProps = {
 }
 
 export default function DynamicField({ field }: DynamicFieldProps) {
+  const { register } = useFormContext()
+
   switch (field.type) {
     case 'text':
       return (
@@ -117,5 +120,8 @@ export default function DynamicField({ field }: DynamicFieldProps) {
           allowHidden={field.allowHidden}
         />
       )
+
+    case 'hidden':
+      return <input type="hidden" {...register(field.name)} />
   }
 }

@@ -20,10 +20,11 @@ interface InviteEmailParams {
   to: string
   campaignName: string
   invitedBy: string
+  inviteToken: string
 }
 
-export async function sendCampaignInvite({ to, campaignName, invitedBy }: InviteEmailParams) {
-  const signUpUrl = `${env.CLIENT_URL}/login`
+export async function sendCampaignInvite({ to, campaignName, invitedBy, inviteToken }: InviteEmailParams) {
+  const signUpUrl = `${env.CLIENT_URL}/accept-invite?token=${inviteToken}`
 
   const subject = `You've been invited to join "${campaignName}"`
 
@@ -32,10 +33,8 @@ export async function sendCampaignInvite({ to, campaignName, invitedBy }: Invite
     ``,
     `${invitedBy} has invited you to join the campaign "${campaignName}" on D&D Character Builder.`,
     ``,
-    `To get started, create an account using this email address:`,
+    `Click the link below to accept your invite:`,
     `${signUpUrl}`,
-    ``,
-    `Once you've signed up, the campaign will appear in your dashboard automatically.`,
     ``,
     `Happy adventuring!`,
     `— D&D Character Builder`,
@@ -44,9 +43,8 @@ export async function sendCampaignInvite({ to, campaignName, invitedBy }: Invite
   const html = [
     `<p>Hi there!</p>`,
     `<p><strong>${invitedBy}</strong> has invited you to join the campaign <strong>"${campaignName}"</strong> on D&amp;D Character Builder.</p>`,
-    `<p>To get started, create an account using this email address:</p>`,
-    `<p><a href="${signUpUrl}">${signUpUrl}</a></p>`,
-    `<p>Once you've signed up, the campaign will appear in your dashboard automatically.</p>`,
+    `<p>Click the link below to accept your invite:</p>`,
+    `<p><a href="${signUpUrl}">Accept Invite</a></p>`,
     `<p>Happy adventuring!<br/>— D&amp;D Character Builder</p>`,
   ].join('\n')
 

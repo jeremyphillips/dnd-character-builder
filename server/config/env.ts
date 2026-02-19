@@ -11,4 +11,5 @@ export const env = {
   AUTH_SECRET: process.env.AUTH_SECRET ?? '',
   CLIENT_URL: process.env.CLIENT_URL ?? 'http://localhost:5173',
   IMAGE_BASE_URL: process.env.IMAGE_BASE_URL ?? '/uploads/',
+  INVITE_TOKEN_EXPIRY_DAYS: Number(process.env.INVITE_TOKEN_EXPIRY_DAYS) || 14,
 } as const

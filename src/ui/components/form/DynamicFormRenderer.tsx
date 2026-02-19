@@ -19,11 +19,15 @@ export default function DynamicFormRenderer({
 }: DynamicFormRendererProps) {
   return (
     <Stack spacing={spacing}>
-      {fields.map((field) => (
-        <Box key={field.name}>
-          <DynamicField field={field} />
-        </Box>
-      ))}
+      {fields.map((field) =>
+        field.type === 'hidden' ? (
+          <DynamicField key={field.name} field={field} />
+        ) : (
+          <Box key={field.name}>
+            <DynamicField field={field} />
+          </Box>
+        )
+      )}
     </Stack>
   )
 }

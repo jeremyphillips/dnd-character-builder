@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react'
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
-import type { CampaignSummary, CharacterNarrative } from '@/features/character/hooks'
+import type { CampaignSummary } from '@/features/character/hooks'
 import type { EditionId } from '@/data'
 import { classes as classesData, editions, settings, races } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'

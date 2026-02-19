@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { useAuth } from './AuthProvider'
 import { apiFetch } from '../api'
@@ -12,8 +12,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
 
+  // Hold user in a ref so `refresh` never changes identity.
+  // Without this, every new user object (e.g. from StrictMode double-firing
+  // the auth check) would recreate refresh → re-trigger the polling effect →
+  // cause a burst of notification fetches and context value churn.
+  const userRef = useRef(user)
+  userRef.current = user
+
   const refresh = useCallback(async () => {
-    if (!user) return
+    if (!userRef.current) return
     setLoading(true)
     try {
       const data = await apiFetch<{ notifications: AppNotification[]; unreadCount: number }>('/api/notifications')
@@ -24,7 +31,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [])
 
   // Initial load + poll every 30 seconds
   useEffect(() => {
@@ -63,10 +70,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Memoize so consumers only re-render when notification state changes
+  const value = useMemo(
+    () => ({ notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead }),
+    [notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead],
+  )
+
   return (
-    <NotificationContext.Provider
-      value={{ notifications, unreadCount, loading, refresh, markAsRead, markAllAsRead }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   )

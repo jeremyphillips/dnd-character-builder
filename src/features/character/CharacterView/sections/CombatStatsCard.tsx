@@ -13,6 +13,7 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
+import { StatShield } from '@/ui/stats'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,8 +69,8 @@ export default function CombatStatsCard({
   alignmentOptions,
   onSave,
 }: CombatStatsCardProps) {
-  const hasCombat = character.hitPoints?.total != null || character.armorClass?.current != null
-
+  //const hasCombat = character.hitPoints?.total != null || character.armorClass?.current != null
+  const hasCombat = true
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
@@ -80,16 +81,21 @@ export default function CombatStatsCard({
         {hasCombat ? (
           <Stack direction="row" spacing={3} sx={{ mt: 0.5, mb: 2 }}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight={700}>{character.armorClass?.current ?? character.armorClass?.base ?? '—'}</Typography>
-              <Typography variant="caption" color="text.secondary">AC</Typography>
+              {/* <StatCircle label="AC2" value={character.armorClass?.current ?? character.armorClass?.base ?? '—'} /> */}
+              <StatShield label="AC" value={character.armorClass?.current ?? character.armorClass?.base ?? '—'} />
+
               {character.armorClass?.calculation && (
+                <>
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
                   {character.armorClass.calculation}
                 </Typography>
+                </>
               )}
             </Box>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight={700}>{character.hitPoints?.total ?? '—'}</Typography>
+              <Typography variant="h4" fontWeight={700}>
+                {character.hitPoints?.total ?? '—'}
+              </Typography>
               <Typography variant="caption" color="text.secondary">HP</Typography>
               {character.hitPoints?.generationMethod && (
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>

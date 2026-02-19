@@ -1,19 +1,27 @@
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { resolveImageUrl } from '@/utils/image'
-import CharacterMediaTopCard from '@/domain/character/components/CharacterMediaTopCard/CharacterMediaTopCard'
+import { CharacterMediaTopCard } from '@/features/character/cards'
 import Box from '@mui/material/Box'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
-export default function CampaignPartySection() {
+export interface CampaignPartySectionProps {
+  status?: 'pending' | 'approved'
+}
+
+export default function CampaignPartySection({
+  status = 'approved'
+}: CampaignPartySectionProps) {
   const {
     party: approvedPartyCharacters,
     loading: approvedPartyCharactersLoading,
-  } = useCampaignParty('approved')
+  } = useCampaignParty(status)
+
+  const heading = status === 'approved' ? 'Active party members' : 'Pending party members'
 
   return (
     <>
-      <h3>Party</h3>
+      <h3>{heading}</h3>
       <Box
         sx={{
           display: 'grid',
@@ -26,7 +34,7 @@ export default function CampaignPartySection() {
             <CircularProgress />
           </Box>
         ) : approvedPartyCharacters.length === 0 ? (
-          <Alert severity="info">No approved characters in this campaign's party yet.</Alert>
+          <Alert severity="info">No {status} characters in this campaign.</Alert>
         ) : (
           approvedPartyCharacters.map((char) => (
             <CharacterMediaTopCard

@@ -27,7 +27,7 @@ import {
   SpellsCard,
   NarrativeCard,
   CharacterModals,
-} from '@/features/character/components'
+} from '@/features/character/CharacterView/sections'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'

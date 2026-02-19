@@ -1,0 +1,1 @@
+export { default as CharacterMediaTopCard } from './CharacterMediaTopCard/CharacterMediaTopCard'

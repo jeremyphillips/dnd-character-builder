@@ -9,7 +9,8 @@ import { env } from '../config/env'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 
 export async function getCharacters(req: Request, res: Response) {
-  const characters = await characterService.getCharactersByUser(req.userId!)
+  const type = req.query.type as string | undefined
+  const characters = await characterService.getCharactersByUser(req.userId!, type)
   res.json({ characters })
 }
 

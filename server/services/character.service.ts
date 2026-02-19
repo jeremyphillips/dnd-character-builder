@@ -12,9 +12,18 @@ function normalizeCharacter(doc: any) {
   return { ...doc, imageUrl: getPublicUrl(doc.imageKey) }
 }
 
-export async function getCharactersByUser(userId: string) {
+export async function getCharactersByUser(userId: string, type?: string) {
+  const allowedTypes = ['pc', 'npc']
+  const filter: Record<string, unknown> = {
+    userId: new mongoose.Types.ObjectId(userId),
+    deletedAt: { $exists: false },
+  }
+  if (type && allowedTypes.includes(type)) {
+    filter.type = type
+  }
+
   const docs = await charactersCollection()
-    .find({ userId: new mongoose.Types.ObjectId(userId), deletedAt: { $exists: false } })
+    .find(filter)
     .sort({ createdAt: -1 })
     .toArray()
   return docs.map(normalizeCharacter)

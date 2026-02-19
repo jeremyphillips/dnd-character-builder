@@ -1,9 +1,11 @@
 import { useCharacterBuilder } from '../../context'
 import { editions, settings, races, classes } from '@/data'
 import { standardAlignments, fourEAlignments, basicAlignments } from '@/data/alignments'
+import { spells as spellCatalog } from '@/data/classes/spells'
 import { getNameById } from '@/domain/lookups'
 import { getClassProgression } from '@/domain/character'
 import type { ClassProgression } from '@/data/classes/types'
+import type { Proficiency } from '@/shared/types/character.core'
 import type { StepId } from '../../types'
 
 import Box from '@mui/material/Box'
@@ -137,6 +139,34 @@ const ConfirmationStep = () => {
     (state.equipment?.weapons?.length ?? 0) +
     (state.equipment?.armor?.length ?? 0) +
     (state.equipment?.gear?.length ?? 0)
+
+  // Group proficiencies by taxonomy for the summary card
+  const profsByTaxonomy = (state.proficiencies as Proficiency[] | undefined ?? []).reduce<
+    Map<string, string[]>
+  >((map, p) => {
+    const names = map.get(p.taxonomy) ?? []
+    names.push(p.option.name)
+    map.set(p.taxonomy, names)
+    return map
+  }, new Map())
+  const totalProfs = (state.proficiencies ?? []).length
+
+  // Resolve selected spell IDs to name + level for the summary card
+  const selectedSpells = state.spells ?? []
+  const resolvedSpells = selectedSpells
+    .map((id) => {
+      const spell = spellCatalog.find((s) => s.id === id)
+      if (!spell) return null
+      const entry = spell.editions.find((e) => e.edition === state.edition)
+      return entry ? { name: spell.name, level: entry.level } : null
+    })
+    .filter(Boolean) as { name: string; level: number }[]
+  const spellsByLevel = resolvedSpells.reduce<Map<number, string[]>>((map, s) => {
+    const names = map.get(s.level) ?? []
+    names.push(s.name)
+    map.set(s.level, names)
+    return map
+  }, new Map())
 
   return (
     <Box>
@@ -289,6 +319,67 @@ const ConfirmationStep = () => {
             }
           />
         )}
+
+        {/* Proficiencies */}
+        <SummaryCard
+          label="Proficiencies"
+          stepId="details"
+          filled={totalProfs > 0}
+          onEdit={goToStep}
+          value={
+            totalProfs > 0 ? (
+              <Box>
+                {[...profsByTaxonomy.entries()].map(([taxonomy, names]) => (
+                  <Box key={taxonomy} sx={{ mb: 0.75 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {taxonomy}
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.25 }}>
+                      {names.map((name) => (
+                        <Chip key={name} label={name} size="small" variant="outlined" />
+                      ))}
+                    </Stack>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body1" color="text.secondary">—</Typography>
+            )
+          }
+        />
+
+        {/* Spells */}
+        <SummaryCard
+          label="Spells"
+          stepId="spells"
+          filled={resolvedSpells.length > 0}
+          onEdit={goToStep}
+          value={
+            resolvedSpells.length > 0 ? (
+              <Box>
+                <Typography variant="body1" fontWeight={600} sx={{ mb: 0.5 }}>
+                  {resolvedSpells.length} spell{resolvedSpells.length !== 1 ? 's' : ''}
+                </Typography>
+                {[...spellsByLevel.entries()]
+                  .sort(([a], [b]) => a - b)
+                  .map(([level, names]) => (
+                    <Box key={level} sx={{ mb: 0.75 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {level === 0 ? 'Cantrips' : `Level ${level}`}
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.25 }}>
+                        {names.sort().map((name) => (
+                          <Chip key={name} label={name} size="small" variant="outlined" />
+                        ))}
+                      </Stack>
+                    </Box>
+                  ))}
+              </Box>
+            ) : (
+              <Typography variant="body1" color="text.secondary">—</Typography>
+            )
+          }
+        />
 
         {/* Equipment */}
         <SummaryCard

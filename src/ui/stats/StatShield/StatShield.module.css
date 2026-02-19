@@ -1,0 +1,10 @@
+.rounded-shield {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 80px;
+  border: 2px solid var(--mui-palette-primary-main);
+  border-radius: 7% 7% 50% 50% / 20% 20% 80% 80%;
+}

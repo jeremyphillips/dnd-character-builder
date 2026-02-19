@@ -70,7 +70,8 @@ export async function deleteCampaign(req: Request, res: Response) {
 
 export async function getPartyCharacters(req: Request, res: Response) {
   try {
-    const characters = await campaignService.getPartyCharacters(req.params.id)
+    const status = req.query.status as string | undefined
+    const characters = await campaignService.getPartyCharacters(req.params.id, status)
     res.json({ characters })
   } catch (err) {
     console.error('Failed to get party characters:', err)

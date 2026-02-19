@@ -9,12 +9,12 @@ import { FormModal } from '@/ui/modals'
 import { FilterableCardGroup } from '@/ui/components'
 import type { FilterOption } from '@/ui/components/FilterableCardGroup/FilterableCardGroup'
 import { LocationHorizontalCard } from '@/domain/location/components/LocationHorizontalCard'
-import { getPartyMembers } from '@/domain/party'
 import { useBreadcrumbs } from '@/hooks'
 import { apiFetch } from '@/app/api'
 import { resolveImageUrl } from '@/utils/image'
 import type { FieldConfig } from '@/ui/components/form/form.types'
-
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
+import { useCampaignParty } from '@/features/campaign/hooks/useCampaignParty'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
@@ -113,64 +113,30 @@ export default function LocationsRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin'
-
-  const [campaign, setCampaign] = useState<{ identity?: { setting?: string } } | null>(null)
-  const [campaignLoading, setCampaignLoading] = useState(true)
-  const activeSetting = campaign?.identity?.setting ?? ''
-  const world = getWorldForSetting(activeSetting)
+  const {
+    loading: activeCampaignLoading,
+    campaignId: activeCampaignId,
+    settingId: activeSettingId,
+  } = useActiveCampaign()
+  const { party: partyMembers } = useCampaignParty('approved')
+  const world = getWorldForSetting(activeSettingId ?? '')
 
   const [loading, setLoading] = useState(true)
   const [worldMapUrl, setWorldMapUrl] = useState<string | null>(null)
   const [customLocations, setCustomLocations] = useState<Location[]>([])
   const [locationOverrides, setLocationOverrides] = useState<Record<string, LocationOverride>>({})
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
   const breadcrumbs = useBreadcrumbs()
 
-  // Load party members for VisibilityField character selection
   useEffect(() => {
-    if (!campaignId) {
-      setPartyMembers([])
-      return
-    }
-    getPartyMembers(campaignId, (cId) =>
-      apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
-        `/api/campaigns/${cId}/party`
-      )
-    )
-      .then((members) =>
-        setPartyMembers(members.map((m) => ({ id: m._id, name: m.name })))
-      )
-      .catch(() => setPartyMembers([]))
-  }, [campaignId])
-
-  useEffect(() => {
-    if (!campaignId) {
-      setCampaignLoading(false)
-      return
-    }
-    let cancelled = false
-    setCampaignLoading(true)
-    apiFetch<{ campaign?: { identity?: { setting?: string } } }>(`/api/campaigns/${campaignId}`)
-      .then((data) => {
-        if (!cancelled && data.campaign) setCampaign({ identity: data.campaign.identity })
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setCampaignLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [campaignId])
-
-  useEffect(() => {
-    if (!campaignId || !activeSetting) {
+    if (!campaignId || !activeSettingId) {
       setLoading(true)
       return
     }
     let cancelled = false
     async function load() {
       try {
-        const data = await fetchSettingData(activeSetting)
+        const data = await fetchSettingData(activeSettingId ?? '')
         if (cancelled || !data) return
         setWorldMapUrl(data.worldMapUrl ?? null)
         setCustomLocations(data.customLocations ?? [])
@@ -183,9 +149,9 @@ export default function LocationsRoute() {
     }
     load()
     return () => { cancelled = true }
-  }, [campaignId, activeSetting])
+  }, [campaignId, activeSettingId])
 
-  const dataLocations = useMemo(() => getSettingLocations(activeSetting), [activeSetting])
+  const dataLocations = useMemo(() => getSettingLocations(activeSettingId ?? ''), [activeSettingId])
   const mergedDataLocations = useMemo(
     () => applyOverrides(dataLocations, locationOverrides),
     [dataLocations, locationOverrides]
@@ -213,7 +179,7 @@ export default function LocationsRoute() {
     )
   }
 
-  if (campaignLoading || (!campaign && loading)) {
+  if (activeCampaignLoading || (!activeCampaignId && loading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
@@ -221,7 +187,7 @@ export default function LocationsRoute() {
     )
   }
 
-  if (!campaign?.identity?.setting) {
+  if (!activeSettingId) {
     return (
       <Typography color="text.secondary">Campaign has no setting configured.</Typography>
     )
@@ -256,7 +222,7 @@ export default function LocationsRoute() {
     const locId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const apiBody = {
       id: locId,
-      settingId: activeSetting,
+      settingId: activeSettingId,
       name,
       type: (data.type as LocationType) ?? 'other',
       description: (data.description as string) || undefined,
@@ -264,7 +230,7 @@ export default function LocationsRoute() {
       visibility: (data.visibility as Visibility) ?? DEFAULT_VISIBILITY,
       isCustom: true,
     }
-    await apiCreateLocation(activeSetting, apiBody as unknown as Location)
+    await apiCreateLocation(activeSettingId ?? '', apiBody as unknown as Location)
     // Add to local state with resolved imageUrl for display
     const displayLoc: Location = {
       ...apiBody,

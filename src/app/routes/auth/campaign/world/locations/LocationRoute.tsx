@@ -5,9 +5,9 @@ import type { Location, LocationType, Visibility } from '@/data/types'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROUTES } from '@/app/routes'
 import { apiFetch } from '@/app/api'
-//import { getPartyMembers } from '@/domain/party'
 import { Hero, Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
+import  { useCampaignParty } from '@/features/campaign/hooks/useCampaignParty'
 import { useCampaigns } from '@/features/campaign/hooks/useCampaigns'
 import {
   EditableTextField,
@@ -92,25 +92,13 @@ export default function LocationRoute() {
   const { user } = useAuth()
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin'
   const { campaigns } = useCampaigns({ campaignId })
+  const { party: partyMembers } = useCampaignParty('approved')
   const [loading, setLoading] = useState(true)
   const [location, setLocation] = useState<Location | null>(null)
   const [allLocations, setAllLocations] = useState<Location[]>([])
-  const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
   const breadcrumbs = useBreadcrumbs()
   const campaign = campaigns?.[0] ?? null
   const activeSetting = campaign?.identity.setting ?? ''
-
-  // ── Load party members ───────────────────────────────────────────────
-  // useEffect(() => {
-  //   if (!campaignId) return
-  //   getPartyMembers(campaignId, (cId) =>
-  //     apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
-  //       `/api/campaigns/${cId}/party`,
-  //     ),
-  //   )
-  //     .then((members) => setPartyMembers(members.map((m) => ({ id: m._id, name: m.name }))))
-  //     .catch(() => setPartyMembers([]))
-  // }, [campaignId])
 
   // ── Load location data ───────────────────────────────────────────────
   useEffect(() => {
@@ -265,7 +253,7 @@ export default function LocationRoute() {
             value={location.visibility}
             onChange={(v) => saveField('visibility', v)}
             disabled={!canEdit}
-            characters={partyMembers}
+            characters={partyMembers.map((m) => ({ id: m._id, name: m.name }))}
           />
         </Box>
       </Stack>

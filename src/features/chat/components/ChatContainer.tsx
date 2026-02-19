@@ -81,14 +81,16 @@ function mergeCharacterData(
     ? (aiResult as any).character
     : aiResult) ?? {}
 
-  const classInfo = builderState.classes.filter((c: CharacterClassInfo) => c.classId)
-  const primaryClass = classInfo[0]
+  const proficiencies = builderState?.proficiencies?.length && 
+    builderState?.proficiencies?.length > 0 ? 
+    builderState.proficiencies : 
+    ai.proficiencies ?? []
 
   return {
+    type: builderState.type,
     name: (builderState.name && builderState.name.trim()) || ai.name || '',
     // Builder state (source of truth for selections)
     race: builderState.race ?? '',
-    class: primaryClass?.classId ?? '',
     classes: builderState.classes,
     level: builderState.totalLevel || 1,
     totalLevel: builderState.totalLevel || 1,
@@ -97,7 +99,7 @@ function mergeCharacterData(
     setting: builderState.setting ?? '',
     xp: builderState.xp ?? 0,
     equipment: builderState.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
-
+    proficiencies: proficiencies,
     // Wealth: merge AI overrides onto builder state
     wealth: {
       ...builderState.wealth,
@@ -108,7 +110,6 @@ function mergeCharacterData(
     stats: ai.stats ?? {},
     hitPoints: ai.hitPoints ?? {},
     armorClass: ai.armorClass ?? {},
-    proficiencies: ai.proficiencies ?? [],
     narrative: ai.narrative ?? {},
 
     // Full AI response stored for reference

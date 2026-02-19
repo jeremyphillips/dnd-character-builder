@@ -3,9 +3,9 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { apiFetch } from '@/app/api'
 import { ROUTES } from '@/app/routes'
+import { useCampaignParty } from '@/features/campaign/hooks/useCampaignParty'
 import type { Session } from '@/domain/session'
 import { formatSessionDateTime } from '@/domain/session'
-import { getPartyMembers } from '@/domain/party'
 import { Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
 import { FormModal } from '@/ui/modals'
@@ -16,16 +16,15 @@ import type { FieldConfig } from '@/ui/components/form'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import dayjs from 'dayjs'
-
 import AddIcon from '@mui/icons-material/Add'
 
 export default function SessionsRoute() {
   const { id: campaignId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
+  const { party: partyMembers } = useCampaignParty('approved')
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [partyMembers, setPartyMembers] = useState<{ id: string; name: string }[]>([])
   const breadcrumbs = useBreadcrumbs()
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
@@ -46,23 +45,6 @@ export default function SessionsRoute() {
       }
     }
     load()
-  }, [campaignId])
-
-  // Load party members when on sessions page (so they're ready when modal opens)
-  useEffect(() => {
-    if (!campaignId) {
-      setPartyMembers([])
-      return
-    }
-    getPartyMembers(campaignId, (cId) =>
-      apiFetch<{ characters?: import('@/domain/party').PartyMemberApiRow[] }>(
-        `/api/campaigns/${cId}/party`
-      )
-    )
-      .then((members) =>
-        setPartyMembers(members.map((m) => ({ id: m._id, name: m.name })))
-      )
-      .catch(() => setPartyMembers([]))
   }, [campaignId])
 
   const openModal = () => setModalOpen(true)

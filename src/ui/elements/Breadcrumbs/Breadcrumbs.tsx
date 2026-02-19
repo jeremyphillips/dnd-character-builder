@@ -27,7 +27,7 @@ const Breadcrumbs = ({ items }: BreadcrumbsProps) => (
     aria-label="breadcrumb"
     sx={{ mb: 2 }}
   >
-    {items.map((item, i) => {
+    {items && items.length > 0 && items.map((item, i) => {
       const isLast = i === items.length - 1
 
       if (isLast || !item.to) {

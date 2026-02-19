@@ -225,18 +225,21 @@ export async function getMembersForMessaging(campaignId: string) {
   }))
 }
 
-export async function getPartyCharacters(campaignId: string) {
+export async function getPartyCharacters(campaignId: string, status?: string) {
   const usersCol = () => db().collection('users')
   const charsCol = () => db().collection('characters')
 
   const campaign = await getCampaignById(campaignId)
   if (!campaign) return []
 
-  // Get CampaignMembers for this campaign (pending + approved; excluded rejected)
+  const allowedStatuses = ['pending', 'approved']
+  const statusFilter =
+    status && allowedStatuses.includes(status) ? status : { $in: allowedStatuses }
+
   const members = await campaignMembersCollection()
     .find({
       campaignId: new mongoose.Types.ObjectId(campaignId),
-      status: { $in: ['pending', 'approved'] },
+      status: statusFilter,
     })
     .sort({ joinedAt: 1, requestedAt: 1 })
     .toArray()

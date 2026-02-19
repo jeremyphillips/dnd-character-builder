@@ -36,11 +36,11 @@ const MonsterMediaTopCard = ({
   const cardActions = (
     <>
       {actions}
-      {link && (
+      {/* {link && (
         <Button component="span" size="small" variant="outlined">
           View Detail
         </Button>
-      )}
+      )} */}
     </>
   )
 

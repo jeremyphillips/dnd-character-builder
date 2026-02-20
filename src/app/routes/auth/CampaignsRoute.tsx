@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
-import CampaignForm, { type CampaignFormData } from '@/features/campaign/components/CampaignForm'
-import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import CampaignForm, { type CampaignFormData } from '@/features/campaign/components/CampaignForm/CampaignForm'
+import { CampaignHorizontalCard} from '@/features/campaign/components'
 import Box from '@mui/material/Box'
 import { useCampaigns } from '@/features/campaign/hooks'
 

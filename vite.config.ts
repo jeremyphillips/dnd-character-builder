@@ -27,8 +27,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@/app': path.resolve(__dirname, './src/app'),
-      '@/characterBuilder': path.resolve(__dirname, './src/features/characterBuilder'),
-      '@/characterBuilder/context': path.resolve(__dirname, './src/features/characterBuilder/context'),
+      '@/features/characterBuilder': path.resolve(__dirname, './src/features/characterBuilder'),
+      '@/features/characterBuilder/context': path.resolve(__dirname, './src/features/characterBuilder/context'),
       "@/ui/elements": path.resolve(__dirname, "src/ui/elements"),
       "@/ui/components": path.resolve(__dirname, "src/ui/components"),
       "@/ui/fields": path.resolve(__dirname, "src/ui/components/fields"),

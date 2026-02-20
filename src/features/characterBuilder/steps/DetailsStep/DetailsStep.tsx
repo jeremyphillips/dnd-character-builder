@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react'
-import { useCharacterBuilder } from '@/characterBuilder/context'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { classes } from '@/data'
 import type { EditionId } from '@/data'
 import type { ClassProficiency, ProficiencyOption } from '@/data/classes/types'

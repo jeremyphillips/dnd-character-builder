@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/app/api";
 import type { Campaign } from "@/shared/types/campaign.types";
 import { ApiError } from "@/app/api"
-import type { CampaignFormData } from "@/features/campaign/components/CampaignForm";
+import type { CampaignFormData } from "@/features/campaign/components/CampaignForm/CampaignForm";
 
 export function useCampaigns(filters?: {
   campaignId?: string

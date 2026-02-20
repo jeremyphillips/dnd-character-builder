@@ -1,7 +1,0 @@
-/* Character Builder step-specific layout utilities.
-   Modal chrome is handled by MUI Dialog.
-   Class cards and level controls are handled by MUI components. */
-
-.button-group {
-  margin: 24px 0;
-}

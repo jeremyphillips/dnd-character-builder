@@ -4,3 +4,5 @@ export { useCharacterActions, type CharacterActionDeps, type UseCharacterActions
 export { useCharacters, type UseCharactersReturn } from './useCharacters'
 export { useCreateCharacter, type UseCreateCharacterReturn } from './useCreateCharacter'
 export { useAvailableCharacters, type CharacterForOption, type UseAvailableCharactersReturn } from './useAvailableCharacters'
+export { useCombatStats, type UseCombatStatsReturn } from './useCombatStats'
+

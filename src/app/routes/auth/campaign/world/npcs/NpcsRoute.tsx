@@ -1,5 +1,5 @@
 import { useBreadcrumbs } from '@/hooks'
-import { CharacterBuilderLauncher } from '@/characterBuilder'
+import { CharacterBuilderLauncher } from '@/features/characterBuilder/components'
 // import NpcMediaTopCard from '@/domain/npc/components/NpcMediaTopCard/NpcMediaTopCard'
 //import { npcs } from '@/data/npcs/npcs'
 import type { EditionId, SettingId } from '@/data'
@@ -34,7 +34,7 @@ export default function NpcsRoute() {
     <Box>
       <Breadcrumbs items={breadcrumbs} />
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h1" >
           NPCs
         </Typography>
         <CharacterBuilderLauncher

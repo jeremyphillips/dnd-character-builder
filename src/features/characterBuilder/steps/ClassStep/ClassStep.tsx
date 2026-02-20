@@ -1,18 +1,19 @@
 import { useEffect } from 'react'
-import { useCharacterBuilder } from '@/characterBuilder/context'
-import { InvalidationNotice } from '@/characterBuilder/components'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { classes } from '@/data'
 import { getOptions } from '@/domain/options'
-import {
-  getClassDefinitions,
-  getSubclassUnlockLevel,
-  meetsClassRequirements,
-  getClassProgression,
-  getClassRestrictionNotes,
-  canAddClass,
-} from '@/domain/character'
+import { getSubclassUnlockLevel } from '@/features/character/domain/progression'
+import { getClassDefinitions } from '@/features/character/domain/reference'
+import { meetsClassRequirements } from '@/features/character/domain/validation'
+import { getClassRestrictionNotes } from '@/features/character/domain/validation'
+import { canAddClass } from '@/features/character/domain/validation'
+import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { ButtonGroup } from '@/ui/elements'
+import { getNameById } from '@/domain/lookups'
+import { getSubclassNameById } from '@/features/character/domain/reference'
+import { classes as classesData } from '@/data'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -210,8 +211,8 @@ const ClassStep = () => {
                       sx={{ mb: 1 }}
                     />
                     <Typography variant="h6" sx={{ lineHeight: 1.3 }}>
-                      {cls.classId || 'Choose a class'}
-                      {cls.classDefinitionId && ` — ${cls.classDefinitionId}`}
+                      {getNameById(classesData, cls.classId) || 'Choose a class'}
+                      {cls.classDefinitionId && ` — ${getSubclassNameById(cls.classId, cls.classDefinitionId)}`}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" my={1.5}>
                       Level {cls.level}

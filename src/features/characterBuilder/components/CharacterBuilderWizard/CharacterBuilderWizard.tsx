@@ -1,14 +1,16 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { useCharacterBuilder } from '../../context'
 import { getStepConfig } from '../../constants'
+import type { HitPointMode } from '../../types'
 import InvalidationConfirmDialog from '../InvalidationConfirmDialog/InvalidationConfirmDialog'
 
 export type CharacterBuilderWizardProps = {
   onGenerate: () => void
   isGenerating?: boolean
+  hitPointMode?: HitPointMode
   /** Optional cancel/exit action (useful for inline usage without a modal). */
   onCancel?: () => void
   children: (slots: {
@@ -22,6 +24,7 @@ export type CharacterBuilderWizardProps = {
 const CharacterBuilderWizard = ({
   onGenerate,
   isGenerating = false,
+  hitPointMode = 'average',
   onCancel,
   children,
 }: CharacterBuilderWizardProps) => {
@@ -29,10 +32,17 @@ const CharacterBuilderWizard = ({
     state,
     nextStep,
     prevStep,
+    setHitPointMode,
     pendingInvalidations,
     confirmChange,
     cancelChange,
   } = useCharacterBuilder()
+
+  useEffect(() => {
+    if (hitPointMode !== state.hitPointMode) {
+      setHitPointMode(hitPointMode)
+    }
+  }, [hitPointMode, state.hitPointMode, setHitPointMode])
 
   const stepConfig = getStepConfig(state.type ?? 'pc')
   const currentStepIndex = Math.max(0, stepConfig.findIndex(step => step.id === state.step.id))

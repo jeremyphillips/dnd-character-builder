@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Button from '@mui/material/Button'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 
-import { useCharacterBuilder } from '@/characterBuilder'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { ChatContainer } from '@/chat'
 import type { CharacterType } from '@/shared/types/character.core'
 import type { EditionId, SettingId } from '@/data'

@@ -1,4 +1,4 @@
-import { useCharacterBuilder } from '@/characterBuilder/context'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { editions } from '@/data'
 import { ButtonGroup } from '@/ui/elements'
 

@@ -1,8 +1,8 @@
-import { useCharacterBuilder } from '@/characterBuilder/context'
-import { InvalidationNotice } from '@/characterBuilder/components'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { InvalidationNotice } from '@/features/characterBuilder/components'
 import type { EditionId } from '@/data'
 import { ButtonGroup } from '@/ui/elements'
-import { getAlignmentOptionsForCharacter } from '@/domain/character'
+import { getAlignmentOptionsForCharacter } from '@/features/character/domain/reference'
 
 const AlignmentStep = () => {
   const { state, setAlignment, stepNotices, dismissNotice } = useCharacterBuilder()

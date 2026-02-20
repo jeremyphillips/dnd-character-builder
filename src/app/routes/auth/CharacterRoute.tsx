@@ -6,7 +6,7 @@ import { ROUTES } from '@/app/routes'
 import { useCharacter } from '@/features/character/hooks'
 import { useCharacterForm } from '@/features/character/hooks'
 import { useCharacterActions } from '@/features/character/hooks'
-import { CharacterView } from '@/features/character/CharacterView'
+import { CharacterView } from '@/features/character/view'
 
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'

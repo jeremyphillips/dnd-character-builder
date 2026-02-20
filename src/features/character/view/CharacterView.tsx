@@ -1,19 +1,17 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { CharacterDoc } from '@/shared'
 import type { EditionId } from '@/data'
 import { editions, equipment } from '@/data'
 import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
 import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
-import type { LevelUpResult } from '@/features/character/levelUp'
 import { ROUTES } from '@/app/routes'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
+import { AppModal } from '@/ui/modals'
+import type { StepId } from '@/features/characterBuilder/types'
+import { getProficiencySlotSummary } from '@/features/character/domain/validation'
 
-import type {
-  CampaignSummary,
-  PendingMembership,
-  CharacterNarrative,
-  UseCharacterActionsReturn,
-} from '@/features/character/hooks'
 
 import {
   CharacterAlerts,
@@ -46,7 +44,10 @@ export type CharacterViewProps = {
   campaigns: CampaignSummary[]
   pendingMemberships: PendingMembership[]
   isOwner: boolean
+  /** True when the current user is a campaign admin (DM) for one of this character's campaigns. */
   isAdmin: boolean
+  /** True when the current user is a platform admin or superadmin. */
+  isPlatformAdmin?: boolean
   ownerName?: string
   error: string | null
   success: string | null
@@ -80,6 +81,7 @@ export default function CharacterView({
   pendingMemberships,
   isOwner,
   isAdmin,
+  isPlatformAdmin = false,
   ownerName,
   error,
   success,
@@ -96,7 +98,6 @@ export default function CharacterView({
   actions
 }: CharacterViewProps) {
   const navigate = useNavigate()
-console.log('CharacterView character', character)
 
   // ── UI toggle state ────────────────────────────────────────────────
   const [awardXpOpen, setAwardXpOpen] = useState(false)
@@ -109,9 +110,43 @@ console.log('CharacterView character', character)
   } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
+  // ── Single-step edit via builder ────────────────────────────────────
+  const [editingStep, setEditingStep] = useState<StepId | null>(null)
+  const { state: builderState, loadCharacterIntoBuilder, resetState: resetBuilder } = useCharacterBuilder()
+
+  const STEP_FIELDS: Partial<Record<StepId, (s: typeof builderState) => Record<string, unknown>>> = {
+    alignment: (s) => ({ alignment: s.alignment }),
+    equipment: (s) => ({ equipment: s.equipment, wealth: s.wealth }),
+    details: (s) => ({ proficiencies: s.proficiencies }),
+  }
+
+  const profSlots = useMemo(
+    () => getProficiencySlotSummary(character.classes, character.edition, character.proficiencies),
+    [character.classes, character.edition, character.proficiencies],
+  )
+
+  const openStepEditor = useCallback((stepId: StepId) => {
+    loadCharacterIntoBuilder(character, stepId)
+    setEditingStep(stepId)
+  }, [character, loadCharacterIntoBuilder])
+
+  const handleStepSave = useCallback(async () => {
+    if (!editingStep) return
+    const extractor = STEP_FIELDS[editingStep]
+    if (!extractor) return
+    await actions.saveCharacter(extractor(builderState))
+    setEditingStep(null)
+    resetBuilder()
+  }, [editingStep, builderState, actions, resetBuilder])
+
+  const handleStepCancel = useCallback(() => {
+    setEditingStep(null)
+    resetBuilder()
+  }, [resetBuilder])
+
   // ── Derived values ─────────────────────────────────────────────────
-  const canEditAll = isAdmin
-  const canEdit = isOwner || isAdmin
+  const canEditAll = isAdmin || isPlatformAdmin
+  const canEdit = isOwner || isAdmin || isPlatformAdmin
   const activeCampaignCount = campaigns.filter(c => (c.characterStatus ?? 'active') === 'active').length
 
   const filledClasses = (character.classes ?? []).filter((c) => c.classId)
@@ -194,6 +229,7 @@ console.log('CharacterView character', character)
         name={name}
         totalLevel={totalLevel}
         alignmentOptions={alignmentOptions}
+        raceOptions={raceOptions}
         canEdit={canEdit}
         canEditAll={canEditAll}
         isOwner={isOwner}
@@ -203,6 +239,7 @@ console.log('CharacterView character', character)
         onAwardXpOpen={() => setAwardXpOpen(true)}
         onSetStatusAction={setStatusAction}
         onReactivate={actions.handleReactivate}
+        onEditAlignment={canEdit ? () => openStepEditor('alignment') : undefined}
       />
 
       {/* Row 2: Ability Scores | Combat + Class Stats | Proficiencies */}
@@ -217,6 +254,7 @@ console.log('CharacterView character', character)
             character={character}
             filledClasses={filledClasses}
             isMulticlass={isMulticlass}
+            canEdit={canEdit}
             canEditAll={canEditAll}
             race={race}
             alignment={alignment}
@@ -229,6 +267,8 @@ console.log('CharacterView character', character)
           <ProficienciesCard
             proficiencies={character.proficiencies}
             wealth={character.wealth}
+            onEdit={canEdit ? () => openStepEditor('details') : undefined}
+            editDisabled={!profSlots.hasAvailableSlots || profSlots.allFilled}
           />
         </Grid>
       </Grid>
@@ -236,7 +276,10 @@ console.log('CharacterView character', character)
       {/* Row 3: Equipment | Magic Items */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <EquipmentCard equipment={character.equipment} />
+          <EquipmentCard
+            equipment={character.equipment}
+            onEdit={canEdit ? () => openStepEditor('equipment') : undefined}
+          />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <MagicItemsCard
@@ -309,6 +352,29 @@ console.log('CharacterView character', character)
         onStatusActionClose={() => setStatusAction(null)}
         onStatusActionConfirm={onStatusChange}
       />
+
+      {/* Single-step edit modal — reuses CharacterBuilderWizard in edit mode */}
+      <AppModal
+        open={!!editingStep}
+        onClose={handleStepCancel}
+        headline={`Edit ${editingStep ? editingStep.charAt(0).toUpperCase() + editingStep.slice(1) : ''}`}
+      >
+        <CharacterBuilderWizard
+          editStepId={editingStep ?? undefined}
+          onSave={handleStepSave}
+          onCancel={handleStepCancel}
+          onGenerate={() => {}}
+        >
+          {({ content, actions: wizardActions }) => (
+            <Box>
+              {content}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                {wizardActions}
+              </Box>
+            </Box>
+          )}
+        </CharacterBuilderWizard>
+      </AppModal>
     </Box>
   )
 }

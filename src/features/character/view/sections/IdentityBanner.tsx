@@ -10,15 +10,21 @@ import {
   ImageUploadField,
   EditableTextField,
   EditableNumberField,
+  EditableSelect
 } from '@/ui/fields'
+import type { Race, Alignment } from '@/data/types'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
+// import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import EditIcon from '@mui/icons-material/Edit'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,6 +53,7 @@ type IdentityBannerProps = {
   name: string
   totalLevel: number
   alignmentOptions: { id: string; label: string }[]
+  raceOptions: { id: string; label: string }[]
   canEdit: boolean
   canEditAll: boolean
   isOwner: boolean
@@ -56,6 +63,7 @@ type IdentityBannerProps = {
   onAwardXpOpen: () => void
   onSetStatusAction: (action: { campaignMemberId: string; campaignName: string; newStatus: 'inactive' | 'deceased' }) => void
   onReactivate: (campaignMemberId: string, campaignName: string) => Promise<void>
+  onEditAlignment?: () => void
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +78,7 @@ export default function IdentityBanner({
   name,
   totalLevel,
   alignmentOptions,
+  raceOptions,
   canEdit,
   canEditAll,
   isOwner,
@@ -79,16 +88,17 @@ export default function IdentityBanner({
   onAwardXpOpen,
   onSetStatusAction,
   onReactivate,
+  onEditAlignment,
 }: IdentityBannerProps) {
-  const editionName = getNameById(editions as unknown as { id: string; name: string }[], character.edition) ?? character.edition ?? '—'
-  const settingName = getNameById(settings as unknown as { id: string; name: string }[], character.setting) ?? character.setting ?? '—'
+  // const editionName = getNameById(editions as unknown as { id: string; name: string }[], character.edition) ?? character.edition ?? '—'
+  // const settingName = getNameById(settings as unknown as { id: string; name: string }[], character.setting) ?? character.setting ?? '—'
   const raceName = (getNameById(races as unknown as { id: string; name: string }[], character.race) ?? character.race) || '—'
   const alignmentName = getAlignmentName(alignmentOptions, character.alignment)
   const currentLevel = character.totalLevel ?? character.level ?? 1
   const primaryClassId = filledClasses[0]?.classId
   const editionObj = editions.find(e => e.id === character.edition)
   const maxLevel = editionObj?.progression?.maxLevel ?? 20
-
+console.log(raceOptions)
   const classSummary = filledClasses.length > 0
     ? filledClasses.map(cls => {
         const sub = getSubclassNameById(cls.classId, cls.classDefinitionId)
@@ -147,37 +157,41 @@ export default function IdentityBanner({
               {classSummary}
             </Typography>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+            {/* <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
               <Chip label={raceName} size="small" variant="outlined" />
               <Chip label={alignmentName} size="small" variant="outlined" />
               <Chip label={editionName} size="small" variant="outlined" />
               <Chip label={settingName} size="small" variant="outlined" />
-            </Stack>
+            </Stack> */}
 
-            {/* Level + XP inline */}
-            <Stack direction="row" spacing={3} sx={{ mt: 1.5 }}>
-              <Box>
-                {canEditAll ? (
-                  <EditableNumberField
-                    label="Level"
-                    value={totalLevel}
-                    onSave={(v: number) => onSave({ totalLevel: v, level: v })}
-                  />
-                ) : (
-                  <>
-                    <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Level</Typography>
-                    <Stack direction="row" spacing={0.5} alignItems="baseline">
-                      <Typography variant="body1" fontWeight={600}>{currentLevel}</Typography>
-                      {isPendingLevelUp && (
-                        <Typography variant="body2" color="info.main" fontWeight={500}>
-                          &rarr; {character.pendingLevel}
-                        </Typography>
-                      )}
-                    </Stack>
-                  </>
-                )}
-              </Box>
-              <Box>
+            <Divider sx={{ my: 1.5 }} />
+            <Grid container columns={12} spacing={2}>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                  Race
+                </Typography>
+                <Typography variant="body1" fontWeight={600}>{raceName}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                    Alignment
+                  </Typography>
+                  {onEditAlignment && (
+                    <IconButton size="small" onClick={onEditAlignment} sx={{ mt: -0.5 }}>
+                      <EditIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  )}
+                </Stack>
+                <Typography variant="body1" fontWeight={600}>{alignmentName}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                  Level
+                </Typography>
+                <Typography variant="body1" fontWeight={600}>{totalLevel}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>XP</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Typography variant="body1" fontWeight={600}>{(character.xp ?? 0).toLocaleString()}</Typography>
@@ -195,8 +209,8 @@ export default function IdentityBanner({
                 {xpDescription && (
                   <Typography variant="caption" color="text.secondary">{xpDescription}</Typography>
                 )}
-              </Box>
-            </Stack>
+              </Grid>
+            </Grid>
 
             {/* Campaigns */}
             {campaigns.length > 0 && (

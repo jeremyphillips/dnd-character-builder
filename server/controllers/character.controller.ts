@@ -177,15 +177,16 @@ export async function updateCharacter(req: Request, res: Response) {
     return
   }
 
-  // Only campaign admins can update admin-scoped fields (xp, level, classes, etc.)
-  // Character owners can update name, imageKey, narrative, and level-up completion fields
+  // Campaign admins and platform admins can update all fields.
+  // Character owners can only update name, imageKey, narrative, combat, and level-up completion fields.
   let updateData = req.body
-  if (!isCampaignAdmin) {
-    const { name, imageKey, narrative, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, classDefinitionId } = req.body
+  if (!isCampaignAdmin && !isPlatformAdmin) {
+    const { name, imageKey, narrative, combat, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, classDefinitionId } = req.body
     updateData = {} as any
     if (name !== undefined) updateData.name = name
     if (imageKey !== undefined) updateData.imageKey = imageKey
     if (narrative !== undefined) updateData.narrative = narrative
+    if (combat !== undefined) updateData.combat = combat
     // Allow character owners to complete a pending level-up
     if (character.levelUpPending) {
       if (totalLevel !== undefined) updateData.totalLevel = totalLevel

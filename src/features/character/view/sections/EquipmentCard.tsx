@@ -1,23 +1,39 @@
 import type { CharacterDoc } from '@/shared'
+import { getNameById } from '@/domain/lookups'
+import { equipment as equipmentData } from '@/data'
 
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
+import EditIcon from '@mui/icons-material/Edit'
 
 type EquipmentCardProps = {
   equipment: CharacterDoc['equipment']
+  onEdit?: () => void
 }
 
-export default function EquipmentCard({ equipment }: EquipmentCardProps) {
+export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps) {
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
-        <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-          Equipment
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+            Equipment
+          </Typography>
+          {onEdit && (
+            <Button
+              size="small"
+              startIcon={<EditIcon fontSize="small" />}
+              onClick={onEdit}
+            >
+              Edit
+            </Button>
+          )}
+        </Stack>
 
         {/* Weapons */}
         <Box sx={{ mt: 1 }}>
@@ -25,7 +41,7 @@ export default function EquipmentCard({ equipment }: EquipmentCardProps) {
           {(equipment?.weapons ?? []).length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {(equipment?.weapons ?? []).map((w, i) => (
-                <Chip key={i} label={w} size="small" variant="outlined" />
+                <Chip key={i} label={getNameById(equipmentData.weapons as unknown as { id: string; name: string }[], w)} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -39,7 +55,7 @@ export default function EquipmentCard({ equipment }: EquipmentCardProps) {
           {(equipment?.armor ?? []).length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {(equipment?.armor ?? []).map((a, i) => (
-                <Chip key={i} label={a} size="small" variant="outlined" />
+                <Chip key={i} label={getNameById(equipmentData.armor as unknown as { id: string; name: string }[], a)} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -53,7 +69,7 @@ export default function EquipmentCard({ equipment }: EquipmentCardProps) {
           {(equipment?.gear ?? []).length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {(equipment?.gear ?? []).map((g, i) => (
-                <Chip key={i} label={g} size="small" variant="outlined" />
+                <Chip key={i} label={getNameById(equipmentData.gear as unknown as { id: string; name: string }[], g)} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (

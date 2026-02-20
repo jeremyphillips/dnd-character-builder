@@ -1,19 +1,23 @@
+import { useState } from 'react'
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import { classes as classesData } from '@/data'
 import { getById } from '@/domain/lookups'
 import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { useCombatStats } from '@/features/character/hooks'
-import { EditableSelect } from '@/ui/fields'
+import type { ArmorConfiguration } from '@/features/character/domain/combat'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Collapse from '@mui/material/Collapse'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
-import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Link from '@mui/material/Link'
 import { StatShield } from '@/ui/stats'
 
 // ---------------------------------------------------------------------------
@@ -56,6 +60,7 @@ type CombatStatsCardProps = {
   alignment: string
   raceOptions: { id: string; label: string }[]
   alignmentOptions: { id: string; label: string }[]
+  canEdit?: boolean
   onSave: (partial: Record<string, unknown>) => Promise<void>
 }
 
@@ -63,18 +68,19 @@ export default function CombatStatsCard({
   character,
   filledClasses,
   isMulticlass,
-  canEditAll,
-  race,
-  alignment,
-  raceOptions,
-  alignmentOptions,
+  canEdit = false,
   onSave,
 }: CombatStatsCardProps) {
-  const { calculatedArmorClass } = useCombatStats(character)
+  const { calculatedArmorClass, armorConfigurations, activeArmorConfig } = useCombatStats(character)
+  const [configOpen, setConfigOpen] = useState(false)
 
-  // TODO: Add combat stats calculation
-  //const hasCombat = character.hitPoints?.total != null || character.armorClass?.current != null
   const hasCombat = true
+  const hasMultipleConfigs = armorConfigurations.length > 1
+
+  const handleConfigChange = async (configId: string) => {
+    await onSave({ combat: { selectedArmorConfigId: configId } })
+    setConfigOpen(false)
+  }
 
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
@@ -91,14 +97,30 @@ export default function CombatStatsCard({
                 value={calculatedArmorClass.value}
               />
 
-              {calculatedArmorClass && (
-                <>
+              {activeArmorConfig && (
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem', mt: 0.5 }}>
+                  {activeArmorConfig.label}
+                </Typography>
+              )}
+
+              {canEdit && hasMultipleConfigs && (
+                <Link
+                  component="button"
+                  variant="caption"
+                  onClick={() => setConfigOpen(prev => !prev)}
+                  sx={{ fontSize: '0.65rem' }}
+                >
+                  {configOpen ? 'Hide' : 'Change'}
+                </Link>
+              )}
+
+              {!hasMultipleConfigs && calculatedArmorClass && (
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
                   {calculatedArmorClass.breakdown}
                 </Typography>
-                </>
               )}
             </Box>
+
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700}>
                 {character.hitPoints?.total ?? '—'}
@@ -114,6 +136,35 @@ export default function CombatStatsCard({
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>—</Typography>
         )}
+
+        {/* Armor configuration selector */}
+        <Collapse in={configOpen}>
+          <Box sx={{ mb: 2, px: 0.5 }}>
+            <Typography variant="caption" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>
+              Armor Configurations
+            </Typography>
+            <RadioGroup
+              value={activeArmorConfig?.id ?? ''}
+              onChange={(_, val) => handleConfigChange(val)}
+            >
+              {armorConfigurations.map((config: ArmorConfiguration) => (
+                <FormControlLabel
+                  key={config.id}
+                  value={config.id}
+                  control={<Radio size="small" />}
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      <strong>{config.totalAC}</strong>
+                      {'  '}
+                      {config.breakdown}
+                    </Typography>
+                  }
+                  sx={{ ml: 0, mr: 0, '.MuiFormControlLabel-label': { ml: 0.5 } }}
+                />
+              ))}
+            </RadioGroup>
+          </Box>
+        </Collapse>
 
         {/* Class quick stats */}
         {filledClasses.map((cls, i) => {
@@ -141,32 +192,6 @@ export default function CombatStatsCard({
             </Box>
           )
         })}
-
-        {/* Admin-editable race + alignment */}
-        {canEditAll && (
-          <>
-            <Divider sx={{ my: 1.5 }} />
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 6 }}>
-                <EditableSelect
-                  label="Race"
-                  value={race}
-                  onSave={(v: string) => onSave({ race: v })}
-                  options={raceOptions}
-                />
-              </Grid>
-              <Grid size={{ xs: 6 }}>
-                <EditableSelect
-                  label="Alignment"
-                  value={alignment}
-                  onSave={(v: string) => onSave({ alignment: v })}
-                  options={alignmentOptions}
-                  emptyLabel="—"
-                />
-              </Grid>
-            </Grid>
-          </>
-        )}
       </CardContent>
     </Card>
   )

@@ -39,9 +39,17 @@ const EquipmentStep = () => {
     wealth
   } = state
 
+  const isEditMode = !!state.editMode
+
   useEffect(() => {
     if (initializedRef.current) return
     if (!edition) return
+
+    // Skip wealth initialization when editing an existing character
+    if (isEditMode) {
+      initializedRef.current = true
+      return
+    }
 
     // If baseGp is already set, wealth was initialized on a previous mount — don't reset
     if (wealth?.baseGp) {
@@ -71,7 +79,7 @@ const EquipmentStep = () => {
     })
 
     initializedRef.current = true
-  }, [edition, totalLevel, selectedClasses, setWealth, wealth?.baseGp])
+  }, [edition, totalLevel, selectedClasses, setWealth, wealth?.baseGp, isEditMode])
 
   const { 
     weapons: selectedWeapons = [], 

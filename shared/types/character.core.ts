@@ -108,6 +108,9 @@ export type CharacterCore = {
   stats?: AbilityScores
   hitPoints?: HitPoints
   armorClass?: ArmorClass
+  combat?: {
+    selectedArmorConfigId?: string | null
+  }
 
   proficiencies?: Proficiency[]
   spells?: string[]              // selected spell IDs from the spell catalog

@@ -90,6 +90,7 @@ temp/
 # =========================
 data/
 data/db/
+!src/data/
 
 # =========================
 # Database dumps

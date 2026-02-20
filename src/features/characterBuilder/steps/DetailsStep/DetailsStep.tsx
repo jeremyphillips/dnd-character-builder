@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
+import LockIcon from '@mui/icons-material/Lock'
 
 // ---------------------------------------------------------------------------
 // Full 5e skill list (for classes with options: 'all')
@@ -93,7 +94,17 @@ interface ProfGroup {
 
 const DetailsStep = () => {
   const { state, setProficiencies } = useCharacterBuilder()
-  const { classes: selectedClasses, edition, proficiencies = [] } = state
+  const { classes: selectedClasses, edition, proficiencies = [], editMode } = state
+
+  // In edit mode, existing selections are locked — the user can only add new ones
+  const lockedByGroup = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    if (!editMode?.lockedSelections) return map
+    for (const [key, ids] of Object.entries(editMode.lockedSelections)) {
+      map.set(key, new Set(ids))
+    }
+    return map
+  }, [editMode?.lockedSelections])
 
   // Build proficiency groups across all selected classes
   const profGroups: ProfGroup[] = useMemo(() => {
@@ -126,7 +137,7 @@ const DetailsStep = () => {
   const selectionsByGroup = useMemo(() => {
     const map = new Map<string, Set<string>>()
     for (const p of (proficiencies as Proficiency[])) {
-      // Rebuild the key from the stored proficiency
+      if (!p?.id || !p?.option?.id) continue
       const key = profKey(p.id, p.taxonomy)
       if (!map.has(key)) map.set(key, new Set())
       map.get(key)!.add(p.option.id)
@@ -138,6 +149,9 @@ const DetailsStep = () => {
     (groupKey: string, classId: string, taxonomy: ProficiencyTaxonomy, choiceCount: number, option: ProficiencyOption) => {
       const current = selectionsByGroup.get(groupKey) ?? new Set<string>()
       const isSelected = current.has(option.id)
+      const isLocked = lockedByGroup.get(groupKey)?.has(option.id) ?? false
+
+      if (isSelected && isLocked) return
 
       let nextIds: Set<string>
       if (isSelected) {
@@ -190,7 +204,7 @@ const DetailsStep = () => {
 
       setProficiencies([...otherProfs, ...fixedProfs, ...groupProfs])
     },
-    [selectionsByGroup, proficiencies, profGroups, edition, setProficiencies]
+    [selectionsByGroup, lockedByGroup, proficiencies, profGroups, edition, setProficiencies]
   )
 
   if (profGroups.length === 0) {
@@ -265,17 +279,20 @@ const DetailsStep = () => {
                     {group.options.map((opt: ProficiencyOption) => {
                       const isChosen = selected.has(opt.id)
                       const isFixed = group.fixed.some((f: ProficiencyOption) => f.id === opt.id)
+                      const isLocked = lockedByGroup.get(group.key)?.has(opt.id) ?? false
+                      const isNonInteractive = isFixed || (isChosen && isLocked)
                       const costLabel = opt.cost ? ` (${opt.cost} slot${opt.cost > 1 ? 's' : ''})` : ''
 
                       return (
                         <Chip
                           key={opt.id}
                           label={`${opt.name}${costLabel}`}
+                          icon={isLocked && isChosen ? <LockIcon sx={{ fontSize: 14 }} /> : undefined}
                           color={isChosen ? 'primary' : 'default'}
                           variant={isChosen ? 'filled' : 'outlined'}
                           disabled={isFixed}
                           onClick={
-                            isFixed
+                            isNonInteractive
                               ? undefined
                               : () =>
                                   toggleOption(
@@ -286,7 +303,7 @@ const DetailsStep = () => {
                                     opt
                                   )
                           }
-                          sx={{ cursor: isFixed ? 'default' : 'pointer' }}
+                          sx={{ cursor: isNonInteractive ? 'default' : 'pointer' }}
                         />
                       )
                     })}

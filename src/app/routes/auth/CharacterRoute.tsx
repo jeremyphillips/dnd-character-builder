@@ -18,7 +18,8 @@ import Breadcrumbs from '@/ui/elements/Breadcrumbs/Breadcrumbs'
 export default function CharacterRoute() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  useAuth()
+  const { user } = useAuth()
+  const isPlatformAdmin = user?.role === 'admin' || user?.role === 'superadmin'
   const breadcrumbs = useBreadcrumbs()
 
   const welcomeState = location.state as { welcomeCampaign?: string; campaignId?: string } | null
@@ -80,6 +81,7 @@ export default function CharacterRoute() {
       pendingMemberships={state.pendingMemberships}
       isOwner={state.isOwner}
       isAdmin={state.isAdmin}
+      isPlatformAdmin={isPlatformAdmin}
       ownerName={state.ownerName}
       error={state.error}
       success={state.success}

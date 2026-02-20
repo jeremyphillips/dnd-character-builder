@@ -158,6 +158,61 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     setState(createInitialBuilderState(mode, overrides))
   }
 
+  const loadCharacterIntoBuilder = (
+    character: import('@/shared').CharacterSheet & {
+      _id?: string
+      name?: string
+      /** @deprecated Legacy field — backfills classes[0].classId when missing. */
+      class?: string
+      /** @deprecated Legacy field — backfills totalLevel when missing. */
+      level?: number
+    },
+    stepId: import('../types').StepId,
+  ) => {
+    const mode = (character.type ?? 'pc') as CharacterType
+    const config = getStepConfig(mode)
+    const stepIndex = config.findIndex(s => s.id === stepId)
+    const step = stepIndex >= 0
+      ? { id: config[stepIndex].id, name: config[stepIndex].label }
+      : { id: stepId, name: stepId }
+
+    // Normalize: backfill classId from deprecated top-level `class` field
+    const rawClasses = character.classes?.length ? character.classes : [{ level: character.level ?? 1 }]
+    const classes = rawClasses.map((cls, i) => ({
+      ...cls,
+      classId: cls.classId ?? (i === 0 ? character.class : undefined),
+    }))
+
+    // Build locked selections from the character's existing proficiencies
+    const lockedSelections: Record<string, string[]> = {}
+    for (const p of (character.proficiencies ?? []) as import('@/shared/types/character.core').Proficiency[]) {
+      if (!p?.id || !p?.option?.id) continue
+      const key = `${p.id}::${p.taxonomy}`
+      if (!lockedSelections[key]) lockedSelections[key] = []
+      lockedSelections[key].push(p.option.id)
+    }
+
+    setState({
+      step,
+      type: mode,
+      name: character.name,
+      hitPointMode: 'average',
+      edition: character.edition as EditionId | undefined,
+      setting: character.setting as SettingId | undefined,
+      race: character.race,
+      alignment: character.alignment,
+      classes,
+      activeClassIndex: 0,
+      totalLevel: character.totalLevel ?? character.level ?? 1,
+      xp: character.xp ?? 0,
+      equipment: character.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
+      proficiencies: character.proficiencies ?? [],
+      spells: character.spells ?? [],
+      wealth: character.wealth ?? { gp: 0, sp: 0, cp: 0 },
+      editMode: { characterId: character._id ?? '', stepId, lockedSelections },
+    })
+  }
+
 
   const setName = (name: string) =>
     updateState(s => ({ ...s, name }))
@@ -596,6 +651,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         allocatedLevels,
         remainingLevels,
 
+        loadCharacterIntoBuilder,
         setCharacterType,
         openBuilder,
         setName,

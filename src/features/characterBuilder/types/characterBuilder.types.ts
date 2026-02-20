@@ -8,6 +8,13 @@ export type { HitPointMode }
 
 export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
 
+export type EditMode = {
+  characterId: string
+  stepId: StepId
+  /** Per-group locked option IDs (group key → option IDs). Prevents deselecting existing choices. */
+  lockedSelections?: Record<string, string[]>
+}
+
 export type CharacterBuilderState = CharacterSheet & {
   name?: string
   hitPointMode: HitPointMode
@@ -18,6 +25,8 @@ export type CharacterBuilderState = CharacterSheet & {
   activeClassIndex: number | null
   /** Fields pre-filled via overrides — their corresponding steps are skipped and locked. */
   lockedFields?: Set<StepId>
+  /** When set, the builder is editing a single step on an existing character. */
+  editMode?: EditMode | null
 }
 
 /** Fields that can be pre-filled when launching the builder. */
@@ -30,6 +39,14 @@ export type BuilderOverrides = {
 
 export type CharacterBuilderContextValue = {
   state: CharacterBuilderState
+
+  // edit mode
+  loadCharacterIntoBuilder: (character: CharacterSheet & {
+    _id?: string
+    name?: string
+    class?: string
+    level?: number
+  }, stepId: StepId) => void
 
   // basic character info
   setCharacterType: (type: CharacterType) => void

@@ -1,27 +1,49 @@
 import type { CharacterDoc } from '@/shared'
 
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
+import Tooltip from '@mui/material/Tooltip'
+import EditIcon from '@mui/icons-material/Edit'
 
 type ProficienciesCardProps = {
   proficiencies: CharacterDoc['proficiencies']
   wealth: CharacterDoc['wealth']
+  /** When provided, renders an Edit button. */
+  onEdit?: () => void
+  /** Disables the Edit button (e.g. no proficiency slots available for the character's class). */
+  editDisabled?: boolean
 }
 
-export default function ProficienciesCard({ proficiencies, wealth }: ProficienciesCardProps) {
-  console.log('ProficienciesCard proficiencies', proficiencies)
-  const taxanomyName =
+export default function ProficienciesCard({ proficiencies, wealth, onEdit, editDisabled }: ProficienciesCardProps) {
+  const taxonomyName =
     (proficiencies && Array.isArray(proficiencies) && proficiencies[0]?.taxonomy) ?? 'Proficiencies'
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
-        <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-          {taxanomyName}
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+            {taxonomyName}
+          </Typography>
+          {onEdit && (
+            <Tooltip title={editDisabled ? 'All proficiency slots are filled' : ''}>
+              <span>
+                <Button
+                  size="small"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={onEdit}
+                  disabled={editDisabled}
+                >
+                  Edit
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+        </Stack>
         {(proficiencies ?? []).length > 0 ? (
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
             {(proficiencies ?? []).map((p, i) => (

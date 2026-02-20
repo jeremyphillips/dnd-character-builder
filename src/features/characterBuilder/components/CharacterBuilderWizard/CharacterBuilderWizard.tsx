@@ -11,6 +11,9 @@ export type CharacterBuilderWizardProps = {
   onGenerate: () => void
   isGenerating?: boolean
   hitPointMode?: HitPointMode
+  /** When set, locks the wizard to a single step with Save/Cancel buttons. */
+  editStepId?: string
+  onSave?: () => void
   /** Optional cancel/exit action (useful for inline usage without a modal). */
   onCancel?: () => void
   children: (slots: {
@@ -25,6 +28,8 @@ const CharacterBuilderWizard = ({
   onGenerate,
   isGenerating = false,
   hitPointMode = 'average',
+  editStepId,
+  onSave,
   onCancel,
   children,
 }: CharacterBuilderWizardProps) => {
@@ -44,6 +49,7 @@ const CharacterBuilderWizard = ({
     }
   }, [hitPointMode, state.hitPointMode, setHitPointMode])
 
+  const isEditMode = !!editStepId
   const stepConfig = getStepConfig(state.type ?? 'pc')
   const currentStepIndex = Math.max(0, stepConfig.findIndex(step => step.id === state.step.id))
   const currentStep = stepConfig[currentStepIndex]
@@ -57,7 +63,22 @@ const CharacterBuilderWizard = ({
 
   const content = <StepComponent />
 
-  const actions = (
+  const actions = isEditMode ? (
+    <>
+      {onCancel && (
+        <Button onClick={onCancel} variant="outlined" color="secondary">
+          Cancel
+        </Button>
+      )}
+      <Button
+        onClick={onSave ?? onGenerate}
+        variant="contained"
+        color="primary"
+      >
+        Save
+      </Button>
+    </>
+  ) : (
     <>
       {onCancel && isFirstStep && (
         <Button onClick={onCancel} variant="outlined" color="secondary" disabled={isGenerating}>

@@ -13,16 +13,19 @@ type ProficienciesCardProps = {
 }
 
 export default function ProficienciesCard({ proficiencies, wealth }: ProficienciesCardProps) {
+  console.log('ProficienciesCard proficiencies', proficiencies)
+  const taxanomyName =
+    (proficiencies && Array.isArray(proficiencies) && proficiencies[0]?.taxonomy) ?? 'Proficiencies'
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
         <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-          Proficiencies
+          {taxanomyName}
         </Typography>
         {(proficiencies ?? []).length > 0 ? (
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
             {(proficiencies ?? []).map((p, i) => (
-              <Chip key={i} label={typeof p === 'string' ? p : p.name} size="small" variant="outlined" />
+              <Chip key={i} label={typeof p === 'string' ? p : p.option?.name ?? p.name} size="small" variant="outlined" />
             ))}
           </Stack>
         ) : (

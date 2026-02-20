@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { CharacterDoc } from '@/shared'
 import type { EditionId } from '@/data'
-import type { LevelUpResult } from '@/features/levelUp'
+import type { LevelUpResult } from '@/features/character/level-up-flow'
 import { getXpByLevelAndEdition } from '@/domain/character'
 import { apiFetch } from '@/app/api'
 import type { CampaignSummary, PendingMembership } from './useCharacter'
@@ -42,6 +42,9 @@ export function useCharacterActions(
     setError, setSuccess, syncFromCharacter,
   } = deps
 
+  const isNpc = character?.type === 'npc'
+  const notify = (msg: string) => { if (!isNpc) setSuccess(msg) }
+
   const [approvingId, setApprovingId] = useState<string | null>(null)
 
   const saveCharacter = useCallback(async (partial: Record<string, unknown>) => {
@@ -55,7 +58,7 @@ export function useCharacterActions(
       })
       setCharacter(data.character)
       syncFromCharacter(data.character)
-      setSuccess('Saved')
+      notify('Saved')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
       throw err
@@ -68,7 +71,7 @@ export function useCharacterActions(
     try {
       await apiFetch(`/api/campaign-members/${campaignMemberId}/approve`, { method: 'POST' })
       setPendingMemberships((prev) => prev.filter((m) => m.campaignMemberId !== campaignMemberId))
-      setSuccess('Character approved for campaign')
+      notify('Character approved for campaign')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve')
     } finally {
@@ -82,7 +85,7 @@ export function useCharacterActions(
     try {
       await apiFetch(`/api/campaign-members/${campaignMemberId}/reject`, { method: 'POST' })
       setPendingMemberships((prev) => prev.filter((m) => m.campaignMemberId !== campaignMemberId))
-      setSuccess('Character rejected')
+      notify('Character rejected')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject')
     } finally {
@@ -125,7 +128,7 @@ export function useCharacterActions(
     })
     setCharacter(data.character)
     syncFromCharacter(data.character)
-    setSuccess('Level-up cancelled. XP has been reverted.')
+    notify('Level-up cancelled. XP has been reverted.')
   }, [id, character, setCharacter, syncFromCharacter, setSuccess])
 
   const handleLevelUpComplete = useCallback(async (result: LevelUpResult) => {
@@ -147,7 +150,7 @@ export function useCharacterActions(
     })
     setCharacter(data.character)
     syncFromCharacter(data.character)
-    setSuccess(`${character?.name ?? 'Character'} has been advanced to level ${result.totalLevel}!`)
+    notify(`${character?.name ?? 'Character'} has been advanced to level ${result.totalLevel}!`)
   }, [id, character?.name, setCharacter, syncFromCharacter, setSuccess])
 
   const handleCharacterStatusChange = useCallback(async (statusAction: {
@@ -168,7 +171,7 @@ export function useCharacterActions(
         ),
       )
       const label = statusAction.newStatus === 'deceased' ? 'marked as deceased' : 'set to inactive'
-      setSuccess(`${character?.name ?? 'Character'} has been ${label} in ${statusAction.campaignName}.`)
+      notify(`${character?.name ?? 'Character'} has been ${label} in ${statusAction.campaignName}.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update character status')
     }
@@ -187,7 +190,7 @@ export function useCharacterActions(
             : c,
         ),
       )
-      setSuccess(`${character?.name ?? 'Character'} has been reactivated in ${campaignName}.`)
+      notify(`${character?.name ?? 'Character'} has been reactivated in ${campaignName}.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reactivate character')
     }

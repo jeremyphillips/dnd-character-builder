@@ -5,7 +5,7 @@ import type { EditionId } from '@/data'
 import { editions, equipment } from '@/data'
 import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
 import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
-import type { LevelUpResult } from '@/features/levelUp'
+import type { LevelUpResult } from '@/features/character/level-up-flow'
 import { ROUTES } from '@/app/routes'
 
 import type {
@@ -25,9 +25,10 @@ import {
   MagicItemsCard,
   ClassFeaturesCard,
   SpellsCard,
-  NarrativeCard,
-  CharacterModals,
-} from '@/features/character/CharacterView/sections'
+  NarrativeCard
+} from './sections'
+
+import { CharacterModalManager } from '@/features/character/modals'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -284,7 +285,7 @@ console.log('CharacterView character', character)
       )}
 
       {/* Modals */}
-      <CharacterModals
+      <CharacterModalManager
         character={character}
         currentLevel={currentLevel}
         maxLevel={maxLevel}

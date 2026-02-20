@@ -1,8 +1,9 @@
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import { classes as classesData } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassProgression } from '@/domain/character'
+import { getClassProgression } from '@/features/character/domain/progession'
 import type { ClassProgression } from '@/data/classes/types'
+import { useCombatStats } from '@/features/character/hooks'
 import { EditableSelect } from '@/ui/fields'
 
 import Box from '@mui/material/Box'
@@ -69,8 +70,12 @@ export default function CombatStatsCard({
   alignmentOptions,
   onSave,
 }: CombatStatsCardProps) {
+  const { calculatedArmorClass } = useCombatStats(character)
+
+  // TODO: Add combat stats calculation
   //const hasCombat = character.hitPoints?.total != null || character.armorClass?.current != null
   const hasCombat = true
+
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
@@ -81,13 +86,15 @@ export default function CombatStatsCard({
         {hasCombat ? (
           <Stack direction="row" spacing={3} sx={{ mt: 0.5, mb: 2 }}>
             <Box sx={{ textAlign: 'center' }}>
-              {/* <StatCircle label="AC2" value={character.armorClass?.current ?? character.armorClass?.base ?? '—'} /> */}
-              <StatShield label="AC" value={character.armorClass?.current ?? character.armorClass?.base ?? '—'} />
+              <StatShield
+                label="AC"
+                value={calculatedArmorClass.value}
+              />
 
-              {character.armorClass?.calculation && (
+              {calculatedArmorClass && (
                 <>
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
-                  {character.armorClass.calculation}
+                  {calculatedArmorClass.breakdown}
                 </Typography>
                 </>
               )}

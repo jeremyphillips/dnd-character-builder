@@ -1,7 +1,7 @@
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import { classes as classesData } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassProgression } from '@/domain/character'
+import { getClassProgression } from '@/features/character/domain/progession'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'

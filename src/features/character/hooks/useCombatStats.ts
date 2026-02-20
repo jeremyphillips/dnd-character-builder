@@ -2,9 +2,8 @@ import { useMemo } from 'react'
 import type { Character } from '@/shared/types/character.core'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { getArmorConfigurations, getActiveArmorConfig } from '../domain/combat/armorConfigurations'
-import type { ArmorConfiguration } from '../domain/combat/armorConfigurations'
+import type { ArmorConfiguration } from '@features/character/domain/combat'
 
-export type { ArmorConfiguration }
 
 export function useCombatStats(character: Character) {
   const { editionId: activeEditionId } = useActiveCampaign()

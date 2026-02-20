@@ -5,7 +5,7 @@ import { getById } from '@/domain/lookups'
 import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { useCombatStats } from '@/features/character/hooks'
-import type { ArmorConfiguration } from '@/features/character/hooks/useCombatStats'
+import type { ArmorConfiguration } from '@/features/character/domain/combat'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'

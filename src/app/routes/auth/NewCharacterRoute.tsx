@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
-import { useCharacterBuilder, CharacterBuilderWizard } from '@/characterBuilder'
+import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { apiFetch } from '@/app/api'
 import { ROUTES } from '@/app/routes'
 import type { EditionId, SettingId } from '@/data'

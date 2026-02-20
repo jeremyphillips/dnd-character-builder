@@ -19,7 +19,7 @@ import Alert from '@mui/material/Alert'
 
 import EditIcon from '@mui/icons-material/Edit'
 import PersonIcon from '@mui/icons-material/Person'
-import { CharacterBuilderLauncher } from '@/characterBuilder'
+import { CharacterBuilderLauncher } from '@/features/characterBuilder/components'
 
 // ---------------------------------------------------------------------------
 // Helpers

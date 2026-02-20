@@ -1,5 +1,5 @@
 import { useAuth } from '@/app/providers/AuthProvider'
-import CampaignHorizontalCard from '@/domain/campaign/components/CampaignHorizontalCard/CampaignHorizontalCard'
+import { CampaignHorizontalCard }from '@/features/campaign/components'
 import { useCampaigns } from '@/features/campaign/hooks'
 import { Typography } from '@mui/material'
 

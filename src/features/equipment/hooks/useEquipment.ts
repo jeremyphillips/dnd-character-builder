@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/app/api";
 import type { Campaign } from "@/shared/types/campaign.types";
 import { ApiError } from "@/app/api"
-import type { CampaignFormData } from "@/features/campaign/components/CampaignForm";
+import type { CampaignFormData } from "@/features/campaign/components/CampaignForm/CampaignForm";
 
-export function useEquipment() {
+export function useEquipment(filters?: {
+  campaignId?: string;
+  edition?: string;
+}) {
   const [equipment, setEquipment] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -12,11 +15,17 @@ export function useEquipment() {
 
   useEffect(() => {
     fetchEquipment();
-  }, []);
+  }, [filters?.campaignId, filters?.edition]);
+  
 
   async function fetchEquipment() {
+    const params = new URLSearchParams()
+
+    if (filters?.campaignId) params.append("campaignId", filters.campaignId);
+    if (filters?.edition) params.append("edition", filters.edition)
+  
     try {
-      const data = await apiFetch<{ equipment: Campaign[] }>("/api/campaigns");
+      const data = await apiFetch<{ equipment: Campaign[] }>(`/api/equipment?${params.toString()}`);
       setEquipment(data.equipment ?? []);
     } catch (err) {
       setError("Failed to load equipment");

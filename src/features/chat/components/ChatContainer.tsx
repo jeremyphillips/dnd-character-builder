@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import useChat from '../hooks/useChat'
 import type { ChatMessage } from '../types'
-import { useCharacterBuilder, CharacterBuilderWizard, type CharacterBuilderState } from '@/characterBuilder'
-import { AppModal } from '@/ui/modals'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
+import { AppModal, ConfirmModal } from '@/ui/modals'
 import { apiFetch } from '@/app/api'
 import { type CharacterClassInfo } from '@/shared'
+import { generateHitPoints } from '@/features/character/domain/progression/hitPoints'
 import { LoadingOverlay } from '@/ui/elements'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Alert from '@mui/material/Alert'
+import type { CharacterBuilderState } from '@/features/characterBuilder/types'
 
 // ---------------------------------------------------------------------------
 // ChatMessageItem
@@ -106,9 +109,11 @@ function mergeCharacterData(
       ...(ai.wealth ?? {}),
     },
 
+    // Hit points generated from builder state
+    hitPoints: generateHitPoints(builderState.classes, builderState.edition, builderState.hitPointMode),
+
     // AI-generated fields
     stats: ai.stats ?? {},
-    hitPoints: ai.hitPoints ?? {},
     armorClass: ai.armorClass ?? {},
     narrative: ai.narrative ?? {},
 
@@ -161,6 +166,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
 
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
+  const [confirmClose, setConfirmClose] = useState(false)
 
   const formatPrompt = (s: CharacterBuilderState) => {
     const baseCharacter = {
@@ -267,7 +273,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
         {({ content, actions }) => (
           <AppModal
             open={isModalOpen}
-            onClose={generating ? () => {} : onCloseModal}
+            onClose={generating ? () => {} : () => setConfirmClose(true)}
             size="full"
             showCloseButton={!generating}
             closeOnBackdropClick={!generating}
@@ -279,6 +285,21 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
           </AppModal>
         )}
       </CharacterBuilderWizard>
+
+      <ConfirmModal
+        open={confirmClose}
+        headline="Discard character?"
+        description="Your current progress will be lost if you close the builder."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        confirmColor="error"
+        onConfirm={() => {
+          setConfirmClose(false)
+          resetState()
+          onCloseModal()
+        }}
+        onCancel={() => setConfirmClose(false)}
+      />
 
       {/* Generation loader overlay inside the modal */}
       <LoadingOverlay

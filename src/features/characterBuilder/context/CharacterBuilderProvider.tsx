@@ -9,10 +9,10 @@ import {
 } from '../constants'
 import { getById } from '@/domain/lookups'
 import { getOptions } from '@/domain/options'
-import {
+import { 
   getSubclassUnlockLevel,
-  getXpByLevelAndEdition
-} from '@/domain/character'
+  getXpByLevelAndEdition 
+} from '@/features/character/domain/progression'
 import {
   calculateEquipmentWeight,
   calculateEquipmentCost
@@ -421,6 +421,9 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const setAlignment = (alignment: string) =>
     guardedUpdate(s => ({ ...s, alignment }))
 
+  const setHitPointMode = (hitPointMode: CharacterBuilderState['hitPointMode']) =>
+    updateState(s => ({ ...s, hitPointMode }))
+
   const setProficiencies = (proficiencies: Proficiency[]) =>
     updateState(s => ({ ...s, proficiencies }))
 
@@ -611,6 +614,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         updateSubclass: updateClassDefinition,
         allocateRemainingLevels,
 
+        setHitPointMode,
         setProficiencies,
         setSpells,
         setWealth,

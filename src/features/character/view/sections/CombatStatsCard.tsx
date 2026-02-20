@@ -1,7 +1,7 @@
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import { classes as classesData } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassProgression } from '@/features/character/domain/progession'
+import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { useCombatStats } from '@/features/character/hooks'
 import { EditableSelect } from '@/ui/fields'

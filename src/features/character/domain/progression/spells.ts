@@ -1,5 +1,5 @@
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
-import { getClassProgression } from '@/features/character/domain/progession'
+import { getClassProgression } from '@/features/character/domain/progression'
 import { getSpellLimits } from '@/domain/spells'
 import { getAvailableSpells } from '@/domain/spells'
 

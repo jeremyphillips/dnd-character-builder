@@ -1,6 +1,6 @@
 import { classes } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getSubclassNameById } from '@/features/character/domain/lookups'
+import { getSubclassNameById } from '@/features/character/domain/reference'
 
 export interface CharacterForLabel {
   name: string

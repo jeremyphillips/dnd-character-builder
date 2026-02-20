@@ -1,8 +1,8 @@
-import { useCharacterBuilder } from '@/characterBuilder/context'
-import { InvalidationNotice } from '@/characterBuilder/components'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { InvalidationNotice } from '@/features/characterBuilder/components'
 import type { EditionId, SettingId } from '@/data'
 import { ButtonGroup } from '@/ui/elements'
-import { getAllowedRaces } from '@/domain/character/races'
+import { getAllowedRaces } from '@/features/character/domain/validation'
 
 const RaceStep = () => {
   const { state, setRace, stepNotices, dismissNotice } = useCharacterBuilder()

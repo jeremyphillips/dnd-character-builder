@@ -13,7 +13,7 @@ import {
 import { type CharacterBuilderState, type StepId, type BuilderOverrides } from '../types'
 import type { CharacterType } from '@/shared/types/character.core'
 import type { EditionId, SettingId } from '@/data'
-import { getClassProgression } from '@/domain/character'
+import { getClassProgression } from '@/features/character/domain/progression'
 
 // ---------------------------------------------------------------------------
 // Step config
@@ -143,6 +143,7 @@ export function createInitialBuilderState(
     step: { id: steps[0].id, name: steps[0].label },
     type: mode,
     name: undefined,
+    hitPointMode: 'average',
     xp: 0,
     edition: (overrides?.edition ?? undefined) as EditionId | undefined,
     setting: (overrides?.setting ?? undefined) as SettingId | undefined,

@@ -4,12 +4,11 @@
 // take the average or roll.
 
 import { useMemo, useCallback } from 'react'
-import { getClassProgression } from '@/domain/character'
+import { getHitPointInfo, getAverageHpForLevel, rollHitDie } from '@/features/character/domain/progression/hitPoints'
 import type { LevelUpState } from '../levelUp.types'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Stack from '@mui/material/Stack'
@@ -35,27 +34,19 @@ export default function LevelUpHitPointsStep({
 }: LevelUpHitPointsStepProps) {
   const { edition, primaryClassId, hpGained, hpMethod } = state
 
-  const prog = useMemo(
-    () => getClassProgression(primaryClassId, edition),
+  const hpInfo = useMemo(
+    () => getHitPointInfo(primaryClassId, edition),
     [primaryClassId, edition],
   )
 
-  const hitDie = prog?.hitDie ?? 8
-  const averageHp = Math.floor(hitDie / 2) + 1
-
-  // 4e uses flat hpPerLevel instead of a hit die
-  const isFlat = hitDie === 0 && prog?.hpPerLevel != null
-  const flatHp = prog?.hpPerLevel ?? averageHp
+  const { hitDie, averageHp, isFlat, flatHp } = hpInfo
 
   const handleAverage = useCallback(() => {
-    const hp = isFlat ? flatHp : averageHp
-    onChange({ hpGained: hp, hpMethod: 'average' })
-  }, [isFlat, flatHp, averageHp, onChange])
+    onChange({ hpGained: getAverageHpForLevel(hpInfo), hpMethod: 'average' })
+  }, [hpInfo, onChange])
 
   const handleRoll = useCallback(() => {
-    const rolled = Math.floor(Math.random() * hitDie) + 1
-    // Minimum of 1 HP per level
-    onChange({ hpGained: Math.max(1, rolled), hpMethod: 'rolled' })
+    onChange({ hpGained: rollHitDie(hitDie), hpMethod: 'rolled' })
   }, [hitDie, onChange])
 
   return (

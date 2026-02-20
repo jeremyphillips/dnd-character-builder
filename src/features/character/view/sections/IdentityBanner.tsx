@@ -3,8 +3,8 @@ import type { CampaignSummary } from '@/features/character/hooks'
 import type { EditionId } from '@/data'
 import { classes as classesData, editions, settings, races } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
-import { getSubclassNameById } from '@/features/character/domain/lookups'
-import { getXpByLevelAndEdition } from '@/features/character/domain/progession'
+import { getSubclassNameById } from '@/features/character/domain/reference'
+import { getXpByLevelAndEdition } from '@/features/character/domain/progression'
 import { CampaignHorizontalCard }from '@/features/campaign/components'
 import {
   ImageUploadField,

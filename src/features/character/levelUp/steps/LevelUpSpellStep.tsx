@@ -6,7 +6,7 @@
 // builder context).
 
 import { useMemo, useCallback } from 'react'
-import { getClassProgression } from '@/domain/character'
+import { getClassProgression } from '@/features/character/domain/progression'
 import { getAvailableSpells, groupSpellsByLevel, getSpellLimits } from '@/domain/spells'
 import type { SpellWithEntry } from '@/domain/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'

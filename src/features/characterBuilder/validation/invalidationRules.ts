@@ -15,10 +15,11 @@ import { getOptions } from '@/domain/options'
 import { classes as classCatalog, races as raceCatalog, equipment } from '@/data'
 import type { AlignmentId } from '@/data'
 import { spells as spellCatalog } from '@/data/classes/spells'
-import { getClassProgression, getClassRequirement, getAlignmentsByEdition } from '@/domain/character'
-import { getAvailableSpells, getSpellLimits } from '@/domain/spells'
+import { getClassRequirement } from '@/features/character/domain/validation'
+import { getAlignmentsByEdition } from '@/features/character/domain/reference'
 import { resolveEquipmentEdition } from '@/domain/equipment'
 import { getById } from '@/domain/lookups'
+import { getAvailableSpellsByEditionAndClass, computeSpellLimits } from '@/features/character/domain/progression'
 
 const { weapons: weaponsData, armor: armorData, gear: gearData } = equipment
 
@@ -69,59 +70,6 @@ function itemHasEdition(
 }
 
 /**
- * Compute per-level spell limits for the given state.
- * Returns { perLevelMax, maxSpellLevel, totalKnown } identical to SpellStep's logic.
- */
-function computeSpellLimits(state: CharacterBuilderState) {
-  const perLevelMax = new Map<number, number>()
-  let maxSpellLevel = 0
-  let totalKnown = 0
-
-  if (!state.edition) return { perLevelMax, maxSpellLevel, totalKnown }
-
-  for (const cls of state.classes) {
-    if (!cls.classId) continue
-    const prog = getClassProgression(cls.classId, state.edition)
-    if (!prog?.spellProgression) continue
-
-    const limits = getSpellLimits(prog, cls.level)
-    if (limits.cantrips > 0) {
-      perLevelMax.set(0, (perLevelMax.get(0) ?? 0) + limits.cantrips)
-    }
-    for (let i = 0; i < limits.slotsByLevel.length; i++) {
-      const spellLevel = i + 1
-      if (limits.slotsByLevel[i] > 0) {
-        perLevelMax.set(spellLevel, (perLevelMax.get(spellLevel) ?? 0) + limits.slotsByLevel[i])
-      }
-    }
-    maxSpellLevel = Math.max(maxSpellLevel, limits.maxSpellLevel)
-    totalKnown += limits.totalKnown
-  }
-
-  return { perLevelMax, maxSpellLevel, totalKnown }
-}
-
-/**
- * Build a set of available spell IDs + a level map for a given state.
- */
-function getAvailableSpellsForState(state: CharacterBuilderState) {
-  const availableIds = new Set<string>()
-  const spellLevelMap = new Map<string, number>()
-
-  if (!state.edition) return { availableIds, spellLevelMap }
-
-  for (const cls of state.classes) {
-    if (!cls.classId) continue
-    for (const s of getAvailableSpells(cls.classId, state.edition)) {
-      availableIds.add(s.spell.id)
-      spellLevelMap.set(s.spell.id, s.entry.level)
-    }
-  }
-
-  return { availableIds, spellLevelMap }
-}
-
-/**
  * Detect which spells would be invalidated in the proposed next state.
  * Mirrors the pruning logic from SpellStep but is pure / stateless.
  */
@@ -132,7 +80,7 @@ function detectInvalidSpells(
   const selected = next.spells ?? []
   if (selected.length === 0) return []
 
-  const { availableIds, spellLevelMap } = getAvailableSpellsForState(next)
+  const { availableIds, spellLevelMap } = getAvailableSpellsByEditionAndClass(next)
   const { perLevelMax, maxSpellLevel, totalKnown } = computeSpellLimits(next)
 
   const removed: string[] = []

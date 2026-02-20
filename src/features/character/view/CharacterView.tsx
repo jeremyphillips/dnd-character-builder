@@ -5,7 +5,7 @@ import type { EditionId } from '@/data'
 import { editions, equipment } from '@/data'
 import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
 import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
-import type { LevelUpResult } from '@/features/character/level-up-flow'
+import type { LevelUpResult } from '@/features/character/levelUp'
 import { ROUTES } from '@/app/routes'
 
 import type {

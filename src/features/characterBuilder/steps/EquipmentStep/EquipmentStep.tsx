@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { useCharacterBuilder } from '@/characterBuilder/context'
-import { InvalidationNotice } from '@/characterBuilder/components'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { ButtonGroup } from '@/ui/elements'
 import { classes, equipment, type EditionId } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassRequirement } from '@/domain/character'
+import { getClassRequirement } from '@/features/character/domain/validation'
 import {
   calculateEquipmentCost,
   getAllowedEquipment,

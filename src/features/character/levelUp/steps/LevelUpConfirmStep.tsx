@@ -3,7 +3,8 @@
 // Final summary of all level-up choices before confirmation.
 
 import { useMemo } from 'react'
-import { getClassProgression, getSubclassNameById } from '@/domain/character'
+import { getSubclassNameById } from '@/features/character/domain/reference'
+import { getClassProgression } from '@/features/character/domain/progression'
 import { spells as spellCatalog } from '@/data/classes/spells'
 import type { LevelUpState } from '../levelUp.types'
 

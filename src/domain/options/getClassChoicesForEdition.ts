@@ -1,6 +1,6 @@
 import { classes, type EditionId } from "@/data"
 import type { SubclassOption } from '@/data/classes/types'
-import { getById } from '../lookups'
+import { getById } from '@/domain/lookups'
 
 export const getClassChoicesForEdition = (
   classId?: string,

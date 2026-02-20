@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import { CharacterBuilderLauncher } from '@/characterBuilder'
+import { CharacterBuilderLauncher } from '@/features/characterBuilder/components'
 
 export default function CharacterBuilderRoute() {
 

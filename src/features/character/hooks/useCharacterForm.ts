@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { CharacterDoc } from '@/shared'
 import type { EditionId, SettingId } from '@/data'
 import { getAllowedRaces } from '@/features/character/domain/validation'
-import { getAlignmentOptionsForCharacter } from '@/features/character/domain/lookups'
+import { getAlignmentOptionsForCharacter } from '@/features/character/domain/reference'
 
 export interface CharacterNarrative {
   personalityTraits: string[]

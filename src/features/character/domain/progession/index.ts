@@ -1,3 +1,5 @@
 export * from './classProgression'
 // export * from 'levelProgression'
 export * from './subclassUnlock'
+export * from './spells'
+export * from './xp'

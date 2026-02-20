@@ -7,7 +7,7 @@ import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { AppModal } from '@/ui/modals'
-import { getLevelForXp, getXpByLevelAndEdition } from '@/domain/character'
+import { getLevelForXp, getXpByLevelAndEdition } from '@/features/character/domain/progession'
 import type { EditionId } from '@/data'
 
 // ---------------------------------------------------------------------------

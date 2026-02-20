@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import type { CharacterDoc } from '@/shared'
 import type { EditionId } from '@/data'
 import type { LevelUpResult } from '@/features/character/level-up-flow'
-import { getXpByLevelAndEdition } from '@/domain/character'
+import { getXpByLevelAndEdition } from '@/features/character/domain/progession'
 import { apiFetch } from '@/app/api'
 import type { CampaignSummary, PendingMembership } from './useCharacter'
 

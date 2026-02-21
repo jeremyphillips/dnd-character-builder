@@ -162,7 +162,7 @@ export default function CharacterView({
   const editionObj = editions.find(e => e.id === character.edition)
   const maxLevel = editionObj?.progression?.maxLevel ?? 20
 
-  const hasStats = character.stats && Object.values(character.stats).some(v => v != null)
+  const hasStats = character.abilityScores && Object.values(character.abilityScores).some(v => v != null)
 
   // Magic items
   const charMagicItemIds = character.equipment?.magicItems ?? []
@@ -207,8 +207,6 @@ export default function CharacterView({
 
   return (
     <Box sx={{ maxWidth: 920, mx: 'auto' }}>
-      
-
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
@@ -252,7 +250,7 @@ export default function CharacterView({
       <Grid container spacing={2} sx={{ mb: 2 }}>
         {hasStats && (
           <Grid size={{ xs: 12, md: 2 }}>
-            <AbilityScoresCard stats={character.stats!} />
+            <AbilityScoresCard abilityScores={character.abilityScores!} />
           </Grid>
         )}
         <Grid size={{ xs: 12, md: hasStats ? 6 : 7 }}>

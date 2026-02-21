@@ -3,14 +3,19 @@ import useChat from '../hooks/useChat'
 import type { ChatMessage } from '../types'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
+import type { AbilityScoreMode } from '@/features/characterBuilder/components/CharacterBuilderWizard/CharacterBuilderWizard'
 import { AppModal, ConfirmModal } from '@/ui/modals'
 import { apiFetch } from '@/app/api'
 import { type CharacterClassInfo } from '@/shared'
+import { editions, classes as classesData } from '@/data'
+import { generateAbilityScores, prioritizeAbilityScores } from '@/features/character/domain/generation/abilityScores'
 import { generateHitPoints } from '@/features/character/domain/progression/hitPoints'
 import { LoadingOverlay } from '@/ui/elements'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Alert from '@mui/material/Alert'
+import type { AbilityScoreMethod } from '@/data/types'
+import type { AbilityScores } from '@/shared/types/character.core'
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
 
 // ---------------------------------------------------------------------------
@@ -73,11 +78,52 @@ function parseAiResponse(message: ChatMessage): Record<string, unknown> | null {
 }
 
 // ---------------------------------------------------------------------------
+// Ability score generation helpers
+// ---------------------------------------------------------------------------
+
+function getEditionAbilityScoreMethod(editionId: string | undefined): AbilityScoreMethod {
+  const ed = editions.find(e => e.id === editionId)
+  return ed?.generation?.abilityScoreMethod ?? '4d6-drop-lowest'
+}
+
+function getClassAbilityPriority(classId: string | undefined): (keyof AbilityScores)[] {
+  if (!classId) return []
+  const cls = classesData.find(c => c.id === classId)
+  return cls?.generation?.abilityPriority ?? []
+}
+
+/**
+ * Resolve ability scores based on the selected mode.
+ * - 'default': generate using the edition method, prioritized by class
+ * - 'ai': return null scores so the AI generates them
+ * - 'custom': placeholder (TODO: implement custom score entry UI)
+ */
+function resolveAbilityScores(
+  mode: AbilityScoreMode,
+  builderState: CharacterBuilderState,
+): AbilityScores | null {
+  if (mode === 'ai') return null
+
+  // TODO: implement custom score entry UI
+  if (mode === 'custom') return null
+
+  const method = getEditionAbilityScoreMethod(builderState.edition)
+  const primaryClassId = builderState.classes[0]?.classId
+  const priority = getClassAbilityPriority(primaryClassId)
+
+  if (priority.length > 0) {
+    return prioritizeAbilityScores(method, priority)
+  }
+  return generateAbilityScores(method)
+}
+
+// ---------------------------------------------------------------------------
 // Merge builder state + AI result into a character document
 // ---------------------------------------------------------------------------
 function mergeCharacterData(
   builderState: CharacterBuilderState,
   aiResult: Record<string, unknown> | null,
+  abilityScoreMode: AbilityScoreMode,
 ) {
   // The AI response may be wrapped in { character: { ... } }
   const ai = (aiResult && typeof aiResult === 'object' && 'character' in aiResult
@@ -88,6 +134,8 @@ function mergeCharacterData(
   const proficiencies = builderSkills.length > 0
     ? { skills: builderSkills }
     : (ai.proficiencies ?? { skills: [] })
+
+  const generatedScores = resolveAbilityScores(abilityScoreMode, builderState)
 
   return {
     type: builderState.type,
@@ -112,8 +160,8 @@ function mergeCharacterData(
     // Hit points generated from builder state
     hitPoints: generateHitPoints(builderState.classes, builderState.edition, builderState.hitPointMode),
 
-    // AI-generated fields
-    stats: ai.stats ?? {},
+    // Ability scores: use generated scores when available, otherwise fall back to AI
+    abilityScores: generatedScores ?? ai.stats ?? {},
     armorClass: ai.armorClass ?? {},
     narrative: ai.narrative ?? {},
 
@@ -135,10 +183,11 @@ function mergeCharacterData(
 async function saveCharacterToDb(data: {
   builderState: CharacterBuilderState
   aiResult: Record<string, unknown> | null
+  abilityScoreMode: AbilityScoreMode
 }): Promise<boolean> {
   try {
     await apiFetch('/api/auth/me')
-    const characterData = mergeCharacterData(data.builderState, data.aiResult)
+    const characterData = mergeCharacterData(data.builderState, data.aiResult, data.abilityScoreMode)
     await apiFetch('/api/characters', { method: 'POST', body: characterData })
     return true
   } catch (err) {
@@ -167,16 +216,20 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
   const [confirmClose, setConfirmClose] = useState(false)
+  const [abilityScoreMode] = useState<AbilityScoreMode>('default')
 
   const formatPrompt = (s: CharacterBuilderState) => {
+    const scores = resolveAbilityScores(abilityScoreMode, s)
+    const method = getEditionAbilityScoreMethod(s.edition)
+
     const baseCharacter = {
       character: {
         type: s.type ?? 'pc',
-        name: (s.name && s.name.trim()) || '', // User-provided or AI to generate
-        
+        name: (s.name && s.name.trim()) || '',
+
         edition: s.edition ?? '',
         setting: s.setting,
-        
+
         race: s.race,
         classes: s.classes.map((cls: CharacterClassInfo, i: number) => ({
           id: cls.classId,
@@ -189,7 +242,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
           isStartingClass: i === 0,
         })),
         alignment: s.alignment,
-        stats: {
+        abilityScores: scores ?? {
           strength: null,
           dexterity: null,
           constitution: null,
@@ -199,7 +252,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
         },
         hitPoints: {
           total: null,
-          generationMethod: '4d6-drop-lowest',
+          generationMethod: method,
         },
         armorClass: {
           base: 10,
@@ -254,6 +307,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
       await saveCharacterToDb({
         builderState: state,
         aiResult,
+        abilityScoreMode,
       })
 
       // 4. Only clear state + close modal after persistence succeeds

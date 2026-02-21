@@ -7,10 +7,11 @@ import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 
 type AbilityScoresCardProps = {
-  stats: NonNullable<CharacterDoc['stats']>
+  abilityScores: NonNullable<CharacterDoc['abilityScores']>
 }
 
-export default function AbilityScoresCard({ stats }: AbilityScoresCardProps) {
+export default function AbilityScoresCard({ abilityScores }: AbilityScoresCardProps) {
+
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent sx={{ px: 1.5, py: 2, '&:last-child': { pb: 2 } }}>
@@ -18,12 +19,12 @@ export default function AbilityScoresCard({ stats }: AbilityScoresCardProps) {
           Ability Scores
         </Typography>
         <Stack spacing={1} alignItems="center">
-          <StatCircle label="Strength" value={stats.strength} />
-          <StatCircle label="Dexterity" value={stats.dexterity} />
-          <StatCircle label="Constitution" value={stats.constitution} />
-          <StatCircle label="Intelligence" value={stats.intelligence} />
-          <StatCircle label="Wisdom" value={stats.wisdom} />
-          <StatCircle label="Charisma" value={stats.charisma} />
+          <StatCircle label="Strength" value={abilityScores.strength} />
+          <StatCircle label="Dexterity" value={abilityScores.dexterity} />
+          <StatCircle label="Constitution" value={abilityScores.constitution} />
+          <StatCircle label="Intelligence" value={abilityScores.intelligence} />
+          <StatCircle label="Wisdom" value={abilityScores.wisdom} />
+          <StatCircle label="Charisma" value={abilityScores.charisma} />
         </Stack>
       </CardContent>
     </Card>

@@ -156,5 +156,8 @@ export const warlock = {
       reflexBonus: 1,
       willBonus: 1,
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['charisma', 'constitution']
+  }
 } satisfies CharacterClass

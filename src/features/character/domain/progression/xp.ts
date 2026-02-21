@@ -23,7 +23,7 @@
 //   2. experience                          (universal fallback)
 //   3. 0                                   (no data available)
 
-import { editions } from '@/data/editions'
+import { editions } from '@/data/editions/editions'
 import { getById } from '@/domain/lookups'
 import type { EditionId, Edition } from '@/data'
 import { resolveClassId } from '@/features/character/domain/reference/classAliases'

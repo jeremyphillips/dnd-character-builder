@@ -16,7 +16,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
+    abilityScores: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
     hitPoints: { total: 4 }
   },
   {
@@ -29,7 +29,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 12, dexterity: 10, constitution: 11, intelligence: 9, wisdom: 10, charisma: 9 }
+    abilityScores: { strength: 12, dexterity: 10, constitution: 11, intelligence: 9, wisdom: 10, charisma: 9 }
   },
   {
     type: 'npc',
@@ -41,7 +41,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 9, dexterity: 12, constitution: 10, intelligence: 10, wisdom: 10, charisma: 11 }
+    abilityScores: { strength: 9, dexterity: 12, constitution: 10, intelligence: 10, wisdom: 10, charisma: 11 }
   },
 
   /* ────────────────────────────── */
@@ -57,7 +57,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 13, dexterity: 12, constitution: 12, intelligence: 10, wisdom: 11, charisma: 10 },
+    abilityScores: { strength: 13, dexterity: 12, constitution: 12, intelligence: 10, wisdom: 11, charisma: 10 },
     hitPoints: { total: 11 },
     equipment: { weapons: ['spear', 'shortsword'] }
   },
@@ -71,7 +71,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 14, dexterity: 12, constitution: 13, intelligence: 10, wisdom: 11, charisma: 10 },
+    abilityScores: { strength: 14, dexterity: 12, constitution: 13, intelligence: 10, wisdom: 11, charisma: 10 },
     hitPoints: { total: 20 },
     equipment: { weapons: ['longsword', 'light-crossbow'] }
   },
@@ -85,7 +85,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 6 }],
     totalLevel: 6,
     xp: 14000,
-    stats: { strength: 16, dexterity: 13, constitution: 14, intelligence: 10, wisdom: 11, charisma: 10 },
+    abilityScores: { strength: 16, dexterity: 13, constitution: 14, intelligence: 10, wisdom: 11, charisma: 10 },
     hitPoints: { total: 58 },
     equipment: { weapons: ['longsword', 'shortsword', 'longbow'] }
   },
@@ -99,7 +99,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 5 }],
     totalLevel: 5,
     xp: 6500,
-    stats: { strength: 16, dexterity: 11, constitution: 14, intelligence: 11, wisdom: 11, charisma: 15 },
+    abilityScores: { strength: 16, dexterity: 11, constitution: 14, intelligence: 11, wisdom: 11, charisma: 15 },
     hitPoints: { total: 52 },
     equipment: { weapons: ['greatsword', 'lance', 'longsword'] }
   },
@@ -113,7 +113,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 15, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 10, charisma: 9 },
+    abilityScores: { strength: 15, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 10, charisma: 9 },
     hitPoints: { total: 28 },
     equipment: { weapons: ['battleaxe', 'handaxe'] }
   },
@@ -131,7 +131,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 11, dexterity: 12, constitution: 12, intelligence: 10, wisdom: 10, charisma: 10 },
+    abilityScores: { strength: 11, dexterity: 12, constitution: 12, intelligence: 10, wisdom: 10, charisma: 10 },
     hitPoints: { total: 11 },
     equipment: { weapons: ['shortsword', 'shortbow'] }
   },
@@ -145,7 +145,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 15, dexterity: 11, constitution: 14, intelligence: 10, wisdom: 10, charisma: 9 },
+    abilityScores: { strength: 15, dexterity: 11, constitution: 14, intelligence: 10, wisdom: 10, charisma: 9 },
     hitPoints: { total: 32 },
     equipment: { weapons: ['mace', 'heavy-crossbow'] }
   },
@@ -159,7 +159,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 10, dexterity: 15, constitution: 10, intelligence: 12, wisdom: 14, charisma: 16 },
+    abilityScores: { strength: 10, dexterity: 15, constitution: 10, intelligence: 12, wisdom: 14, charisma: 16 },
     hitPoints: { total: 27 },
     equipment: { weapons: ['shortsword', 'hand-crossbow'], gear: ['thieves-tools'] }
   },
@@ -173,7 +173,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 8 }],
     totalLevel: 8,
     xp: 34000,
-    stats: { strength: 11, dexterity: 16, constitution: 10, intelligence: 13, wisdom: 11, charisma: 10 },
+    abilityScores: { strength: 11, dexterity: 16, constitution: 10, intelligence: 13, wisdom: 11, charisma: 10 },
     hitPoints: { total: 78 },
     equipment: { weapons: ['shortsword', 'hand-crossbow'], gear: ['thieves-tools'] }
   },
@@ -187,7 +187,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 8, dexterity: 16, constitution: 10, intelligence: 12, wisdom: 10, charisma: 14 },
+    abilityScores: { strength: 8, dexterity: 16, constitution: 10, intelligence: 12, wisdom: 10, charisma: 14 },
     hitPoints: { total: 17 },
     equipment: { weapons: ['dagger'], gear: ['thieves-tools'] }
   },
@@ -205,7 +205,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'cleric', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 10, dexterity: 10, constitution: 12, intelligence: 13, wisdom: 16, charisma: 12 },
+    abilityScores: { strength: 10, dexterity: 10, constitution: 12, intelligence: 13, wisdom: 16, charisma: 12 },
     hitPoints: { total: 22 },
     equipment: { weapons: ['mace', 'light-crossbow'] }
   },
@@ -219,7 +219,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'cleric', level: 5 }],
     totalLevel: 5,
     xp: 6500,
-    stats: { strength: 12, dexterity: 10, constitution: 12, intelligence: 13, wisdom: 17, charisma: 13 },
+    abilityScores: { strength: 12, dexterity: 10, constitution: 12, intelligence: 13, wisdom: 17, charisma: 13 },
     hitPoints: { total: 39 },
     equipment: { weapons: ['mace', 'warhammer'] }
   },
@@ -233,7 +233,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'warlock', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 11, dexterity: 12, constitution: 10, intelligence: 10, wisdom: 11, charisma: 14 },
+    abilityScores: { strength: 11, dexterity: 12, constitution: 10, intelligence: 10, wisdom: 11, charisma: 14 },
     hitPoints: { total: 9 },
     equipment: { weapons: ['dagger', 'scimitar'] }
   },
@@ -247,7 +247,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'paladin', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 15, dexterity: 10, constitution: 14, intelligence: 10, wisdom: 12, charisma: 12 },
+    abilityScores: { strength: 15, dexterity: 10, constitution: 14, intelligence: 10, wisdom: 12, charisma: 12 },
     hitPoints: { total: 31 },
     equipment: { weapons: ['longsword', 'spear'] }
   },
@@ -265,7 +265,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'wizard', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 8, dexterity: 14, constitution: 12, intelligence: 15, wisdom: 10, charisma: 10 },
+    abilityScores: { strength: 8, dexterity: 14, constitution: 12, intelligence: 15, wisdom: 10, charisma: 10 },
     hitPoints: { total: 8 },
     equipment: { weapons: ['quarterstaff', 'dagger'], gear: ['spellbook-blank'] }
   },
@@ -279,7 +279,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'wizard', level: 6 }],
     totalLevel: 6,
     xp: 14000,
-    stats: { strength: 9, dexterity: 14, constitution: 11, intelligence: 17, wisdom: 12, charisma: 11 },
+    abilityScores: { strength: 9, dexterity: 14, constitution: 11, intelligence: 17, wisdom: 12, charisma: 11 },
     hitPoints: { total: 40 },
     equipment: { weapons: ['dagger', 'quarterstaff'], gear: ['spellbook-blank'] }
   },
@@ -293,7 +293,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'wizard', level: 18 }],
     totalLevel: 18,
     xp: 265000,
-    stats: { strength: 10, dexterity: 14, constitution: 12, intelligence: 20, wisdom: 15, charisma: 16 },
+    abilityScores: { strength: 10, dexterity: 14, constitution: 12, intelligence: 20, wisdom: 15, charisma: 16 },
     hitPoints: { total: 99 },
     equipment: { weapons: ['dagger', 'quarterstaff'], gear: ['spellbook-blank'] }
   },
@@ -307,7 +307,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'sorcerer', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 9, dexterity: 14, constitution: 12, intelligence: 10, wisdom: 11, charisma: 16 },
+    abilityScores: { strength: 9, dexterity: 14, constitution: 12, intelligence: 10, wisdom: 11, charisma: 16 },
     hitPoints: { total: 27 },
     equipment: { weapons: ['dagger', 'light-crossbow'] }
   },
@@ -321,7 +321,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'warlock', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 8, dexterity: 12, constitution: 12, intelligence: 13, wisdom: 10, charisma: 17 },
+    abilityScores: { strength: 8, dexterity: 12, constitution: 12, intelligence: 13, wisdom: 10, charisma: 17 },
     hitPoints: { total: 31 },
     equipment: { weapons: ['dagger', 'light-crossbow'] }
   },
@@ -339,7 +339,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 16, dexterity: 10, constitution: 15, intelligence: 10, wisdom: 10, charisma: 9 },
+    abilityScores: { strength: 16, dexterity: 10, constitution: 15, intelligence: 10, wisdom: 10, charisma: 9 },
     hitPoints: { total: 31 },
     equipment: { weapons: ['warhammer', 'light-hammer'] }
   },
@@ -353,7 +353,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 10, dexterity: 12, constitution: 11, intelligence: 13, wisdom: 12, charisma: 14 },
+    abilityScores: { strength: 10, dexterity: 12, constitution: 11, intelligence: 13, wisdom: 12, charisma: 14 },
     hitPoints: { total: 17 }
   },
   {
@@ -366,7 +366,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 12, dexterity: 11, constitution: 13, intelligence: 11, wisdom: 12, charisma: 14 },
+    abilityScores: { strength: 12, dexterity: 11, constitution: 13, intelligence: 11, wisdom: 12, charisma: 14 },
     hitPoints: { total: 22 },
     equipment: { weapons: ['club'] }
   },
@@ -380,7 +380,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'wizard', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 8, dexterity: 10, constitution: 10, intelligence: 18, wisdom: 14, charisma: 12 },
+    abilityScores: { strength: 8, dexterity: 10, constitution: 10, intelligence: 18, wisdom: 14, charisma: 12 },
     hitPoints: { total: 22 },
     equipment: { weapons: ['quarterstaff'], gear: ['book'] }
   },
@@ -394,7 +394,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'druid', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 10, dexterity: 12, constitution: 12, intelligence: 14, wisdom: 16, charisma: 10 },
+    abilityScores: { strength: 10, dexterity: 12, constitution: 12, intelligence: 14, wisdom: 16, charisma: 10 },
     hitPoints: { total: 24 }
   },
 
@@ -411,7 +411,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'bard', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 10, dexterity: 12, constitution: 11, intelligence: 14, wisdom: 13, charisma: 16 },
+    abilityScores: { strength: 10, dexterity: 12, constitution: 11, intelligence: 14, wisdom: 13, charisma: 16 },
     hitPoints: { total: 9 },
     equipment: { weapons: ['rapier'] }
   },
@@ -425,7 +425,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 10, dexterity: 14, constitution: 10, intelligence: 14, wisdom: 12, charisma: 16 },
+    abilityScores: { strength: 10, dexterity: 14, constitution: 10, intelligence: 14, wisdom: 12, charisma: 16 },
     hitPoints: { total: 27 },
     equipment: { weapons: ['rapier', 'dagger'] }
   },
@@ -439,7 +439,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 12, dexterity: 12, constitution: 12, intelligence: 13, wisdom: 11, charisma: 15 },
+    abilityScores: { strength: 12, dexterity: 12, constitution: 12, intelligence: 13, wisdom: 11, charisma: 15 },
     hitPoints: { total: 36 },
     equipment: { weapons: ['rapier', 'shortsword'] }
   },
@@ -457,7 +457,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'ranger', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 12, dexterity: 14, constitution: 12, intelligence: 11, wisdom: 13, charisma: 9 },
+    abilityScores: { strength: 12, dexterity: 14, constitution: 12, intelligence: 11, wisdom: 13, charisma: 9 },
     hitPoints: { total: 22 },
     equipment: { weapons: ['shortsword', 'shortbow'] }
   },
@@ -471,7 +471,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'ranger', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 14, dexterity: 16, constitution: 14, intelligence: 10, wisdom: 14, charisma: 9 },
+    abilityScores: { strength: 14, dexterity: 16, constitution: 14, intelligence: 10, wisdom: 14, charisma: 9 },
     hitPoints: { total: 36 },
     equipment: { weapons: ['longbow', 'shortsword'] }
   },
@@ -485,7 +485,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'druid', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 10, dexterity: 12, constitution: 13, intelligence: 12, wisdom: 17, charisma: 11 },
+    abilityScores: { strength: 10, dexterity: 12, constitution: 13, intelligence: 12, wisdom: 17, charisma: 11 },
     hitPoints: { total: 31 }
   },
   {
@@ -498,7 +498,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'barbarian', level: 5 }],
     totalLevel: 5,
     xp: 6500,
-    stats: { strength: 18, dexterity: 14, constitution: 16, intelligence: 9, wisdom: 12, charisma: 9 },
+    abilityScores: { strength: 18, dexterity: 14, constitution: 16, intelligence: 9, wisdom: 12, charisma: 9 },
     hitPoints: { total: 55 },
     equipment: { weapons: ['greataxe', 'handaxe'] }
   },
@@ -512,7 +512,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'ranger', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 13, dexterity: 14, constitution: 12, intelligence: 11, wisdom: 13, charisma: 8 },
+    abilityScores: { strength: 13, dexterity: 14, constitution: 12, intelligence: 11, wisdom: 13, charisma: 8 },
     hitPoints: { total: 28 },
     equipment: { weapons: ['shortbow', 'handaxe'] }
   },
@@ -530,7 +530,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'bard', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 10, dexterity: 14, constitution: 12, intelligence: 12, wisdom: 10, charisma: 16 },
+    abilityScores: { strength: 10, dexterity: 14, constitution: 12, intelligence: 12, wisdom: 10, charisma: 16 },
     hitPoints: { total: 27 },
     equipment: { weapons: ['rapier', 'dagger'] }
   },
@@ -544,7 +544,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'bard', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 9, dexterity: 14, constitution: 11, intelligence: 12, wisdom: 10, charisma: 15 },
+    abilityScores: { strength: 9, dexterity: 14, constitution: 11, intelligence: 12, wisdom: 10, charisma: 15 },
     hitPoints: { total: 18 },
     equipment: { weapons: ['rapier'] }
   },
@@ -558,7 +558,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'bard', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 8, dexterity: 16, constitution: 11, intelligence: 14, wisdom: 10, charisma: 15 },
+    abilityScores: { strength: 8, dexterity: 16, constitution: 11, intelligence: 14, wisdom: 10, charisma: 15 },
     hitPoints: { total: 21 },
     equipment: { weapons: ['dagger'] }
   },
@@ -576,7 +576,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'monk', level: 5 }],
     totalLevel: 5,
     xp: 6500,
-    stats: { strength: 12, dexterity: 16, constitution: 14, intelligence: 10, wisdom: 16, charisma: 10 },
+    abilityScores: { strength: 12, dexterity: 16, constitution: 14, intelligence: 10, wisdom: 16, charisma: 10 },
     hitPoints: { total: 38 }
   },
   {
@@ -589,7 +589,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'monk', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 12, dexterity: 15, constitution: 13, intelligence: 10, wisdom: 14, charisma: 9 },
+    abilityScores: { strength: 12, dexterity: 15, constitution: 13, intelligence: 10, wisdom: 14, charisma: 9 },
     hitPoints: { total: 24 }
   },
 
@@ -606,7 +606,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 14, dexterity: 12, constitution: 13, intelligence: 10, wisdom: 11, charisma: 10 },
+    abilityScores: { strength: 14, dexterity: 12, constitution: 13, intelligence: 10, wisdom: 11, charisma: 10 },
     hitPoints: { total: 12 },
     equipment: { weapons: ['shortsword', 'light-crossbow'] }
   },
@@ -620,7 +620,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 2 }],
     totalLevel: 2,
     xp: 300,
-    stats: { strength: 14, dexterity: 13, constitution: 12, intelligence: 10, wisdom: 10, charisma: 11 },
+    abilityScores: { strength: 14, dexterity: 13, constitution: 12, intelligence: 10, wisdom: 10, charisma: 11 },
     hitPoints: { total: 22 },
     equipment: { weapons: ['scimitar', 'shortbow'] }
   },
@@ -634,7 +634,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 14, dexterity: 12, constitution: 14, intelligence: 12, wisdom: 13, charisma: 14 },
+    abilityScores: { strength: 14, dexterity: 12, constitution: 14, intelligence: 12, wisdom: 13, charisma: 14 },
     hitPoints: { total: 42 },
     equipment: { weapons: ['rapier', 'light-crossbow'] }
   },
@@ -652,7 +652,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 17, dexterity: 10, constitution: 16, intelligence: 12, wisdom: 11, charisma: 9 },
+    abilityScores: { strength: 17, dexterity: 10, constitution: 16, intelligence: 12, wisdom: 11, charisma: 9 },
     hitPoints: { total: 42 },
     equipment: { weapons: ['warhammer', 'battleaxe'] }
   },
@@ -666,7 +666,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'ranger', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 12, dexterity: 18, constitution: 12, intelligence: 12, wisdom: 14, charisma: 10 },
+    abilityScores: { strength: 12, dexterity: 18, constitution: 12, intelligence: 12, wisdom: 14, charisma: 10 },
     hitPoints: { total: 33 },
     equipment: { weapons: ['longbow', 'shortsword'] }
   },
@@ -680,7 +680,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 4 }],
     totalLevel: 4,
     xp: 2700,
-    stats: { strength: 8, dexterity: 18, constitution: 12, intelligence: 14, wisdom: 12, charisma: 14 },
+    abilityScores: { strength: 8, dexterity: 18, constitution: 12, intelligence: 14, wisdom: 12, charisma: 14 },
     hitPoints: { total: 27 },
     equipment: { weapons: ['shortsword', 'shortbow'], gear: ['thieves-tools'] }
   },
@@ -694,7 +694,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'fighter', level: 5 }],
     totalLevel: 5,
     xp: 6500,
-    stats: { strength: 18, dexterity: 12, constitution: 16, intelligence: 10, wisdom: 12, charisma: 12 },
+    abilityScores: { strength: 18, dexterity: 12, constitution: 16, intelligence: 10, wisdom: 12, charisma: 12 },
     hitPoints: { total: 49 },
     equipment: { weapons: ['greatsword', 'longbow'] }
   },
@@ -708,7 +708,7 @@ export const npcs5eBase: readonly Npcs5eBase[] = [
     classes: [{ classId: 'rogue', level: 3 }],
     totalLevel: 3,
     xp: 900,
-    stats: { strength: 10, dexterity: 16, constitution: 12, intelligence: 13, wisdom: 10, charisma: 14 },
+    abilityScores: { strength: 10, dexterity: 16, constitution: 12, intelligence: 13, wisdom: 10, charisma: 14 },
     hitPoints: { total: 24 },
     equipment: { weapons: ['rapier', 'hand-crossbow'], gear: ['thieves-tools'] }
   }

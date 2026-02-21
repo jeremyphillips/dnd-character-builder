@@ -1,4 +1,5 @@
-import type { AlignmentId, EditionId, Stats } from '@/data'
+import type { AlignmentId, EditionId } from '@/data'
+import type { AbilityScores } from '@/shared/types/character.core'
 
 // ---------------------------------------------------------------------------
 // Shared primitives
@@ -28,11 +29,11 @@ export interface ClassRequirement {
   allowedRaces: 'all' | string[]
   allowedAlignments: 'any' | AlignmentId[]
   levelCaps?: Record<string, number | 'unlimited'>
-  minStats?: Stats
+  minStats?: AbilityScores
   multiclassing?: {
     logic: LogicalOperator
     note: string
-    options: Stats[]
+    options: AbilityScores[]
   }
   equipment: {
     armor: EquipmentRequirement
@@ -94,26 +95,29 @@ export interface ProficiencyOption {
   type?: 'category' | 'item'
   cost?: number
   source?: string
-  relevantStatId?: string
-  relevantStat?: string
-  checkModifier?: number
+  checkModifier?: number // 2e
+  // 2e Thief skill
+  // pointPool?: {
+  //   initial: number
+  //   perLevel: number
+  // }
 }
 
-export interface ClassProficiency {
-  edition: EditionId | string
-  taxonomy: string
-  name?: string
-  choiceCount?: number
-  slots?: number // TODO: fold into choiceCount — only used by paladin 2e NWP; semantically identical
-  canSpecialize?: boolean
-  fixed?: ProficiencyOption[]
-  options?: ProficiencyOption[] | string
-  recommended?: ProficiencyOption[]
-  pointPool?: {
-    initial: number
-    perLevel: number
-  }
-}
+// export interface ClassProficiency {
+//   // edition: EditionId | string
+//   // taxonomy: string
+//   name?: string
+//   // choiceCount?: number
+//   slots?: number // TODO: fold into choiceCount — only used by paladin 2e NWP; semantically identical
+//   canSpecialize?: boolean
+//   fixed?: ProficiencyOption[]
+//   options?: ProficiencyOption[] | string
+//   // 2e Thief skill
+//   // pointPool?: {
+//   //   initial: number
+//   //   perLevel: number
+//   // }
+// }
 
 export interface ClassProficiencyEntry {
   type?: 'choice' | 'fixed'
@@ -123,10 +127,11 @@ export interface ClassProficiencyEntry {
   from?: string[]
   categories?: string[]
   items?: string[]
+  // canSpecialize?: boolean
 }
 
 export type EditionClassProficiencies = {
-  skills?: ClassProficiencyEntry[] | ClassProficiencyEntry
+  skills?: ClassProficiencyEntry[]
   weapons?: ClassProficiencyEntry[]
   armor?: ClassProficiencyEntry[]
 }
@@ -199,8 +204,6 @@ export interface ClassProgression {
   hpPerLevel?: number                         // 4e flat HP per level; other editions: derived from hitDie
   attackProgression: AttackProgression         // normalized: good/average/poor
   primaryAbilities: string[]                   // e.g. ['str', 'con'] for Fighter
-  armorProficiency: string[]                   // e.g. ['all'] or ['light', 'medium', 'shields']
-  weaponProficiency: string[]                  // e.g. ['all'] or ['simple', 'martial']
 
   // ── Cross-edition grouping ─────────────────────────────────────
   classGroup?: string                          // 2e group: 'warrior' | 'priest' | 'wizard' | 'rogue'
@@ -257,6 +260,9 @@ export interface CharacterClass {
   displayNameByEdition?: Partial<Record<string, string>>  // edition-specific display name (e.g. wizard -> "Mage" in 2e)
   definitions: ClassDefinition[]
   requirements: ClassRequirement[]
-  proficiencies: ClassProficiency[] | ClassProficienciesByEdition
-  progression?: ClassProgression[]
+  proficiencies: ClassProficiencyEntry[] | ClassProficienciesByEdition
+  progression?: ClassProgression[],
+  generation?: {
+    abilityPriority: (keyof AbilityScores)[]
+  }
 }

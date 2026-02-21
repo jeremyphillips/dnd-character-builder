@@ -31,7 +31,7 @@ export default function MonsterRoute() {
       <Typography variant="overline" color="text.secondary">
         Monster
       </Typography>
-      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+      <Typography variant="h1" sx={{ mb: 2 }}>
         {monster.name}
       </Typography>
 

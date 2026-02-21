@@ -16,7 +16,7 @@
 //     - Fighter/Mage requires Str 15+ AND Int 15+
 //     - Cleric/Ranger requires Wis 15+ AND Str 13+, Dex 13+, Wis 14+
 //   Humans use "dual-classing" instead (different rules entirely).
-//   Implementation would check `state.stats` against a lookup table of
+//   Implementation would check `state.abilityScores` against a lookup table of
 //   valid multiclass combos keyed by race + class pair.
 //
 //   2e/1e Race-Restricted Combinations

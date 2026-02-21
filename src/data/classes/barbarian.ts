@@ -1,8 +1,8 @@
 import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealth4e } from "@/data/startingWealth4e"
 import type { CharacterClass } from './types'
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "@/data/editions/proficiencySkillsByEdition"
 
 export const barbarian = {
   id: 'barbarian',
@@ -148,8 +148,8 @@ export const barbarian = {
           slots: 2,
           level: 1,
           from: resolveAvailable2eSkills(
-            TWOE_GENERAL_PROFICIENCY_SKILLS,
-            TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+            Object.keys(TWOE_GENERAL_PROFICIENCY_SKILLS),
+            Object.keys(TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS)
           )
         }
       ],

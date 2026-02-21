@@ -195,5 +195,8 @@ export const sorcerer = {
       reflexBonus: 0,
       willBonus: 2,
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['charisma', 'constitution']
+  }
 } satisfies CharacterClass

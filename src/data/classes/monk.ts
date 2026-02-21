@@ -2,7 +2,7 @@ import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealth4e } from "@/data/startingWealth4e"
 import type { CharacterClass } from './types'
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "@/data/editions/proficiencySkillsByEdition"
 
 export const monk = {
   id: 'monk',
@@ -217,5 +217,8 @@ export const monk = {
       armorProficiency: ['none'],
       weaponProficiency: ['staff', 'polearm', 'sling'],
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['dexterity', 'wisdom']
+  }
 } satisfies CharacterClass

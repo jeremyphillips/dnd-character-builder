@@ -4,7 +4,7 @@ import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, FULL_CASTER_SLOTS_35E, PRIEST_SLOTS_2E, DRUID_SLOTS_1E } from './spellSlotTables'
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "@/data/editions"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "@/data/editions/proficiencySkillsByEdition"
 
 export const druid = {
   id: 'druid',
@@ -276,5 +276,8 @@ export const druid = {
         maxSpellLevel: 7,
       },
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['wisdom', 'constitution']
+  }
 } satisfies CharacterClass;

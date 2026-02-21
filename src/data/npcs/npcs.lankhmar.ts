@@ -14,7 +14,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'warrior', level: 15 }],
     totalLevel: 15,
     xp: 2250000,
-    stats: {
+    abilityScores: {
       strength: 18,
       dexterity: 17,
       constitution: 18,
@@ -23,7 +23,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
       charisma: 16
     },
     rules: {
-      stats: { strengthPercentile: 90 },
+      abilityScores: { strengthPercentile: 90 },
       thac0: 6,
       savingThrows: {
         paralyzationPoisonDeath: 5,
@@ -52,7 +52,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     ],
     totalLevel: 14,
     xp: 440000,
-    stats: {
+    abilityScores: {
       strength: 10,
       dexterity: 19,
       constitution: 15,
@@ -90,7 +90,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'wizard', level: 20 }],
     totalLevel: 20,
     xp: 6000000,
-    stats: { strength: 8, dexterity: 12, constitution: 14, intelligence: 20, wisdom: 18, charisma: 10 }
+    abilityScores: { strength: 8, dexterity: 12, constitution: 14, intelligence: 20, wisdom: 18, charisma: 10 }
   },
   {
     type: 'npc',
@@ -103,7 +103,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'wizard', level: 18 }],
     totalLevel: 18,
     xp: 3750000,
-    stats: { strength: 9, dexterity: 14, constitution: 12, intelligence: 19, wisdom: 17, charisma: 8 }
+    abilityScores: { strength: 9, dexterity: 14, constitution: 12, intelligence: 19, wisdom: 17, charisma: 8 }
   },
   {
     type: 'npc',
@@ -116,7 +116,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'wizard', level: 8 }],
     totalLevel: 8,
     xp: 25000,
-    stats: { strength: 8, dexterity: 12, constitution: 10, intelligence: 17, wisdom: 11, charisma: 9 }
+    abilityScores: { strength: 8, dexterity: 12, constitution: 10, intelligence: 17, wisdom: 11, charisma: 9 }
   },
 
   /* ────────────────────────────── */
@@ -133,7 +133,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'thief', level: 14 }],
     totalLevel: 14,
     xp: 800000,
-    stats: { strength: 12, dexterity: 17, constitution: 14, intelligence: 16, wisdom: 13, charisma: 15 }
+    abilityScores: { strength: 12, dexterity: 17, constitution: 14, intelligence: 16, wisdom: 13, charisma: 15 }
   },
   {
     type: 'npc',
@@ -146,7 +146,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'thief', level: 5 }],
     totalLevel: 5,
     xp: 5000,
-    stats: { strength: 11, dexterity: 15, constitution: 12, intelligence: 13, wisdom: 10, charisma: 9 }
+    abilityScores: { strength: 11, dexterity: 15, constitution: 12, intelligence: 13, wisdom: 10, charisma: 9 }
   },
   {
     type: 'npc',
@@ -159,7 +159,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'thief', level: 7 }],
     totalLevel: 7,
     xp: 15000,
-    stats: { strength: 13, dexterity: 16, constitution: 12, intelligence: 14, wisdom: 11, charisma: 10 }
+    abilityScores: { strength: 13, dexterity: 16, constitution: 12, intelligence: 14, wisdom: 11, charisma: 10 }
   },
   {
     type: 'npc',
@@ -212,7 +212,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'thief', level: 6 }],
     totalLevel: 6,
     xp: 10000,
-    stats: { strength: 10, dexterity: 16, constitution: 11, intelligence: 14, wisdom: 12, charisma: 15 }
+    abilityScores: { strength: 10, dexterity: 16, constitution: 11, intelligence: 14, wisdom: 12, charisma: 15 }
   },
   {
     type: 'npc',
@@ -225,7 +225,7 @@ export const npcsLankhmar: readonly NpcLankhmar[] = [
     classes: [{ classId: 'wizard', level: 1 }],
     totalLevel: 1,
     xp: 0,
-    stats: { strength: 8, dexterity: 12, constitution: 10, intelligence: 15, wisdom: 11, charisma: 16 }
+    abilityScores: { strength: 8, dexterity: 12, constitution: 10, intelligence: 15, wisdom: 11, charisma: 16 }
   },
 
   /* ────────────────────────────── */

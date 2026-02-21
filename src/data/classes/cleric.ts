@@ -3,7 +3,7 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, FULL_CASTER_SLOTS_35E, PRIEST_SLOTS_2E, CLERIC_SLOTS_1E, CLERIC_SLOTS_BASIC } from './spellSlotTables'
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "@/data/editions/proficiencySkillsByEdition"
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
 
 export const cleric = {
@@ -331,5 +331,8 @@ export const cleric = {
         maxSpellLevel: 5,
       },
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['wisdom', 'constitution']
+  }
 } satisfies CharacterClass

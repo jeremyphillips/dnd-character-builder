@@ -85,7 +85,7 @@ export type CharacterCore = {
   levelUpPending?: boolean
   pendingLevel?: number
 
-  stats?: AbilityScores
+  abilityScores?: AbilityScores
   hitPoints?: HitPoints
   armorClass?: ArmorClass
   combat?: {

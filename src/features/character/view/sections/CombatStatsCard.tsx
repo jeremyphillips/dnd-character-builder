@@ -6,6 +6,7 @@ import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { useCombatStats } from '@/features/character/hooks'
 import type { ArmorConfiguration } from '@/features/character/domain/combat'
+import type { AttackEntry } from '@/features/character/hooks/useCombatStats'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -18,7 +19,10 @@ import Radio from '@mui/material/Radio'
 import RadioGroup from '@mui/material/RadioGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Link from '@mui/material/Link'
+import Tooltip from '@mui/material/Tooltip'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { StatShield } from '@/ui/stats'
+import Divider from '@mui/material/Divider'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -71,7 +75,7 @@ export default function CombatStatsCard({
   canEdit = false,
   onSave,
 }: CombatStatsCardProps) {
-  const { calculatedArmorClass, armorConfigurations, activeArmorConfig } = useCombatStats(character)
+  const { calculatedArmorClass, armorConfigurations, activeArmorConfig, attacks } = useCombatStats(character)
   const [configOpen, setConfigOpen] = useState(false)
 
   const hasCombat = true
@@ -192,6 +196,48 @@ export default function CombatStatsCard({
             </Box>
           )
         })}
+
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', mt: 1, display: 'block' }}>
+          Attacks
+        </Typography>
+        {attacks.length > 0 ? (
+          <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', mt: 0.5, '& td, & th': { py: 0.5, px: 0.75, textAlign: 'left' } }}>
+            <thead>
+              <tr>
+                <Box component="th"><Typography variant="caption" fontWeight={600}>Weapon</Typography></Box>
+                <Box component="th"><Typography variant="caption" fontWeight={600}>Atk</Typography></Box>
+                <Box component="th"><Typography variant="caption" fontWeight={600}>Damage</Typography></Box>
+              </tr>
+            </thead>
+            <tbody>
+              {attacks.map((atk: AttackEntry) => (
+                <tr key={atk.weaponId}>
+                  <Box component="td"><Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{atk.name}</Typography></Box>
+                  <Box component="td">
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.8rem' }}>
+                        {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
+                      </Typography>
+                      <Tooltip title={atk.attackBreakdown} arrow placement="top">
+                        <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }} />
+                      </Tooltip>
+                    </Stack>
+                  </Box>
+                  <Box component="td">
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      {atk.damage}{atk.damageType ? ` ${atk.damageType}` : ''}
+                    </Typography>
+                  </Box>
+                </tr>
+              ))}
+            </tbody>
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontSize: '0.8rem' }}>
+            No weapons equipped.
+          </Typography>
+        )}
       </CardContent>
     </Card>
   )

@@ -2,10 +2,12 @@ import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, BARD_SLOTS_35E, BARD_SLOTS_2E } from './spellSlotTables'
-import { FIVE_E_INTELLIGENCE_SKILLS, FIVE_E_WISDOM_SKILLS } from "../editions"
-import { FIVE_E_CHARISMA_SKILLS, FIVE_E_DEXTERITY_SKILLS, FIVE_E_STRENGTH_SKILLS } from "../editions"
+import {
+  FIVE_E_INTELLIGENCE_SKILLS, FIVE_E_WISDOM_SKILLS,
+  FIVE_E_CHARISMA_SKILLS, FIVE_E_DEXTERITY_SKILLS, FIVE_E_STRENGTH_SKILLS,
+  TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS,
+} from "@/data/editions/proficiencySkillsByEdition"
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS } from "../editions"
 
 export const bard = {
   id: 'bard',
@@ -260,5 +262,8 @@ export const bard = {
         maxSpellLevel: 6,
       },
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['charisma', 'dexterity']
+  }
 } satisfies CharacterClass

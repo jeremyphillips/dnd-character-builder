@@ -106,6 +106,7 @@ export const rogue = {
         {
           type: 'fixed',
           level: 1,
+          categories: ['simple'],
           items: ['hand-crossbow', 'longsword', 'rapier', 'shortsword'],
         }
       ],
@@ -139,8 +140,6 @@ export const rogue = {
       hitDie: 8,
       attackProgression: 'average',
       primaryAbilities: ['dex', 'int'],
-      armorProficiency: ['light'],
-      weaponProficiency: ['simple', 'hand-crossbow', 'longsword', 'rapier', 'shortsword'],
       savingThrows: ['dex', 'int'],
       spellcasting: 'none',
       asiLevels: [4, 8, 10, 12, 16, 19],
@@ -174,5 +173,8 @@ export const rogue = {
       reflexBonus: 2,
       willBonus: 0,
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['dexterity', 'intelligence']
+  }
 } satisfies CharacterClass

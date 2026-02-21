@@ -3,7 +3,7 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { HALF_CASTER_SLOTS_5E, PALADIN_SLOTS_35E } from './spellSlotTables'
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "@/data/editions/proficiencySkillsByEdition"
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const paladin = {
@@ -287,5 +287,8 @@ export const paladin = {
       armorProficiency: ['all'],
       weaponProficiency: ['all'],
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['strength', 'charisma']
+  }
 } satisfies CharacterClass

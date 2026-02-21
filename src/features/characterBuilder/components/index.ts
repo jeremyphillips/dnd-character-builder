@@ -1,4 +1,5 @@
 export { default as CharacterBuilderWizard } from './CharacterBuilderWizard/CharacterBuilderWizard'
+export type { AbilityScoreMode } from './CharacterBuilderWizard/CharacterBuilderWizard'
 export { default as CharacterBuilderLauncher } from './CharacterBuilderLauncher/CharacterBuilderLauncher'
 export { default as InvalidationConfirmDialog } from './InvalidationConfirmDialog/InvalidationConfirmDialog'
 export { default as InvalidationNotice } from './InvalidationNotice/InvalidationNotice'

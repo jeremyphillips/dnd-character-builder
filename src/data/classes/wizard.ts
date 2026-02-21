@@ -338,5 +338,8 @@ export const wizard =  {
         maxSpellLevel: 6,
       },
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['intelligence', 'constitution']
+  }
 } satisfies CharacterClass

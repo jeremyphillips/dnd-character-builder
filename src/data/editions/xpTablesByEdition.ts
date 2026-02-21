@@ -1,24 +1,4 @@
-import { 
-  standardAlignments, 
-  basicAlignments, 
-  fourEAlignments,
-  type Edition,
-  type LevelProgression
-} from "@/data"
-
-const basicRaces = [
-  'human',
-  'dwarf',
-  'elf',
-  'halfling'
-] as const
-
-const advancedBasicRaces = [
-  ...basicRaces,
-  'gnome',
-  'halfElf',
-  'halfOrc'
-] as const
+import type { LevelProgression } from './edition.types'
 
 // ===========================================================================
 // XP Tables
@@ -52,7 +32,7 @@ const advancedBasicRaces = [
 // ---------------------------------------------------------------------------
 // 5e — Universal (levels 1–20)
 // ---------------------------------------------------------------------------
-const fiveEExperience: LevelProgression[] = [
+export const fiveEExperience: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 300 },
   { level: 3, xpRequired: 900 },
@@ -78,7 +58,7 @@ const fiveEExperience: LevelProgression[] = [
 // ---------------------------------------------------------------------------
 // 4e — Universal (levels 1–30, three tiers: Heroic/Paragon/Epic)
 // ---------------------------------------------------------------------------
-const fourEExperience: LevelProgression[] = [
+export const fourEExperience: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1000 },
   { level: 3, xpRequired: 2250 },
@@ -117,7 +97,7 @@ const fourEExperience: LevelProgression[] = [
 // 3e / 3.5e — Universal (levels 1–20)
 // Both editions share the same XP table.
 // ---------------------------------------------------------------------------
-const threeEExperience: LevelProgression[] = [
+export const threeEExperience: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1000 },
   { level: 3, xpRequired: 3000 },
@@ -153,7 +133,7 @@ const threeEExperience: LevelProgression[] = [
 // "mage" → "wizard", "thief" → "rogue" is NOT aliased (thief IS the
 // canonical 2e ID in our system — it maps to rogue only in 5e context).
 
-const twoE_fighter: LevelProgression[] = [
+export const twoE_fighter: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2000 },
   { level: 3, xpRequired: 4000 },
@@ -177,7 +157,7 @@ const twoE_fighter: LevelProgression[] = [
   { level: 20, xpRequired: 3000000 }
 ]
 
-const twoE_paladin: LevelProgression[] = [
+export const twoE_paladin: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2250 },
   { level: 3, xpRequired: 4500 },
@@ -201,7 +181,7 @@ const twoE_paladin: LevelProgression[] = [
   { level: 20, xpRequired: 3600000 }
 ]
 
-const twoE_ranger: LevelProgression[] = [
+export const twoE_ranger: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2250 },
   { level: 3, xpRequired: 4500 },
@@ -225,7 +205,7 @@ const twoE_ranger: LevelProgression[] = [
   { level: 20, xpRequired: 3600000 }
 ]
 
-const twoE_wizard: LevelProgression[] = [
+export const twoE_wizard: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2500 },
   { level: 3, xpRequired: 5000 },
@@ -249,7 +229,7 @@ const twoE_wizard: LevelProgression[] = [
   { level: 20, xpRequired: 3750000 }
 ]
 
-const twoE_cleric: LevelProgression[] = [
+export const twoE_cleric: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1500 },
   { level: 3, xpRequired: 3000 },
@@ -273,7 +253,7 @@ const twoE_cleric: LevelProgression[] = [
   { level: 20, xpRequired: 2700000 }
 ]
 
-const twoE_druid: LevelProgression[] = [
+export const twoE_druid: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2000 },
   { level: 3, xpRequired: 4000 },
@@ -292,7 +272,7 @@ const twoE_druid: LevelProgression[] = [
   { level: 15, xpRequired: 3000000 }
 ]
 
-const twoE_thief: LevelProgression[] = [
+export const twoE_thief: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1250 },
   { level: 3, xpRequired: 2500 },
@@ -317,9 +297,9 @@ const twoE_thief: LevelProgression[] = [
 ]
 
 // Bard in 2e uses the same table as Thief
-const twoE_bard = twoE_thief
+export const twoE_bard = twoE_thief
 
-const twoEClassExperience: Record<string, LevelProgression[]> = {
+export const twoEClassExperience: Record<string, LevelProgression[]> = {
   fighter:  twoE_fighter,
   paladin:  twoE_paladin,
   ranger:   twoE_ranger,
@@ -341,7 +321,7 @@ const twoEClassExperience: Record<string, LevelProgression[]> = {
 //   - Thief diverges from 2e at levels 10+
 //   - 1e has Assassin and Illusionist as standalone classes
 
-const oneE_fighter: LevelProgression[] = [
+export const oneE_fighter: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2001 },
   { level: 3, xpRequired: 4001 },
@@ -365,7 +345,7 @@ const oneE_fighter: LevelProgression[] = [
   { level: 20, xpRequired: 3000001 }
 ]
 
-const oneE_paladin: LevelProgression[] = [
+export const oneE_paladin: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2751 },
   { level: 3, xpRequired: 5501 },
@@ -389,7 +369,7 @@ const oneE_paladin: LevelProgression[] = [
   { level: 20, xpRequired: 4200001 }
 ]
 
-const oneE_ranger: LevelProgression[] = [
+export const oneE_ranger: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2251 },
   { level: 3, xpRequired: 4501 },
@@ -413,7 +393,7 @@ const oneE_ranger: LevelProgression[] = [
   { level: 20, xpRequired: 3575001 }
 ]
 
-const oneE_wizard: LevelProgression[] = [
+export const oneE_wizard: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2501 },
   { level: 3, xpRequired: 5001 },
@@ -435,7 +415,7 @@ const oneE_wizard: LevelProgression[] = [
   { level: 18, xpRequired: 3000001 }
 ]
 
-const oneE_cleric: LevelProgression[] = [
+export const oneE_cleric: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1501 },
   { level: 3, xpRequired: 3001 },
@@ -459,7 +439,7 @@ const oneE_cleric: LevelProgression[] = [
   { level: 20, xpRequired: 2700001 }
 ]
 
-const oneE_druid: LevelProgression[] = [
+export const oneE_druid: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2001 },
   { level: 3, xpRequired: 4001 },
@@ -476,7 +456,7 @@ const oneE_druid: LevelProgression[] = [
   { level: 14, xpRequired: 1500001 }
 ]
 
-const oneE_thief: LevelProgression[] = [
+export const oneE_thief: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1251 },
   { level: 3, xpRequired: 2501 },
@@ -500,7 +480,7 @@ const oneE_thief: LevelProgression[] = [
   { level: 20, xpRequired: 2360001 }
 ]
 
-const oneE_monk: LevelProgression[] = [
+export const oneE_monk: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2251 },
   { level: 3, xpRequired: 4751 },
@@ -520,7 +500,7 @@ const oneE_monk: LevelProgression[] = [
   { level: 17, xpRequired: 3250001 }
 ]
 
-const oneE_bard: LevelProgression[] = [
+export const oneE_bard: LevelProgression[] = [
   // 1e Bard is complex (must multiclass Fighter→Thief→Bard).
   // These are the Bard-class levels once the character qualifies.
   { level: 1, xpRequired: 0 },
@@ -541,7 +521,7 @@ const oneE_bard: LevelProgression[] = [
   { level: 15, xpRequired: 1375001 }
 ]
 
-const oneEClassExperience: Record<string, LevelProgression[]> = {
+export const oneEClassExperience: Record<string, LevelProgression[]> = {
   fighter:  oneE_fighter,
   paladin:  oneE_paladin,
   ranger:   oneE_ranger,
@@ -565,7 +545,7 @@ const oneEClassExperience: Record<string, LevelProgression[]> = {
 // Race-as-class characters (Dwarf, Elf, Halfling) use the Fighter table
 // in our system since they map to the "fighter" canonical class.
 
-const basic_fighter: LevelProgression[] = [
+export const basic_fighter: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2000 },
   { level: 3, xpRequired: 4000 },
@@ -583,7 +563,7 @@ const basic_fighter: LevelProgression[] = [
   { level: 14, xpRequired: 840000 }
 ]
 
-const basic_cleric: LevelProgression[] = [
+export const basic_cleric: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1500 },
   { level: 3, xpRequired: 3000 },
@@ -601,7 +581,7 @@ const basic_cleric: LevelProgression[] = [
   { level: 14, xpRequired: 700000 }
 ]
 
-const basic_wizard: LevelProgression[] = [
+export const basic_wizard: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 2500 },
   { level: 3, xpRequired: 5000 },
@@ -619,7 +599,7 @@ const basic_wizard: LevelProgression[] = [
   { level: 14, xpRequired: 1050000 }
 ]
 
-const basic_thief: LevelProgression[] = [
+export const basic_thief: LevelProgression[] = [
   { level: 1, xpRequired: 0 },
   { level: 2, xpRequired: 1200 },
   { level: 3, xpRequired: 2400 },
@@ -637,437 +617,9 @@ const basic_thief: LevelProgression[] = [
   { level: 14, xpRequired: 760000 }
 ]
 
-const basicClassExperience: Record<string, LevelProgression[]> = {
+export const basicClassExperience: Record<string, LevelProgression[]> = {
   fighter:  basic_fighter,
   cleric:   basic_cleric,
   wizard:   basic_wizard,   // "magicUser" / "magic-user" resolve to "wizard"
   thief:    basic_thief
 }
-
-
-
-export const FIVE_E_STRENGTH_SKILLS = {
-  athletics: { name: 'Athletics', ability: 'strength', description: 'Difficult situations you face while climbing, jumping, or swimming.' }
-};
-
-export const FIVE_E_DEXTERITY_SKILLS = {
-  acrobatics: { name: 'Acrobatics', ability: 'dexterity', description: 'Staying on your feet in tricky situations, like walking across a tightrope or icy surface.' },
-  sleightOfHand: { name: 'Sleight of Hand', ability: 'dexterity', description: 'Manual trickery, such as planting something on someone else or concealing an object on your person.' },
-  stealth: { name: 'Stealth', ability: 'dexterity', description: 'Escaping notice by moving silently and hiding from view.' }
-};
-
-export const FIVE_E_INTELLIGENCE_SKILLS = {
-  arcana: { name: 'Arcana', ability: 'intelligence', description: 'Recall lore about spells, magic items, eldritch symbols, and planes of existence.' },
-  history: { name: 'History', ability: 'intelligence', description: 'Recall lore about historical events, legendary people, ancient kingdoms, and past disputes.' },
-  investigation: { name: 'Investigation', ability: 'intelligence', description: 'Looking for clues and making deductions based on those clues.' },
-  nature: { name: 'Nature', ability: 'intelligence', description: 'Recall lore about terrain, plants and animals, the weather, and natural cycles.' },
-  religion: { name: 'Religion', ability: 'intelligence', description: 'Recall lore about deities, rites and prayers, religious hierarchies, and holy symbols.' }
-};
-
-export const FIVE_E_WISDOM_SKILLS = {
-  animalHandling: { name: 'Animal Handling', ability: 'wisdom', description: 'Calming domesticated animals, intuiting an animal’s intentions, or controlling a mount.' },
-  insight: { name: 'Insight', ability: 'wisdom', description: 'Determine the true intentions of a creature, such as searching out a lie or predicting a move.' },
-  medicine: { name: 'Medicine', ability: 'wisdom', description: 'Stabilizing a dying companion or diagnosing an illness.' },
-  perception: { name: 'Perception', ability: 'wisdom', description: 'Lets you spot, hear, or otherwise detect the presence of something.' },
-  survival: { name: 'Survival', ability: 'wisdom', description: 'Follow tracks, hunt wild game, guide your group through frozen wastelands, and predict the weather.' }
-};
-
-export const FIVE_E_CHARISMA_SKILLS = {
-  deception: { name: 'Deception', ability: 'charisma', description: 'Hiding the truth, either verbally or through actions, to mislead others.' },
-  intimidation: { name: 'Intimidation', ability: 'charisma', description: 'Influencing others through overt threats, hostile actions, and physical violence.' },
-  performance: { name: 'Performance', ability: 'charisma', description: 'Delighting an audience with music, dance, acting, storytelling, or some other entertainment.' },
-  persuasion: { name: 'Persuasion', ability: 'charisma', description: 'Influencing others with tact, social graces, or good nature.' }
-};
-
-
-
-
-
-export const TWOE_GENERAL_PROFICIENCY_SKILLS = {
-  agriculture: { name: 'Agriculture', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  animalHandling: { name: 'Animal Handling', ability: 'wisdom', checkModifier: -1, baseCost: 1 },
-  animalTraining: { name: 'Animal Training', ability: 'wisdom', checkModifier: 0, baseCost: 1 },
-  artisticAbility: { name: 'Artistic Ability', ability: 'wisdom', checkModifier: 0, baseCost: 1 },
-  blacksmithing: { name: 'Blacksmithing', ability: 'strength', checkModifier: 0, baseCost: 1 },
-  brewing: { name: 'Brewing', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  carpentry: { name: 'Carpentry', ability: 'strength', checkModifier: 0, baseCost: 1 },
-  cobbling: { name: 'Cobbling', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-  cooking: { name: 'Cooking', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  dancing: { name: 'Dancing', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-  directionSense: { name: 'Direction Sense', ability: 'wisdom', checkModifier: +1, baseCost: 1 },
-  etiquette: { name: 'Etiquette', ability: 'charisma', checkModifier: 0, baseCost: 1 },
-  fireBuilding: { name: 'Fire-building', ability: 'wisdom', checkModifier: -1, baseCost: 1 },
-  fishing: { name: 'Fishing', ability: 'wisdom', checkModifier: -1, baseCost: 1 },
-  heraldry: { name: 'Heraldry', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  languagesModern: { name: 'Languages, Modern', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  leatherworking: { name: 'Leatherworking', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  mining: { name: 'Mining', ability: 'wisdom', checkModifier: -3, baseCost: 2 },
-  musicalInstrument: { name: 'Musical Instrument', ability: 'dexterity', checkModifier: -1, baseCost: 1 },
-  pottery: { name: 'Pottery', ability: 'dexterity', checkModifier: -2, baseCost: 1 },
-  ridingLandBased: { name: 'Riding, Land-based', ability: 'wisdom', checkModifier: +3, baseCost: 1 },
-  ropeUse: { name: 'Rope Use', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-  seamanship: { name: 'Seamanship', ability: 'dexterity', checkModifier: +1, baseCost: 1 },
-  seamstressTailor: { name: 'Seamstress/Tailor', ability: 'dexterity', checkModifier: -1, baseCost: 1 },
-  singing: { name: 'Singing', ability: 'charisma', checkModifier: 0, baseCost: 1 },
-  stonemasonry: { name: 'Stonemasonry', ability: 'strength', checkModifier: -2, baseCost: 1 },
-  swimming: { name: 'Swimming', ability: 'strength', checkModifier: 0, baseCost: 1 },
-  weatherSense: { name: 'Weather Sense', ability: 'wisdom', checkModifier: -1, baseCost: 1 },
-  weaving: { name: 'Weaving', ability: 'intelligence', checkModifier: -1, baseCost: 1 },
-  winemaking: { name: 'Winemaking', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-}
-
-export const TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS = {
-  ancientHistory: { name: 'Ancient History', ability: 'intelligence', checkModifier: -1, baseCost: 1 },
-  astrology: { name: 'Astrology', ability: 'intelligence', checkModifier: 0, baseCost: 2 },
-  engineering: { name: 'Engineering', ability: 'intelligence', checkModifier: -3, baseCost: 2 },
-  healing: { name: 'Healing', ability: 'wisdom', checkModifier: -2, baseCost: 2 },
-  herbalism: { name: 'Herbalism', ability: 'intelligence', checkModifier: -2, baseCost: 2 },
-  languagesAncient: { name: 'Languages, Ancient', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  localHistory: { name: 'Local History', ability: 'charisma', checkModifier: 0, baseCost: 1 },
-  musicalInstrumentPriest: { name: 'Musical Instrument', ability: 'dexterity', checkModifier: -1, baseCost: 1 },
-  readingWriting: { name: 'Reading/Writing', ability: 'intelligence', checkModifier: +1, baseCost: 1 },
-  religion: { name: 'Religion', ability: 'wisdom', checkModifier: 0, baseCost: 1 },
-  spellcraft: { name: 'Spellcraft', ability: 'intelligence', checkModifier: -2, baseCost: 1 },
-}
-
-export const TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS = {
-  armorer: { name: 'Armorer', ability: 'intelligence', checkModifier: -2, baseCost: 2 },
-  bowyerFletcher: { name: 'Bowyer/Fletcher', ability: 'dexterity', checkModifier: -1, baseCost: 1 },
-  charioteering: { name: 'Charioteering', ability: 'dexterity', checkModifier: +2, baseCost: 1 },
-  endurance: { name: 'Endurance', ability: 'constitution', checkModifier: 0, baseCost: 2 },
-  navigation: { name: 'Navigation', ability: 'intelligence', checkModifier: -2, baseCost: 1 },
-  ridingAirborne: { name: 'Riding, Airborne', ability: 'wisdom', checkModifier: -2, baseCost: 2 },
-  setSnares: { name: 'Set Snares', ability: 'dexterity', checkModifier: -1, baseCost: 1 },
-  tracking: { name: 'Tracking', ability: 'wisdom', checkModifier: 0, baseCost: 2 },
-  weaponmithing: { name: 'Weaponsmithing', ability: 'intelligence', checkModifier: -3, baseCost: 3 },
-}
-
-export const TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS = {
-  appraising: { name: 'Appraising', ability: 'intelligence', checkModifier: 0, baseCost: 1 },
-  burglary: { name: 'Burglary', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-  climbing: { name: 'Climbing', ability: 'strength', checkModifier: 0, baseCost: 1 },
-  disguise: { name: 'Disguise', ability: 'charisma', checkModifier: 0, baseCost: 1 },
-  escapeArtist: { name: 'Escape Artist', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-  stealth: { name: 'Stealth', ability: 'dexterity', checkModifier: 0, baseCost: 1 },
-}
-
-export const TWOE_WIZARD_GROUP_PROFICIENCY_SKILLS = {
-  alchemy: { name: 'Alchemy', ability: 'intelligence', checkModifier: -3, baseCost: 2 },
-  gemCutting: { name: 'Gem Cutting', ability: 'dexterity', checkModifier: -2, baseCost: 2 },
-}
-
-export const editions: readonly Edition[] = [
-  {
-    id: '5e',
-    name: '5th Edition',
-    settings: [ 'forgottenRealms', 'dragonlance', 'lankhmar', 'ravenloft', 'spellJammer' ],
-    alignments: standardAlignments,
-    races: [
-      ...advancedBasicRaces,
-      'dragonborn',
-      'tiefling'
-    ],
-    classes: [
-      'artificer',
-      'barbarian',
-      'bard',
-      'druid',
-      'fighter',
-      'monk',
-      'ranger',
-      'rogue',
-      'sorcerer',
-      'wizard'
-    ],
-    proficiencies: {
-      skills: {
-        ...FIVE_E_STRENGTH_SKILLS,
-        ...FIVE_E_DEXTERITY_SKILLS,
-        ...FIVE_E_INTELLIGENCE_SKILLS,
-        ...FIVE_E_WISDOM_SKILLS,
-        ...FIVE_E_CHARISMA_SKILLS,
-      }
-    },
-    progression: {
-      maxLevel: 20,
-      experience: fiveEExperience
-    },
-    multiclassing: { allowed: true },
-    equipmentRestrictions: {
-      plateArmorMinLevel: 5,
-      allowMagicItemsAtCreation: true
-    },
-    // Xanathar's Guide recommended magic item distribution by tier
-    magicItemBudget: {
-      maxAttunement: 3,
-      tiers: [
-        { levelRange: [1, 4],   maxRarity: 'uncommon',  permanentItems: 2,  consumableItems: 9 },
-        { levelRange: [5, 10],  maxRarity: 'rare',      permanentItems: 6,  consumableItems: 28 },
-        { levelRange: [11, 16], maxRarity: 'very-rare',  permanentItems: 6,  consumableItems: 24 },
-        { levelRange: [17, 20], maxRarity: 'legendary',  permanentItems: 6,  consumableItems: 19 }
-      ]
-    }
-  },
-  {
-    id: '4e',
-    name: '4th edition',
-    settings: [ 'forgottenRealms' ],
-    alignments: fourEAlignments,  
-    races: [
-      ...basicRaces,
-      'dragonborn',
-      'eladrin',
-      'tiefling'
-    ],
-    classes: [
-      'cleric',
-      'fighter',
-      'paladin',
-      'ranger',
-      'rogue',
-      'warlock',
-      'warlord',
-      'wizard'
-    ],  
-    multiclassing: { allowed: true, maxClasses: 2 },
-    progression: {
-      maxLevel: 30,
-      experience: fourEExperience
-    },
-    // 4e: Items are gated by item level, not rarity.  The standard treasure
-    // parcel gives one item of level+1, level, and level-1.  We approximate
-    // this across tier ranges — the domain logic also checks enhancementLevel
-    // on each item to enforce the per-level gate.
-    magicItemBudget: {
-      tiers: [
-        { levelRange: [1, 4],   permanentItems: 3,  consumableItems: 4 },
-        { levelRange: [5, 10],  permanentItems: 6,  consumableItems: 8 },
-        { levelRange: [11, 16], permanentItems: 6,  consumableItems: 8 },
-        { levelRange: [17, 20], permanentItems: 6,  consumableItems: 8 },
-        { levelRange: [21, 25], permanentItems: 6,  consumableItems: 8 },
-        { levelRange: [26, 30], permanentItems: 6,  consumableItems: 8 }
-      ]
-    }
-  },
-  {
-    id: '3.5e',
-    name: '3.5 edition',
-    settings: [ 'darkSun', 'dragonlance', 'forgottenRealms', 'ravenloft' ],
-    alignments: standardAlignments,
-    races: advancedBasicRaces,
-    classes: [
-      "barbarian",
-      "bard",
-      "cleric",
-      "druid",
-      "fighter",
-      "monk",
-      "paladin",
-      "ranger",
-      "rogue",
-      "sorcerer",
-      "wizard"
-    ],
-    multiclassing: { allowed: true },
-    progression: {
-      maxLevel: 20,
-      experience: threeEExperience
-    },
-    // 3.5e: Wealth by Level (DMG p135).  Magic items are purchased from the
-    // character's total wealth budget.  maxItemValueGp caps any single item.
-    magicItemBudget: {
-      tiers: [
-        { levelRange: [1, 4],   permanentItems: 2,  consumableItems: 4,  maxItemValueGp: 3000 },
-        { levelRange: [5, 10],  permanentItems: 4,  consumableItems: 6,  maxItemValueGp: 25000 },
-        { levelRange: [11, 16], permanentItems: 6,  consumableItems: 6,  maxItemValueGp: 100000 },
-        { levelRange: [17, 20], permanentItems: 8,  consumableItems: 6,  maxItemValueGp: 200000 }
-      ]
-    }
-  },
-  {
-    id: '3e',
-    name: '3rd edition',
-    settings: [ 'darkSun', 'dragonlance', 'forgottenRealms', 'ravenloft' ],
-    alignments: standardAlignments,
-    races: advancedBasicRaces,
-    classes: [
-      "barbarian",
-      "bard",
-      "cleric",
-      "druid",
-      "fighter",
-      "monk",
-      "paladin",
-      "ranger",
-      "rogue",
-      "sorcerer",
-      "wizard"
-    ],  
-    multiclassing: { allowed: true },
-    progression: {
-      maxLevel: 20,
-      experience: threeEExperience
-    },
-    // 3e uses the same Wealth by Level system as 3.5e
-    magicItemBudget: {
-      tiers: [
-        { levelRange: [1, 4],   permanentItems: 2,  consumableItems: 4,  maxItemValueGp: 3000 },
-        { levelRange: [5, 10],  permanentItems: 4,  consumableItems: 6,  maxItemValueGp: 25000 },
-        { levelRange: [11, 16], permanentItems: 6,  consumableItems: 6,  maxItemValueGp: 100000 },
-        { levelRange: [17, 20], permanentItems: 8,  consumableItems: 6,  maxItemValueGp: 200000 }
-      ]
-    }
-  },
-  {
-    id: '2e',
-    name: '2nd edition - AD&D',
-    settings: [ 'alQadim', 'darkSun', 'dragonlance', 'greyhawk', 'forgottenRealms', 'hollowWorld', 'lankhmar', 'mystara', 'planescape', 'ravenloft', 'spellJammer' ],
-    alignments: standardAlignments,
-    races: advancedBasicRaces,
-    // "mage" resolved to "wizard" via classAliases
-    classes: [
-      "fighter",
-      "paladin",
-      "ranger",
-      "mage",
-      // "specialist wizard",
-      "cleric",
-      "druid",
-      "thief",
-      "bard"
-    ],
-    multiclassing: { allowed: true, maxClasses: 3 },
-    progression: {
-      maxLevel: 20,
-      classExperience: twoEClassExperience
-    },
-    proficiencies: {
-      skills: {
-        ...TWOE_GENERAL_PROFICIENCY_SKILLS,
-        ...TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS,
-        ...TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS,
-        ...TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS,
-        ...TWOE_WIZARD_GROUP_PROFICIENCY_SKILLS,
-      }
-    },
-    terminology: {
-      skills: 'Non-Weapon Proficiency'
-    }
-  },
-  {
-    id: '1e',
-    name: '1st edition - AD&D',
-    settings: [ 'dragonlance', 'greyhawk', 'forgottenRealms', 'lankhmar', 'mystara', 'ravenloft'],
-    alignments: standardAlignments,
-    races: advancedBasicRaces,
-    // "magicUser" resolved to "wizard" via classAliases
-    classes: [
-      "cleric",
-      "druid",
-      "fighter",
-      "paladin",
-      "ranger",
-      "magic-user",   // resolved to "wizard" via classAliases
-      "illusionist",  // TODO: no catalog entry yet
-      "thief",
-      "assassin",     // TODO: no catalog entry yet
-      "monk",
-      "bard"
-    ],
-    multiclassing: { allowed: true, maxClasses: 3 },
-    progression: {
-      maxLevel: 20,
-      classExperience: oneEClassExperience
-    }
-  },
-  {
-    id: 'becmi',
-    name: 'BECMI', // Basic, Expert, Companion, Master, Immortal
-    settings: [ 'mystara'],
-    alignments: basicAlignments,
-    races: basicRaces,
-    classes: [
-      "cleric",
-      "fighter",
-      "magicUser",
-      "thief",
-      // TODO: Race as class
-      // "dwarf",
-      // "elf",
-      // "halfling"
-      // TODO: Handle later
-      // "mystic"
-    ],
-    progression: {
-      maxLevel: 36,
-      classExperience: basicClassExperience
-    }
-  },
-  {
-    id: 'bx',
-    name: 'Basic, Expert',
-    settings: [ 'mystara'],
-    alignments: basicAlignments,
-    races: basicRaces,
-    classes: [
-      "cleric",
-      "fighter",
-      "magicUser",
-      "thief",
-      // TODO: Race as class
-      // "dwarf",
-      // "elf",
-      // "halfling"
-      // TODO: Handle later
-      // "mystic"
-    ],
-    progression: {
-      maxLevel: 14,
-      classExperience: basicClassExperience
-    }
-  },
-  {
-    id: 'b',
-    name: 'Basic (Holmes)',
-    settings: [ 'mystara'],
-    alignments: basicAlignments,
-    races: basicRaces,
-    classes: [
-      "cleric",
-      "fighter",
-      "magic-user",   // resolved to "wizard" via classAliases
-      "thief",
-      // Race-as-class: demihumans restricted to Fighter via class requirements
-    ],
-    progression: {
-      maxLevel: 3,
-      classExperience: basicClassExperience
-    }
-  },
-  {
-    id: 'odd',
-    name: 'OD&D',
-    settings: [ 'mystara'],
-    alignments: basicAlignments,
-    races: basicRaces,
-    // Class IDs resolved via classAliases: "fighting-man" → "fighter", "magic-user" → "wizard"
-    classes: [
-      "fighting-man",
-      "magic-user",
-      "cleric",
-      "thief",
-      // TODO: Introduced later
-      // "paladin",
-      // "monk",
-      // "assassin",
-      // "druid"
-    ],
-    progression: {
-      maxLevel: 14,
-      classExperience: basicClassExperience
-    }
-  }
-] as const;
-
-
- export type EditionType = keyof typeof editions

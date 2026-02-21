@@ -7,10 +7,19 @@ import { getStepConfig } from '../../constants'
 import type { HitPointMode } from '../../types'
 import InvalidationConfirmDialog from '../InvalidationConfirmDialog/InvalidationConfirmDialog'
 
+export type AbilityScoreMode = 'default' | 'ai' | 'custom'
+
 export type CharacterBuilderWizardProps = {
   onGenerate: () => void
   isGenerating?: boolean
   hitPointMode?: HitPointMode
+  /**
+   * How ability scores are generated:
+   * - 'default': use the edition's configured method + class ability priority
+   * - 'ai': let the AI generate scores (current behavior)
+   * - 'custom': user-defined (TODO)
+   */
+  abilityScoreMode?: AbilityScoreMode
   /** When set, locks the wizard to a single step with Save/Cancel buttons. */
   editStepId?: string
   onSave?: () => void
@@ -28,6 +37,7 @@ const CharacterBuilderWizard = ({
   onGenerate,
   isGenerating = false,
   hitPointMode = 'average',
+  abilityScoreMode = 'default',
   editStepId,
   onSave,
   onCancel,

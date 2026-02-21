@@ -4,8 +4,8 @@ import type { CharacterClass } from './types'
 import {
   FIVE_E_STRENGTH_SKILLS,
   TWOE_GENERAL_PROFICIENCY_SKILLS,
-  TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
-} from "../editions"
+  TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS,
+} from "@/data/editions/proficiencySkillsByEdition"
 import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const fighter = {
@@ -342,5 +342,8 @@ export const fighter = {
       armorProficiency: ['all'],
       weaponProficiency: ['all'],
     },
-  ]
+  ],
+  generation: {
+    abilityPriority: ['strength', 'constitution']
+  }
 } satisfies CharacterClass

@@ -79,7 +79,7 @@ export function getArmorConfigurations(
 ): ArmorConfiguration[] {
   if (edition !== '5e') return []
 
-  const dexScore = character.stats?.dexterity ?? 10
+  const dexScore = character.abilityScores?.dexterity ?? 10
   const dexMod = Math.floor((dexScore - 10) / 2)
   const ownedIds = character.equipment?.armor ?? []
 

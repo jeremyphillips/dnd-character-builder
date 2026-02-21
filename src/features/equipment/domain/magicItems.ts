@@ -1,4 +1,4 @@
-import { editions } from '@/data/editions'
+import { editions } from '@/data/editions/editions'
 import { equipment } from '@/data/equipment'
 import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import type { EditionId } from '@/data'

@@ -1,5 +1,5 @@
 import { resolveAvailable2eSkills } from '@/features/character/domain/edition/2e/proficiencies'
-import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS } from '../editions'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS } from '@/data/editions/proficiencySkillsByEdition'
 import type { CharacterClass } from './types'
 
 export const thief = {

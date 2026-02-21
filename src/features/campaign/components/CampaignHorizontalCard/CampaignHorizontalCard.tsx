@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography'
 import { HorizontalCompactCard, type CardBadgeItem } from '@/ui/cards'
 import { getNameById } from '@/domain/lookups'
 import { editions, settings } from '@/data'
+import type { EditionId, SettingId } from '@/data'
 
 interface CampaignHorizontalCardProps {
   campaignId: string
@@ -12,9 +13,9 @@ interface CampaignHorizontalCardProps {
   /** DM / admin display name */
   dmName?: string
   /** Edition ID — resolved to display name internally */
-  edition?: string
+  edition?: EditionId
   /** Setting ID — resolved to display name internally */
-  setting?: string
+  setting?: SettingId
   /** Number of approved campaign members */
   memberCount?: number
   /** Character's in-campaign status ('active' | 'inactive' | 'deceased') */

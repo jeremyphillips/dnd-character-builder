@@ -1,4 +1,4 @@
-export { useCharacter, type CampaignSummary, type PendingMembership, type UseCharacterReturn } from './useCharacter'
+export { useCharacter, type UseCharacterReturn } from './useCharacter'
 export { useCharacterForm, type CharacterNarrative, type UseCharacterFormReturn } from './useCharacterForm'
 export { useCharacterActions, type CharacterActionDeps, type UseCharacterActionsReturn } from './useCharacterActions'
 export { useCharacters, type UseCharactersReturn } from './useCharacters'

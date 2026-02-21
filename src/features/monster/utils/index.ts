@@ -5,5 +5,3 @@ export {
   formatMorale, 
   formatNumberAppearing,
 } from './formatters'
-
-export { resolveEditionRule } from './ruleResolution'

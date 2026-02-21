@@ -1,27 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { CharacterDoc } from '@/shared'
+import type { CampaignSummary, PendingMembership } from '@/shared/types/campaign.types'
 import { apiFetch } from '@/app/api'
-
-export interface CampaignSummary {
-  _id: string
-  identity: {
-    name: string
-    setting?: string
-    edition?: string
-    description?: string
-    imageUrl?: string
-  }
-  dmName?: string
-  campaignMemberId?: string
-  characterStatus?: string
-  memberCount?: number
-}
-
-export interface PendingMembership {
-  campaignId: string
-  campaignName: string
-  campaignMemberId: string
-}
 
 interface CharacterResponse {
   character: CharacterDoc

@@ -14,19 +14,44 @@ export type CampaignCharacterStatus =
   | 'inactive'
   | 'deceased'
 
-export interface Campaign {
+export type CampaignIdentity = {
+  name: string
+  setting?: string
+  edition?: string
+  description?: string
+  imageUrl?: string
+}
+
+export type CampaignConfiguration = {
+  allowLegacyEditionNpcs?: boolean
+}
+
+/** Fields common to both the full Campaign document and lightweight summaries. */
+export interface CampaignBase {
   _id: string
-  identity: {
-    name?: string
-    setting?: string
-    edition?: string
-    description?: string
-  }
+  identity: CampaignIdentity
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface Campaign extends CampaignBase {
   membership: {
     adminId: string
   }
-  memberCount: number,
-  configuration?: {
-    allowLegacyEditionNpcs?: boolean
-  }
+  configuration?: CampaignConfiguration
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CampaignSummary extends CampaignBase {
+  dmName?: string
+  campaignMemberId?: string
+  characterStatus?: string
+  memberCount?: number
+}
+
+export interface PendingMembership {
+  campaignId: string
+  campaignName: string
+  campaignMemberId: string
 }

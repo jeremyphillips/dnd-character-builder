@@ -1,5 +1,5 @@
 import type { CharacterDoc } from '@/shared'
-import type { PendingMembership } from '@/features/character/hooks'
+import type { PendingMembership } from '@/shared/types/campaign.types'
 
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'

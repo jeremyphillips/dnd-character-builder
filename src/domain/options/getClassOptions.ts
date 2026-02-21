@@ -1,5 +1,5 @@
 import { classes, settings, type EditionId } from '@/data'
-import { applyOverrides } from '../rules'
+import { applyOverrides } from '@/features/character/helpers'
 
 export const getClassOptions = (edition?: EditionId, settingId?: string) => {
   if (!edition) return []
@@ -14,8 +14,6 @@ export const getClassOptions = (edition?: EditionId, settingId?: string) => {
   const setting = settingId ? settings.find(c => c.id === settingId) : null
 
   const finalClassIds = applyOverrides(baseClassIds, setting?.classOverrides)
-
-  console.log('finalClassIds',finalClassIds)
 
   return finalClassIds.map(id => {
     const cls = classList.find(c => c.id === id)

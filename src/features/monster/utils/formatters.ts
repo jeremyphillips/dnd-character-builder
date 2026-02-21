@@ -1,4 +1,4 @@
-import { type EditionRule } from '@/data'
+import { type EditionRule } from '@/features/mechanics/domain/edition'
 
 export function formatAttacks(attacks: EditionRule['mechanics']['attacks']): string {
   if (!attacks?.length) return '—'

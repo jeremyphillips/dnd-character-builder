@@ -24,7 +24,6 @@ export default function useChat(): UseChatReturn {
 
     try {
       const assistantMessage = await sendChatMessage(userMessage.content)
-      console.log('chat response: ', assistantMessage)
       setMessages(prev => [...prev, assistantMessage])
       return assistantMessage
     } catch (err) {

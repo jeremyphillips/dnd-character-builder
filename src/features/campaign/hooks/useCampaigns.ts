@@ -13,7 +13,6 @@ export function useCampaigns(filters?: {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("useCampaigns render");
     fetchCampaigns();
   }, []);
 

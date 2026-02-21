@@ -1,5 +1,5 @@
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
-import type { CampaignSummary } from '@/features/character/hooks'
+import type { CampaignSummary } from '@/shared/types/campaign.types'
 import type { EditionId } from '@/data'
 import { classes as classesData, editions, settings, races } from '@/data'
 import { getNameById, getById } from '@/domain/lookups'
@@ -98,7 +98,7 @@ export default function IdentityBanner({
   const primaryClassId = filledClasses[0]?.classId
   const editionObj = editions.find(e => e.id === character.edition)
   const maxLevel = editionObj?.progression?.maxLevel ?? 20
-console.log(raceOptions)
+
   const classSummary = filledClasses.length > 0
     ? filledClasses.map(cls => {
         const sub = getSubclassNameById(cls.classId, cls.classDefinitionId)

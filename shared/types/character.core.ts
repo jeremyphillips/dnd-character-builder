@@ -64,28 +64,8 @@ export type ArmorClass = {
   calculation?: string
 }
 
-export type ProficiencyTaxonomy =
-  | 'Skill'               // 5e skill proficiency
-  | 'Tool'                // 5e tool proficiency
-  | 'Proficiencies'       // generic / 3e
-  | 'NWP'                 // 2e non-weapon proficiency
-  | 'Weapon Proficiency'  // 2e weapon proficiency
-  | 'Trained Skill'       // 4e trained skill
-
-export type Proficiency = {
-  id: string
-  name: string
-  edition: EditionId
-  taxonomy: ProficiencyTaxonomy
-  choiceCount?: number
-  canSpecialize?: boolean // 2e specific
-  option: {
-    id: string
-    name: string
-    // 2e specific
-    relevantStatId?: string
-    checkModifier?: number
-  }
+export type CharacterProficiencies = {
+  skills?: string[]
 }
 
 export type CharacterType = 'pc' | 'npc'
@@ -112,7 +92,7 @@ export type CharacterCore = {
     selectedArmorConfigId?: string | null
   }
 
-  proficiencies?: Proficiency[]
+  proficiencies?: CharacterProficiencies
   spells?: string[]              // selected spell IDs from the spell catalog
   equipment?: Equipment
   wealth?: Wealth

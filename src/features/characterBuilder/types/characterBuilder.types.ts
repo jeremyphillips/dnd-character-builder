@@ -1,9 +1,9 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
-import type { CharacterType, Proficiency } from '@/shared/types/character.core'
+import type { CharacterType, CharacterProficiencies } from '@/shared/types/character.core'
 import type { HitPointMode } from '@/features/character/domain/progression'
 import type { InvalidationResult } from '../validation/types'
 
-export type { CharacterClassInfo, CharacterSheet, Proficiency }
+export type { CharacterClassInfo, CharacterSheet, CharacterProficiencies }
 export type { HitPointMode }
 
 export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
@@ -83,7 +83,7 @@ export type CharacterBuilderContextValue = {
   }) => void
 
   // proficiencies
-  setProficiencies: (proficiencies: Proficiency[]) => void
+  setProficiencies: (proficiencies: CharacterProficiencies) => void
 
   // hit points
   setHitPointMode: (mode: HitPointMode) => void

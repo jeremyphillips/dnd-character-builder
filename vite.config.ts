@@ -45,6 +45,7 @@ export default defineConfig({
       "@/features/messaging": path.resolve(__dirname, "src/features/messaging"),
       "@/features/monster": path.resolve(__dirname, "src/features/monster"),
       "@/features/npc": path.resolve(__dirname, "src/features/npc"),
+      "@/features/equipment": path.resolve(__dirname, "src/features/equipment"),
       "@/hooks": path.resolve(__dirname, "src/hooks"),
       "@/services": path.resolve(__dirname, "src/services"),
       "@/shared": path.resolve(__dirname, "shared/types"),

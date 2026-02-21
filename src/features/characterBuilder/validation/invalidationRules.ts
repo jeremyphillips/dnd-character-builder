@@ -17,7 +17,7 @@ import type { AlignmentId } from '@/data'
 import { spells as spellCatalog } from '@/data/classes/spells'
 import { getClassRequirement } from '@/features/character/domain/validation'
 import { getAlignmentsByEdition } from '@/features/character/domain/reference'
-import { resolveEquipmentEdition } from '@/domain/equipment'
+import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import { getById } from '@/domain/lookups'
 import { getAvailableSpellsByEditionAndClass, computeSpellLimits } from '@/features/character/domain/progression'
 

@@ -91,10 +91,10 @@ export const sorcerer = {
             'arcana',
             'deception',
             'insight',
-          'intimidation',
-          'persuasion',
-          'religion'
-        ]
+            'intimidation',
+            'persuasion',
+            'religion'
+          ]
         }
       ],
       weapons: [

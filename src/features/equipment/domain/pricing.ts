@@ -1,6 +1,6 @@
 import type { ArmorItem, GearItem, WeaponItem } from '@/data'
-import { parseCurrencyToGold } from '../wealth'
-import { resolveEquipmentEdition } from './editionMap'
+import { parseCurrencyToGold } from '../../../domain/wealth'
+import { resolveEquipmentEdition } from '@/features/equipment/domain'
 
 /** Returns the cost string for an item in a given edition (e.g. "10 gp"). */
 export const getEquipmentCostByEdition = (

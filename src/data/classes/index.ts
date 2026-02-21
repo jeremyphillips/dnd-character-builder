@@ -53,19 +53,19 @@ export const classes: readonly CharacterClass[] = [
     definitions: [],
     requirements: [],
     proficiencies: [
-      {
-        edition: '2e',
-        taxonomy: 'NWP',
-        name: 'Non-Weapon Proficiencies',
-        options: [
-          { id: 'ancientHistory', name: 'Ancient History', relevantStatId: 'intelligence', checkModifier: -1 },
-          { id: 'astrology', name: 'Astrology', relevantStatId: 'intelligence', checkModifier: 0 },
-          { id: 'healing', name: 'Healing', relevantStatId: 'wisdom', checkModifier: -2 },
-          { id: 'herbalism', name: 'Herbalism', relevantStatId: 'intelligence', checkModifier: -2 },
-          { id: 'localHistory', name: 'Local History', relevantStatId: 'charisma', checkModifier: 0 },
-          { id: 'religion', name: 'Religion', relevantStatId: 'wisdom', checkModifier: 0 }
-        ]
-      }
+      // {
+      //   edition: '2e',
+      //   taxonomy: 'NWP',
+      //   name: 'Non-Weapon Proficiencies',
+      //   options: [
+      //     { id: 'ancientHistory', name: 'Ancient History', relevantStatId: 'intelligence', checkModifier: -1 },
+      //     { id: 'astrology', name: 'Astrology', ability: 'intelligence', checkModifier: 0 },
+      //     { id: 'healing', name: 'Healing', ability: 'wisdom', checkModifier: -2 },
+      //     { id: 'herbalism', name: 'Herbalism', ability: 'intelligence', checkModifier: -2 },
+      //     { id: 'localHistory', name: 'Local History', ability: 'charisma', checkModifier: 0 },
+      //     { id: 'religion', name: 'Religion', ability: 'wisdom', checkModifier: 0 }
+      //   ]
+      // }
     ]
     // rolesByEdition: {
     //   '2': 'group'
@@ -122,22 +122,22 @@ export const classes: readonly CharacterClass[] = [
     definitions: [],
     requirements: [],
     proficiencies: [
-      {
-        edition: '2e',
-        taxonomy: 'NWP',
-        name: 'Non-Weapon Proficiencies',
-        options: [
-          { id: 'appraising', name: 'Appraising', relevantStatId: 'intelligence', checkModifier: 0 },
-          { id: 'blindFighting', name: 'Blind-fighting', relevantStatId: 'none', checkModifier: 0 },
-          { id: 'disguise', name: 'Disguise', relevantStatId: 'charisma', checkModifier: -1 },
-          { id: 'forgery', name: 'Forgery', relevantStatId: 'dexterity', checkModifier: -1 },
-          { id: 'gaming', name: 'Gaming', relevantStatId: 'charisma', checkModifier: 0 },
-          { id: 'jumping', name: 'Jumping', relevantStatId: 'strength', checkModifier: 0 },
-          { id: 'musicalInstrument', name: 'Musical Instrument', relevantStatId: 'dexterity', checkModifier: -1 },
-          { id: 'tightropeWalking', name: 'Tightrope Walking', relevantStatId: 'dexterity', checkModifier: -1 },
-          { id: 'tumbling', name: 'Tumbling', relevantStatId: 'dexterity', checkModifier: 0 }
-        ]
-      }
+      // {
+      //   edition: '2e',
+      //   taxonomy: 'NWP',
+      //   name: 'Non-Weapon Proficiencies',
+      //   options: [
+      //     { id: 'appraising', name: 'Appraising', relevantStatId: 'intelligence', checkModifier: 0 },
+      //     { id: 'blindFighting', name: 'Blind-fighting', relevantStatId: 'none', checkModifier: 0 },
+      //     { id: 'disguise', name: 'Disguise', relevantStatId: 'charisma', checkModifier: -1 },
+      //     { id: 'forgery', name: 'Forgery', relevantStatId: 'dexterity', checkModifier: -1 },
+      //     { id: 'gaming', name: 'Gaming', relevantStatId: 'charisma', checkModifier: 0 },
+      //     { id: 'jumping', name: 'Jumping', relevantStatId: 'strength', checkModifier: 0 },
+      //     { id: 'musicalInstrument', name: 'Musical Instrument', relevantStatId: 'dexterity', checkModifier: -1 },
+      //     { id: 'tightropeWalking', name: 'Tightrope Walking', relevantStatId: 'dexterity', checkModifier: -1 },
+      //     { id: 'tumbling', name: 'Tumbling', relevantStatId: 'dexterity', checkModifier: 0 }
+      //   ]
+      // }
     ]
 
     // rolesByEdition: {

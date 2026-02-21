@@ -84,10 +84,10 @@ function mergeCharacterData(
     ? (aiResult as any).character
     : aiResult) ?? {}
 
-  const proficiencies = builderState?.proficiencies?.length && 
-    builderState?.proficiencies?.length > 0 ? 
-    builderState.proficiencies : 
-    ai.proficiencies ?? []
+  const builderSkills = builderState?.proficiencies?.skills ?? []
+  const proficiencies = builderSkills.length > 0
+    ? { skills: builderSkills }
+    : (ai.proficiencies ?? { skills: [] })
 
   return {
     type: builderState.type,
@@ -209,7 +209,7 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
         requirements: {
           minStats: { strength: 9 },
         },
-        proficiencies: [],
+        proficiencies: { skills: [] },
         equipment: {
           weapons: s?.equipment?.weapons,
           armor: s?.equipment?.armor,

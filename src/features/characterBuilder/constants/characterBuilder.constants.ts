@@ -90,7 +90,7 @@ export function getStepConfig(mode: CharacterType): StepConfig[] {
       label: 'Proficiencies',
       component: ProficiencyStep,
       selector: (state: CharacterBuilderState) =>
-        (state.proficiencies?.length ?? 0) > 0
+        (state.proficiencies?.skills?.length ?? 0) > 0
     },
     {
       id: 'confirmation',
@@ -157,7 +157,7 @@ export function createInitialBuilderState(
       weight: 0
     },
     alignment: overrides?.alignment ?? undefined,
-    proficiencies: [],
+    proficiencies: { skills: [] },
     spells: [],
     totalLevel: 0,
     wealth: {

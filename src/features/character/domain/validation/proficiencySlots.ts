@@ -1,57 +1,59 @@
 import { classes } from '@/data'
-import type { ClassProficiency } from '@/data/classes/types'
-import type { CharacterClassInfo, Proficiency } from '@/shared/types/character.core'
+import type { ClassProficiencyEntry, ClassProficienciesByEdition } from '@/data/classes/types'
+import type { CharacterClassInfo, CharacterProficiencies } from '@/shared/types/character.core'
 
 export interface ProficiencySlotSummary {
-  /** Total slots granted across all class proficiency groups. */
+  /** Total slots granted across all class skill proficiency groups. */
   totalSlots: number
-  /** Number of proficiencies the character has selected. */
+  /** Number of skills the character has selected. */
   filled: number
   /** Slots still available for selection. */
   remaining: number
-  /** True when every proficiency group's choiceCount is fully satisfied. */
+  /** True when every skill slot is filled. */
   allFilled: boolean
   /** True when the character has at least one selectable slot. */
   hasAvailableSlots: boolean
 }
 
 /**
- * Look up proficiency groups for a class + edition from static class data.
- * Mirrors `getClassProficiencyGroups` in ProficiencyStep but lives in domain
- * so it can be reused by validation and view layers.
+ * Extract skill choice entries for a class + edition from the new proficiency data.
  */
-export function getClassProficiencyGroups(
+function getClassSkillChoices(
   classId: string | undefined,
   edition: string | undefined,
-): ClassProficiency[] {
+): ClassProficiencyEntry[] {
   if (!classId || !edition) return []
   const cls = classes.find(c => c.id === classId)
   if (!cls) return []
-  if (!Array.isArray(cls.proficiencies)) return []
-  return cls.proficiencies.filter(p => p.edition === edition)
+  const profs = cls.proficiencies
+  if (Array.isArray(profs)) return []
+  const edProfs = (profs as ClassProficienciesByEdition)[edition]
+  if (!edProfs?.skills) return []
+  const entries = Array.isArray(edProfs.skills) ? edProfs.skills : [edProfs.skills]
+  return entries.filter(e => e.type === 'choice')
 }
 
 /**
- * Aggregate all proficiency groups for a character's class list + edition.
+ * Aggregate all skill choice entries for a character's class list + edition.
  */
-export function getAllProficiencyGroups(
+export function getAllSkillChoices(
   characterClasses: CharacterClassInfo[],
   edition: string | undefined,
-): ClassProficiency[] {
-  return characterClasses.flatMap(c => getClassProficiencyGroups(c.classId, edition))
+): ClassProficiencyEntry[] {
+  return characterClasses.flatMap(c => getClassSkillChoices(c.classId, edition))
 }
 
 /**
- * Calculate how many total slots the character has versus how many are filled.
+ * Calculate how many total skill slots the character has versus how many are filled.
  */
 export function getProficiencySlotSummary(
   characterClasses: CharacterClassInfo[],
   edition: string | undefined,
-  proficiencies: Proficiency[] | undefined,
+  proficiencies: CharacterProficiencies | undefined,
 ): ProficiencySlotSummary {
-  const groups = getAllProficiencyGroups(characterClasses, edition)
-  const totalSlots = groups.reduce((sum, g) => sum + (g.choiceCount ?? 0), 0)
-  const filled = proficiencies?.length ?? 0
+  const choices = getAllSkillChoices(characterClasses, edition)
+  const totalSlots = choices.reduce((sum, e) => sum + (e.count ?? e.slots ?? 0), 0)
+  const filled = proficiencies?.skills?.length ?? 0
   const remaining = Math.max(0, totalSlots - filled)
 
   return {

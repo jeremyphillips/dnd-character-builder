@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState, CharacterClassInfo, StepId } from '../types'
-import type { Proficiency } from '@/shared/types/character.core'
+import type { CharacterProficiencies } from '@/shared/types/character.core'
 import type { InvalidationResult } from '../validation/types'
 import {
   getStepConfig,
@@ -16,7 +16,7 @@ import {
 import {
   calculateEquipmentWeight,
   calculateEquipmentCost
-} from '@/domain/equipment'
+} from '@/features/equipment/domain'
 import {
   detectInvalidations,
   resolveInvalidations,
@@ -183,13 +183,11 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       classId: cls.classId ?? (i === 0 ? character.class : undefined),
     }))
 
-    // Build locked selections from the character's existing proficiencies
+    // Lock existing skill selections so edit mode only allows adding new ones
     const lockedSelections: Record<string, string[]> = {}
-    for (const p of (character.proficiencies ?? []) as import('@/shared/types/character.core').Proficiency[]) {
-      if (!p?.id || !p?.option?.id) continue
-      const key = `${p.id}::${p.taxonomy}`
-      if (!lockedSelections[key]) lockedSelections[key] = []
-      lockedSelections[key].push(p.option.id)
+    const existingSkills = character.proficiencies?.skills ?? []
+    if (existingSkills.length > 0) {
+      lockedSelections['skills'] = [...existingSkills]
     }
 
     setState({
@@ -206,7 +204,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       totalLevel: character.totalLevel ?? character.level ?? 1,
       xp: character.xp ?? 0,
       equipment: character.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
-      proficiencies: character.proficiencies ?? [],
+      proficiencies: character.proficiencies ?? { skills: [] },
       spells: character.spells ?? [],
       wealth: character.wealth ?? { gp: 0, sp: 0, cp: 0 },
       editMode: { characterId: character._id ?? '', stepId, lockedSelections },
@@ -479,7 +477,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const setHitPointMode = (hitPointMode: CharacterBuilderState['hitPointMode']) =>
     updateState(s => ({ ...s, hitPointMode }))
 
-  const setProficiencies = (proficiencies: Proficiency[]) =>
+  const setProficiencies = (proficiencies: CharacterProficiencies) =>
     updateState(s => ({ ...s, proficiencies }))
 
   const setSpells = (spells: string[]) =>

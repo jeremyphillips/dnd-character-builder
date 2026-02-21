@@ -17,7 +17,7 @@ export interface ProficiencySlotSummary {
 
 /**
  * Look up proficiency groups for a class + edition from static class data.
- * Mirrors `getClassProficiencyGroups` in DetailsStep but lives in domain
+ * Mirrors `getClassProficiencyGroups` in ProficiencyStep but lives in domain
  * so it can be reused by validation and view layers.
  */
 export function getClassProficiencyGroups(
@@ -27,6 +27,7 @@ export function getClassProficiencyGroups(
   if (!classId || !edition) return []
   const cls = classes.find(c => c.id === classId)
   if (!cls) return []
+  if (!Array.isArray(cls.proficiencies)) return []
   return cls.proficiencies.filter(p => p.edition === edition)
 }
 

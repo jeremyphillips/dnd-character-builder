@@ -115,6 +115,24 @@ export interface ClassProficiency {
   }
 }
 
+export interface ClassProficiencyEntry {
+  type?: 'choice' | 'fixed'
+  level?: number
+  count?: number
+  slots?: number
+  from?: string[]
+  categories?: string[]
+  items?: string[]
+}
+
+export type EditionClassProficiencies = {
+  skills?: ClassProficiencyEntry[] | ClassProficiencyEntry
+  weapons?: ClassProficiencyEntry[]
+  armor?: ClassProficiencyEntry[]
+}
+
+export type ClassProficienciesByEdition = Partial<Record<EditionId | string, EditionClassProficiencies>>
+
 // ---------------------------------------------------------------------------
 // Spell Progression
 // ---------------------------------------------------------------------------
@@ -239,6 +257,6 @@ export interface CharacterClass {
   displayNameByEdition?: Partial<Record<string, string>>  // edition-specific display name (e.g. wizard -> "Mage" in 2e)
   definitions: ClassDefinition[]
   requirements: ClassRequirement[]
-  proficiencies: ClassProficiency[]
+  proficiencies: ClassProficiency[] | ClassProficienciesByEdition
   progression?: ClassProgression[]
 }

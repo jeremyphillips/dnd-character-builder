@@ -1,4 +1,5 @@
 import type { MagicItemRarity } from './equipment/magicItems.types'
+import type { AbilityScores } from '@/shared/types/character.core'
 
 export interface Stats {
   strength?: number
@@ -32,10 +33,14 @@ export interface LevelProgression {
 }
 
 export interface EditionProficiency {
-  id: string
   name: string
-  relevantStatId?: string
+  ability: keyof AbilityScores
+  /** 5e skill description. */
+  description?: string
+  /** 2e ability-check modifier applied when using the proficiency. */
   checkModifier?: number
+  /** 2e slot cost to acquire the proficiency. */
+  baseCost?: number
 }
 
 export interface Edition {
@@ -89,7 +94,9 @@ export interface Edition {
      */
     maxClasses?: number
   }
-  proficiencies?: EditionProficiency[]
+  proficiencies?: Partial<Record<EditionId, {
+    skills: Record<string, EditionProficiency>
+  }>>
   equipmentRestrictions?: {
     plateArmorMinLevel?: number
     allowMagicItemsAtCreation?: boolean

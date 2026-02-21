@@ -7,13 +7,15 @@ import { getById } from '@/domain/lookups'
 import { getClassRequirement } from '@/features/character/domain/validation'
 import {
   calculateEquipmentCost,
-  getAllowedEquipment,
   getEquipmentNotes,
   getItemCostGp,
-  resolveEquipmentEdition,
   getAvailableMagicItems,
-  getMagicItemBudget
-} from '@/domain/equipment'
+  getMagicItemBudget,
+  getAllowedEquipment, 
+  getClassEquipmentProficiency, 
+  resolveEquipmentEdition
+} from '@/features/equipment/domain'
+
 import { calculateWealth } from '@/domain/wealth'
 
 const EquipmentStep = () => {
@@ -101,15 +103,13 @@ const EquipmentStep = () => {
 
   if (!edition) return null
 
-  const classReq = getClassRequirement(selectedClassId, edition as EditionId)
   const equipEdition = resolveEquipmentEdition(edition)
 
-  // When no class-specific equipment requirements exist for this edition,
-  // fall back to allowing everything.
-  const defaultReq = { categories: 'all' as const, individuals: 'none' as const }
-  const weaponReq = classReq?.equipment?.weapons ?? defaultReq
-  const armorReq  = classReq?.equipment?.armor   ?? defaultReq
-  const gearReq   = classReq?.equipment?.tools   ?? defaultReq
+  // Derive allowed equipment from the class proficiency data.
+  const weaponProf = getClassEquipmentProficiency(selectedClassId, edition, 'weapons')
+  const armorProf  = getClassEquipmentProficiency(selectedClassId, edition, 'armor')
+  // Gear is edition-catalogue–wide; proficiency data doesn't restrict it.
+  const gearProf   = { categories: ['all'], items: [] as string[] }
 
   const baseGp = wealth?.baseGp ?? 0
 
@@ -123,74 +123,27 @@ const EquipmentStep = () => {
     edition
   )
 
-  const allowedWeapons = getAllowedEquipment({
-    items: equipment.weapons,
-    edition,
-    requirement: weaponReq
-  })
+  const allowedWeapons = getAllowedEquipment({ items: equipment.weapons, edition, proficiency: weaponProf })
+  const allowedArmor   = getAllowedEquipment({ items: equipment.armor,   edition, proficiency: armorProf })
+  const allowedGear    = getAllowedEquipment({ items: equipment.gear,    edition, proficiency: gearProf })
 
-  const weaponOptions = allowedWeapons.map(w => {
-    const cost = getItemCostGp(w, edition)
-    const isSelected = selectedWeapons.includes(w.id)
+  const buildOptions = (allowed: any[], selected: string[]) =>
+    allowed.map(item => {
+      const cost = getItemCostGp(item, edition)
+      const isSelected = selected.includes(item.id)
+      const costWithoutThis = isSelected ? currentCost - cost : currentCost
+      const wouldExceedGold = costWithoutThis + cost > baseGp
 
-    const costWithoutThis = isSelected
-      ? currentCost - cost
-      : currentCost
+      return {
+        id: item.id,
+        label: `${item.name} (${item.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
+        disabled: !isSelected && wouldExceedGold,
+      }
+    })
 
-    const wouldExceedGold = costWithoutThis + cost > baseGp
-
-    return {
-      id: w.id,
-      label: `${w.name} (${w.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
-      disabled: !isSelected && wouldExceedGold
-    }
-  })
-
-  const allowedArmor = getAllowedEquipment({
-    items: equipment.armor,
-    edition,
-    requirement: armorReq
-  })
-
-  const armorOptions = allowedArmor.map(a => {
-    const cost = getItemCostGp(a, edition)
-    const isSelected = selectedArmor.includes(a.id)
-
-    const costWithoutThis = isSelected
-      ? currentCost - cost
-      : currentCost
-
-    const wouldExceedGold = costWithoutThis + cost > baseGp
-
-    return {
-      id: a.id,
-      label: `${a.name} (${a.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
-      disabled: !isSelected && wouldExceedGold
-    }
-  })
-
-  const allowedGear = getAllowedEquipment({
-    items: equipment.gear,
-    edition,
-    requirement: gearReq
-  })
-
-  const gearOptions = allowedGear.map(g => {
-    const cost = getItemCostGp(g, edition)
-    const isSelected = selectedGear.includes(g.id)
-
-    const costWithoutThis = isSelected
-      ? currentCost - cost
-      : currentCost
-
-    const wouldExceedGold = costWithoutThis + cost > baseGp
-
-    return {
-      id: g.id,
-      label: `${g.name} (${g.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
-      disabled: !isSelected && wouldExceedGold
-    }
-  })
+  const weaponOptions = buildOptions(allowedWeapons, selectedWeapons)
+  const armorOptions  = buildOptions(allowedArmor, selectedArmor)
+  const gearOptions   = buildOptions(allowedGear, selectedGear)
 
   const cls = selectedClassId ? getById(classes, selectedClassId) : undefined
   const requirements = cls?.requirements

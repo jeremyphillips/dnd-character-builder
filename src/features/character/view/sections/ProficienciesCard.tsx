@@ -1,4 +1,6 @@
 import type { CharacterDoc } from '@/shared'
+import { editions } from '@/data'
+import type { EditionProficiency } from '@/data/types'
 
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
@@ -13,21 +15,26 @@ import EditIcon from '@mui/icons-material/Edit'
 type ProficienciesCardProps = {
   proficiencies: CharacterDoc['proficiencies']
   wealth: CharacterDoc['wealth']
+  edition?: string
   /** When provided, renders an Edit button. */
   onEdit?: () => void
   /** Disables the Edit button (e.g. no proficiency slots available for the character's class). */
   editDisabled?: boolean
 }
 
-export default function ProficienciesCard({ proficiencies, wealth, onEdit, editDisabled }: ProficienciesCardProps) {
-  const taxonomyName =
-    (proficiencies && Array.isArray(proficiencies) && proficiencies[0]?.taxonomy) ?? 'Proficiencies'
+export default function ProficienciesCard({ proficiencies, wealth, edition, onEdit, editDisabled }: ProficienciesCardProps) {
+  const skillIds = proficiencies?.skills ?? []
+
+  const editionObj = edition ? editions.find(e => e.id === edition) : undefined
+  const skillMap: Record<string, EditionProficiency> =
+    (editionObj?.proficiencies as any)?.[edition ?? '']?.skills ?? {}
+
   return (
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-            {taxonomyName}
+            Skills
           </Typography>
           {onEdit && (
             <Tooltip title={editDisabled ? 'All proficiency slots are filled' : ''}>
@@ -44,10 +51,10 @@ export default function ProficienciesCard({ proficiencies, wealth, onEdit, editD
             </Tooltip>
           )}
         </Stack>
-        {(proficiencies ?? []).length > 0 ? (
+        {skillIds.length > 0 ? (
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-            {(proficiencies ?? []).map((p, i) => (
-              <Chip key={i} label={typeof p === 'string' ? p : p.option?.name ?? p.name} size="small" variant="outlined" />
+            {skillIds.map((id) => (
+              <Chip key={id} label={skillMap[id]?.name ?? id} size="small" variant="outlined" />
             ))}
           </Stack>
         ) : (

@@ -3,6 +3,8 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, FULL_CASTER_SLOTS_35E, PRIEST_SLOTS_2E, CLERIC_SLOTS_1E, CLERIC_SLOTS_BASIC } from './spellSlotTables'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
 
 export const cleric = {
   id: 'cleric',
@@ -163,48 +165,67 @@ export const cleric = {
       }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'history', name: 'History' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'medicine', name: 'Medicine' },
-        { id: 'persuasion', name: 'Persuasion' },
-        { id: 'religion', name: 'Religion' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'history',
+            'insight',
+            'medicine',
+            'persuasion',
+            'religion'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          // TODO: account for Martial weapons added via the Subclass/Domain data (not currently supported)
+          categories: ['simple'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light', 'medium', 'shields'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' }
-      ]
-      // TODO: account for Martial weapons added via the Subclass/Domain data (not currently supported)
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'light', name: 'light Armor', type: 'category' },
-        { id: 'medium', name: 'Medium Armor', type: 'category' },
-        { id: 'shields', name: 'Shields', type: 'item' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 3,
-      options: [
-        { id: 'healing', name: 'Healing', cost: 2 },
-        { id: 'ancientHistory', name: 'Ancient History', cost: 1 },
-        { id: 'religion', name: 'Religion', cost: 1 },
-        { id: 'herbalism', name: 'Herbalism', cost: 2 }
-      ]
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 3,
+          level: 1,
+          from: resolveAvailable2eSkills(
+            TWOE_GENERAL_PROFICIENCY_SKILLS, 
+            TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS
+          )
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          slots: 3,
+          level: 1,
+          categories: ['simple'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light', 'medium', 'shields'],
+        }
+      ],
     }
-  ],
+  },
   progression: [
     {
       edition: '5e',

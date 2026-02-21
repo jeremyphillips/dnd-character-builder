@@ -79,32 +79,50 @@ export const artificer = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'arcana', name: 'Arcana' },
-        { id: 'history', name: 'History' },
-        { id: 'investigation', name: 'Investigation' },
-        { id: 'medicine', name: 'Medicine' },
-        { id: 'nature', name: 'Nature' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'sleightOfHand', name: 'Sleight of Hand' }
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'arcana',
+            'history',
+            'investigation',
+            'medicine',
+            'nature',
+            'perception',
+            'sleightOfHand'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light', 'medium', 'shields'],
+        }
       ]
     },
-    {
-      edition: '5e',
-      taxonomy: 'Tool',
-      choiceCount: 1,
-      fixed: [
-        { id: 'thieves-tools', name: 'Thieves\' Tools' },
-        { id: 'tinkers-tools', name: 'Tinker\'s Tools' }
-      ],
-      options: 'all-artisan-tools'
-    }
-  ],
+    // {
+    //   edition: '5e',
+    //   taxonomy: 'Tool',
+    //   choiceCount: 1,
+    //   fixed: [
+    //     { id: 'thieves-tools', name: 'Thieves\' Tools' },
+    //     { id: 'tinkers-tools', name: 'Tinker\'s Tools' }
+    //   ],
+    //   options: 'all-artisan-tools'
+    // }
+  },
   progression: [
     {
       edition: '5e',

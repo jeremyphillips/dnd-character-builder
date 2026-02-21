@@ -1,6 +1,6 @@
 import { editions } from '@/data/editions'
 import { equipment } from '@/data/equipment'
-import { resolveEquipmentEdition } from './editionMap'
+import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import type { EditionId } from '@/data'
 import type { MagicItem, MagicItemRarity } from '@/data/equipment/magicItems.types'
 

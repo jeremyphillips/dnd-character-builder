@@ -1,6 +1,8 @@
 import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealth4e } from "@/data/startingWealth4e"
 import type { CharacterClass } from './types'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const barbarian = {
   id: 'barbarian',
@@ -106,56 +108,62 @@ export const barbarian = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'animalHandling', name: 'Animal Handling' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'nature', name: 'Nature' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'survival', name: 'Survival' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'animalHandling',
+            'athletics',
+            'insight',
+            'intimidation',
+            'nature',
+            'perception',
+            'survival'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple', 'martial'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light', 'medium', 'shields'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      // Barbarians get everything; logic checks against these category IDs
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'martial', name: 'Martial Weapons', type: 'category' }
-      ]
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 2,
+          level: 1,
+          from: resolveAvailable2eSkills(
+            TWOE_GENERAL_PROFICIENCY_SKILLS,
+            TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+          )
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          slots: 4,
+          level: 1,
+          // canSpecialize: false,
+          categories: ['all'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'allArmor', name: 'All Armor', type: 'category' },
-        { id: 'shields', name: 'Shields', type: 'item' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Weapon Proficiency',
-      choiceCount: 4,
-      canSpecialize: false,
-      options: 'all'
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 3,
-      options: [
-        { id: 'endurance', name: 'Endurance', cost: 2 },
-        { id: 'fire-building', name: 'Fire-building', cost: 1 },
-        { id: 'hunting', name: 'Hunting', cost: 1 },
-        { id: 'survival', name: 'Survival', cost: 2 }
-      ]
-    }
-  ],
+  },
   progression: [
     {
       edition: '5e',

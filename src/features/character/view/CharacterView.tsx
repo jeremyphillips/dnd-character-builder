@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import type { CharacterDoc } from '@/shared'
 import type { EditionId } from '@/data'
 import { editions, equipment } from '@/data'
-import { getMagicItemBudget, resolveEquipmentEdition } from '@/domain/equipment'
+import { getMagicItemBudget } from '@/features/equipment/domain'
+import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import type { MagicItem, MagicItemEditionDatum } from '@/data/equipment/magicItems.types'
 import { ROUTES } from '@/app/routes'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
@@ -11,7 +12,12 @@ import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
 import { AppModal } from '@/ui/modals'
 import type { StepId } from '@/features/characterBuilder/types'
 import { getProficiencySlotSummary } from '@/features/character/domain/validation'
-
+import type { 
+  CampaignSummary, 
+  PendingMembership, 
+  CharacterNarrative, 
+  UseCharacterActionsReturn 
+} from '@/features/character/hooks'
 
 import {
   CharacterAlerts,
@@ -117,7 +123,7 @@ export default function CharacterView({
   const STEP_FIELDS: Partial<Record<StepId, (s: typeof builderState) => Record<string, unknown>>> = {
     alignment: (s) => ({ alignment: s.alignment }),
     equipment: (s) => ({ equipment: s.equipment, wealth: s.wealth }),
-    details: (s) => ({ proficiencies: s.proficiencies }),
+    proficiencies: (s) => ({ proficiencies: s.proficiencies }),
   }
 
   const profSlots = useMemo(
@@ -267,7 +273,8 @@ export default function CharacterView({
           <ProficienciesCard
             proficiencies={character.proficiencies}
             wealth={character.wealth}
-            onEdit={canEdit ? () => openStepEditor('details') : undefined}
+            edition={character.edition}
+            onEdit={canEdit ? () => openStepEditor('proficiencies') : undefined}
             editDisabled={!profSlots.hasAvailableSlots || profSlots.allFilled}
           />
         </Grid>

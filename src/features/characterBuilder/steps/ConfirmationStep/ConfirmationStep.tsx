@@ -5,7 +5,7 @@ import { spells as spellCatalog } from '@/data/classes/spells'
 import { getNameById } from '@/domain/lookups'
 import { getClassProgression } from '@/features/character/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
-import type { Proficiency } from '@/shared/types/character.core'
+import type { EditionProficiency } from '@/data/types'
 import type { StepId } from '../../types'
 
 import Box from '@mui/material/Box'
@@ -140,16 +140,15 @@ const ConfirmationStep = () => {
     (state.equipment?.armor?.length ?? 0) +
     (state.equipment?.gear?.length ?? 0)
 
-  // Group proficiencies by taxonomy for the summary card
-  const profsByTaxonomy = (state.proficiencies as Proficiency[] | undefined ?? []).reduce<
-    Map<string, string[]>
-  >((map, p) => {
-    const names = map.get(p.taxonomy) ?? []
-    names.push(p.option.name)
-    map.set(p.taxonomy, names)
-    return map
-  }, new Map())
-  const totalProfs = (state.proficiencies ?? []).length
+  // Resolve selected skill IDs to display names via edition catalogue
+  const selectedSkillIds = state.proficiencies?.skills ?? []
+  const editionObj = editions.find(e => e.id === state.edition)
+  const editionSkillMap: Record<string, EditionProficiency> =
+    (editionObj?.proficiencies as any)?.[state.edition ?? '']?.skills ?? {}
+  const resolvedSkillNames = selectedSkillIds.map(
+    id => editionSkillMap[id]?.name ?? id,
+  )
+  const totalProfs = selectedSkillIds.length
 
   // Resolve selected spell IDs to name + level for the summary card
   const selectedSpells = state.spells ?? []
@@ -323,25 +322,16 @@ const ConfirmationStep = () => {
         {/* Proficiencies */}
         <SummaryCard
           label="Proficiencies"
-          stepId="details"
+          stepId="proficiencies"
           filled={totalProfs > 0}
           onEdit={goToStep}
           value={
             totalProfs > 0 ? (
-              <Box>
-                {[...profsByTaxonomy.entries()].map(([taxonomy, names]) => (
-                  <Box key={taxonomy} sx={{ mb: 0.75 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      {taxonomy}
-                    </Typography>
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.25 }}>
-                      {names.map((name) => (
-                        <Chip key={name} label={name} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </Box>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                {resolvedSkillNames.map((name) => (
+                  <Chip key={name} label={name} size="small" variant="outlined" />
                 ))}
-              </Box>
+              </Stack>
             ) : (
               <Typography variant="body1" color="text.secondary">—</Typography>
             )

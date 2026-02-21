@@ -3,6 +3,8 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { HALF_CASTER_SLOTS_5E, PALADIN_SLOTS_35E } from './spellSlotTables'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const paladin = {
   id: 'paladin',
@@ -140,61 +142,68 @@ export const paladin = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'medicine', name: 'Medicine' },
-        { id: 'persuasion', name: 'Persuasion' },
-        { id: 'religion', name: 'Religion' }
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'athletics',
+            'insight',
+            'intimidation',
+            'medicine',
+            'persuasion',
+            'religion'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple', 'martial'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['allArmor', 'shields'],
+        }
+      ],
+    },
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 3,
+          level: 1,
+          from: [
+            ...resolveAvailable2eSkills(
+              TWOE_GENERAL_PROFICIENCY_SKILLS,
+              TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+            ),  
+            ...Object.keys(TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS)
+          ]
+        },
       ]
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      // Paladins get everything; logic checks against these category IDs
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'martial', name: 'Martial Weapons', type: 'category' }
-      ]
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'allArmor', name: 'All Armor', type: 'category' },
-        { id: 'shields', name: 'Shields', type: 'item' }
-      ]
-    },
-    {
-      edition: '4e',
-      taxonomy: 'Trained Skill',
-      choiceCount: 3, // Paladins get Religion plus 3 from list
-      fixed: [{ id: 'religion', name: 'Religion' }],
-      options: [
-        { id: 'diplomacy', name: 'Diplomacy' },
-        { id: 'endurance', name: 'Endurance' },
-        { id: 'heal', name: 'Heal' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Non-Weapon Proficiency',
-      slots: 3, // Paladins start with 3 NWP slots
-      recommended: [
-        { id: 'healing', name: 'Healing', cost: 2 },
-        { id: 'heraldry', name: 'Heraldry', cost: 1 },
-        { id: 'riding-land-based', name: 'Riding (Land-based)', cost: 1 }
-      ]
-    }
-  ],
+    // {
+    //   edition: '4e',
+    //   taxonomy: 'Trained Skill',
+    //   choiceCount: 3, // Paladins get Religion plus 3 from list
+    //   fixed: [{ id: 'religion', name: 'Religion' }],
+    //   options: [
+    //     { id: 'diplomacy', name: 'Diplomacy' },
+    //     { id: 'endurance', name: 'Endurance' },
+    //     { id: 'heal', name: 'Heal' },
+    //     { id: 'insight', name: 'Insight' },
+    //     { id: 'intimidation', name: 'Intimidation' }
+    //   ]
+    // },
+  },
   progression: [
     {
       edition: '5e',

@@ -323,7 +323,7 @@ const ConfirmationStep = () => {
         {/* Proficiencies */}
         <SummaryCard
           label="Proficiencies"
-          stepId="details"
+          stepId="proficiencies"
           filled={totalProfs > 0}
           onEdit={goToStep}
           value={

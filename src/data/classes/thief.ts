@@ -1,9 +1,10 @@
+import { resolveAvailable2eSkills } from '@/features/character/domain/edition/2e/proficiencies'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS } from '../editions'
 import type { CharacterClass } from './types'
 
 export const thief = {
   id: 'thief',
   name: 'Thief',
-  
   definitions: [
     {
       edition: '2e',
@@ -90,55 +91,47 @@ export const thief = {
       }
     }
   ],
-  proficiencies: [
-    {
-      edition: '2e',
-      taxonomy: 'Weapon Proficiency',
-      choiceCount: 2,
-      options: [
-        { id: 'club', name: 'Club', cost: 1 },
-        { id: 'dagger', name: 'Dagger', cost: 1 },
-        { id: 'dart', name: 'Dart', cost: 1 },
-        { id: 'hand-crossbow', name: 'Hand Crossbow', cost: 1 },
-        { id: 'short-sword', name: 'Short Sword', cost: 1 }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      name: 'Non-Weapon Proficiency',
-      choiceCount: 3,
-      options: [
-        { id: 'appraising', name: 'Appraising', relevantStatId: 'intelligence', checkModifier: 0 },
-        { id: 'blindFighting', name: 'Blind-fighting', relevantStatId: 'none', checkModifier: 0 },
-        { id: 'disguise', name: 'Disguise', relevantStatId: 'charisma', checkModifier: -1 },
-        { id: 'forgery', name: 'Forgery', relevantStatId: 'dexterity', checkModifier: -1 },
-        { id: 'gaming', name: 'Gaming', relevantStatId: 'charisma', checkModifier: 0 },
-        { id: 'jumping', name: 'Jumping', relevantStatId: 'strength', checkModifier: 0 },
-        { id: 'musicalInstrument', name: 'Musical Instrument', relevantStatId: 'dexterity', checkModifier: -1 },
-        { id: 'tightropeWalking', name: 'Tightrope Walking', relevantStatId: 'dexterity', checkModifier: -1 },
-        { id: 'tumbling', name: 'Tumbling', relevantStatId: 'dexterity', checkModifier: 0 }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Thief Skill',
-      pointPool: {
-        initial: 60,
-        perLevel: 30
-      },
-      options: [
-        { id: 'pickPockets', name: 'Pick Pockets' },
-        { id: 'openLocks', name: 'Open Locks' },
-        { id: 'findTrap', name: 'Find/Remove Traps' },
-        { id: 'moveSilently', name: 'Move Silently' },
-        { id: 'hideInShadows', name: 'Hide in Shadows' },
-        { id: 'detectNoise', name: 'Detect Noise' },
-        { id: 'climbWalls', name: 'Climb Walls' },
-        { id: 'readLanguages', name: 'Read Languages' }
-      ]
+  proficiencies: {
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 2,
+          level: 1,
+          from: resolveAvailable2eSkills(
+            TWOE_GENERAL_PROFICIENCY_SKILLS,
+            TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS
+          )
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          slots: 2,
+          level: 1,
+          items: [ 'club', 'dagger', 'dart', 'hand-crossbow', 'shortsword' ],
+        }
+      ],
     }
-  ],
+    // {
+    //   edition: '2e',
+    //   taxonomy: 'Thief Skill',
+    //   pointPool: {
+    //     initial: 60,
+    //     perLevel: 30
+    //   },
+    //   options: [
+    //     { id: 'pickPockets', name: 'Pick Pockets' },
+    //     { id: 'openLocks', name: 'Open Locks' },
+    //     { id: 'findTrap', name: 'Find/Remove Traps' },
+    //     { id: 'moveSilently', name: 'Move Silently' },
+    //     { id: 'hideInShadows', name: 'Hide in Shadows' },
+    //     { id: 'detectNoise', name: 'Detect Noise' },
+    //     { id: 'climbWalls', name: 'Climb Walls' },
+    //     { id: 'readLanguages', name: 'Read Languages' }
+    //   ]
+    // }
+  },
   progression: [
     {
       edition: '2e',

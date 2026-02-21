@@ -1,7 +1,7 @@
 export { default as AlignmentStep } from './AlignmentStep/AlignmentStep'
 export { default as SettingsStep } from './SettingStep/SettingStep'
 export { default as ClassStep } from './ClassStep/ClassStep'
-export { default as DetailsStep } from './DetailsStep/DetailsStep'
+export { default as ProficiencyStep } from './ProficiencyStep/ProficiencyStep'
 export { default as EditionStep } from './EditionStep/EditionStep'
 export { default as EquipmentStep } from './EquipmentStep/EquipmentStep'
 export { default as LevelStep } from './LevelStep/LevelStep'

@@ -3,6 +3,8 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { HALF_CASTER_SLOTS_5E, RANGER_SLOTS_35E } from './spellSlotTables'
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const ranger = {
   id: 'ranger',
@@ -146,65 +148,76 @@ export const ranger = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 3,
-      options: [
-        { id: 'animalHandling', name: 'Animal Handling' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'investigation', name: 'Investigation' },
-        { id: 'nature', name: 'Nature' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'stealth', name: 'Stealth' },
-        { id: 'survival', name: 'Survival' }
-      ]
+  proficiencies: {
+    '5e': { 
+      skills: [
+        {
+          type: 'choice',
+          count: 3,
+          level: 1,
+          from: [
+            'animalHandling',
+            'athletics',
+            'insight',
+            'investigation',
+            'nature',
+            'perception',
+            'stealth',
+            'survival'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple', 'martial'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['allArmor', 'shields'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      // Paladins get everything; logic checks against these category IDs
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'martial', name: 'Martial Weapons', type: 'category' }
-      ]
+    '2e':  {
+      skills: [
+        {
+          type: 'choice',
+          count: 3,
+          level: 1,
+          from: [
+            ...resolveAvailable2eSkills(
+              TWOE_GENERAL_PROFICIENCY_SKILLS,
+              TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+            ),
+            ...Object.keys(TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS)
+          ]
+        },
+        {
+          type: 'fixed',
+          level: 1,
+          from: ['tracking'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'allArmor', name: 'All Armor', type: 'category' },
-        { id: 'shields', name: 'Shields', type: 'item' }
-      ]
-    },
-    {
-      edition: '4e',
-      taxonomy: 'Trained Skill',
-      choiceCount: 4,
-      fixed: [{ id: 'nature', name: 'Nature' }, { id: 'dungeoneering', name: 'Dungeoneering' }],
-      options: [
-        { id: 'acrobatics', name: 'Acrobatics' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'endurance', name: 'Endurance' },
-        { id: 'heal', name: 'Heal' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'stealth', name: 'Stealth' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 3,
-      fixed: [{ id: 'tracking', name: 'Tracking' }], // Rangers get Tracking for free in 2e
-      options: [
-        { id: 'animalLore', name: 'Animal Lore', cost: 1 },
-        { id: 'directionSense', name: 'Direction Sense', cost: 1 },
-        { id: 'survival', name: 'Survival', cost: 2 }
-      ]
-    }
-  ],
+    // {
+    //   edition: '4e',
+    //   taxonomy: 'Trained Skill',
+    //   choiceCount: 4,
+    //   fixed: [{ id: 'nature', name: 'Nature' }, { id: 'dungeoneering', name: 'Dungeoneering' }],
+    //   options: [
+    //     { id: 'acrobatics', name: 'Acrobatics' },
+    //     { id: 'athletics', name: 'Athletics' },
+    //     { id: 'endurance', name: 'Endurance' },
+    //     { id: 'heal', name: 'Heal' },
+    //     { id: 'perception', name: 'Perception' },
+    //     { id: 'stealth', name: 'Stealth' }
+    //   ]
+    // }
+  },
   progression: [
     {
       edition: '5e',

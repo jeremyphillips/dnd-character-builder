@@ -6,7 +6,7 @@ import type { InvalidationResult } from '../validation/types'
 export type { CharacterClassInfo, CharacterSheet, Proficiency }
 export type { HitPointMode }
 
-export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'details' | 'confirmation'
+export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
 
 export type EditMode = {
   characterId: string

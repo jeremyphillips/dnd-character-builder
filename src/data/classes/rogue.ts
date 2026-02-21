@@ -80,67 +80,59 @@ export const rogue = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'hand-crossbow', name: 'Hand Crossbow', type: 'item' },
-        { id: 'longsword', name: 'Longsword', type: 'item' },
-        { id: 'rapier', name: 'Rapier', type: 'item' },
-        { id: 'shortsword', name: 'Shortsword', type: 'item' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 4,
+          level: 1,
+          from: [
+            'acrobatics',
+            'athletics',
+            'deception',
+          'insight',
+          'intimidation',
+          'investigation',
+          'perception',
+          'performance',
+          'persuasion',
+          'sleightOfHand',
+          'stealth'
+        ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          items: ['hand-crossbow', 'longsword', 'rapier', 'shortsword'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 4,
-      options: [
-        { id: 'acrobatics', name: 'Acrobatics' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'deception', name: 'Deception' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'investigation', name: 'Investigation' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'performance', name: 'Performance' },
-        { id: 'persuasion', name: 'Persuasion' },
-        { id: 'sleightOfHand', name: 'Sleight of Hand' },
-        { id: 'stealth', name: 'Stealth' }
-      ]
-    },
-    {
-      edition: '4e',
-      taxonomy: 'Trained Skill',
-      choiceCount: 4,
-      fixed: [{ id: 'stealth', name: 'Stealth' }, { id: 'thievery', name: 'Thievery' }],
-      options: [
-        { id: 'acrobatics', name: 'Acrobatics' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'bluff', name: 'Bluff' },
-        { id: 'dungeoneering', name: 'Dungeoneering' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'streetwise', name: 'Streetwise' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Non-Weapon Proficiencies',
-      options: [
-        { id: 'appraising', name: 'Appraising', relevantStat: 'intelligence', checkModifier: 0 },
-        { id: 'blindFighting', name: 'Blind-fighting', relevantStat: 'none', checkModifier: 0 },
-        { id: 'disguise', name: 'Disguise', relevantStat: 'charisma', checkModifier: -1 },
-        { id: 'forgery', name: 'Forgery', relevantStat: 'dexterity', checkModifier: -1 },
-        { id: 'gaming', name: 'Gaming', relevantStat: 'charisma', checkModifier: 0 },
-        { id: 'jumping', name: 'Jumping', relevantStat: 'strength', checkModifier: 0 },
-        { id: 'musicalInstrument', name: 'Musical Instrument', relevantStat: 'dexterity', checkModifier: -1 },
-        { id: 'tightropeWalking', name: 'Tightrope Walking', relevantStat: 'dexterity', checkModifier: -1 },
-        { id: 'tumbling', name: 'Tumbling', relevantStat: 'dexterity', checkModifier: 0 }
-      ]
-    }
-  ],
+    // {
+    //   edition: '4e',
+    //   taxonomy: 'Trained Skill',
+    //   choiceCount: 4,
+    //   fixed: [{ id: 'stealth', name: 'Stealth' }, { id: 'thievery', name: 'Thievery' }],
+    //   options: [
+    //     { id: 'acrobatics', name: 'Acrobatics' },
+    //     { id: 'athletics', name: 'Athletics' },
+    //     { id: 'bluff', name: 'Bluff' },
+    //     { id: 'dungeoneering', name: 'Dungeoneering' },
+    //     { id: 'insight', name: 'Insight' },
+    //     { id: 'perception', name: 'Perception' },
+    //     { id: 'streetwise', name: 'Streetwise' }
+    //   ]
+    // }
+  },
   progression: [
     {
       edition: '5e',

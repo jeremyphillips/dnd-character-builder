@@ -1,6 +1,8 @@
 import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealth4e } from "@/data/startingWealth4e"
 import type { CharacterClass } from './types'
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS } from "../editions"
 
 export const monk = {
   id: 'monk',
@@ -106,55 +108,57 @@ export const monk = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'acrobatics', name: 'Acrobatics' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'history', name: 'History' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'religion', name: 'Religion' },
-        { id: 'stealth', name: 'Stealth' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'acrobatics',
+            'athletics',
+            'history',
+            'insight',
+            'religion',
+            'stealth'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple'],
+          items: ['shortsword'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'shortsword', name: 'Shortsword', type: 'item' }
-      ]
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      // Monks have no natural armor proficiencies.
-      options: []
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Weapon Proficiency',
-      choiceCount: 2,
-      options: [
-        { id: 'staff', name: 'Staff', cost: 1 },
-        { id: 'polearm', name: 'Polearm', cost: 1 },
-        { id: 'sling', name: 'Sling', cost: 1 }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 3,
-      options: [
-        { id: 'blindFighting', name: 'Blind-fighting', cost: 2 },
-        { id: 'tumbling', name: 'Tumbling', cost: 1 },
-        { id: 'directionSense', name: 'Direction Sense', cost: 1 }
-      ]
+    '2e': {
+      skills: {
+        slots: 2, // 2e Monks typically start with 2 NWP slots
+        from: resolveAvailable2eSkills(
+          TWOE_GENERAL_PROFICIENCY_SKILLS, 
+          TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+        )
+      },
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          items: ['staff', 'polearm', 'sling'],
+        }
+      ],
+      armor: []
     }
-  ],
+  },
   progression: [
     {
       edition: '5e',

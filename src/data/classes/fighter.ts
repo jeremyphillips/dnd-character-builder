@@ -1,6 +1,12 @@
 import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealth4e } from "@/data/startingWealth4e"
 import type { CharacterClass } from './types'
+import {
+  FIVE_E_STRENGTH_SKILLS,
+  TWOE_GENERAL_PROFICIENCY_SKILLS,
+  TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+} from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e/proficiencies"
 
 export const fighter = {
   id: 'fighter',
@@ -181,81 +187,74 @@ export const fighter = {
       }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'acrobatics', name: 'Acrobatics' },
-        { id: 'animalHandling', name: 'Animal Handling' },
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'history', name: 'History' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'survival', name: 'Survival' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            ...Object.keys(FIVE_E_STRENGTH_SKILLS),
+            'acrobatics', 
+            'history', 
+            'insight', 
+            'intimidation', 
+            'perception', 
+            'survival'
+          ]
+        },
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'simple', 'martial' ],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'allArmor', 'shields' ],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      // No choiceCount because 5e Fighters get these automatically
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' },
-        { id: 'martial', name: 'Martial Weapons', type: 'category' }
-      ]
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 4,
+          level: 1,
+          from: resolveAvailable2eSkills(
+            TWOE_GENERAL_PROFICIENCY_SKILLS,
+            TWOE_WARRIOR_GROUP_PROFICIENCY_SKILLS
+          )
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'simple', 'martial' ],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'allArmor', name: 'All Armor' },
-        { id: 'shields', name: 'Shields' }
-      ]
-    },
-    {
-      edition: '4e',
-      taxonomy: 'Trained Skill',
-      choiceCount: 3,
-      options: [
-        { id: 'athletics', name: 'Athletics' },
-        { id: 'endurance', name: 'Endurance' },
-        { id: 'heal', name: 'Heal' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'streetwise', name: 'Streetwise' }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'Weapon Proficiency',
-      choiceCount: 4,
-      canSpecialize: true, // Unique Fighter trait: spend 2 slots on one weapon
-      options: [
-        { id: 'bow', name: 'Bow', cost: 1 },
-        { id: 'crossbow', name: 'Crossbow', cost: 1 },
-        { id: 'one-handed-melee', name: 'One-handed Melee', cost: 1 },
-        { id: 'polearm', name: 'Polearm', cost: 1 },
-        { id: 'spear', name: 'Spear', cost: 1 },
-        { id: 'two-handed-melee', name: 'Two-handed Melee', cost: 1 }
-      ]
-    },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      name: 'Non-Weapon Proficiency',
-      choiceCount: 3,
-      options: [
-        { id: 'blindFighting', name: 'Blind-fighting', cost: 2 },
-        { id: 'endurance', name: 'Endurance', cost: 2 },
-        { id: 'survival', name: 'Survival', cost: 2 },
-        { id: 'tracking', name: 'Tracking', cost: 2 },
-        { id: 'armorer', name: 'Armorer', cost: 2 },
-        { id: 'blacksmithing', name: 'Blacksmithing', cost: 2 }
-      ]
-    }
-  ],
+    // {
+    //   edition: '2e',
+    //   taxonomy: 'Weapon Proficiency',
+    //   choiceCount: 4,
+    //   canSpecialize: true, // Unique Fighter trait: spend 2 slots on one weapon
+    //   options: [
+    //     { id: 'bow', name: 'Bow', cost: 1 },
+    //     { id: 'crossbow', name: 'Crossbow', cost: 1 },
+    //     { id: 'one-handed-melee', name: 'One-handed Melee', cost: 1 },
+    //     { id: 'polearm', name: 'Polearm', cost: 1 },
+    //     { id: 'spear', name: 'Spear', cost: 1 },
+    //     { id: 'two-handed-melee', name: 'Two-handed Melee', cost: 1 }
+    //   ]
+    // },
+  },
   progression: [
     {
       edition: '5e',

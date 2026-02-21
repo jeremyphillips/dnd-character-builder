@@ -83,21 +83,40 @@ export const wizard =  {
       ]
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Proficiencies',
-      choiceCount: 2,
-      options: [
-        { id: 'arcana', name: 'Arcana' },
-        { id: 'history', name: 'History' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'investigation', name: 'Investigation' },
-        { id: 'medicine', name: 'Medicine' },
-        { id: 'religion', name: 'Religion' }
-      ]
-    }
-  ],
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'arcana',
+            'history',
+            'insight',
+            'investigation',
+            'medicine',
+            'religion'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [],
+          items: ['dagger', 'dart', 'sling', 'quarterstaff', 'light-crossbow'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [],
+        }
+      ],
+    },
+  },
   requirements: [
     {
       edition: '5e',

@@ -73,36 +73,40 @@ export const warlock = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'arcana', name: 'Arcana' },
-        { id: 'deception', name: 'Deception' },
-        { id: 'history', name: 'History' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'investigation', name: 'Investigation' },
-        { id: 'nature', name: 'Nature' },
-        { id: 'religion', name: 'Religion' }
-      ]
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      options: [
-        { id: 'simple', name: 'Simple Weapons', type: 'category' }
-      ]
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      options: [
-        { id: 'light', name: 'Light Armor', type: 'category' }
-      ]
-    },
-  ],
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'arcana',
+            'deception',
+            'history',
+            'intimidation',
+            'investigation',
+            'nature',
+            'religion'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'simple' ],
+        },
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'light' ],
+        }
+      ],
+    }
+  },
   progression: [
     {
       edition: '5e',

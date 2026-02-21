@@ -3,6 +3,8 @@ import { startingWealth4e } from "@/data/startingWealth4e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, FULL_CASTER_SLOTS_35E, PRIEST_SLOTS_2E, DRUID_SLOTS_1E } from './spellSlotTables'
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS } from "@/data/editions"
 
 export const druid = {
   id: 'druid',
@@ -137,34 +139,52 @@ export const druid = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'arcana', name: 'Arcana' },
-        { id: 'animalHandling', name: 'Animal Handling' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'medicine', name: 'Medicine' },
-        { id: 'nature', name: 'Nature' },
-        { id: 'perception', name: 'Perception' },
-        { id: 'religion', name: 'Religion' },
-        { id: 'survival', name: 'Survival' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'arcana',
+            'animalHandling',
+            'insight',
+            'medicine',
+            'nature',
+            'perception',
+            'religion',
+            'survival'
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          items: [ 'club', 'dagger', 'dart', 'javelin', 'mace', 'quarterstaff', 'scimitar', 'sickle', 'sling', 'spear' ],
+          categories: [ 'simple', 'martial' ],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [ 'light', 'medium', 'shields' ],
+        }
+      ],
     },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 4, // Druids get slightly more base NWPs than Clerics in 2e
-      options: [
-        { id: 'agriculture', name: 'Agriculture', cost: 1 },
-        { id: 'animalLore', name: 'Animal Lore', cost: 1 },
-        { id: 'herbalism', name: 'Herbalism', cost: 2 },
-        { id: 'weatherSense', name: 'Weather Sense', cost: 1 }
-      ]
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 4,
+          level: 1,
+          from: resolveAvailable2eSkills(TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_PRIEST_GROUP_PROFICIENCY_SKILLS)
+        }
+      ],
     }
-  ],
+  },
   progression: [
     {
       edition: '5e',

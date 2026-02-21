@@ -80,38 +80,39 @@ export const sorcerer = {
       startingWealth: { ...startingWealth4e }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 2,
-      options: [
-        { id: 'arcana', name: 'Arcana' },
-        { id: 'deception', name: 'Deception' },
-        { id: 'insight', name: 'Insight' },
-        { id: 'intimidation', name: 'Intimidation' },
-        { id: 'persuasion', name: 'Persuasion' },
-        { id: 'religion', name: 'Religion' }
-      ]
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 2,
+          level: 1,
+          from: [
+            'arcana',
+            'deception',
+            'insight',
+          'intimidation',
+          'persuasion',
+          'religion'
+        ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          items: ['dagger', 'dart', 'sling', 'quarterstaff', 'light-crossbow'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: [],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Weapon',
-      options: [
-        { id: 'dagger', name: 'Dagger', type: 'item' },
-        { id: 'dart', name: 'Dart', type: 'item' },
-        { id: 'sling', name: 'Sling', type: 'item' },
-        { id: 'quarterstaff', name: 'Quarterstaff', type: 'item' },
-        { id: 'light-crossbow', name: 'Light Crossbow', type: 'item' }
-      ]
-    },
-    {
-      edition: '5e',
-      taxonomy: 'Armor',
-      // Sorcerers have no natural armor proficiencies.
-      options: [] 
-    }
-  ],
+  },
   progression: [
     {
       edition: '5e',

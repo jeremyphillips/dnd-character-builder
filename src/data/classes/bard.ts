@@ -2,6 +2,10 @@ import { startingWealth5e } from "@/data/startingWealth5e"
 import { startingWealthTiers35e } from "@/data/startingWealth35e"
 import type { CharacterClass } from './types'
 import { FULL_CASTER_SLOTS_5E, BARD_SLOTS_35E, BARD_SLOTS_2E } from './spellSlotTables'
+import { FIVE_E_INTELLIGENCE_SKILLS, FIVE_E_WISDOM_SKILLS } from "../editions"
+import { FIVE_E_CHARISMA_SKILLS, FIVE_E_DEXTERITY_SKILLS, FIVE_E_STRENGTH_SKILLS } from "../editions"
+import { resolveAvailable2eSkills } from "@/features/character/domain/edition/2e"
+import { TWOE_GENERAL_PROFICIENCY_SKILLS, TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS } from "../editions"
 
 export const bard = {
   id: 'bard',
@@ -103,31 +107,73 @@ export const bard = {
       }
     }
   ],
-  proficiencies: [
-    {
-      edition: '5e',
-      taxonomy: 'Skill',
-      choiceCount: 3,
-      options: 'all'
+  proficiencies: {
+    '5e': {
+      skills: [
+        {
+          type: 'choice',
+          count: 3,
+          level: 1,
+          from: [
+            ...Object.keys(FIVE_E_STRENGTH_SKILLS),
+            ...Object.keys(FIVE_E_DEXTERITY_SKILLS),
+            ...Object.keys(FIVE_E_INTELLIGENCE_SKILLS),
+            ...Object.keys(FIVE_E_WISDOM_SKILLS),
+            ...Object.keys(FIVE_E_CHARISMA_SKILLS)
+          ]
+        }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['simple'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          level: 1,
+          categories: ['light'],
+        }
+      ],
     },
-    {
-      edition: '5e',
-      taxonomy: 'Tool',
-      choiceCount: 3,
-      options: 'musical-instruments'
+    '2e': {
+      skills: [
+        {
+          type: 'choice',
+          slots: 3,
+          level: 1,
+          // TODO: check if crowdWorking, poetry, and readingWriting are available
+          from: resolveAvailable2eSkills(
+            TWOE_GENERAL_PROFICIENCY_SKILLS,
+            TWOE_ROGUE_GROUP_PROFICIENCY_SKILLS
+          )
+        },
+        // {
+        //   type: 'fixed',
+        //   level: 1,
+        //   from: ['singing', 'musicalInstrument'],
+        // }
+      ],
+      weapons: [
+        {
+          type: 'fixed',
+          slots: 3,
+          level: 1,
+          categories: ['simple'],
+        }
+      ],
+      armor: [
+        {
+          type: 'fixed',
+          slots: 1,
+          level: 1,
+          categories: ['light'],
+        }
+      ],
     },
-    {
-      edition: '2e',
-      taxonomy: 'NWP',
-      choiceCount: 3,
-      fixed: [{ id: 'singing', name: 'Singing', cost: 1 }, { id: 'musicalInstrument', name: 'Musical Instrument', cost: 1 }],
-      options: [
-        { id: 'crowdWorking', name: 'Crowd Working', cost: 1 },
-        { id: 'poetry', name: 'Poetry', cost: 1 },
-        { id: 'readingWriting', name: 'Reading/Writing', cost: 1 }
-      ]
-    }
-  ],
+  },
   progression: [
     {
       edition: '5e',

@@ -1,7 +1,7 @@
 import {
   AlignmentStep,
   ConfirmationStep,
-  DetailsStep,
+  ProficiencyStep,
   SettingStep,
   ClassStep,
   EditionStep,
@@ -86,9 +86,9 @@ export function getStepConfig(mode: CharacterType): StepConfig[] {
       selector: (state: CharacterBuilderState) => state.equipment
     },
     {
-      id: 'details',
-      label: 'Details',
-      component: DetailsStep,
+      id: 'proficiencies',
+      label: 'Proficiencies',
+      component: ProficiencyStep,
       selector: (state: CharacterBuilderState) =>
         (state.proficiencies?.length ?? 0) > 0
     },

@@ -117,7 +117,7 @@ export default function CharacterView({
   const STEP_FIELDS: Partial<Record<StepId, (s: typeof builderState) => Record<string, unknown>>> = {
     alignment: (s) => ({ alignment: s.alignment }),
     equipment: (s) => ({ equipment: s.equipment, wealth: s.wealth }),
-    details: (s) => ({ proficiencies: s.proficiencies }),
+    proficiencies: (s) => ({ proficiencies: s.proficiencies }),
   }
 
   const profSlots = useMemo(
@@ -267,7 +267,7 @@ export default function CharacterView({
           <ProficienciesCard
             proficiencies={character.proficiencies}
             wealth={character.wealth}
-            onEdit={canEdit ? () => openStepEditor('details') : undefined}
+            onEdit={canEdit ? () => openStepEditor('proficiencies') : undefined}
             editDisabled={!profSlots.hasAvailableSlots || profSlots.allFilled}
           />
         </Grid>

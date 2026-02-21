@@ -92,7 +92,7 @@ interface ProfGroup {
 // Component
 // ---------------------------------------------------------------------------
 
-const DetailsStep = () => {
+const ProficiencyStep = () => {
   const { state, setProficiencies } = useCharacterBuilder()
   const { classes: selectedClasses, edition, proficiencies = [], editMode } = state
 
@@ -210,7 +210,7 @@ const DetailsStep = () => {
   if (profGroups.length === 0) {
     return (
       <>
-        <h2>Details</h2>
+        <h2>Proficiencies</h2>
         <Typography color="text.secondary">
           No proficiency choices available. Select a class first.
         </Typography>
@@ -220,7 +220,7 @@ const DetailsStep = () => {
 
   return (
     <>
-      <h2>Choose Details</h2>
+      <h2>Choose Proficiencies</h2>
 
       <Stack spacing={2}>
         {profGroups.map((group: ProfGroup) => {
@@ -322,4 +322,4 @@ const DetailsStep = () => {
   )
 }
 
-export default DetailsStep
+export default ProficiencyStep

@@ -4,7 +4,7 @@ import type { EditionId } from '@/data'
 import type { LevelUpResult } from '@/features/character/levelUp'
 import { getXpByLevelAndEdition } from '@/features/character/domain/progression'
 import { apiFetch } from '@/app/api'
-import type { CampaignSummary, PendingMembership } from './useCharacter'
+import type { CampaignSummary, PendingMembership } from '@/shared/types/campaign.types'
 
 export interface CharacterActionDeps {
   character: CharacterDoc | null

@@ -12,9 +12,8 @@ import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
 import { AppModal } from '@/ui/modals'
 import type { StepId } from '@/features/characterBuilder/types'
 import { getProficiencySlotSummary } from '@/features/character/domain/validation'
+import type { CampaignSummary, PendingMembership } from '@/shared/types/campaign.types'
 import type { 
-  CampaignSummary, 
-  PendingMembership, 
   CharacterNarrative, 
   UseCharacterActionsReturn 
 } from '@/features/character/hooks'

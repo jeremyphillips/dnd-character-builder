@@ -1,6 +1,7 @@
-import type { EditionRule, Monster } from "@/data";
+import type { Monster } from "@/data";
+import type { EditionRule } from "@/features/mechanics/domain/edition";
 import { useActiveCampaign } from "@/app/providers/ActiveCampaignProvider";
-import { resolveEditionRule } from "../utils";
+import { resolveEditionRule } from '@/features/mechanics/domain/resolution/resolveEditionRule';
 
  type MonsterEditionState =
   | { type: "loading" }

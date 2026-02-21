@@ -4,7 +4,7 @@ import Box from '@mui/material/Box'
 import { Breadcrumbs } from '@/ui/elements'
 import { useBreadcrumbs } from '@/hooks'
 import { monsters } from '@/data/monsters'
-import MonsterMediaTopCard from '@/domain/monsters/components/MonsterMediaTopCard/MonsterMediaTopCard'
+import { MonsterMediaTopCard } from '@/features/monster/components'
 import { ROUTES } from '@/app/routes'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 

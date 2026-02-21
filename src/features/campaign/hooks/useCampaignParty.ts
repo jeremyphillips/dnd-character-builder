@@ -1,8 +1,34 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/app/api";
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
-import type { PartyMember } from "@/domain/party";
-import type { PartyMemberApiRow } from "@/domain/party";
+
+/** Party member (character in a campaign party) as returned from the API. */
+export type PartyMemberApiRow = {
+  _id: string
+  name?: string
+  race?: string
+  class?: string
+  level?: number
+  imageKey?: string | null
+  ownerName?: string
+  ownerAvatarUrl?: string
+  status?: 'pending' | 'approved'
+  campaignMemberId?: string
+}
+
+/** Normalized party member for use in the app. */
+export type PartyMember = {
+  _id: string
+  name: string
+  race: string
+  class: string
+  level: number
+  imageKey?: string | null
+  ownerName: string
+  ownerAvatarUrl?: string
+  status?: 'pending' | 'approved'
+  campaignMemberId?: string
+}
 
 export function useCampaignParty(status: string = 'approved') {
   const { campaignId } = useActiveCampaign();

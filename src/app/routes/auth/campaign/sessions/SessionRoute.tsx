@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useNotifications } from '@/app/providers/NotificationProvider'
 import { apiFetch } from '@/app/api'
-import type { Session } from '@/domain/session'
-import { formatSessionDateTime } from '@/domain/session'
+import type { Session } from '@/features/session'
+import { formatSessionDateTime } from '@/features/session'
 import {
   EditableField,
   EditableTextField,

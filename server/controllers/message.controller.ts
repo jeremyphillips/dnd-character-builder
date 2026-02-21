@@ -5,7 +5,7 @@ import * as messageService from '../services/message.service'
 import * as campaignMemberService from '../services/campaignMember.service'
 import { getCampaignById } from '../services/campaign.service'
 import { env } from '../config/env'
-import { canMessageUser, canMessageUsers } from '../../src/domain/messaging'
+import { canMessageUser, canMessageUsers } from '../../src/features/messaging'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 

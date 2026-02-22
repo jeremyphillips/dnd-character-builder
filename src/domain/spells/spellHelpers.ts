@@ -1,3 +1,11 @@
+/**
+ * @deprecated All exports have moved to '@/features/mechanics/domain/spells'.
+ *
+ * - getAvailableSpells → '@/features/mechanics/domain/spells/catalog'
+ * - groupSpellsByLevel → '@/features/mechanics/domain/spells/utils/groupSpellsByLevel'
+ * - SpellWithEntry     → '@/features/mechanics/domain/spells/catalog/types'
+ * - getSpellLimits     → getClassSpellLimitsAtLevel from '@/features/mechanics/domain/spells/progression'
+ */
 import { spells as spellCatalog } from '@/data/classes/spells'
 import type { Spell, SpellEditionEntry } from '@/data/classes/spells'
 import type { ClassProgression } from '@/data/classes/types'
@@ -6,11 +14,13 @@ import type { ClassProgression } from '@/data/classes/types'
 // Types
 // ---------------------------------------------------------------------------
 
+/** @deprecated Import from '@/features/mechanics/domain/spells' instead. */
 export interface SpellWithEntry {
   spell: Spell
   entry: SpellEditionEntry
 }
 
+/** @deprecated Import SpellLimits from '@/features/mechanics/domain/spells/progression' instead. */
 export interface SpellLimits {
   cantrips: number
   totalKnown: number
@@ -22,21 +32,21 @@ export interface SpellLimits {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Get all spells available to a given class + edition, returns matched spell + its edition entry. */
+/** @deprecated Use getAvailableSpells from '@/features/mechanics/domain/spells' instead. */
 export function getAvailableSpells(classId: string, edition: string): SpellWithEntry[] {
   const results: SpellWithEntry[] = []
   for (const spell of spellCatalog) {
     for (const entry of spell.editions) {
       if (entry.edition === edition && entry.classes.includes(classId)) {
         results.push({ spell, entry })
-        break // one match per spell is enough
+        break
       }
     }
   }
   return results
 }
 
-/** Group spells by level, sorted ascending. */
+/** @deprecated Use groupSpellsByLevel from '@/features/mechanics/domain/spells' instead. */
 export function groupSpellsByLevel(spells: SpellWithEntry[]): Map<number, SpellWithEntry[]> {
   const groups = new Map<number, SpellWithEntry[]>()
   for (const s of spells) {
@@ -47,7 +57,10 @@ export function groupSpellsByLevel(spells: SpellWithEntry[]): Map<number, SpellW
   return new Map([...groups.entries()].sort(([a], [b]) => a - b))
 }
 
-/** Compute spell limits from a class progression at a given class level. */
+/**
+ * @deprecated Use getClassSpellLimitsAtLevel from
+ * '@/features/mechanics/domain/spells/progression' instead.
+ */
 export function getSpellLimits(prog: ClassProgression, classLevel: number): SpellLimits {
   const sp = prog.spellProgression
   if (!sp) return { cantrips: 0, totalKnown: 0, maxSpellLevel: 0, slotsByLevel: [] }
@@ -57,13 +70,10 @@ export function getSpellLimits(prog: ClassProgression, classLevel: number): Spel
   const totalKnown = sp.spellsKnown?.[idx] ?? 0
   const slots = idx >= 0 ? sp.spellSlots[idx] : []
 
-  // Derive max spell level from the character's current slot table:
-  // the highest spell level (1-indexed) for which they have ≥1 slot.
-  // Cantrips (level 0) are always allowed if cantripsKnown > 0.
   let maxSpellLevel = 0
   for (let i = slots.length - 1; i >= 0; i--) {
     if (slots[i] > 0) {
-      maxSpellLevel = i + 1 // slots[0] = 1st level, slots[1] = 2nd, etc.
+      maxSpellLevel = i + 1
       break
     }
   }

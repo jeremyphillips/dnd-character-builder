@@ -1,11 +1,27 @@
 import { useMemo } from 'react'
-import type { Character, AbilityScores } from '@/shared/types/character.core'
+import type { Character } from '@/shared/types/character.core'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
-import { editions } from '@/data'
 import { weapons as weaponCatalog } from '@/data/equipment/weapons'
 import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import type { WeaponEditionDatum } from '@/data/equipment/weapons.types'
-import { getArmorConfigurations, getActiveArmorConfig } from '../domain/combat/armorConfigurations'
+import { buildCharacterContext } from '../domain/engine/buildCharacterContext'
+import { collectIntrinsicEffects } from '../domain/engine/collectCharacterEffects'
+import { getLoadoutPickerOptions } from '../domain/engine/getLoadoutPickerOptions'
+import { getWeaponPickerOptions } from '../domain/engine/getWeaponPickerOptions'
+import { resolveStat, resolveStatDetailed, type BreakdownToken } from '@/features/mechanics/domain/resolution/stat-resolver'
+import {
+  resolveWeaponAttackBonus,
+  resolveWeaponDamage,
+  type AttackHand,
+} from '@/features/mechanics/domain/resolution/attack-resolver'
+import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
+import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import {
+  getEquipmentEffects,
+  selectActiveEquipmentEffects,
+  resolveLoadout,
+  resolveWieldedWeaponIds,
+} from '@/features/mechanics/domain/effects/sources/equipment-to-effects'
 
 // ---------------------------------------------------------------------------
 // Attack types
@@ -14,28 +30,17 @@ import { getArmorConfigurations, getActiveArmorConfig } from '../domain/combat/a
 export interface AttackEntry {
   weaponId: string
   name: string
+  hand: AttackHand
   attackBonus: number
-  /** e.g. "+2 prof + +3 STR" */
-  attackBreakdown: string
+  attackBreakdown: BreakdownToken[]
   damage: string
   damageType: string
+  damageBreakdown: BreakdownToken[]
 }
 
 // ---------------------------------------------------------------------------
-// Attack helpers
+// Attack helpers (catalog lookup — math is in attack-resolver)
 // ---------------------------------------------------------------------------
-
-function abilityMod(score: number | null | undefined): number {
-  if (score == null) return 0
-  return Math.floor((score - 10) / 2)
-}
-
-function getProficiencyBonus(editionId: string, totalLevel: number): number {
-  const ed = editions.find(e => e.id === editionId)
-  const table = ed?.levelScaling?.proficiencyBonus
-  if (!table) return 0
-  return (table as Record<number, number>)[totalLevel] ?? 0
-}
 
 function getWeaponEditionData(weaponId: string, editionId: string): WeaponEditionDatum | undefined {
   const resolved = resolveEquipmentEdition(editionId)
@@ -43,62 +48,50 @@ function getWeaponEditionData(weaponId: string, editionId: string): WeaponEditio
   return weapon?.editionData?.find(d => d.edition === resolved)
 }
 
-/** Determine the relevant ability modifier for a weapon attack. */
-function getAttackAbilityMod(
-  editionData: WeaponEditionDatum,
-  abilityScores: AbilityScores | undefined,
-): { mod: number; label: string } {
-  const str = abilityMod(abilityScores?.strength)
-  const dex = abilityMod(abilityScores?.dexterity)
-
-  const isFinesse = editionData.properties?.includes('finesse')
-  const isRanged = editionData.type === 'ranged'
-
-  if (isFinesse) {
-    return dex >= str
-      ? { mod: dex, label: 'DEX' }
-      : { mod: str, label: 'STR' }
-  }
-  if (isRanged) return { mod: dex, label: 'DEX' }
-  return { mod: str, label: 'STR' }
-}
-
-function formatDamage(editionData: WeaponEditionDatum): string {
-  const dmg = editionData.damage
-  if (!dmg) return '—'
-  return dmg.default ?? dmg.sm ?? '—'
-}
-
-/**
- * Build the attack list from a character's equipped weapons.
- */
-export function getCharacterAttacks(character: Character): AttackEntry[] {
-  const weaponIds = character.equipment?.weapons ?? []
-  if (weaponIds.length === 0) return []
+export function getCharacterAttacks(
+  character: Character,
+  context: EvaluationContext,
+  effects: Effect[],
+  wieldedWeaponIds: string[]
+): AttackEntry[] {
+  if (wieldedWeaponIds.length === 0) return []
 
   const editionId = character.edition
-  const profBonus = getProficiencyBonus(editionId, character.totalLevel ?? 1)
 
-  return weaponIds.map(id => {
+  return wieldedWeaponIds.map((id, idx) => {
+    const hand: AttackHand = idx === 0 ? 'main' : 'off'
     const weapon = weaponCatalog.find(w => w.id === id)
     const edData = getWeaponEditionData(id, editionId)
-    const { mod, label } = edData
-      ? getAttackAbilityMod(edData, character.abilityScores)
-      : { mod: 0, label: '—' }
 
-    const bonus = profBonus + mod
-    const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
+    const weaponInput = {
+      type: edData?.type,
+      properties: edData?.properties,
+      damage: edData?.damage,
+      damageType: weapon?.damageType,
+      edition: editionId,
+    }
+
+    const atk = resolveWeaponAttackBonus(context, weaponInput, effects, { hand })
+    const dmg = resolveWeaponDamage(context, weaponInput, effects, { hand })
 
     return {
       weaponId: id,
       name: weapon?.name ?? id,
-      attackBonus: bonus,
-      attackBreakdown: `${sign(profBonus)} prof ${sign(mod)} ${label}`,
-      damage: edData ? formatDamage(edData) : '—',
-      damageType: weapon?.damageType ?? '',
+      hand,
+      attackBonus: atk.bonus,
+      attackBreakdown: atk.breakdown,
+      damage: dmg.total,
+      damageType: dmg.damageType,
+      damageBreakdown: dmg.breakdown,
     }
   })
 }
+
+// ---------------------------------------------------------------------------
+// Hook return type
+// ---------------------------------------------------------------------------
+
+export type UseCombatStatsReturn = ReturnType<typeof useCombatStats>
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -106,32 +99,47 @@ export function getCharacterAttacks(character: Character): AttackEntry[] {
 
 export function useCombatStats(character: Character) {
   const { editionId: activeEditionId } = useActiveCampaign()
-  const edition = activeEditionId ?? ''
+  const edition = activeEditionId ?? character.edition ?? '5e'
 
-  const armorConfigurations = useMemo(
-    () => getArmorConfigurations(character, edition),
-    [character, edition],
-  )
+  return useMemo(() => {
+    const context = buildCharacterContext(character)
+    const intrinsicEffects = collectIntrinsicEffects(character)
+    const candidateEffects = getEquipmentEffects(character.equipment, edition)
+    const loadout = resolveLoadout(character.combat)
+    const activeEquipmentEffects = selectActiveEquipmentEffects(candidateEffects, loadout)
 
-  const activeArmorConfig = useMemo(
-    () => getActiveArmorConfig(armorConfigurations, character.combat?.selectedArmorConfigId),
-    [armorConfigurations, character.combat?.selectedArmorConfigId],
-  )
+    const allEffects = [...intrinsicEffects, ...activeEquipmentEffects]
 
-  const calculatedArmorClass = useMemo(() => {
-    if (!activeArmorConfig) return { value: 10, breakdown: '10 (base)' }
-    return { value: activeArmorConfig.totalAC, breakdown: activeArmorConfig.breakdown }
-  }, [activeArmorConfig])
+    const acResult = resolveStatDetailed('armor_class', context, allEffects)
+    const maxHp = resolveStat('hp_max', context, allEffects)
+    const initiative = resolveStat('initiative', context, allEffects)
 
-  const attacks = useMemo(
-    () => getCharacterAttacks(character),
-    [character],
-  )
+    const loadoutOptions = getLoadoutPickerOptions(character, intrinsicEffects)
+    const activeOption = loadoutOptions.find(
+      (o) =>
+        o.loadout.armorId === loadout.armorId &&
+        o.loadout.shieldId === loadout.shieldId
+    ) ?? loadoutOptions[0] ?? null
 
-  return {
-    calculatedArmorClass,
-    armorConfigurations,
-    activeArmorConfig,
-    attacks,
-  }
+    const ownedWeaponIds = character.equipment?.weapons ?? []
+    const wieldedWeaponIds = resolveWieldedWeaponIds(loadout, ownedWeaponIds)
+    const attacks = getCharacterAttacks(character, context, allEffects, wieldedWeaponIds)
+    const weaponOptions = getWeaponPickerOptions(character)
+
+    return {
+      armorClass: acResult.value,
+      maxHp,
+      initiative,
+      calculatedArmorClass: {
+        value: acResult.value,
+        breakdown: acResult.breakdown,
+      },
+      loadoutOptions,
+      activeLoadout: loadout,
+      activeOption,
+      attacks,
+      weaponOptions,
+      wieldedWeaponIds,
+    }
+  }, [character, edition])
 }

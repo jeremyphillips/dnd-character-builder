@@ -2,13 +2,18 @@ import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } fro
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState, CharacterClassInfo, StepId } from '../types'
 import type { CharacterProficiencies } from '@/shared/types/character.core'
-import type { InvalidationResult } from '../validation/types'
+import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
+import {
+  detectInvalidations,
+  resolveInvalidations,
+  INVALIDATION_RULES,
+} from '@/features/mechanics/domain/character-build/invalidation'
 import {
   getStepConfig,
   createInitialBuilderState
 } from '../constants'
 import { getById } from '@/domain/lookups'
-import { getOptions } from '@/domain/options'
+import { getAllowedRaceIdsFromDraft, getAllowedClassIdsFromDraft } from '@/features/mechanics/domain/character-build/options'
 import { 
   getSubclassUnlockLevel,
   getXpByLevelAndEdition 
@@ -17,11 +22,6 @@ import {
   calculateEquipmentWeight,
   calculateEquipmentCost
 } from '@/features/equipment/domain'
-import {
-  detectInvalidations,
-  resolveInvalidations,
-  INVALIDATION_RULES,
-} from '../validation'
 import { races, equipment } from "@/data"
 import type { EditionId, SettingId } from "@/data"
 import type { CharacterType } from "@/shared/types/character.core"
@@ -45,13 +45,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const raceOptions = useMemo(() => {
     if (!state.edition) return []
-    const ids = getOptions('races', state.edition, state.setting)
+    const ids = getAllowedRaceIdsFromDraft(state)
     return ids.map(id => getById(races, id)).filter(Boolean)
   }, [state.edition, state.setting])
 
   const classOptions = useMemo(() => {
     if (!state.edition) return []
-    return getOptions('classes', state.edition, state.setting)
+    return getAllowedClassIdsFromDraft(state)
   }, [state.edition, state.setting])
 
   const updateState = (
@@ -69,7 +69,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   } | null>(null)
 
   /** Per-step notices from the most recent confirmed invalidation. */
-  const [stepNotices, setStepNotices] = useState<Map<StepId, string[]>>(
+  const [stepNotices, setStepNotices] = useState<Map<StepId, InvalidationItem[]>>(
     () => new Map()
   )
 
@@ -114,15 +114,19 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
       // Build per-step notices from the invalidation result.
       // Multiple rules can target the same step (e.g. level→spells and
-      // class→spells), so deduplicate items within each step.
-      const notices = new Map<StepId, string[]>()
+      // class→spells), so deduplicate items within each step by id.
+      const notices = new Map<StepId, InvalidationItem[]>()
       for (const inv of result.affected) {
         const existing = notices.get(inv.stepId) ?? []
         notices.set(inv.stepId, [...existing, ...inv.items])
       }
-      // Deduplicate per step
       for (const [stepId, items] of notices) {
-        notices.set(stepId, [...new Set(items)])
+        const seen = new Set<string>()
+        notices.set(stepId, items.filter(item => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        }))
       }
 
       // Replace (not merge) — each confirmation represents a fresh set of notices

@@ -39,14 +39,17 @@ export const paladin = {
               }]
             },
             {
-              name: 'Aura of Devotion',
+              kind: 'aura',
               level: 7,
-              type: 'passive_aura',
-              range: '10 feet',
-              effects: [{
-                target: 'charm_resistance',
-                type: 'immunity'
-              }]
+              range: 10,
+              affects: 'allies',
+              effects: [
+                {
+                  kind: 'grant',
+                  grantType: 'condition_immunity',
+                  value: 'charmed'
+                }
+              ]
             }
           ]
         },

@@ -69,11 +69,20 @@ export interface StartingWealth {
 // Definitions (subclass / archetype / kit)
 // ---------------------------------------------------------------------------
 
+export type SubclassFeatureData = {
+  name?: string
+  level?: number
+  description?: string
+  kind?: string
+  [key: string]: unknown
+}
+
 export interface SubclassOption {
   id: string
   name: string
   source?: string
   parentId?: string
+  features?: SubclassFeatureData[]
 }
 
 export interface ClassDefinition {

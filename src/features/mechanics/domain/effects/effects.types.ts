@@ -1,6 +1,7 @@
 import type { AbilityScores } from '@/shared/types/character.core'
 import type { Condition } from '../conditions/condition.types'
-import type { TriggerType } from './trigger.types'
+import type { TriggerType } from '../triggers/trigger.types'
+import type { StatTarget } from '../resolution/stat-resolver'
 
 export type Duration = '1 minute' | '1 hour' | '1 day' | '1 week' | '1 month' | '1 year' | 'instant'
 
@@ -15,24 +16,33 @@ export type ResourceCost = {
 
 export type ModifierEffect = {
   kind: 'modifier'
-  target: keyof AbilityScores
+  target: StatTarget
   mode: 'add' | 'set' | 'multiply'
-  value: number | { ability: keyof AbilityScores }
+  value: number | { ability: keyof AbilityScores } | { perLevel: number }
+  source?: string
   condition?: Condition
   duration?: Duration
 }
 
 export type FormulaEffect = {
   kind: 'formula'
-  target: 'armor_class' | 'initiative' // TODO: add more
+  target: StatTarget
   formula: FormulaDefinition
+  source?: string
   condition?: Condition
+}
+
+export type ProficiencyGrantValue = {
+  target: 'armor' | 'weapon' | 'tool' | 'skill' | 'saving_throw'
+  categories?: string[]
+  items?: string[]
 }
 
 export type GrantEffect = {
   kind: 'grant'
   grantType: 'proficiency' | 'action' | 'spell' | 'condition_immunity'
-  value: unknown
+  value: ProficiencyGrantValue[] | unknown
+  source?: string
 }
 
 

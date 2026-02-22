@@ -4,17 +4,21 @@ import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { ButtonGroup } from '@/ui/elements'
 import { classes, equipment, type EditionId } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassRequirement } from '@/features/character/domain/validation'
+import { getClassRequirement } from '@/features/mechanics/domain/character-build/rules'
 import {
   calculateEquipmentCost,
   getEquipmentNotes,
   getItemCostGp,
   getAvailableMagicItems,
   getMagicItemBudget,
-  getAllowedEquipment, 
-  getClassEquipmentProficiency, 
   resolveEquipmentEdition
 } from '@/features/equipment/domain'
+import { collectIntrinsicEffects } from '@/features/character/domain/engine/collectCharacterEffects'
+import {
+  deriveEquipmentProficiency,
+  evaluateEquipmentEligibility,
+} from '@/features/mechanics/domain/proficiencies/proficiency-adapters'
+import type { Character } from '@/shared/types/character.core'
 
 import { calculateWealth } from '@/domain/wealth'
 
@@ -105,10 +109,16 @@ const EquipmentStep = () => {
 
   const equipEdition = resolveEquipmentEdition(edition)
 
-  // Derive allowed equipment from the class proficiency data.
-  const weaponProf = getClassEquipmentProficiency(selectedClassId, edition, 'weapons')
-  const armorProf  = getClassEquipmentProficiency(selectedClassId, edition, 'armor')
-  // Gear is edition-catalogue–wide; proficiency data doesn't restrict it.
+  // Derive allowed equipment from the engine's collected effects.
+  // Build a minimal Character shape from the builder state so the collector can read it.
+  const characterLike = {
+    edition,
+    classes: selectedClasses,
+    totalLevel: totalLevel ?? 1,
+  } as Character
+  const intrinsicEffects = collectIntrinsicEffects(characterLike)
+  const weaponProf = deriveEquipmentProficiency(intrinsicEffects, 'weapon')
+  const armorProf  = deriveEquipmentProficiency(intrinsicEffects, 'armor')
   const gearProf   = { categories: ['all'], items: [] as string[] }
 
   const baseGp = wealth?.baseGp ?? 0
@@ -123,27 +133,43 @@ const EquipmentStep = () => {
     edition
   )
 
-  const allowedWeapons = getAllowedEquipment({ items: equipment.weapons, edition, proficiency: weaponProf })
-  const allowedArmor   = getAllowedEquipment({ items: equipment.armor,   edition, proficiency: armorProf })
-  const allowedGear    = getAllowedEquipment({ items: equipment.gear,    edition, proficiency: gearProf })
+  const buildOptions = (
+    items: readonly any[],
+    selected: string[],
+    proficiency: { categories: string[]; items: string[] },
+  ) => {
+    return items
+      .filter(item => {
+        if (!Array.isArray(item.editionData)) return false
+        return item.editionData.some((d: { edition: string }) => d.edition === equipEdition)
+      })
+      .map(item => {
+        const cost = getItemCostGp(item, edition)
+        const isSelected = selected.includes(item.id)
+        const costWithoutThis = isSelected ? currentCost - cost : currentCost
+        const wouldExceedGold = costWithoutThis + cost > baseGp
 
-  const buildOptions = (allowed: any[], selected: string[]) =>
-    allowed.map(item => {
-      const cost = getItemCostGp(item, edition)
-      const isSelected = selected.includes(item.id)
-      const costWithoutThis = isSelected ? currentCost - cost : currentCost
-      const wouldExceedGold = costWithoutThis + cost > baseGp
+        const eligibility = evaluateEquipmentEligibility(item, edition, proficiency)
+        const notProficient = !eligibility.allowed
+        const disabled = !isSelected && (notProficient || wouldExceedGold)
 
-      return {
-        id: item.id,
-        label: `${item.name} (${item.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
-        disabled: !isSelected && wouldExceedGold,
-      }
-    })
+        const reasons: string[] = []
+        if (notProficient) reasons.push(...eligibility.reasons)
+        if (wouldExceedGold) reasons.push('Exceeds gold budget')
+        const tooltip = reasons.length > 0 ? reasons.join('; ') : undefined
 
-  const weaponOptions = buildOptions(allowedWeapons, selectedWeapons)
-  const armorOptions  = buildOptions(allowedArmor, selectedArmor)
-  const gearOptions   = buildOptions(allowedGear, selectedGear)
+        return {
+          id: item.id,
+          label: `${item.name} (${item.editionData.find((d: { edition: string; cost?: string }) => d.edition === equipEdition)?.cost ?? '—'})`,
+          disabled,
+          tooltip,
+        }
+      })
+  }
+
+  const weaponOptions = buildOptions(equipment.weapons, selectedWeapons, weaponProf)
+  const armorOptions  = buildOptions(equipment.armor, selectedArmor, armorProf)
+  const gearOptions   = buildOptions(equipment.gear, selectedGear, gearProf)
 
   const cls = selectedClassId ? getById(classes, selectedClassId) : undefined
   const requirements = cls?.requirements

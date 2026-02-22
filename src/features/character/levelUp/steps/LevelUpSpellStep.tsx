@@ -7,8 +7,7 @@
 
 import { useMemo, useCallback } from 'react'
 import { getClassProgression } from '@/features/character/domain/progression'
-import { getAvailableSpells, groupSpellsByLevel, getSpellLimits } from '@/domain/spells'
-import type { SpellWithEntry } from '@/domain/spells'
+import { getAvailableSpells, groupSpellsByLevel, getClassSpellLimitsAtLevel, type SpellWithEntry } from '@/features/mechanics/domain/spells'
 import { SpellHorizontalCard } from '@/domain/spells/components'
 import type { LevelUpState } from '../levelUp.types'
 
@@ -66,12 +65,12 @@ export default function LevelUpSpellStep({
   )
 
   const oldLimits = useMemo(
-    () => (prog ? getSpellLimits(prog, oldClassLevel) : null),
+    () => (prog ? getClassSpellLimitsAtLevel(prog, oldClassLevel) : null),
     [prog, oldClassLevel],
   )
 
   const newLimits = useMemo(
-    () => (prog ? getSpellLimits(prog, newClassLevel) : null),
+    () => (prog ? getClassSpellLimitsAtLevel(prog, newClassLevel) : null),
     [prog, newClassLevel],
   )
 

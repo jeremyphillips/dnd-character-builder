@@ -20,25 +20,20 @@ export const warlock = {
         { id: 'genie', name: 'The Genie', source: 'TCOE' },
         { id: 'great-old-one', name: 'The Great Old One', source: 'PHB' },
         { 
-          id: 'hexblade', 
+          id: 'hexblade',
           name: 'The Hexblade', 
           source: 'XGE',
           features: [
             {
+              name: 'Hex Warrior',
+              description: 'Hex Warrior: Grants proficiency with Medium Armor, Shields, and Martial Weapons.',
               kind: 'grant',
-              grantType: 'proficiency.armor',
+              grantType: 'proficiency',
               level: 1,
-              value: {
-                categories: ['medium', 'shield'],
-              }
-            },
-            {
-              kind: 'grant',
-              grantType: 'proficiency.weapons',
-              level: 1,
-              value: {
-                categories: ['martial'],
-              }
+              value: [
+                { target: 'armor', categories: ['medium', 'shield'] },
+                { target: 'weapon', categories: ['martial'] },
+              ],
             }
           ]
         },
@@ -68,11 +63,11 @@ export const warlock = {
       equipment: {
         armor: {
           categories: ['light'],
-          individuals: 'none'
+          individuals: []
         },
         weapons: {
           categories: ['simple'],
-          individuals: 'none'
+          individuals: []
         },
         notes: [
           { id: 'pactOfTheBlade', text: 'Pact of the Blade (Level 3) grants proficiency with any summoned melee weapon.' },
@@ -166,8 +161,6 @@ export const warlock = {
       hpPerLevel: 5,
       attackProgression: 'average',
       primaryAbilities: ['cha', 'con'],
-      armorProficiency: ['light'],
-      weaponProficiency: ['simple'],
       role: 'Striker',
       powerSource: 'Arcane',
       healingSurges: 6,

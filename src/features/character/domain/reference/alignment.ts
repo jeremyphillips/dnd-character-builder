@@ -1,6 +1,6 @@
 import { editions, type EditionId } from '@/data'
 import { getById } from '@/domain/lookups'
-import { getClassRequirement } from '@/features/character/domain/validation'
+import { getClassRequirement } from '@/features/mechanics/domain/character-build/rules'
 
 export type AlignmentOption = {
   id: string

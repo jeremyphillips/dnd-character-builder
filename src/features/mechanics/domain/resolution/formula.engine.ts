@@ -3,6 +3,7 @@ import type { Condition } from "../conditions/condition.types"
 import type { AbilityScores } from "@/shared/types/character.core"
 import type { EvaluationContext } from "../conditions/evaluation-context.types"
 import { getAbilityModifier } from "../core"
+import { getProficiencyBonus } from "../core/progression"
 
 // Responsible for:
 //   - Evaluating formula definitions
@@ -18,7 +19,9 @@ import { getAbilityModifier } from "../core"
 export type FormulaDefinition = {
   base?: number
   ability?: keyof AbilityScores
-  abilities?: AbilityScores[]
+  abilities?: (keyof AbilityScores)[]
+  /** Cap ability contribution (e.g. medium armor: min(dex, 2)) */
+  maxAbilityContribution?: number
   proficiency?: boolean
   perLevel?: number
 }
@@ -27,6 +30,7 @@ export type FormulaEffect = {
   kind: 'formula'
   target: StatTarget
   formula: FormulaDefinition
+  source?: string
   condition?: Condition
   priority?: number
 }
@@ -43,7 +47,11 @@ export function resolveFormulaValue(
   }
 
   if (formula.ability) {
-    value += getAbilityModifier(context.self, formula.ability)
+    let mod = getAbilityModifier(context.self, formula.ability)
+    if (formula.maxAbilityContribution !== undefined) {
+      mod = Math.min(mod, formula.maxAbilityContribution)
+    }
+    value += mod
   }
 
   if (formula.abilities) {

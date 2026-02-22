@@ -1,7 +1,7 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
 import type { CharacterType, CharacterProficiencies } from '@/shared/types/character.core'
 import type { HitPointMode } from '@/features/character/domain/progression'
-import type { InvalidationResult } from '../validation/types'
+import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
 
 export type { CharacterClassInfo, CharacterSheet, CharacterProficiencies }
 export type { HitPointMode }
@@ -108,7 +108,7 @@ export type CharacterBuilderContextValue = {
 
   // invalidation
   /** Per-step invalidation notices, keyed by StepId. */
-  stepNotices: Map<StepId, string[]>
+  stepNotices: Map<StepId, InvalidationItem[]>
   /** Pending invalidation result awaiting user confirmation.  Null when idle. */
   pendingInvalidations: InvalidationResult | null
   /** Confirm the pending change — apply it and store step notices. */

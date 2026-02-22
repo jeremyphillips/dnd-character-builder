@@ -16,6 +16,8 @@ export interface CreatureSnapshot {
   hp: number
   hpMax: number
 
+  hitDie?: number
+
   abilities: Record<keyof AbilityScores, number>
 
   conditions: string[] // prone, charmed, frightened, etc.

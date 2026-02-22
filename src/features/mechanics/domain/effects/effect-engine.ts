@@ -1,17 +1,10 @@
-import type { Condition } from "../conditions/condition.types";
-//import { EvaluationContext } from "./evaluation-context.types";
+import type { Condition } from "../conditions/condition.types"
+import type { EvaluationContext } from "../conditions/evaluation-context.types"
 
 export function evaluateCondition(
-  condition: Condition,
-  context: EvaluationContext
-): boolean => {
+  _condition: Condition,
+  _context: EvaluationContext
+): boolean {
+  return false
+}
 
-  switch (condition.kind) {
-    case 'and':
-      return condition.conditions.every(evaluateCondition)
-    case 'or':
-      return condition.conditions.some(evaluateCondition)
-    case 'not':
-      return !evaluateCondition(condition.condition)
-  }
-} 

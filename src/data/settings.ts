@@ -80,7 +80,7 @@ export const settings: readonly Setting[] = [
       only: ['human']
     },
     classOverrides: {
-      remove: ['druid', 'paladin', 'warlock'],
+      remove: ['druid', 'paladin'],
 
       subclassOverrides: {
         warrior: {

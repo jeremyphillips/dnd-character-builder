@@ -129,8 +129,6 @@ export const artificer = {
       hitDie: 8,
       attackProgression: 'average',
       primaryAbilities: ['int', 'con'],
-      armorProficiency: ['light', 'medium', 'shields'],
-      weaponProficiency: ['simple'],
       savingThrows: ['con', 'int'],
       spellcasting: 'half',
       spellProgression: {

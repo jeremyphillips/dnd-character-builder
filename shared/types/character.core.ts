@@ -64,6 +64,13 @@ export type ArmorClass = {
   calculation?: string
 }
 
+export type EquipmentLoadout = {
+  armorId?: string
+  shieldId?: string
+  mainHandWeaponId?: string
+  offHandWeaponId?: string
+}
+
 export type CharacterProficiencies = {
   skills?: string[]
 }
@@ -89,7 +96,9 @@ export type CharacterCore = {
   hitPoints?: HitPoints
   armorClass?: ArmorClass
   combat?: {
+    /** @deprecated Use loadout instead. Kept for backward compatibility. */
     selectedArmorConfigId?: string | null
+    loadout?: EquipmentLoadout
   }
 
   proficiencies?: CharacterProficiencies

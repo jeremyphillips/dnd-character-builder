@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use getArmorConfigOptions from character/domain/engine instead.
+ * Kept for one sprint as safety net during AC migration.
+ */
 import type { Character } from '@/shared/types'
 import { equipment as equipmentData } from '@/data'
 import type { ArmorItem, ArmorEditionDatum } from '@/data/equipment/armor.types'

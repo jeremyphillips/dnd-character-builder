@@ -60,9 +60,11 @@ export const editions: readonly Edition[] = [
       'druid',
       'fighter',
       'monk',
+      'paladin',
       'ranger',
       'rogue',
       'sorcerer',
+      'warlock',
       'wizard'
     ],
     proficiencies: {

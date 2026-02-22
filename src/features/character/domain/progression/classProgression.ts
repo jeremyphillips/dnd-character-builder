@@ -11,6 +11,47 @@ import type {
 import { getById } from '@/domain/lookups'
 
 // ---------------------------------------------------------------------------
+// Subclass feature extraction (for UI display)
+// ---------------------------------------------------------------------------
+
+export type SubclassFeature = {
+  name: string
+  level: number
+  description?: string
+}
+
+/**
+ * Extract displayable subclass features for a given class + subclass + edition.
+ * Only returns features with a human-readable name, filtered by character level.
+ */
+export function getSubclassFeatures(
+  classId: string | undefined,
+  classDefinitionId: string | undefined,
+  edition: EditionId | string | undefined,
+  characterLevel: number
+): SubclassFeature[] {
+  if (!classId || !classDefinitionId || !edition) return []
+
+  const cls = getById(classes, classId)
+  if (!cls) return []
+
+  const def = cls.definitions?.find((d) => d.edition === edition)
+  if (!def?.options) return []
+
+  const subclass = def.options.find((o) => o.id === classDefinitionId)
+  if (!subclass?.features) return []
+
+  return subclass.features
+    .filter((f) => typeof f.name === 'string')
+    .map((f) => ({
+      name: f.name!,
+      level: f.level ?? def.selectionLevel ?? 1,
+      description: typeof f.description === 'string' ? f.description : undefined,
+    }))
+    .filter((f) => f.level <= characterLevel)
+}
+
+// ---------------------------------------------------------------------------
 // Core Class Progression — edition-agnostic intermediate representation
 // ---------------------------------------------------------------------------
 

@@ -16,7 +16,30 @@ export const sorcerer = {
       options: [
         { id: 'aberrant-mind', name: 'Aberrant Mind', source: 'TCOE' },
         { id: 'clockwork-soul', name: 'Clockwork Soul', source: 'TCOE' },
-        { id: 'draconic-bloodline', name: 'Draconic Bloodline', source: 'PHB' },
+        {
+          id: 'draconic-bloodline',
+          name: 'Draconic Bloodline',
+          source: 'PHB',
+          features: [
+            {
+              kind: 'formula',
+              target: 'armor_class',
+              level: 1,
+              condition: { type: 'unarmored' },
+              formula: {
+                base: 13,
+                ability: 'dexterity'
+              }
+            },
+            {
+              kind: 'modifier',
+              level: 1,
+              target: 'hp_max',
+              mode: 'add',
+              value: { perLevel: 1 }
+            }
+          ]
+        },
         { id: 'shadow-magic', name: 'Shadow Magic', source: 'XGE' },
         { id: 'storm-sorcery', name: 'Storm Sorcery', source: 'SCAG' },
         { id: 'wild-magic', name: 'Wild Magic', source: 'PHB' }

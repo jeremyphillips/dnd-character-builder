@@ -19,7 +19,29 @@ export const warlock = {
         { id: 'fiend', name: 'The Fiend', source: 'PHB' },
         { id: 'genie', name: 'The Genie', source: 'TCOE' },
         { id: 'great-old-one', name: 'The Great Old One', source: 'PHB' },
-        { id: 'hexblade', name: 'The Hexblade', source: 'XGE' },
+        { 
+          id: 'hexblade', 
+          name: 'The Hexblade', 
+          source: 'XGE',
+          features: [
+            {
+              kind: 'grant',
+              grantType: 'proficiency.armor',
+              level: 1,
+              value: {
+                categories: ['medium', 'shield'],
+              }
+            },
+            {
+              kind: 'grant',
+              grantType: 'proficiency.weapons',
+              level: 1,
+              value: {
+                categories: ['martial'],
+              }
+            }
+          ]
+        },
         { id: 'undead', name: 'The Undead', source: 'VRGR' },
         { id: 'undying', name: 'The Undying', source: 'SCAG' }
       ]
@@ -113,8 +135,6 @@ export const warlock = {
       hitDie: 8,
       attackProgression: 'average',
       primaryAbilities: ['cha', 'con'],
-      armorProficiency: ['light'],
-      weaponProficiency: ['simple'],
       savingThrows: ['wis', 'cha'],
       spellcasting: 'pact',
       spellProgression: {

@@ -19,7 +19,37 @@ export const paladin = {
         { id: 'ancients', name: 'Oath of the Ancients', source: 'PHB' },
         { id: 'conquest', name: 'Oath of Conquest', source: 'XGE' },
         { id: 'crown', name: 'Oath of the Crown', source: 'SCAG' },
-        { id: 'devotion', name: 'Oath of Devotion', source: 'PHB' },
+        { 
+          id: 'devotion', 
+          name: 'Oath of Devotion', 
+          source: 'PHB',
+          features: [
+            {
+              name: 'Sacred Weapon',
+              level: 3,
+              type: 'active_buff',
+              action: 'action',
+              duration: '1 minute',
+              resource: 'channel_divinity',
+              // This allows your logic engine to find and apply the bonus
+              effects: [{
+                target: 'attack_roll',
+                stat: 'charisma',
+                type: 'additive'
+              }]
+            },
+            {
+              name: 'Aura of Devotion',
+              level: 7,
+              type: 'passive_aura',
+              range: '10 feet',
+              effects: [{
+                target: 'charm_resistance',
+                type: 'immunity'
+              }]
+            }
+          ]
+        },
         { id: 'glory', name: 'Oath of Glory', source: 'TCOE' },
         { id: 'redemption', name: 'Oath of Redemption', source: 'XGE' },
         { id: 'vengeance', name: 'Oath of Vengeance', source: 'PHB' },
@@ -210,8 +240,6 @@ export const paladin = {
       hitDie: 10,
       attackProgression: 'good',
       primaryAbilities: ['str', 'cha'],
-      armorProficiency: ['all'],
-      weaponProficiency: ['all'],
       savingThrows: ['wis', 'cha'],
       spellcasting: 'half',
       spellProgression: {
@@ -242,8 +270,6 @@ export const paladin = {
       hitDie: 10,
       attackProgression: 'good',
       primaryAbilities: ['str', 'wis', 'cha'],
-      armorProficiency: ['all'],
-      weaponProficiency: ['all'],
       fortSave: 'good',
       refSave: 'poor',
       willSave: 'poor',
@@ -260,8 +286,6 @@ export const paladin = {
       hpPerLevel: 6,
       attackProgression: 'good',
       primaryAbilities: ['str', 'cha'],
-      armorProficiency: ['all'],
-      weaponProficiency: ['simple', 'military'],
       role: 'Defender',
       powerSource: 'Divine',
       healingSurges: 10,
@@ -276,8 +300,6 @@ export const paladin = {
       hitDie: 10,
       attackProgression: 'good',
       primaryAbilities: ['str', 'wis', 'cha'],
-      armorProficiency: ['all'],
-      weaponProficiency: ['all'],
     },
     {
       edition: '1e',

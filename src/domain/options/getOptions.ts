@@ -1,15 +1,15 @@
 import { editions, settings } from '@/data'
 import type { OverrideConfig } from '@/data'
 import type { EditionId, SettingId } from '@/data/types'
-import { resolveClassId } from '@/features/character/domain/reference/classAliases'
+import { resolveClassId } from '@/features/mechanics/domain/progression/reference/classAliases'
 
 type OptionType = 'races' | 'classes'
 
 /**
  * Get available options for a given edition and setting.
- * Handles edition defaults + setting overrides (only, add, remove).
- * For classes, edition-specific IDs are resolved to canonical catalog IDs
- * via the alias map (e.g. "fighting-man" -> "fighter", "mage" -> "wizard").
+ *
+ * @deprecated Use named functions from `@/features/mechanics/domain/character-build/options`
+ * instead: `getAllowedRaceIds`, `getAllowedClassIds`, or the draft-first variants.
  */
 export const getOptions = (
   type: OptionType,

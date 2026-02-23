@@ -1,27 +1,28 @@
 import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
 import type { CharacterBuilderState, CharacterClassInfo, StepId } from '../types'
-import type { CharacterProficiencies } from '@/shared/types/character.core'
-import type { InvalidationResult } from '../validation/types'
+import type { CharacterProficiencies, EquipmentItemInstance } from '@/shared/types/character.core'
+import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
+import {
+  detectInvalidations,
+  resolveInvalidations,
+  INVALIDATION_RULES,
+} from '@/features/mechanics/domain/character-build/invalidation'
 import {
   getStepConfig,
   createInitialBuilderState
 } from '../constants'
 import { getById } from '@/domain/lookups'
-import { getOptions } from '@/domain/options'
+import { getAllowedRaceIdsFromDraft, getAllowedClassIdsFromDraft } from '@/features/mechanics/domain/character-build/options'
 import { 
   getSubclassUnlockLevel,
   getXpByLevelAndEdition 
-} from '@/features/character/domain/progression'
+} from '@/features/mechanics/domain/progression'
 import {
   calculateEquipmentWeight,
-  calculateEquipmentCost
+  calculateEquipmentCost,
+  normalizeEquipmentInstances,
 } from '@/features/equipment/domain'
-import {
-  detectInvalidations,
-  resolveInvalidations,
-  INVALIDATION_RULES,
-} from '../validation'
 import { races, equipment } from "@/data"
 import type { EditionId, SettingId } from "@/data"
 import type { CharacterType } from "@/shared/types/character.core"
@@ -45,13 +46,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const raceOptions = useMemo(() => {
     if (!state.edition) return []
-    const ids = getOptions('races', state.edition, state.setting)
+    const ids = getAllowedRaceIdsFromDraft(state)
     return ids.map(id => getById(races, id)).filter(Boolean)
   }, [state.edition, state.setting])
 
   const classOptions = useMemo(() => {
     if (!state.edition) return []
-    return getOptions('classes', state.edition, state.setting)
+    return getAllowedClassIdsFromDraft(state)
   }, [state.edition, state.setting])
 
   const updateState = (
@@ -69,7 +70,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   } | null>(null)
 
   /** Per-step notices from the most recent confirmed invalidation. */
-  const [stepNotices, setStepNotices] = useState<Map<StepId, string[]>>(
+  const [stepNotices, setStepNotices] = useState<Map<StepId, InvalidationItem[]>>(
     () => new Map()
   )
 
@@ -114,15 +115,19 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
       // Build per-step notices from the invalidation result.
       // Multiple rules can target the same step (e.g. level→spells and
-      // class→spells), so deduplicate items within each step.
-      const notices = new Map<StepId, string[]>()
+      // class→spells), so deduplicate items within each step by id.
+      const notices = new Map<StepId, InvalidationItem[]>()
       for (const inv of result.affected) {
         const existing = notices.get(inv.stepId) ?? []
         notices.set(inv.stepId, [...existing, ...inv.items])
       }
-      // Deduplicate per step
       for (const [stepId, items] of notices) {
-        notices.set(stepId, [...new Set(items)])
+        const seen = new Set<string>()
+        notices.set(stepId, items.filter(item => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        }))
       }
 
       // Replace (not merge) — each confirmation represents a fresh set of notices
@@ -203,7 +208,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       activeClassIndex: 0,
       totalLevel: character.totalLevel ?? character.level ?? 1,
       xp: character.xp ?? 0,
-      equipment: character.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
+      equipment: normalizeEquipmentInstances(character.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 }),
       proficiencies: character.proficiencies ?? { skills: [] },
       spells: character.spells ?? [],
       wealth: character.wealth ?? { gp: 0, sp: 0, cp: 0 },
@@ -520,7 +525,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
       return {
         ...prev,
-        equipment: { ...prev.equipment, weapons: weaponIds, weight },
+        equipment: normalizeEquipmentInstances({ ...prev.equipment, weapons: weaponIds, weight }),
         wealth: { ...prev.wealth, gp: remainingGp }
       }
     })
@@ -537,7 +542,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
       return {
         ...prev,
-        equipment: { ...prev.equipment, armor: armorIds, weight },
+        equipment: normalizeEquipmentInstances({ ...prev.equipment, armor: armorIds, weight }),
         wealth: { ...prev.wealth, gp: remainingGp }
       }
     })
@@ -567,10 +572,109 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     }))
   }
 
+  // ---------------------------------------------------------------------------
+  // Equipment instance management
+  // ---------------------------------------------------------------------------
+
+  let instanceCounter = 0
+  const nextInstanceId = () => `inst_${Date.now()}_${++instanceCounter}`
+
+  const addWeaponInstance = (baseId: string) => {
+    setState(prev => {
+      const existing = prev.equipment?.weaponInstances ?? []
+      const inst: EquipmentItemInstance = { instanceId: nextInstanceId(), baseId }
+      return {
+        ...prev,
+        equipment: { ...prev.equipment, weaponInstances: [...existing, inst] },
+      }
+    })
+  }
+
+  const addArmorInstance = (baseId: string) => {
+    setState(prev => {
+      const existing = prev.equipment?.armorInstances ?? []
+      const inst: EquipmentItemInstance = { instanceId: nextInstanceId(), baseId }
+      return {
+        ...prev,
+        equipment: { ...prev.equipment, armorInstances: [...existing, inst] },
+      }
+    })
+  }
+
+  const updateWeaponInstance = (instanceId: string, patch: Partial<EquipmentItemInstance>) => {
+    setState(prev => {
+      const instances = prev.equipment?.weaponInstances
+      if (!instances) return prev
+      return {
+        ...prev,
+        equipment: {
+          ...prev.equipment,
+          weaponInstances: instances.map(i =>
+            i.instanceId === instanceId ? { ...i, ...patch, instanceId } : i,
+          ),
+        },
+      }
+    })
+  }
+
+  const updateArmorInstance = (instanceId: string, patch: Partial<EquipmentItemInstance>) => {
+    setState(prev => {
+      const instances = prev.equipment?.armorInstances
+      if (!instances) return prev
+      return {
+        ...prev,
+        equipment: {
+          ...prev.equipment,
+          armorInstances: instances.map(i =>
+            i.instanceId === instanceId ? { ...i, ...patch, instanceId } : i,
+          ),
+        },
+      }
+    })
+  }
+
+  const removeWeaponInstance = (instanceId: string) => {
+    setState(prev => {
+      const instances = prev.equipment?.weaponInstances
+      if (!instances) return prev
+      return {
+        ...prev,
+        equipment: {
+          ...prev.equipment,
+          weaponInstances: instances.filter(i => i.instanceId !== instanceId),
+        },
+      }
+    })
+  }
+
+  const removeArmorInstance = (instanceId: string) => {
+    setState(prev => {
+      const instances = prev.equipment?.armorInstances
+      if (!instances) return prev
+      return {
+        ...prev,
+        equipment: {
+          ...prev.equipment,
+          armorInstances: instances.filter(i => i.instanceId !== instanceId),
+        },
+      }
+    })
+  }
+
   const setWeight = (weight: number) => {
     updateState(s => ({
       ...s,
       equipment: { ...s.equipment, weight }
+    }))
+  }
+
+  const updateLoadout = (patch: import('@/shared/types/character.core').EquipmentLoadout) => {
+    setState(prev => ({
+      ...prev,
+      combat: {
+        ...prev.combat,
+        loadout: { ...prev.combat?.loadout, ...patch },
+      },
     }))
   }
 
@@ -678,6 +782,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         updateGear,
         updateMagicItems,
         setWeight,
+        addWeaponInstance,
+        addArmorInstance,
+        updateWeaponInstance,
+        updateArmorInstance,
+        removeWeaponInstance,
+        removeArmorInstance,
+        updateLoadout,
 
         setAlignment,
         setTotalLevels,

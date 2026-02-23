@@ -1,12 +1,15 @@
-import type { CharacterBuilderState } from '@/features/characterBuilder/types'
-import { getClassProgression } from '@/features/character/domain/progression'
-import { getSpellLimits } from '@/domain/spells'
-import { getAvailableSpells } from '@/domain/spells'
-
 /**
- * Compute per-level spell limits for the given state.
- * Returns { perLevelMax, maxSpellLevel, totalKnown } identical to SpellStep's logic.
+ * @deprecated Use buildSpellSelectionModel from
+ * '@/features/mechanics/domain/spells/selection' instead.
+ *
+ * These functions are kept for backward compatibility.
  */
+import type { CharacterBuilderState } from '@/features/characterBuilder/types'
+import { getClassProgression } from '@/features/mechanics/domain/progression'
+import { getClassSpellLimitsAtLevel } from '@/features/mechanics/domain/spells/progression'
+import { getAvailableSpells } from '@/features/mechanics/domain/spells/catalog'
+
+/** @deprecated Use buildSpellSelectionModel instead. */
 export function computeSpellLimits(state: CharacterBuilderState) {
   const perLevelMax = new Map<number, number>()
   let maxSpellLevel = 0
@@ -19,7 +22,7 @@ export function computeSpellLimits(state: CharacterBuilderState) {
     const prog = getClassProgression(cls.classId, state.edition)
     if (!prog?.spellProgression) continue
 
-    const limits = getSpellLimits(prog, cls.level)
+    const limits = getClassSpellLimitsAtLevel(prog, cls.level)
     if (limits.cantrips > 0) {
       perLevelMax.set(0, (perLevelMax.get(0) ?? 0) + limits.cantrips)
     }
@@ -36,9 +39,7 @@ export function computeSpellLimits(state: CharacterBuilderState) {
   return { perLevelMax, maxSpellLevel, totalKnown }
 }
 
-/**
- * Build a set of available spell IDs + a level map for a given state.
- */
+/** @deprecated Use buildSpellSelectionModel instead. */
 export function getAvailableSpellsByEditionAndClass(character: CharacterBuilderState) {
   const availableIds = new Set<string>()
   const spellLevelMap = new Map<string, number>()
@@ -55,4 +56,3 @@ export function getAvailableSpellsByEditionAndClass(character: CharacterBuilderS
 
   return { availableIds, spellLevelMap }
 }
-

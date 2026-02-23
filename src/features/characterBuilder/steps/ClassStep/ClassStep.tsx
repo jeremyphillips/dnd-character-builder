@@ -2,13 +2,12 @@ import { useEffect } from 'react'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { classes } from '@/data'
-import { getOptions } from '@/domain/options'
-import { getSubclassUnlockLevel } from '@/features/character/domain/progression'
+import { getAllowedClassIds } from '@/features/mechanics/domain/character-build/options'
+import { evaluateClassEligibility, getClassRestrictionNotes } from '@/features/mechanics/domain/character-build/rules'
+import { getSubclassUnlockLevel } from '@/features/mechanics/domain/progression'
 import { getClassDefinitions } from '@/features/character/domain/reference'
-import { meetsClassRequirements } from '@/features/character/domain/validation'
-import { getClassRestrictionNotes } from '@/features/character/domain/validation'
 import { canAddClass } from '@/features/character/domain/validation'
-import { getClassProgression } from '@/features/character/domain/progression'
+import { getClassProgression } from '@/features/mechanics/domain/progression'
 import type { ClassProgression } from '@/data/classes/types'
 import { ButtonGroup } from '@/ui/elements'
 import { getNameById } from '@/domain/lookups'
@@ -107,13 +106,13 @@ const ClassStep = () => {
   }, [editionAllowsMulticlass, remainingLevels, allocateRemainingLevels])
 
   /* ---------- Primary class options ---------- */
-  const allowedClassIds = getOptions('classes', edition, setting)
+  const allowedClassIds = getAllowedClassIds(edition, setting)
 
   const classOptions = allowedClassIds
     .map(id => classes.find(c => c.id === id))
     .filter(Boolean)
     .map(cls => {
-      const { allowed } = meetsClassRequirements(cls!, state)
+      const { allowed } = evaluateClassEligibility(cls!.id, state)
       const label = (edition && cls!.displayNameByEdition?.[edition]) ?? cls!.name
       return {
         id: cls!.id,

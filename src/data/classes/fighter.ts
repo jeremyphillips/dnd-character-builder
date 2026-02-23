@@ -25,7 +25,46 @@ export const fighter = {
       options: [
         { id: 'arcane-archer', name: 'Arcane Archer', source: 'XGE' },
         { id: 'banneret', name: 'Banneret (Purple Dragon Knight)', source: 'SCAG' },
-        { id: 'battle-master', name: 'Battle Master', source: 'PHB' },
+        {
+          id: 'battle-master',
+          name: 'Battle Master',
+          source: 'PHB',
+          features: [
+            {
+              id: 'battleMaster',
+              name: 'Battle Master',
+              features: [
+                {
+                  kind: 'resource',
+                  resource: {
+                    id: 'superiority_dice',
+                    max: 4,
+                    dice: 'd8',
+                    recharge: 'short_rest'
+                  }
+                },
+                {
+                  kind: 'trigger',
+                  trigger: 'on_weapon_hit',
+                  cost: { resource: 'superiority_dice', amount: 1 },
+                  effects: [
+                    {
+                      kind: 'modifier',
+                      target: 'damage',
+                      mode: 'add',
+                      value: { dice: 'superiority_dice' }
+                    },
+                    {
+                      kind: 'save',
+                      ability: 'strength',
+                      onFail: { applyCondition: 'prone' }
+                    }
+                  ]
+                }  
+              ]
+            }
+          ]
+        },
         { id: 'cavalier', name: 'Cavalier', source: 'XGE' },
         { id: 'champion', name: 'Champion', source: 'PHB' },
         { id: 'echo-knight', name: 'Echo Knight', source: 'EGW' },

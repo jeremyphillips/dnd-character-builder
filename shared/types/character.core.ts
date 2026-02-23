@@ -31,11 +31,19 @@ export type Wealth = {
   baseGp?: number | null
 }
 
+export type EquipmentItemInstance = {
+  instanceId: string
+  baseId: string
+  enhancementTemplateId?: string
+}
+
 export type Equipment = {
   armor?: string[]
   weapons?: string[]
   gear?: string[]
   magicItems?: string[]
+  armorInstances?: EquipmentItemInstance[]
+  weaponInstances?: EquipmentItemInstance[]
   weight?: number
 }
 
@@ -64,6 +72,20 @@ export type ArmorClass = {
   calculation?: string
 }
 
+export type EquipmentLoadout = {
+  armorId?: string
+  shieldId?: string
+  mainHandWeaponId?: string
+  offHandWeaponId?: string
+  armorInstanceId?: string
+  shieldInstanceId?: string
+  mainHandWeaponInstanceId?: string
+  offHandWeaponInstanceId?: string
+  armorEnhancementId?: string
+  shieldEnhancementId?: string
+  weaponEnhancementId?: string
+}
+
 export type CharacterProficiencies = {
   skills?: string[]
 }
@@ -89,7 +111,9 @@ export type CharacterCore = {
   hitPoints?: HitPoints
   armorClass?: ArmorClass
   combat?: {
+    /** @deprecated Use loadout instead. Kept for backward compatibility. */
     selectedArmorConfigId?: string | null
+    loadout?: EquipmentLoadout
   }
 
   proficiencies?: CharacterProficiencies

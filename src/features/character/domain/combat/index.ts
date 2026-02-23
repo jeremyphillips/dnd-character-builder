@@ -1,2 +1,3 @@
 export * from './calculateArmorClass'
-export * from './armorConfigurations'
+/** @deprecated Use getLoadoutPickerOptions from character/domain/engine instead */
+export * from './armorConfigurations.legacy'

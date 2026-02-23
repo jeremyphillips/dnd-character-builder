@@ -1,15 +1,12 @@
+/**
+ * @deprecated Use types from '@/features/mechanics/domain/character-build/invalidation' instead.
+ *
+ * These types are the legacy string-based API; the engine now uses
+ * `InvalidationItem` (id + kind + label) and `Trigger` (key | fn).
+ * Kept only for reference — no code should import these anymore.
+ */
 import type { CharacterBuilderState, StepId } from '../types'
 
-// ---------------------------------------------------------------------------
-// Invalidation rule — declarative description of a downstream dependency
-// ---------------------------------------------------------------------------
-
-/**
- * A single invalidation rule.
- *
- * Rules are intentionally pure data + pure functions so they can be unit-tested
- * without React, and new rules can be added without touching the provider.
- */
 export interface InvalidationRule {
   /** Unique identifier for this rule (e.g. "level→spells"). */
   id: string

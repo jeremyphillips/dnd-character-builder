@@ -1,6 +1,7 @@
 import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import type { CampaignSummary } from '@/shared/types/campaign.types'
-import { classes as classesData, races } from '@/data'
+import { classes as classesData } from '@/data'
+import { racesCore as races } from '@/data/races.core'
 import { getNameById, getById } from '@/domain/lookups'
 import { getSubclassNameById } from '@/features/character/domain/reference'
 import { getXpForLevel } from '@/features/mechanics/domain/progression'

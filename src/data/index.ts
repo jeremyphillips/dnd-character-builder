@@ -8,7 +8,7 @@ export * from './editions/xpTablesByEdition.ts'
 export * from './editions/proficiencySkillsByEdition.ts'
 
 export * from './equipment/index.ts'
-export * from './races'
+//export * from './races'
 export * from './worlds'
 export * from './types'
 export * from './classes/types'

@@ -1,6 +1,7 @@
 import { useCharacterBuilder } from '../../context'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { races } from '@/data'
+// import { races } from '@/data'
+import { racesCore as races } from '@/data/races.core'
 import { standardAlignments, fourEAlignments, basicAlignments } from '@/data/alignments'
 import { getNameById } from '@/domain/lookups'
 import type { ClassProgression } from '@/data/classes/types'

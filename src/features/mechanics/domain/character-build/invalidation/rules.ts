@@ -9,11 +9,14 @@
  */
 import type { InvalidationRule, InvalidationItem } from './types'
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
-import type { EditionId } from '@/data/editions/edition.types'
 
 import { getAllowedRaceIdsFromDraft, getAllowedClassIdsFromDraft } from '../options'
 import { evaluateClassEligibility } from '../rules'
-import { classes as classCatalog, races as raceCatalog, equipment } from '@/data'
+import { 
+  classes as classCatalog,  
+  equipment 
+} from '@/data'
+import { racesCore as raceCatalog } from '@/data/races.core'
 import { spells as spellCatalog } from '@/data/classes/spells'
 import { resolveEquipmentEdition } from '@/features/equipment/domain'
 import { getById } from '@/domain/lookups'

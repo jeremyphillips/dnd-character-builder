@@ -1,6 +1,6 @@
-import type { CampaignTagCategory } from './ruleSets'
+import type { CampaignTagsConfig } from './ruleSets'
 
-export const CAMPAIGN_TAG_OPTIONS: CampaignTagCategory[] = [
+export const CAMPAIGN_TAG_OPTIONS: CampaignTagsConfig = [
   {
     id: 'tone',
     name: 'Tone',

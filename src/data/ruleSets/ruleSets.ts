@@ -171,23 +171,28 @@ export type RulesetContent = {
 }
 
 export type CampaignTagOption = {
-  id: string
-  name: string
-  description?: string
-}
+  id: string;
+  name: string;
+  description?: string;
+};
 
 export type CampaignTagCategory = {
-  id: string
-  name: string
-  options: CampaignTagOption[]
+  id: string;
+  name: string;
+  options: CampaignTagOption[];
 }
 
-export type CampaignTags = {
-  selected: string[]
-  allowCustom?: boolean
-  custom?: string[]
-  options: CampaignTagCategory[]
-}
+// DB-provided “catalog”
+export type CampaignTagsOptions = CampaignTagCategory[];
+
+// Persisted user state
+export type CampaignTagsState = {
+  selected: string[];        // option ids and/or custom ids (see note below)
+  allowCustom?: boolean;
+  custom?: string[];         // raw custom strings
+};
+
+export type CampaignTagsConfig = CampaignTagCategory[]
 
 export type Ruleset = {
   _id: string
@@ -197,7 +202,7 @@ export type Ruleset = {
     basedOn?: string
     version: number
     /** Campaign tone + content descriptors chosen by the campaign owner */
-    campaignTags?: CampaignTags
+    campaignTags?: CampaignTagsState
   }
   content: RulesetContent
   mechanics: MechanicsRules

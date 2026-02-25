@@ -7,7 +7,7 @@ import { getSubclassUnlockLevel } from '@/features/mechanics/domain/progression'
 import { getClassDefinitions } from '@/features/character/domain/reference'
 import { canAddClass } from '@/features/character/domain/validation'
 import { getClassProgression } from '@/features/mechanics/domain/progression'
-import type { ClassProgression } from '@/data/classes/types'
+import type { ClassProgression } from '@/data/classes.types'
 import { ButtonGroup } from '@/ui/elements'
 import { getSubclassNameById } from '@/features/character/domain/reference'
 
@@ -91,9 +91,12 @@ const ClassStep = () => {
 
   const remainingLevels = (totalLevel ?? 0) - allocatedLevels
 
+  const characterLevel = totalLevel ?? 1
+  const ruleCtx = { classId: selectedClasses[0]?.classId }
+
   // Does this campaign support multiclassing at all? (ignoring current class
   // count / remaining levels — just the campaign-level rule)
-  const campaignAllowsMulticlass = canAddClass(multiclassingRules, 1, 1).allowed
+  const campaignAllowsMulticlass = canAddClass(multiclassingRules, ruleCtx, 1, 1, characterLevel).allowed
 
   // When multiclassing is disabled, auto-allocate all levels to the primary
   // class so the user doesn't need to interact with a level spinner.
@@ -371,9 +374,9 @@ const ClassStep = () => {
         })}
       </Stack>
 
-      {/* Add class — gated by edition multiclassing rules */}
+      {/* Add class — gated by multiclassing rules */}
       {primaryClassSelected && (() => {
-        const mc = canAddClass(multiclassingRules, selectedClasses.length, remainingLevels)
+        const mc = canAddClass(multiclassingRules, ruleCtx, selectedClasses.length, remainingLevels, characterLevel)
         return mc.allowed ? (
           <CardActions sx={{ px: 0, pt: 2 }}>
             <Button

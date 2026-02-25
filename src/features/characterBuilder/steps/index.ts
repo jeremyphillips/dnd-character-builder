@@ -1,4 +1,6 @@
+export { default as AbilityScoresStep } from './AbilityScoresStep/AbilityScoresStep'
 export { default as AlignmentStep } from './AlignmentStep/AlignmentStep'
+export { default as CharacterSourceStep } from './CharacterSourceStep/CharacterSourceStep'
 export { default as ClassStep } from './ClassStep/ClassStep'
 export { default as ProficiencyStep } from './ProficiencyStep/ProficiencyStep'
 export { default as EquipmentStep } from './EquipmentStep/EquipmentStep'

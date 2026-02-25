@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
-import type { CharacterBuilderState, CharacterClassInfo, StepId } from '../types'
-import type { CharacterProficiencies, EquipmentItemInstance } from '@/shared/types/character.core'
+import type { CharacterBuilderState, CharacterClassInfo, StepId, AbilityScoreSource, AbilityScoresStatus } from '../types'
+import type { CharacterProficiencies, EquipmentItemInstance, AbilityScores } from '@/shared/types/character.core'
 import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 
@@ -12,8 +12,13 @@ import {
 } from '@/features/mechanics/domain/character-build/invalidation'
 import {
   getStepConfig,
-  createInitialBuilderState
+  createInitialBuilderState,
+  INITIAL_ABILITY_SCORES,
+  DEFAULT_ABILITY_KEYS,
 } from '../constants'
+import {
+  generateAbilityScores,
+} from '@/features/mechanics/domain/generation/ability-scores'
 import { 
   getSubclassUnlockLevel,
   getXpForLevel,
@@ -186,6 +191,10 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       lockedSelections['skills'] = [...existingSkills]
     }
 
+    const loadedScores: AbilityScores = character.abilityScores
+      ? { ...INITIAL_ABILITY_SCORES, ...character.abilityScores }
+      : { ...INITIAL_ABILITY_SCORES };
+
     setState({
       step,
       type: mode,
@@ -197,6 +206,10 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       activeClassIndex: 0,
       totalLevel: character.totalLevel ?? character.level ?? 1,
       xp: character.xp ?? 0,
+      abilityScores: loadedScores,
+      abilityScoreSource: character.abilityScores ? 'import_manual' : undefined,
+      abilityScoresStatus: deriveAbilityScoresStatus(loadedScores),
+      flowMode: 'isolated',
       equipment: normalizeEquipmentInstances(character.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 }),
       proficiencies: character.proficiencies ?? { skills: [] },
       spells: character.spells ?? [],
@@ -456,6 +469,58 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const setHitPointMode = (hitPointMode: CharacterBuilderState['hitPointMode']) =>
     updateState(s => ({ ...s, hitPointMode }))
+
+  // ---------------------------------------------------------------------------
+  // Ability scores
+  // ---------------------------------------------------------------------------
+
+  const deriveAbilityScoresStatus = (scores: AbilityScores): AbilityScoresStatus => {
+    const vals = Object.values(scores);
+    if (vals.length === 0 || vals.every(v => v == null)) return 'unset';
+    if (vals.every(v => v != null)) return 'complete';
+    return 'partial';
+  };
+
+  const setAbilityScores = (patch: Partial<AbilityScores>) =>
+    updateState(s => {
+      const merged = { ...s.abilityScores, ...patch };
+      return { ...s, abilityScores: merged, abilityScoresStatus: deriveAbilityScoresStatus(merged) };
+    });
+
+  const setAbilityScore = (abilityId: string, value: number | null) =>
+    setAbilityScores({ [abilityId]: value });
+
+  const setAbilityScoreSource = (abilityScoreSource: AbilityScoreSource) =>
+    updateState(s => ({ ...s, abilityScoreSource }));
+
+  const rollAbilityScores = () =>
+    updateState(s => {
+      const allNull = DEFAULT_ABILITY_KEYS.every(k => s.abilityScores[k] == null);
+      if (!allNull) return s;
+      const rolled = generateAbilityScores('4d6-drop-lowest');
+      return { ...s, abilityScores: rolled, abilityScoresStatus: 'complete' as const };
+    });
+
+  // ---------------------------------------------------------------------------
+  // Character source actions
+  // ---------------------------------------------------------------------------
+
+  const advanceFromSource = (source: AbilityScoreSource) => {
+    setState(s => {
+      const updated = { ...s, abilityScoreSource: source };
+      const config = getStepConfig(updated.type ?? 'pc');
+      const currentIdx = config.findIndex(step => step.id === s.step.id);
+      let nextIdx = currentIdx + 1;
+      while (nextIdx < config.length && config[nextIdx]?.shouldSkip?.(updated)) {
+        nextIdx++;
+      }
+      const next = config[Math.min(nextIdx, config.length - 1)];
+      return { ...updated, step: { id: next.id, name: next.label } };
+    });
+  };
+
+  const chooseImportCharacter = () => advanceFromSource('import_manual');
+  const chooseGenerateCharacter = () => advanceFromSource('generated_roll');
 
   const setProficiencies = (proficiencies: CharacterProficiencies) =>
     updateState(s => ({ ...s, proficiencies }))
@@ -738,6 +803,12 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         updateSubclass: updateClassDefinition,
         allocateRemainingLevels,
 
+        chooseImportCharacter,
+        chooseGenerateCharacter,
+        rollAbilityScores,
+        setAbilityScores,
+        setAbilityScore,
+        setAbilityScoreSource,
         setHitPointMode,
         setProficiencies,
         setSpells,

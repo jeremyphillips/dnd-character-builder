@@ -73,7 +73,7 @@ export type MulticlassingRuleSet = {
 
 export type MulticlassingRules = RuleConfig<
   MulticlassingRuleSet,
-  Partial<MulticlassingRuleSet> | ClassEntryRequirement
+  Partial<MulticlassingRuleSet>
 >;
 
 export type AlignmentOption = {
@@ -314,20 +314,13 @@ export const ruleSets: Ruleset[] = [
             enabled: true,
             minLevelToMulticlass: 2,
             xpMode: 'shared',
-          },
-          overrides: {
-            byClass: {
+            entryRequirementsByTargetClass: {
               wizard: {
                 anyOf: [
-                  {
-                    all: [
-                      { ability: 'intelligence', min: 16 },
-                    ]
-                  }
-                ]
-              }
+                  { all: [{ ability: 'intelligence', min: 18 }] },
+                ],
+              },
             },
-            byRace: {},
           },
           // // Initial implentation: one rule for all classes and races
           // // TODO: support per-class/race rules

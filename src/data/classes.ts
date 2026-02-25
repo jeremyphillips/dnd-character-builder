@@ -972,7 +972,7 @@ export const classes: readonly CharacterClass[] = [
       multiclassing: {
         note: 'Requires 13 Intelligence',
         anyOf: [
-          { all: [{ ability: 'intelligence', min: 13 }] },
+          { all: [{ ability: 'intelligence', min: 7 }] },
         ],
       }
     } 

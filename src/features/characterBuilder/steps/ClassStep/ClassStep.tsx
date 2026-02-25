@@ -93,10 +93,11 @@ const ClassStep = () => {
 
   const characterLevel = totalLevel ?? 1
   const ruleCtx = { classId: selectedClasses[0]?.classId }
+  const { abilityScores } = state
 
   // Does this campaign support multiclassing at all? (ignoring current class
   // count / remaining levels — just the campaign-level rule)
-  const campaignAllowsMulticlass = canAddClass(multiclassingRules, ruleCtx, 1, 1, characterLevel).allowed
+  const campaignAllowsMulticlass = canAddClass(multiclassingRules, ruleCtx, 1, 1, characterLevel, undefined, abilityScores).allowed
 
   // When multiclassing is disabled, auto-allocate all levels to the primary
   // class so the user doesn't need to interact with a level spinner.
@@ -254,10 +255,22 @@ const ClassStep = () => {
                     <ButtonGroup
                       options={classOptions.map(opt => {
                         const primaryClassId = selectedClasses[0]?.classId
-                        const disabled =
+                        let disabled =
                           opt.disabled || (index !== 0 && opt.id === primaryClassId)
+                        let tooltip: string | undefined
 
-                        return { ...opt, disabled }
+                        if (!disabled && index > 0) {
+                          const mc = canAddClass(
+                            multiclassingRules, ruleCtx, selectedClasses.length,
+                            remainingLevels, characterLevel, opt.id, abilityScores,
+                          )
+                          if (!mc.allowed) {
+                            disabled = true
+                            tooltip = mc.reason
+                          }
+                        }
+
+                        return { ...opt, disabled, tooltip }
                       })}
                       value={cls.classId}
                       onChange={id => setClassId(id)}
@@ -376,18 +389,24 @@ const ClassStep = () => {
 
       {/* Add class — gated by multiclassing rules */}
       {primaryClassSelected && (() => {
-        const mc = canAddClass(multiclassingRules, ruleCtx, selectedClasses.length, remainingLevels, characterLevel)
-        return mc.allowed ? (
-          <CardActions sx={{ px: 0, pt: 2 }}>
+        const mc = canAddClass(multiclassingRules, ruleCtx, selectedClasses.length, remainingLevels, characterLevel, undefined, abilityScores)
+        return (
+          <CardActions sx={{ px: 0, pt: 2, flexDirection: 'column', alignItems: 'flex-start' }}>
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={addClass}
+              disabled={!mc.allowed}
             >
               Add another class
             </Button>
+            {!mc.allowed && mc.reason && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                {mc.reason}
+              </Typography>
+            )}
           </CardActions>
-        ) : null
+        )
       })()}
     </div>
   )

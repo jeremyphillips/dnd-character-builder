@@ -3,7 +3,21 @@ import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E } from './spellSlotTables'
 import type { WealthTier } from '@/data/classes.types'
 import type { MagicItemRarity } from '@/data/equipment/magicItems'
 import type { AbilityId } from '@/shared/types/character.core'
-// import { CAMPAIGN_TAG_OPTIONS } from './campaignTags'
+import type {
+  ResolveMode,
+  RuleOverrideMap,
+  RuleConfig,
+  ArrayMergeMode,
+  MergePolicy,
+} from '@/features/mechanics/domain/core/rules/ruleConfig'
+
+export type {
+  ResolveMode,
+  RuleOverrideMap,
+  RuleConfig,
+  ArrayMergeMode,
+  MergePolicy,
+}
 
 // ---------------------------------------------------------------------------
 // Ruleset types
@@ -18,30 +32,8 @@ export type DerivedCombat = {
   armorClass: number
 }
 
-// TODO: dervive from core class data and user-defined classes
 export type ClassId = string;
-// TODO: dervive from core race data and user-defined classes
 export type RaceId = string;
-
-export type ResolveMode = 'use_default' | 'override' | 'merge';
-
-export type RuleOverrideMap<O, ClassId extends string = string, RaceId extends string = string> = {
-  byClass?: Record<ClassId, O>;
-  byRace?: Record<RaceId, O>;
-};
-
-export type RuleConfig<T, O = Partial<T>> = {
-  mode?: ResolveMode;
-  default: T;
-  overrides?: RuleOverrideMap<O>;
-  mergePolicy?: MergePolicy;
-};
-
-export type ArrayMergeMode = 'replace' | 'concat' | 'union';
-
-export type MergePolicy = {
-  arrays?: ArrayMergeMode;
-};
 
 
 export type AbilityRequirement = {

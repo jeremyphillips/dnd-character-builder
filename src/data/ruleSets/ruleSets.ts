@@ -265,8 +265,8 @@ export type Ruleset = {
 export const startingWealthTiersDefault: WealthTier[] = [
   { levelRange: [1, 4],   baseGold: 125,  maxItemValue: 75 },
   { levelRange: [5, 10],  baseGold: 500,  maxItemValue: 200 },
-  { levelRange: [11, 20], baseGold: 5000, maxItemValue: 2000 }
-]
+  { levelRange: [11, 20], baseGold: 5000, maxItemValue: 2000 },
+];
 
 // TODO: keep CAMPAIGN_TAG_OPTIONS somewhere else (a config fetch / separate field / UI state).
 export type CampaignTagsVM = CampaignTagsState & {
@@ -275,107 +275,194 @@ export type CampaignTagsVM = CampaignTagsState & {
 
 export const toCampaignTagsVM = (
   state: CampaignTagsState | undefined,
-  options: CampaignTagsOptions
+  options: CampaignTagsOptions,
 ): CampaignTagsVM => ({
   selected: state?.selected ?? [],
   allowCustom: state?.allowCustom ?? true,
   custom: state?.custom ?? [],
   options,
-})
+});
 
-export const ruleSets: Ruleset[] = [
-  {
-    _id: 'testruleset01',
-    campaignId: '698a7c82c35d1758cfa4f4c3',
-    meta: { 
-      name: 'Lankhmar 5e Ruleset', 
-      basedOn: '5e', 
-      version: 1,
-      campaignTags: {
-        selected: [],
-        // options: CAMPAIGN_TAG_OPTIONS,
-        allowCustom: true,
-        custom: []
-      }
-    },
-    content: {
-      classes:    { allowAll: true, deny: ['warlock'] },
-      races:      { allowAll: true },
-      equipment:  { allowAll: true },
-      spells:     { allowAll: true },
-      monsters:   { allowAll: true },
-      locations:  { allowAll: true },
-    },
-    mechanics: {
-      progression: {
-        multiclassing: {
-          mode: 'use_default',
-          default: {
-            enabled: true,
-            minLevelToMulticlass: 2,
-            xpMode: 'shared',
-            entryRequirementsByTargetClass: {
-              wizard: {
-                anyOf: [
-                  { all: [{ ability: 'intelligence', min: 18 }] },
-                ],
-              },
+// ---------------------------------------------------------------------------
+// System ruleset — code-defined 5e baseline
+//
+// These are the "factory defaults" shared by every campaign that inherits
+// from 5e.  In a real deployment this object lives in code (or a read-only
+// system collection); it is never mutated by campaign owners.
+// ---------------------------------------------------------------------------
+
+const SYSTEM_RULESET_5E: Ruleset = {
+  _id: 'system_5e',
+  campaignId: '',
+  meta: {
+    name: '5e System Defaults',
+    basedOn: '5e',
+    version: 1,
+  },
+  content: {
+    classes:    { allowAll: true },
+    races:      { allowAll: true },
+    equipment:  { allowAll: true },
+    spells:     { allowAll: true },
+    monsters:   { allowAll: true },
+    locations:  { allowAll: true },
+  },
+  mechanics: {
+    progression: {
+      multiclassing: {
+        mode: 'use_default',
+        default: {
+          enabled: true,
+          minLevelToMulticlass: 2,
+          xpMode: 'shared',
+          entryRequirementsByTargetClass: {
+            sorcerer: {
+              anyOf: [{ all: [{ ability: 'charisma', min: 13 }] }],
             },
           },
-          // // Initial implentation: one rule for all classes and races
-          // // TODO: support per-class/race rules
-          // enabled: true,
-          // maxClasses: undefined,
-          // // Initial implentation: one rule for all classes and races
-          // // TODO: support per-class/race rules
-          // minLevelToMulticlass: 2,
-          // // Initial implentation: only target class's progression.primaryAbilities
-          // // do not hardcode stats here
-          // entryRequirementsByTargetClass: undefined,
-          // // Initial implentation: one rule for all classes and races
-          // // TODO: support per-class/race rules
-          // xpMode: 'shared'
         },
-        starting: {
-          wealth: {
-            level1: {
-              mode: 'by_class', defaultFormula: '5d4 * 10' 
+      },
+      starting: {
+        wealth: {
+          level1: { mode: 'by_class', defaultFormula: '5d4 * 10' },
+          tiers: startingWealthTiersDefault,
+        },
+      },
+      spellcasting: {
+        slotTables: {
+          fullCaster: FULL_CASTER_SLOTS_5E,
+          halfCaster: HALF_CASTER_SLOTS_5E,
+        },
+      },
+      magicItemBudget: {
+        maxAttunement: 3,
+        tiers: [
+          { levelRange: [1, 4],   maxRarity: 'uncommon',  permanentItems: 2,  consumableItems: 9 },
+          { levelRange: [5, 10],  maxRarity: 'rare',      permanentItems: 6,  consumableItems: 28 },
+          { levelRange: [11, 16], maxRarity: 'very-rare', permanentItems: 6,  consumableItems: 24 },
+          { levelRange: [17, 20], maxRarity: 'legendary', permanentItems: 6,  consumableItems: 19 },
+        ],
+      },
+    },
+    character: {
+      alignment: {
+        enabled: true,
+        defaultId: 'n',
+        options: standardAlignments,
+      },
+    },
+    combat: {
+      armorClass: 10,
+      attackResolution: 'to_hit',
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Campaign patch — simulates a DB-stored campaign record
+//
+// Only the fields the campaign owner changed are present; everything else
+// falls through from the system ruleset via mergeRuleset().
+// ---------------------------------------------------------------------------
+
+export type CampaignRulesetPatch = {
+  _id: string;
+  campaignId: string;
+} & DeepPartial<Omit<Ruleset, '_id' | 'campaignId'>>;
+
+const CAMPAIGN_PATCH_LANKHMAR: CampaignRulesetPatch = {
+  _id: 'testruleset01',
+  campaignId: '698a7c82c35d1758cfa4f4c3',
+  meta: {
+    name: 'Lankhmar 5e Ruleset',
+    campaignTags: {
+      selected: [],
+      allowCustom: true,
+      custom: [],
+    },
+  },
+  content: {
+    classes: { allowAll: true, deny: ['warlock'] },
+    races: { allow: ['human'] },
+  },
+  mechanics: {
+    progression: {
+      multiclassing: {
+        default: {
+          entryRequirementsByTargetClass: {
+            wizard: {
+              anyOf: [{ all: [{ ability: 'intelligence', min: 18 }] }],
             },
-            tiers: startingWealthTiersDefault
-          }
+          },
         },
-        spellcasting: {
-          slotTables: {
-            fullCaster: FULL_CASTER_SLOTS_5E,
-            halfCaster: HALF_CASTER_SLOTS_5E,
-            // TODO: support third casters
-            // thirdCaster: THIRD_CASTER_SLOTS_5E,
-          }
-        },
-        magicItemBudget: {
-          maxAttunement: 3,
-          tiers: [
-            { levelRange: [1, 4],   maxRarity: 'uncommon',  permanentItems: 2,  consumableItems: 9 },
-            { levelRange: [5, 10],  maxRarity: 'rare',      permanentItems: 6,  consumableItems: 28 },
-            { levelRange: [11, 16], maxRarity: 'very-rare',  permanentItems: 6,  consumableItems: 24 },
-            { levelRange: [17, 20], maxRarity: 'legendary',  permanentItems: 6,  consumableItems: 19 }
-          ]
-        }
-      },
-      character: {
-        alignment: {
-          enabled: true,
-          defaultId: 'n',
-          options: standardAlignments,
-        }
-      },
-      combat: {
-        armorClass: 10,
-        attackResolution: 'to_hit',
       },
     },
   },
-]
+};
+
+// ---------------------------------------------------------------------------
+// Merge helper
+//
+// Shallow-merges at each nesting level down to
+// mechanics.progression.multiclassing.default, then performs a keyed map
+// merge for entryRequirementsByTargetClass so system keys and campaign keys
+// coexist (campaign keys win on collision).
+// ---------------------------------------------------------------------------
+
+function mergeRuleset(system: Ruleset, patch: CampaignRulesetPatch): Ruleset {
+  const sMcDefault = system.mechanics.progression.multiclassing.default;
+  const pMc = patch.mechanics?.progression?.multiclassing;
+  const pMcDefault = pMc?.default;
+
+  const mergedEntryReqs: Record<ClassId, ClassEntryRequirement> = {
+    ...(sMcDefault.entryRequirementsByTargetClass ?? {}),
+    ...((pMcDefault?.entryRequirementsByTargetClass ?? {}) as Record<ClassId, ClassEntryRequirement>),
+  };
+
+  const mergedMcDefault: MulticlassingRuleSet = {
+    ...sMcDefault,
+    ...((pMcDefault ?? {}) as Partial<MulticlassingRuleSet>),
+    entryRequirementsByTargetClass: Object.keys(mergedEntryReqs).length > 0
+      ? mergedEntryReqs
+      : undefined,
+  };
+
+  const sMc = system.mechanics.progression.multiclassing;
+  const mergedMc: MulticlassingRules = {
+    ...sMc,
+    ...((pMc ?? {}) as Partial<MulticlassingRules>),
+    default: mergedMcDefault,
+  };
+
+  const sProg = system.mechanics.progression;
+  const mergedProg: Progression = {
+    ...sProg,
+    ...((patch.mechanics?.progression ?? {}) as Partial<Progression>),
+    multiclassing: mergedMc,
+  };
+
+  const mergedMechanics: MechanicsRules = {
+    ...system.mechanics,
+    ...((patch.mechanics ?? {}) as Partial<MechanicsRules>),
+    progression: mergedProg,
+  };
+
+  return {
+    _id: patch._id,
+    campaignId: patch.campaignId,
+    meta: { ...system.meta, ...(patch.meta ?? {}) } as Ruleset['meta'],
+    content: { ...system.content, ...(patch.content ?? {}) } as RulesetContent,
+    mechanics: mergedMechanics,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Final assembled rulesets
+// ---------------------------------------------------------------------------
+
+const lankhmarRuleset = mergeRuleset(SYSTEM_RULESET_5E, CAMPAIGN_PATCH_LANKHMAR);
+
+export const ruleSets: Ruleset[] = [lankhmarRuleset];
 
 // ---------------------------------------------------------------------------
 // Lookup helpers
@@ -383,8 +470,8 @@ export const ruleSets: Ruleset[] = [
 
 export const ruleSetsById: Record<string, Ruleset> = Object.fromEntries(
   ruleSets.map(r => [r._id, r]),
-)
+);
 
-export const defaultRulesetId = 'testruleset01'
+export const defaultRulesetId = 'testruleset01';
 
-export const defaultRuleset: Ruleset = ruleSetsById[defaultRulesetId]
+export const defaultRuleset: Ruleset = ruleSetsById[defaultRulesetId];

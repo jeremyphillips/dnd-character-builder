@@ -42,7 +42,7 @@ export interface ClassRequirement {
   allowedRaces: 'all' | string[]
   allowedAlignments: 'any' | AlignmentId[]
   levelCaps?: Record<string, number | 'unlimited'>
-  minStats?: AbilityScores
+  minStats?: RequirementExpr
   multiclassing?: RequirementExpr
   startingWealth?: StartingWealth
   generationNotes?: Note[]

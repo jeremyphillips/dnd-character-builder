@@ -304,7 +304,7 @@ export const ruleSets: Ruleset[] = [
       equipment:  { allowAll: true },
       spells:     { allowAll: true },
       monsters:   { allowAll: true },
-      locations:   { allowAll: true },
+      locations:  { allowAll: true },
     },
     mechanics: {
       progression: {

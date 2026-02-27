@@ -80,13 +80,13 @@ export const classes: readonly CharacterClass[] = [
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
       features: [
         { level: 1, name: 'Fighting Style' },
-        { level: 1, name: 'Second Wind' },
-        { level: 2, name: 'Action Surge' },
-        { level: 3, name: 'Martial Archetype' },
-        { level: 5, name: 'Extra Attack' },
-        { level: 9, name: 'Indomitable' },
-        { level: 11, name: 'Extra Attack (2)' },
-        { level: 20, name: 'Extra Attack (3)' },
+        { id: 'second-wind', level: 1, name: 'Second Wind' },
+        { id: 'action-surge', level: 2, name: 'Action Surge' },
+        { id: 'martial-archetype', level: 3, name: 'Martial Archetype' },
+        { id: 'extra-attack', level: 5, name: 'Extra Attack' },
+        { id: 'indomitable', level: 9, name: 'Indomitable' },
+        { id: 'extra-attack-2', level: 11, name: 'Extra Attack (2)' },
+        { id: 'extra-attack-3', level: 20, name: 'Extra Attack (3)' },
       ],
     },
     proficiencies: {
@@ -121,6 +121,17 @@ export const classes: readonly CharacterClass[] = [
     requirements: {
       allowedRaces: ['human'],
       allowedAlignments: 'any',
+      multiclassing: {
+        note: 'Requires Strength or Dexterity of 13+',
+        anyOf: [
+          {
+            all: [{ ability: 'strength', min: 13 }],
+          },
+          {
+            all: [{ ability: 'dexterity', min: 13 }],
+          },
+        ],
+      },
     } 
   },
   { 
@@ -165,12 +176,12 @@ export const classes: readonly CharacterClass[] = [
       },
       asiLevels: [4, 8, 12, 16, 19],
       features: [
-        { level: 1, name: 'Spellcasting' },
-        { level: 1, name: 'Divine Domain' },
-        { level: 2, name: 'Channel Divinity' },
-        { level: 5, name: 'Destroy Undead' },
-        { level: 10, name: 'Divine Intervention' },
-        { level: 20, name: 'Divine Intervention Improvement' },
+        { id: 'spellcasting', level: 1, name: 'Spellcasting' },
+        { id: 'divine-domain', level: 1, name: 'Divine Domain' },
+        { id: 'channel-divinity', level: 2, name: 'Channel Divinity' },
+        { id: 'destroy-undead', level: 5, name: 'Destroy Undead' },
+        { id: 'divine-intervention', level: 10, name: 'Divine Intervention' },
+        { id: 'divine-intervention-improvement', level: 20, name: 'Divine Intervention Improvement' },
       ],
     },
     proficiencies: {
@@ -659,12 +670,12 @@ export const classes: readonly CharacterClass[] = [
       },
       asiLevels: [4, 8, 12, 16, 19],
       features: [
-        { level: 1, name: 'Otherworldly Patron' },
-        { level: 1, name: 'Pact Magic' },
-        { level: 2, name: 'Eldritch Invocations' },
-        { level: 3, name: 'Pact Boon' },
-        { level: 11, name: 'Mystic Arcanum' },
-        { level: 20, name: 'Eldritch Master' },
+        { id: 'otherworldly-patron', level: 1, name: 'Otherworldly Patron' },
+        { id: 'pact-magic', level: 1, name: 'Pact Magic' },
+        { id: 'eldritch-invocations', level: 2, name: 'Eldritch Invocations' },
+        { id: 'pact-boon', level: 3, name: 'Pact Boon' },
+        { id: 'mystic-arcanum', level: 11, name: 'Mystic Arcanum' },
+        { id: 'eldritch-master', level: 20, name: 'Eldritch Master' },
       ],  
     },
     proficiencies: {
@@ -753,11 +764,11 @@ export const classes: readonly CharacterClass[] = [
       },
       asiLevels: [4, 8, 12, 16, 19],
       features: [
-        { level: 1, name: 'Spellcasting' },
-        { level: 1, name: 'Sorcerous Origin' },
-        { level: 2, name: 'Font of Magic' },
-        { level: 3, name: 'Metamagic' },
-        { level: 20, name: 'Sorcerous Restoration' },
+        { id: 'spellcasting', level: 1, name: 'Spellcasting' },
+        { id: 'sorcerous-origin', level: 1, name: 'Sorcerous Origin' },
+        { id: 'font-of-magic', level: 2, name: 'Font of Magic' },
+        { id: 'metamagic', level: 3, name: 'Metamagic' },
+        { id: 'sorcerous-restoration', level: 20, name: 'Sorcerous Restoration' },
       ],
     },
     proficiencies: {
@@ -818,6 +829,43 @@ export const classes: readonly CharacterClass[] = [
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
+      features: [
+        {
+          id: 'unarmored-defense',
+          name: 'Unarmored Defense',
+          level: 1,
+          effects: [
+            {
+              kind: 'formula',
+              target: 'armor_class',
+              formula: {
+                base: 10,
+                abilities: ['dexterity', 'constitution'],
+              },
+              source: 'barbarian.unarmored_defense',
+              condition: {
+                kind: 'state',
+                target: 'self',
+                property: 'equipment.armorEquipped',
+                equals: null,
+              }
+            },
+          ],
+        },
+        { id: 'rage', level: 1, name: 'Rage' },
+        { id: 'unarmored-defense', level: 1, name: 'Unarmored Defense' },
+        { id: 'reckless-attack', level: 2, name: 'Reckless Attack' },
+        { id: 'danger-sense', level: 2, name: 'Danger Sense' },
+        { id: 'primal-path', level: 3, name: 'Primal Path' },
+        { id: 'extra-attack', level: 5, name: 'Extra Attack' },
+        { id: 'fast-movement', level: 5, name: 'Fast Movement' },
+        { id: 'feral-instinct', level: 7, name: 'Feral Instinct' },
+        { id: 'brutal-critical', level: 9, name: 'Brutal Critical' },
+        { id: 'relentless-rage', level: 11, name: 'Relentless Rage' },
+        { id: 'persistent-rage', level: 15, name: 'Persistent Rage' },
+        { id: 'indomitable-might', level: 18, name: 'Indomitable Might' },
+        { id: 'primal-champion', level: 20, name: 'Primal Champion' },
+      ]
     },
     proficiencies: {
       skills: {
@@ -845,7 +893,7 @@ export const classes: readonly CharacterClass[] = [
     requirements: {
       allowedRaces: 'all',
       allowedAlignments: 'any',
-    } 
+    }
   },
   {
     id: 'wizard',
@@ -888,11 +936,11 @@ export const classes: readonly CharacterClass[] = [
       },
       asiLevels: [4, 8, 12, 16, 19],
       features: [
-        { level: 1, name: 'Spellcasting' },
-        { level: 1, name: 'Arcane Recovery' },
-        { level: 2, name: 'Arcane Tradition' },
-        { level: 18, name: 'Spell Mastery' },
-        { level: 20, name: 'Signature Spells' },
+        { id: 'spellcasting', level: 1, name: 'Spellcasting' },
+        { id: 'arcane-recovery', level: 1, name: 'Arcane Recovery' },
+        { id: 'arcane-tradition', level: 2, name: 'Arcane Tradition' },
+        { id: 'spell-mastery', level: 18, name: 'Spell Mastery' },
+        { id: 'signature-spells', level: 20, name: 'Signature Spells' },
       ],
     },
     proficiencies: {
@@ -921,6 +969,12 @@ export const classes: readonly CharacterClass[] = [
     requirements: {
       allowedRaces: 'all',
       allowedAlignments: 'any',
+      multiclassing: {
+        note: 'Requires 13 Intelligence',
+        anyOf: [
+          { all: [{ ability: 'intelligence', min: 13 }] },
+        ],
+      }
     } 
   }
-]
+] satisfies CharacterClass[]

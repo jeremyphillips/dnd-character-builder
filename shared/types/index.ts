@@ -1,7 +1,9 @@
 export type { CharacterDoc } from './character'
-export type { CharacterCore, CharacterSheet, CharacterClassInfo, PlayerCharacter, NonPlayerCharacter, Character } from './character.core'
+export type { Character, CharacterSheet, CharacterClassInfo, PlayerCharacter, NonPlayerCharacter } from './character.core'
 export type {
-  CampaignMemberStatus, CampaignRole, CampaignMemberRole, CampaignCharacterStatus,
-  CampaignIdentity, CampaignConfiguration, CampaignBase, Campaign, CampaignSummary, PendingMembership,
+  CampaignMemberStatus, CampaignRole, ViewerCampaignRole, CampaignMemberRole, CampaignMemberStoredRole, CampaignCharacterStatus,
+  CampaignIdentity, CampaignConfiguration, CampaignBase, CampaignViewer,
+  CampaignMemberView, CampaignMembersPayload,
+  Campaign, CampaignSummary, PendingMembership,
 } from './campaign.types'
 export * from './status'

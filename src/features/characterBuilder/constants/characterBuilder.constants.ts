@@ -1,5 +1,7 @@
 import {
+  AbilityScoresStep,
   AlignmentStep,
+  CharacterSourceStep,
   ConfirmationStep,
   ProficiencyStep,
   ClassStep,
@@ -10,7 +12,7 @@ import {
   RaceStep,
   SpellStep
 } from '../steps'
-import { type CharacterBuilderState, type StepId, type BuilderOverrides } from '../types'
+import { type CharacterBuilderState, type StepId, type BuilderOverrides, type AbilityScores } from '../types'
 import type { CharacterType } from '@/shared/types/character.core'
 import { classes } from '@/data/classes'
 import { getById } from '@/utils'
@@ -44,6 +46,22 @@ function isLocked(state: CharacterBuilderState, stepId: StepId): boolean {
 
 export function getStepConfig(_mode: CharacterType): StepConfig[] {
   const baseSteps: StepConfig[] = [
+    {
+      id: 'character_source',
+      label: 'Character Source',
+      component: CharacterSourceStep,
+      selector: (state: CharacterBuilderState) => state.abilityScoreSource,
+      shouldSkip: (state: CharacterBuilderState) =>
+        state.flowMode === 'isolated' || state.abilityScoreSource != null,
+    },
+    {
+      id: 'ability_scores',
+      label: 'Ability Scores',
+      component: AbilityScoresStep,
+      selector: (state: CharacterBuilderState) => state.abilityScoresStatus === 'complete',
+      shouldSkip: (state: CharacterBuilderState) =>
+        state.flowMode === 'isolated' && state.editMode?.stepId !== 'ability_scores',
+    },
     {
       id: 'race',
       label: 'Race',
@@ -118,6 +136,21 @@ export function getStepConfig(_mode: CharacterType): StepConfig[] {
   return baseSteps
 }
 
+import type { AbilityId } from '@/shared/types/character.core'
+
+export const DEFAULT_ABILITY_KEYS: AbilityId[] = [
+  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
+];
+
+export const INITIAL_ABILITY_SCORES: AbilityScores = {
+  strength: null,
+  dexterity: null,
+  constitution: null,
+  intelligence: null,
+  wisdom: null,
+  charisma: null,
+};
+
 export function createInitialBuilderState(
   mode: CharacterType,
   overrides?: BuilderOverrides,
@@ -139,6 +172,10 @@ export function createInitialBuilderState(
     race: overrides?.race ?? undefined,
     classes: [{ level: 1 }],
     activeClassIndex: 0,
+    abilityScores: { ...INITIAL_ABILITY_SCORES },
+    abilityScoreSource: undefined,
+    abilityScoresStatus: 'unset',
+    flowMode: 'full',
     equipment: {
       armor: [],
       weapons: [],

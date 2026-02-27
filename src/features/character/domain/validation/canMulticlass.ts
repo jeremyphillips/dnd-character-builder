@@ -1,85 +1,156 @@
-// Determines whether a character is allowed to add another class based on
-// the edition's multiclassing rules.
-//
-// CURRENT CHECKS:
-//   1. Edition explicitly allows multiclassing (Edition.multiclassing.allowed)
-//   2. Character hasn't reached the edition's maxClasses cap
-//   3. There are remaining levels to allocate
-//
-// FUTURE CHECKS (documented for implementation later):
-//
-//   2e Ability Score Requirements
-//   ─────────────────────────────
-//   In 2e, multiclassing is restricted to demihumans and requires minimum
-//   ability scores in BOTH classes.  For example:
-//     - Fighter/Thief requires Str 15+ AND Dex 15+
-//     - Fighter/Mage requires Str 15+ AND Int 15+
-//     - Cleric/Ranger requires Wis 15+ AND Str 13+, Dex 13+, Wis 14+
-//   Humans use "dual-classing" instead (different rules entirely).
-//   Implementation would check `state.abilityScores` against a lookup table of
-//   valid multiclass combos keyed by race + class pair.
-//
-//   2e/1e Race-Restricted Combinations
-//   ───────────────────────────────────
-//   Not all multiclass combinations are available to all races:
-//     - Elves: Fighter/Mage, Fighter/Thief, Mage/Thief, Fighter/Mage/Thief
-//     - Dwarves: Fighter/Thief, Fighter/Cleric
-//     - Halflings: Fighter/Thief
-//     - Gnomes: Fighter/Thief, Fighter/Illusionist, Cleric/Thief, etc.
-//   Implementation would store valid combos per race in the class
-//   requirements data and filter available secondary classes accordingly.
-//
-//   3e/3.5e XP Penalty
-//   ──────────────────
-//   3e penalizes multiclassing when class levels are unbalanced (>1 level
-//   difference between any two non-favored classes).  This is a display
-//   concern (showing a warning) rather than a hard restriction.
+import type { MulticlassingRules } from '@/data/ruleSets';
+import type { AbilityRequirementGroup, RequirementExpr } from '@/data/classes.types';
+import type { AbilityScores } from '@/shared/types/character.core';
+import { classes } from '@/data/classes';
+import { resolveRule, type RuleResolveContext } from '@/features/mechanics/domain/core/rules';
 
-import type { MulticlassingRules } from '@/data/ruleSets'
+// ---------------------------------------------------------------------------
+// Result type
+// ---------------------------------------------------------------------------
 
 export interface CanMulticlassResult {
-  /** Whether the "Add another class" action should be available */
-  allowed: boolean
-  /** Human-readable reason when disallowed (for UI display) */
-  reason?: string
+  allowed: boolean;
+  reason?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Completeness check
+// ---------------------------------------------------------------------------
+
+const REQUIRED_ABILITIES = [
+  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
+] as const;
+
+function areAbilityScoresComplete(scores: AbilityScores | undefined): boolean {
+  if (!scores) return false;
+  return REQUIRED_ABILITIES.every(k => {
+    const v = scores[k];
+    return typeof v === 'number' && Number.isFinite(v);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Requirement helpers
+// ---------------------------------------------------------------------------
+
+type EffectiveRequirement = { anyOf: AbilityRequirementGroup[]; note?: string };
+
+function meetsRequirementGroup(
+  group: AbilityRequirementGroup,
+  scores: AbilityScores,
+): boolean {
+  return group.all.every(req => ((scores[req.ability] as number) ?? 0) >= req.min);
+}
+
+function meetsRequirement(
+  req: EffectiveRequirement,
+  scores: AbilityScores,
+): boolean {
+  if (req.anyOf.length === 0) return false;
+  return req.anyOf.some(group => meetsRequirementGroup(group, scores));
+}
+
+function formatAbilityName(id: string): string {
+  return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+function formatRequirement(req: EffectiveRequirement): string {
+  if (req.note) return req.note;
+
+  const groupLabels = req.anyOf.map(group =>
+    group.all.map(r => `${formatAbilityName(r.ability)} ${r.min}+`).join(' and '),
+  );
+
+  if (groupLabels.length === 1) return `Requires ${groupLabels[0]}`;
+  return `Requires ${groupLabels.join('; or ')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Main check
+// ---------------------------------------------------------------------------
 
 /**
  * Determines whether a character can add another class.
  *
- * @param edition         - Current edition ID
- * @param currentClasses  - Number of classes the character already has
- * @param remainingLevels - Levels still available to allocate
+ * Resolves the multiclassing RuleConfig against the given context so
+ * per-class / per-race overrides take effect automatically.
+ *
+ * Checks (in order, first failure wins):
+ *   1. Campaign enables multiclassing
+ *   2. Character meets minimum level
+ *   3. Ability scores complete
+ *   4. Current-class exit requirements (must meet own class's prereqs)
+ *   5. Target-class entry requirements
+ *   6. Character hasn't hit the class cap
+ *   7. Remaining levels available
  */
 export const canAddClass = (
-  multiClassingRules: MulticlassingRules,
+  multiclassingConfig: MulticlassingRules,
+  context: RuleResolveContext,
   currentClasses: number,
-  remainingLevels: number
+  remainingLevels: number,
+  characterLevel: number,
+  targetClassId?: string,
+  abilityScores?: AbilityScores,
 ): CanMulticlassResult => {
-  // --- Check 1: Does this ruleset support multiclassing at all? ---
-  if (!multiClassingRules.enabled) {
+  const rules = resolveRule(multiclassingConfig, context);
+
+  if (!rules.enabled) {
+    return { allowed: false, reason: 'Campaign does not support multiclassing' };
+  }
+
+  if (rules.minLevelToMulticlass != null && characterLevel < rules.minLevelToMulticlass) {
     return {
       allowed: false,
-      reason: `Campaign does not support multiclassing`
+      reason: `Requires level ${rules.minLevelToMulticlass} to multiclass`,
+    };
+  }
+
+  if (!areAbilityScoresComplete(abilityScores)) {
+    return { allowed: false, reason: 'Set ability scores before adding a class' };
+  }
+
+  // Current-class exit requirements: in 5e you must meet your own class's
+  // multiclassing prerequisites to leave it.
+  if (context.classId && abilityScores) {
+    const currentClassData = classes.find(c => c.id === context.classId);
+    const classExitReq: RequirementExpr | undefined = currentClassData?.requirements?.multiclassing;
+    const rulesetExitReq = rules.entryRequirementsByTargetClass?.[context.classId];
+    const exitReq: EffectiveRequirement | undefined = rulesetExitReq ?? classExitReq;
+
+    if (exitReq && exitReq.anyOf.length > 0 && !meetsRequirement(exitReq, abilityScores)) {
+      return { allowed: false, reason: formatRequirement(exitReq) };
     }
   }
 
-  // --- Check 2: Has the character hit the ruleset's class cap? ---
-  const maxClasses = multiClassingRules?.maxClasses ?? null
-  if (maxClasses != null && currentClasses >= maxClasses) {
-    return {
-      allowed: false,
-      reason: `Campaign allows a maximum of ${maxClasses} classes`
+  if (targetClassId && abilityScores) {
+    const classData = classes.find(c => c.id === targetClassId);
+    const classReq: RequirementExpr | undefined = classData?.requirements?.multiclassing;
+
+    const rulesetReq = rules.entryRequirementsByTargetClass?.[targetClassId];
+    const effective: EffectiveRequirement | undefined = rulesetReq ?? classReq;
+
+    if (effective) {
+      if (effective.anyOf.length === 0) {
+        return { allowed: false, reason: 'No valid multiclass requirement options defined' };
+      }
+
+      if (!meetsRequirement(effective, abilityScores)) {
+        return { allowed: false, reason: formatRequirement(effective) };
+      }
     }
   }
 
-  // --- Check 3: Are there levels left to allocate? ---
+  if (rules.maxClasses != null && currentClasses >= rules.maxClasses) {
+    return {
+      allowed: false,
+      reason: `Campaign allows a maximum of ${rules.maxClasses} classes`,
+    };
+  }
+
   if (remainingLevels <= 0) {
-    return {
-      allowed: false,
-      reason: 'No remaining levels to allocate'
-    }
+    return { allowed: false, reason: 'No remaining levels to allocate' };
   }
 
-  return { allowed: true }
-}
+  return { allowed: true };
+};

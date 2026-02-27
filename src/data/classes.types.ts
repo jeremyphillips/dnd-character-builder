@@ -1,6 +1,6 @@
 import type { AlignmentId } from '@/data'
-import type { AbilityScores } from '@/shared/types/character.core'
-
+import type { AbilityScores, AbilityId } from '@/shared/types/character.core'
+import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 // ---------------------------------------------------------------------------
 // Shared primitives
 // ---------------------------------------------------------------------------
@@ -24,23 +24,26 @@ export interface EquipmentRequirement {
   notes?: Note[]
 }
 
+export type AbilityRequirement = {
+  ability: AbilityId;
+  min: number;
+};
+
+export type AbilityRequirementGroup = {
+  all: AbilityRequirement[];
+};
+
+export type RequirementExpr = {
+  anyOf: AbilityRequirementGroup[];
+  note?: string;
+}
+
 export interface ClassRequirement {
-  //edition: EditionId
   allowedRaces: 'all' | string[]
   allowedAlignments: 'any' | AlignmentId[]
   levelCaps?: Record<string, number | 'unlimited'>
-  minStats?: AbilityScores
-  multiclassing?: {
-    logic: LogicalOperator
-    note: string
-    options: AbilityScores[]
-  }
-  // equipment: {
-  //   armor: EquipmentRequirement
-  //   weapons: EquipmentRequirement
-  //   tools?: EquipmentRequirement
-  //   notes?: Note[]
-  // }
+  minStats?: RequirementExpr
+  multiclassing?: RequirementExpr
   startingWealth?: StartingWealth
   generationNotes?: Note[]
 }
@@ -86,7 +89,6 @@ export interface SubclassOption {
 }
 
 export interface ClassDefinition {
-  // edition: EditionId | string
   id?: string
   name: string
   selectionLevel?: number | null
@@ -151,14 +153,6 @@ export interface ClassProficiencyArmor {
   disallowedMaterials?: Material[]
 }
 
-// export type EditionClassProficiencies = {
-//   skills?: ClassProficiencyEntry[]
-//   weapons?: ClassProficiencyEntry[]
-//   armor?: ClassProficiencyEntry[]
-// }
-
-// export type ClassProficienciesByEdition = Partial<Record<EditionId | string, EditionClassProficiencies>>
-
 // ---------------------------------------------------------------------------
 // Spell Progression
 // ---------------------------------------------------------------------------
@@ -214,13 +208,14 @@ export type AttackProgression = 'good' | 'average' | 'poor'
 export type SaveProgression = 'good' | 'poor'
 
 export interface ClassFeature {
+  id: string
   level: number
   name: string
   description?: string
+  effects?: Effect[]
 }
 
 export interface ClassProgression {
-  // edition: EditionId | string
   hitDie: number                              // d6=6, d8=8, d10=10, d12=12; 4e: 0 (use hpPerLevel)
   hpPerLevel?: number                         // 4e flat HP per level; other editions: derived from hitDie
   attackProgression: AttackProgression         // normalized: good/average/poor
@@ -289,6 +284,6 @@ export interface CharacterClass {
   }
   progression?: ClassProgression,
   generation?: {
-    abilityPriority: (keyof AbilityScores)[]
+    abilityPriority: AbilityId[]
   }
 }

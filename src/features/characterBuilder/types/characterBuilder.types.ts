@@ -1,12 +1,18 @@
 import type { CharacterClassInfo, CharacterSheet } from '@/shared'
-import type { CharacterType, CharacterProficiencies, EquipmentLoadout, EquipmentItemInstance } from '@/shared/types/character.core'
+import type { CharacterType, CharacterProficiencies, EquipmentLoadout, EquipmentItemInstance, AbilityScores } from '@/shared/types/character.core'
 import type { HitPointMode } from '@/features/mechanics/domain/progression'
 import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
 
 export type { CharacterClassInfo, CharacterSheet, CharacterProficiencies }
 export type { HitPointMode }
+export type { AbilityScores }
 
-export type StepId = 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'loadout' | 'magicItems' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
+export type AbilityScoreSource = 'import_manual' | 'generated_roll';
+export type AbilityScoresStatus = 'unset' | 'partial' | 'complete';
+
+export type StepId = 'character_source' | 'ability_scores' | 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'loadout' | 'magicItems' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
+
+export type BuilderFlowMode = 'full' | 'isolated';
 
 export type EditMode = {
   characterId: string
@@ -23,6 +29,10 @@ export type CharacterBuilderState = CharacterSheet & {
     name: string
   }
   activeClassIndex: number | null
+  abilityScores: AbilityScores
+  abilityScoreSource?: AbilityScoreSource
+  abilityScoresStatus?: AbilityScoresStatus
+  flowMode: BuilderFlowMode
   /** Fields pre-filled via overrides — their corresponding steps are skipped and locked. */
   lockedFields?: Set<StepId>
   /** When set, the builder is editing a single step on an existing character. */
@@ -84,6 +94,16 @@ export type CharacterBuilderContextValue = {
 
   // proficiencies
   setProficiencies: (proficiencies: CharacterProficiencies) => void
+
+  // character source
+  chooseImportCharacter: () => void
+  chooseGenerateCharacter: () => void
+
+  // ability scores
+  rollAbilityScores: () => void
+  setAbilityScores: (patch: Partial<AbilityScores>) => void
+  setAbilityScore: (abilityId: string, value: number | null) => void
+  setAbilityScoreSource: (source: AbilityScoreSource) => void
 
   // hit points
   setHitPointMode: (mode: HitPointMode) => void

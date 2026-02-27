@@ -42,7 +42,7 @@ export async function getSessionsForUser(userId: string, role: string) {
   const campaigns = await campaignsCollection()
     .find({
       $or: [
-        { 'membership.adminId': oid },
+        { 'membership.ownerId': oid },
         { _id: { $in: memberCampaignIds } },
       ],
     })

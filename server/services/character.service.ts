@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
-import type { CharacterCore, CharacterDoc } from '../../shared/types'
+import type { Character, CharacterDoc } from '../../shared/types'
 import { getPublicUrl } from '../services/image.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
@@ -48,8 +48,6 @@ export async function createCharacter(userId: string, data: CharacterDoc) {
     classes: data.classes ?? [],
     totalLevel: data.totalLevel ?? 1,
     alignment: data.alignment ?? '',
-    edition: data.edition ?? '',
-    setting: data.setting ?? '',
     xp: data.xp ?? 0,
     equipment: data.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
     wealth: data.wealth ?? { gp: 0, sp: 0, cp: 0 },
@@ -116,18 +114,21 @@ export async function getCampaignsForCharacter(characterId: string) {
   const campaigns = await db()
     .collection('campaigns')
     .find({
-      $or: [{ 'membership.adminId': userId }, { _id: { $in: memberCampaignIds } }],
+      $or: [
+        { 'membership.ownerId': userId },
+        { _id: { $in: memberCampaignIds } },
+      ],
     })
-    .project({ identity: 1, 'membership.adminId': 1 })
+    .project({ identity: 1, 'membership.ownerId': 1 })
     .toArray()
 
-  // Resolve DM names
-  const adminIds = [...new Set(campaigns.map(c => c.membership?.adminId?.toString()).filter(Boolean))]
+  const resolveOwner = (m: any) => m?.ownerId ?? m?.adminId
+  const ownerIds = [...new Set(campaigns.map(c => resolveOwner(c.membership)?.toString()).filter(Boolean))]
   const usersCol = db().collection('users')
-  const admins = adminIds.length > 0
-    ? await usersCol.find({ _id: { $in: adminIds.map(id => new mongoose.Types.ObjectId(id)) } }).project({ username: 1 }).toArray()
+  const owners = ownerIds.length > 0
+    ? await usersCol.find({ _id: { $in: ownerIds.map(id => new mongoose.Types.ObjectId(id)) } }).project({ username: 1 }).toArray()
     : []
-  const adminNameMap = new Map(admins.map(u => [u._id.toString(), u.username]))
+  const ownerNameMap = new Map(owners.map(u => [u._id.toString(), u.username]))
 
   // Build member lookup by campaignId
   const memberByCampaignId = new Map(
@@ -152,7 +153,7 @@ export async function getCampaignsForCharacter(characterId: string) {
     return {
       _id: c._id,
       identity: { ...identityRest, imageUrl: getPublicUrl(campImageKey) },
-      dmName: adminNameMap.get(c.membership?.adminId?.toString()) ?? undefined,
+      dmName: ownerNameMap.get(resolveOwner(c.membership)?.toString()) ?? undefined,
       campaignMemberId: member?._id?.toString(),
       characterStatus: (member?.characterStatus ?? 'active') as string,
       memberCount: countMap.get(c._id.toString()) ?? 0,
@@ -180,7 +181,8 @@ export async function getPendingMembershipsForAdmin(
   const result: { campaignId: string; campaignName: string; campaignMemberId: string }[] = []
   for (const m of members as { _id: mongoose.Types.ObjectId; campaignId: mongoose.Types.ObjectId }[]) {
     const campaign = await campaignsCol.findOne({ _id: m.campaignId })
-    const isAdmin = campaign?.membership?.adminId?.equals(new mongoose.Types.ObjectId(adminUserId))
+    const campaignOwnerId = campaign?.membership?.ownerId ?? campaign?.membership?.adminId
+    const isAdmin = campaignOwnerId?.equals(new mongoose.Types.ObjectId(adminUserId))
     if (isAdmin && campaign) {
       result.push({
         campaignId: m.campaignId.toString(),
@@ -211,12 +213,11 @@ export async function isCampaignAdminForCharacter(
 
   if (campaignIds.length === 0) return false
 
-  // Check if the user is the adminId of any of those campaigns
   const match = await db()
     .collection('campaigns')
     .findOne({
       _id: { $in: campaignIds },
-      'membership.adminId': uid,
+      $or: [{ 'membership.ownerId': uid }],
     })
 
   return match !== null

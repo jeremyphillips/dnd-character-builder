@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -18,6 +19,20 @@ import type { RaceInput } from '@/features/content/domain/types';
 
 type ValidationError = { path: string; code: string; message: string };
 
+type RaceEditorFormValues = {
+  name: string;
+  description: string;
+  accessPolicy: Visibility;
+};
+
+const FORM_ID = 'race-editor-form';
+
+const DEFAULT_VALUES: RaceEditorFormValues = {
+  name: '',
+  description: '',
+  accessPolicy: DEFAULT_VISIBILITY_PUBLIC,
+};
+
 export default function RaceEditorRoute() {
   const { campaignId, campaign } = useActiveCampaign();
   const { raceId } = useParams<{ raceId: string }>();
@@ -35,17 +50,23 @@ export default function RaceEditorRoute() {
 
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
+  const methods = useForm<RaceEditorFormValues>({ defaultValues: DEFAULT_VALUES });
+  const { reset, setValue, watch, formState: { isDirty } } = methods;
+
   const [loading, setLoading] = useState(!isNew);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [accessPolicy, setAccessPolicy] = useState<Visibility>(DEFAULT_VISIBILITY_PUBLIC);
-  const [dirty, setDirty] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
+
+  useEffect(() => {
+    const sub = watch(() => {
+      setSuccess(false);
+      setErrors([]);
+    });
+    return () => sub.unsubscribe();
+  }, [watch]);
 
   useEffect(() => {
     if (isNew || !campaignId || !raceId) return;
@@ -61,9 +82,11 @@ export default function RaceEditorRoute() {
           );
           return;
         }
-        setName(race.name);
-        setDescription(race.description);
-        setAccessPolicy(race.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC);
+        reset({
+          name: race.name,
+          description: race.description ?? '',
+          accessPolicy: race.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC,
+        });
         setLoading(false);
       })
       .catch(err => {
@@ -74,20 +97,15 @@ export default function RaceEditorRoute() {
       });
 
     return () => { cancelled = true; };
-  }, [campaignId, raceId, isNew, navigate]);
+  }, [campaignId, raceId, isNew, navigate, reset]);
 
-  const markDirty = useCallback(() => {
-    setDirty(true);
-    setSuccess(false);
-    setErrors([]);
-  }, []);
+  const policyValue = watch('accessPolicy');
 
   const handlePolicyChange = useCallback((next: Visibility) => {
-    setAccessPolicy(next);
-    markDirty();
-  }, [markDirty]);
+    setValue('accessPolicy', next, { shouldDirty: true });
+  }, [setValue]);
 
-  const handleSave = useCallback(async () => {
+  const handleSubmit = useCallback(async (values: RaceEditorFormValues) => {
     if (!campaignId) return;
 
     setSaving(true);
@@ -95,9 +113,9 @@ export default function RaceEditorRoute() {
     setErrors([]);
 
     const input: RaceInput = {
-      name: name.trim(),
-      description: description.trim(),
-      accessPolicy,
+      name: values.name.trim(),
+      description: values.description.trim(),
+      accessPolicy: values.accessPolicy,
     };
 
     try {
@@ -109,10 +127,11 @@ export default function RaceEditorRoute() {
         );
       } else if (raceId) {
         const updated = await raceRepo.updateEntry(campaignId, DEFAULT_SYSTEM_ID, raceId, input);
-        setName(updated.name);
-        setDescription(updated.description);
-        setAccessPolicy(updated.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC);
-        setDirty(false);
+        reset({
+          name: updated.name,
+          description: updated.description ?? '',
+          accessPolicy: updated.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC,
+        });
         setSuccess(true);
       }
     } catch (err) {
@@ -124,7 +143,7 @@ export default function RaceEditorRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, raceId, isNew, name, description, accessPolicy, navigate]);
+  }, [campaignId, raceId, isNew, navigate, reset]);
 
   const handleBack = useCallback(() => {
     navigate(`/campaigns/${campaignId}/world/races`);
@@ -154,44 +173,58 @@ export default function RaceEditorRoute() {
   }
 
   return (
-    <EntryEditorLayout
-      typeLabel="Race"
-      isNew={isNew}
-      saving={saving}
-      dirty={dirty}
-      success={success}
-      errors={errors}
-      onSave={handleSave}
-      onBack={handleBack}
-      canDelete={canDelete}
-      onDelete={handleDelete}
-      validateDelete={handleValidateDelete}
-      showPolicyField
-      policyValue={accessPolicy}
-      onPolicyChange={handlePolicyChange}
-      policyCharacters={policyCharacters}
-    >
-      <Stack spacing={2.5}>
-        <TextField
-          label="Name"
-          size="small"
-          fullWidth
-          required
-          value={name}
-          onChange={e => { setName(e.target.value); markDirty(); }}
-        />
+    <FormProvider {...methods}>
+      <EntryEditorLayout
+        typeLabel="Race"
+        isNew={isNew}
+        saving={saving}
+        dirty={isDirty}
+        success={success}
+        errors={errors}
+        formId={FORM_ID}
+        onBack={handleBack}
+        canDelete={canDelete}
+        onDelete={handleDelete}
+        validateDelete={handleValidateDelete}
+        showPolicyField
+        policyValue={policyValue}
+        onPolicyChange={handlePolicyChange}
+        policyCharacters={policyCharacters}
+      >
+        <form id={FORM_ID} onSubmit={methods.handleSubmit(handleSubmit)} noValidate>
+          <Stack spacing={2.5}>
+            <Controller
+              name="name"
+              control={methods.control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Name"
+                  size="small"
+                  fullWidth
+                  required
+                />
+              )}
+            />
 
-        <TextField
-          label="Description"
-          size="small"
-          fullWidth
-          multiline
-          minRows={3}
-          maxRows={8}
-          value={description}
-          onChange={e => { setDescription(e.target.value); markDirty(); }}
-        />
-      </Stack>
-    </EntryEditorLayout>
+            <Controller
+              name="description"
+              control={methods.control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Description"
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  maxRows={8}
+                />
+              )}
+            />
+          </Stack>
+        </form>
+      </EntryEditorLayout>
+    </FormProvider>
   );
 }

@@ -62,9 +62,19 @@ interface EntryEditorLayoutProps {
   dirty: boolean;
   success: boolean;
   errors: ValidationError[];
-  onSave: () => void;
+  /**
+   * Legacy/non-form save handler invoked on click.
+   * Ignored when `formId` is provided.
+   */
+  onSave?: () => void;
   onBack?: () => void;
   children: React.ReactNode;
+  /**
+   * HTML form id used for RHF / AppForm submission.
+   * When provided the Save button renders as `type="submit" form={formId}`
+   * instead of using `onClick`. Preferred for new editor routes.
+   */
+  formId?: string;
 
   /** When true, renders a Delete button. Caller determines permission. */
   canDelete?: boolean;
@@ -107,6 +117,7 @@ export default function EntryEditorLayout({
   onSave,
   onBack,
   children,
+  formId,
   canDelete = false,
   onDelete,
   validateDelete,
@@ -224,8 +235,10 @@ export default function EntryEditorLayout({
         <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
-            onClick={onSave}
             disabled={busy || (!dirty && !isNew)}
+            {...(formId
+              ? { type: 'submit', form: formId }
+              : { onClick: onSave })}
           >
             {saving ? 'Saving…' : isNew ? `Create ${typeLabel}` : `Save ${typeLabel}`}
           </Button>

@@ -1,5 +1,5 @@
 export { AppDataGrid } from './AppDataGrid'
-export type { AppDataGridProps, AppDataGridColumn } from './AppDataGrid'
+export type { AppDataGridProps, AppDataGridColumn, AppDataGridFilter } from './AppDataGrid'
 export { InviteConfirmationBox } from './InviteConfirmationBox'
 export type { InviteConfirmationBoxProps } from './InviteConfirmationBox'
 export { FilterableCardGroup } from './FilterableCardGroup'

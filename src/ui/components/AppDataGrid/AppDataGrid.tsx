@@ -1,4 +1,4 @@
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useMemo, useCallback, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
@@ -16,14 +16,45 @@ import SearchIcon from '@mui/icons-material/Search'
 import type { FilterOption } from '../FilterableCardGroup/FilterableCardGroup'
 
 // ---------------------------------------------------------------------------
+// MIGRATION NOTES
+// ---------------------------------------------------------------------------
+// Legacy props:
+// - filterColumn
+// - filterOptions
+// - filterLabel
+//
+// These are deprecated and will be removed in a future refactor.
+//
+// New API:
+// - filters: AppDataGridFilter<T>[]
+// - columns[].accessor for computed values
+//
+// Migration strategy:
+// 1. Replace filterColumn/filterOptions with filters[]
+// 2. Replace direct row[field] usage with accessor where needed
+// 3. Update renderCell to (row, value) signature
+//
+// ContentTypeListPage still uses legacy API and should NOT be updated yet.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface AppDataGridColumn<T> {
-  /** Field key on the row object */
-  field: string & keyof T
+  /**
+   * Field key used as the MUI DataGrid column identifier.
+   * When `accessor` is provided this does not need to be a key of T.
+   */
+  field: string
   /** Column header label */
   headerName: string
+  /**
+   * Compute a derived cell value from the row instead of reading row[field].
+   * When present, MUI valueGetter delegates to this function and the result
+   * flows into params.value for renderCell / valueFormatter.
+   */
+  accessor?: (row: T) => unknown
   /** If true, this column's cell renders as a router Link using getDetailLink */
   linkColumn?: boolean
   /** Fixed width in pixels */
@@ -34,9 +65,13 @@ export interface AppDataGridColumn<T> {
   minWidth?: number
   /** Column data type (e.g. 'number' for right-aligned numeric columns) */
   type?: string
-  /** Custom value formatter — receives the raw cell value */
-  valueFormatter?: (value: unknown) => string
-  /** Custom cell renderer — escape hatch for rich cell content (e.g. Chips) */
+  /** Custom value formatter — receives the cell value and the source row */
+  valueFormatter?: (value: unknown, row: T) => string
+  /**
+   * Custom cell renderer for rich cell content (e.g. Chips).
+   * Receives standard MUI GridRenderCellParams. When an accessor is defined
+   * on the column, params.value reflects the accessor result.
+   */
   renderCell?: (params: GridRenderCellParams) => ReactNode
   /** If true, renders a MUI Switch. The field value is read as a boolean. */
   switchColumn?: boolean
@@ -45,6 +80,35 @@ export interface AppDataGridColumn<T> {
   /** Disable the switch for specific rows (requires switchColumn) */
   isSwitchDisabled?: (row: T) => boolean
 }
+
+// ── Filter types ──────────────────────────────────────────────────────────
+
+export type AppDataGridFilter<T> =
+  | {
+      id: string
+      label: string
+      type: 'select'
+      options: FilterOption[]
+      accessor: (row: T) => string | null | undefined
+      defaultValue?: string
+    }
+  | {
+      id: string
+      label: string
+      type: 'multiSelect'
+      options: FilterOption[]
+      accessor: (row: T) => string[]
+      defaultValue?: string[]
+    }
+  | {
+      id: string
+      label: string
+      type: 'boolean'
+      trueLabel?: string
+      falseLabel?: string
+      accessor: (row: T) => boolean
+      defaultValue?: 'all' | 'true' | 'false'
+    }
 
 export interface AppDataGridProps<T> {
   /** Data rows */
@@ -55,12 +119,26 @@ export interface AppDataGridProps<T> {
   getRowId: (row: T) => string
   /** Build the detail route link for a row (used by linkColumn) */
   getDetailLink?: (row: T) => string
-  /** Column field to use for dropdown filtering */
-  filterColumn?: string & keyof T
-  /** Options for the filter dropdown */
+
+  /**
+   * @deprecated Use `filters` instead.
+   * Column field to use for dropdown filtering.
+   */
+  filterColumn?: string
+  /**
+   * @deprecated Use `filters` instead.
+   * Options for the filter dropdown.
+   */
   filterOptions?: FilterOption[]
-  /** Label shown on the filter dropdown */
+  /**
+   * @deprecated Use `filters` instead.
+   * Label shown on the filter dropdown.
+   */
   filterLabel?: string
+
+  /** Typed filter definitions. Supersedes filterColumn / filterOptions / filterLabel. */
+  filters?: AppDataGridFilter<T>[]
+
   /**
    * Enable row multi-select.
    * TODO: expose onSelectionChange callback and selectedIds controlled prop
@@ -72,7 +150,7 @@ export interface AppDataGridProps<T> {
   /** Placeholder for the search field */
   searchPlaceholder?: string
   /** Columns to search across (defaults to all columns) */
-  searchColumns?: (string & keyof T)[]
+  searchColumns?: string[]
   /** Show a loading overlay */
   loading?: boolean
   /** Message displayed when there are no rows */
@@ -88,6 +166,22 @@ export interface AppDataGridProps<T> {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getFilterDefault<T>(f: AppDataGridFilter<T>): unknown {
+  if (f.defaultValue !== undefined) return f.defaultValue
+  switch (f.type) {
+    case 'select':
+      return f.options[0]?.value ?? ''
+    case 'multiSelect':
+      return []
+    case 'boolean':
+      return 'all'
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -99,6 +193,7 @@ export default function AppDataGrid<T>({
   filterColumn,
   filterOptions,
   filterLabel,
+  filters,
   multiSelect = false,
   searchable = false,
   searchPlaceholder = 'Search…',
@@ -111,38 +206,83 @@ export default function AppDataGrid<T>({
   height = 400,
 }: AppDataGridProps<T>) {
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState(filterOptions?.[0]?.value ?? '')
+  const [filterValues, setFilterValues] = useState<Record<string, unknown>>({})
 
-  // ── Filtering & searching ──────────────────────────────────────────
+  const setFilterValue = useCallback((id: string, value: unknown) => {
+    setFilterValues((prev) => ({ ...prev, [id]: value }))
+  }, [])
+
+  // ── Normalise filters (new API or legacy shim) ────────────────────
+  const resolvedFilters = useMemo<AppDataGridFilter<T>[]>(() => {
+    if (filters) return filters
+    if (filterColumn && filterOptions && filterOptions.length > 0) {
+      const col = filterColumn
+      return [
+        {
+          id: '__legacy__',
+          label: filterLabel ?? '',
+          type: 'select' as const,
+          options: filterOptions,
+          accessor: (row: T) =>
+            String((row as Record<string, unknown>)[col] ?? ''),
+          defaultValue: filterOptions[0]?.value,
+        },
+      ]
+    }
+    return []
+  }, [filters, filterColumn, filterOptions, filterLabel])
+
+  const getFilterValue = useCallback(
+    (f: AppDataGridFilter<T>): unknown =>
+      filterValues[f.id] ?? getFilterDefault(f),
+    [filterValues],
+  )
+
+  // ── Filtering & searching ─────────────────────────────────────────
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      // Column filter
-      if (
-        filterColumn &&
-        filterOptions &&
-        filter &&
-        filter !== filterOptions[0]?.value
-      ) {
-        const cellValue = String((row as Record<string, unknown>)[filterColumn] ?? '')
-        if (cellValue !== filter) return false
-      }
+      const passesFilters = resolvedFilters.every((f) => {
+        const current = filterValues[f.id] ?? getFilterDefault(f)
 
-      // Text search
+        switch (f.type) {
+          case 'select': {
+            const defaultVal = f.defaultValue ?? f.options[0]?.value
+            if (current === defaultVal) return true
+            return String(f.accessor(row) ?? '') === current
+          }
+          case 'multiSelect': {
+            const selected = current as string[]
+            if (!selected || selected.length === 0) return true
+            const rowValues = f.accessor(row)
+            return selected.some((v) => rowValues.includes(v))
+          }
+          case 'boolean': {
+            if (current === 'all') return true
+            const rowValue = f.accessor(row)
+            return current === 'true' ? rowValue === true : rowValue === false
+          }
+        }
+      })
+
+      if (!passesFilters) return false
+
       if (searchable && search) {
         const lowerSearch = search.toLowerCase()
-        const colsToSearch =
-          searchColumns ?? columns.map((c) => c.field)
-        return colsToSearch.some((field) => {
-          const val = (row as Record<string, unknown>)[field]
+        const colsToSearch = searchColumns ?? columns.map((c) => c.field)
+        return colsToSearch.some((fieldKey) => {
+          const col = columns.find((c) => c.field === fieldKey)
+          const val = col?.accessor
+            ? col.accessor(row)
+            : (row as Record<string, unknown>)[fieldKey]
           return val != null && String(val).toLowerCase().includes(lowerSearch)
         })
       }
 
       return true
     })
-  }, [rows, filter, filterColumn, filterOptions, searchable, search, searchColumns, columns])
+  }, [rows, resolvedFilters, filterValues, searchable, search, searchColumns, columns])
 
-  // ── Map AppDataGridColumn → MUI GridColDef ─────────────────────────
+  // ── Map AppDataGridColumn → MUI GridColDef ────────────────────────
   const muiColumns: GridColDef[] = useMemo(() => {
     return columns.map((col) => {
       const def: GridColDef = {
@@ -151,16 +291,31 @@ export default function AppDataGrid<T>({
         width: col.width,
         flex: col.flex,
         minWidth: col.minWidth,
-        type: col.type,
-        valueFormatter: col.valueFormatter
-          ? (value: unknown) => col.valueFormatter!(value)
-          : undefined,
-        renderCell: col.renderCell,
+        type: col.type as GridColDef['type'],
+      }
+
+      if (col.accessor) {
+        def.valueGetter = (_value: unknown, row: unknown) =>
+          col.accessor!(row as T)
+      }
+
+      if (col.valueFormatter) {
+        def.valueFormatter = (value: unknown, row: unknown) =>
+          col.valueFormatter!(value, row as T)
+      }
+
+      if (col.renderCell) {
+        def.renderCell = col.renderCell
       }
 
       if (col.linkColumn && getDetailLink) {
-        def.renderCell = (params) => {
+        const customRender = col.renderCell
+        def.renderCell = (params: GridRenderCellParams) => {
           const row = params.row as T
+          const content = customRender
+            ? customRender(params)
+            : (params.value as string)
+
           return (
             <MuiLink
               component={Link}
@@ -175,14 +330,14 @@ export default function AppDataGrid<T>({
                 whiteSpace: 'nowrap',
               }}
             >
-              {params.value as string}
+              {content}
             </MuiLink>
           )
         }
       }
 
       if (col.switchColumn) {
-        def.renderCell = (params) => {
+        def.renderCell = (params: GridRenderCellParams) => {
           const row = params.row as T
           return (
             <Switch
@@ -199,12 +354,11 @@ export default function AppDataGrid<T>({
     })
   }, [columns, getDetailLink])
 
-  // ── Render ─────────────────────────────────────────────────────────
-  const showToolbar = toolbar || searchable || (filterOptions && filterOptions.length > 0)
+  // ── Render ────────────────────────────────────────────────────────
+  const showToolbar = toolbar || searchable || resolvedFilters.length > 0
 
   return (
     <Box>
-      {/* Toolbar area */}
       {showToolbar && (
         <Stack
           direction="row"
@@ -230,29 +384,74 @@ export default function AppDataGrid<T>({
             />
           )}
 
-          {filterOptions && filterOptions.length > 0 && (
-            <TextField
-              select
-              size="small"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              label={filterLabel}
-              sx={{ minWidth: 160 }}
-            >
-              {filterOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          {resolvedFilters.map((f) => {
+            switch (f.type) {
+              case 'select':
+                return (
+                  <TextField
+                    key={f.id}
+                    select
+                    size="small"
+                    value={getFilterValue(f) as string}
+                    onChange={(e) => setFilterValue(f.id, e.target.value)}
+                    label={f.label}
+                    sx={{ minWidth: 160 }}
+                  >
+                    {f.options.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )
+              case 'multiSelect':
+                return (
+                  <TextField
+                    key={f.id}
+                    select
+                    size="small"
+                    value={(getFilterValue(f) as string[]) ?? []}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setFilterValue(
+                        f.id,
+                        typeof val === 'string' ? val.split(',') : val,
+                      )
+                    }}
+                    label={f.label}
+                    sx={{ minWidth: 160 }}
+                    slotProps={{ select: { multiple: true } }}
+                  >
+                    {f.options.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )
+              case 'boolean':
+                return (
+                  <TextField
+                    key={f.id}
+                    select
+                    size="small"
+                    value={getFilterValue(f) as string}
+                    onChange={(e) => setFilterValue(f.id, e.target.value)}
+                    label={f.label}
+                    sx={{ minWidth: 160 }}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="true">{f.trueLabel ?? 'Yes'}</MenuItem>
+                    <MenuItem value="false">{f.falseLabel ?? 'No'}</MenuItem>
+                  </TextField>
+                )
+            }
+          })}
 
-          {/* Push custom toolbar content to the right */}
           {toolbar && <Box sx={{ ml: 'auto' }}>{toolbar}</Box>}
         </Stack>
       )}
 
-      {/* Grid */}
       <Box sx={{ height, width: '100%' }}>
         <DataGrid
           rows={filteredRows}

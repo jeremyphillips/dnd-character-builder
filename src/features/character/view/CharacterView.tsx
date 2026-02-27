@@ -8,6 +8,7 @@ import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
 import { AppModal } from '@/ui/modals'
 import type { StepId } from '@/features/characterBuilder/types'
 import { getProficiencySlotSummary } from '@/features/character/domain/validation'
+import { moneyToCp } from '@/shared/money'
 import type { CampaignSummary, PendingMembership } from '@/shared/types/campaign.types'
 import type { 
   CharacterNarrative, 
@@ -199,10 +200,12 @@ console.log('characterView', character)
   }
 
   const onEditWealthSave = async (wealth: { gp: number; sp: number; cp: number }) => {
-    const currentBaseGp = character.wealth?.baseGp ?? 0
-    const newBaseGp = Math.max(currentBaseGp, wealth.gp)
+    const currentBudgetGp = moneyToCp(character.wealth?.baseBudget ?? undefined) / 100
+    const newBudgetGp = Math.max(currentBudgetGp, wealth.gp)
+    const baseBudget: import('@/shared/money/types').Money = character.wealth?.baseBudget
+      ?? { coin: 'gp', value: newBudgetGp }
     await actions.saveCharacter({
-      wealth: { ...character.wealth, gp: wealth.gp, sp: wealth.sp, cp: wealth.cp, baseGp: newBaseGp },
+      wealth: { ...character.wealth, gp: wealth.gp, sp: wealth.sp, cp: wealth.cp, baseBudget },
     })
   }
 

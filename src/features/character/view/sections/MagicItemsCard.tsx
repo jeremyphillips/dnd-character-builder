@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import EditIcon from '@mui/icons-material/Edit'
-import { moneyToGp } from '@/features/equipment/domain/pricing/pricing'
+import { formatMoney } from '@/shared/money'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -89,7 +89,7 @@ export default function MagicItemsCard({
                     </Typography>
                   )}
                   {item.cost && (
-                    <Typography variant="caption" color="text.secondary" display="block">Value: {moneyToGp(item.cost)} gp</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">Value: {formatMoney(item.cost)}</Typography>
                   )}
                 </Box>
               )

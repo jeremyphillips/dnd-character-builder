@@ -1,6 +1,4 @@
-export type Coin = 'cp' | 'sp' | 'ep' | 'gp' | 'pp'
-
-export type Money = { coin: Coin; value: number }
+import type { Money } from '@/shared/money/types'
 
 export type EquipmentBase = {
   id: string

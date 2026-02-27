@@ -1,27 +1,41 @@
-import type { ArmorItem, WeaponItem, GearItem, EquipmentBase } from '@/data/equipment'
-import type { Coin } from '@/data/equipment'
+// ---------------------------------------------------------------------------
+// MIGRATION NOTE
+// ---------------------------------------------------------------------------
+// All monetary math should use CP (copper) as the base unit.
+// Avoid using moneyToGp for calculations.
+// Use:
+// - moneyToCp for math
+// - formatMoney / formatCp for UI display
+// ---------------------------------------------------------------------------
 
-const COIN_TO_CP: Record<Coin, number> = {
-  cp: 1,
-  sp: 10,
-  ep: 50,
-  gp: 100,
-  pp: 1000,
-}
+import type { ArmorItem, WeaponItem, GearItem } from '@/data/equipment'
+import type { Money } from '@/shared/money/types'
+import { moneyToCp, COIN_TO_CP } from '@/shared/money'
 
-export const moneyToCp = (money?: { coin: Coin; value: number }): number => {
-  if (!money) return 0
-  return money.value * COIN_TO_CP[money.coin]
-}
+export { moneyToCp, COIN_TO_CP }
 
-export const moneyToGp = (money?: { coin: Coin; value: number }): number => {
+/**
+ * @deprecated Avoid using GP math in UI. Use CP-based helpers instead.
+ * Prefer moneyToCp for calculations and formatMoney / formatCp for display.
+ */
+export const moneyToGp = (money?: Money): number => {
   return moneyToCp(money) / 100
 }
 
-export const getItemCostGp = (item?: { cost?: { coin: Coin; value: number } }) => {
+/**
+ * @deprecated Use getItemCostCp instead.
+ */
+export const getItemCostGp = (item?: { cost?: Money }) => {
   return moneyToGp(item?.cost)
 }
 
+export const getItemCostCp = (item?: { cost?: Money }): number => {
+  return moneyToCp(item?.cost)
+}
+
+/**
+ * @deprecated Use calculateEquipmentCostCp instead.
+ */
 export const calculateEquipmentCost = (
   weaponIds: string[],
   armorIds: string[],
@@ -30,20 +44,24 @@ export const calculateEquipmentCost = (
   armorData: readonly ArmorItem[],
   gearData: readonly GearItem[],
 ): number => {
-  const weaponCost = weaponIds.reduce((sum, id) => {
-    const w = weaponsData.find(w => w.id === id)
-    return sum + getItemCostGp(w)
-  }, 0)
+  return calculateEquipmentCostCp(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData) / 100
+}
 
-  const armorCost = armorIds.reduce((sum, id) => {
-    const a = armorData.find(a => a.id === id)
-    return sum + getItemCostGp(a)
-  }, 0)
+export const calculateEquipmentCostCp = (
+  weaponIds: string[],
+  armorIds: string[],
+  gearIds: string[],
+  weaponsData: readonly WeaponItem[],
+  armorData: readonly ArmorItem[],
+  gearData: readonly GearItem[],
+): number => {
+  const weaponMap = new Map(weaponsData.map(w => [w.id, w]))
+  const armorMap = new Map(armorData.map(a => [a.id, a]))
+  const gearMap = new Map(gearData.map(g => [g.id, g]))
 
-  const gearCost = gearIds.reduce((sum, id) => {
-    const g = gearData.find(g => g.id === id)
-    return sum + getItemCostGp(g)
-  }, 0)
+  const weaponCost = weaponIds.reduce((sum, id) => sum + getItemCostCp(weaponMap.get(id)), 0)
+  const armorCost = armorIds.reduce((sum, id) => sum + getItemCostCp(armorMap.get(id)), 0)
+  const gearCost = gearIds.reduce((sum, id) => sum + getItemCostCp(gearMap.get(id)), 0)
 
   return weaponCost + armorCost + gearCost
 }

@@ -3,7 +3,7 @@ import { equipment } from '@/data/equipment/equipment'
 import type { ArmorItem } from '@/data/equipment'
 import type { WeaponItem } from '@/data/equipment'
 import { resolveLoadout } from '@/features/mechanics/domain/effects/sources/equipment-to-effects'
-import { moneyToGp } from '@/features/equipment/domain/pricing/pricing'
+import { formatMoney } from '@/shared/money'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,12 +40,12 @@ function partitionArmor(
 }
 
 function armorToOption(item: ArmorItem): SelectOption {
-  const costSuffix = item.cost ? ` (${moneyToGp(item.cost)} gp)` : ''
+  const costSuffix = item.cost ? ` (${formatMoney(item.cost)})` : ''
   return { value: item.id, label: `${item.name}${costSuffix}` }
 }
 
 function weaponToOption(item: WeaponItem): SelectOption {
-  const costSuffix = item.cost ? ` (${moneyToGp(item.cost)} gp)` : ''
+  const costSuffix = item.cost ? ` (${formatMoney(item.cost)})` : ''
   return { value: item.id, label: `${item.name}${costSuffix}` }
 }
 

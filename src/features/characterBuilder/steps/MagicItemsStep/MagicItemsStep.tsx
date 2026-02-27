@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { getMagicItemBudget } from '@/features/equipment/domain/magic-items/magicItems'
@@ -14,8 +14,8 @@ import Box from '@mui/material/Box'
 import type { MagicItemSlot, MagicItem, MagicItemRarity } from '@/data/equipment'
 import type { EquipmentItemInstance } from '@/shared/types/character.core'
 import type { EnchantableSlot } from '@/data/equipment/enchantments/enchantmentTemplates.types'
-import { moneyToGp } from '@/features/equipment/domain/pricing/pricing'
-import type { Coin, Money } from '@/data/equipment'
+import { moneyToCp, cpToDenoms, formatCp } from '@/shared/money'
+import type { Money } from '@/shared/money/types'
 
 // ---------------------------------------------------------------------------
 // Enhancement types & constants
@@ -93,6 +93,7 @@ const MagicItemsStep = () => {
 
   const {
     state,
+    setWealth,
     updateMagicItems,
     updateWeaponInstance,
     updateArmorInstance,
@@ -136,11 +137,11 @@ const MagicItemsStep = () => {
     return `${name} (${short})`
   }
 
-  const getEnhancementCostGp = (templateId: string | undefined): number => {
+  const getEnhancementCostCp = (templateId: string | undefined): number => {
     if (!templateId) return 0
     const tpl = catalog.enhancementTemplatesById[templateId]
     if (!tpl) return 0
-    return moneyToGp(tpl.cost as Money)
+    return moneyToCp(tpl.cost as Money)
   }
 
   const asFinite = (n: unknown): number => {
@@ -148,11 +149,9 @@ const MagicItemsStep = () => {
     return Number.isFinite(x) ? x : 0;
   };
 
-  const sumEnhancementCost = (instances: any[]): number => {
-    return instances.reduce((sum: number, inst: any) => {
-      // wherever you compute enhancement cost:
-      const costGp = getEnhancementCostGp(inst.enhancementTemplateId);
-      return sum + asFinite(costGp);
+  const sumEnhancementCostCp = (instances: EquipmentItemInstance[]): number => {
+    return instances.reduce((sum: number, inst) => {
+      return sum + asFinite(getEnhancementCostCp(inst.enhancementTemplateId));
     }, 0);
   };
   // =========================================================================
@@ -179,33 +178,32 @@ const MagicItemsStep = () => {
   )
   const templateIds = availableTemplates.map(t => t.id)
 
-  // Budget
-  const baseGp = wealth?.baseGp ?? 0
+  // Budget (all arithmetic in CP)
+  const baseCp = moneyToCp(wealth?.baseBudget ?? undefined)
 
-  const mundaneCostGp = useMemo(() => {
+  const mundaneCostCp = useMemo(() => {
     const weapons = selectedEquipment?.weapons ?? []
     const armor = selectedEquipment?.armor ?? []
     const gear = selectedEquipment?.gear ?? []
 
-    const costOf = (item: any) => moneyToGp(item?.cost as unknown as { coin: Coin; value: number })
+    const costOf = (item: { cost?: Money } | undefined) => moneyToCp(item?.cost)
     const wCost = weapons.reduce((sum, id) => sum + costOf(catalog.weaponsById[id]), 0)
     const aCost = armor.reduce((sum, id) => sum + costOf(catalog.armorById[id]), 0)
     const gCost = gear.reduce((sum, id) => sum + costOf(catalog.gearById[id]), 0)
     return wCost + aCost + gCost
   }, [selectedEquipment?.weapons, selectedEquipment?.armor, selectedEquipment?.gear, catalog])
 
-  const totalEnhCost = sumEnhancementCost([...weaponInstances, ...allArmorInstances])
-  const remainingGp = baseGp - mundaneCostGp - totalEnhCost
-  
-  const overBudget = remainingGp < 0
-  console.log({
-    baseGp,
-    mundaneCostGp,
-    totalEnhCost,
-    baseGpIsNaN: Number.isNaN(baseGp),
-    mundaneIsNaN: Number.isNaN(mundaneCostGp),
-    enhIsNaN: Number.isNaN(totalEnhCost),
-  });
+  const totalEnhCostCp = sumEnhancementCostCp([...weaponInstances, ...allArmorInstances])
+  const remainingCp = baseCp - mundaneCostCp - totalEnhCostCp
+
+  const overBudget = remainingCp < 0
+
+  useEffect(() => {
+    const safeCp = Math.max(remainingCp, 0)
+    const denoms = cpToDenoms(safeCp)
+    setWealth({ gp: denoms.gp, sp: denoms.sp, cp: denoms.cp })
+  }, [remainingCp, setWealth])
+
   // Add-copy options
   const ownedWeaponBaseIds = [...new Set(selectedEquipment?.weapons ?? [])]
   const ownedArmorBaseIds = [
@@ -227,12 +225,12 @@ const MagicItemsStep = () => {
     currentTemplateId: string | undefined,
   ): Set<string> => {
     const disabled = new Set<string>()
-    const currentCost = getEnhancementCostGp(currentTemplateId)
-    const costWithoutThis = totalEnhCost - currentCost
+    const currentCost = getEnhancementCostCp(currentTemplateId)
+    const costWithoutThis = totalEnhCostCp - currentCost
     for (const tid of templateIds) {
       if (tid === currentTemplateId) continue
-      const optCost = getEnhancementCostGp(tid)
-      if (mundaneCostGp + costWithoutThis + optCost > baseGp) {
+      const optCost = getEnhancementCostCp(tid)
+      if (mundaneCostCp + costWithoutThis + optCost > baseCp) {
         disabled.add(tid)
       }
     }
@@ -371,14 +369,14 @@ const MagicItemsStep = () => {
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Gold remaining: {remainingGp.toLocaleString()} gp
+            Budget remaining: {formatCp(remainingCp)}
             {' · '}
-            Enhancement total: {totalEnhCost.toLocaleString()} gp
+            Enhancement total: {formatCp(totalEnhCostCp)}
           </Typography>
 
           {overBudget && (
             <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-              Over budget by {Math.abs(remainingGp).toLocaleString()} gp
+              Over budget by {formatCp(Math.abs(remainingCp))}
             </Typography>
           )}
 

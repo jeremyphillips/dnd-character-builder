@@ -90,6 +90,7 @@ export type CharacterBuilderContextValue = {
     gp?: number | null
     sp?: number | null
     cp?: number | null
+    baseBudget?: import('@/shared/money/types').Money | null
   }) => void
 
   // proficiencies

@@ -4,9 +4,10 @@ import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { ButtonGroup } from '@/ui/elements'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import {
-  calculateEquipmentCost,
-  getItemCostGp
+  calculateEquipmentCostCp,
+  getItemCostCp,
 } from '@/features/equipment/domain'
+import { moneyToCp, formatCp } from '@/shared/money'
 import { collectIntrinsicEffects } from '@/features/character/domain/engine/collectCharacterEffects'
 import {
   deriveEquipmentProficiency,
@@ -52,8 +53,8 @@ const EquipmentStep = () => {
       return
     }
 
-    // If baseGp is already set, wealth was initialized on a previous mount — don't reset
-    if (wealth?.baseGp) {
+    // If baseBudget is already set, wealth was initialized on a previous mount — don't reset
+    if (wealth?.baseBudget) {
       initializedRef.current = true
       return
     }
@@ -76,11 +77,12 @@ const EquipmentStep = () => {
     setWealth({
       gp: resolved.gp,
       sp: 0,
-      cp: 0
+      cp: 0,
+      baseBudget: { coin: 'gp', value: resolved.gp },
     })
 
     initializedRef.current = true
-  }, [totalLevel, selectedClasses, setWealth, wealth?.baseGp, isEditMode])
+  }, [totalLevel, selectedClasses, setWealth, wealth?.baseBudget, isEditMode])
 
   const { 
     weapons: selectedWeapons = [], 
@@ -105,13 +107,13 @@ const EquipmentStep = () => {
   const armorProf  = deriveEquipmentProficiency(intrinsicEffects, 'armor')
   const gearProf   = { categories: ['all'], items: [] as string[] }
 
-  const baseGp = wealth?.baseGp ?? 0
+  const baseCp = moneyToCp(wealth?.baseBudget ?? undefined)
 
   const weaponsCatalog = Object.values(catalog.weaponsById)
   const armorCatalog = Object.values(catalog.armorById)
   const gearCatalog = Object.values(catalog.gearById)
 
-  const currentCost = calculateEquipmentCost(
+  const currentCostCp = calculateEquipmentCostCp(
     selectedWeapons,
     selectedArmor,
     selectedGear,
@@ -127,22 +129,22 @@ const EquipmentStep = () => {
   ) => {
     return items
       .map(item => {
-        const costGp = getItemCostGp(item)
+        const itemCp = getItemCostCp(item)
         const isSelected = selected.includes(item.id)
-        const costWithoutThis = isSelected ? currentCost - costGp : currentCost
-        const wouldExceedGold = costWithoutThis + costGp > baseGp
+        const costWithoutThis = isSelected ? currentCostCp - itemCp : currentCostCp
+        const wouldExceedBudget = costWithoutThis + itemCp > baseCp
 
         const eligibility = evaluateEquipmentEligibility(item, proficiency)
         const notProficient = !eligibility.allowed
-        const disabled = !isSelected && (notProficient || wouldExceedGold)
+        const disabled = !isSelected && (notProficient || wouldExceedBudget)
 
         const reasons: string[] = []
         if (notProficient) reasons.push(...eligibility.reasons)
-        if (wouldExceedGold) reasons.push('Exceeds gold budget')
+        if (wouldExceedBudget) reasons.push('Exceeds budget')
         const tooltip = reasons.length > 0 ? reasons.join('; ') : undefined
 
         const costStr = `${item.cost.value} ${item.cost.coin}`
-        
+
         return {
           id: item.id,
           label: item.cost ? `${item.name} (${costStr})` : item.name,
@@ -168,8 +170,7 @@ const EquipmentStep = () => {
       <InvalidationNotice items={equipmentNotices} onDismiss={() => dismissNotice('equipment')} />
       {wealth &&
       <>
-        <p>Gold remaining: {Math.round((wealth.gp ?? 0) * 100) / 100} gp / {wealth.baseGp} gp</p>
-        {/* <p>Wealth: {wealth.gp} gp, {wealth.sp} sp, {wealth.cp} cp</p> */}
+        <p>Budget remaining: {formatCp(baseCp - currentCostCp)} / {formatCp(baseCp)}</p>
       </>
       }
       <small>Current weight: {currentWeight} lbs.</small>

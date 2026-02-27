@@ -78,6 +78,8 @@
       "@/hooks/*": ["hooks/*"],
       "@/shared": ["../shared/types/index.ts"],
       "@/shared/*": ["../shared/*"],
+      "@/shared/money": ["../shared/money/index.ts"],
+      "@/shared/money/*": ["../shared/money/*"],
       "@/shared/permissions": ["../shared/permissions/index.ts"],
       "@/utils/*": ["utils/*"],
       "@/utils": ["utils/index.ts"]

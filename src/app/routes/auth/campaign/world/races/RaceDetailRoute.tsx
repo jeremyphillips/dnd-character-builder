@@ -11,6 +11,9 @@ import type { Race } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageCampaignContent } from '@/shared/domain/capabilities';
+import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
+import { KeyValueSection } from '@/ui/components/content';
+import { VisibilityChip } from '@/ui/components/fields';
 
 export default function RaceDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();
@@ -57,6 +60,32 @@ export default function RaceDetailRoute() {
           {race.description}
         </Typography>
       )}
+
+      <KeyValueSection
+        title="Details"
+        items={[
+          {
+            label: 'Source',
+            value: (
+              <AppBadge
+                label={race.source}
+                tone={race.source === 'system' ? 'info' : 'default'}
+              />
+            ),
+          },
+          {
+            label: 'Visibility',
+            value:
+              race.accessPolicy && race.accessPolicy.scope !== 'public' ? (
+                <VisibilityChip visibility={race.accessPolicy} />
+              ) : (
+                'Public'
+              ),
+          },
+        ]}
+        columns={2}
+        sx={{ mt: 3 }}
+      />
     </ContentDetailScaffold>
   );
 }

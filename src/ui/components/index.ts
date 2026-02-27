@@ -22,3 +22,5 @@ export type {
   SelectOption,
 } from './fields'
 export { AppForm, FormTextField, FormSelectField, FormRadioField, FormCheckboxField, DynamicField, FormActions } from './form'
+export { KeyValueSection } from './content'
+export type { KeyValueSectionProps, KeyValueItem } from './content'

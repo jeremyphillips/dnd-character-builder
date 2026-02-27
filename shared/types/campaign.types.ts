@@ -41,11 +41,30 @@ export interface CampaignBase {
   updatedAt?: Date
 }
 
+/**
+ * Campaign role as seen by the viewer.
+ *
+ * 'owner' is a derived value — it is never stored on CampaignMember docs.
+ * DM/co-DM derivation will be added in a later stage.
+ */
+export type ViewerCampaignRole = 'owner' | CampaignRole
+
 /** Viewer-specific context attached by the API when fetching a campaign. */
 export interface CampaignViewer {
-  campaignRole: CampaignRole | null
+  campaignRole: ViewerCampaignRole | null
   isPlatformAdmin: boolean
   isOwner: boolean
+}
+
+/** Summary counts derived from CampaignMember docs. */
+export interface CampaignMembersSummary {
+  counts: {
+    pending: number
+    approved: number
+    declined: number
+    total: number
+  }
+  viewerCharacterIds: string[]
 }
 
 export interface Campaign extends CampaignBase {
@@ -57,6 +76,8 @@ export interface Campaign extends CampaignBase {
   configuration?: CampaignConfiguration
   /** Populated by GET /api/campaigns/:id with the requesting user's context. */
   viewer?: CampaignViewer
+  /** Member summary derived from CampaignMember docs (not legacy fields). */
+  members?: CampaignMembersSummary
   createdAt: Date
   updatedAt: Date
 }

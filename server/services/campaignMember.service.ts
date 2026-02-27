@@ -54,6 +54,51 @@ export async function isCharacterInCampaign(characterId: string): Promise<boolea
 }
 
 // ---------------------------------------------------------------------------
+// Viewer context
+// ---------------------------------------------------------------------------
+
+export interface ViewerMembershipContext {
+  viewerCharacterIds: string[]
+  viewerHasPending: boolean
+  viewerHasApproved: boolean
+  allMembers: CampaignMemberDoc[]
+}
+
+/**
+ * Derives the requesting user's membership context from CampaignMember docs.
+ *
+ * Uses getCampaignMembersByCampaign and compares ObjectIds properly so the
+ * caller never has to deal with string vs ObjectId mismatches.
+ */
+export async function getViewerMembershipContext(
+  campaignId: string,
+  userId: string,
+): Promise<ViewerMembershipContext> {
+  const rawMembers = await getCampaignMembersByCampaign(campaignId)
+  const allMembers = rawMembers as unknown as CampaignMemberDoc[]
+
+  const uid = new mongoose.Types.ObjectId(userId)
+
+  const viewerApproved: CampaignMemberDoc[] = []
+  let viewerHasPending = false
+
+  for (const m of allMembers) {
+    if (!(m.userId as mongoose.Types.ObjectId).equals(uid)) continue
+    if ((m.status as string) === 'approved') viewerApproved.push(m)
+    else if ((m.status as string) === 'pending') viewerHasPending = true
+  }
+
+  return {
+    viewerCharacterIds: viewerApproved.map(
+      (m) => (m.characterId as mongoose.Types.ObjectId).toString(),
+    ),
+    viewerHasPending,
+    viewerHasApproved: viewerApproved.length > 0,
+    allMembers,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 

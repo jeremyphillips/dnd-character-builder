@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express'
 import mongoose from 'mongoose'
-import type { CampaignMemberStoredRole } from '../../shared/types'
+import type { CampaignMemberStoredRole, ViewerCampaignRole, CampaignRole } from '../../shared/types'
 import * as campaignService from '../services/campaign.service'
+import { getViewerMembershipContext } from '../services/campaignMember.service'
 
 // ---------------------------------------------------------------------------
 // Campaign CRUD
@@ -13,14 +14,48 @@ export async function getCampaigns(req: Request, res: Response) {
 }
 
 export async function getCampaign(req: Request, res: Response) {
+  const raw = req.campaign!
+  const isPlatformAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+
+  const ownerId = raw.membership?.ownerId
+  const isOwner = ownerId
+    ? new mongoose.Types.ObjectId(req.userId!).equals(
+        new mongoose.Types.ObjectId(ownerId),
+      )
+    : false
+
+  const ctx = await getViewerMembershipContext(req.params.id, req.userId!)
+
+  let viewerCampaignRole: ViewerCampaignRole | null = null
+  if (isOwner) {
+    viewerCampaignRole = 'owner'
+  } else if (ctx.viewerHasApproved) {
+    viewerCampaignRole = 'pc'
+  } else if (ctx.viewerHasPending) {
+    viewerCampaignRole = 'observer'
+  }
+
+  const counts = { pending: 0, approved: 0, declined: 0, total: ctx.allMembers.length }
+  for (const m of ctx.allMembers) {
+    const s = m.status as string
+    if (s === 'pending') counts.pending++
+    else if (s === 'approved') counts.approved++
+    else if (s === 'declined') counts.declined++
+  }
+
   const campaign = {
-    ...req.campaign!,
+    ...raw,
     viewer: {
-      campaignRole: req.campaignRole ?? null,
-      isPlatformAdmin: req.userRole === 'admin' || req.userRole === 'superadmin',
-      isOwner: req.isOwner ?? false,
+      campaignRole: viewerCampaignRole,
+      isPlatformAdmin,
+      isOwner,
+    },
+    members: {
+      counts,
+      viewerCharacterIds: ctx.viewerCharacterIds,
     },
   }
+
   res.json({ campaign })
 }
 

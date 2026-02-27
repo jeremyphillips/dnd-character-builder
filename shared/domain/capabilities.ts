@@ -6,10 +6,10 @@
  * Platform admin bypass never depends on campaign membership.
  */
 
-import type { CampaignRole } from '../types/campaign.types'
+import type { ViewerCampaignRole } from '../types/campaign.types'
 
 export interface ViewerContext {
-  campaignRole: CampaignRole | null
+  campaignRole: ViewerCampaignRole | null
   isOwner: boolean
   isPlatformAdmin: boolean
   characterIds: string[]

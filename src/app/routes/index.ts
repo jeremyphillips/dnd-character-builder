@@ -54,6 +54,7 @@ export {
   RaceListRoute,
   RaceDetailRoute,
   RaceEditorRoute,
+  ContentManageGuard,
   AccountRoute,
   AccountSettingsRoute
 } from './auth'

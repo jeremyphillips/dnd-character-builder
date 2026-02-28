@@ -25,3 +25,4 @@ export {
 export { SessionsRoute, SessionRoute } from './sessions'
 export { MessagingRoute } from './messaging'
 export { AdminGuard, CampaignAdminRoute, CampaignAdminSettingsRoute, CampaignAdminInvitesRoute, CampaignRulesetEditorRoute } from './admin'
+export { default as ContentManageGuard } from './ContentManageGuard'

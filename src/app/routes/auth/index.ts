@@ -51,4 +51,5 @@ export {
   RaceListRoute,
   RaceDetailRoute,
   RaceEditorRoute,
+  ContentManageGuard,
 } from './campaign'

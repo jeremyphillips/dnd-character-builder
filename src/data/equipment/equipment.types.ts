@@ -3,7 +3,6 @@ import type { Money } from '@/shared/money/types'
 export type EquipmentBase = {
   id: string
   name: string
-  category: string
   description?: string
   weight?: {
     value: number
@@ -38,48 +37,63 @@ export type GearCategory =
   | 'potions-alchemical';
 
 export interface GearItem extends EquipmentBase {
+  category: GearCategory;
   properties?: string[];
-
   // Containers / storage
   capacity?: string;
-
   // Lighting
   range?: string;
   duration?: string;
-
   // Rope / climbing (5e-ish where applicable)
   hp?: number;
   burstDC?: number;
-
   // Kits / consumables
   charges?: number;
-
   // Writing
   pages?: number;
-
   // Rations
   type?: string;
-
   // Potions / alchemical
   effect?: string;
-
   // Focus / proficiency
   proficiency?: string;
-
   // Focus kind (spellcasting focus, implement, etc.)
   kind?: string;
 };
 
+export type WeaponCategory =
+  | 'simple'
+  | 'martial';
+
+export type WeaponProperty =
+  | 'light'
+  | 'finesse'
+  | 'thrown'
+  | 'two-handed'
+  | 'versatile'
+  | 'reach'
+  | 'special'
+  | 'ammunition'
+  | 'loading'
+  | 'heavy'
+  | 'two-handed'
+  | 'reach'
+  | 'special';
+
+export type WeaponMode =
+  | 'melee'
+  | 'ranged';
+
 export interface WeaponItem extends EquipmentBase {
-  type: string
-  properties: string[]
+  category: WeaponCategory;
+  mode: WeaponMode;
+  range?: { normal: number; long?: number; unit: 'ft' }
+  properties: WeaponProperty[];
   damage: { default: string, versatile?: string }
   damageType: string  
   mastery: string
-  range?: string
   description?: string
 }
-
 
 export type MagicItemSlot =
   | 'weapon'

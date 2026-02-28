@@ -54,11 +54,11 @@ const ContentDetailScaffold = ({
         ]}
       />
 
-      {source === 'system' && (
+      {/* {source === 'system' && (
         <Alert severity="info" sx={{ mb: 2 }}>
           This is a system entry and is not editable.
         </Alert>
-      )}
+      )} */}
 
       {isRestricted && source === 'campaign' && (
         <Alert severity="warning" sx={{ mb: 2 }}>

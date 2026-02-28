@@ -1,6 +1,10 @@
 export type ContentTypeKey =
   | 'races'
   | 'equipment'
+  | 'weapons'
+  | 'armor'
+  | 'gear'
+  | 'magicItems'
   | 'spells'
   | 'monsters'
   | 'npcs'

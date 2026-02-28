@@ -33,7 +33,7 @@ export async function getCharacter(req: Request, res: Response) {
   }
 
   const isOwner = character.userId.equals(new mongoose.Types.ObjectId(req.userId!))
-  const isPlatformAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+  const isPlatformAdmin = req.userRole === 'superadmin'
 
   // Platform admins can view any character; otherwise must be owner or campaign admin
   if (!isOwner && !isPlatformAdmin) {

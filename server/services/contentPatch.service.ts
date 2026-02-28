@@ -7,6 +7,10 @@ import { CampaignContentPatch } from '../models/CampaignContentPatch.model';
 const VALID_CONTENT_TYPE_KEYS = new Set([
   'races',
   'equipment',
+  'weapons',
+  'armor',
+  'gear',
+  'magicItems',
   'spells',
   'monsters',
   'npcs',

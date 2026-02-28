@@ -19,7 +19,7 @@ export async function getCampaigns(req: Request, res: Response) {
 
 export async function getCampaign(req: Request, res: Response) {
   const raw = req.campaign!
-  const isPlatformAdmin = req.userRole === 'admin' || req.userRole === 'superadmin'
+  const isPlatformAdmin = req.userRole === 'superadmin'
 
   const ownerId = raw.membership?.ownerId
   const isOwner = ownerId

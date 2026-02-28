@@ -7,7 +7,7 @@ function buildViewerContext(req: Request, characterIds: string[]): ViewerContext
   return {
     campaignRole: req.campaignRole ?? null,
     isOwner: req.isOwner ?? false,
-    isPlatformAdmin: req.userRole === 'admin' || req.userRole === 'superadmin',
+    isPlatformAdmin: req.userRole === 'superadmin',
     characterIds,
   };
 }

@@ -9,8 +9,7 @@ export const armor: readonly ArmorItem[] = [
     category: 'light',
     cost: { coin: 'gp', value: 10 },
     baseAC: 11,
-    stealthDisadvantage: false,
-    properties: ['dexterity-modifier-full'],
+    dex: { mode: 'full' },
     weight: { value: 10, unit: 'lb' },
   },
   {
@@ -20,8 +19,7 @@ export const armor: readonly ArmorItem[] = [
     category: 'light',
     cost: { coin: 'gp', value: 45 },
     baseAC: 12,
-    stealthDisadvantage: false,
-    properties: ['dexterity-modifier-full'],
+    dex: { mode: 'full' },
     weight: { value: 13, unit: 'lb' },
   },
 
@@ -34,7 +32,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 10 },
     baseAC: 12,
     stealthDisadvantage: false,
-    properties: ['dexterity-modifier-max-2'],
+    dex: { mode: 'capped', maxBonus: 2 },
     weight: { value: 12, unit: 'lb' },
   },
   {
@@ -45,7 +43,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 50 },
     baseAC: 13,
     stealthDisadvantage: false,
-    properties: ['dexterity-modifier-max-2'],
+    dex: { mode: 'capped', maxBonus: 2 },
     weight: { value: 20, unit: 'lb' },
   },
   {
@@ -56,7 +54,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 50 },
     baseAC: 14,
     stealthDisadvantage: true,
-    properties: ['dexterity-modifier-max-2'],
+    dex: { mode: 'capped', maxBonus: 2 },
     weight: { value: 45, unit: 'lb' },
   },
   {
@@ -67,7 +65,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 400 },
     baseAC: 14,
     stealthDisadvantage: false,
-    properties: ['dexterity-modifier-max-2'],
+    dex: { mode: 'capped', maxBonus: 2 },
     weight: { value: 20, unit: 'lb' },
   },
   {
@@ -78,7 +76,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 750 },
     baseAC: 15,
     stealthDisadvantage: true,
-    properties: ['dexterity-modifier-max-2'],
+    dex: { mode: 'capped', maxBonus: 2 },
     weight: { value: 40, unit: 'lb' },
   },
 
@@ -91,7 +89,7 @@ export const armor: readonly ArmorItem[] = [
     cost: { coin: 'gp', value: 30 },
     baseAC: 14,
     stealthDisadvantage: true,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     weight: { value: 40, unit: 'lb' },
   },
   {
@@ -103,7 +101,7 @@ export const armor: readonly ArmorItem[] = [
     baseAC: 16,
     stealthDisadvantage: true,
     minStrength: 13,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     weight: { value: 55, unit: 'lb' },
   },
   {
@@ -115,7 +113,7 @@ export const armor: readonly ArmorItem[] = [
     baseAC: 17,
     stealthDisadvantage: true,
     minStrength: 15,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     weight: { value: 60, unit: 'lb' },
   },
   {
@@ -127,7 +125,7 @@ export const armor: readonly ArmorItem[] = [
     baseAC: 18,
     stealthDisadvantage: true,
     minStrength: 15,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     weight: { value: 65, unit: 'lb' },
   },
 
@@ -139,7 +137,7 @@ export const armor: readonly ArmorItem[] = [
     category: 'shields',
     cost: { coin: 'gp', value: 10 },
     stealthDisadvantage: false,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     acBonus: 2,
     weight: { value: 6, unit: 'lb' },
   },
@@ -150,7 +148,7 @@ export const armor: readonly ArmorItem[] = [
     category: 'shields',
     cost: { coin: 'gp', value: 10 },
     stealthDisadvantage: false,
-    properties: ['dexterity-modifier-none'],
+    dex: { mode: 'none' },
     acBonus: 2,
     weight: { value: 6, unit: 'lb' },
   },

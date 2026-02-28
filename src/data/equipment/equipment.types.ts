@@ -1,21 +1,33 @@
 import type { Money } from '@/shared/money/types'
+import type { Weight } from '@/shared/weight/types'
 
 export type EquipmentBase = {
   id: string
   name: string
   description?: string
-  weight?: {
-    value: number
-    unit: string
-  }
-  cost: Money
+  weight?: Weight
 }
 
+export type ArmorCategory =
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'shields';
+
+type DexContribution =
+  | { mode: 'full' }
+  | { mode: 'capped'; maxBonus: number }  // e.g. 2
+  | { mode: 'none' };
+
+export type Material = 'metal' | 'organic' | 'fabric' | 'wood' | 'stone'
+
 export interface ArmorItem extends EquipmentBase {
-  material: string
+  cost: Money
+  category: ArmorCategory;
+  material: Material
   baseAC?: number
-  stealthDisadvantage: boolean
-  properties: string[]
+  dex?: DexContribution
+  stealthDisadvantage?: boolean
   minStrength?: number
   acBonus?: number
 }
@@ -36,9 +48,13 @@ export type GearCategory =
   | 'luxury-special'
   | 'potions-alchemical';
 
+export type GearProperty =
+  | 'magnification'
+
 export interface GearItem extends EquipmentBase {
+  cost: Money
   category: GearCategory;
-  properties?: string[];
+  properties?: GearProperty[];
   // Containers / storage
   capacity?: string;
   // Lighting
@@ -85,6 +101,7 @@ export type WeaponMode =
   | 'ranged';
 
 export interface WeaponItem extends EquipmentBase {
+  cost: Money
   category: WeaponCategory;
   mode: WeaponMode;
   range?: { normal: number; long?: number; unit: 'ft' }
@@ -128,6 +145,7 @@ export type MagicItemRarity =
   | 'artifact';
 
 export interface MagicItem extends EquipmentBase {
+  cost?: Money
   slot: MagicItemSlot;
   // “derived”/composition
   baseItemId?: string;
@@ -141,7 +159,6 @@ export interface MagicItem extends EquipmentBase {
   bonus?: number;
   charges?: number;
 
-  effect?: string;
   effects?: MagicItemEffect[];
 
   description?: string;

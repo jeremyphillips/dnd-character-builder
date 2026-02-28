@@ -203,7 +203,7 @@ export const gear: GearItem[] = [
     category: 'tools-utility',
     weight: { value: 5, unit: 'lb' },
     cost: { coin: 'gp', value: 2 },
-    properties: ['advantage on Strength checks to open'],
+    properties: [], // 'advantage on Strength checks to open'
   },
   {
     id: 'hammer',

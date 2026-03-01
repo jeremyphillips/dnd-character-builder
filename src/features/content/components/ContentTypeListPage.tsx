@@ -22,8 +22,7 @@ import type { GridRenderCellParams } from '@mui/x-data-grid';
 import { AppDataGrid, type AppDataGridColumn } from '@/ui/patterns';
 import type { ContentSummary } from '@/features/content/domain/types';
 import { canBypassVisibility, canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
-import { VisibilityBadge } from '@/ui/patterns';
-import { AppPageHeader } from '@/ui/patterns';
+import { AppPageHeader,VisibilityBadge } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 
 export type ContentListItem = ContentSummary & {

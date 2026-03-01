@@ -9,7 +9,8 @@
  *   4. Merge `custom` entries from the ruleset itself (custom wins on id collision)
  */
 import type { CampaignCatalog } from './systemCatalog'
-import type { Ruleset, ContentRule } from '@/data/ruleSets'
+import type { RulesetLike } from './ruleset.types'
+import type { ContentRule } from '@/shared/types'
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -91,7 +92,7 @@ function resolveContent<T extends { id: string }>(
 export function buildCampaignCatalog(
   system: CampaignCatalog,
   campaign: Partial<CampaignCatalog>,
-  ruleset: Ruleset,
+  ruleset: RulesetLike,
 ): CampaignCatalog {
   const c = ruleset.content;
 

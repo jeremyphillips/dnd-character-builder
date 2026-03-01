@@ -52,7 +52,6 @@
       "@/ui/types": ["ui/types/index.ts"],
       "@/data": ["data/index.ts"],
       "@/data/*": ["data/*"],
-      "@/data/ruleSets": ["data/ruleSets/index.ts"],
       "@/domain/*": ["domain/*"],
       "@/domain/shared": ["domain/shared/index.ts"],
       "@/chat": ["features/chat/index.ts"],

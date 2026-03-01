@@ -20,6 +20,7 @@ import type { Monster } from '@/data/monsters/monsters.types'
 import { standardAlignments } from '@/data/ruleSets/alignments'
 import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E } from '@/data/ruleSets/spellSlotTables'
 import type { SystemRuleset, SystemRulesetId } from './ruleset.types'
+import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,16 +41,13 @@ function keyBy<T extends { id: string }>(items: readonly T[]): Record<string, T>
 export type CampaignCatalog = {
   classesById:              Record<string, CharacterClass>
   classIds:                 readonly string[]
-
   racesById:                Record<string, Race>
   raceIds:                  readonly string[]
-
   weaponsById:              Record<string, WeaponItem>
   armorById:                Record<string, ArmorItem>
   gearById:                 Record<string, GearItem>
   magicItemsById:           Record<string, MagicItem>
   enhancementTemplatesById: Record<string, EnchantmentTemplate>
-  
   spellsById:               Record<string, SpellData>
   monstersById:             Record<string, Monster>
 }
@@ -58,27 +56,20 @@ export type CampaignCatalog = {
 // System catalog (singleton — full unfiltered data)
 // ---------------------------------------------------------------------------
 
-const races = getSystemRaces('5e_v1');
+const races = getSystemRaces(DEFAULT_SYSTEM_RULESET_ID);
 
 export const systemCatalog: CampaignCatalog = {
   classesById:              keyBy(classes),
   classIds:                 Object.keys(classes),
   racesById:                keyBy(races),
   raceIds:                  races.map(r => r.id),
-
   // weaponsById:              keyBy(equipment.weapons),
-  weaponsById:              keyBy(equipment.weapons),
   // armorById:                keyBy(equipment.armor),
-  armorById:                keyBy(equipment.armor),
-
   // gearById:                 keyBy(equipment.gear),
-  gearById:                 keyBy(equipment.gear),
   // magicItemsById:           keyBy(equipment.magicItems),
-  magicItemsById:           keyBy(equipment.magicItems),
-
-  enhancementTemplatesById: keyBy(equipment.enchantments.enhancementTemplates),
-  spellsById:               keyBy(spells),
-  monstersById:             keyBy(monsters),
+  // enhancementTemplatesById: keyBy(equipment.enchantments.enhancementTemplates),
+  // spellsById:               keyBy(spells),
+  // monstersById:             keyBy(monsters),
 }
 
 // ---------------------------------------------------------------------------
@@ -94,12 +85,15 @@ export const startingWealthTiersDefault: WealthTier[] = [
   { levelRange: [11, 20], baseGold: 5000, maxItemValue: 2000 },
 ];
 
-const SYSTEM_RULESET_5E_V1: SystemRuleset = {
-  systemId: '5e_v1',
+const SYSTEM_RULESET_SRD_CC_V5_2_1: SystemRuleset = {
+  systemId: DEFAULT_SYSTEM_RULESET_ID,
   meta: {
-    name: '5e System Defaults',
+    name: 'D&D 5e SRD (CC) v5.2.1',
     basedOn: '5e',
     version: 1,
+    license: 'CC-BY-4.0',
+    source: 'SRD',
+    srdVersion: '5.2.1',
   },
   content: {
     classes:    { policy: 'all_except', ids: [] },
@@ -165,7 +159,7 @@ const SYSTEM_RULESET_5E_V1: SystemRuleset = {
 // ---------------------------------------------------------------------------
 
 export const SYSTEM_RULESETS: Record<SystemRulesetId, SystemRuleset> = {
-  '5e_v1': SYSTEM_RULESET_5E_V1,
+  [DEFAULT_SYSTEM_RULESET_ID]: SYSTEM_RULESET_SRD_CC_V5_2_1,
 };
 
 export function getSystemRuleset(systemId: SystemRulesetId): SystemRuleset {

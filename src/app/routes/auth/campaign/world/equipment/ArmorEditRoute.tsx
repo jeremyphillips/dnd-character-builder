@@ -7,7 +7,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -15,7 +14,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/data/types';
+import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
@@ -23,7 +22,6 @@ import { useCampaignMembers } from '@/features/campaign/hooks';
 import { armorRepo } from '@/features/content/domain/repo';
 import type { Armor, ArmorInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
@@ -115,7 +113,7 @@ export default function ArmorEditRoute() {
       stealthDisadvantage: values.stealthDisadvantage,
     };
     try {
-      const updated = await armorRepo.updateEntry(campaignId, DEFAULT_SYSTEM_ID, armorId, input);
+      const updated = await armorRepo.updateEntry(campaignId, armorId, input);
       reset({
         name: updated.name, description: updated.description ?? '', imageKey: updated.imageKey ?? '',
         accessPolicy: updated.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC,
@@ -148,7 +146,7 @@ export default function ArmorEditRoute() {
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !armorId) return;
-    await armorRepo.deleteEntry(campaignId, DEFAULT_SYSTEM_ID, armorId);
+    await armorRepo.deleteEntry(campaignId, armorId);
     navigate(`/campaigns/${campaignId}/world/equipment/armor`, { replace: true });
   }, [campaignId, armorId, navigate]);
 

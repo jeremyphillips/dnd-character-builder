@@ -14,7 +14,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/data/types';
+import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
@@ -22,7 +22,6 @@ import { useCampaignMembers } from '@/features/campaign/hooks';
 import { weaponRepo } from '@/features/content/domain/repo';
 import type { Weapon, WeaponInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
@@ -135,7 +134,7 @@ export default function WeaponEditRoute() {
       mastery: values.mastery, properties,
     };
     try {
-      const updated = await weaponRepo.updateEntry(campaignId, DEFAULT_SYSTEM_ID, weaponId, input);
+      const updated = await weaponRepo.updateEntry(campaignId, weaponId, input);
       reset({
         name: updated.name, description: updated.description ?? '',
         imageKey: updated.imageKey ?? '',
@@ -179,7 +178,7 @@ export default function WeaponEditRoute() {
   // ── Delete ──────────────────────────────────────────────────────
   const handleDelete = useCallback(async () => {
     if (!campaignId || !weaponId) return;
-    await weaponRepo.deleteEntry(campaignId, DEFAULT_SYSTEM_ID, weaponId);
+    await weaponRepo.deleteEntry(campaignId, weaponId);
     navigate(`/campaigns/${campaignId}/world/equipment/weapons`, { replace: true });
   }, [campaignId, weaponId, navigate]);
 
@@ -188,7 +187,7 @@ export default function WeaponEditRoute() {
   }, [navigate, campaignId]);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>;
-  if (error || notFound || !weapon) return <AppAlert tone="error">{error ?? 'Weapon not found.'}</AppAlert>;
+  if (error || notFound || !weapon) return <AppAlert tone="danger">{error ?? 'Weapon not found.'}</AppAlert>;
 
   // ── System patch UI ─────────────────────────────────────────────
   if (isSystem) {

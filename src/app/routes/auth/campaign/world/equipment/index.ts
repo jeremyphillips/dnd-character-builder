@@ -1,4 +1,3 @@
-export { default as EquipmentRoute } from './EquipmentRoute'
 export { default as EquipmentHubRoute } from './EquipmentHubRoute'
 export { default as WeaponsListRoute } from './WeaponsListRoute'
 export { default as ArmorListRoute } from './ArmorListRoute'

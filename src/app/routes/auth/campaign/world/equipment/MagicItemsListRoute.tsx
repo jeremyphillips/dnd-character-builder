@@ -11,7 +11,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useViewerEquipment } from '@/features/campaign/hooks';
 import { magicItemRepo } from '@/features/content/domain/repo';
 import type { MagicItemSummary } from '@/features/content/domain/types';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules';
 import { AppDataGrid } from '@/ui/patterns';
 import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import { makeOwnedColumn, makeOwnedFilter } from '@/ui/patterns';
@@ -42,7 +42,7 @@ export default function MagicItemsListRoute() {
     let cancelled = false;
     setLoading(true);
 
-    magicItemRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID)
+    magicItemRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID)
       .then(data => { if (!cancelled) setItems(data); })
       .catch(err => { if (!cancelled) setError((err as Error).message); })
       .finally(() => { if (!cancelled) setLoading(false); });

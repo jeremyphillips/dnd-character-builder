@@ -10,6 +10,7 @@ import type { ArmorItem } from '@/data/equipment';
 import { armor as armorData } from '@/data/equipment/armor';
 import type { ContentSource } from '@/features/content/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
 function toSystemArmor(raw: ArmorItem): Armor {
   return {
@@ -19,10 +20,10 @@ function toSystemArmor(raw: ArmorItem): Armor {
   };
 }
 
-const SYSTEM_ARMOR_5E_V1: readonly Armor[] = armorData.map(toSystemArmor);
+const SYSTEM_ARMOR_SRD_CC_V5_2_1: readonly Armor[] = armorData.map(toSystemArmor);
 
 export const SYSTEM_ARMOR_BY_SYSTEM_ID: Record<SystemRulesetId, readonly Armor[]> = {
-  '5e_v1': SYSTEM_ARMOR_5E_V1,
+  [DEFAULT_SYSTEM_RULESET_ID]: SYSTEM_ARMOR_SRD_CC_V5_2_1,
 };
 
 export function getSystemArmor(systemId: SystemRulesetId): readonly Armor[] {

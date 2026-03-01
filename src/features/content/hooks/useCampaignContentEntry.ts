@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
+import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules/ruleset.types';
 
 export interface UseCampaignContentEntryResult<T> {
   entry: T | null;
@@ -13,8 +14,8 @@ export interface UseCampaignContentEntryResult<T> {
 export interface UseCampaignContentEntryOptions<T> {
   campaignId: string | undefined;
   entryId: string | undefined;
-  fetchEntry: (campaignId: string, systemId: string, entryId: string) => Promise<T | null>;
-  systemId?: string;
+  fetchEntry: (campaignId: string, systemId: SystemRulesetId, entryId: string) => Promise<T | null>;
+  systemId?: SystemRulesetId;
 }
 
 export function useCampaignContentEntry<T>(
@@ -24,7 +25,7 @@ export function useCampaignContentEntry<T>(
     campaignId,
     entryId,
     fetchEntry,
-    systemId = DEFAULT_SYSTEM_ID,
+    systemId = DEFAULT_SYSTEM_RULESET_ID,
   } = options;
 
   const [entry, setEntry] = useState<T | null>(null);

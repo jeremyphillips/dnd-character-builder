@@ -10,6 +10,7 @@ import type { WeaponItem } from '@/data/equipment';
 import { weapons as weaponData } from '@/data/equipment/weapons';
 import type { ContentSource } from '@/features/content/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
 function toSystemWeapon(raw: WeaponItem): Weapon {
   return {
@@ -19,10 +20,10 @@ function toSystemWeapon(raw: WeaponItem): Weapon {
   };
 }
 
-const SYSTEM_WEAPONS_5E_V1: readonly Weapon[] = weaponData.map(toSystemWeapon);
+const SYSTEM_WEAPONS_SRD_CC_V5_2_1: readonly Weapon[] = weaponData.map(toSystemWeapon);
 
 export const SYSTEM_WEAPONS_BY_SYSTEM_ID: Record<SystemRulesetId, readonly Weapon[]> = {
-  '5e_v1': SYSTEM_WEAPONS_5E_V1,
+  [DEFAULT_SYSTEM_RULESET_ID]: SYSTEM_WEAPONS_SRD_CC_V5_2_1,
 };
 
 export function getSystemWeapons(systemId: SystemRulesetId): readonly Weapon[] {

@@ -22,7 +22,6 @@ export {
   NpcRoute,
   MonstersRoute,
   MonsterRoute,
-  EquipmentRoute,
   EquipmentHubRoute,
   WeaponsListRoute,
   ArmorListRoute,

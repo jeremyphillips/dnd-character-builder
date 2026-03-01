@@ -4,7 +4,7 @@
  * Every content category (races, classes, equipment, spells, monsters,
  * locations) shares these base shapes. Category-specific types extend them.
  */
-import type { Visibility } from '@/data/types';
+import type { Visibility } from '@/shared/types';
 
 export type ContentId = string;
 

@@ -10,10 +10,10 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { weaponRepo, armorRepo, gearRepo, magicItemRepo } from '@/features/content/domain/repo';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import { AppPageHeader } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
 
 interface EquipmentCategoryCard {
   title: string;
@@ -80,10 +80,10 @@ export default function EquipmentHubRoute() {
 
     const fetchCounts = async () => {
       const [w, a, g, m] = await Promise.all([
-        weaponRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID),
-        armorRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID),
-        gearRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID),
-        magicItemRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID),
+        weaponRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID),
+        armorRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID),
+        gearRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID),
+        magicItemRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID),
       ]);
       if (!cancelled) {
         setCounts({

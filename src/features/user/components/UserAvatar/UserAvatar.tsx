@@ -1,11 +1,11 @@
 import { AppAvatar } from '@/ui/primitives'
-import type { CampaignMemberRole } from '@/shared'
+import type { CampaignMemberStoredRole } from '@/shared'
 
 interface UserAvatarProps {
   userId?: string
   username?: string
   avatarUrl?: string
-  role?: CampaignMemberRole
+  role?: CampaignMemberStoredRole
   status?: 'online' | 'offline' | 'pending'
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }

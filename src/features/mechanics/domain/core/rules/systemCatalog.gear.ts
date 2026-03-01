@@ -10,6 +10,7 @@ import type { GearItem } from '@/data/equipment';
 import { gear as gearData } from '@/data/equipment/gear';
 import type { ContentSource } from '@/features/content/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
 function toSystemGear(raw: GearItem): Gear {
   return {
@@ -19,10 +20,10 @@ function toSystemGear(raw: GearItem): Gear {
   };
 }
 
-const SYSTEM_GEAR_5E_V1: readonly Gear[] = gearData.map(toSystemGear);
+const SYSTEM_GEAR_SRD_CC_V5_2_1: readonly Gear[] = gearData.map(toSystemGear);
 
 export const SYSTEM_GEAR_BY_SYSTEM_ID: Record<SystemRulesetId, readonly Gear[]> = {
-  '5e_v1': SYSTEM_GEAR_5E_V1,
+  [DEFAULT_SYSTEM_RULESET_ID]: SYSTEM_GEAR_SRD_CC_V5_2_1,
 };
 
 export function getSystemGear(systemId: SystemRulesetId): readonly Gear[] {

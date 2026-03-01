@@ -41,8 +41,6 @@ export type CharacterBuilderState = CharacterSheet & {
 
 /** Fields that can be pre-filled when launching the builder. */
 export type BuilderOverrides = {
-  edition?: import('@/data').EditionId
-  setting?: import('@/data').SettingId
   race?: string
   alignment?: string
 }

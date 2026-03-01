@@ -13,6 +13,7 @@ import { getContentPatch } from '../contentPatchRepo';
 import { applyContentPatch } from '../patches/applyContentPatch';
 import { moneyToCp } from '@/shared/money';
 import type { ContentSource } from '../types';
+import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
 
 function toSummary(armor: Armor): ArmorSummary {
   return {
@@ -60,7 +61,7 @@ export const armorRepo: CampaignContentRepo<Armor, ArmorSummary, ArmorInput> = {
 
   async listSummaries(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     opts?: ListOptions,
   ): Promise<ArmorSummary[]> {
     const [system, campaign, contentPatch] = await Promise.all([
@@ -97,7 +98,7 @@ export const armorRepo: CampaignContentRepo<Armor, ArmorSummary, ArmorInput> = {
 
   async getEntry(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     id: string,
   ): Promise<Armor | null> {
     const campaignEntry = await campaignArmorRepo.get(campaignId, id);
@@ -116,7 +117,6 @@ export const armorRepo: CampaignContentRepo<Armor, ArmorSummary, ArmorInput> = {
 
   async createEntry(
     campaignId: string,
-    _systemId: string,
     input: ArmorInput,
   ): Promise<Armor> {
     const { name, description, accessPolicy, ...rest } = input;
@@ -135,7 +135,6 @@ export const armorRepo: CampaignContentRepo<Armor, ArmorSummary, ArmorInput> = {
 
   async updateEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
     input: ArmorInput,
   ): Promise<Armor> {
@@ -155,7 +154,6 @@ export const armorRepo: CampaignContentRepo<Armor, ArmorSummary, ArmorInput> = {
 
   async deleteEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
   ): Promise<boolean> {
     return campaignArmorRepo.remove(campaignId, id);

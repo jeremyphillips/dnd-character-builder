@@ -1,6 +1,5 @@
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
-import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
@@ -46,13 +45,6 @@ const buildFields = (edition?: string): FieldConfig[] => [
     label: 'Campaign Image',
     section: 'general'
   },
-  {
-    type: 'checkbox',
-    name: 'allowLegacyEditionNpcs',
-    label: 'Allow legacy edition NPCs?',
-    helperText: `Their stats will be converted to ${edition ?? 'the campaign edition'}.`,
-    section: 'advanced'
-  }
 ]
 
 export default function CampaignAdminSettingsRoute() {

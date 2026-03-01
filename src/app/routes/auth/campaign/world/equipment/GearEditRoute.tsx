@@ -14,7 +14,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/data/types';
+import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
@@ -22,7 +22,6 @@ import { useCampaignMembers } from '@/features/campaign/hooks';
 import { gearRepo } from '@/features/content/domain/repo';
 import type { Gear, GearInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
@@ -105,7 +104,7 @@ export default function GearEditRoute() {
       category: values.category as GearInput['category'], capacity: values.capacity.trim() || undefined,
     };
     try {
-      const updated = await gearRepo.updateEntry(campaignId, DEFAULT_SYSTEM_ID, gearId, input);
+      const updated = await gearRepo.updateEntry(campaignId, gearId, input);
       reset({
         name: updated.name, description: updated.description ?? '', imageKey: updated.imageKey ?? '',
         accessPolicy: updated.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC,
@@ -135,7 +134,7 @@ export default function GearEditRoute() {
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !gearId) return;
-    await gearRepo.deleteEntry(campaignId, DEFAULT_SYSTEM_ID, gearId);
+    await gearRepo.deleteEntry(campaignId, gearId);
     navigate(`/campaigns/${campaignId}/world/equipment/gear`, { replace: true });
   }, [campaignId, gearId, navigate]);
 

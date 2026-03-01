@@ -3,7 +3,6 @@ export { default as PartyRoute } from './PartyRoute'
 export { default as RulesRoute } from './RulesRoute'
 export { WorldLayout, LocationsRoute, LocationRoute, NpcsRoute, NpcRoute, MonstersRoute, MonsterRoute, RaceListRoute, RaceDetailRoute, RaceEditorRoute } from './world'
 export {
-  EquipmentRoute,
   EquipmentHubRoute,
   WeaponsListRoute,
   ArmorListRoute,

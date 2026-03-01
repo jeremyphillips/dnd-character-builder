@@ -1,6 +1,6 @@
 import { AppBadge } from '@/ui/primitives'
 import type { AppBadgeTone } from '@/ui/types'
-import type { Visibility } from '@/data'
+import type { Visibility } from '@/shared/types'
 import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';

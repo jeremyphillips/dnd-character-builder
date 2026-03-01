@@ -13,6 +13,7 @@ import { getContentPatch } from '../contentPatchRepo';
 import { applyContentPatch } from '../patches/applyContentPatch';
 import { moneyToCp } from '@/shared/money';
 import type { ContentSource } from '../types';
+import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
 
 function toSummary(item: MagicItemEntry): MagicItemSummary {
   return {
@@ -58,7 +59,7 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
 
   async listSummaries(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     opts?: ListOptions,
   ): Promise<MagicItemSummary[]> {
     const [system, campaign, contentPatch] = await Promise.all([
@@ -95,7 +96,7 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
 
   async getEntry(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     id: string,
   ): Promise<MagicItemEntry | null> {
     const campaignEntry = await campaignMagicItemRepo.get(campaignId, id);
@@ -114,7 +115,6 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
 
   async createEntry(
     campaignId: string,
-    _systemId: string,
     input: MagicItemInput,
   ): Promise<MagicItemEntry> {
     const { name, description, accessPolicy, ...rest } = input;
@@ -133,7 +133,6 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
 
   async updateEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
     input: MagicItemInput,
   ): Promise<MagicItemEntry> {
@@ -153,7 +152,6 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
 
   async deleteEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
   ): Promise<boolean> {
     return campaignMagicItemRepo.remove(campaignId, id);

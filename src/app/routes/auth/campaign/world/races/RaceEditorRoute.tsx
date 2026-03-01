@@ -6,14 +6,14 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
-import type { Visibility } from '@/data/types';
+import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { raceRepo } from '@/features/content/domain/repo';
 import { validateRaceDelete } from '@/features/content/domain/validateRaceDelete';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules';
 import type { RaceInput } from '@/features/content/domain/types';
 import { AppAlert } from '@/ui/primitives';
 
@@ -72,7 +72,7 @@ export default function RaceEditorRoute() {
     if (isNew || !campaignId || !raceId) return;
     let cancelled = false;
 
-    raceRepo.getEntry(campaignId, DEFAULT_SYSTEM_ID, raceId)
+    raceRepo.getEntry(campaignId, DEFAULT_SYSTEM_RULESET_ID, raceId)
       .then(race => {
         if (cancelled) return;
         if (!race || race.source !== 'campaign') {
@@ -120,13 +120,13 @@ export default function RaceEditorRoute() {
 
     try {
       if (isNew) {
-        const created = await raceRepo.createEntry(campaignId, DEFAULT_SYSTEM_ID, input);
+        const created = await raceRepo.createEntry(campaignId, input);
         navigate(
           `/campaigns/${campaignId}/world/races/${created.id}`,
           { replace: true },
         );
       } else if (raceId) {
-        const updated = await raceRepo.updateEntry(campaignId, DEFAULT_SYSTEM_ID, raceId, input);
+        const updated = await raceRepo.updateEntry(campaignId, raceId, input);
         reset({
           name: updated.name,
           description: updated.description ?? '',
@@ -151,7 +151,7 @@ export default function RaceEditorRoute() {
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !raceId) return;
-    await raceRepo.deleteEntry(campaignId, DEFAULT_SYSTEM_ID, raceId);
+    await raceRepo.deleteEntry(campaignId, raceId);
     navigate(`/campaigns/${campaignId}/world/races`, { replace: true });
   }, [campaignId, raceId, navigate]);
 

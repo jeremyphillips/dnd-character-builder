@@ -25,7 +25,7 @@ import { getSystemRuleset, systemCatalog } from '@/features/mechanics/domain/cor
 import { resolveCampaignRuleset } from '@/features/mechanics/domain/core/rules/resolveCampaignRuleset';
 import { normalizeCampaignRulesetPatch } from '@/features/mechanics/domain/core/rules/normalizeCampaignRulesetPatch';
 import type { CampaignRulesetPatch } from '@/features/mechanics/domain/core/rules/ruleset.types';
-import type { ContentPolicy, MulticlassingRuleSet } from '@/data/ruleSets/ruleSets.types';
+import type { ContentPolicy, MulticlassingRuleSet } from '@/shared/types';
 import type { ValidationError } from '@/features/mechanics/domain/core/rules/validateCampaignRulesetPatch';
 import { AppAlert } from '@/ui/primitives';
 

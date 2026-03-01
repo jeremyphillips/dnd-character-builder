@@ -11,7 +11,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useViewerEquipment } from '@/features/campaign/hooks';
 import { weaponRepo } from '@/features/content/domain/repo';
 import type { WeaponSummary } from '@/features/content/domain/types';
-import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
 import { AppDataGrid } from '@/ui/patterns';
 import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import { makeOwnedColumn, makeOwnedFilter } from '@/ui/patterns';
@@ -42,7 +42,7 @@ export default function WeaponsListRoute() {
     let cancelled = false;
     setLoading(true);
 
-    weaponRepo.listSummaries(campaignId, DEFAULT_SYSTEM_ID)
+    weaponRepo.listSummaries(campaignId, DEFAULT_SYSTEM_RULESET_ID)
       .then(data => { if (!cancelled) setItems(data); })
       .catch(err => { if (!cancelled) setError((err as Error).message); })
       .finally(() => { if (!cancelled) setLoading(false); });

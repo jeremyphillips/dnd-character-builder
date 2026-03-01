@@ -1,5 +1,5 @@
 import { Avatar, Badge, Box } from '@mui/material'
-import type { CampaignMemberRole } from '@/shared'
+import type { CampaignMemberStoredRole } from '@/shared'
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
@@ -8,7 +8,7 @@ export interface AppAvatarProps {
   name?: string
   size?: AvatarSize
   shape?: 'circle' | 'rounded'
-  role?: CampaignMemberRole
+  role?: CampaignMemberStoredRole
   status?: 'online' | 'offline' | 'pending'
 }
 

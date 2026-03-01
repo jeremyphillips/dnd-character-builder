@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -14,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
-import { JsonPreviewField } from '@/ui/components/form';
+import { JsonPreviewField } from '@/ui/patterns';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import {
   getCampaignRulesetPatch,
@@ -28,6 +27,7 @@ import { normalizeCampaignRulesetPatch } from '@/features/mechanics/domain/core/
 import type { CampaignRulesetPatch } from '@/features/mechanics/domain/core/rules/ruleset.types';
 import type { ContentPolicy, MulticlassingRuleSet } from '@/data/ruleSets/ruleSets.types';
 import type { ValidationError } from '@/features/mechanics/domain/core/rules/validateCampaignRulesetPatch';
+import { AppAlert } from '@/ui/primitives';
 
 // ---------------------------------------------------------------------------
 // Catalog data for content editing
@@ -222,9 +222,9 @@ function ContentRuleEditor({
       </Box>
 
       {policy === 'only' && selectedIds.length === 0 && (
-        <Alert severity="warning" sx={{ mt: 1 }}>
+        <AppAlert tone="warning" sx={{ mt: 1 }}>
           No items selected — nothing will be allowed.
-        </Alert>
+        </AppAlert>
       )}
     </Box>
   );
@@ -387,7 +387,7 @@ export default function CampaignRulesetEditorRoute() {
   if (loadError || !patch) {
     return (
       <Box>
-        <Alert severity="error">{loadError ?? 'Could not load campaign ruleset.'}</Alert>
+        <AppAlert tone="danger">{loadError ?? 'Could not load campaign ruleset.'}</AppAlert>
       </Box>
     );
   }
@@ -402,21 +402,21 @@ export default function CampaignRulesetEditorRoute() {
       </Typography>
 
       {isNew && (
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <AppAlert tone="info" sx={{ mb: 2 }}>
           No ruleset patch exists yet for this campaign. Changes will be saved when you click Save.
-        </Alert>
+        </AppAlert>
       )}
 
       {!USE_DB_RULESET_PATCHES && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
+        <AppAlert tone="warning" sx={{ mb: 2 }}>
           In-memory mode — changes won't survive a full page reload.
-        </Alert>
+        </AppAlert>
       )}
 
-      {success && <Alert severity="success" sx={{ mb: 2 }}>Patch saved and validated.</Alert>}
+      {success && <AppAlert tone="success" sx={{ mb: 2 }}>Patch saved and validated.</AppAlert>}
 
       {validationErrors.length > 0 && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <AppAlert tone="danger" sx={{ mb: 2 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Validation errors:</Typography>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {validationErrors.map((e, i) => (
@@ -426,7 +426,7 @@ export default function CampaignRulesetEditorRoute() {
               </li>
             ))}
           </ul>
-        </Alert>
+        </AppAlert>
       )}
 
       {/* ---- Content Restrictions ---- */}

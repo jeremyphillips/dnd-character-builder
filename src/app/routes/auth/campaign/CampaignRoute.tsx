@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { Outlet, useMatch, Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { Hero } from '@/ui/elements'
-import { FormModal, ConfirmModal } from '@/ui/modals'
-import type { FieldConfig } from '@/ui/components/form'
-import { ROUTES } from '@/app/routes'
+import { AppHero } from '@/ui/patterns'
+import { FormModal, ConfirmModal } from '@/ui/patterns'
+import type { FieldConfig } from '@/ui/patterns'
 import Button from '@mui/material/Button'
-import Alert from '@mui/material/Alert'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import { apiFetch } from '@/app/api'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import CampaignPartySection from '@/features/character/sections/CampaignPartySection'
+import { AppAlert } from '@/ui/primitives'
 
 type InviteFormData = { email: string }
 
@@ -111,7 +110,7 @@ export default function CampaignRoute() {
 
   return (
     <div>
-      <Hero
+      <AppHero
         headline={activeCampaignName ?? ''}
         subheadline={subheadline}
         image={activeCampaign.identity?.imageUrl}
@@ -130,9 +129,9 @@ export default function CampaignRoute() {
       )}
 
       {inviteSuccess && (
-        <Alert severity="success" onClose={() => setInviteSuccess(null)} sx={{ mt: 2 }}>
+        <AppAlert tone="success" onClose={() => setInviteSuccess(null)} sx={{ mt: 2 }}>
           {inviteSuccess}
-        </Alert>
+        </AppAlert>
       )}
 
       <h3>Sessions</h3>

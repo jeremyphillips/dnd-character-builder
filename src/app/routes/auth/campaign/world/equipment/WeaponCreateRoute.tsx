@@ -7,13 +7,13 @@ import TextField from '@mui/material/TextField';
 
 import type { Visibility } from '@/data/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/components/fields';
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { weaponRepo } from '@/features/content/domain/repo';
 import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import type { WeaponInput } from '@/features/content/domain/types';
-import { JsonPreviewField } from '@/ui/components/form';
+import { JsonPreviewField } from '@/ui/patterns';
 
 type ValidationError = { path: string; code: string; message: string };
 

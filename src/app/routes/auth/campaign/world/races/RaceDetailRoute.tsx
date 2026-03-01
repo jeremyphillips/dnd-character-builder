@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -15,9 +14,9 @@ import type { Race } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
-import { KeyValueSection } from '@/ui/components/content';
-import { VisibilityChip } from '@/ui/components/fields';
+import { AppAlert, AppBadge } from '@/ui/primitives';
+import { KeyValueSection } from '@/ui/patterns';
+import { VisibilityBadge } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image'
 
 // TODO: reuse SystemContentPatchModal for other system content detail routes (equipment, spells, etc.)
@@ -55,7 +54,7 @@ export default function RaceDetailRoute() {
   }
 
   if (error || notFound || !race) {
-    return <Alert severity="error">{error ?? 'Race not found.'}</Alert>;
+    return <Box sx={{ maxWidth: 520, mx: 'auto', mt: 6 }}><AppAlert tone="danger">{error ?? 'Race not found.'}</AppAlert></Box>;
   }
 
   const listPath = `/campaigns/${campaignId}/world/races`;
@@ -123,7 +122,7 @@ export default function RaceDetailRoute() {
               label: 'Visibility',
               value:
                 race.accessPolicy && race.accessPolicy.scope !== 'public' ? (
-                  <VisibilityChip visibility={race.accessPolicy} />
+                  <VisibilityBadge visibility={race.accessPolicy} />
                 ) : (
                   'Public'
                 ),

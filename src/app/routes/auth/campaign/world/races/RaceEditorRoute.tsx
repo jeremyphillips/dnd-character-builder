@@ -2,20 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
 import type { Visibility } from '@/data/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/components/fields';
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { raceRepo } from '@/features/content/domain/repo';
 import { validateRaceDelete } from '@/features/content/domain/validateRaceDelete';
 import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import type { RaceInput } from '@/features/content/domain/types';
+import { AppAlert } from '@/ui/primitives';
 
 type ValidationError = { path: string; code: string; message: string };
 
@@ -169,7 +169,7 @@ export default function RaceEditorRoute() {
   }
 
   if (loadError) {
-    return <Alert severity="error">{loadError}</Alert>;
+    return <Box sx={{ maxWidth: 520, mx: 'auto', mt: 6 }}><AppAlert tone="danger">{loadError}</AppAlert></Box>;
   }
 
   return (

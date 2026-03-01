@@ -1,7 +1,6 @@
 // Owned column uses makeOwnedColumn helper; integrate with character equipment state.
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -13,12 +12,14 @@ import { useViewerEquipment } from '@/features/campaign/hooks';
 import { gearRepo } from '@/features/content/domain/repo';
 import type { GearSummary } from '@/features/content/domain/types';
 import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
-import AppDataGrid, { type AppDataGridColumn, type AppDataGridFilter } from '@/ui/components/AppDataGrid/AppDataGrid';
-import { makeOwnedColumn, makeOwnedFilter } from '@/ui/components/AppDataGrid/helpers/ownership';
-import { PageHeader } from '@/ui/elements';
+import { AppDataGrid } from '@/ui/patterns';
+import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
+import { makeOwnedColumn, makeOwnedFilter } from '@/ui/patterns';
+import { AppPageHeader } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 import { formatCp } from '@/shared/money';
 import { canManageContent, toViewerContext } from '@/shared/domain/capabilities';
+import { AppAlert } from '@/ui/primitives';
 
 export default function GearListRoute() {
   const { campaign, campaignId } = useActiveCampaign();
@@ -79,12 +80,12 @@ export default function GearListRoute() {
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return <AppAlert tone="danger">{error}</AppAlert>;
   }
 
   return (
     <Box>
-      <PageHeader
+      <AppPageHeader
         headline="Gear"
         breadcrumbData={breadcrumbs}
         actions={[

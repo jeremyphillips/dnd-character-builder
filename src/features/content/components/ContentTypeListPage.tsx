@@ -19,11 +19,11 @@ import Stack from '@mui/material/Stack';
 import AddIcon from '@mui/icons-material/Add';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
 
-import AppDataGrid, { type AppDataGridColumn } from '@/ui/components/AppDataGrid/AppDataGrid';
+import { AppDataGrid, type AppDataGridColumn } from '@/ui/patterns';
 import type { ContentSummary } from '@/features/content/domain/types';
 import { canBypassVisibility, canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
-import { VisibilityChip } from '@/ui/components/fields';
-import { PageHeader } from '@/ui/elements';
+import { VisibilityBadge } from '@/ui/patterns';
+import { AppPageHeader } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 
 export type ContentListItem = ContentSummary & {
@@ -118,7 +118,7 @@ const ContentTypeListPage = ({
         renderCell: (params: GridRenderCellParams) => {
           const policy = params.row.accessPolicy;
           if (!policy || policy.scope === 'public') return null;
-          return <VisibilityChip visibility={policy} />;
+          return <VisibilityBadge visibility={policy} />;
         },
       });
     }
@@ -161,7 +161,7 @@ const ContentTypeListPage = ({
 
   return (
     <Box>
-      <PageHeader
+      <AppPageHeader
         headline={typeLabelPlural}
         breadcrumbData={breadcrumbs}
       />

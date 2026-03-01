@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { AppModal, ConfirmModal } from '@/ui/modals';
+import { AppModal, ConfirmModal } from '@/ui/patterns';
 import type { ContentTypeKey } from '@/features/content/domain/patches/contentPatch.types';
 import {
   getContentPatch,

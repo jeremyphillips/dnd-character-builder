@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -11,8 +10,8 @@ import type { MagicItemEntry } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
-import { KeyValueSection } from '@/ui/components/content';
+import { AppAlert, AppBadge } from '@/ui/primitives';
+import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image';
 import { formatMoney } from '@/shared/money';
 
@@ -35,7 +34,7 @@ export default function MagicItemDetailRoute() {
   }
 
   if (error || notFound || !item) {
-    return <Alert severity="error">{error ?? 'Magic item not found.'}</Alert>;
+    return <AppAlert tone="danger">{error ?? 'Magic item not found.'}</AppAlert>;
   }
 
   const listPath = `/campaigns/${campaignId}/world/equipment/magic-items`;

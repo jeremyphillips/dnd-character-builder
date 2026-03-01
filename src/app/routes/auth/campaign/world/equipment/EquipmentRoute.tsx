@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
-import { Breadcrumbs } from '@/ui/elements'
+import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/hooks'
 import { equipment } from '@/data/equipment/equipment'
 import { EquipmentMediaTopCard } from '@/features/equipment/cards'

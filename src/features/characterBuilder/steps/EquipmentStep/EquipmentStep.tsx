@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { InvalidationNotice } from '@/features/characterBuilder/components'
-import { ButtonGroup } from '@/ui/elements'
+import { ButtonGroup } from '@/ui/patterns'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import {
   calculateEquipmentCostCp,

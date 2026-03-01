@@ -61,11 +61,9 @@ export default defineConfig({
       "@/shared": path.resolve(__dirname, "shared/types"),
       "@/shared/permissions": path.resolve(__dirname, "shared/permissions"),
       "@/steps": path.resolve(__dirname, "src/steps"),
-      "@/ui/badges": path.resolve(__dirname, "src/ui/badges"),
-      "@/ui/avatar": path.resolve(__dirname, "src/ui/avatar"),
-      "@/ui/cards": path.resolve(__dirname, "src/ui/cards"),
-      "@/ui/modals": path.resolve(__dirname, "src/ui/modals"),
-      "@/ui/stats": path.resolve(__dirname, "src/ui/stats"),
+      "@/ui/patterns": path.resolve(__dirname, "src/ui/patterns"),
+      "@/ui/primitives": path.resolve(__dirname, "src/ui/primitives"),
+      "@/ui/types": path.resolve(__dirname, "src/ui/types"),
       "@/utils": path.resolve(__dirname, "src/utils"),
     }
   }

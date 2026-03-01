@@ -5,7 +5,7 @@ import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { ROUTES } from '@/app/routes'
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { CharacterBuilderWizard } from '@/features/characterBuilder/components'
-import { AppModal } from '@/ui/modals'
+import { AppModal } from '@/ui/patterns'
 import type { StepId } from '@/features/characterBuilder/types'
 import { getProficiencySlotSummary } from '@/features/character/domain/validation'
 import { moneyToCp } from '@/shared/money'
@@ -34,7 +34,7 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import Alert from '@mui/material/Alert'
+import { AppAlert } from '@/ui/primitives'
 
 
 // ---------------------------------------------------------------------------
@@ -211,8 +211,8 @@ console.log('characterView', character)
 
   return (
     <Box sx={{ maxWidth: 920, mx: 'auto' }}>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && <AppAlert tone="danger" sx={{ mb: 2 }}>{error}</AppAlert>}
+      {success && <AppAlert tone="success" sx={{ mb: 2 }}>{success}</AppAlert>}
 
       {/* Alerts: pending approvals + level-up banner */}
       <CharacterAlerts

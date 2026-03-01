@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -11,8 +10,8 @@ import type { Armor } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
-import { KeyValueSection } from '@/ui/components/content';
+import { AppAlert, AppBadge } from '@/ui/primitives';
+import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image';
 import { formatMoney } from '@/shared/money';
 
@@ -35,7 +34,7 @@ export default function ArmorDetailRoute() {
   }
 
   if (error || notFound || !armor) {
-    return <Alert severity="error">{error ?? 'Armor not found.'}</Alert>;
+    return <Box sx={{ maxWidth: 520, mx: 'auto', mt: 6 }}><AppAlert tone="danger">{error ?? 'Armor not found.'}</AppAlert></Box>;
   }
 
   const listPath = `/campaigns/${campaignId}/world/equipment/armor`;

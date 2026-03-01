@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -11,10 +10,11 @@ import type { Gear } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
-import { KeyValueSection } from '@/ui/components/content';
+import { AppBadge } from '@/ui/primitives';
+import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image';
 import { formatMoney } from '@/shared/money';
+import { AppAlert } from '@/ui/primitives';
 
 export default function GearDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();
@@ -35,7 +35,7 @@ export default function GearDetailRoute() {
   }
 
   if (error || notFound || !gear) {
-    return <Alert severity="error">{error ?? 'Gear not found.'}</Alert>;
+    return <AppAlert tone="danger">{error ?? 'Gear not found.'}</AppAlert>;
   }
 
   const listPath = `/campaigns/${campaignId}/world/equipment/gear`;

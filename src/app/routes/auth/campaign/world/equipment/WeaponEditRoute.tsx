@@ -7,7 +7,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -17,7 +16,7 @@ import Typography from '@mui/material/Typography';
 
 import type { Visibility } from '@/data/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/components/fields';
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { weaponRepo } from '@/features/content/domain/repo';
@@ -27,8 +26,9 @@ import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campai
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
-import { JsonPreviewField } from '@/ui/components/form';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
+import { JsonPreviewField } from '@/ui/patterns';
+import { AppBadge } from '@/ui/primitives';
+import { AppAlert } from '@/ui/primitives';
 
 type ValidationError = { path: string; code: string; message: string };
 
@@ -188,7 +188,7 @@ export default function WeaponEditRoute() {
   }, [navigate, campaignId]);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>;
-  if (error || notFound || !weapon) return <Alert severity="error">{error ?? 'Weapon not found.'}</Alert>;
+  if (error || notFound || !weapon) return <AppAlert tone="error">{error ?? 'Weapon not found.'}</AppAlert>;
 
   // ── System patch UI ─────────────────────────────────────────────
   if (isSystem) {

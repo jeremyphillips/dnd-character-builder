@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { weaponRepo, armorRepo, gearRepo, magicItemRepo } from '@/features/content/domain/repo';
 import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
-import { PageHeader } from '@/ui/elements';
+import { AppPageHeader } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 
@@ -140,7 +140,7 @@ export default function EquipmentHubRoute() {
 
   return (
     <Box>
-      <PageHeader headline="Equipment" breadcrumbData={breadcrumbs} />
+      <AppPageHeader headline="Equipment" breadcrumbData={breadcrumbs} />
 
       <Box
         sx={{

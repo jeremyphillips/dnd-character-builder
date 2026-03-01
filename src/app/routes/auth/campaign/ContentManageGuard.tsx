@@ -1,10 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { Box, Stack, Typography, Alert, Button } from '@mui/material'
+import { Box, Stack, Typography, Button } from '@mui/material'
 
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { ROUTES } from '@/app/routes'
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
+import { AppAlert } from '@/ui/primitives'
 
 export default function ContentManageGuard() {
   const { user } = useAuth()
@@ -21,9 +22,9 @@ export default function ContentManageGuard() {
       <Box sx={{ p: 2 }}>
         <Stack spacing={2}>
           <Typography variant="h6">Access denied</Typography>
-          <Alert severity="error">
+          <AppAlert tone="danger">
             You don’t have permission to manage campaign content.
-          </Alert>
+          </AppAlert>
 
           {/* Optional: helpful actions */}
           <Stack direction="row" spacing={1}>

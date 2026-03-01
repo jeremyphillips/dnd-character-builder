@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography';
 
 import type { Visibility } from '@/data/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/components/fields';
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { armorRepo } from '@/features/content/domain/repo';
@@ -27,8 +27,8 @@ import { DEFAULT_SYSTEM_ID } from '@/features/mechanics/domain/core/rules/campai
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
-import { JsonPreviewField } from '@/ui/components/form';
-import { AppBadge } from '@/ui/badges/AppBadge/AppBadge';
+import { JsonPreviewField } from '@/ui/patterns';
+import { AppAlert, AppBadge } from '@/ui/primitives';
 
 type ValidationError = { path: string; code: string; message: string };
 
@@ -155,7 +155,7 @@ export default function ArmorEditRoute() {
   const handleBack = useCallback(() => navigate(`/campaigns/${campaignId}/world/equipment/armor`), [navigate, campaignId]);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>;
-  if (error || notFound || !armor) return <Alert severity="error">{error ?? 'Armor not found.'}</Alert>;
+  if (error || notFound || !armor) return <AppAlert tone="danger">{error ?? 'Armor not found.'}</AppAlert>;
 
   if (isSystem) {
     return (

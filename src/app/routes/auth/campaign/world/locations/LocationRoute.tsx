@@ -6,15 +6,16 @@ import type { Location } from '@/data/locations'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROUTES } from '@/app/routes'
 import { apiFetch } from '@/app/api'
-import { Hero, Breadcrumbs } from '@/ui/elements'
+import { Breadcrumbs, AppHero } from '@/ui/patterns'
+
 import { useBreadcrumbs } from '@/hooks'
 import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers'
 import { useCampaigns } from '@/features/campaign/hooks/useCampaigns'
 import {
   EditableTextField,
   EditableSelect,
-  VisibilityField,
-} from '@/ui/components'
+} from '@/ui/patterns'
+import { VisibilityField } from '@/ui/patterns'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -189,7 +190,7 @@ export default function LocationRoute() {
       <Breadcrumbs items={breadcrumbs} />
 
       {/* Hero — location image (leave as-is for now, inline editing refactored later) */}
-      <Hero
+      <AppHero
         headline={location.name}
         subheadline={location.type.charAt(0).toUpperCase() + location.type.slice(1)}
         image={location.imageUrl}

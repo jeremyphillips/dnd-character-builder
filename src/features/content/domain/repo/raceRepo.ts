@@ -29,6 +29,7 @@ import {
 } from '../campaignRaceRepo';
 import { getContentPatch } from '../contentPatchRepo';
 import { applyContentPatch } from '../patches/applyContentPatch';
+import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -61,7 +62,7 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
 
   async listSummaries(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     opts?: ListOptions,
   ): Promise<RaceSummary[]> {
     const [system, campaign, contentPatch] = await Promise.all([
@@ -95,7 +96,7 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
 
   async getEntry(
     campaignId: string,
-    systemId: string,
+    systemId: SystemRulesetId,
     id: string,
   ): Promise<Race | null> {
     const campaignRace = await getCampaignRace(campaignId, id);
@@ -114,7 +115,6 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
 
   async createEntry(
     campaignId: string,
-    _systemId: string,
     input: RaceInput,
   ): Promise<Race> {
     const result = await createCampaignRace(campaignId, input);
@@ -126,7 +126,6 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
 
   async updateEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
     patch: RaceInput,
   ): Promise<Race> {
@@ -139,7 +138,6 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
 
   async deleteEntry(
     campaignId: string,
-    _systemId: string,
     id: string,
   ): Promise<boolean> {
     return deleteCampaignRace(campaignId, id);

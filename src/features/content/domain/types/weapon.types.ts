@@ -7,22 +7,16 @@
 import type { EquipmentBase } from './equipment.types';
 import type { ContentItem, ContentSummary, ContentInput } from './content.types';
 import type { Money } from '@/shared/money/types';
+import type {
+  WeaponCategory,
+  WeaponMode,
+  WeaponProperty,
+  DamageType,
+} from '../vocab/weapons.vocab';
 
-export type WeaponCategory = 'simple' | 'martial';
+export type { WeaponCategory, WeaponMode, WeaponProperty, DamageType };
 
-export type WeaponMode = 'melee' | 'ranged';
-
-export type WeaponProperty =
-  | 'light'
-  | 'finesse'
-  | 'thrown'
-  | 'two-handed'
-  | 'versatile'
-  | 'reach'
-  | 'special'
-  | 'ammunition'
-  | 'loading'
-  | 'heavy';
+// export type Mastery = 'slow' | 'nick' | 'push' | 'vex' | 'sap' | 'topple' | 'graze';
 
 export interface WeaponFields extends EquipmentBase {
   cost: Money;
@@ -32,7 +26,7 @@ export interface WeaponFields extends EquipmentBase {
   properties: WeaponProperty[];
   damage: { default: string; versatile?: string };
   damageType: string;
-  mastery: string;
+  // mastery: string;
 }
 
 /** Canonical weapon content item */

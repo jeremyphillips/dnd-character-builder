@@ -22,7 +22,7 @@ import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { magicItemRepo } from '@/features/content/domain/repo';
-import type { MagicItem, MagicItemInput } from '@/features/content/domain/types';
+import type { MagicItem, MagicItemInput, MagicItemFormValues } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
@@ -31,17 +31,6 @@ import { JsonPreviewField } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 
 type ValidationError = { path: string; code: string; message: string };
-
-type FormValues = {
-  name: string;
-  description: string;
-  imageKey: string;
-  accessPolicy: Visibility;
-  slot: string;
-  rarity: string;
-  requiresAttunement: boolean;
-  effectsJson: string;
-};
 
 const FORM_ID = 'magic-item-edit-form';
 
@@ -60,7 +49,7 @@ export default function MagicItemEditRoute() {
     fetchEntry: magicItemRepo.getEntry,
   });
 
-  const methods = useForm<FormValues>({
+  const methods = useForm<MagicItemFormValues>({
     defaultValues: { name: '', description: '', imageKey: '', accessPolicy: DEFAULT_VISIBILITY_PUBLIC, slot: 'wondrous', rarity: 'common', requiresAttunement: false, effectsJson: '[]' },
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
@@ -102,7 +91,7 @@ export default function MagicItemEditRoute() {
   const policyValue = watch('accessPolicy');
   const handlePolicyChange = useCallback((next: Visibility) => setValue('accessPolicy', next, { shouldDirty: true }), [setValue]);
 
-  const handleCampaignSubmit = useCallback(async (values: FormValues) => {
+  const handleCampaignSubmit = useCallback(async (values: MagicItemFormValues) => {
     if (!campaignId || !magicItemId) return;
     setSaving(true); setSuccess(false); setErrors([]);
     let effects: unknown[] = [];

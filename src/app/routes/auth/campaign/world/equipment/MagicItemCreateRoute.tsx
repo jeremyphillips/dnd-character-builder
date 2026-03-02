@@ -13,25 +13,14 @@ import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { magicItemRepo } from '@/features/content/domain/repo';
-import type { MagicItemInput } from '@/features/content/domain/types';
+import type { MagicItemInput, MagicItemFormValues } from '@/features/content/domain/types';
 import { JsonPreviewField } from '@/ui/patterns';
 
 type ValidationError = { path: string; code: string; message: string };
 
-type FormValues = {
-  name: string;
-  description: string;
-  imageKey: string;
-  accessPolicy: Visibility;
-  slot: string;
-  rarity: string;
-  requiresAttunement: boolean;
-  effectsJson: string;
-};
-
 const FORM_ID = 'magic-item-create-form';
 
-const DEFAULT_VALUES: FormValues = {
+const DEFAULT_VALUES: MagicItemFormValues = {
   name: '',
   description: '',
   imageKey: '',
@@ -47,7 +36,7 @@ export default function MagicItemCreateRoute() {
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<FormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<MagicItemFormValues>({ defaultValues: DEFAULT_VALUES });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);
@@ -58,7 +47,7 @@ export default function MagicItemCreateRoute() {
     setValue('accessPolicy', next, { shouldDirty: true });
   }, [setValue]);
 
-  const handleSubmit = useCallback(async (values: FormValues) => {
+  const handleSubmit = useCallback(async (values: MagicItemFormValues) => {
     if (!campaignId) return;
     setSaving(true);
     setErrors([]);

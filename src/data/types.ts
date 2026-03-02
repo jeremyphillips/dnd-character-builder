@@ -64,18 +64,3 @@ export interface Setting {
   classOverrides?: ClassOverrideConfig
   locations?: Location[]
 }
-
-export type SettingId = 
-  | 'alQadim'
-  | 'birthright'
-  | 'blackmoor'
-  | 'darkSun'
-  | 'dragonlance'
-  | 'forgottenRealms'
-  | 'greyhawk'
-  | 'lankhmar'
-  | 'mystara'
-  | 'planescape'
-  | 'ravenloft'
-  | 'spellJammer';
-

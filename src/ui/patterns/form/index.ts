@@ -6,9 +6,13 @@ export { default as FormCheckboxField } from './FormCheckboxField'
 export { default as FormImageUploadField } from './FormImageUploadField'
 export { default as FormDateTimeField } from './FormDateTimeField'
 export { default as FormVisibilityField } from './FormVisibilityField'
+export { default as FormJsonField } from './FormJsonField'
 export { default as FormActions } from './FormActions'
 export { default as DynamicField } from './DynamicField'
-export { default as DynamicFormRenderer } from './DynamicFormRenderer'
+export {
+  default as DynamicFormRenderer,
+  type FormDriver,
+} from './DynamicFormRenderer'
 export { default as TabbedFormLayout } from './TabbedFormLayout'
 export { default as JsonPreviewField } from './JsonPreviewField'
 export type { FieldConfig, FormSection, SelectOption } from './form.types'

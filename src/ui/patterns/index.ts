@@ -64,7 +64,10 @@ export { default as FormSelectField } from './form/FormSelectField'
 export { default as FormRadioField } from './form/FormRadioField'
 export { default as FormCheckboxField } from './form/FormCheckboxField'
 export { default as DynamicField } from './form/DynamicField'
-export { default as DynamicFormRenderer } from './form/DynamicFormRenderer'
+export {
+  default as DynamicFormRenderer,
+  type FormDriver,
+} from './form/DynamicFormRenderer'
 export { default as TabbedFormLayout } from './form/TabbedFormLayout'
 export { default as JsonPreviewField } from './form/JsonPreviewField'
 export type { FieldConfig, FormSection, SelectOption } from './form/form.types' 

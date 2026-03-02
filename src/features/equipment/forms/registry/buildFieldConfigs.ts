@@ -79,6 +79,15 @@ export const buildFieldConfigs = <
           allowHidden: false,
         });
         break;
+      case 'json':
+        configs.push({
+          ...base,
+          type: 'json',
+          placeholder: spec.placeholder,
+          minRows: spec.minRows ?? 4,
+          maxRows: spec.maxRows ?? 16,
+        });
+        break;
       default:
         break;
     }

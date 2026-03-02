@@ -10,7 +10,8 @@ export type FieldSpecKind =
   | 'checkbox'
   | 'numberText'
   | 'imageUpload'
-  | 'visibility';
+  | 'visibility'
+  | 'json';
 
 export type FieldSpecOption = { value: string; label: string };
 
@@ -36,4 +37,8 @@ export type FieldSpec<
   formatForDisplay?: (itemValue: unknown) => React.ReactNode;
   /** Default for initial form state. */
   defaultValue?: FormValues[keyof FormValues];
+  /** For kind: 'json' — min rows for textarea. */
+  minRows?: number;
+  /** For kind: 'json' — max rows for textarea. */
+  maxRows?: number;
 };

@@ -62,6 +62,13 @@ export type FieldConfig =
       characters?: { id: string; name: string }[]
       allowHidden?: boolean
     }
+  | BaseFieldConfig & {
+      type: 'json'
+      path?: string
+      placeholder?: string
+      minRows?: number
+      maxRows?: number
+    }
   | Omit<BaseFieldConfig, 'label'> & {
       type: 'hidden'
       label?: string

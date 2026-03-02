@@ -7,6 +7,7 @@ import FormCheckboxField from './FormCheckboxField'
 import FormImageUploadField from './FormImageUploadField'
 import FormDateTimeField from './FormDateTimeField'
 import FormVisibilityField from './FormVisibilityField'
+import FormJsonField from './FormJsonField'
 
 type DynamicFieldProps = {
   field: FieldConfig
@@ -118,6 +119,20 @@ export default function DynamicField({ field }: DynamicFieldProps) {
           disabled={field.disabled}
           characters={field.characters}
           allowHidden={field.allowHidden}
+        />
+      )
+
+    case 'json':
+      return (
+        <FormJsonField
+          name={field.name}
+          label={field.label}
+          required={field.required}
+          disabled={field.disabled}
+          placeholder={field.placeholder}
+          helperText={field.helperText}
+          minRows={field.minRows}
+          maxRows={field.maxRows}
         />
       )
 

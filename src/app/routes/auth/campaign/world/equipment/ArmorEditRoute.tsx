@@ -4,7 +4,7 @@
  * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
  */
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -141,8 +141,15 @@ export default function ArmorEditRoute() {
     });
   }, [armor, initialPatch]);
 
+  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
+
   const handlePatchSave = useCallback(async () => {
     if (!campaignId || !armorId || !driver) return;
+    const ok = validationApiRef.current?.validateAll?.() ?? true;
+    if (!ok) {
+      setSuccess(false);
+      return;
+    }
     setSaving(true);
     setSuccess(false);
     setErrors([]);
@@ -232,6 +239,9 @@ export default function ArmorEditRoute() {
               getValue: driver.getValue,
               setValue: driver.setValue,
               unsetValue: driver.unsetValue,
+            }}
+            onValidationApi={(api) => {
+              validationApiRef.current = api;
             }}
           />
           {Object.keys(initialPatch).length > 0 && (

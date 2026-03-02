@@ -2,7 +2,7 @@
  * Renders a single field using a patch driver (getValue/setValue).
  * Used when DynamicFormRenderer is in patch mode.
  */
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   Box,
   Checkbox,
@@ -19,6 +19,7 @@ import {
   TextField,
 } from '@mui/material';
 import type { FieldConfig } from './form.types';
+import { usePatchValidation } from './validation/PatchValidationContext';
 import ImageUploadField from './ImageUploadField';
 import JsonPreviewField from './JsonPreviewField';
 import VisibilityField from './VisibilityField';
@@ -40,6 +41,24 @@ const getPath = (field: FieldConfig): string =>
 
 export default function DriverField({ field, driver }: DriverFieldProps) {
   const path = getPath(field);
+  const patchValidation = usePatchValidation();
+  const errorMessage = patchValidation?.getError(field.name);
+
+  const handleChange = useCallback(
+    (value: unknown) => {
+      driver.setValue(path, value);
+      patchValidation?.clearError(field.name);
+    },
+    [driver, path, field.name, patchValidation],
+  );
+
+  const handleBlur = useCallback(() => {
+    if (!patchValidation) return;
+    patchValidation.validateOne(field, (p) => driver.getValue(p));
+  }, [patchValidation, field, driver]);
+
+  const helperText = errorMessage ?? field.helperText;
+  const hasError = Boolean(errorMessage);
 
   switch (field.type) {
     case 'text':
@@ -48,12 +67,14 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
           label={field.label}
           fullWidth
           value={String(driver.getValue(path) ?? '')}
-          onChange={(e) => driver.setValue(path, e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           required={field.required}
           disabled={field.disabled}
           placeholder={field.placeholder}
           type={field.inputType ?? 'text'}
-          helperText={field.helperText}
+          helperText={helperText}
+          error={hasError}
           multiline={field.multiline}
           rows={field.multiline ? field.rows : undefined}
         />
@@ -67,22 +88,25 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
           multiline
           rows={field.rows ?? 4}
           value={String(driver.getValue(path) ?? '')}
-          onChange={(e) => driver.setValue(path, e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           required={field.required}
           disabled={field.disabled}
           placeholder={field.placeholder}
-          helperText={field.helperText}
+          helperText={helperText}
+          error={hasError}
         />
       );
 
     case 'select':
       return (
-        <FormControl fullWidth disabled={field.disabled} required={field.required}>
+        <FormControl fullWidth disabled={field.disabled} required={field.required} error={hasError}>
           <InputLabel>{field.label}</InputLabel>
           <Select
             label={field.label}
             value={String(driver.getValue(path) ?? '')}
-            onChange={(e) => driver.setValue(path, e.target.value)}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
             displayEmpty
           >
             {field.placeholder && (
@@ -96,20 +120,21 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
               </MenuItem>
             ))}
           </Select>
-          {field.helperText && (
-            <FormHelperText>{field.helperText}</FormHelperText>
+          {(helperText || hasError) && (
+            <FormHelperText error={hasError}>{helperText}</FormHelperText>
           )}
         </FormControl>
       );
 
     case 'radio':
       return (
-        <FormControl disabled={field.disabled} required={field.required}>
+        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
           <FormLabel required={field.required}>{field.label}</FormLabel>
           <RadioGroup
             row={field.row}
             value={String(driver.getValue(path) ?? '')}
-            onChange={(e) => driver.setValue(path, e.target.value)}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
           >
             {field.options.map((opt) => (
               <FormControlLabel
@@ -120,30 +145,33 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
               />
             ))}
           </RadioGroup>
+          {(helperText || hasError) && (
+            <FormHelperText error={hasError}>{helperText}</FormHelperText>
+          )}
         </FormControl>
       );
 
     case 'checkbox':
       return (
-        <FormControl disabled={field.disabled} required={field.required}>
+        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
           <FormControlLabel
             control={
               <Checkbox
                 checked={Boolean(driver.getValue(path))}
-                onChange={(e) => driver.setValue(path, e.target.checked)}
+                onChange={(e) => handleChange(e.target.checked)}
               />
             }
             label={field.label}
           />
-          {field.helperText && (
-            <FormHelperText>{field.helperText}</FormHelperText>
+          {(helperText || hasError) && (
+            <FormHelperText error={hasError}>{helperText}</FormHelperText>
           )}
         </FormControl>
       );
 
     case 'checkboxGroup':
       return (
-        <FormControl disabled={field.disabled} required={field.required}>
+        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
           <FormLabel required={field.required}>{field.label}</FormLabel>
           <FormGroup row={field.row}>
             {(field.options ?? []).map((opt) => {
@@ -154,7 +182,7 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
                 const next = selected.includes(opt.value)
                   ? selected.filter((v) => v !== opt.value)
                   : [...selected, opt.value];
-                driver.setValue(path, next);
+                handleChange(next);
               };
               return (
                 <FormControlLabel
@@ -170,8 +198,8 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
               );
             })}
           </FormGroup>
-          {field.helperText && (
-            <FormHelperText>{field.helperText}</FormHelperText>
+          {(helperText || hasError) && (
+            <FormHelperText error={hasError}>{helperText}</FormHelperText>
           )}
         </FormControl>
       );
@@ -180,7 +208,7 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
       return (
         <ImageUploadField
           value={driver.getValue(path) as string | null | undefined}
-          onChange={(v) => driver.setValue(path, v)}
+          onChange={(v) => handleChange(v)}
           label={field.label}
           disabled={field.disabled}
           maxHeight={field.maxHeight}
@@ -205,11 +233,13 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
             })()
           }
           onChange={(e) =>
-            driver.setValue(path, e.target.value ? new Date(e.target.value).toISOString() : null)
+            handleChange(e.target.value ? new Date(e.target.value).toISOString() : null)
           }
+          onBlur={handleBlur}
           required={field.required}
           disabled={field.disabled}
-          helperText={field.helperText}
+          helperText={helperText}
+          error={hasError}
           InputLabelProps={{ shrink: true }}
         />
       );
@@ -223,7 +253,7 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
               allowCharacterIds: [],
             }
           }
-          onChange={(v) => driver.setValue(path, v)}
+          onChange={(v) => handleChange(v)}
           disabled={field.disabled}
           required={field.required}
           characters={field.characters}
@@ -236,6 +266,8 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
           field={field}
           path={path}
           driver={driver}
+          errorMessage={errorMessage}
+          onClearError={() => patchValidation?.clearError(field.name)}
         />
       );
 
@@ -263,10 +295,14 @@ function DriverJsonField({
   field,
   path,
   driver,
+  errorMessage,
+  onClearError,
 }: {
   field: Extract<FieldConfig, { type: 'json' }>;
   path: string;
   driver: PatchDriver;
+  errorMessage?: string;
+  onClearError?: () => void;
 }) {
   const [text, setText] = useState(() => initJsonText(driver.getValue(path)));
 
@@ -276,6 +312,7 @@ function DriverJsonField({
 
   const handleChange = (next: string) => {
     setText(next);
+    onClearError?.();
     if (next.trim().length === 0) {
       if (driver.unsetValue) {
         driver.unsetValue(path);
@@ -292,6 +329,8 @@ function DriverJsonField({
     }
   };
 
+  const helperText = errorMessage ?? field.helperText;
+
   return (
     <Box>
       <JsonPreviewField
@@ -299,10 +338,11 @@ function DriverJsonField({
         value={text}
         onChange={handleChange}
         placeholder={field.placeholder}
-        helperText={field.helperText}
+        helperText={helperText}
         minRows={field.minRows ?? 4}
         maxRows={field.maxRows ?? 16}
         required={field.required}
+        error={Boolean(errorMessage)}
       />
     </Box>
   );

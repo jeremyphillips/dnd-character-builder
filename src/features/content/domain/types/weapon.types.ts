@@ -2,25 +2,30 @@
  * Canonical Weapon content types.
  *
  * Extends the generic ContentItem interfaces with weapon-specific fields.
- * The data shape mirrors WeaponItem from src/data/equipment but adds
  * content-system metadata (source, accessPolicy, patched).
  */
+import type { EquipmentBase } from './equipment.types';
+import type { ContentItem, ContentSummary, ContentInput } from './content.types';
 import type { Money } from '@/shared/money/types';
-import type { Weight } from '@/shared/weight/types';
-import type {
-  ContentItem,
-  ContentSummary,
-  ContentInput,
-} from './content.types';
-import type {
-  WeaponCategory,
-  WeaponMode,
-  WeaponProperty,
-} from '@/data/equipment/equipment.types';
 
-export interface Weapon extends ContentItem {
+export type WeaponCategory = 'simple' | 'martial';
+
+export type WeaponMode = 'melee' | 'ranged';
+
+export type WeaponProperty =
+  | 'light'
+  | 'finesse'
+  | 'thrown'
+  | 'two-handed'
+  | 'versatile'
+  | 'reach'
+  | 'special'
+  | 'ammunition'
+  | 'loading'
+  | 'heavy';
+
+export interface WeaponFields extends EquipmentBase {
   cost: Money;
-  weight?: Weight;
   category: WeaponCategory;
   mode: WeaponMode;
   range?: { normal: number; long?: number; unit: 'ft' };
@@ -30,22 +35,17 @@ export interface Weapon extends ContentItem {
   mastery: string;
 }
 
-export interface WeaponSummary extends ContentSummary {
+/** Canonical weapon content item */
+export type Weapon = ContentItem & WeaponFields;
+
+/** Minimal list/option model */
+export type WeaponSummary = ContentSummary & {
   category: WeaponCategory;
   costCp: number;
   damage: string;
   damageType: string;
   properties: WeaponProperty[];
-}
+};
 
-export interface WeaponInput extends ContentInput {
-  cost?: Money;
-  weight?: Weight;
-  category?: WeaponCategory;
-  mode?: WeaponMode;
-  range?: { normal: number; long?: number; unit: 'ft' };
-  properties?: WeaponProperty[];
-  damage?: { default: string; versatile?: string };
-  damageType?: string;
-  mastery?: string;
-}
+/** Create/edit payload */
+export type WeaponInput = ContentInput & Partial<WeaponFields>;

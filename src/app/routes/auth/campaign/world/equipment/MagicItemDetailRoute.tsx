@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { ContentDetailScaffold } from '@/features/content/components';
 import { magicItemRepo } from '@/features/content/domain/repo';
-import type { MagicItemEntry } from '@/features/content/domain/types';
+import type { MagicItem } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
@@ -23,7 +23,7 @@ export default function MagicItemDetailRoute() {
   const ctx = toViewerContext(campaign?.viewer);
   const canManage = canManageContent(ctx);
 
-  const { entry: item, loading, error, notFound } = useCampaignContentEntry<MagicItemEntry>({
+  const { entry: item, loading, error, notFound } = useCampaignContentEntry<MagicItem>({
     campaignId: campaignId ?? undefined,
     entryId: magicItemId,
     fetchEntry: magicItemRepo.getEntry,

@@ -1,6 +1,7 @@
-import type { MagicItem } from './equipment.types'
+import type { MagicItemFields } from "@/features/content/domain";
 
-export const magicItems: MagicItem[] = [
+/** @deprecated to be migrated to system catalog */
+export const magicItems: MagicItemFields[] = [
   {
     id: 'flame-tongue',
     name: 'Flame Tongue',

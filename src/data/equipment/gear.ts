@@ -1,6 +1,7 @@
-import type { GearItem } from './equipment.types'
+import type { GearFields } from '@/features/content/domain/types'
 
-export const gear: GearItem[] = [
+/** @deprecated to be migrated to system catalog */
+export const gear: GearFields[] = [
   // ——— PACKS & CONTAINERS ———
   {
     id: 'backpack',

@@ -7,15 +7,19 @@
  * patches are applied on top of via `resolveCampaignRuleset`.
  */
 import { equipment } from '@/data/equipment/equipment'
+import { getSystemWeapons } from './systemCatalog.weapons'
+import { getSystemArmor } from './systemCatalog.armor'
+import { getSystemGear } from './systemCatalog.gear'
+import { getSystemMagicItems } from './systemCatalog.magicItems'
 import { spells } from '@/data/spells'
 import type { SpellData } from '@/data/spells'
 import { monsters } from '@/data/monsters'
 import { classes } from "@/data/classes"
 import type { CharacterClass } from '@/data/classes.types'
 import type { WealthTier } from '@/data/classes.types'
-import type { Race } from '@/features/content/domain/types'
+import type { Armor, Gear, MagicItem, Race, Weapon } from '@/features/content/domain/types'
 import { getSystemRaces } from './systemCatalog.races'
-import type { WeaponItem, ArmorItem, GearItem, MagicItem, EnchantmentTemplate } from '@/data/equipment'
+import type { EnchantmentTemplate } from '@/features/content/domain/types'
 import type { Monster } from '@/data/monsters/monsters.types'
 import { standardAlignments } from '@/data/ruleSets/alignments'
 import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E } from '@/data/ruleSets/spellSlotTables'
@@ -43,9 +47,9 @@ export type CampaignCatalog = {
   classIds:                 readonly string[]
   racesById:                Record<string, Race>
   raceIds:                  readonly string[]
-  weaponsById:              Record<string, WeaponItem>
-  armorById:                Record<string, ArmorItem>
-  gearById:                 Record<string, GearItem>
+  weaponsById:              Record<string, Weapon>
+  armorById:                Record<string, Armor>
+  gearById:                 Record<string, Gear>
   magicItemsById:           Record<string, MagicItem>
   enhancementTemplatesById: Record<string, EnchantmentTemplate>
   spellsById:               Record<string, SpellData>
@@ -58,24 +62,20 @@ export type CampaignCatalog = {
 
 const races = getSystemRaces(DEFAULT_SYSTEM_RULESET_ID);
 
-// Runtime validation: equipment.weapons must be defined for weaponsById
-if (!equipment.weapons || !Array.isArray(equipment.weapons)) {
-  console.error('[systemCatalog] equipment.weapons is invalid', {
-    weapons: equipment.weapons,
-    type: typeof equipment.weapons,
-    isArray: Array.isArray(equipment.weapons),
-  });
-}
+const weapons = getSystemWeapons(DEFAULT_SYSTEM_RULESET_ID);
+const armor = getSystemArmor(DEFAULT_SYSTEM_RULESET_ID);
+const gear = getSystemGear(DEFAULT_SYSTEM_RULESET_ID);
+const magicItems = getSystemMagicItems(DEFAULT_SYSTEM_RULESET_ID);
 
 export const systemCatalog: CampaignCatalog = {
   classesById:              keyBy(classes),
   classIds:                 Object.keys(classes),
   racesById:                keyBy(races),
   raceIds:                  races.map(r => r.id),
-  weaponsById:              keyBy(equipment.weapons),
-  armorById:                keyBy(equipment.armor),
-  gearById:                 keyBy(equipment.gear),
-  magicItemsById:           keyBy(equipment.magicItems),
+  weaponsById:              keyBy(weapons),
+  armorById:                keyBy(armor),
+  gearById:                 keyBy(gear),
+  magicItemsById:           keyBy(magicItems),
   enhancementTemplatesById: keyBy(equipment.enchantments.enhancementTemplates),
   spellsById:               keyBy(spells),
   monstersById:             keyBy(monsters),

@@ -22,7 +22,7 @@ import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { magicItemRepo } from '@/features/content/domain/repo';
-import type { MagicItemEntry, MagicItemInput } from '@/features/content/domain/types';
+import type { MagicItem, MagicItemInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
   getContentPatch, getEntryPatch, upsertEntryPatch, removeEntryPatch,
@@ -54,7 +54,7 @@ export default function MagicItemEditRoute() {
   const viewer = campaign?.viewer;
   const canDelete = Boolean(magicItemId && campaignId && (viewer?.isPlatformAdmin || viewer?.isOwner));
 
-  const { entry: item, loading, error, notFound } = useCampaignContentEntry<MagicItemEntry>({
+  const { entry: item, loading, error, notFound } = useCampaignContentEntry<MagicItem>({
     campaignId: campaignId ?? undefined,
     entryId: magicItemId,
     fetchEntry: magicItemRepo.getEntry,

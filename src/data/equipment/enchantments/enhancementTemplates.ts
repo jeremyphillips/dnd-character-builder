@@ -1,5 +1,6 @@
-import type { EnchantmentTemplate } from './enchantmentTemplates.types'
+import type { EnchantmentTemplate } from '@/features/content/domain/types';
 
+/** @deprecated to be migrated to system catalog */
 export const enhancementTemplates: EnchantmentTemplate[] = [
   {
     id: 'enhancement-plus-1',

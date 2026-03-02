@@ -28,6 +28,10 @@ function toSummary(weapon: Weapon): WeaponSummary {
     id: weapon.id,
     name: weapon.name,
     source: weapon.source,
+    ...(weapon.source === 'system'
+      ? { systemId: weapon.systemId }
+      : { campaignId: weapon.campaignId }),
+      
     imageKey: weapon.imageKey,
     accessPolicy: weapon.accessPolicy,
     patched: weapon.patched,

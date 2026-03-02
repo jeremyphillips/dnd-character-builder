@@ -6,45 +6,46 @@
  * content-system metadata (source, accessPolicy, patched).
  */
 import type { Money } from '@/shared/money/types';
-import type { Weight } from '@/shared/weight/types';
 import type {
   ContentItem,
   ContentSummary,
   ContentInput,
 } from './content.types';
-import type {
-  ArmorCategory,
-  Material,
-} from '@/data/equipment/equipment.types';
+import type { EquipmentBase } from './equipment.types';
 
-export interface Armor extends ContentItem {
+type DexContribution =
+  | { mode: 'full' }
+  | { mode: 'capped'; maxBonus: number }  // e.g. 2
+  | { mode: 'none' };
+
+export type Material = 'metal' | 'organic' | 'fabric' | 'wood' | 'stone'
+
+export type ArmorCategory =
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'shields';
+
+export interface ArmorFields extends EquipmentBase {
   cost: Money;
-  weight?: Weight;
   category: ArmorCategory;
   material: Material;
   baseAC?: number;
-  dex?: { mode: 'full' } | { mode: 'capped'; maxBonus: number } | { mode: 'none' };
+  dex?: DexContribution;
   stealthDisadvantage?: boolean;
   minStrength?: number;
   acBonus?: number;
 }
 
-export interface ArmorSummary extends ContentSummary {
+export type ArmorSummary = ContentSummary & {
   category: ArmorCategory;
   costCp: number;
   baseAC?: number;
   acBonus?: number;
   stealthDisadvantage: boolean;
-}
+};
 
-export interface ArmorInput extends ContentInput {
-  cost?: Money;
-  weight?: Weight;
-  category?: ArmorCategory;
-  material?: Material;
-  baseAC?: number;
-  dex?: { mode: 'full' } | { mode: 'capped'; maxBonus: number } | { mode: 'none' };
-  stealthDisadvantage?: boolean;
-  minStrength?: number;
-  acBonus?: number;
-}
+export type ArmorInput = ContentInput & Partial<ArmorFields>;
+
+export type Armor = ContentItem & ArmorFields;
+

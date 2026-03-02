@@ -1,6 +1,7 @@
-import type { ArmorItem } from './equipment.types'
+import type { ArmorFields } from "@/features/content/domain";
 
-export const armor: readonly ArmorItem[] = [
+/** @deprecated to be migrated to system catalog */
+export const armor: readonly ArmorFields[] = [
   // LIGHT ARMOR
   {
     id: 'leather',

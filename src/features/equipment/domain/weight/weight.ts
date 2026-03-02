@@ -1,4 +1,4 @@
-import type { ArmorItem, GearItem, WeaponItem } from '@/data/equipment'
+import type { Armor, Gear, Weapon } from '@/features/content/domain/types'
 import type { WeightUnit, Weight } from '@/shared/weight/types'
 
 const WEIGHT_TO_LB: Record<WeightUnit, number> = {
@@ -15,9 +15,9 @@ export const calculateEquipmentWeight = (
   weapons: string[] = [],
   armor: string[] = [],
   gear: string[] = [],
-  weaponData: readonly WeaponItem[],
-  armorData: readonly ArmorItem[],
-  gearData: readonly GearItem[] = []
+  weaponData: readonly Weapon[],
+  armorData: readonly Armor[],
+  gearData: readonly Gear[] = []
 ): number => {
 
   const weaponMap = new Map(weaponData.map(w => [w.id, w]))

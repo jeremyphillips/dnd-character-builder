@@ -29,17 +29,13 @@ import {
   normalizeEquipmentInstances,
 } from '@/features/equipment/domain'
 import { moneyToCp, cpToDenoms } from '@/shared/money'
-import { equipment } from "@/data/equipment/equipment"
-// import type { EditionId, SettingId } from "@/data"
 import type { CharacterType } from "@/shared/types/character.core"
-const {
-  weapons: weaponsData,
-  armor: armorData,
-  gear: gearData
-} = equipment
 
 export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
-  const { ruleset } = useCampaignRules()
+  const { ruleset, catalog } = useCampaignRules()
+  const weaponsData = Object.values(catalog.weaponsById)
+  const armorData = Object.values(catalog.armorById)
+  const gearData = Object.values(catalog.gearById)
   const xpTable = ruleset.mechanics.progression.experience
 
   const [state, setState] = useState<CharacterBuilderState>(
@@ -164,10 +160,6 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     character: import('@/shared').CharacterSheet & {
       _id?: string
       name?: string
-      /** @deprecated Legacy field — backfills classes[0].classId when missing. */
-      class?: string
-      /** @deprecated Legacy field — backfills totalLevel when missing. */
-      level?: number
     },
     stepId: import('../types').StepId,
   ) => {
@@ -549,14 +541,13 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
     })
   }
 
-  const computeEquipmentTotals = (
-    weaponIds: string[],
-    armorIds: string[],
-    gearIds: string[],
-  ) => ({
-    weight: calculateEquipmentWeight(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData),
-    equipmentCostCp: calculateEquipmentCostCp(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData),
-  })
+  const computeEquipmentTotals = useCallback(
+    (weaponIds: string[], armorIds: string[], gearIds: string[]) => ({
+      weight: calculateEquipmentWeight(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData),
+      equipmentCostCp: calculateEquipmentCostCp(weaponIds, armorIds, gearIds, weaponsData, armorData, gearData),
+    }),
+    [weaponsData, armorData, gearData],
+  )
 
   const updateWeapons = (weaponIds: string[]) => {
     setState(prev => {

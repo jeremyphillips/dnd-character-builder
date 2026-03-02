@@ -1,4 +1,5 @@
-import type { MagicItemRarity, Money } from '../equipment.types'
+import type { MagicItemRarity } from './magicItem.types'
+import type { Money } from '@/shared/money/types' 
 
 export type EnchantableSlot = 'weapon' | 'armor' | 'shield'
 

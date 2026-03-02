@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import type { CampaignContentRepo, ListOptions } from './contentRepo.types';
-import type { MagicItemEntry, MagicItemSummary, MagicItemInput } from '../types/magicItem.types';
+import type { MagicItem, MagicItemSummary, MagicItemInput } from '../types/magicItem.types';
 import { getSystemMagicItems, getSystemMagicItem } from '@/features/mechanics/domain/core/rules/systemCatalog.magicItems';
 import { campaignMagicItemRepo, type CampaignEquipmentEntry } from '../campaignEquipmentRepo';
 import { getContentPatch } from '../contentPatchRepo';
@@ -15,7 +15,7 @@ import { moneyToCp } from '@/shared/money';
 import type { ContentSource } from '../types';
 import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
 
-function toSummary(item: MagicItemEntry): MagicItemSummary {
+function toSummary(item: MagicItem): MagicItemSummary {
   return {
     id: item.id,
     name: item.name,
@@ -30,7 +30,7 @@ function toSummary(item: MagicItemEntry): MagicItemSummary {
   };
 }
 
-function campaignEntryToMagicItem(e: CampaignEquipmentEntry): MagicItemEntry {
+function campaignEntryToMagicItem(e: CampaignEquipmentEntry): MagicItem {
   const d = e.data ?? {};
   return {
     id: e.id,
@@ -40,14 +40,14 @@ function campaignEntryToMagicItem(e: CampaignEquipmentEntry): MagicItemEntry {
     source: 'campaign' as ContentSource,
     campaignId: e.campaignId,
     accessPolicy: e.accessPolicy,
-    cost: d.cost as MagicItemEntry['cost'],
-    weight: d.weight as MagicItemEntry['weight'],
-    slot: (d.slot as MagicItemEntry['slot']) ?? 'wondrous',
-    rarity: d.rarity as MagicItemEntry['rarity'],
+    cost: d.cost as MagicItem['cost'],
+    weight: d.weight as MagicItem['weight'],
+    slot: (d.slot as MagicItem['slot']) ?? 'wondrous',
+    rarity: d.rarity as MagicItem['rarity'],
     requiresAttunement: d.requiresAttunement as boolean | undefined,
     bonus: d.bonus as number | undefined,
     charges: d.charges as number | undefined,
-    effects: d.effects as MagicItemEntry['effects'],
+    effects: d.effects as MagicItem['effects'],
   };
 }
 
@@ -55,7 +55,7 @@ function matchesSearch(name: string, search: string): boolean {
   return name.toLowerCase().includes(search.toLowerCase());
 }
 
-export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary, MagicItemInput> = {
+export const magicItemRepo: CampaignContentRepo<MagicItem, MagicItemSummary, MagicItemInput> = {
 
   async listSummaries(
     campaignId: string,
@@ -71,16 +71,16 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
     const magicItemPatches = contentPatch?.patches?.magicItems ?? {};
     const campaignIds = new Set(campaign.map(c => c.id));
 
-    const patchedSystem: MagicItemEntry[] = system
+    const patchedSystem: MagicItem[] = system
       .filter(m => !campaignIds.has(m.id))
-      .map((m): MagicItemEntry => {
+      .map((m): MagicItem => {
         const patch = magicItemPatches[m.id];
         if (!patch) return m;
-        const merged = applyContentPatch<MagicItemEntry>(m, patch as Partial<MagicItemEntry>);
+        const merged = applyContentPatch<MagicItem>(m, patch as Partial<MagicItem>);
         return { ...merged, patched: true };
       });
 
-    const merged: MagicItemEntry[] = [
+    const merged: MagicItem[] = [
       ...patchedSystem,
       ...campaign.map(campaignEntryToMagicItem),
     ];
@@ -98,7 +98,7 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
     campaignId: string,
     systemId: SystemRulesetId,
     id: string,
-  ): Promise<MagicItemEntry | null> {
+  ): Promise<MagicItem | null> {
     const campaignEntry = await campaignMagicItemRepo.get(campaignId, id);
     if (campaignEntry) return campaignEntryToMagicItem(campaignEntry);
 
@@ -109,14 +109,14 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
     const itemPatch = contentPatch?.patches?.magicItems?.[id];
     if (!itemPatch) return systemItem;
 
-    const merged = applyContentPatch<MagicItemEntry>(systemItem, itemPatch as Partial<MagicItemEntry>);
+    const merged = applyContentPatch<MagicItem>(systemItem, itemPatch as Partial<MagicItem>);
     return { ...merged, patched: true };
   },
 
   async createEntry(
     campaignId: string,
     input: MagicItemInput,
-  ): Promise<MagicItemEntry> {
+  ): Promise<MagicItem> {
     const { name, description, accessPolicy, ...rest } = input;
     const result = await campaignMagicItemRepo.create(campaignId, {
       name,
@@ -135,7 +135,7 @@ export const magicItemRepo: CampaignContentRepo<MagicItemEntry, MagicItemSummary
     campaignId: string,
     id: string,
     input: MagicItemInput,
-  ): Promise<MagicItemEntry> {
+  ): Promise<MagicItem> {
     const { name, description, accessPolicy, ...rest } = input;
     const result = await campaignMagicItemRepo.update(campaignId, id, {
       name,

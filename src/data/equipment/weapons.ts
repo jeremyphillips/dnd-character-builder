@@ -1,6 +1,7 @@
-import type { WeaponItem } from './equipment.types'
+import type { WeaponFields } from '@/features/content/domain/types';
 
-export const weapons: readonly WeaponItem[] = [
+/** @deprecated to be migrated to system catalog */
+export const weapons: readonly WeaponFields[] = [
   // SIMPLE MELEE WEAPONS
   { 
     id: 'club', 

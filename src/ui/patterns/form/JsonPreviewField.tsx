@@ -14,6 +14,8 @@ type JsonPreviewFieldProps = {
   size?: 'small' | 'medium';
   showInsertExample?: boolean;
   insertExampleLabel?: string;
+  required?: boolean;
+  error?: boolean;
 };
 
 const JsonPreviewField = ({
@@ -27,6 +29,8 @@ const JsonPreviewField = ({
   size = 'small',
   showInsertExample,
   insertExampleLabel = 'Insert example',
+  required = false,
+  error = false,
 }: JsonPreviewFieldProps) => {
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -50,6 +54,7 @@ const JsonPreviewField = ({
     <Box>
       <TextField
         label={label}
+        required={required}
         multiline
         minRows={minRows}
         maxRows={maxRows}
@@ -58,7 +63,7 @@ const JsonPreviewField = ({
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
-        error={!!jsonError}
+        error={error || !!jsonError}
         helperText={jsonError ?? helperText}
         slotProps={{ input: { sx: { fontFamily: 'monospace', fontSize: 13 } } }}
       />

@@ -11,22 +11,13 @@ import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { gearRepo } from '@/features/content/domain/repo';
-import type { GearInput } from '@/features/content/domain/types';
+import type { GearInput, GearFormValues } from '@/features/content/domain/types';
 
 type ValidationError = { path: string; code: string; message: string };
 
-type FormValues = {
-  name: string;
-  description: string;
-  imageKey: string;
-  accessPolicy: Visibility;
-  category: string;
-  capacity: string;
-};
-
 const FORM_ID = 'gear-create-form';
 
-const DEFAULT_VALUES: FormValues = {
+const DEFAULT_VALUES: GearFormValues = {
   name: '',
   description: '',
   imageKey: '',
@@ -40,7 +31,11 @@ export default function GearCreateRoute() {
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<FormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<GearFormValues>({
+    defaultValues: DEFAULT_VALUES,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+  });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);
@@ -51,7 +46,7 @@ export default function GearCreateRoute() {
     setValue('accessPolicy', next, { shouldDirty: true });
   }, [setValue]);
 
-  const handleSubmit = useCallback(async (values: FormValues) => {
+  const handleSubmit = useCallback(async (values: GearFormValues) => {
     if (!campaignId) return;
     setSaving(true);
     setErrors([]);

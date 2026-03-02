@@ -64,10 +64,21 @@ export { default as FormSelectField } from './form/FormSelectField'
 export { default as FormRadioField } from './form/FormRadioField'
 export { default as FormCheckboxField } from './form/FormCheckboxField'
 export { default as DynamicField } from './form/DynamicField'
-export { default as DynamicFormRenderer } from './form/DynamicFormRenderer'
+export {
+  default as DynamicFormRenderer,
+  type FormDriver,
+} from './form/DynamicFormRenderer'
+export { default as ConditionalFormRenderer } from './form/ConditionalFormRenderer'
 export { default as TabbedFormLayout } from './form/TabbedFormLayout'
 export { default as JsonPreviewField } from './form/JsonPreviewField'
-export type { FieldConfig, FormSection, SelectOption } from './form/form.types' 
+export type { FieldConfig, FormSection, SelectOption } from './form/form.types'
+export { buildDefaultValues } from './form/utils/buildDefaultValues'
+export { when, evaluateCondition, type Condition } from './form/conditions'
+export {
+  numberRange,
+  type ValidationRule,
+  type ValidationSpec,
+} from './form/validation/rules'
 
 export { default as VisibilityField } from './form/VisibilityField'
 export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'

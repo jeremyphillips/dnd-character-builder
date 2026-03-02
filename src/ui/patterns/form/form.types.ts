@@ -1,3 +1,6 @@
+import type { RegisterOptions } from 'react-hook-form';
+import type { Condition } from './conditions';
+
 export type SelectOption = {
   label: string
   value: string
@@ -12,6 +15,16 @@ type BaseFieldConfig = {
   section?: string
   /** Helper text shown below the field */
   helperText?: string
+  /** UI-only description shown below the field (separate from helperText/validation) */
+  fieldDescription?: React.ReactNode
+  /** Default value for initial form state / RHF defaultValues */
+  defaultValue?: unknown
+  /** For option-based fields: use first option's value as default */
+  defaultFromOptions?: 'first';
+  /** When set, field is shown only when condition evaluates to true */
+  visibleWhen?: Condition;
+  /** RHF Controller rules (compiled from FieldSpec validation). */
+  rules?: RegisterOptions;
 }
 
 export type FormSection = {
@@ -21,11 +34,11 @@ export type FormSection = {
 
 export type FieldConfig =
   | BaseFieldConfig & {
-      type: 'text'
-      multiline?: boolean
-      rows?: number
-      placeholder?: string
-      inputType?: 'text' | 'email' | 'password' | 'number'
+      type: 'text';
+      multiline?: boolean;
+      rows?: number;
+      placeholder?: string;
+      inputType?: 'text' | 'email' | 'password' | 'number';
     }
   | BaseFieldConfig & {
       type: 'textarea'
@@ -61,6 +74,13 @@ export type FieldConfig =
       type: 'visibility'
       characters?: { id: string; name: string }[]
       allowHidden?: boolean
+    }
+  | BaseFieldConfig & {
+      type: 'json'
+      path?: string
+      placeholder?: string
+      minRows?: number
+      maxRows?: number
     }
   | Omit<BaseFieldConfig, 'label'> & {
       type: 'hidden'

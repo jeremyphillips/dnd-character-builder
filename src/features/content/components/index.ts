@@ -10,3 +10,8 @@ export {
   type BlockingEntity,
 } from './EntryEditorLayout';
 export { default as ContentDetailScaffold } from './ContentDetailScaffold';
+export {
+  EntryFormEditorLayout,
+  type EntryFormEditorLayoutProps,
+  type ValidationError,
+} from './editor';

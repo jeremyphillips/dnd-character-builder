@@ -13,7 +13,8 @@ import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image';
-import { formatMoney } from '@/shared/money';
+import { buildDetailItemsFromSpecs } from '@/features/content/forms/registry';
+import { ARMOR_DETAIL_SPECS } from '@/features/equipment/armor/forms';
 
 export default function ArmorDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();
@@ -43,6 +44,10 @@ export default function ArmorDetailRoute() {
   const dexLabel = armor.dex
     ? armor.dex.mode === 'full' ? 'Full' : armor.dex.mode === 'capped' ? `Capped (+${armor.dex.maxBonus})` : 'None'
     : '—';
+
+  const items = buildDetailItemsFromSpecs(ARMOR_DETAIL_SPECS, armor, {
+    dexLabel,
+  });
 
   return (
     <ContentDetailScaffold
@@ -74,18 +79,7 @@ export default function ArmorDetailRoute() {
 
       <KeyValueSection
         title="Armor Details"
-        items={[
-          { label: 'Category', value: armor.category },
-          { label: 'Material', value: armor.material },
-          { label: 'Cost', value: formatMoney(armor.cost) },
-          { label: 'Base AC', value: armor.baseAC != null ? String(armor.baseAC) : '—' },
-          { label: 'AC Bonus', value: armor.acBonus != null ? `+${armor.acBonus}` : '—' },
-          { label: 'Dex Contribution', value: dexLabel },
-          { label: 'Stealth Disadvantage', value: armor.stealthDisadvantage ? 'Yes' : 'No' },
-          { label: 'Min Strength', value: armor.minStrength ? String(armor.minStrength) : '—' },
-          { label: 'Weight', value: armor.weight ? `${armor.weight.value} ${armor.weight.unit}` : '—' },
-          { label: 'Source', value: <AppBadge label={armor.source} tone={armor.source === 'system' ? 'info' : 'default'} /> },
-        ]}
+        items={items}
         columns={2}
         sx={{ mt: 2 }}
       />

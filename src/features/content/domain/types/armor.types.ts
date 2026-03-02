@@ -12,19 +12,14 @@ import type {
   ContentInput,
 } from './content.types';
 import type { EquipmentBase } from './equipment.types';
+import type { Material, ArmorCategory, DexContributionMode } from '../vocab/armor.vocab';
 
-type DexContribution =
-  | { mode: 'full' }
-  | { mode: 'capped'; maxBonus: number }  // e.g. 2
-  | { mode: 'none' };
+export type DexContribution =
+  | { mode: Extract<DexContributionMode, 'full'> }
+  | { mode: Extract<DexContributionMode, 'capped'>; maxBonus: number }
+  | { mode: Extract<DexContributionMode, 'none'> };
 
-export type Material = 'metal' | 'organic' | 'fabric' | 'wood' | 'stone'
-
-export type ArmorCategory =
-  | 'light'
-  | 'medium'
-  | 'heavy'
-  | 'shields';
+export type { Material, ArmorCategory };
 
 export interface ArmorFields extends EquipmentBase {
   cost: Money;

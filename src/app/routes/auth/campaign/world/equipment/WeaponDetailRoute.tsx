@@ -13,7 +13,8 @@ import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/utils/image';
-import { formatMoney } from '@/shared/money';
+import { buildDetailItemsFromSpecs } from '@/features/content/forms/registry';
+import { WEAPON_DETAIL_SPECS } from '@/features/equipment/weapons/forms';
 
 export default function WeaponDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();
@@ -40,6 +41,8 @@ export default function WeaponDetailRoute() {
   const listPath = `/campaigns/${campaignId}/world/equipment/weapons`;
   const editPath = `${listPath}/${weaponId}/edit`;
   const canEdit = canManage && weapon.source === 'campaign';
+
+  const items = buildDetailItemsFromSpecs(WEAPON_DETAIL_SPECS, weapon, {});
 
   return (
     <ContentDetailScaffold
@@ -71,18 +74,7 @@ export default function WeaponDetailRoute() {
 
       <KeyValueSection
         title="Weapon Details"
-        items={[
-          { label: 'Category', value: weapon.category },
-          { label: 'Mode', value: weapon.mode },
-          { label: 'Cost', value: formatMoney(weapon.cost) },
-          { label: 'Damage', value: weapon.damage?.versatile ? `${weapon.damage.default} (${weapon.damage.versatile} versatile)` : weapon.damage?.default },
-          { label: 'Damage Type', value: weapon.damageType },
-          { label: 'Mastery', value: weapon.mastery },
-          { label: 'Properties', value: weapon.properties?.join(', ') || '—' },
-          { label: 'Range', value: weapon.range ? `${weapon.range.normal}/${weapon.range.long ?? '—'} ft` : '—' },
-          { label: 'Weight', value: weapon.weight ? `${weapon.weight.value} ${weapon.weight.unit}` : '—' },
-          { label: 'Source', value: <AppBadge label={weapon.source} tone={weapon.source === 'system' ? 'info' : 'default'} /> },
-        ]}
+        items={items}
         columns={2}
         sx={{ mt: 2 }}
       />

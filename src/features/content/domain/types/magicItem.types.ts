@@ -7,39 +7,28 @@
  */
 import type { Money } from '@/shared/money/types';
 import type { Weight } from '@/shared/weight/types';
+import type { Visibility } from '@/shared/types';
 import type { ContentItem, ContentSummary, ContentInput } from './content.types';
 import type { EquipmentBase } from './equipment.types';
+import type { MagicItemSlot, MagicItemRarity } from '../vocab/magicItems.vocab';
 
-export type MagicItemSlot =
-  | 'weapon'
-  | 'armor'
-  | 'shield'
-  | 'potion'
-  | 'ring'
-  | 'cloak'
-  | 'boots'
-  | 'gloves'
-  | 'helm'
-  | 'belt'
-  | 'amulet'
-  | 'wand'
-  | 'staff'
-  | 'rod'
-  | 'scroll'
-  | 'wondrous';
+export type { MagicItemSlot, MagicItemRarity };
+
+export type MagicItemFormValues = {
+  name: string;
+  description: string;
+  imageKey: string;
+  accessPolicy: Visibility;
+  slot: MagicItemSlot | '';
+  rarity: MagicItemRarity | '';
+  requiresAttunement: boolean;
+  effectsJson: string;
+};
 
 export type MagicItemEffect =
   | { kind: 'bonus'; target: string; value: number }
   | { kind: 'modifier'; target: string; mode: 'add' | 'mul' | 'set'; value: unknown }
   | { kind: 'note'; text: string };
-
-export type MagicItemRarity =
-  | 'common'
-  | 'uncommon'
-  | 'rare'
-  | 'very-rare'
-  | 'legendary'
-  | 'artifact';
 
 /**
  * Fields-only shape (system + campaign share this).

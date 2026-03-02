@@ -76,6 +76,8 @@ export default function WeaponEditRoute() {
 
   const methods = useForm<WeaponFormValues>({
     defaultValues: EMPTY_FORM_VALUES,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
   const [saving, setSaving] = useState(false);

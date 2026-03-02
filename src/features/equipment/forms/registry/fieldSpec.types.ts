@@ -1,4 +1,6 @@
-import type { Condition } from '@/ui/patterns';
+import type { Condition, ValidationSpec } from '@/ui/patterns';
+
+export type { ValidationRule, ValidationSpec } from '@/ui/patterns';
 
 /**
  * FieldSpec — single source of truth for form field config + mapping.
@@ -47,10 +49,6 @@ export type FieldSpec<
   maxRows?: number;
   /** When set, field is shown only when condition evaluates to true. */
   visibleWhen?: Condition;
-  /** Numeric validation for kind: 'numberText'. */
-  validation?: {
-    min?: number;
-    max?: number;
-    integer?: boolean;
-  };
+  /** Validation for kind: 'numberText' (and future field kinds). */
+  validation?: ValidationSpec;
 };

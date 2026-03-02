@@ -1,4 +1,11 @@
-export type { FieldSpec, FieldSpecKind, FieldSpecOption } from './fieldSpec.types';
+export type {
+  FieldSpec,
+  FieldSpecKind,
+  FieldSpecOption,
+  ValidationRule,
+  ValidationSpec,
+} from './fieldSpec.types';
+export { numberRange } from '@/ui/patterns';
 export type { DetailSpec } from './detailSpec.types';
 export { buildFieldConfigs, type BuildFieldConfigsOptions } from './buildFieldConfigs';
 export {

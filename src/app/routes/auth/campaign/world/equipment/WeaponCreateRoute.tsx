@@ -41,7 +41,11 @@ export default function WeaponCreateRoute() {
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<WeaponFormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<WeaponFormValues>({
+    defaultValues: DEFAULT_VALUES,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+  });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);

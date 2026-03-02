@@ -50,7 +50,11 @@ export default function RaceEditorRoute() {
 
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<RaceEditorFormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<RaceEditorFormValues>({
+    defaultValues: DEFAULT_VALUES,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+  });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
 
   const [loading, setLoading] = useState(!isNew);

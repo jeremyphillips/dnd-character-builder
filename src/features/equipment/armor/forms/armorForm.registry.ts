@@ -8,7 +8,7 @@ import {
   ARMOR_MATERIAL_OPTIONS,
 } from '@/features/content/domain/vocab';
 import { when } from '@/ui/patterns';
-import type { FieldSpec } from '@/features/equipment/forms/registry';
+import { numberRange, type FieldSpec } from '@/features/equipment/forms/registry';
 import type { ArmorFormValues } from './armorForm.types';
 
 const isArmor = when.in('category', ['light', 'medium', 'heavy']);
@@ -58,7 +58,7 @@ export const ARMOR_FORM_FIELDS = [
     defaultValue: '',
     required: true,
     visibleWhen: isArmor,
-    validation: { min: 10, max: 20, integer: true },
+    validation: numberRange(10, 20, { integer: true }),
     parse: (v) => numOrUndefined(v),
     format: (v) => numToStr(v),
   },

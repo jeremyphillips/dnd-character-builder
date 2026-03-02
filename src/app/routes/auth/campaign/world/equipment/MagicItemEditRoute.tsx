@@ -51,6 +51,8 @@ export default function MagicItemEditRoute() {
 
   const methods = useForm<MagicItemFormValues>({
     defaultValues: { name: '', description: '', imageKey: '', accessPolicy: DEFAULT_VISIBILITY_PUBLIC, slot: 'wondrous', rarity: 'common', requiresAttunement: false, effectsJson: '[]' },
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
   const [saving, setSaving] = useState(false);

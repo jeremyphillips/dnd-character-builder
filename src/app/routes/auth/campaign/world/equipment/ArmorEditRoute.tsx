@@ -60,6 +60,8 @@ export default function ArmorEditRoute() {
 
   const methods = useForm<ArmorFormValues>({
     defaultValues: ARMOR_FORM_DEFAULTS,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
   const [saving, setSaving] = useState(false);

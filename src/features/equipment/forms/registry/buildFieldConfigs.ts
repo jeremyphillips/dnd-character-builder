@@ -3,16 +3,34 @@
  */
 import type { RegisterOptions } from 'react-hook-form';
 import type { FieldConfig } from '@/ui/patterns';
+import type { ValidationRule, ValidationSpec } from '@/ui/patterns';
 import type { FieldSpec } from './fieldSpec.types';
 
 export type BuildFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];
 };
 
+function applyRule(rule: ValidationRule, n: number): string | null {
+  switch (rule.kind) {
+    case 'min':
+      return n < rule.value ? (rule.message ?? `Must be at least ${rule.value}`) : null;
+    case 'max':
+      return n > rule.value ? (rule.message ?? `Must be at most ${rule.value}`) : null;
+    case 'integer':
+      return !Number.isInteger(n) ? (rule.message ?? 'Must be a whole number') : null;
+    case 'pattern':
+    case 'minLength':
+    case 'maxLength':
+      return null; // not applicable to numberText
+    default:
+      return null;
+  }
+}
+
 function compileNumberTextRules(
   label: string,
   required: boolean | undefined,
-  validation: { min?: number; max?: number; integer?: boolean } | undefined,
+  validation: ValidationSpec | undefined,
 ): RegisterOptions {
   const validate = (value: unknown): true | string => {
     const empty = value === '' || value == null || (typeof value === 'string' && value.trim() === '');
@@ -23,20 +41,12 @@ function compileNumberTextRules(
     if (Number.isNaN(n)) {
       return `${label} must be a number`;
     }
-    if (validation?.integer && !Number.isInteger(n)) {
-      return `${label} must be a whole number`;
-    }
-    if (validation?.min != null && n < validation.min) {
-      if (validation?.max != null) {
-        return `Must be between ${validation.min} and ${validation.max}`;
+
+    if (validation?.rules) {
+      for (const rule of validation.rules) {
+        const err = applyRule(rule, n);
+        if (err) return err;
       }
-      return `Must be at least ${validation.min}`;
-    }
-    if (validation?.max != null && n > validation.max) {
-      if (validation?.min != null) {
-        return `Must be between ${validation.min} and ${validation.max}`;
-      }
-      return `Must be at most ${validation.max}`;
     }
     return true;
   };

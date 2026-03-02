@@ -25,7 +25,11 @@ export default function ArmorCreateRoute() {
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<ArmorFormValues>({ defaultValues: ARMOR_FORM_DEFAULTS });
+  const methods = useForm<ArmorFormValues>({
+    defaultValues: ARMOR_FORM_DEFAULTS,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+  });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);

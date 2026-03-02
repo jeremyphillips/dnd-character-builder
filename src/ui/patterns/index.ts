@@ -73,7 +73,12 @@ export { default as TabbedFormLayout } from './form/TabbedFormLayout'
 export { default as JsonPreviewField } from './form/JsonPreviewField'
 export type { FieldConfig, FormSection, SelectOption } from './form/form.types'
 export { buildDefaultValues } from './form/utils/buildDefaultValues'
-export { when, evaluateCondition, type Condition } from './form/conditions' 
+export { when, evaluateCondition, type Condition } from './form/conditions'
+export {
+  numberRange,
+  type ValidationRule,
+  type ValidationSpec,
+} from './form/validation/rules'
 
 export { default as VisibilityField } from './form/VisibilityField'
 export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'

@@ -145,6 +145,8 @@ function EntryFormEditorLayoutRHF({
 }: CreateEditProps) {
   const methods = useForm({
     defaultValues: defaultValues as Record<string, unknown>,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
   const { formState: { isDirty } } = methods;
   const resolvedDirty = dirty ?? isDirty;

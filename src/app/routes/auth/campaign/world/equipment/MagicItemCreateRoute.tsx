@@ -36,7 +36,11 @@ export default function MagicItemCreateRoute() {
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<MagicItemFormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<MagicItemFormValues>({
+    defaultValues: DEFAULT_VALUES,
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+  });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);

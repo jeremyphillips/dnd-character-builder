@@ -49,6 +49,8 @@ export default function GearEditRoute() {
 
   const methods = useForm<GearFormValues>({
     defaultValues: { name: '', description: '', imageKey: '', accessPolicy: DEFAULT_VISIBILITY_PUBLIC, category: 'adventuring-utility', capacity: '' },
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
   const [saving, setSaving] = useState(false);

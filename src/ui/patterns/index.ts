@@ -70,7 +70,8 @@ export {
 } from './form/DynamicFormRenderer'
 export { default as TabbedFormLayout } from './form/TabbedFormLayout'
 export { default as JsonPreviewField } from './form/JsonPreviewField'
-export type { FieldConfig, FormSection, SelectOption } from './form/form.types' 
+export type { FieldConfig, FormSection, SelectOption } from './form/form.types'
+export { buildDefaultValues } from './form/utils/buildDefaultValues' 
 
 export { default as VisibilityField } from './form/VisibilityField'
 export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'

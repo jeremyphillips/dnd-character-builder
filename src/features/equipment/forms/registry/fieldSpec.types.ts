@@ -37,6 +37,8 @@ export type FieldSpec<
   formatForDisplay?: (itemValue: unknown) => React.ReactNode;
   /** Default for initial form state. */
   defaultValue?: FormValues[keyof FormValues];
+  /** For option-based fields (select, radio, checkboxGroup): use first option as default */
+  defaultFromOptions?: 'first';
   /** For kind: 'json' — min rows for textarea. */
   minRows?: number;
   /** For kind: 'json' — max rows for textarea. */

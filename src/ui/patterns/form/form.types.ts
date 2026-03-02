@@ -12,6 +12,10 @@ type BaseFieldConfig = {
   section?: string
   /** Helper text shown below the field */
   helperText?: string
+  /** Default value for initial form state / RHF defaultValues */
+  defaultValue?: unknown
+  /** For option-based fields: use first option's value as default */
+  defaultFromOptions?: 'first'
 }
 
 export type FormSection = {

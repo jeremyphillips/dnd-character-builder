@@ -1,10 +1,10 @@
 /**
  * Armor edit route.
  *
- * - source === 'system': JSON patch editor via contentPatchRepo
+ * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -15,7 +15,6 @@ import Typography from '@mui/material/Typography';
 
 import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { armorRepo } from '@/features/content/domain/repo';
@@ -27,11 +26,13 @@ import {
   upsertEntryPatch,
   removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
-import { DynamicFormRenderer, JsonPreviewField } from '@/ui/patterns';
+import { createPatchDriver } from '@/features/content/editor/patchDriver';
+import { DynamicFormRenderer } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import {
   type ArmorFormValues,
   getArmorFieldConfigs,
+  ARMOR_FORM_DEFAULTS,
   armorToFormValues,
   toArmorInput,
 } from '@/features/equipment/armor/forms';
@@ -58,26 +59,15 @@ export default function ArmorEditRoute() {
   });
 
   const methods = useForm<ArmorFormValues>({
-    defaultValues: {
-      name: '',
-      description: '',
-      imageKey: '',
-      accessPolicy: DEFAULT_VISIBILITY_PUBLIC,
-      category: 'light',
-      material: 'metal',
-      baseAC: '',
-      acBonus: '',
-      stealthDisadvantage: false,
-    },
+    defaultValues: ARMOR_FORM_DEFAULTS,
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const [patchText, setPatchText] = useState('');
-  const [initialPatchText, setInitialPatchText] = useState('');
-  const [patchSaveError, setPatchSaveError] = useState<string | null>(null);
+  const [initialPatch, setInitialPatch] = useState<Record<string, unknown>>({});
+  const [, setPatchDraft] = useState<Record<string, unknown>>({});
 
   const isSystem = armor?.source === 'system';
   const isCampaign = armor?.source === 'campaign';
@@ -93,12 +83,9 @@ export default function ArmorEditRoute() {
     getContentPatch(campaignId)
       .then((doc) => {
         if (cancelled) return;
-        const existing = getEntryPatch(doc, 'armor', armorId);
-        if (existing) {
-          const t = JSON.stringify(existing, null, 2);
-          setPatchText(t);
-          setInitialPatchText(t);
-        }
+        const existing = (getEntryPatch(doc, 'armor', armorId) ?? {}) as Record<string, unknown>;
+        setInitialPatch(existing);
+        setPatchDraft(existing);
       })
       .catch(() => {});
     return () => {
@@ -142,43 +129,52 @@ export default function ArmorEditRoute() {
     [campaignId, armorId, reset]
   );
 
-  const patchDirty = patchText !== initialPatchText;
-  const tryParse = useCallback((t: string) => {
-    const s = t.trim();
-    if (!s) return { valid: true as const, value: {} };
-    try {
-      return { valid: true as const, value: JSON.parse(s) };
-    } catch {
-      return { valid: false as const, value: null };
-    }
-  }, []);
-  const parsed = tryParse(patchText);
+  const driver = useMemo(() => {
+    if (!armor) return null;
+    return createPatchDriver({
+      base: armor as unknown as Record<string, unknown>,
+      initialPatch,
+      onChange: (p) => {
+        setPatchDraft(p);
+        setSuccess(false);
+      },
+    });
+  }, [armor, initialPatch]);
 
   const handlePatchSave = useCallback(async () => {
-    if (!campaignId || !armorId || !parsed.valid) return;
+    if (!campaignId || !armorId || !driver) return;
     setSaving(true);
-    setPatchSaveError(null);
+    setSuccess(false);
+    setErrors([]);
+    const next = driver.getPatch();
     try {
-      await upsertEntryPatch(campaignId, 'armor', armorId, parsed.value);
-      setInitialPatchText(patchText);
+      await upsertEntryPatch(campaignId, 'armor', armorId, next);
+      setInitialPatch(next);
+      setPatchDraft(next);
       setSuccess(true);
     } catch (err) {
-      setPatchSaveError((err as Error).message);
+      setErrors([
+        { path: '', code: 'SAVE_FAILED', message: (err as Error).message },
+      ]);
     } finally {
       setSaving(false);
     }
-  }, [campaignId, armorId, parsed, patchText]);
+  }, [campaignId, armorId, driver]);
 
   const handleRemovePatch = useCallback(async () => {
     if (!campaignId || !armorId) return;
     setSaving(true);
+    setSuccess(false);
+    setErrors([]);
     try {
       await removeEntryPatch(campaignId, 'armor', armorId);
-      setPatchText('');
-      setInitialPatchText('');
+      setInitialPatch({});
+      setPatchDraft({});
       setSuccess(true);
     } catch (err) {
-      setPatchSaveError((err as Error).message);
+      setErrors([
+        { path: '', code: 'REMOVE_FAILED', message: (err as Error).message },
+      ]);
     } finally {
       setSaving(false);
     }
@@ -197,8 +193,6 @@ export default function ArmorEditRoute() {
     [navigate, campaignId]
   );
 
-  const fieldConfigs = getArmorFieldConfigs({ policyCharacters });
-
   if (loading)
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -210,19 +204,17 @@ export default function ArmorEditRoute() {
       <AppAlert tone="danger">{error ?? 'Armor not found.'}</AppAlert>
     );
 
-  if (isSystem) {
+  const fieldConfigs = getArmorFieldConfigs({ policyCharacters });
+
+  if (isSystem && driver) {
     return (
       <EntryEditorLayout
         typeLabel="Armor Patch"
         isNew={false}
         saving={saving}
-        dirty={patchDirty}
+        dirty={driver.isDirty()}
         success={success}
-        errors={
-          patchSaveError
-            ? [{ path: '', code: 'SAVE_FAILED', message: patchSaveError }]
-            : []
-        }
+        errors={errors}
         onSave={handlePatchSave}
         onBack={handleBack}
       >
@@ -233,23 +225,16 @@ export default function ArmorEditRoute() {
           {armor.patched && (
             <AppBadge label="Patched" tone="warning" size="small" />
           )}
-          <Typography variant="body2" color="text.secondary">
-            Enter a JSON object to deep-merge into this system armor for your
-            campaign.
-          </Typography>
-          <JsonPreviewField
-            label="Patch JSON"
-            value={patchText}
-            onChange={(v) => {
-              setPatchText(v);
-              setSuccess(false);
-              setPatchSaveError(null);
+          <DynamicFormRenderer
+            fields={fieldConfigs}
+            driver={{
+              kind: 'patch',
+              getValue: driver.getValue,
+              setValue: driver.setValue,
+              unsetValue: driver.unsetValue,
             }}
-            placeholder={'{\n  "baseAC": 14,\n  "description": "Custom description..."\n}'}
-            minRows={8}
-            maxRows={20}
           />
-          {initialPatchText && (
+          {Object.keys(initialPatch).length > 0 && (
             <Button
               variant="outlined"
               color="error"

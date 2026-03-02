@@ -5,7 +5,6 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { DynamicFormRenderer } from '@/ui/patterns';
 import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { armorRepo } from '@/features/content/domain/repo';
@@ -13,6 +12,7 @@ import type { ArmorInput } from '@/features/content/domain/types';
 import {
   type ArmorFormValues,
   getArmorFieldConfigs,
+  ARMOR_FORM_DEFAULTS,
   toArmorInput,
 } from '@/features/equipment/armor/forms';
 
@@ -20,24 +20,12 @@ type ValidationError = { path: string; code: string; message: string };
 
 const FORM_ID = 'armor-create-form';
 
-const DEFAULT_VALUES: ArmorFormValues = {
-  name: '',
-  description: '',
-  imageKey: '',
-  accessPolicy: DEFAULT_VISIBILITY_PUBLIC,
-  category: 'light',
-  material: 'metal',
-  baseAC: '',
-  acBonus: '',
-  stealthDisadvantage: false,
-};
-
 export default function ArmorCreateRoute() {
   const { campaignId } = useActiveCampaign();
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
 
-  const methods = useForm<ArmorFormValues>({ defaultValues: DEFAULT_VALUES });
+  const methods = useForm<ArmorFormValues>({ defaultValues: ARMOR_FORM_DEFAULTS });
   const { setValue, watch, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);

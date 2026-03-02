@@ -80,6 +80,7 @@ export const buildFieldConfigs = <
       required: spec.required,
       placeholder: spec.placeholder,
       helperText: spec.helperText,
+      ...(spec.fieldDescription !== undefined && { fieldDescription: spec.fieldDescription }),
       ...(spec.defaultValue !== undefined && { defaultValue: spec.defaultValue }),
       ...(spec.defaultFromOptions && { defaultFromOptions: spec.defaultFromOptions }),
       ...(spec.visibleWhen && { visibleWhen: spec.visibleWhen }),

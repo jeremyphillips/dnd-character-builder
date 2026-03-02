@@ -1,6 +1,8 @@
-import { useFormContext } from 'react-hook-form'
-import type { FieldConfig } from './form.types'
-import FormTextField from './FormTextField'
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import { useFormContext } from 'react-hook-form';
+import type { FieldConfig } from './form.types';
+import FormTextField from './FormTextField';
 import FormSelectField from './FormSelectField'
 import FormRadioField from './FormRadioField'
 import FormCheckboxField from './FormCheckboxField'
@@ -10,16 +12,36 @@ import FormVisibilityField from './FormVisibilityField'
 import FormJsonField from './FormJsonField'
 
 type DynamicFieldProps = {
-  field: FieldConfig
+  field: FieldConfig;
+};
+
+function FieldWithDescription({
+  field,
+  children,
+}: {
+  field: FieldConfig;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box>
+      {children}
+      {field.fieldDescription && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          {field.fieldDescription}
+        </Typography>
+      )}
+    </Box>
+  );
 }
 
 export default function DynamicField({ field }: DynamicFieldProps) {
-  const { register } = useFormContext()
+  const { register } = useFormContext();
 
   switch (field.type) {
     case 'text':
       return (
-        <FormTextField
+        <FieldWithDescription field={field}>
+          <FormTextField
           name={field.name}
           label={field.label}
           required={field.required}
@@ -28,117 +50,136 @@ export default function DynamicField({ field }: DynamicFieldProps) {
           type={field.inputType}
           rules={field.rules}
         />
-      )
+        </FieldWithDescription>
+      );
 
     case 'textarea':
       return (
-        <FormTextField
-          name={field.name}
-          label={field.label}
-          required={field.required}
-          disabled={field.disabled}
-          placeholder={field.placeholder}
-          multiline
-          rows={field.rows}
-          rules={field.rules}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormTextField
+            name={field.name}
+            label={field.label}
+            required={field.required}
+            disabled={field.disabled}
+            placeholder={field.placeholder}
+            multiline
+            rows={field.rows}
+            rules={field.rules}
+          />
+        </FieldWithDescription>
+      );
 
     case 'select':
       return (
-        <FormSelectField
-          name={field.name}
-          label={field.label}
-          options={field.options}
-          required={field.required}
-          disabled={field.disabled}
-          placeholder={field.placeholder}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormSelectField
+            name={field.name}
+            label={field.label}
+            options={field.options}
+            required={field.required}
+            disabled={field.disabled}
+            placeholder={field.placeholder}
+          />
+        </FieldWithDescription>
+      );
 
     case 'radio':
       return (
-        <FormRadioField
-          name={field.name}
-          label={field.label}
-          options={field.options}
-          required={field.required}
-          disabled={field.disabled}
-          row={field.row}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormRadioField
+            name={field.name}
+            label={field.label}
+            options={field.options}
+            required={field.required}
+            disabled={field.disabled}
+            row={field.row}
+          />
+        </FieldWithDescription>
+      );
 
     case 'checkbox':
       return (
-        <FormCheckboxField
-          name={field.name}
-          label={field.label}
-          required={field.required}
-          disabled={field.disabled}
-          helperText={field.helperText}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormCheckboxField
+            name={field.name}
+            label={field.label}
+            required={field.required}
+            disabled={field.disabled}
+            helperText={field.helperText}
+          />
+        </FieldWithDescription>
+      );
 
     case 'checkboxGroup':
       return (
-        <FormCheckboxField
-          name={field.name}
-          label={field.label}
-          options={field.options}
-          required={field.required}
-          disabled={field.disabled}
-          row={field.row}
-          helperText={field.helperText}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormCheckboxField
+            name={field.name}
+            label={field.label}
+            options={field.options}
+            required={field.required}
+            disabled={field.disabled}
+            row={field.row}
+            helperText={field.helperText}
+          />
+        </FieldWithDescription>
+      );
 
     case 'imageUpload':
       return (
-        <FormImageUploadField
-          name={field.name}
-          label={field.label}
-          required={field.required}
-          disabled={field.disabled}
-          maxHeight={field.maxHeight}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormImageUploadField
+            name={field.name}
+            label={field.label}
+            required={field.required}
+            disabled={field.disabled}
+            maxHeight={field.maxHeight}
+          />
+        </FieldWithDescription>
+      );
 
     case 'datetime':
       return (
-        <FormDateTimeField
-          name={field.name}
-          label={field.label}
-          required={field.required}
-          disabled={field.disabled}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormDateTimeField
+            name={field.name}
+            label={field.label}
+            required={field.required}
+            disabled={field.disabled}
+          />
+        </FieldWithDescription>
+      );
 
     case 'visibility':
       return (
-        <FormVisibilityField
-          name={field.name}
-          required={field.required}
-          disabled={field.disabled}
-          characters={field.characters}
-          allowHidden={field.allowHidden}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormVisibilityField
+            name={field.name}
+            required={field.required}
+            disabled={field.disabled}
+            characters={field.characters}
+            allowHidden={field.allowHidden}
+          />
+        </FieldWithDescription>
+      );
 
     case 'json':
       return (
-        <FormJsonField
-          name={field.name}
-          label={field.label}
-          required={field.required}
-          disabled={field.disabled}
-          placeholder={field.placeholder}
-          helperText={field.helperText}
-          minRows={field.minRows}
-          maxRows={field.maxRows}
-        />
-      )
+        <FieldWithDescription field={field}>
+          <FormJsonField
+            name={field.name}
+            label={field.label}
+            required={field.required}
+            disabled={field.disabled}
+            placeholder={field.placeholder}
+            helperText={field.helperText}
+            minRows={field.minRows}
+            maxRows={field.maxRows}
+          />
+        </FieldWithDescription>
+      );
 
     case 'hidden':
-      return <input type="hidden" {...register(field.name)} />
+      return <input type="hidden" {...register(field.name)} />;
   }
 }

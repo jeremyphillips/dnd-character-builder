@@ -15,6 +15,8 @@ type BaseFieldConfig = {
   section?: string
   /** Helper text shown below the field */
   helperText?: string
+  /** UI-only description shown below the field (separate from helperText/validation) */
+  fieldDescription?: React.ReactNode
   /** Default value for initial form state / RHF defaultValues */
   defaultValue?: unknown
   /** For option-based fields: use first option's value as default */

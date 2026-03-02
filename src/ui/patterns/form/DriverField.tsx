@@ -17,6 +17,7 @@ import {
   RadioGroup,
   Select,
   TextField,
+  Typography,
 } from '@mui/material';
 import type { FieldConfig } from './form.types';
 import { usePatchValidation } from './validation/PatchValidationContext';
@@ -60,10 +61,17 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
   const helperText = errorMessage ?? field.helperText;
   const hasError = Boolean(errorMessage);
 
+  const FieldDescription = field.fieldDescription ? (
+    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+      {field.fieldDescription}
+    </Typography>
+  ) : null;
+
   switch (field.type) {
     case 'text':
       return (
-        <TextField
+        <Box>
+          <TextField
           label={field.label}
           fullWidth
           value={String(driver.getValue(path) ?? '')}
@@ -78,197 +86,226 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
           multiline={field.multiline}
           rows={field.multiline ? field.rows : undefined}
         />
+          {FieldDescription}
+        </Box>
       );
 
     case 'textarea':
       return (
-        <TextField
-          label={field.label}
-          fullWidth
-          multiline
-          rows={field.rows ?? 4}
-          value={String(driver.getValue(path) ?? '')}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={handleBlur}
-          required={field.required}
-          disabled={field.disabled}
-          placeholder={field.placeholder}
-          helperText={helperText}
-          error={hasError}
-        />
+        <Box>
+          <TextField
+            label={field.label}
+            fullWidth
+            multiline
+            rows={field.rows ?? 4}
+            value={String(driver.getValue(path) ?? '')}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
+            required={field.required}
+            disabled={field.disabled}
+            placeholder={field.placeholder}
+            helperText={helperText}
+            error={hasError}
+          />
+          {FieldDescription}
+        </Box>
       );
 
     case 'select':
       return (
-        <FormControl fullWidth disabled={field.disabled} required={field.required} error={hasError}>
-          <InputLabel>{field.label}</InputLabel>
-          <Select
-            label={field.label}
-            value={String(driver.getValue(path) ?? '')}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleBlur}
-            displayEmpty
-          >
-            {field.placeholder && (
-              <MenuItem value="" disabled>
-                {field.placeholder}
-              </MenuItem>
+        <Box>
+          <FormControl fullWidth disabled={field.disabled} required={field.required} error={hasError}>
+            <InputLabel>{field.label}</InputLabel>
+            <Select
+              label={field.label}
+              value={String(driver.getValue(path) ?? '')}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
+              displayEmpty
+            >
+              {field.placeholder && (
+                <MenuItem value="" disabled>
+                  {field.placeholder}
+                </MenuItem>
+              )}
+              {field.options.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {(helperText || hasError) && (
+              <FormHelperText error={hasError}>{helperText}</FormHelperText>
             )}
-            {field.options.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-          {(helperText || hasError) && (
-            <FormHelperText error={hasError}>{helperText}</FormHelperText>
-          )}
-        </FormControl>
+          </FormControl>
+          {FieldDescription}
+        </Box>
       );
 
     case 'radio':
       return (
-        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
-          <FormLabel required={field.required}>{field.label}</FormLabel>
-          <RadioGroup
-            row={field.row}
-            value={String(driver.getValue(path) ?? '')}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleBlur}
-          >
-            {field.options.map((opt) => (
-              <FormControlLabel
-                key={opt.value}
-                value={opt.value}
-                control={<Radio />}
-                label={opt.label}
-              />
-            ))}
-          </RadioGroup>
-          {(helperText || hasError) && (
-            <FormHelperText error={hasError}>{helperText}</FormHelperText>
-          )}
-        </FormControl>
+        <Box>
+          <FormControl disabled={field.disabled} required={field.required} error={hasError}>
+            <FormLabel required={field.required}>{field.label}</FormLabel>
+            <RadioGroup
+              row={field.row}
+              value={String(driver.getValue(path) ?? '')}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
+            >
+              {field.options.map((opt) => (
+                <FormControlLabel
+                  key={opt.value}
+                  value={opt.value}
+                  control={<Radio />}
+                  label={opt.label}
+                />
+              ))}
+            </RadioGroup>
+            {(helperText || hasError) && (
+              <FormHelperText error={hasError}>{helperText}</FormHelperText>
+            )}
+          </FormControl>
+          {FieldDescription}
+        </Box>
       );
 
     case 'checkbox':
       return (
-        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(driver.getValue(path))}
-                onChange={(e) => handleChange(e.target.checked)}
-              />
-            }
-            label={field.label}
-          />
-          {(helperText || hasError) && (
-            <FormHelperText error={hasError}>{helperText}</FormHelperText>
-          )}
-        </FormControl>
+        <Box>
+          <FormControl disabled={field.disabled} required={field.required} error={hasError}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(driver.getValue(path))}
+                  onChange={(e) => handleChange(e.target.checked)}
+                />
+              }
+              label={field.label}
+            />
+            {(helperText || hasError) && (
+              <FormHelperText error={hasError}>{helperText}</FormHelperText>
+            )}
+          </FormControl>
+          {FieldDescription}
+        </Box>
       );
 
     case 'checkboxGroup':
       return (
-        <FormControl disabled={field.disabled} required={field.required} error={hasError}>
-          <FormLabel required={field.required}>{field.label}</FormLabel>
-          <FormGroup row={field.row}>
-            {(field.options ?? []).map((opt) => {
-              const selected: string[] = Array.isArray(driver.getValue(path))
-                ? (driver.getValue(path) as string[])
-                : [];
-              const handleToggle = () => {
-                const next = selected.includes(opt.value)
-                  ? selected.filter((v) => v !== opt.value)
-                  : [...selected, opt.value];
-                handleChange(next);
-              };
-              return (
-                <FormControlLabel
-                  key={opt.value}
-                  control={
-                    <Checkbox
-                      checked={selected.includes(opt.value)}
-                      onChange={handleToggle}
-                    />
-                  }
-                  label={opt.label}
-                />
-              );
-            })}
-          </FormGroup>
-          {(helperText || hasError) && (
-            <FormHelperText error={hasError}>{helperText}</FormHelperText>
-          )}
-        </FormControl>
+        <Box>
+          <FormControl disabled={field.disabled} required={field.required} error={hasError}>
+            <FormLabel required={field.required}>{field.label}</FormLabel>
+            <FormGroup row={field.row}>
+              {(field.options ?? []).map((opt) => {
+                const selected: string[] = Array.isArray(driver.getValue(path))
+                  ? (driver.getValue(path) as string[])
+                  : [];
+                const handleToggle = () => {
+                  const next = selected.includes(opt.value)
+                    ? selected.filter((v) => v !== opt.value)
+                    : [...selected, opt.value];
+                  handleChange(next);
+                };
+                return (
+                  <FormControlLabel
+                    key={opt.value}
+                    control={
+                      <Checkbox
+                        checked={selected.includes(opt.value)}
+                        onChange={handleToggle}
+                      />
+                    }
+                    label={opt.label}
+                  />
+                );
+              })}
+            </FormGroup>
+            {(helperText || hasError) && (
+              <FormHelperText error={hasError}>{helperText}</FormHelperText>
+            )}
+          </FormControl>
+          {FieldDescription}
+        </Box>
       );
 
     case 'imageUpload':
       return (
-        <ImageUploadField
-          value={driver.getValue(path) as string | null | undefined}
-          onChange={(v) => handleChange(v)}
-          label={field.label}
-          disabled={field.disabled}
-          maxHeight={field.maxHeight}
-          required={field.required}
-        />
+        <Box>
+          <ImageUploadField
+            value={driver.getValue(path) as string | null | undefined}
+            onChange={(v) => handleChange(v)}
+            label={field.label}
+            disabled={field.disabled}
+            maxHeight={field.maxHeight}
+            required={field.required}
+          />
+          {FieldDescription}
+        </Box>
       );
 
     case 'datetime':
       return (
-        <TextField
-          label={field.label}
-          fullWidth
-          type="datetime-local"
-          value={
-            (() => {
-              const v = driver.getValue(path);
-              if (!v) return '';
-              const d = new Date(v as string);
-              return isNaN(d.getTime())
-                ? ''
-                : d.toISOString().slice(0, 16);
-            })()
-          }
-          onChange={(e) =>
-            handleChange(e.target.value ? new Date(e.target.value).toISOString() : null)
-          }
-          onBlur={handleBlur}
-          required={field.required}
-          disabled={field.disabled}
-          helperText={helperText}
-          error={hasError}
-          InputLabelProps={{ shrink: true }}
-        />
+        <Box>
+          <TextField
+            label={field.label}
+            fullWidth
+            type="datetime-local"
+            value={
+              (() => {
+                const v = driver.getValue(path);
+                if (!v) return '';
+                const d = new Date(v as string);
+                return isNaN(d.getTime())
+                  ? ''
+                  : d.toISOString().slice(0, 16);
+              })()
+            }
+            onChange={(e) =>
+              handleChange(e.target.value ? new Date(e.target.value).toISOString() : null)
+            }
+            onBlur={handleBlur}
+            required={field.required}
+            disabled={field.disabled}
+            helperText={helperText}
+            error={hasError}
+            InputLabelProps={{ shrink: true }}
+          />
+          {FieldDescription}
+        </Box>
       );
 
     case 'visibility':
       return (
-        <VisibilityField
-          value={
-            (driver.getValue(path) as { scope: string; allowCharacterIds?: string[] }) ?? {
-              scope: 'public',
-              allowCharacterIds: [],
+        <Box>
+          <VisibilityField
+            value={
+              (driver.getValue(path) as { scope: string; allowCharacterIds?: string[] }) ?? {
+                scope: 'public',
+                allowCharacterIds: [],
+              }
             }
-          }
-          onChange={(v) => handleChange(v)}
-          disabled={field.disabled}
-          required={field.required}
-          characters={field.characters}
-        />
+            onChange={(v) => handleChange(v)}
+            disabled={field.disabled}
+            required={field.required}
+            characters={field.characters}
+          />
+          {FieldDescription}
+        </Box>
       );
 
     case 'json':
       return (
-        <DriverJsonField
-          field={field}
-          path={path}
-          driver={driver}
-          errorMessage={errorMessage}
-          onClearError={() => patchValidation?.clearError(field.name)}
-        />
+        <Box>
+          <DriverJsonField
+            field={field}
+            path={path}
+            driver={driver}
+            errorMessage={errorMessage}
+            onClearError={() => patchValidation?.clearError(field.name)}
+          />
+          {FieldDescription}
+        </Box>
       );
 
     case 'hidden': {

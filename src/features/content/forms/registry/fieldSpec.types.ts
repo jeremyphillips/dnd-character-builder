@@ -51,4 +51,6 @@ export type FieldSpec<
   visibleWhen?: Condition;
   /** Validation for kind: 'numberText' (and future field kinds). */
   validation?: ValidationSpec;
+  /** UI-only description shown below the field (separate from helperText/validation). */
+  fieldDescription?: React.ReactNode;
 };

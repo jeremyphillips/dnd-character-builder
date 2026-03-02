@@ -7,8 +7,12 @@ import {
   ARMOR_CATEGORY_OPTIONS,
   ARMOR_MATERIAL_OPTIONS,
 } from '@/features/content/domain/vocab';
+import { when } from '@/ui/patterns';
 import type { FieldSpec } from '@/features/equipment/forms/registry';
 import type { ArmorFormValues } from './armorForm.types';
+
+const isArmor = when.in('category', ['light', 'medium', 'heavy']);
+const isShield = when.eq('category', 'shields');
 
 const numOrUndefined = (v: unknown): number | undefined => {
   if (v === '' || v == null) return undefined;
@@ -53,6 +57,7 @@ export const ARMOR_FORM_FIELDS = [
     placeholder: 'e.g. 14',
     defaultValue: '',
     required: true,
+    visibleWhen: isArmor,
     parse: (v) => numOrUndefined(v),
     format: (v) => numToStr(v),
   },
@@ -62,6 +67,7 @@ export const ARMOR_FORM_FIELDS = [
     kind: 'numberText',
     placeholder: 'e.g. 2',
     defaultValue: '',
+    visibleWhen: isShield,
     parse: (v) => numOrUndefined(v),
     format: (v) => numToStr(v),
     formatForDisplay: (v) =>
@@ -72,6 +78,7 @@ export const ARMOR_FORM_FIELDS = [
     label: 'Stealth Disadvantage',
     kind: 'checkbox',
     defaultValue: false,
+    visibleWhen: isArmor,
     parse: (v) => Boolean(v),
     format: (v) => Boolean(v ?? false),
     formatForDisplay: (v) => (v ? 'Yes' : 'No'),

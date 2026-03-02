@@ -1,3 +1,5 @@
+import type { Condition } from '@/ui/patterns';
+
 /**
  * FieldSpec — single source of truth for form field config + mapping.
  *
@@ -43,4 +45,6 @@ export type FieldSpec<
   minRows?: number;
   /** For kind: 'json' — max rows for textarea. */
   maxRows?: number;
+  /** When set, field is shown only when condition evaluates to true. */
+  visibleWhen?: Condition;
 };

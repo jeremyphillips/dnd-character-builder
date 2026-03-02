@@ -27,7 +27,7 @@ import {
   removeEntryPatch,
 } from '@/features/content/domain/contentPatchRepo';
 import { createPatchDriver } from '@/features/content/editor/patchDriver';
-import { DynamicFormRenderer } from '@/ui/patterns';
+import { ConditionalFormRenderer } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import {
   type ArmorFormValues,
@@ -225,7 +225,7 @@ export default function ArmorEditRoute() {
           {armor.patched && (
             <AppBadge label="Patched" tone="warning" size="small" />
           )}
-          <DynamicFormRenderer
+          <ConditionalFormRenderer
             fields={fieldConfigs}
             driver={{
               kind: 'patch',
@@ -275,7 +275,7 @@ export default function ArmorEditRoute() {
           onSubmit={methods.handleSubmit(handleCampaignSubmit)}
           noValidate
         >
-          <DynamicFormRenderer fields={fieldConfigs} />
+          <ConditionalFormRenderer fields={fieldConfigs} />
         </form>
       </EntryEditorLayout>
     </FormProvider>

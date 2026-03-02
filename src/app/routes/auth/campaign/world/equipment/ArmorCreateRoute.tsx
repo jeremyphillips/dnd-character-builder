@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
-import { DynamicFormRenderer } from '@/ui/patterns';
+import { ConditionalFormRenderer } from '@/ui/patterns';
 import type { Visibility } from '@/shared/types';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
@@ -86,7 +86,7 @@ export default function ArmorCreateRoute() {
         policyCharacters={policyCharacters}
       >
         <form id={FORM_ID} onSubmit={methods.handleSubmit(handleSubmit)} noValidate>
-          <DynamicFormRenderer fields={fieldConfigs} />
+          <ConditionalFormRenderer fields={fieldConfigs} />
         </form>
       </EntryEditorLayout>
     </FormProvider>

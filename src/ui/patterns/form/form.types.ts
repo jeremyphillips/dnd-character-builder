@@ -1,3 +1,5 @@
+import type { Condition } from './conditions';
+
 export type SelectOption = {
   label: string
   value: string
@@ -15,7 +17,9 @@ type BaseFieldConfig = {
   /** Default value for initial form state / RHF defaultValues */
   defaultValue?: unknown
   /** For option-based fields: use first option's value as default */
-  defaultFromOptions?: 'first'
+  defaultFromOptions?: 'first';
+  /** When set, field is shown only when condition evaluates to true */
+  visibleWhen?: Condition;
 }
 
 export type FormSection = {

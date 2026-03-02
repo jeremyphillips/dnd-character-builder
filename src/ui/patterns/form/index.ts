@@ -13,10 +13,12 @@ export {
   default as DynamicFormRenderer,
   type FormDriver,
 } from './DynamicFormRenderer'
+export { default as ConditionalFormRenderer } from './ConditionalFormRenderer'
 export { default as TabbedFormLayout } from './TabbedFormLayout'
 export { default as JsonPreviewField } from './JsonPreviewField'
 export type { FieldConfig, FormSection, SelectOption } from './form.types'
 export { buildDefaultValues } from './utils/buildDefaultValues'
+export { when, evaluateCondition, type Condition } from './conditions'
 
 export { default as VisibilityField } from './VisibilityField'
 export { default as VisibilityBadge } from '../status/VisibilityBadge'

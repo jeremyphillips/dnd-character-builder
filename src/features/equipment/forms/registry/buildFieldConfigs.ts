@@ -34,6 +34,7 @@ export const buildFieldConfigs = <
       helperText: spec.helperText,
       ...(spec.defaultValue !== undefined && { defaultValue: spec.defaultValue }),
       ...(spec.defaultFromOptions && { defaultFromOptions: spec.defaultFromOptions }),
+      ...(spec.visibleWhen && { visibleWhen: spec.visibleWhen }),
     };
 
     switch (spec.kind) {

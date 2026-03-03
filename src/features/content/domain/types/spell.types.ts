@@ -15,3 +15,6 @@ export interface Spell {
   concentration?: boolean
   effects?: SpellEffects
 }
+
+/** Shape for create/update (omits id). */
+export type SpellInput = Omit<Spell, 'id'>

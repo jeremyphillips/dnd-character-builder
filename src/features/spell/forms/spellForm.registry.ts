@@ -1,0 +1,131 @@
+/**
+ * Spell form field registry — single source of truth for config + mapping.
+ */
+import type { Spell, SpellInput } from '@/features/content/domain/types/spell.types';
+import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/domain/vocab';
+import { numberRange, type FieldSpec } from '@/features/content/forms/registry';
+import type { SpellFormValues } from './spellForm.types';
+
+const numOrUndefined = (v: unknown): number | undefined => {
+  if (v === '' || v == null) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
+const numToStr = (v: unknown): string =>
+  v != null && Number.isFinite(Number(v)) ? String(v) : '';
+
+const arrOrEmpty = (v: unknown): string[] =>
+  Array.isArray(v) ? (v as string[]) : [];
+
+const parseEffectsJson = (v: unknown): SpellInput['effects'] | undefined => {
+  if (v == null || v === '') return undefined;
+  if (typeof v !== 'string') return undefined;
+  try {
+    const parsed = JSON.parse(v) as unknown;
+    return Array.isArray(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+};
+const formatEffectsJson = (v: unknown): string => {
+  if (v == null || !Array.isArray(v)) return '[]';
+  try {
+    return JSON.stringify(v, null, 2);
+  } catch {
+    return '[]';
+  }
+};
+
+/** 5e spellcasting classes for spell form. */
+const SPELL_CLASS_OPTIONS = [
+  { value: 'bard', label: 'Bard' },
+  { value: 'cleric', label: 'Cleric' },
+  { value: 'druid', label: 'Druid' },
+  { value: 'paladin', label: 'Paladin' },
+  { value: 'ranger', label: 'Ranger' },
+  { value: 'sorcerer', label: 'Sorcerer' },
+  { value: 'warlock', label: 'Warlock' },
+  { value: 'wizard', label: 'Wizard' },
+] as const;
+
+export const SPELL_FORM_FIELDS = [
+  {
+    name: 'name',
+    label: 'Name',
+    kind: 'text' as const,
+    required: true,
+    placeholder: 'Spell name',
+    defaultValue: '' as SpellFormValues['name'],
+    parse: (v: unknown) => (typeof v === 'string' ? v.trim() : undefined),
+    format: (v: unknown) => (v != null ? String(v) : '') as SpellFormValues['name'],
+  },
+  {
+    name: 'school',
+    label: 'School',
+    kind: 'select' as const,
+    required: true,
+    options: MAGIC_SCHOOL_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+    placeholder: 'Select school',
+    defaultValue: '' as SpellFormValues['school'],
+    parse: (v: unknown) => (v ? (v as SpellInput['school']) : undefined),
+    format: (v: unknown) => (v ?? '') as SpellFormValues['school'],
+  },
+  {
+    name: 'level',
+    label: 'Level',
+    kind: 'numberText' as const,
+    required: true,
+    placeholder: '0–9 (0 = cantrip)',
+    defaultValue: '0' as SpellFormValues['level'],
+    validation: numberRange(0, 9, { integer: true }),
+    parse: (v: unknown) => numOrUndefined(v),
+    format: (v: unknown) => numToStr(v),
+  },
+  {
+    name: 'classes',
+    label: 'Classes',
+    kind: 'checkboxGroup' as const,
+    options: SPELL_CLASS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+    defaultValue: [] as SpellFormValues['classes'],
+    parse: (v: unknown) => (Array.isArray(v) ? (v as SpellInput['classes']) : undefined),
+    format: (v: unknown) => arrOrEmpty(v) as SpellFormValues['classes'],
+  },
+  {
+    name: 'ritual',
+    label: 'Ritual',
+    kind: 'checkbox' as const,
+    defaultValue: false as SpellFormValues['ritual'],
+    parse: (v: unknown) => Boolean(v),
+    format: (v: unknown) => Boolean(v ?? false),
+    formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
+  },
+  {
+    name: 'concentration',
+    label: 'Concentration',
+    kind: 'checkbox' as const,
+    defaultValue: false as SpellFormValues['concentration'],
+    parse: (v: unknown) => Boolean(v),
+    format: (v: unknown) => Boolean(v ?? false),
+    formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
+  },
+  {
+    name: 'effects',
+    label: 'Effects',
+    kind: 'json' as const,
+    placeholder: '[{ "kind": "note", "text": "..." }]',
+    helperText: 'Effect objects with kind (e.g. note, modifier, grant).',
+    minRows: 4,
+    maxRows: 16,
+    defaultValue: '[]' as SpellFormValues['effects'],
+    parse: (v: unknown) => parseEffectsJson(v),
+    format: (v: unknown) => formatEffectsJson(v),
+    formatForDisplay: (v: unknown) => {
+      const arr = Array.isArray(v) ? v : [];
+      return arr.length > 0 ? `${arr.length} effect(s)` : '—';
+    },
+  },
+] as const satisfies readonly FieldSpec<
+  SpellFormValues,
+  SpellInput & Record<string, unknown>,
+  Spell & Record<string, unknown>
+>[];

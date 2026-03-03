@@ -49,6 +49,7 @@ export {
   CampaignRulesetEditorRoute,
   RaceListRoute,
   RaceDetailRoute,
-  RaceEditorRoute,
+  RaceCreateRoute,
+  RaceEditRoute,
   ContentManageGuard,
 } from './campaign'

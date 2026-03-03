@@ -47,6 +47,7 @@ export default defineConfig({
       "@/features/npc": path.resolve(__dirname, "src/features/npc"),
       "@/features/spell": path.resolve(__dirname, "src/features/spell"),
       "@/features/equipment": path.resolve(__dirname, "src/features/equipment"),
+      "@/features/race": path.resolve(__dirname, "src/features/race"),
       "@/features/location": path.resolve(__dirname, "src/features/location"),
       "@/features/mechanics": path.resolve(__dirname, "src/features/mechanics"),
       "@/features/content": path.resolve(__dirname, "src/features/content"),

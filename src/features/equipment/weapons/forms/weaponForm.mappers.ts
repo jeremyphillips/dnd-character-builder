@@ -5,6 +5,13 @@
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import type { Weapon, WeaponInput } from '@/features/content/domain/types';
 import { buildDefaultFormValues } from '@/features/content/forms/registry';
+import {
+  buildXdY,
+  parseXdY,
+  toCount,
+  toCountOrZero,
+  toDieFace,
+} from '@/features/mechanics/domain/dice';
 import { WEAPON_FORM_FIELDS } from './weaponForm.registry';
 import type { WeaponFormValues } from './weaponForm.types';
 
@@ -22,33 +29,48 @@ const trimOrNull = (s: string): string | null =>
  * Converts a Weapon domain object to form values.
  * Handles nested damage/range structure (not 1:1 with item).
  */
-export const weaponToFormValues = (weapon: Weapon): WeaponFormValues => ({
-  ...(defaultFormValues as WeaponFormValues),
-  name: weapon.name,
-  description: weapon.description ?? '',
-  imageKey: weapon.imageKey ?? '',
-  accessPolicy: (weapon.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC) as WeaponFormValues['accessPolicy'],
-  category: (weapon.category ?? '') as WeaponFormValues['category'],
-  mode: (weapon.mode ?? '') as WeaponFormValues['mode'],
-  damageDefault: weapon.damage?.default ?? '',
-  damageVersatile: weapon.damage?.versatile ?? '',
-  damageType: weapon.damageType ?? '',
-  mastery: (weapon as { mastery?: string }).mastery ?? '',
-  rangeNormal: weapon.range?.normal != null ? String(weapon.range.normal) : '',
-  rangeLong: weapon.range?.long != null ? String(weapon.range.long) : '',
-  properties: weapon.properties ?? [],
-});
+export const weaponToFormValues = (weapon: Weapon): WeaponFormValues => {
+  const { count, die } = parseXdY(weapon.damage?.default);
+  const versatile = parseXdY(weapon.damage?.versatile, {
+    defaultCount: 0,
+    defaultDie: 8,
+  });
+  return {
+    ...(defaultFormValues as WeaponFormValues),
+    name: weapon.name,
+    description: weapon.description ?? '',
+    imageKey: weapon.imageKey ?? '',
+    accessPolicy: (weapon.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC) as WeaponFormValues['accessPolicy'],
+    category: (weapon.category ?? '') as WeaponFormValues['category'],
+    mode: (weapon.mode ?? '') as WeaponFormValues['mode'],
+    damageDefaultCount: String(count),
+    damageDefaultDie: String(die),
+    damageVersatileCount: String(versatile.count),
+    damageVersatileDie: String(versatile.die),
+    damageType: weapon.damageType ?? '',
+    // TODO: decide whether to show mastery. Leave this here for now.
+    // mastery: (weapon as { mastery?: string }).mastery ?? '',
+    rangeNormal: weapon.range?.normal != null ? String(weapon.range.normal) : '',
+    rangeLong: weapon.range?.long != null ? String(weapon.range.long) : '',
+    properties: weapon.properties ?? [],
+  };
+};
 
 /**
  * Converts form values to WeaponInput for create/update.
  * Handles nested damage and range structure.
  */
 export const toWeaponInput = (values: WeaponFormValues): WeaponInput => {
+  const count = toCount(values.damageDefaultCount, 1);
+  const die = toDieFace(values.damageDefaultDie, 6);
+  const damageDefault = buildXdY({ count, die });
   const damage: { default: string; versatile?: string } = {
-    default: values.damageDefault.trim(),
+    default: damageDefault,
   };
-  if (values.damageVersatile.trim()) {
-    damage.versatile = values.damageVersatile.trim();
+  const vCount = toCountOrZero(values.damageVersatileCount, 0);
+  if (vCount > 0) {
+    const vDie = toDieFace(values.damageVersatileDie, 6);
+    damage.versatile = buildXdY({ count: vCount, die: vDie });
   }
 
   let range: { normal: number; long?: number; unit: 'ft' } | undefined;
@@ -85,4 +107,75 @@ export const toWeaponInput = (values: WeaponFormValues): WeaponInput => {
   }
 
   return input;
+};
+
+/**
+ * Converts a weapon domain-style patch to form-style patch.
+ * Used when loading system item patches so form fields (damageDefaultCount/die) display correctly.
+ */
+export const weaponDomainPatchToForm = (
+  patch: Record<string, unknown>
+): Record<string, unknown> => {
+  const out = { ...patch };
+  const damage = patch.damage as { default?: string; versatile?: string } | undefined;
+  if (damage?.default) {
+    const { count, die } = parseXdY(damage.default);
+    out.damageDefaultCount = String(count);
+    out.damageDefaultDie = String(die);
+  }
+  if (damage?.versatile) {
+    const versatile = parseXdY(damage.versatile, {
+      defaultCount: 0,
+      defaultDie: 8,
+    });
+    out.damageVersatileCount = String(versatile.count);
+    out.damageVersatileDie = String(versatile.die);
+  }
+  if ('damage' in out) {
+    delete out.damage;
+  }
+  return out;
+};
+
+/**
+ * Converts a weapon form-style patch to domain-style patch.
+ * Used when saving system item patches (damageDefaultCount/die -> damage.default).
+ */
+export const weaponPatchToDomain = (
+  patch: Record<string, unknown>
+): Record<string, unknown> => {
+  const out = { ...patch };
+  let damage: Record<string, unknown> = (out.damage ?? {}) as Record<string, unknown>;
+
+  const hasDamageFields =
+    'damageDefaultCount' in patch || 'damageDefaultDie' in patch;
+  if (hasDamageFields) {
+    const count = toCount(patch.damageDefaultCount, 1);
+    const die = toDieFace(patch.damageDefaultDie, 6);
+    damage = { ...damage, default: buildXdY({ count, die }) };
+    delete out.damageDefaultCount;
+    delete out.damageDefaultDie;
+  }
+
+  const hasVersatileFields =
+    'damageVersatileCount' in patch || 'damageVersatileDie' in patch;
+  if (hasVersatileFields) {
+    const vCount = toCountOrZero(patch.damageVersatileCount, 0);
+    delete out.damageVersatileCount;
+    delete out.damageVersatileDie;
+    if (vCount > 0) {
+      const vDie = toDieFace(patch.damageVersatileDie, 6);
+      damage = { ...damage, versatile: buildXdY({ count: vCount, die: vDie }) };
+    } else {
+      const { versatile: _, ...rest } = damage;
+      damage = rest;
+    }
+  }
+
+  if (Object.keys(damage).length > 0) {
+    out.damage = damage;
+  } else if ('damage' in out) {
+    delete out.damage;
+  }
+  return out;
 };

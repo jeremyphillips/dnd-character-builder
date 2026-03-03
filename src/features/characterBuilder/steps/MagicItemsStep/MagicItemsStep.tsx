@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import type { MagicItemSlot, MagicItem, MagicItemRarity } from '@/features/content/domain/types'
 import type { EquipmentItemInstance } from '@/shared/types/character.core'
-import type { EnchantableSlot } from '@/data/equipment/enchantments/enchantmentTemplates.types'
+import type { EnchantableSlot } from '@/features/content/domain/types'
 import { moneyToCp, cpToDenoms, formatCp } from '@/shared/money'
 import type { Money } from '@/shared/money/types'
 
@@ -131,7 +131,7 @@ const MagicItemsStep = () => {
   const getInstanceLabel = (inst: EquipmentItemInstance, kind: 'weapon' | 'armor'): string => {
     const name = getBaseItemName(inst.baseId, kind)
     if (!inst.enhancementTemplateId) return name
-    const t = catalog.enhancementTemplatesById[inst.enhancementTemplateId]
+    const t = catalog.enhancementsById[inst.enhancementTemplateId]
     if (!t) return name
     const short = t.name.replace(' Enhancement', '')
     return `${name} (${short})`
@@ -139,7 +139,7 @@ const MagicItemsStep = () => {
 
   const getEnhancementCostCp = (templateId: string | undefined): number => {
     if (!templateId) return 0
-    const tpl = catalog.enhancementTemplatesById[templateId]
+    const tpl = catalog.enhancementsById[templateId]
     if (!tpl) return 0
     return moneyToCp(tpl.cost as Money)
   }
@@ -173,7 +173,7 @@ const MagicItemsStep = () => {
     activeEnhGroup === 'weapons' ? 'weapon' : 'armor'
 
   const slot = GROUP_TO_SLOT[activeEnhGroup]
-  const availableTemplates = Object.values(catalog.enhancementTemplatesById).filter(
+  const availableTemplates = Object.values(catalog.enhancementsById).filter(
     t => t.appliesTo.includes(slot),
   )
   const templateIds = availableTemplates.map(t => t.id)

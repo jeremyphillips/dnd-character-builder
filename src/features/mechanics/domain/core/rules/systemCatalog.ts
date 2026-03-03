@@ -6,7 +6,7 @@
  * ContentPolicy.  System rulesets are code-defined defaults that campaign
  * patches are applied on top of via `resolveCampaignRuleset`.
  */
-import { equipment } from '@/data/equipment/equipment'
+import { getSystemEnchantmentTemplates } from './systemCatalog.enchantments'
 import { getSystemWeapons } from './systemCatalog.weapons'
 import { getSystemArmor } from './systemCatalog.armor'
 import { getSystemGear } from './systemCatalog.gear'
@@ -51,7 +51,7 @@ export type CampaignCatalog = {
   armorById:                Record<string, Armor>
   gearById:                 Record<string, Gear>
   magicItemsById:           Record<string, MagicItem>
-  enhancementTemplatesById: Record<string, EnchantmentTemplate>
+  enhancementsById: Record<string, EnchantmentTemplate>
   spellsById:               Record<string, SpellData>
   monstersById:             Record<string, Monster>
 }
@@ -76,7 +76,7 @@ export const systemCatalog: CampaignCatalog = {
   armorById:                keyBy(armor),
   gearById:                 keyBy(gear),
   magicItemsById:           keyBy(magicItems),
-  enhancementTemplatesById: keyBy(equipment.enchantments.enhancementTemplates),
+  enhancementsById: keyBy(getSystemEnchantmentTemplates(DEFAULT_SYSTEM_RULESET_ID)),
   spellsById:               keyBy(spells),
   monstersById:             keyBy(monsters),
 }

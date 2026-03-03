@@ -12,12 +12,14 @@ import type { ContentFormValues } from '@/features/content/domain/types';
 export type WeaponFormValues = ContentFormValues & {
   category: WeaponCategory | '';
   mode: WeaponMode | '';
-  // converted from damage: { default, versatile }
-  damageDefaultCount: number | string;
-  damageDefaultDie: string; // "4"|"6"|"8"|"10"|"12"|"20" for select
-  damageVersatileCount: number;
-  damageVersatileDie: string; // "4"|"6"|"8"|"10"|"12"|"20" for select
   damageType: DamageType;
+
+  // converted from damage: { default, versatile } — stored as strings (RHF-friendly)
+  damageDefaultCount: string;
+  damageDefaultDie: string;
+  damageVersatileCount: string;
+  damageVersatileDie: string;
+  
   // converted from range: { normal, long }
   rangeNormal: string;
   rangeLong: string;

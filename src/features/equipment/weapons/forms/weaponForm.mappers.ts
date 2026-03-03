@@ -5,6 +5,13 @@
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import type { Weapon, WeaponInput } from '@/features/content/domain/types';
 import { buildDefaultFormValues } from '@/features/content/forms/registry';
+import {
+  buildXdY,
+  parseXdY,
+  toCount,
+  toCountOrZero,
+  toDieFace,
+} from '@/features/mechanics/domain/dice';
 import { WEAPON_FORM_FIELDS } from './weaponForm.registry';
 import type { WeaponFormValues } from './weaponForm.types';
 
@@ -18,39 +25,16 @@ const toOptionalNumber = (s: string): number | undefined => {
 const trimOrNull = (s: string): string | null =>
   s.trim() ? s.trim() : null;
 
-const VALID_DIE_FACES = [4, 6, 8, 10, 12, 20] as const;
-
-function parseDamage(s: string | undefined): { count: number; die: number } {
-  if (!s || typeof s !== 'string') return { count: 1, die: 6 };
-  const m = s.trim().match(/^(\d+)d(\d+)$/i);
-  if (!m) return { count: 1, die: 6 };
-  const count = Math.max(1, parseInt(m[1], 10) || 1);
-  const dieNum = parseInt(m[2], 10);
-  const die = VALID_DIE_FACES.includes(dieNum as (typeof VALID_DIE_FACES)[number])
-    ? dieNum
-    : 6;
-  return { count, die };
-}
-
-function parseDamageVersatile(s: string | undefined): { count: number; die: number } {
-  if (!s || typeof s !== 'string' || !s.trim()) return { count: 0, die: 8 };
-  const m = s.trim().match(/^(\d+)d(\d+)$/i);
-  if (!m) return { count: 0, die: 8 };
-  const count = Math.max(0, parseInt(m[1], 10) || 0);
-  const dieNum = parseInt(m[2], 10);
-  const die = VALID_DIE_FACES.includes(dieNum as (typeof VALID_DIE_FACES)[number])
-    ? dieNum
-    : 8;
-  return { count: count || 0, die };
-}
-
 /**
  * Converts a Weapon domain object to form values.
  * Handles nested damage/range structure (not 1:1 with item).
  */
 export const weaponToFormValues = (weapon: Weapon): WeaponFormValues => {
-  const { count, die } = parseDamage(weapon.damage?.default);
-  const versatile = parseDamageVersatile(weapon.damage?.versatile);
+  const { count, die } = parseXdY(weapon.damage?.default);
+  const versatile = parseXdY(weapon.damage?.versatile, {
+    defaultCount: 0,
+    defaultDie: 8,
+  });
   return {
     ...(defaultFormValues as WeaponFormValues),
     name: weapon.name,
@@ -59,12 +43,13 @@ export const weaponToFormValues = (weapon: Weapon): WeaponFormValues => {
     accessPolicy: (weapon.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC) as WeaponFormValues['accessPolicy'],
     category: (weapon.category ?? '') as WeaponFormValues['category'],
     mode: (weapon.mode ?? '') as WeaponFormValues['mode'],
-    damageDefaultCount: count,
+    damageDefaultCount: String(count),
     damageDefaultDie: String(die),
-    damageVersatileCount: versatile.count,
+    damageVersatileCount: String(versatile.count),
     damageVersatileDie: String(versatile.die),
     damageType: weapon.damageType ?? '',
-    mastery: (weapon as { mastery?: string }).mastery ?? '',
+    // TODO: decide whether to show mastery. Leave this here for now.
+    // mastery: (weapon as { mastery?: string }).mastery ?? '',
     rangeNormal: weapon.range?.normal != null ? String(weapon.range.normal) : '',
     rangeLong: weapon.range?.long != null ? String(weapon.range.long) : '',
     properties: weapon.properties ?? [],
@@ -76,16 +61,16 @@ export const weaponToFormValues = (weapon: Weapon): WeaponFormValues => {
  * Handles nested damage and range structure.
  */
 export const toWeaponInput = (values: WeaponFormValues): WeaponInput => {
-  const count = Number(values.damageDefaultCount) || 1;
-  const die = Number(values.damageDefaultDie) || 6;
-  const damageDefault = `${count}d${die}`;
+  const count = toCount(values.damageDefaultCount, 1);
+  const die = toDieFace(values.damageDefaultDie, 6);
+  const damageDefault = buildXdY({ count, die });
   const damage: { default: string; versatile?: string } = {
     default: damageDefault,
   };
-  const vCount = Number(values.damageVersatileCount) || 0;
+  const vCount = toCountOrZero(values.damageVersatileCount, 0);
   if (vCount > 0) {
-    const vDie = Number(values.damageVersatileDie) || 6;
-    damage.versatile = `${vCount}d${vDie}`;
+    const vDie = toDieFace(values.damageVersatileDie, 6);
+    damage.versatile = buildXdY({ count: vCount, die: vDie });
   }
 
   let range: { normal: number; long?: number; unit: 'ft' } | undefined;
@@ -134,13 +119,16 @@ export const weaponDomainPatchToForm = (
   const out = { ...patch };
   const damage = patch.damage as { default?: string; versatile?: string } | undefined;
   if (damage?.default) {
-    const { count, die } = parseDamage(damage.default);
-    out.damageDefaultCount = count;
+    const { count, die } = parseXdY(damage.default);
+    out.damageDefaultCount = String(count);
     out.damageDefaultDie = String(die);
   }
   if (damage?.versatile) {
-    const versatile = parseDamageVersatile(damage.versatile);
-    out.damageVersatileCount = versatile.count;
+    const versatile = parseXdY(damage.versatile, {
+      defaultCount: 0,
+      defaultDie: 8,
+    });
+    out.damageVersatileCount = String(versatile.count);
     out.damageVersatileDie = String(versatile.die);
   }
   if ('damage' in out) {
@@ -162,9 +150,9 @@ export const weaponPatchToDomain = (
   const hasDamageFields =
     'damageDefaultCount' in patch || 'damageDefaultDie' in patch;
   if (hasDamageFields) {
-    const count = Number(patch.damageDefaultCount) || 1;
-    const die = Number(patch.damageDefaultDie) || 6;
-    damage = { ...damage, default: `${count}d${die}` };
+    const count = toCount(patch.damageDefaultCount, 1);
+    const die = toDieFace(patch.damageDefaultDie, 6);
+    damage = { ...damage, default: buildXdY({ count, die }) };
     delete out.damageDefaultCount;
     delete out.damageDefaultDie;
   }
@@ -172,12 +160,12 @@ export const weaponPatchToDomain = (
   const hasVersatileFields =
     'damageVersatileCount' in patch || 'damageVersatileDie' in patch;
   if (hasVersatileFields) {
-    const vCount = Number(patch.damageVersatileCount) || 0;
+    const vCount = toCountOrZero(patch.damageVersatileCount, 0);
     delete out.damageVersatileCount;
     delete out.damageVersatileDie;
     if (vCount > 0) {
-      const vDie = Number(patch.damageVersatileDie) || 6;
-      damage = { ...damage, versatile: `${vCount}d${vDie}` };
+      const vDie = toDieFace(patch.damageVersatileDie, 6);
+      damage = { ...damage, versatile: buildXdY({ count: vCount, die: vDie }) };
     } else {
       const { versatile: _, ...rest } = damage;
       damage = rest;

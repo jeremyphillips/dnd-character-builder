@@ -13,9 +13,11 @@ import type {
   WeaponProperty,
   DamageType,
 } from '../vocab/weapons.vocab';
+import type { DiceOrFlat } from '@/features/mechanics/domain/dice';
 
 export type { WeaponCategory, WeaponMode, WeaponProperty, DamageType };
 
+/** TODO: decide whether to show mastery. Leave for now */
 // export type Mastery = 'slow' | 'nick' | 'push' | 'vex' | 'sap' | 'topple' | 'graze';
 
 export interface WeaponFields extends EquipmentBase {
@@ -24,7 +26,7 @@ export interface WeaponFields extends EquipmentBase {
   mode: WeaponMode;
   range?: { normal: number; long?: number; unit: 'ft' };
   properties: WeaponProperty[];
-  damage: { default: string; versatile?: string };
+  damage: { default: DiceOrFlat; versatile?: DiceOrFlat };
   damageType: DamageType;
   /** TODO: decide whether to show mastery */
   // mastery: string;
@@ -37,7 +39,7 @@ export type Weapon = ContentItem & WeaponFields;
 export type WeaponSummary = ContentSummary & {
   category: WeaponCategory;
   costCp: number;
-  damage: string;
+  damage: DiceOrFlat; // Flattened to string for List view
   damageType: DamageType;
   properties: WeaponProperty[];
 };

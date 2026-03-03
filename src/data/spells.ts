@@ -1,6 +1,6 @@
-import type { SpellData } from '@/features/content/domain/types/spell.types';
+import type { Spell } from '@/features/content/domain/types/spell.types';
 
-export const spells: SpellData[] = [
+export const spells: Spell[] = [
   {
     id: 'fireBolt',
     name: 'Fire Bolt',

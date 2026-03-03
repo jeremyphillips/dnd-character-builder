@@ -5,7 +5,7 @@ import type { Effect } from '@/features/mechanics/domain/effects/effects.types';
  // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
 
-export interface SpellData {
+export interface Spell {
   id: string
   name: string
   school: MagicSchool

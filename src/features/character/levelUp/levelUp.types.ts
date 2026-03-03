@@ -5,7 +5,7 @@
 
 import type { CharacterClassInfo } from '@/shared/types/character.core'
 import type { ClassId } from '@/shared/types/ruleset'
-import type { SpellData } from '@/features/content/domain/types/spell.types'
+import type { Spell } from '@/features/content/domain/types/spell.types'
 
 // ---------------------------------------------------------------------------
 // Wizard state
@@ -72,7 +72,7 @@ export interface LevelUpResult {
   /** New HP total */
   hitPoints: { total: number; generationMethod: string }
   /** Complete spell list after additions/removals */
-  spells: SpellData[]
+  spells: Spell[]
   /** Subclass ID (if newly chosen) */
   classDefinitionId?: string
 }

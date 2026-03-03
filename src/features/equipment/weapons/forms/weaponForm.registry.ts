@@ -11,6 +11,11 @@ import {
 } from '@/features/content/domain/vocab';
 import type { FieldSpec } from '@/features/content/forms/registry';
 import type { WeaponFormValues } from './weaponForm.types';
+import { when } from '@/ui/patterns';
+
+const isMelee = when.eq('mode', 'melee');
+const isRanged = when.eq('mode', 'ranged');
+const isVersatile = when.contains('properties', 'versatile');
 
 const arrOrEmpty = (v: unknown): string[] =>
   Array.isArray(v) ? (v as string[]) : [];
@@ -44,6 +49,15 @@ export const WEAPON_FORM_FIELDS = [
     format: (v: unknown) => (v ?? '') as WeaponFormValues['mode'],
   },
   {
+    name: 'properties',
+    label: 'Properties',
+    kind: 'checkboxGroup' as const,
+    options: WEAPON_PROPERTY_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+    defaultValue: [] as WeaponFormValues['properties'],
+    parse: (v: unknown) => (Array.isArray(v) ? (v as WeaponInput['properties']) : undefined),
+    format: (v: unknown) => arrOrEmpty(v) as WeaponFormValues['properties'],
+  },
+  {
     name: 'damageDefault',
     label: 'Damage (e.g. 1d6)',
     kind: 'text' as const,
@@ -57,6 +71,7 @@ export const WEAPON_FORM_FIELDS = [
     placeholder: '1d8',
     helperText: 'Optional. Only used for versatile weapons.',
     defaultValue: '' as WeaponFormValues['damageVersatile'],
+    visibleWhen: isVersatile,
   },
   {
     name: 'damageType',
@@ -68,13 +83,14 @@ export const WEAPON_FORM_FIELDS = [
     parse: (v: unknown) => (v ? String(v) : undefined),
     format: (v: unknown) => (v ?? '') as WeaponFormValues['damageType'],
   },
-  {
-    name: 'mastery',
-    label: 'Mastery',
-    kind: 'text' as const,
-    placeholder: 'e.g. slow, nick',
-    defaultValue: '' as WeaponFormValues['mastery'],
-  },
+  // TODO: decide whether to show mastery
+  // {
+  //   name: 'mastery',
+  //   label: 'Mastery',
+  //   kind: 'text' as const,
+  //   placeholder: 'e.g. slow, nick',
+  //   defaultValue: '' as WeaponFormValues['mastery'],
+  // },
   {
     name: 'rangeNormal',
     label: 'Range (normal, ft)',
@@ -82,6 +98,7 @@ export const WEAPON_FORM_FIELDS = [
     placeholder: 'e.g. 30',
     helperText: 'Only used for ranged weapons.',
     defaultValue: '' as WeaponFormValues['rangeNormal'],
+    visibleWhen: isRanged,
   },
   {
     name: 'rangeLong',
@@ -90,15 +107,7 @@ export const WEAPON_FORM_FIELDS = [
     placeholder: 'e.g. 120',
     helperText: 'Optional. Only used for ranged weapons.',
     defaultValue: '' as WeaponFormValues['rangeLong'],
-  },
-  {
-    name: 'properties',
-    label: 'Properties',
-    kind: 'checkboxGroup' as const,
-    options: WEAPON_PROPERTY_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-    defaultValue: [] as WeaponFormValues['properties'],
-    parse: (v: unknown) => (Array.isArray(v) ? (v as WeaponInput['properties']) : undefined),
-    format: (v: unknown) => arrOrEmpty(v) as WeaponFormValues['properties'],
+    visibleWhen: isRanged,
   },
 ] as const satisfies readonly FieldSpec<
   WeaponFormValues,

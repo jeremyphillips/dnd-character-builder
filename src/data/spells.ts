@@ -6,8 +6,8 @@ export const spells: SpellData[] = [
     name: 'Fire Bolt',
     school: 'evocation',
     level: 0,
-    classes: ['artificer', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    classes: ['sorcerer', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'eldritchBlast',
@@ -15,7 +15,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 0,
     classes: ['warlock'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'sacredFlame',
@@ -23,31 +23,31 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 0,
     classes: ['cleric'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'mageHand',
     name: 'Mage Hand',
     school: 'conjuration',
     level: 0,
-    classes: ['artificer', 'bard', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'prestidigitation',
     name: 'Prestidigitation',
     school: 'transmutation',
     level: 0,
-    classes: ['artificer', 'bard', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'light',
     name: 'Light',
     school: 'evocation',
     level: 0,
-    classes: ['artificer', 'bard', 'cleric', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    classes: ['bard', 'cleric', 'sorcerer', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'magicMissile',
@@ -55,7 +55,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 1,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'shield',
@@ -63,15 +63,15 @@ export const spells: SpellData[] = [
     school: 'abjuration',
     level: 1,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'cureWounds',
     name: 'Cure Wounds',
     school: 'evocation',
     level: 1,
-    classes: ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger'],
-    source: 'PHB'
+    classes: ['bard', 'cleric', 'druid', 'paladin', 'ranger'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'healingWord',
@@ -79,7 +79,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 1,
     classes: ['bard', 'cleric', 'druid'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'thunderwave',
@@ -87,17 +87,17 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 1,
     classes: ['bard', 'druid', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'detectMagic',
     name: 'Detect Magic',
     school: 'divination',
     level: 1,
-    classes: ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'wizard'],
+    classes: ['bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'wizard'],
     ritual: true,
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'guidingBolt',
@@ -105,7 +105,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 1,
     classes: ['cleric'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'sleep',
@@ -113,7 +113,7 @@ export const spells: SpellData[] = [
     school: 'enchantment',
     level: 1,
     classes: ['bard', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'charmPerson',
@@ -121,7 +121,7 @@ export const spells: SpellData[] = [
     school: 'enchantment',
     level: 1,
     classes: ['bard', 'druid', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'protectionFromEvil',
@@ -130,7 +130,7 @@ export const spells: SpellData[] = [
     level: 1,
     classes: ['cleric', 'paladin', 'warlock', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'bless',
@@ -139,24 +139,24 @@ export const spells: SpellData[] = [
     level: 1,
     classes: ['cleric', 'paladin'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'featherFall',
     name: 'Feather Fall',
     school: 'transmutation',
     level: 1,
-    classes: ['artificer', 'bard', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    classes: ['bard', 'sorcerer', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'identify',
     name: 'Identify',
     school: 'divination',
     level: 1,
-    classes: ['artificer', 'bard', 'wizard'],
+    classes: ['bard', 'wizard'],
     ritual: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   // ═══════════════════════════════════════════════════════════════
   // 2nd Level
@@ -167,7 +167,7 @@ export const spells: SpellData[] = [
     school: 'conjuration',
     level: 2,
     classes: ['sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'spiritualWeapon',
@@ -175,7 +175,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 2,
     classes: ['cleric'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'holdPerson',
@@ -184,7 +184,7 @@ export const spells: SpellData[] = [
     level: 2,
     classes: ['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'scorchingRay',
@@ -192,25 +192,25 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 2,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'web',
     name: 'Web',
     school: 'conjuration',
     level: 2,
-    classes: ['artificer', 'sorcerer', 'wizard'],
+    classes: ['sorcerer', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'invisibility',
     name: 'Invisibility',
     school: 'illusion',
     level: 2,
-    classes: ['artificer', 'bard', 'sorcerer', 'warlock', 'wizard'],
+    classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'silence',
@@ -220,15 +220,15 @@ export const spells: SpellData[] = [
     classes: ['bard', 'cleric', 'ranger'],
     ritual: true,
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'lesserRestoration',
     name: 'Lesser Restoration',
     school: 'abjuration',
     level: 2,
-    classes: ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger'],
-    source: 'PHB'
+    classes: ['bard', 'cleric', 'druid', 'paladin', 'ranger'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'fireball',
@@ -236,7 +236,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 3,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'counterspell',
@@ -244,7 +244,7 @@ export const spells: SpellData[] = [
     school: 'abjuration',
     level: 3,
     classes: ['sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'spiritGuardians',
@@ -253,24 +253,24 @@ export const spells: SpellData[] = [
     level: 3,
     classes: ['cleric'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'revivify',
     name: 'Revivify',
     school: 'necromancy',
     level: 3,
-    classes: ['artificer', 'cleric', 'paladin'],
-    source: 'PHB'
+    classes: ['cleric', 'paladin'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'haste',
     name: 'Haste',
     school: 'transmutation',
     level: 3,
-    classes: ['artificer', 'sorcerer', 'wizard'],
+    classes: ['sorcerer', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'lightningBolt',
@@ -278,24 +278,24 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 3,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'fly',
     name: 'Fly',
     school: 'transmutation',
     level: 3,
-    classes: ['artificer', 'sorcerer', 'warlock', 'wizard'],
+    classes: ['sorcerer', 'warlock', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'dispelMagic',
     name: 'Dispel Magic',
     school: 'abjuration',
     level: 3,
-    classes: ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    classes: ['bard', 'cleric', 'druid', 'paladin', 'sorcerer', 'warlock', 'wizard'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'removeCurse',
@@ -303,7 +303,7 @@ export const spells: SpellData[] = [
     school: 'abjuration',
     level: 3,
     classes: ['cleric', 'paladin', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'slow',
@@ -312,7 +312,7 @@ export const spells: SpellData[] = [
     level: 3,
     classes: ['sorcerer', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -324,7 +324,7 @@ export const spells: SpellData[] = [
     school: 'conjuration',
     level: 4,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'banishment',
@@ -333,7 +333,7 @@ export const spells: SpellData[] = [
     level: 4,
     classes: ['cleric', 'paladin', 'sorcerer', 'warlock', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'polymorph',
@@ -342,7 +342,7 @@ export const spells: SpellData[] = [
     level: 4,
     classes: ['bard', 'druid', 'sorcerer', 'wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'iceStorm',
@@ -350,7 +350,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 4,
     classes: ['druid', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'wallOfForce',
@@ -359,15 +359,15 @@ export const spells: SpellData[] = [
     level: 5,
     classes: ['wizard'],
     concentration: true,
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'greaterRestoration',
     name: 'Greater Restoration',
     school: 'abjuration',
     level: 5,
-    classes: ['artificer', 'bard', 'cleric', 'druid'],
-    source: 'PHB'
+    classes: ['bard', 'cleric', 'druid'],
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'raiseDead',
@@ -375,7 +375,7 @@ export const spells: SpellData[] = [
     school: 'necromancy',
     level: 5,
     classes: ['bard', 'cleric', 'paladin'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'chainLightning',
@@ -383,7 +383,7 @@ export const spells: SpellData[] = [
     school: 'evocation',
     level: 6,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'disintegrate',
@@ -391,7 +391,7 @@ export const spells: SpellData[] = [
     school: 'transmutation',
     level: 6,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'teleport',
@@ -399,7 +399,7 @@ export const spells: SpellData[] = [
     school: 'conjuration',
     level: 7,
     classes: ['bard', 'sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'resurrection',
@@ -407,7 +407,7 @@ export const spells: SpellData[] = [
     school: 'necromancy',
     level: 7,
     classes: ['bard', 'cleric'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'powerWordStun',
@@ -415,7 +415,7 @@ export const spells: SpellData[] = [
     school: 'enchantment',
     level: 8,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'wish',
@@ -423,7 +423,7 @@ export const spells: SpellData[] = [
     school: 'conjuration',
     level: 9,
     classes: ['sorcerer', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   },
   {
     id: 'powerWordKill',
@@ -431,6 +431,6 @@ export const spells: SpellData[] = [
     school: 'enchantment',
     level: 9,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
-    source: 'PHB'
+    effects: [{ kind: 'note', text: '' }]
   }
 ] as const

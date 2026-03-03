@@ -84,6 +84,7 @@ export const buildFieldConfigs = <
       ...(spec.defaultValue !== undefined && { defaultValue: spec.defaultValue }),
       ...(spec.defaultFromOptions && { defaultFromOptions: spec.defaultFromOptions }),
       ...(spec.visibleWhen && { visibleWhen: spec.visibleWhen }),
+      ...(spec.path !== undefined && { path: spec.path }),
     };
 
     switch (spec.kind) {

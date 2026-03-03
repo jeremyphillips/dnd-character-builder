@@ -13,7 +13,6 @@ import type { FieldSpec } from '@/features/content/forms/registry';
 import type { WeaponFormValues } from './weaponForm.types';
 import { when } from '@/ui/patterns';
 
-const isMelee = when.eq('mode', 'melee');
 const isRanged = when.eq('mode', 'ranged');
 const isVersatile = when.contains('properties', 'versatile');
 
@@ -61,6 +60,7 @@ export const WEAPON_FORM_FIELDS = [
     name: 'damageDefault',
     label: 'Damage (e.g. 1d6)',
     kind: 'text' as const,
+    path: 'damage.default',
     placeholder: '1d6',
     defaultValue: '1d6' as WeaponFormValues['damageDefault'],
   },
@@ -68,6 +68,7 @@ export const WEAPON_FORM_FIELDS = [
     name: 'damageVersatile',
     label: 'Damage (versatile)',
     kind: 'text' as const,
+    path: 'damage.versatile',
     placeholder: '1d8',
     helperText: 'Optional. Only used for versatile weapons.',
     defaultValue: '' as WeaponFormValues['damageVersatile'],
@@ -95,6 +96,7 @@ export const WEAPON_FORM_FIELDS = [
     name: 'rangeNormal',
     label: 'Range (normal, ft)',
     kind: 'text' as const,
+    path: 'range.normal',
     placeholder: 'e.g. 30',
     helperText: 'Only used for ranged weapons.',
     defaultValue: '' as WeaponFormValues['rangeNormal'],
@@ -104,6 +106,7 @@ export const WEAPON_FORM_FIELDS = [
     name: 'rangeLong',
     label: 'Range (long, ft)',
     kind: 'text' as const,
+    path: 'range.long',
     placeholder: 'e.g. 120',
     helperText: 'Optional. Only used for ranged weapons.',
     defaultValue: '' as WeaponFormValues['rangeLong'],

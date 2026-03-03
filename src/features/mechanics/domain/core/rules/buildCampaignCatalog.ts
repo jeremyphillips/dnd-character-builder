@@ -126,7 +126,7 @@ export function buildCampaignCatalog(
     armorById:                resolveContent('armor', system.armorById,                campaign.armorById,                c.equipment),
     gearById:                 resolveContent('gear', system.gearById,                 campaign.gearById,                 c.equipment),
     magicItemsById:           resolveContent('magicItems', system.magicItemsById,           campaign.magicItemsById,           c.equipment),
-    enhancementTemplatesById: resolveContent('enhancementTemplates', system.enhancementTemplatesById, campaign.enhancementTemplatesById, c.equipment),
+    enhancementsById:         resolveContent('enhancementTemplates', system.enhancementsById, campaign.enhancementsById, c.equipment),
     spellsById:               resolveContent('spells', system.spellsById,              campaign.spellsById,               c.spells),
     monstersById:             resolveContent('monsters', system.monstersById,             campaign.monstersById,             c.monsters),
   };

@@ -6,7 +6,8 @@
  */
 import type { Effect } from '../effects.types'
 import type { EnchantableSlot } from '@/features/content/domain/types'
-import { equipment } from '@/data/equipment/equipment'
+import { enchantmentRepo } from '@/features/content/domain/repo/enchantmentRepo'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
 import { resolveEffectDescriptors } from '../descriptors/resolveEffectDescriptors'
 import type { ResolvedEquipmentLoadout, ResolvedSlot } from './equipment-to-effects'
 
@@ -44,7 +45,7 @@ export function getEnchantmentCandidateEffects(args: {
   resolved: ResolvedEquipmentLoadout
 }): Effect[] {
   const { resolved } = args
-  const templates = equipment.enchantments.enhancementTemplates
+  const templates = enchantmentRepo.listSystem(DEFAULT_SYSTEM_RULESET_ID);
   const effects: Effect[] = []
 
   const slotSourceLabel: Record<EnchantableSlot, string> = {

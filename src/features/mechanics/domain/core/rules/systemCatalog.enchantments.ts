@@ -1,7 +1,18 @@
+/**
+ * System enchantment catalog — code-defined enhancement templates per system ruleset.
+ *
+ * These are the "factory defaults" for enhancement templates (SRD_CC_v5_2_1).
+ * Campaign-owned custom enchantments would be merged at runtime by the catalog.
+ */
 import type { EnchantmentTemplate } from '@/features/content/domain/types';
+import type { SystemRulesetId } from './ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
-/** @deprecated to be migrated to system catalog */
-export const enhancementTemplates: EnchantmentTemplate[] = [
+// ---------------------------------------------------------------------------
+// 5e v1 system enhancement templates (SRD_CC_v5_2_1)
+// ---------------------------------------------------------------------------
+
+export const SYSTEM_ENHANCEMENT_TEMPLATES: EnchantmentTemplate[] = [
   {
     id: 'enhancement-plus-1',
     name: '+1 Enhancement',
@@ -59,4 +70,20 @@ export const enhancementTemplates: EnchantmentTemplate[] = [
       shield: [{ kind: 'bonus', target: 'armor_class', value: 3 }],
     },
   },
-]
+];
+
+// ---------------------------------------------------------------------------
+// Registry
+// ---------------------------------------------------------------------------
+
+const SYSTEM_ENHANCEMENT_TEMPLATES_BY_SYSTEM_ID: Record<SystemRulesetId, readonly EnchantmentTemplate[]> = {
+  [DEFAULT_SYSTEM_RULESET_ID]: SYSTEM_ENHANCEMENT_TEMPLATES,
+};
+
+export function getSystemEnchantmentTemplates(systemId: SystemRulesetId): readonly EnchantmentTemplate[] {
+  return SYSTEM_ENHANCEMENT_TEMPLATES_BY_SYSTEM_ID[systemId] ?? [];
+}
+
+export function getSystemEnchantmentTemplate(systemId: SystemRulesetId, id: string): EnchantmentTemplate | undefined {
+  return getSystemEnchantmentTemplates(systemId).find(t => t.id === id);
+}

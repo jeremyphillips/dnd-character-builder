@@ -1,5 +1,6 @@
 import type { EnchantmentTemplate } from '@/features/content/domain/types'
-import { equipment } from '@/data/equipment/equipment'
+import { enchantmentRepo } from '@/features/content/domain/repo/enchantmentRepo'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
 
 /**
  * Look up an enchantment template by ID.
@@ -7,5 +8,5 @@ import { equipment } from '@/data/equipment/equipment'
 export function resolveEnchantmentTemplate(
   templateId: string,
 ): EnchantmentTemplate | undefined {
-  return equipment.enchantments.enhancementTemplates.find(t => t.id === templateId)
+  return enchantmentRepo.getSystemById(DEFAULT_SYSTEM_RULESET_ID, templateId) ?? undefined;
 }

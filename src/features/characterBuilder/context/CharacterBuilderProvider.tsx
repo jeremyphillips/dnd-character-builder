@@ -521,12 +521,14 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const setSpells = (spells: string[]) =>
     updateState(s => ({ ...s, spells }))
 
-  const setWealth = (wealth: {
-    gp?: number | null
-    sp?: number | null
-    cp?: number | null
-    baseBudget?: import('@/shared/money/types').Money | null
-  }) => {
+  const setWealth = useCallback((
+    wealth: {
+      gp?: number | null
+      sp?: number | null
+      cp?: number | null
+      baseBudget?: import('@/shared/money/types').Money | null
+    },
+  ) => {
     setState(prev => {
       const baseBudget = wealth.baseBudget ?? prev.wealth?.baseBudget ?? null
       return {
@@ -539,7 +541,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
         },
       }
     })
-  }
+  }, [])
 
   const computeEquipmentTotals = useCallback(
     (weaponIds: string[], armorIds: string[], gearIds: string[]) => ({

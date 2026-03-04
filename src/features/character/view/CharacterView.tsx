@@ -35,6 +35,8 @@ import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 import { AppAlert } from '@/ui/primitives'
+import type { AlignmentId } from '@/features/content/domain/types'
+import type { RaceId } from '@/features/content/domain/types'
 
 
 // ---------------------------------------------------------------------------
@@ -46,10 +48,7 @@ export type CharacterViewProps = {
   campaigns: CampaignSummary[]
   pendingMemberships: PendingMembership[]
   isOwner: boolean
-  /** True when the current user is a campaign admin (DM) for one of this character's campaigns. */
   isAdmin: boolean
-  /** True when the current user is a platform admin or superadmin. */
-  isPlatformAdmin?: boolean
   ownerName?: string
   error: string | null
   success: string | null
@@ -61,10 +60,10 @@ export type CharacterViewProps = {
   setImageKey: React.Dispatch<React.SetStateAction<string | null>>
   narrative: CharacterNarrative
   race: string
-  alignment: string
+  alignment: AlignmentId
   totalLevel: number
-  alignmentOptions: { id: string; label: string }[]
-  raceOptions: { id: string; label: string }[]
+  alignmentOptions: { id: AlignmentId; label: string }[]
+  raceOptions: { id: RaceId; label: string }[]
 
   // Actions
   actions: UseCharacterActionsReturn
@@ -83,7 +82,6 @@ export default function CharacterView({
   pendingMemberships,
   isOwner,
   isAdmin,
-  isPlatformAdmin = false,
   ownerName,
   error,
   success,
@@ -101,9 +99,8 @@ export default function CharacterView({
 }: CharacterViewProps) {
   const navigate = useNavigate()
   const { ruleset, catalog } = useCampaignRules()
-  const xpTable = ruleset.mechanics?.progression?.experience
+  const xpTable = ruleset.mechanics?.progression?.xp?.tableId === 'standard'
 
-console.log('characterView', character)
   
   // ── UI toggle state ────────────────────────────────────────────────
   const [awardXpOpen, setAwardXpOpen] = useState(false)
@@ -153,13 +150,11 @@ console.log('characterView', character)
   }, [resetBuilder])
 
   // ── Derived values ─────────────────────────────────────────────────
-  const canEditAll = isAdmin || isPlatformAdmin
-  const canEdit = isOwner || isAdmin || isPlatformAdmin
   const activeCampaignCount = campaigns.filter(c => (c.characterStatus ?? 'active') === 'active').length
 
   const filledClasses = (character.classes ?? []).filter((c) => c.classId)
   const isMulticlass = filledClasses.length > 1
-  const currentLevel = character.totalLevel ?? character.level ?? 1
+  const currentLevel = character.totalLevel ?? 1
   const maxLevel = xpTable?.length ? Math.max(...xpTable.map(e => e.level)) : 20
 
   const hasStats = character.abilityScores && Object.values(character.abilityScores).some(v => v != null)
@@ -219,7 +214,7 @@ console.log('characterView', character)
         character={character}
         pendingMemberships={pendingMemberships}
         isOwner={isOwner}
-        isAdmin={canEditAll}
+        isAdmin={isAdmin}
         ownerName={ownerName}
         approvingId={actions.approvingId}
         onApprove={actions.handleApprove}
@@ -238,8 +233,8 @@ console.log('characterView', character)
         totalLevel={totalLevel}
         alignmentOptions={alignmentOptions}
         raceOptions={raceOptions}
-        canEdit={canEdit}
-        canEditAll={canEditAll}
+        canEdit={isOwner}
+        canEditAll={isAdmin}
         isOwner={isOwner}
         isAdmin={isAdmin}
         onSave={actions.saveCharacter}
@@ -247,7 +242,7 @@ console.log('characterView', character)
         onAwardXpOpen={() => setAwardXpOpen(true)}
         onSetStatusAction={setStatusAction}
         onReactivate={actions.handleReactivate}
-        onEditAlignment={canEdit ? () => openStepEditor('alignment') : undefined}
+        onEditAlignment={isOwner || isAdmin ? () => openStepEditor('alignment') : undefined}
       />
 
       {/* Row 2: Ability Scores | Combat + Class Stats | Proficiencies */}
@@ -262,8 +257,8 @@ console.log('characterView', character)
             character={character}
             filledClasses={filledClasses}
             isMulticlass={isMulticlass}
-            canEdit={canEdit}
-            canEditAll={canEditAll}
+            canEdit={isOwner}
+            canEditAll={isAdmin}
             race={race}
             alignment={alignment}
             raceOptions={raceOptions}
@@ -275,9 +270,9 @@ console.log('characterView', character)
           <ProficienciesCard
             proficiencies={character.proficiencies}
             wealth={character.wealth}
-            onEdit={canEdit ? () => openStepEditor('proficiencies') : undefined}
+            onEdit={isOwner || isAdmin ? () => openStepEditor('proficiencies') : undefined}
             editDisabled={!profSlots.hasAvailableSlots || profSlots.allFilled}
-            onEditWealth={canEditAll ? () => setEditWealthOpen(true) : undefined}
+            onEditWealth={isAdmin ? () => setEditWealthOpen(true) : undefined}
           />
         </Grid>
       </Grid>
@@ -287,7 +282,7 @@ console.log('characterView', character)
         <Grid size={{ xs: 12, md: 6 }}>
           <EquipmentCard
             equipment={character.equipment}
-            onEdit={canEdit ? () => openStepEditor('equipment') : undefined}
+            onEdit={isOwner || isAdmin ? () => openStepEditor('equipment') : undefined}
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -295,7 +290,7 @@ console.log('characterView', character)
             resolvedMagicItems={resolvedMagicItems}
             permanentCount={permanentMagicCount}
             consumableCount={consumableMagicCount}
-            onEdit={canEdit ? () => openStepEditor('magicItems') : undefined}
+            onEdit={isOwner || isAdmin ? () => openStepEditor('magicItems') : undefined}
           />
         </Grid>
       </Grid>
@@ -314,7 +309,7 @@ console.log('characterView', character)
       {narrative && (
         <NarrativeCard
           narrative={narrative}
-          canEdit={canEdit}
+          canEdit={isOwner || isAdmin}
           onSave={actions.saveCharacter}
         />
       )}

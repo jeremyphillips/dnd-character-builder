@@ -25,7 +25,7 @@ import {
  *   5. **confirm** — always present.
  */
 export function useLevelUpSteps(state: LevelUpState): LevelUpStepConfig[] {
-  const { edition, classes, pendingLevel, primaryClassId } = state
+  const { classes, pendingLevel, primaryClassId } = state
 
   return useMemo(() => {
     const steps: LevelUpStepConfig[] = []
@@ -37,11 +37,11 @@ export function useLevelUpSteps(state: LevelUpState): LevelUpStepConfig[] {
     const newClassLevel = oldClassLevel + (pendingLevel - (state.currentLevel))
 
     // ── Subclass ──────────────────────────────────────────────────────
-    const unlockLevel = getSubclassUnlockLevel(primaryClassId, edition)
+    const unlockLevel = getSubclassUnlockLevel(primaryClassId)
     if (
       unlockLevel &&
       newClassLevel >= unlockLevel &&
-      !primaryClass.classDefinitionId
+      !primaryClass.subclassId
     ) {
       steps.push({ id: 'subclass', label: 'Subclass' })
     }
@@ -50,7 +50,7 @@ export function useLevelUpSteps(state: LevelUpState): LevelUpStepConfig[] {
     steps.push({ id: 'hitPoints', label: 'Hit Points' })
 
     // ── Spells ────────────────────────────────────────────────────────
-    const prog = getClassProgression(primaryClassId, edition)
+    const prog = getClassProgression(primaryClassId)
     if (prog?.spellProgression) {
       const oldLimits = getClassSpellLimitsAtLevel(prog, oldClassLevel)
       const newLimits = getClassSpellLimitsAtLevel(prog, newClassLevel)
@@ -72,5 +72,5 @@ export function useLevelUpSteps(state: LevelUpState): LevelUpStepConfig[] {
     steps.push({ id: 'confirm', label: 'Confirm' })
 
     return steps
-  }, [edition, classes, pendingLevel, primaryClassId, state.currentLevel])
+  }, [classes, pendingLevel, primaryClassId, state.currentLevel])
 }

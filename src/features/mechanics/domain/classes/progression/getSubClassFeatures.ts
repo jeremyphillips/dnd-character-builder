@@ -12,10 +12,10 @@ import type { SubclassFeature } from '@/data/classes.types'
  */
 export function getSubclassFeatures(
   classId: string | undefined,
-  classDefinitionId: string | undefined,
+  subclassId: string | undefined,
   characterLevel: number
 ): SubclassFeature[] {
-  if (!classId || !classDefinitionId) return [];
+  if (!classId || !subclassId) return [];
 
   const cls = getById(classes, classId);
   if (!cls) return [];
@@ -23,7 +23,7 @@ export function getSubclassFeatures(
   const def = Array.isArray(cls.definitions) ? cls.definitions[0] : cls.definitions;
   if (!def?.options) return [];
 
-  const subclass = def.options.find((o: any) => o?.id === classDefinitionId);
+  const subclass = def.options.find((o: any) => o?.id === subclassId);
   if (!subclass?.features) return [];
 
   return subclass.features

@@ -33,9 +33,9 @@ function formatClassLine(
   const name = classData?.name ?? cls.classId ?? 'Unknown'
 
   let subclassName = ''
-  if (cls.classDefinitionId && classData) {
+  if (cls.subclassId && classData) {
     const options = (classData as any).definitions?.options as { id: string; name?: string }[] | undefined
-    const sub = options?.find((d) => d.id === cls.classDefinitionId)
+    const sub = options?.find((d) => d.id === cls.subclassId)
     if (sub?.name) subclassName = sub.name
   }
 

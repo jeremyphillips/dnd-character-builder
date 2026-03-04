@@ -9,6 +9,7 @@ import type { WealthTier } from '@/data/classes.types';
 import type { MagicItemRarity } from '@/features/content/domain/types';
 import type { AbilityId } from '@/shared/types/character.core';
 import type { XpTable } from '@/features/mechanics/domain/core/progression/xp/xp.types';
+import type { Coin } from '../money';
 
 export type {
   ResolveMode,
@@ -79,9 +80,11 @@ export type AlignmentOption = {
 
 export type AlignmentList = AlignmentOption[];
 
+export type AlignmentOptionSetId = 'nine_point' | 'five_point' | 'three_point';
+
 export type AlignmentRules = {
   enabled: boolean;
-  options: AlignmentOption[];
+  optionSetId: AlignmentOptionSetId;
   axes?: Array<{
     id: 'ethics' | 'morality' | string;
     values: Array<{ id: string; name: string }>;
@@ -96,7 +99,7 @@ export type StartingWealthRules = {
     | { mode: 'by_class'; formulaByClassId: Record<string, string> }
     | { mode: 'by_class'; defaultFormula: string; overrides?: Record<string, string> };
   tiers?: WealthTier[];
-  currency?: { base: 'gp' | 'sp' | 'cp' };
+  currency?: { base: Coin };
 };
 
 export type LevelingRules = {
@@ -118,6 +121,12 @@ export type RestRules = {
   shortRestMinutes: number;
   longRestMinutes: number;
   hitDiceRecoveryOnLongRest: { kind: 'half_total' | 'all' | 'none' };
+};
+
+export type XpRules = {
+  enabled: boolean;
+  tableId: 'standard';
+  mode: 'shared' | 'per_class';
 };
 
 export type MechanicsRules = {
@@ -162,6 +171,7 @@ export type Progression = {
   leveling?: LevelingRules;
   spellcasting: SpellcastingProgression;
   magicItemBudget: MagicItemBudget;
+  xp: XpRules;
   overrides?: {
     byClassId?: Record<string, {
       levelCap?: number;

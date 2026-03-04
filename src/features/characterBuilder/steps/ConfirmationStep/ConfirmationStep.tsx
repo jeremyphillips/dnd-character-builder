@@ -1,6 +1,5 @@
 import { useCharacterBuilder } from '../../context'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { standardAlignments, fourEAlignments, basicAlignments } from '@/data/ruleSets'
 import type { ClassProgression } from '@/data'
 import type { StepId } from '../../types'
 import {
@@ -22,6 +21,7 @@ import Stack from '@mui/material/Stack'
 
 import EditIcon from '@mui/icons-material/Edit'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { resolveAlignmentOptions } from '@/features/mechanics/domain/core/rules/alignment/resolveAlignmentOptions'
 
 // ---------------------------------------------------------------------------
 // Skill name lookup
@@ -42,12 +42,6 @@ const SKILL_NAME_MAP: Record<string, string> = Object.fromEntries(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getAlignmentName(alignmentId: string | undefined): string {
-  if (!alignmentId) return '—'
-  const allAlignments = [...standardAlignments, ...fourEAlignments, ...basicAlignments]
-  return allAlignments.find(a => a.id === alignmentId)?.name ?? alignmentId
-}
 
 function formatHitDie(prog: ClassProgression): string {
   if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/lvl`
@@ -117,7 +111,12 @@ const ConfirmationStep = () => {
   const { catalog } = useCampaignRules()
 
   const raceName = catalog.racesById[state.race]?.name ?? state.race ?? '—'
-  const alignmentName = getAlignmentName(state.alignment)
+  
+  const { ruleset } = useCampaignRules()
+  const { alignment: alignmentRules } = ruleset.mechanics.character
+  
+  const alignmentOptions = resolveAlignmentOptions(alignmentRules.optionSetId)
+  const alignmentName = alignmentOptions.find(a => a.id === state.alignment)?.name ?? state.alignment ?? '—'
 
   const filledClasses = state.classes.filter(cls => cls.classId)
   const isMulticlass = filledClasses.length > 1
@@ -127,8 +126,8 @@ const ConfirmationStep = () => {
     const name = classDef?.name ?? cls.classId ?? 'Unknown'
 
     let subclassName = ''
-    if (cls.classDefinitionId && classDef) {
-      const opt = classDef.definitions?.options?.find(o => o.id === cls.classDefinitionId)
+    if (cls.subclassId && classDef) {
+      const opt = classDef.definitions?.options?.find(o => o.id === cls.subclassId)
       if (opt) subclassName = opt.name
     }
 

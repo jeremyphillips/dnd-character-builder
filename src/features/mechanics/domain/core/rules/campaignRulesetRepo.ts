@@ -1,11 +1,5 @@
 /**
  * Campaign ruleset patch repository.
- *
- * Provides a persistence seam with two backends:
- *   - API-backed (real DB) when USE_DB_RULESET_PATCHES is true
- *   - In-memory simulated patches (legacy) when false
- *
- * Toggle the flag to switch. Default: false (in-memory).
  */
 import { apiFetch, ApiError } from '@/app/api';
 import type { CampaignRulesetPatch, SystemRulesetId } from './ruleset.types';
@@ -17,13 +11,6 @@ import { resolveCampaignRuleset } from './resolveCampaignRuleset';
 import type { ValidationResult } from './validateCampaignRulesetPatch';
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 import { assertSystemRulesetId } from '@/features/mechanics/domain/core/rules';
-
-// ---------------------------------------------------------------------------
-// Feature flag
-// ---------------------------------------------------------------------------
-/** @deprecated Use the API-backed implementation instead. */
-export const USE_DB_RULESET_PATCHES = true;
-
 
 // ---------------------------------------------------------------------------
 // Draft factory
@@ -87,9 +74,7 @@ async function apiSave(patch: CampaignRulesetPatch): Promise<CampaignRulesetPatc
 export async function getCampaignRulesetPatch(
   campaignId: string,
 ): Promise<CampaignRulesetPatch | null> {
-  const patch = USE_DB_RULESET_PATCHES
-    ? await apiGet(campaignId)
-    : (memoryStore.get(campaignId) ?? null);
+  const patch = await apiGet(campaignId);
 
   if (!patch) return null;
 
@@ -109,13 +94,8 @@ export async function saveCampaignRulesetPatch(
     return { patch: normalized, validation };
   }
 
-  if (USE_DB_RULESET_PATCHES) {
-    const saved = await apiSave(normalized);
-    return { patch: saved, validation };
-  }
-
-  memoryStore.set(normalized.campaignId, normalized);
-  return { patch: normalized, validation };
+  const saved = await apiSave(normalized);
+  return { patch: saved, validation };
 }
 
 export async function getResolvedCampaignRuleset(

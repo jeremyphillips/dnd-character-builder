@@ -58,29 +58,6 @@ export const HALF_CASTER_SLOTS_5E: number[][] = [
   /* L20 */ [4, 3, 3, 3, 2],
 ]
 
-/** 5e Artificer slots (half caster that rounds up, gets spells at level 1) — TCoE p. 10 */
-export const ARTIFICER_SLOTS_5E: number[][] = [
-  /* L1  */ [2],
-  /* L2  */ [2],
-  /* L3  */ [3],
-  /* L4  */ [3],
-  /* L5  */ [4, 2],
-  /* L6  */ [4, 2],
-  /* L7  */ [4, 3],
-  /* L8  */ [4, 3],
-  /* L9  */ [4, 3, 2],
-  /* L10 */ [4, 3, 2],
-  /* L11 */ [4, 3, 3],
-  /* L12 */ [4, 3, 3],
-  /* L13 */ [4, 3, 3, 1],
-  /* L14 */ [4, 3, 3, 1],
-  /* L15 */ [4, 3, 3, 2],
-  /* L16 */ [4, 3, 3, 2],
-  /* L17 */ [4, 3, 3, 3, 1],
-  /* L18 */ [4, 3, 3, 3, 1],
-  /* L19 */ [4, 3, 3, 3, 2],
-  /* L20 */ [4, 3, 3, 3, 2],
-]
 
 /** 5e Warlock Pact Magic slots — all slots are the same level, short-rest recharge — PHB p. 106 */
 export const WARLOCK_PACT_SLOTS_5E: number[][] = [

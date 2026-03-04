@@ -21,7 +21,6 @@ import type { Armor, Gear, MagicItem, Race, Weapon } from '@/features/content/do
 import { getSystemRaces } from './systemCatalog.races'
 import type { EnchantmentTemplate } from '@/features/content/domain/types'
 import type { Monster } from '@/data/monsters/monsters.types'
-import { standardAlignments } from '@/data/ruleSets/alignments'
 import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E } from '@/data/ruleSets/spellSlotTables'
 import type { SystemRuleset, SystemRulesetId } from './ruleset.types'
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds'
@@ -68,17 +67,17 @@ const gear = getSystemGear(DEFAULT_SYSTEM_RULESET_ID);
 const magicItems = getSystemMagicItems(DEFAULT_SYSTEM_RULESET_ID);
 
 export const systemCatalog: CampaignCatalog = {
-  classesById:              keyBy(classes),
-  classIds:                 Object.keys(classes),
-  racesById:                keyBy(races),
-  raceIds:                  races.map(r => r.id),
-  weaponsById:              keyBy(weapons),
-  armorById:                keyBy(armor),
-  gearById:                 keyBy(gear),
-  magicItemsById:           keyBy(magicItems),
+  classesById:      keyBy(classes),
+  classIds:         Object.keys(classes),
+  racesById:        keyBy(races),
+  raceIds:          races.map(r => r.id),
+  weaponsById:      keyBy(weapons),
+  armorById:        keyBy(armor),
+  gearById:         keyBy(gear),
+  magicItemsById:   keyBy(magicItems),
   enhancementsById: keyBy(getSystemEnchantmentTemplates(DEFAULT_SYSTEM_RULESET_ID)),
-  spellsById:               keyBy(getSystemSpells(DEFAULT_SYSTEM_RULESET_ID)),
-  monstersById:             keyBy(monsters),
+  spellsById:       keyBy(getSystemSpells(DEFAULT_SYSTEM_RULESET_ID)),
+  monstersById:     keyBy(monsters),
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +113,11 @@ const SYSTEM_RULESET_SRD_CC_V5_2_1: SystemRuleset = {
   },
   mechanics: {
     progression: {
+      xp: {
+        enabled: true,
+        tableId: 'standard',
+        mode: 'shared'
+      },
       multiclassing: {
         mode: 'use_default',
         default: {
@@ -153,7 +157,7 @@ const SYSTEM_RULESET_SRD_CC_V5_2_1: SystemRuleset = {
       alignment: {
         enabled: true,
         defaultId: 'n',
-        options: standardAlignments,
+        optionSetId: 'nine_point',
       },
     },
     combat: {

@@ -1,3 +1,6 @@
-export type XpEntry = { level: number; xpRequired: number };
+import { XP_TABLES } from './xpTables';
 
-export type XpTable = readonly XpEntry[];
+export type XpTableEntry = { level: number; xpRequired: number };
+
+export type XpTableId = keyof typeof XP_TABLES;
+export type XpTable = (typeof XP_TABLES)[XpTableId];

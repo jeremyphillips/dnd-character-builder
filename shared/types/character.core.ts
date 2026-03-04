@@ -1,5 +1,7 @@
 import type { Money } from '../money/types'
 import type { ClassId } from './ruleset'
+import type { AlignmentId } from '@/features/content/domain/types'
+import type { RaceId } from '@/features/content/domain/types'
 
 // shared/types/character.core.ts
 
@@ -64,7 +66,7 @@ export type Equipment = {
 
 export type CharacterClassInfo = {
   classId?: ClassId
-  classDefinitionId?: string
+  subclassId?: string
   level: number
 }
 
@@ -111,8 +113,8 @@ export type Character = {
   name: string
   type: CharacterType
 
-  race?: string
-  alignment?: string
+  race?: RaceId
+  alignment?: AlignmentId
 
   classes: CharacterClassInfo[]
   xp: number

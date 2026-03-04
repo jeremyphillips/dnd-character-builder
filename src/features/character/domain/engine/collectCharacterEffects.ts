@@ -142,7 +142,7 @@ export function collectClassEffects(
 
     // Subclass / definition features
     const defs = normalizeDefinitions(classDef.definitions)
-    const selectedId = cls.classDefinitionId ?? null
+    const selectedId = cls.subclassId ?? null
     const defToUse =
       defs.find(d => d?.id && d.id === selectedId) ??
       defs[0]

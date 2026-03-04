@@ -41,7 +41,7 @@ function classesChanged(
   if (a.length !== b.length) return true
   for (let i = 0; i < a.length; i++) {
     if (a[i].classId !== b[i].classId) return true
-    if (a[i].classDefinitionId !== b[i].classDefinitionId) return true
+    if (a[i].subclassId !== b[i].subclassId) return true
     if (a[i].level !== b[i].level) return true
   }
   return false

@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { AppModal } from '@/ui/patterns'
 import { getLevelForXp, getXpForLevel } from '@/features/mechanics/domain/core/progression/xp'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
+import { resolveXpTable } from '@/features/mechanics/domain/core/rules/xp/resolveXpTable'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,7 +53,7 @@ export default function AwardXpModal({
   onAward,
 }: AwardXpModalProps) {
   const { ruleset } = useCampaignRules()
-  const xpTable = ruleset.mechanics.progression.experience
+  const xpTable = resolveXpTable(ruleset.mechanics.progression.xp); 
 
   const [step, setStep] = useState<ModalStep>('input')
   const [amount, setAmount] = useState('')

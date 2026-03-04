@@ -7,7 +7,7 @@ export interface CharacterForOption {
   level?: number
   totalLevel?: number
   class?: string
-  classes?: { classId?: string; classDefinitionId?: string; level: number }[]
+  classes?: { classId?: string; subclassId?: string; level: number }[]
   edition?: string
   setting?: string
 }

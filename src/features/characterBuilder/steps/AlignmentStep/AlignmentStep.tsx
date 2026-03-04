@@ -1,8 +1,9 @@
 import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { ButtonGroup } from '@/ui/patterns'
-import { getAlignmentOptionsForCharacter } from '@/features/character/domain/reference'
+import { getAlignmentOptionsForClass } from '@/features/mechanics/domain/character/selection'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
+import { resolveAlignmentOptions } from '@/features/mechanics/domain/core/rules/alignment/resolveAlignmentOptions'
 
 const AlignmentStep = () => {
   const { state, setAlignment, stepNotices, dismissNotice } = useCharacterBuilder()
@@ -15,10 +16,9 @@ const AlignmentStep = () => {
   const { ruleset, catalog } = useCampaignRules()
   const { classesById } = catalog
   const { alignment: alignmentRules } = ruleset.mechanics.character
-
+  const alignmentOptions = resolveAlignmentOptions(alignmentRules.optionSetId)
   const classIds = selectedClasses.map((c) => c.classId).filter(Boolean) as string[]
-
-  const allowedAlignmentOptions = getAlignmentOptionsForCharacter(classIds, alignmentRules.options, classesById)
+  const allowedAlignmentOptions = getAlignmentOptionsForClass(classIds, alignmentOptions, classesById)
 
   const notices = stepNotices.get('alignment') ?? []
 

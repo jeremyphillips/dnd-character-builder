@@ -225,8 +225,8 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
           name: cls.classId,
           level: cls.level,
           subclass: {
-            id: cls.classDefinitionId,
-            name: cls.classDefinitionId,
+            id: cls.subclassId,
+            name: cls.subclassId,
           },
           isStartingClass: i === 0,
         })),

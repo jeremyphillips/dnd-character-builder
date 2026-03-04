@@ -187,7 +187,7 @@ export async function updateCharacter(req: Request, res: Response) {
   // Character owners can only update name, imageKey, narrative, combat, and level-up completion fields.
   let updateData = req.body
   if (!isCampaignAdmin && !access.isPlatformAdmin) {
-    const { name, imageKey, narrative, combat, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, classDefinitionId } = req.body
+    const { name, imageKey, narrative, combat, totalLevel, classes, hitPoints, spells, levelUpPending, pendingLevel, subclassId } = req.body
     updateData = {} as any
     if (name !== undefined) updateData.name = name
     if (imageKey !== undefined) updateData.imageKey = imageKey
@@ -201,7 +201,7 @@ export async function updateCharacter(req: Request, res: Response) {
       if (spells !== undefined) updateData.spells = spells
       if (levelUpPending !== undefined) updateData.levelUpPending = levelUpPending
       if (pendingLevel !== undefined) updateData.pendingLevel = pendingLevel
-      if (classDefinitionId !== undefined) updateData.classDefinitionId = classDefinitionId
+      if (subclassId !== undefined) updateData.subclassId = subclassId
     }
   }
 

@@ -3,7 +3,7 @@
 // Final summary of all level-up choices before confirmation.
 
 import { useMemo } from 'react'
-import { getSubclassNameById } from '@/features/character/domain/reference'
+import { getSubclassNameById } from '@/features/mechanics/domain/classes/progression'
 import { getClassProgression } from '@/features/mechanics/domain/classes/progression'
 import { getSystemSpells } from '@/features/mechanics/domain/core/rules/systemCatalog.spells'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
@@ -60,8 +60,8 @@ export default function LevelUpConfirmStep({ state }: LevelUpConfirmStepProps) {
     primaryClassId.charAt(0).toUpperCase() + primaryClassId.slice(1)
 
   const subclassName = useMemo(
-    () => getSubclassNameById(primaryClassId, subclassId ?? primaryClass?.classDefinitionId),
-    [primaryClassId, subclassId, primaryClass?.classDefinitionId],
+    () => getSubclassNameById(primaryClassId, subclassId ?? primaryClass?.subclassId),
+    [primaryClassId, subclassId, primaryClass?.subclassId],
   )
 
   const prog = useMemo(

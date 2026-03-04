@@ -1,0 +1,1 @@
+export { getAlignmentOptionsForClass } from './getAlignmentOptionsForClass'

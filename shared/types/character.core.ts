@@ -2,6 +2,7 @@ import type { Money } from '../money/types'
 import type { ClassId } from './ruleset'
 import type { AlignmentId } from '@/features/content/domain/types'
 import type { RaceId } from '@/features/content/domain/types'
+import type { AbilityKey } from '@/features/mechanics/domain/core/character'
 
 // shared/types/character.core.ts
 
@@ -18,28 +19,9 @@ import type { RaceId } from '@/features/content/domain/types'
 //   spell?: number
 // }
 
-export type AbilityId =
-  | 'strength'
-  | 'dexterity'
-  | 'constitution'
-  | 'intelligence'
-  | 'wisdom'
-  | 'charisma'
 
-export type AbilityScores = Partial<Record<AbilityId, number | null>>
+export type AbilityScores = Partial<Record<AbilityKey, number | null>>
 
-
-// TODO: Map to AbilityId
-export type AbilityIdAbbreviation = readonly [
-  'str',
-  'dex',
-  'con',
-  'int',
-  'wis',
-  'cha',
-]
-
-export type AbilityIdAbbreviationMap = Record<AbilityIdAbbreviation[number], AbilityId>;
 
 export type Wealth = {
   gp?: number | null

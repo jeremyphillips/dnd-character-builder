@@ -1,10 +1,10 @@
 import { useMemo, useEffect, useCallback, useState, type PropsWithChildren } from "react"
 import CharacterBuilderContext from './CharacterBuilderContext'
-import type { CharacterBuilderState, CharacterClassInfo, StepId, AbilityScoreSource, AbilityScoresStatus } from '../types'
+import type { CharacterBuilderState, StepId, AbilityScoreSource, AbilityScoresStatus } from '../types'
+import type { CharacterClassInfo } from '@/shared/types/character.core'
 import type { CharacterProficiencies, EquipmentItemInstance, AbilityScores } from '@/shared/types/character.core'
 import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-
 import {
   detectInvalidations,
   resolveInvalidations,
@@ -13,8 +13,6 @@ import {
 import {
   getStepConfig,
   createInitialBuilderState,
-  INITIAL_ABILITY_SCORES,
-  DEFAULT_ABILITY_KEYS,
 } from '../constants'
 import {
   generateAbilityScores,
@@ -29,13 +27,15 @@ import {
 import { moneyToCp, cpToDenoms } from '@/shared/money'
 import type { CharacterType } from "@/shared/types/character.core"
 import { resolveXpTable } from "@/features/mechanics/domain/core/rules/xp/resolveXpTable"
+import type { AlignmentId } from '@/features/content/domain/types'
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character'
 
 export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const { ruleset, catalog } = useCampaignRules()
   const weaponsData = Object.values(catalog.weaponsById)
   const armorData = Object.values(catalog.armorById)
   const gearData = Object.values(catalog.gearById)
-  console.log('ruleset', ruleset)
+  
   const xpTable = resolveXpTable(ruleset.mechanics.progression.xp);
 
   const [state, setState] = useState<CharacterBuilderState>(
@@ -171,11 +171,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       : { id: stepId, name: stepId }
 
     // Normalize: backfill classId from deprecated top-level `class` field
-    const rawClasses = character.classes?.length ? character.classes : [{ level: character.level ?? 1 }]
-    const classes = rawClasses.map((cls, i) => ({
-      ...cls,
-      classId: cls.classId ?? (i === 0 ? character.class : undefined),
-    }))
+    const rawClasses = character.classes?.length ? character.classes : [{ level: character.totalLevel ?? 1 }]
+    const classes = rawClasses.map((cls, i) => ({ ...cls }))
 
     // Lock existing skill selections so edit mode only allows adding new ones
     const lockedSelections: Record<string, string[]> = {}
@@ -184,9 +181,11 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       lockedSelections['skills'] = [...existingSkills]
     }
 
+    const initialScores = Object.fromEntries(ABILITY_KEYS.map(key => [key, null])) as AbilityScores;
+
     const loadedScores: AbilityScores = character.abilityScores
-      ? { ...INITIAL_ABILITY_SCORES, ...character.abilityScores }
-      : { ...INITIAL_ABILITY_SCORES };
+      ? { ...ABILITY_KEYS.reduce((acc, key) => ({ ...acc, [key]: null }), {}), ...character.abilityScores }
+      : { ...initialScores };
 
     setState({
       step,
@@ -197,7 +196,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       alignment: character.alignment,
       classes,
       activeClassIndex: 0,
-      totalLevel: character.totalLevel ?? character.level ?? 1,
+      totalLevel: character.totalLevel ?? 1,
       xp: character.xp ?? 0,
       abilityScores: loadedScores,
       abilityScoreSource: character.abilityScores ? 'import_manual' : undefined,
@@ -457,7 +456,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       return { ...s, totalLevel, xp: newXp, classes }
     })
 
-  const setAlignment = (alignment: string) =>
+  const setAlignment = (alignment: AlignmentId) =>
     guardedUpdate(s => ({ ...s, alignment }))
 
   const setHitPointMode = (hitPointMode: CharacterBuilderState['hitPointMode']) =>
@@ -488,7 +487,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
   const rollAbilityScores = () =>
     updateState(s => {
-      const allNull = DEFAULT_ABILITY_KEYS.every(k => s.abilityScores[k] == null);
+      const allNull = ABILITY_KEYS.every(k => s.abilityScores[k] == null);
       if (!allNull) return s;
       const rolled = generateAbilityScores('4d6-drop-lowest');
       return { ...s, abilityScores: rolled, abilityScoresStatus: 'complete' as const };

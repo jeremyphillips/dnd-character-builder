@@ -3,15 +3,7 @@ import type { AbilityScores, EquipmentLoadout } from '@/shared/types/character.c
 import type { EvaluationContext, CreatureSnapshot } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import { getClassProgression } from '@/features/mechanics/domain/classes/progression'
 import { resolveLoadout, resolveWieldedWeaponIds } from '@/features/mechanics/domain/effects/sources/equipment-to-effects'
-
-const ABILITY_KEYS = [
-  'strength',
-  'dexterity',
-  'constitution',
-  'intelligence',
-  'wisdom',
-  'charisma',
-] as const
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character';
 
 /**
  * Flatten ability scores to a record of numbers.

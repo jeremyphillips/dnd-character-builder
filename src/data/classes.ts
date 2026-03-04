@@ -116,7 +116,7 @@ export const classes: readonly CharacterClass[] = [
       },
     },
     generation: {
-      abilityPriority: ['strength', 'constitution']
+      abilityPriority: ['str', 'con']
     },
     requirements: {
       allowedRaces: ['human'],
@@ -125,10 +125,10 @@ export const classes: readonly CharacterClass[] = [
         note: 'Requires Strength or Dexterity of 13+',
         anyOf: [
           {
-            all: [{ ability: 'strength', min: 13 }],
+            all: [{ ability: 'str', min: 13 }],
           },
           {
-            all: [{ ability: 'dexterity', min: 13 }],
+            all: [{ ability: 'dex', min: 13 }],
           },
         ],
       },
@@ -159,7 +159,7 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['wisdom', 'constitution']
+      abilityPriority: ['wis', 'con']
     },
     progression: {
       hitDie: 8,
@@ -230,13 +230,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['dexterity', 'intelligence']
+      abilityPriority: ['dex', 'int']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['dexterity', 'intelligence'],
-      savingThrows: ['dexterity', 'intelligence'],
+      primaryAbilities: ['dex', 'int'],
+      savingThrows: ['dex', 'int'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -328,13 +328,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['charisma', 'constitution']
+      abilityPriority: ['cha', 'con']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['charisma', 'constitution'],
-      savingThrows: ['charisma', 'constitution'],
+      primaryAbilities: ['cha', 'con'],
+      savingThrows: ['cha', 'con'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -388,13 +388,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['charisma', 'dexterity']
+      abilityPriority: ['cha', 'dex']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['charisma', 'dexterity'],
-      savingThrows: ['charisma', 'dexterity'],
+      primaryAbilities: ['cha', 'dex'],
+      savingThrows: ['cha', 'dex'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -449,13 +449,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['strength', 'dexterity']
+      abilityPriority: ['str', 'dex']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['strength', 'dexterity'],
-      savingThrows: ['strength', 'dexterity'],
+      primaryAbilities: ['str', 'dex'],
+      savingThrows: ['str', 'dex'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -508,13 +508,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['dexterity', 'constitution']
+      abilityPriority: ['dex', 'con']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['dexterity', 'constitution'],
-      savingThrows: ['dexterity', 'constitution'],
+      primaryAbilities: ['dex', 'con'],
+      savingThrows: ['dex', 'con'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -565,13 +565,13 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['wisdom', 'constitution']
+      abilityPriority: ['wis', 'con']
     },
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['wisdom', 'constitution'],
-      savingThrows: ['wisdom', 'constitution'],
+      primaryAbilities: ['wis', 'con'],
+      savingThrows: ['wis', 'con'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
@@ -646,7 +646,7 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['charisma', 'constitution']
+      abilityPriority: ['cha', 'con']
     },
     progression: {
       hitDie: 8,
@@ -734,7 +734,7 @@ export const classes: readonly CharacterClass[] = [
             {
               kind: 'modifier',
               level: 1,
-              target: 'hp_max',
+              target: 'hit_points_max',
               mode: 'add',
               value: { perLevel: 1 }
             }
@@ -746,7 +746,7 @@ export const classes: readonly CharacterClass[] = [
       ]
     },
     generation: {
-      abilityPriority: ['charisma', 'constitution']
+      abilityPriority: ['cha', 'con']
     },
     progression: {
       hitDie: 6,
@@ -823,8 +823,8 @@ export const classes: readonly CharacterClass[] = [
     progression: {
       hitDie: 8,
       attackProgression: 'good',
-      primaryAbilities: ['charisma', 'constitution'],
-      savingThrows: ['charisma', 'constitution'],
+      primaryAbilities: ['cha', 'con'],
+      savingThrows: ['cha', 'con'],
       spellcasting: 'none',
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],

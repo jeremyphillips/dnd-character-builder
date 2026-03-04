@@ -1,4 +1,4 @@
-import type { AbilityScoreMethod } from '@/data/types'
+import type { AbilityScoreMethod } from '@/features/mechanics/domain/core/rules/abilityScores.types'
 
 export type Rng = () => number
 

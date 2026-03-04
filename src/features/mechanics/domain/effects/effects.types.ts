@@ -1,9 +1,9 @@
-import type { AbilityScores } from '@/shared/types/character.core';
 import type { Condition } from '../conditions/condition.types';
 import type { TriggerType } from '../triggers/trigger.types';
 import type { StatTarget } from '../resolution/stat-resolver';
 import type { FormulaEffect } from '../resolution/formula.engine';
 import type { DiceOrFlat } from '../dice/dice.types';
+import type { AbilityId } from '../core/character';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/formula.engine';
 
@@ -55,7 +55,7 @@ export type BonusEffect = EffectBase<'bonus'> & {
 export type ModifierValue =
   | number
   | {
-      ability?: keyof AbilityScores;
+      ability?: AbilityId;
       perLevel?: number;
       dice?: DiceOrFlat;
       type?:

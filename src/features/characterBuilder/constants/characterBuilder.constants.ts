@@ -16,6 +16,7 @@ import { type CharacterBuilderState, type StepId, type BuilderOverrides, type Ab
 import type { CharacterType } from '@/shared/types/character.core'
 import { classes } from '@/data/classes'
 import { getById } from '@/utils'
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character'
 
 // ---------------------------------------------------------------------------
 // Step config
@@ -136,21 +137,6 @@ export function getStepConfig(_mode: CharacterType): StepConfig[] {
   return baseSteps
 }
 
-import type { AbilityId } from '@/shared/types/character.core'
-
-export const DEFAULT_ABILITY_KEYS: AbilityId[] = [
-  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-];
-
-export const INITIAL_ABILITY_SCORES: AbilityScores = {
-  strength: null,
-  dexterity: null,
-  constitution: null,
-  intelligence: null,
-  wisdom: null,
-  charisma: null,
-};
-
 export function createInitialBuilderState(
   mode: CharacterType,
   overrides?: BuilderOverrides,
@@ -162,6 +148,8 @@ export function createInitialBuilderState(
 
   const steps = getStepConfig(mode)
 
+  const initialScores = Object.fromEntries(ABILITY_KEYS.map(key => [key, null])) as AbilityScores;
+
   // Build a temporary state so shouldSkip can read lockedFields
   const tempState: CharacterBuilderState = {
     step: { id: steps[0].id, name: steps[0].label },
@@ -172,7 +160,7 @@ export function createInitialBuilderState(
     race: overrides?.race ?? undefined,
     classes: [{ level: 1 }],
     activeClassIndex: 0,
-    abilityScores: { ...INITIAL_ABILITY_SCORES },
+    abilityScores: { ...initialScores },
     abilityScoreSource: undefined,
     abilityScoresStatus: 'unset',
     flowMode: 'full',

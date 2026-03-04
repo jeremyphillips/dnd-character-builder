@@ -1,14 +1,14 @@
-import type { AlignmentId } from '@/data'
-import type { AbilityId, AbilityIdAbbreviation } from '@/shared/types/character.core'
 import type { DieFace } from '@/features/mechanics/domain/dice/dice.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import type { Material } from '@/features/content/domain/vocab'
+import type { AbilityId, AbilityKey } from '@/features/mechanics/domain/core/character'
+import type { AlignmentId } from '@/features/content/domain/types'
 
 // ---------------------------------------------------------------------------
-// Shared primitives
+// Shared primitives  
 // ---------------------------------------------------------------------------
 
 export type LogicalOperator = 'and' | 'or'
-export type Material = 'metal' | 'organic' | 'fabric' | 'wood' | 'stone' | string
 
 export interface Note {
   id: string
@@ -228,13 +228,13 @@ export interface ClassProgression {
   hitDie: DieFace
   hpPerLevel?: number                         // 4e flat HP per level; other editions: derived from hitDie
   attackProgression: AttackProgression         // normalized: good/average/poor
-  primaryAbilities: AbilityIdAbbreviation[]                   // e.g. ['str', 'con'] for Fighter
+  primaryAbilities: AbilityId[]                   // e.g. ['str', 'con'] for Fighter
 
   // ── Cross-edition grouping ─────────────────────────────────────
   // classGroup?: string                          // 2e group: 'warrior' | 'priest' | 'wizard' | 'rogue'
 
   // ── 5e-specific ──────────────────────────────────────────────
-  savingThrows?: AbilityIdAbbreviation[]      // e.g. ['str', 'con']
+  savingThrows?: AbilityId[]      // e.g. ['str', 'con']
   features?: ClassFeature[]                   // class features by level
   asiLevels?: number[]                        // levels that grant ASI (e.g. [4, 6, 8, 12, 14, 16, 19])
   spellcasting?: SpellcastingAbility

@@ -150,7 +150,7 @@ export default function LevelUpWizard({
           return {
             ...cls,
             level: cls.level + levelsGained,
-            ...(state.subclassId ? { classDefinitionId: state.subclassId } : {}),
+            ...(state.subclassId ? { subclassId: state.subclassId } : {}),
           }
         }
         return cls
@@ -172,7 +172,7 @@ export default function LevelUpWizard({
           generationMethod: state.hpMethod ?? 'average',
         },
         spells: [...spellSet],
-        ...(state.subclassId ? { classDefinitionId: state.subclassId } : {}),
+        ...(state.subclassId ? { subclassId: state.subclassId } : {}),
       }
 
       await onComplete(result)

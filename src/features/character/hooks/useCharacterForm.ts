@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import type { CharacterDoc } from '@/shared'
-import { getAlignmentOptionsForCharacter } from '@/features/character/domain/reference'
+import type { CharacterDoc, RaceId } from '@/shared'
+import { getAlignmentOptionsForClass } from '@/features/mechanics/domain/character/selection'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
+import { resolveAlignmentOptions } from '@/features/mechanics/domain/core/rules/alignment/resolveAlignmentOptions'
+import type { AlignmentId } from '@/features/content/domain/types'
 
 export interface CharacterNarrative {
   personalityTraits: string[]
@@ -18,15 +20,15 @@ export interface UseCharacterFormReturn {
   setImageKey: React.Dispatch<React.SetStateAction<string | null>>
   narrative: CharacterNarrative
   setNarrative: React.Dispatch<React.SetStateAction<CharacterNarrative>>
-  race: string
+  race: RaceId
   setRace: React.Dispatch<React.SetStateAction<string>>
-  alignment: string
+  alignment: AlignmentId
   setAlignment: React.Dispatch<React.SetStateAction<string>>
   totalLevel: number
   setTotalLevel: React.Dispatch<React.SetStateAction<number>>
   xp: number
   setXp: React.Dispatch<React.SetStateAction<number>>
-  alignmentOptions: { id: string; label: string }[]
+  alignmentOptions: { id: AlignmentId; label: string }[]
   raceOptions: { id: string; label: string }[]
   syncFromCharacter: (c: CharacterDoc) => void
 }
@@ -62,7 +64,7 @@ export function useCharacterForm(character: CharacterDoc | null): UseCharacterFo
     })
     setRace(c.race ?? '')
     setAlignment(c.alignment ?? '')
-    setTotalLevel(c.totalLevel ?? c.level ?? 0)
+    setTotalLevel(c.totalLevel ?? 1)
     setXp(c.xp ?? 0)
   }, [])
 
@@ -74,16 +76,11 @@ export function useCharacterForm(character: CharacterDoc | null): UseCharacterFo
   const alignmentOptions = useMemo(() => {
     if (!character) return []
     const classIds = (character.classes ?? []).map((c) => c.classId).filter(Boolean) as string[]
-    return getAlignmentOptionsForCharacter(classIds, alignmentRules.options, catalog.classesById)
-  }, [character?.classes, alignmentRules.options, catalog.classesById])
-
-  // const raceOptions = useMemo(() => {
-  //   if (!character) return []
-  //   return Object.values(racesById).map((r) => ({
-  //     id: r.id,
-  //     label: r.name,
-  //   }))
-  // }, [])
+    const alignmentOptions = resolveAlignmentOptions(alignmentRules.optionSetId)
+    return getAlignmentOptionsForClass(
+      classIds, alignmentOptions, catalog.classesById
+    )
+  }, [character?.classes, alignmentRules.optionSetId, catalog.classesById])
 
   const raceOptions = Object.values(racesById).map((r) => ({
     id: r.id,

@@ -18,8 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import {
   getCampaignRulesetPatch,
   saveCampaignRulesetPatch,
-  createDefaultCampaignRulesetPatch,
-  USE_DB_RULESET_PATCHES,
+  createDefaultCampaignRulesetPatch
 } from '@/features/mechanics/domain/core/rules/campaignRulesetRepo';
 import { getSystemRuleset, systemCatalog } from '@/features/mechanics/domain/core/rules/systemCatalog';
 import { resolveCampaignRuleset } from '@/features/mechanics/domain/core/rules/resolveCampaignRuleset';
@@ -404,12 +403,6 @@ export default function CampaignRulesetEditorRoute() {
       {isNew && (
         <AppAlert tone="info" sx={{ mb: 2 }}>
           No ruleset patch exists yet for this campaign. Changes will be saved when you click Save.
-        </AppAlert>
-      )}
-
-      {!USE_DB_RULESET_PATCHES && (
-        <AppAlert tone="warning" sx={{ mb: 2 }}>
-          In-memory mode — changes won't survive a full page reload.
         </AppAlert>
       )}
 

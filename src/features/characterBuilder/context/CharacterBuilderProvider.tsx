@@ -19,10 +19,8 @@ import {
 import {
   generateAbilityScores,
 } from '@/features/mechanics/domain/generation/ability-scores'
-import { 
-  getSubclassUnlockLevel,
-  getXpForLevel,
-} from '@/features/mechanics/domain/progression'
+import { getXpForLevel } from '@/features/mechanics/domain/core/progression/xp'
+import { getSubclassUnlockLevel } from '@/features/mechanics/domain/classes/progression'
 import {
   calculateEquipmentWeight,
   calculateEquipmentCostCp,
@@ -30,22 +28,24 @@ import {
 } from '@/features/equipment/domain'
 import { moneyToCp, cpToDenoms } from '@/shared/money'
 import type { CharacterType } from "@/shared/types/character.core"
+import { resolveXpTable } from "@/features/mechanics/domain/core/rules/xp/resolveXpTable"
 
 export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const { ruleset, catalog } = useCampaignRules()
   const weaponsData = Object.values(catalog.weaponsById)
   const armorData = Object.values(catalog.armorById)
   const gearData = Object.values(catalog.gearById)
-  const xpTable = ruleset.mechanics.progression.experience
+  console.log('ruleset', ruleset)
+  const xpTable = resolveXpTable(ruleset.mechanics.progression.xp);
 
   const [state, setState] = useState<CharacterBuilderState>(
     () => createInitialBuilderState('pc')
   )
 
   useEffect(() => {
-    //console.groupCollapsed('🧙 Character Builder State')
+    console.groupCollapsed('🧙 Character Builder State')
     console.log(state)
-    //console.groupEnd()
+    console.groupEnd()
   }, [state])
 
   const updateState = (
@@ -254,8 +254,8 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       return { ...s, classes, xp: xp ?? s.xp }
     })
 
-  const setClassDefinitionId = (classDefinitionId: string) =>
-    updateActiveClass(cls => ({ ...cls, classDefinitionId }))
+  const setClassDefinitionId = (subclassId: string) =>
+    updateActiveClass(cls => ({ ...cls, subclassId }))
 
   const setClassLevel = (index: number, level: number) =>
     setState(s => {
@@ -296,16 +296,16 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
 
       const unlockLevel = getSubclassUnlockLevel(cls.classId)
 
-      const classDefinitionId =
+      const subclassId =
         unlockLevel && level < unlockLevel
           ? undefined
-          : cls.classDefinitionId
+          : cls.subclassId
 
       const classes = [...s.classes]
       classes[index] = {
         ...cls,
         level,
-        classDefinitionId
+        subclassId
       }
 
       return { ...s, classes }
@@ -336,7 +336,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
   const isEmptySecondaryClass = (cls: CharacterClassInfo, index: number) =>
     index > 0 &&
     !cls.classId &&
-    !cls.classDefinitionId &&
+    !cls.subclassId &&
     cls.level === 1
 
   const setActiveClassIndex = (index: number | null) => {
@@ -374,7 +374,7 @@ export const CharacterBuilderProvider = ({ children }: PropsWithChildren) => {
       const classes = [...s.classes]
       classes[index] = {
         ...cls,
-        classDefinitionId: subclassId
+        subclassId: subclassId
       }
 
       return { ...s, classes }

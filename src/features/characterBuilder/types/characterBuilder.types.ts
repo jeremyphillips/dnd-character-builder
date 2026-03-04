@@ -1,6 +1,13 @@
-import type { CharacterClassInfo, CharacterSheet } from '@/shared'
-import type { CharacterType, CharacterProficiencies, EquipmentLoadout, EquipmentItemInstance, AbilityScores } from '@/shared/types/character.core'
-import type { HitPointMode } from '@/features/mechanics/domain/progression'
+import type { CharacterClassInfo, CharacterSheet, RaceId } from '@/shared'
+import type { AlignmentId } from '@/features/content/domain/types'
+import type {
+  CharacterType, 
+  CharacterProficiencies, 
+  EquipmentLoadout, 
+  EquipmentItemInstance, 
+  AbilityScores 
+} from '@/shared/types/character.core'
+import type { HitPointMode } from '@/features/mechanics/domain/character/progression'
 import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
 
 export type { CharacterClassInfo, CharacterSheet, CharacterProficiencies }
@@ -10,7 +17,7 @@ export type { AbilityScores }
 export type AbilityScoreSource = 'import_manual' | 'generated_roll';
 export type AbilityScoresStatus = 'unset' | 'partial' | 'complete';
 
-export type StepId = 'character_source' | 'ability_scores' | 'edition' | 'setting' | 'class' | 'spells' | 'equipment' | 'loadout' | 'magicItems' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
+export type StepId = 'character_source' | 'ability_scores' | 'class' | 'spells' | 'equipment' | 'loadout' | 'magicItems' | 'race' | 'level' | 'alignment' | 'proficiencies' | 'confirmation'
 
 export type BuilderFlowMode = 'full' | 'isolated';
 
@@ -41,8 +48,8 @@ export type CharacterBuilderState = CharacterSheet & {
 
 /** Fields that can be pre-filled when launching the builder. */
 export type BuilderOverrides = {
-  race?: string
-  alignment?: string
+  race?: RaceId
+  alignment?: AlignmentId
 }
 
 export type CharacterBuilderContextValue = {
@@ -60,10 +67,8 @@ export type CharacterBuilderContextValue = {
   setCharacterType: (type: CharacterType) => void
   openBuilder: (mode: CharacterType, overrides?: BuilderOverrides) => void
   setName: (name: string) => void
-  setEdition: (id: string) => void
-  setSetting: (id: string) => void
-  setRace: (id: string) => void
-  setAlignment: (id: string) => void
+  setRace: (id: RaceId) => void
+  setAlignment: (id: AlignmentId) => void
 
   // leveling
   setTotalLevels: (lvl: number) => void
@@ -147,8 +152,4 @@ export type CharacterBuilderContextValue = {
   cancelChange: () => void
   /** Dismiss a step's invalidation notice. */
   dismissNotice: (stepId: StepId) => void
-
-  // options
-  raceOptions: any[]
-  classOptions: any[]
 }

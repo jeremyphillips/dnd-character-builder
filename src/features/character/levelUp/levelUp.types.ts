@@ -74,5 +74,5 @@ export interface LevelUpResult {
   /** Complete spell list after additions/removals */
   spells: Spell[]
   /** Subclass ID (if newly chosen) */
-  classDefinitionId?: string
+  subclassId?: string
 }

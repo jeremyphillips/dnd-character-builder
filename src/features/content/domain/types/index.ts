@@ -8,3 +8,4 @@ export * from './race.types';
 export * from './content.types';
 export * from './enchantment.types';
 export * from './spell.types';
+export * from './alignment.types';

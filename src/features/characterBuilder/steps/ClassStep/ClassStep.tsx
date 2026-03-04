@@ -3,13 +3,12 @@ import { useCharacterBuilder } from '@/features/characterBuilder/context'
 import { InvalidationNotice } from '@/features/characterBuilder/components'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { evaluateClassEligibility, getClassRestrictionNotes } from '@/features/mechanics/domain/character-build/rules'
-import { getSubclassUnlockLevel } from '@/features/mechanics/domain/progression'
-import { getClassDefinitions } from '@/features/character/domain/reference'
+import { getSubclassUnlockLevel } from '@/features/mechanics/domain/classes/progression'
+import { getAvailableSubclassesByLevel } from '@/features/mechanics/domain/classes/progression'
 import { canAddClass } from '@/features/character/domain/validation'
-import { getClassProgression } from '@/features/mechanics/domain/progression'
 import type { ClassProgression } from '@/data/classes.types'
 import { ButtonGroup } from '@/ui/patterns'
-import { getSubclassNameById } from '@/features/character/domain/reference'
+import { getSubclassNameById } from '@/features/mechanics/domain/classes/progression'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -33,7 +32,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 // ---------------------------------------------------------------------------
 
 function formatHitDie(prog: ClassProgression): string {
-  if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
+  if (!prog.hitDie && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
   return `d${prog.hitDie}`
 }
 
@@ -50,7 +49,7 @@ function formatSpellcasting(prog: ClassProgression): string | null {
 
 function formatSavingThrows(prog: ClassProgression): string | null {
   if (!prog.savingThrows || prog.savingThrows.length === 0) return null
-  return prog.savingThrows.map((s) => s.toUpperCase()).join(', ')
+  return prog.savingThrows.join(', ')
 }
 
 const ClassStep = () => {
@@ -168,11 +167,11 @@ const ClassStep = () => {
             subclassUnlockLevel &&
             cls.level >= subclassUnlockLevel
 
-          const definitions = canChooseSubclass
-            ? getClassDefinitions(cls.classId, cls.level)
+          const subclasses = canChooseSubclass
+            ? getAvailableSubclassesByLevel(cls.classId, cls.level)
             : []
 
-          const subclassOptions = definitions.map(opt => ({
+          const subclassOptions = subclasses.map(opt => ({
             id: opt.id ?? '',
             label: opt.name,
           }))
@@ -204,7 +203,7 @@ const ClassStep = () => {
                     />
                     <Typography variant="h6" sx={{ lineHeight: 1.3 }}>
                       {(cls.classId && catalog.classesById[cls.classId]?.name) || 'Choose a class'}
-                      {cls.classDefinitionId && ` — ${getSubclassNameById(cls.classId, cls.classDefinitionId)}`}
+                      {cls.subclassId && ` — ${getSubclassNameById(cls.classId, cls.subclassId)}`}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" my={1.5}>
                       Level {cls.level}
@@ -364,7 +363,7 @@ const ClassStep = () => {
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Subclass</Typography>
                         <ButtonGroup
                           options={subclassOptions}
-                          value={cls.classDefinitionId}
+                          value={cls.subclassId}
                           onChange={id =>
                             updateClassDefinition(index, id)
                           }

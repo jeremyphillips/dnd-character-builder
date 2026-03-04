@@ -2,7 +2,7 @@ import { classes } from '@/data'
 import type { SubclassOption } from '@/data/classes.types'
 import { getById } from '@/utils'
 
-export const getClassDefinitions = (
+export const getAvailableSubclassesByLevel = (
   classId?: string,
   level: number = 1
 ): SubclassOption[] => {
@@ -21,12 +21,3 @@ export const getClassDefinitions = (
   return []
 }
 
-/** Resolve subclass display name by class id and definition id. */
-export function getSubclassNameById(classId?: string, defId?: string): string | null {
-  if (!classId || !defId) return null
-  const cls = getById(classes, classId)
-  if (!cls) return defId
-
-  const opt = cls.definitions?.options?.find(o => o.id === defId)
-  return opt?.name ?? defId
-}

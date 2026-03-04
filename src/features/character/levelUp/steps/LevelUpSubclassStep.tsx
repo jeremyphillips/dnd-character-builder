@@ -4,7 +4,7 @@
 // the subclass unlock for their class.
 
 import { useMemo, useCallback } from 'react'
-import { getClassDefinitions } from '@/features/character/domain/reference'
+import { getAvailableSubclassesByLevel } from '@/features/mechanics/domain/classes/progression'
 import { ButtonGroup } from '@/ui/patterns'
 import type { LevelUpState } from '../levelUp.types'
 
@@ -28,14 +28,14 @@ export default function LevelUpSubclassStep({
   state,
   onChange,
 }: LevelUpSubclassStepProps) {
-  const { edition, primaryClassId, pendingLevel, subclassId } = state
+  const { primaryClassId, pendingLevel, subclassId } = state
 
   const subclassOptions = useMemo(() => {
-    const definitions = getClassDefinitions(primaryClassId, edition, pendingLevel)
+    const definitions = getAvailableSubclassesByLevel(primaryClassId, pendingLevel)
     return definitions.flatMap(d =>
       d.options.map(opt => ({ id: opt.id, label: opt.name })),
     )
-  }, [primaryClassId, edition, pendingLevel])
+  }, [primaryClassId, pendingLevel])
 
   const handleSelect = useCallback(
     (id: string) => {

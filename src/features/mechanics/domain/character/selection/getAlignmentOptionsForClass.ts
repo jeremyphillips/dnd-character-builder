@@ -1,7 +1,7 @@
 import type { CharacterClass } from '@/data/classes.types'
-import type { AlignmentOption as RulesetAlignmentOption } from '@/data/ruleSets'
+import type { AlignmentVocabItem } from '@/features/content/domain/types';
 
-export type AlignmentOption = {
+export type AlignmentFormOption = {
   id: string
   label: string
   disabled: boolean
@@ -15,11 +15,11 @@ export type AlignmentOption = {
  * @param rulesetOptions    Alignment options from the ruleset (id + name)
  * @param classesById       Catalog class definitions (keyed by id)
  */
-export const getAlignmentOptionsForCharacter = (
+export const getAlignmentOptionsForClass = (
   classIds: string[],
-  rulesetOptions: RulesetAlignmentOption[],
+  rulesetOptions: readonly AlignmentVocabItem[],
   classesById?: Record<string, CharacterClass>,
-): AlignmentOption[] => {
+): AlignmentFormOption[] => {
   let allowed: Set<string> | null = null
 
   if (classIds.length > 0 && classesById) {

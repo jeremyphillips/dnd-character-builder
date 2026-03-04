@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react'
 import type { CharacterDoc } from '@/shared'
 import type { LevelUpResult } from '@/features/character/levelUp'
-import { getXpForLevel } from '@/features/mechanics/domain/progression'
+import { getXpForLevel } from '@/features/mechanics/domain/core/progression/xp'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { apiFetch } from '@/app/api'
 import type { CampaignSummary, PendingMembership } from '@/shared/types/campaign.types'
+import { resolveXpTable } from '@/features/mechanics/domain/core/rules/xp/resolveXpTable'
 
 export interface CharacterActionDeps {
   character: CharacterDoc | null
@@ -43,7 +44,7 @@ export function useCharacterActions(
   } = deps
 
   const { ruleset } = useCampaignRules()
-  const xpTable = ruleset.mechanics.progression.experience
+  const xpTable = resolveXpTable(ruleset.mechanics.progression.xp);
 
   const isNpc = character?.type === 'npc'
   const notify = (msg: string) => { if (!isNpc) setSuccess(msg) }
@@ -143,8 +144,8 @@ export function useCharacterActions(
       levelUpPending: false,
       pendingLevel: null,
     }
-    if (result.classDefinitionId) {
-      body.classDefinitionId = result.classDefinitionId
+    if (result.subclassId) {
+      body.subclassId = result.subclassId
     }
     const data = await apiFetch<{ character: CharacterDoc }>(`/api/characters/${id}`, {
       method: 'PATCH',

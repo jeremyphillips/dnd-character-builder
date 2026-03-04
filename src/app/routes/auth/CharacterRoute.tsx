@@ -4,7 +4,6 @@ import CircularProgress from '@mui/material/CircularProgress'
 import MuiLink from '@mui/material/Link'
 
 import { Breadcrumbs } from '@/ui/patterns'
-import { useAuth } from '@/app/providers/AuthProvider'
 import { useBreadcrumbs } from '@/hooks'
 import { ROUTES } from '@/app/routes'
 import { useCharacter } from '@/features/character/hooks'
@@ -12,12 +11,19 @@ import { useCharacterForm } from '@/features/character/hooks'
 import { useCharacterActions } from '@/features/character/hooks'
 import { CharacterView } from '@/features/character/view'
 import { AppAlert } from '@/ui/primitives';
+import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
+import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 
 export default function CharacterRoute() {
+  const { campaign } = useActiveCampaign()
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  const { user } = useAuth()
-  const isPlatformAdmin = user?.role === 'admin' || user?.role === 'superadmin'
+
+  const ctx = toViewerContext(campaign?.viewer);
+  const canManage = canManageContent(ctx);
+  const characterIds = ctx?.characterIds ?? [];
+  const userOwnsCharacter = characterIds.includes(id ?? '');
+
   const breadcrumbs = useBreadcrumbs()
 
   const welcomeState = location.state as { welcomeCampaign?: string; campaignId?: string } | null
@@ -77,9 +83,8 @@ export default function CharacterRoute() {
       character={state.character}
       campaigns={state.campaigns}
       pendingMemberships={state.pendingMemberships}
-      isOwner={state.isOwner}
-      isAdmin={state.isAdmin}
-      isPlatformAdmin={isPlatformAdmin}
+      isOwner={userOwnsCharacter}
+      isAdmin={canManage}
       ownerName={state.ownerName}
       error={state.error}
       success={state.success}

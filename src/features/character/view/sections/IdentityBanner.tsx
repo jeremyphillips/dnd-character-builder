@@ -2,8 +2,8 @@ import type { CharacterDoc, CharacterClassInfo } from '@/shared'
 import type { CampaignSummary } from '@/shared/types/campaign.types'
 import { classes as classesData } from '@/data'
 import { getById } from '@/utils'
-import { getSubclassNameById } from '@/features/character/domain/reference'
-import { getXpForLevel } from '@/features/mechanics/domain/progression'
+import { getSubclassNameById } from '@/features/mechanics/domain/classes/progression'
+import { getXpForLevel } from '@/features/mechanics/domain/core/progression/xp'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { CampaignHorizontalCard }from '@/features/campaign/components'
 import { EditableTextField } from '@/ui/patterns'
@@ -28,11 +28,6 @@ function getClassName(classId?: string): string {
   if (!classId) return 'Unknown'
   const c = getById(classesData, classId)
   return c?.name ?? classId
-}
-
-function getAlignmentName(options: { id: string; label: string }[], id: string | undefined): string {
-  if (!id) return '—'
-  return getById(options, id)?.label ?? id
 }
 
 // ---------------------------------------------------------------------------
@@ -84,20 +79,20 @@ export default function IdentityBanner({
   onEditAlignment,
 }: IdentityBannerProps) {
   const { ruleset, catalog } = useCampaignRules()
-  const xpTable = ruleset.mechanics?.progression?.experience
-  const raceName = catalog.racesById[character.race]?.name ?? character.race ?? '—'
-  const alignmentName = getAlignmentName(alignmentOptions, character.alignment)
-  const currentLevel = character.totalLevel ?? character.level ?? 1
+  const xpTable = ruleset.mechanics?.progression?.xp?.tableId === 'standard'
+  const raceName = catalog.racesById[character.race ?? '']?.name ?? character.race ?? '—'
+  
+  const alignmentName = alignmentOptions.find(a => a.id === character.alignment)?.name ?? character.alignment ?? '—'
+
+  const currentLevel = character.totalLevel ?? 1
   const maxLevel = xpTable?.length ? Math.max(...xpTable.map(e => e.level)) : 20
 
   const classSummary = filledClasses.length > 0
     ? filledClasses.map(cls => {
-        const sub = getSubclassNameById(cls.classId, cls.classDefinitionId)
+        const sub = getSubclassNameById(cls.classId, cls.subclassId)
         return `${getClassName(cls.classId)}${sub ? ` (${sub})` : ''} ${cls.level}`
       }).join(' / ')
-    : character.class
-      ? `${character.class} ${character.level}`
-      : '—'
+    : '—'
 
   const isPendingLevelUp = character.levelUpPending && character.pendingLevel
   let xpDescription: string | undefined

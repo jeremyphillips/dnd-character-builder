@@ -13,6 +13,8 @@ export interface Spell {
   classes: ClassId[]
   ritual?: boolean
   concentration?: boolean
-  source?: string
   effects?: SpellEffects
 }
+
+/** Shape for create/update (omits id). */
+export type SpellInput = Omit<Spell, 'id'>

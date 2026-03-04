@@ -2,18 +2,19 @@ import type { EffectDescriptor } from '@/features/content/domain/types'
 import type { Effect, GrantEffect, ModifierEffect } from '../effects.types'
 import type { StatTarget } from '../../resolution/stat-resolver'
 import { resolveCustomDescriptor } from './custom-registry'
+import { ABILITY_KEYS } from '../../core/character'
 
 const STAT_TARGETS: ReadonlySet<string> = new Set<StatTarget>([
-  'strength',
-  'dexterity',
-  'constitution',
-  'intelligence',
-  'wisdom',
-  'charisma',
+  ...ABILITY_KEYS,
   'armor_class',
   'attack_roll',
   'damage',
-  'hp_max',
+  'hit_points',
+  'hit_points_temporary',
+  'hit_points_max',
+  'hit_points_temporary_max',
+  'spell_attack',
+  'resistance',
   'speed',
   'initiative',
   'saving_throw',

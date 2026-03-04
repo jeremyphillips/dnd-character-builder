@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useCharacterBuilder } from '@/features/characterBuilder/context';
-import { DEFAULT_ABILITY_KEYS } from '@/features/characterBuilder/constants';
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character';
 
 function formatAbilityLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
@@ -40,7 +40,7 @@ const AbilityScoresStep = () => {
       </Typography>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, maxWidth: 360 }}>
-        {DEFAULT_ABILITY_KEYS.map(id => (
+        {ABILITY_KEYS.map(id => (
           <TextField
             key={id}
             label={formatAbilityLabel(id)}

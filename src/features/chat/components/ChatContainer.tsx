@@ -13,7 +13,7 @@ import { generateHitPoints } from '@/features/mechanics/domain/character/progres
 import { LoadingOverlay } from '@/ui/patterns'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import type { AbilityScoreMethod } from '@/data/types'
+import type { AbilityScoreMethod } from '@/features/mechanics/domain/core/rules/abilityScores.types'
 import type { AbilityScores } from '@/shared/types/character.core'
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
 import { AppAlert } from '@/ui/primitives'

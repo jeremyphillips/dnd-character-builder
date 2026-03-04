@@ -1,13 +1,12 @@
 import { CampaignRulesetPatch } from '../models/CampaignRulesetPatch.model';
 import { DEFAULT_SYSTEM_RULESET_ID, SYSTEM_RULESET_IDS } from '../../src/features/mechanics/domain/core/rules';
+import { ABILITY_KEYS, type AbilityKey } from '../../src/features/mechanics/domain/core/character';
 
 // ---------------------------------------------------------------------------
 // Canonical ability IDs (shared with client via convention)
 // ---------------------------------------------------------------------------
 
-const VALID_ABILITY_IDS = new Set([
-  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-]);
+const VALID_ABILITY_KEYS = new Set(ABILITY_KEYS);
 
 const VALID_SYSTEM_IDS = new Set(SYSTEM_RULESET_IDS);
 
@@ -77,11 +76,11 @@ function validateAbilityRequirement(
     return;
   }
   const ability = item.ability;
-  if (typeof ability !== 'string' || !VALID_ABILITY_IDS.has(ability)) {
+  if (typeof ability !== 'string' || !VALID_ABILITY_KEYS.has(ability as AbilityKey)) {
     errors.push({
       path: `${path}.ability`,
       code: 'INVALID_ID',
-      message: `Invalid ability. Valid: ${[...VALID_ABILITY_IDS].join(', ')}`,
+      message: `Invalid ability. Valid: ${[...VALID_ABILITY_KEYS].join(', ')}`,
     });
   }
   const min = item.min;

@@ -17,7 +17,7 @@ export function getBaseStat(
     case 'armor_class':
       return 10 + getAbilityModifier(context.self, 'dexterity')
 
-    case 'hp_max':
+    case 'hit_points_max':
       return calculateBaseHitPoints(
         context.self.level,
         context.self.hitDie ?? 8,

@@ -5,6 +5,7 @@
  * map issues back to specific fields (UI form errors, API responses, etc.).
  */
 import type { CampaignRulesetPatch, SystemRuleset } from './ruleset.types';
+import { ABILITY_KEYS, type AbilityKey } from '@/features/mechanics/domain/core/character';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,9 +25,7 @@ export type ValidationResult =
 // Constants
 // ---------------------------------------------------------------------------
 
-const VALID_ABILITY_IDS = new Set([
-  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-]);
+const VALID_ABILITY_KEYS = new Set(ABILITY_KEYS);
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -95,15 +94,15 @@ function validateRequirementItem(
   const ability = item.ability;
   if (typeof ability !== 'string' || ability.length === 0) {
     errors.push(err(`${path}.ability`, 'REQUIRED', 'ability is required'));
-  } else if (!VALID_ABILITY_IDS.has(ability)) {
+  } else if (!VALID_ABILITY_KEYS.has(ability as AbilityKey)) {
     errors.push(err(
       `${path}.ability`,
       'INVALID_ID',
-      `Unknown ability "${ability}". Valid: ${[...VALID_ABILITY_IDS].join(', ')}`,
+      `Unknown ability "${ability}". Valid: ${[...VALID_ABILITY_KEYS].join(', ')}`,
     ));
   }
 
-  const min = item.min;
+  const min = item.min; 
   if (min === undefined || min === null) {
     errors.push(err(`${path}.min`, 'REQUIRED', 'min is required'));
   } else if (typeof min !== 'number' || !Number.isFinite(min)) {

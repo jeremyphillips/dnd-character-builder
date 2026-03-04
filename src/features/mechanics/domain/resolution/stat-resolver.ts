@@ -6,16 +6,16 @@ import type { FormulaEffect, FormulaDefinition } from "./formula.engine"
 import { getBaseStat } from "../core/base-stat-resolver"
 import { getAbilityModifier } from "../core/ability.utils"
 import { getProficiencyAttackBonus } from "@/features/mechanics/domain/character/progression"
-import type { AbilityId, AbilityIdAbbreviationMap } from "@/data/character.types"
+import type { AbilityId, AbilityKey } from "../core/character"
 
 // ---------------------------------------------------------------------------
 // Stat target
 // ---------------------------------------------------------------------------
 
-export type AbilityScoreTarget = `ability_score.${keyof AbilityIdAbbreviationMap}`;
+export type AbilityScoreTarget = `ability_score.${AbilityId}`;
 
 export type StatTarget =
-  | AbilityId
+  | AbilityKey
   | AbilityScoreTarget
   | 'armor_class'
   | 'attack_roll'
@@ -99,8 +99,8 @@ function resolveModifierValue(
 ): number {
   const val = mod.value
   if (typeof val === 'number') return val
-  if (typeof val === 'object' && 'perLevel' in val) return val.perLevel * context.self.level
-  if (typeof val === 'object' && 'ability' in val) {
+  if (typeof val === 'object' && val?.perLevel) return val.perLevel * context.self.level
+  if (typeof val === 'object' && val?.ability) {
     return context.self.abilities[val.ability] ?? 0
   }
   return 0

@@ -1,10 +1,7 @@
-import type { AbilityScores, AbilityId } from '@/shared/types/character.core'
-import type { AbilityScoreMethod } from '@/data/types'
+import type { AbilityScores } from '@/shared/types/character.core'
+import type { AbilityScoreMethod } from '@/features/mechanics/domain/core/rules/abilityScores.types'
 import { generateScoreArray, type Rng } from './methods'
-
-const ABILITY_KEYS: AbilityId[] = [
-  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-]
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character'
 
 /**
  * Generate a complete AbilityScores object with scores assigned to abilities

@@ -1,4 +1,4 @@
-import type { CharacterClassInfo, CharacterSheet, RaceId } from '@/shared'
+import type { CharacterSheet, RaceId } from '@/shared'
 import type { AlignmentId } from '@/features/content/domain/types'
 import type {
   CharacterType, 
@@ -9,10 +9,6 @@ import type {
 } from '@/shared/types/character.core'
 import type { HitPointMode } from '@/features/mechanics/domain/character/progression'
 import type { InvalidationResult, InvalidationItem } from '@/features/mechanics/domain/character-build/invalidation'
-
-export type { CharacterClassInfo, CharacterSheet, CharacterProficiencies }
-export type { HitPointMode }
-export type { AbilityScores }
 
 export type AbilityScoreSource = 'import_manual' | 'generated_roll';
 export type AbilityScoresStatus = 'unset' | 'partial' | 'complete';

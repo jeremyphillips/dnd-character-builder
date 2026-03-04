@@ -1,8 +1,9 @@
-import type { MulticlassingRules } from '@/data/ruleSets';
+import type { MulticlassingRules } from '@/shared/types/ruleset';
 import type { AbilityRequirementGroup, RequirementExpr } from '@/data/classes.types';
 import type { AbilityScores } from '@/shared/types/character.core';
 import { classes } from '@/data/classes';
 import { resolveRule, type RuleResolveContext } from '@/features/mechanics/domain/core/rules';
+import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -17,13 +18,9 @@ export interface CanMulticlassResult {
 // Completeness check
 // ---------------------------------------------------------------------------
 
-const REQUIRED_ABILITIES = [
-  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-] as const;
-
 function areAbilityScoresComplete(scores: AbilityScores | undefined): boolean {
   if (!scores) return false;
-  return REQUIRED_ABILITIES.every(k => {
+  return ABILITY_KEYS.every(k => {
     const v = scores[k];
     return typeof v === 'number' && Number.isFinite(v);
   });

@@ -1,5 +1,5 @@
-import type { Money } from '../money/types'
-import type { ClassId } from './ruleset'
+import type { Money } from '@/shared/money/types'
+import type { ClassId } from '@/shared/types/ruleset'
 import type { AlignmentId } from '@/features/content/domain/types'
 import type { RaceId } from '@/features/content/domain/types'
 import type { AbilityScoreMapResolved } from '@/features/mechanics/domain/core/character'
@@ -94,7 +94,7 @@ export type Character = {
   }
 
   proficiencies?: CharacterProficiencies
-  spells?: string[]              // selected spell IDs from the spell catalog
+  spells?: string[]
   equipment?: Equipment
   wealth?: Wealth
   narrative?: CharacterNarrative

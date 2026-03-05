@@ -95,7 +95,7 @@ export default function SkillProficiencyListRoute() {
         field: 'suggestedClasses',
         headerName: 'Suggested Classes',
         flex: 1,
-        minWidth: 180,
+        minWidth: 250,
         renderCell: (params) => {
           const arr = params.value as string[] | undefined
           if (!arr?.length) return '—'

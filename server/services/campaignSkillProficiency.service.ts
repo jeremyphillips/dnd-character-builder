@@ -1,8 +1,9 @@
 import { CampaignSkillProficiency } from '../models/CampaignSkillProficiency.model';
 import type { AccessPolicy, AccessPolicyScope } from '../../shared/domain/accessPolicy';
+import { ABILITY_IDS } from '../../src/features/mechanics/domain/core/character/abilities';
 
 const VALID_SCOPES: AccessPolicyScope[] = ['public', 'dm', 'restricted'];
-const VALID_ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
+const VALID_ABILITIES = ABILITY_IDS;
 
 export type CampaignSkillProficiencyDoc = {
   _id: string;

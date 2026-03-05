@@ -4,7 +4,7 @@
  * These are the "factory defaults" for spells (SRD_CC_v5_2_1). Campaign-owned
  * custom spells would be stored in the DB and merged at runtime.
  */
-import type { Spell } from '@/features/content/domain/types';
+import type { Spell, SpellBase } from '@/features/content/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
@@ -12,7 +12,7 @@ import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 // 5e v1 system spells (SRD_CC_v5_2_1)
 // ---------------------------------------------------------------------------
 
-const SPELLS_RAW: readonly Spell[] = [
+const SPELLS_RAW: readonly SpellBase[] = [
   {
     id: 'fireBolt',
     name: 'Fire Bolt',
@@ -446,7 +446,15 @@ const SPELLS_RAW: readonly Spell[] = [
   },
 ];
 
-const SYSTEM_SPELLS_SRD_CC_V5_2_1: readonly Spell[] = SPELLS_RAW;
+function withSource<T extends Record<string, unknown>>(
+  s: T,
+): T & { source: 'system' } {
+  return { ...s, source: 'system' as const };
+}
+
+const SYSTEM_SPELLS_SRD_CC_V5_2_1: readonly Spell[] = SPELLS_RAW.map(
+  (s) => withSource(s) as Spell,
+);
 
 // ---------------------------------------------------------------------------
 // Registry

@@ -10,3 +10,4 @@ export { gearRepo } from './gearRepo';
 export { magicItemRepo } from './magicItemRepo';
 export { enchantmentRepo } from './enchantmentRepo';
 export { skillProficiencyRepo } from './skillProficiencyRepo';
+export { spellRepo, type SpellSummary } from './spellRepo';

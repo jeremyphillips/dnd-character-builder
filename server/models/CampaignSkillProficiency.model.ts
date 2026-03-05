@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import { ABILITY_IDS } from '../../src/features/mechanics/domain/core/character/abilities';
 
 const accessPolicySchema = new Schema(
   {
@@ -35,7 +36,7 @@ const campaignSkillProficiencySchema = new Schema(
     ability: {
       type: String,
       required: true,
-      enum: ['str', 'dex', 'con', 'int', 'wis', 'cha'],
+      enum: ABILITY_IDS,
     },
     suggestedClasses: {
       type: [String],

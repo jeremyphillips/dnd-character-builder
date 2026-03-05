@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
+import AddIcon from '@mui/icons-material/Add'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
@@ -18,12 +19,17 @@ import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns'
 import { makeOwnedColumn, makeOwnedFilter } from '@/ui/patterns'
 import { AppPageHeader } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/hooks'
-import { AppAlert } from '@/ui/primitives'
+import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
+import { AppAlert, AppBadge } from '@/ui/primitives'
 
 export default function SkillProficiencyListRoute() {
-  const { campaignId } = useActiveCampaign()
+  const { campaign, campaignId } = useActiveCampaign()
+  const navigate = useNavigate()
   const breadcrumbs = useBreadcrumbs()
   const basePath = `/campaigns/${campaignId}/world/skill-proficiencies`
+
+  const ctx = toViewerContext(campaign?.viewer)
+  const canManage = canManageContent(ctx)
 
   const { catalog } = useCampaignRules()
   const { skills: ownedIds } = useViewerProficiencies()
@@ -71,6 +77,11 @@ export default function SkillProficiencyListRoute() {
     }))
   }, [items, catalog.classesById])
 
+  const tagOptions = useMemo(() => {
+    const tags = [...new Set(items.flatMap((i) => i.tags ?? []))].sort()
+    return tags.map((tag) => ({ label: tag, value: tag }))
+  }, [items])
+
   const columns: AppDataGridColumn<SkillProficiency>[] = useMemo(() => {
     const base: AppDataGridColumn<SkillProficiency>[] = [
       { field: 'name', headerName: 'Name', flex: 1, minWidth: 160, linkColumn: true },
@@ -85,13 +96,55 @@ export default function SkillProficiencyListRoute() {
         headerName: 'Suggested Classes',
         flex: 1,
         minWidth: 180,
+        renderCell: (params) => {
+          const arr = params.value as string[] | undefined
+          if (!arr?.length) return '—'
+          return (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {arr.map((id) => (
+                <AppBadge
+                  key={id}
+                  label={catalog.classesById[id]?.name ?? id}
+                  tone="default"
+                  variant="outlined"
+                  size="small"
+                />
+              ))}
+            </Box>
+          )
+        },
+        valueFormatter: (v) =>
+          Array.isArray(v) && v.length > 0 ? (v as string[]).join(', ') : '—',
+      },
+      {
+        field: 'tags',
+        headerName: 'Tags',
+        width: 200,
+        renderCell: (params) => {
+          const arr = params.value as string[] | undefined
+          if (!arr?.length) return '—'
+          const displayTags = arr.slice(0, 2)
+          return (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {displayTags.map((tag) => (
+                <AppBadge
+                  key={tag}
+                  label={tag}
+                  tone="default"
+                  variant="outlined"
+                  size="small"
+                />
+              ))}
+            </Box>
+          )
+        },
         valueFormatter: (v) =>
           Array.isArray(v) && v.length > 0 ? (v as string[]).join(', ') : '—',
       },
     ]
-    if (hasViewer) base.push(makeOwnedColumn<SkillProficiency>({ ownedIds: ownedIds }))
+    if (hasViewer) base.push(makeOwnedColumn<SkillProficiency>({ ownedIds }))
     return base
-  }, [ownedIds, hasViewer])
+  }, [ownedIds, hasViewer, catalog.classesById])
 
   const filters: AppDataGridFilter<SkillProficiency>[] = useMemo(() => {
     const base: AppDataGridFilter<SkillProficiency>[] = [
@@ -109,10 +162,17 @@ export default function SkillProficiencyListRoute() {
         options: suggestedClassOptions,
         accessor: (r: SkillProficiency) => r.suggestedClasses ?? [],
       },
+      {
+        id: 'tags',
+        label: 'Tag',
+        type: 'multiSelect' as const,
+        options: tagOptions,
+        accessor: (r: SkillProficiency) => r.tags ?? [],
+      },
     ]
     if (hasViewer) base.push(makeOwnedFilter<SkillProficiency>({ ownedIds: ownedIds }))
     return base
-  }, [abilityOptions, suggestedClassOptions, ownedIds, hasViewer])
+  }, [abilityOptions, suggestedClassOptions, tagOptions, ownedIds, hasViewer])
 
   if (loading) {
     return (
@@ -155,6 +215,18 @@ export default function SkillProficiencyListRoute() {
         emptyMessage="No skill proficiencies found."
         density="compact"
         height={560}
+        toolbar={
+          canManage && (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => navigate(`${basePath}/new`)}
+            >
+              Add Skill Proficiency
+            </Button>
+          )
+        }
       />
     </Box>
   )

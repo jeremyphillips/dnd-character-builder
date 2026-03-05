@@ -60,6 +60,8 @@ import {
   RaceEditRoute,
   SkillProficiencyListRoute,
   SkillProficiencyDetailRoute,
+  SkillProficiencyCreateRoute,
+  SkillProficiencyEditRoute,
   AccountSettingsRoute,
   NewCharacterRoute,
 } from './routes/index'
@@ -136,6 +138,8 @@ export const router = createBrowserRouter([
                       { path: 'equipment/magic-items/:magicItemId/edit', element: <MagicItemEditRoute /> },
                       { path: 'races/new', element: <RaceCreateRoute /> },
                       { path: 'races/:raceId/edit', element: <RaceEditRoute /> },
+                      { path: 'skill-proficiencies/new', element: <SkillProficiencyCreateRoute /> },
+                      { path: 'skill-proficiencies/:skillProficiencyId/edit', element: <SkillProficiencyEditRoute /> },
                     ],
                   },
                 ],

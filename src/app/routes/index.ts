@@ -31,6 +31,8 @@ export {
   MonsterRoute,
   SkillProficiencyListRoute,
   SkillProficiencyDetailRoute,
+  SkillProficiencyCreateRoute,
+  SkillProficiencyEditRoute,
   EquipmentHubRoute,
   WeaponsListRoute,
   ArmorListRoute,

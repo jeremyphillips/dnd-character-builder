@@ -7,7 +7,9 @@ import { buildFieldConfigs, buildDefaultFormValues } from '@/features/content/fo
 import { SKILL_PROFICIENCY_FORM_FIELDS } from './skillProficiencyForm.registry'
 import type { SkillProficiencyFormValues } from './skillProficiencyForm.types'
 
-export type GetSkillProficiencyFieldConfigsOptions = Record<string, never>
+export type GetSkillProficiencyFieldConfigsOptions = {
+  policyCharacters?: { id: string; name: string }[];
+}
 
 /**
  * Returns FieldConfig[] for skill proficiency Create/Edit forms.

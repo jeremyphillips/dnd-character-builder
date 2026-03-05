@@ -3,6 +3,7 @@
  * JSON fields (examples, tags, suggestedClasses) use placeholders that FormJsonField
  * renders as "Insert example" in JsonPreviewField.
  */
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns'
 import type { SkillProficiency } from '@/features/content/domain/types'
 import type { SkillProficiencyInput } from './skillProficiencyForm.types'
 import { ABILITIES } from '@/features/mechanics/domain/core/character/abilities'
@@ -122,6 +123,15 @@ export const SKILL_PROFICIENCY_FORM_FIELDS = [
       const arr = Array.isArray(v) ? v : []
       return arr.length > 0 ? arr.join(', ') : '—'
     },
+  },
+  {
+    name: 'accessPolicy',
+    label: 'Visibility',
+    kind: 'visibility' as const,
+    skipInForm: true,
+    defaultValue: DEFAULT_VISIBILITY_PUBLIC as SkillProficiencyFormValues['accessPolicy'],
+    parse: (v: unknown) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as SkillProficiencyInput['accessPolicy'],
+    format: (v: unknown) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as NonNullable<SkillProficiencyFormValues['accessPolicy']>,
   },
 ] as const satisfies readonly FieldSpec<
   SkillProficiencyFormValues,

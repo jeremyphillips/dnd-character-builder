@@ -9,15 +9,19 @@ import { skillProficiencyRepo } from '@/features/content/domain/repo'
 import type { SkillProficiency } from '@/features/content/domain/types'
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry'
 import { useBreadcrumbs } from '@/hooks'
-import { AppAlert } from '@/ui/primitives'
+import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
+import { AppAlert, AppBadge } from '@/ui/primitives'
 import { KeyValueSection } from '@/ui/patterns'
 import { buildDetailItemsFromSpecs } from '@/features/content/forms/registry'
 import { SKILL_PROFICIENCY_DETAIL_SPECS } from '@/features/skillProficiency/forms'
 
 export default function SkillProficiencyDetailRoute() {
-  const { campaignId } = useActiveCampaign()
+  const { campaign, campaignId } = useActiveCampaign()
   const { skillProficiencyId } = useParams<{ skillProficiencyId: string }>()
   const breadcrumbs = useBreadcrumbs()
+
+  const ctx = toViewerContext(campaign?.viewer)
+  const canManage = canManageContent(ctx)
 
   const { entry: skillProficiency, loading, error, notFound } = useCampaignContentEntry<SkillProficiency>({
     campaignId: campaignId ?? undefined,
@@ -48,9 +52,16 @@ export default function SkillProficiencyDetailRoute() {
       breadcrumbData={breadcrumbs}
       listPath={listPath}
       editPath={editPath}
-      canEdit={false}
-      source="system"
+      canEdit={canManage}
+      source={skillProficiency.source}
+      accessPolicy={skillProficiency.accessPolicy}
     >
+      {skillProficiency.patched && (
+        <Box sx={{ mb: 2 }}>
+          <AppBadge label="Patched" tone="warning" size="small" />
+        </Box>
+      )}
+
       {skillProficiency.description && (
         <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
           {skillProficiency.description}

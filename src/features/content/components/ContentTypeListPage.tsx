@@ -18,7 +18,13 @@ import type { BreadcrumbItem } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 import { AppAlert } from '@/ui/primitives';
 
-export type ContentListItem = { id: string; name: string; allowedInCampaign?: boolean };
+export type ContentListItem = {
+  id: string;
+  name: string;
+  allowedInCampaign?: boolean;
+  /** Who can see this entry. Missing = public. Compatible with canViewContent. */
+  accessPolicy?: { scope: string; allowCharacterIds?: string[] };
+};
 
 export type ContentViewerContext = import('@/shared/domain/capabilities').ViewerContext;
 

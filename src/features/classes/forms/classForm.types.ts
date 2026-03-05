@@ -3,8 +3,10 @@
  * Extends CharacterClass shape — json fields use string for form representation.
  */
 import type { CharacterClass } from '@/features/classes/domain/types';
+import type { Visibility } from '@/shared/types/visibility';
 
 export type ClassFormValues = Pick<CharacterClass, 'name' | 'description'> & {
+  accessPolicy?: Visibility;
   /** JSON string for FormJsonField. */
   generation: string;
   /** JSON string for FormJsonField. */
@@ -20,4 +22,5 @@ export type ClassFormValues = Pick<CharacterClass, 'name' | 'description'> & {
 /** Input for create/update — domain shape. */
 export type ClassInput = Omit<CharacterClass, 'id'> & {
   id?: string;
+  accessPolicy?: Visibility;
 };

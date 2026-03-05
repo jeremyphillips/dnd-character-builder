@@ -3,6 +3,7 @@
  * Non-standard object and array fields use kind: 'json' per content form pattern.
  */
 import type { CharacterClass } from '@/features/classes/domain/types';
+import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { type FieldSpec } from '@/features/content/forms/registry';
 import type { ClassFormValues, ClassInput } from './classForm.types';
 
@@ -74,6 +75,33 @@ const PROGRESSION_PLACEHOLDER = JSON.stringify(
 
 const GENERATION_PLACEHOLDER = JSON.stringify({ primaryAbilities: ['str', 'dex'] }, null, 2);
 
+const DEFAULT_REQUIREMENTS_JSON = JSON.stringify(
+  { allowedRaces: 'all', allowedAlignments: 'any' },
+  null,
+  2
+);
+const DEFAULT_PROFICIENCIES_JSON = JSON.stringify(
+  {
+    skills: { type: 'choice', choose: 2, level: 1 },
+    weapons: { type: 'fixed', level: 1, categories: ['simple', 'martial'] },
+    armor: { type: 'fixed', level: 1, categories: ['light', 'medium'] },
+  },
+  null,
+  2
+);
+const DEFAULT_PROGRESSION_JSON = JSON.stringify(
+  {
+    hitDie: 8,
+    attackProgression: 'good',
+    savingThrows: ['str', 'dex'],
+    spellcasting: 'none',
+    asiLevels: [4, 8, 12, 16, 19],
+    features: [],
+  },
+  null,
+  2
+);
+
 export const CLASS_FORM_FIELDS = [
   {
     name: 'name',
@@ -95,6 +123,15 @@ export const CLASS_FORM_FIELDS = [
     format: (v: unknown) => strOrEmpty(v) as ClassFormValues['description'],
   },
   {
+    name: 'accessPolicy',
+    label: 'Visibility',
+    kind: 'visibility' as const,
+    skipInForm: true,
+    defaultValue: DEFAULT_VISIBILITY_PUBLIC as ClassFormValues['accessPolicy'],
+    parse: (v: unknown) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as ClassInput['accessPolicy'],
+    format: (v: unknown) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as ClassFormValues['accessPolicy'],
+  },
+  {
     name: 'generation',
     label: 'Generation',
     kind: 'json' as const,
@@ -102,7 +139,7 @@ export const CLASS_FORM_FIELDS = [
     helperText: 'Primary abilities for character generation.',
     minRows: 2,
     maxRows: 8,
-    defaultValue: '{}' as ClassFormValues['generation'],
+    defaultValue: GENERATION_PLACEHOLDER as ClassFormValues['generation'],
     parse: (v: unknown) => parseJsonObject(v) as ClassInput['generation'],
     format: (v: unknown) => formatJsonObject(v) as ClassFormValues['generation'],
     formatForDisplay: (v: unknown) => {
@@ -121,7 +158,7 @@ export const CLASS_FORM_FIELDS = [
     helperText: 'Skills, weapons, and armor proficiencies.',
     minRows: 6,
     maxRows: 16,
-    defaultValue: '{}' as ClassFormValues['proficiencies'],
+    defaultValue: DEFAULT_PROFICIENCIES_JSON as ClassFormValues['proficiencies'],
     parse: (v: unknown) => parseJsonObject(v) as ClassInput['proficiencies'],
     format: (v: unknown) => formatJsonObject(v) as ClassFormValues['proficiencies'],
     formatForDisplay: (v: unknown) =>
@@ -135,7 +172,7 @@ export const CLASS_FORM_FIELDS = [
     helperText: 'Hit die, features, spellcasting, ASI levels.',
     minRows: 8,
     maxRows: 24,
-    defaultValue: '{}' as ClassFormValues['progression'],
+    defaultValue: DEFAULT_PROGRESSION_JSON as ClassFormValues['progression'],
     parse: (v: unknown) => parseJsonObject(v) as ClassInput['progression'],
     format: (v: unknown) => formatJsonObject(v) as ClassFormValues['progression'],
     formatForDisplay: (v: unknown) =>
@@ -168,7 +205,7 @@ export const CLASS_FORM_FIELDS = [
     helperText: 'Allowed races, alignments, multiclassing.',
     minRows: 4,
     maxRows: 16,
-    defaultValue: '{}' as ClassFormValues['requirements'],
+    defaultValue: DEFAULT_REQUIREMENTS_JSON as ClassFormValues['requirements'],
     parse: (v: unknown) => parseJsonObject(v) as ClassInput['requirements'],
     format: (v: unknown) => formatJsonObject(v) as ClassFormValues['requirements'],
     formatForDisplay: (v: unknown) =>

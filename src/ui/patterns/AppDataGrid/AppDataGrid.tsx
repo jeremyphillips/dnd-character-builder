@@ -554,6 +554,12 @@ export default function AppDataGrid<T>({
           columns={muiColumns}
           getRowId={(row) => getRowId(row as T)}
           getRowClassName={getRowClassName}
+          sx={{
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+          }}
           loading={loading}
           pageSizeOptions={pageSizeOptions}
           density={density}

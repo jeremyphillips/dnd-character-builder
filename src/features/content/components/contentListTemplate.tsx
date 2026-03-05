@@ -19,7 +19,7 @@ import type { GridRenderCellParams } from '@mui/x-data-grid';
 import { canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
 import {
   SOURCE_FILTER_OPTIONS,
-  formatContentSource,
+  getSourceColumnDisplay,
 } from '@/features/content/domain/sourceLabels';
 
 // ---------------------------------------------------------------------------
@@ -154,9 +154,9 @@ export function makePreColumns<T extends CampaignContentListRow>(params: {
         characterNameById,
       });
       const iconWithTooltip = spec ? (
-        <Box component="span" sx={{ flexShrink: 0 }}>
+        <Box component="span" sx={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
           <AppTooltip title={spec.tooltip}>
-            <Box component="span" sx={{ display: 'inline-flex' }}>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
               {spec.icon}
             </Box>
           </AppTooltip>
@@ -219,7 +219,17 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
     field: 'source',
     headerName: 'Source',
     width: 100,
-    valueFormatter: (v) => formatContentSource(v as string | null | undefined),
+    renderCell: (params) => {
+      const { text, sx } = getSourceColumnDisplay(
+        (params.value as string) ?? (params.row as CampaignContentListRow).source,
+      );
+      if (!text) return '';
+      return (
+        <Typography component="span" variant="body2" sx={sx}>
+          {text}
+        </Typography>
+      );
+    },
   });
 
   if (canManage && onToggleAllowedInCampaign) {

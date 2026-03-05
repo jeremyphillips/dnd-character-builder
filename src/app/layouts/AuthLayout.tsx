@@ -347,6 +347,14 @@ export default function AuthLayout() {
                       </ListItemButton>
                       <ListItemButton
                         component={NavLink}
+                        to={ROUTES.WORLD_SPELLS.replace(':id', activeCampaignId)}
+                        selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/spells`)}
+                        sx={{ pl: 2 }}
+                      >
+                        <ListItemText primary="Spells" slotProps={{ primary: { fontSize: '0.8rem' } }} />
+                      </ListItemButton>
+                      <ListItemButton
+                        component={NavLink}
                         to={ROUTES.WORLD_SKILL_PROFICIENCIES.replace(':id', activeCampaignId)}
                         selected={location.pathname.startsWith(`/campaigns/${activeCampaignId}/world/skill-proficiencies`)}
                         sx={{ pl: 2 }}

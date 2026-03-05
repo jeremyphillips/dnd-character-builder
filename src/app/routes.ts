@@ -33,6 +33,8 @@ export const ROUTES = {
   WORLD_MONSTERS: '/campaigns/:id/world/monsters',
   WORLD_MONSTER: '/campaigns/:id/world/monsters/:monsterId',
   WORLD_SKILL_PROFICIENCIES: '/campaigns/:id/world/skill-proficiencies',
+  WORLD_SPELLS: '/campaigns/:id/world/spells',
+  WORLD_SPELL: '/campaigns/:id/world/spells/:spellId',
   WORLD_SKILL_PROFICIENCY_NEW: '/campaigns/:id/world/skill-proficiencies/new',
   WORLD_SKILL_PROFICIENCY: '/campaigns/:id/world/skill-proficiencies/:skillProficiencyId',
   WORLD_SKILL_PROFICIENCY_EDIT: '/campaigns/:id/world/skill-proficiencies/:skillProficiencyId/edit',

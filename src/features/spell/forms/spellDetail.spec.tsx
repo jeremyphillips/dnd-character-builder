@@ -11,46 +11,40 @@ const classLabel = (id: string) => getById(classes, id)?.name ?? id;
 
 export const SPELL_DETAIL_SPECS: DetailSpec<Spell, unknown>[] = [
   {
-    key: 'name',
-    label: 'Name',
-    order: 10,
-    render: (spell) => spell.name,
-  },
-  {
     key: 'school',
     label: 'School',
-    order: 20,
+    order: 10,
     render: (spell) => schoolLabel(spell.school),
   },
   {
     key: 'level',
     label: 'Level',
-    order: 30,
+    order: 20,
     render: (spell) => (spell.level === 0 ? 'Cantrip' : `${spell.level}`),
   },
   {
     key: 'classes',
     label: 'Classes',
-    order: 40,
+    order: 30,
     render: (spell) =>
       spell.classes.map((c) => classLabel(c)).join(', ') || '—',
   },
   {
     key: 'ritual',
     label: 'Ritual',
-    order: 50,
+    order: 40,
     render: (spell) => (spell.ritual ? 'Yes' : 'No'),
   },
   {
     key: 'concentration',
     label: 'Concentration',
-    order: 60,
+    order: 50,
     render: (spell) => (spell.concentration ? 'Yes' : 'No'),
   },
   {
     key: 'effects',
     label: 'Effects',
-    order: 70,
+    order: 60,
     render: (spell) => {
       const arr = spell.effects;
       if (!arr || arr.length === 0) return '—';

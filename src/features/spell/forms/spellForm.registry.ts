@@ -2,6 +2,7 @@
  * Spell form field registry — single source of truth for config + mapping.
  */
 import type { Spell, SpellInput } from '@/features/content/domain/types/spell.types';
+import { getBaseContentFieldSpecs } from '@/features/content/forms/baseFieldSpecs';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/domain/vocab';
 import { numberRange, type FieldSpec } from '@/features/content/forms/registry';
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes/queries';
@@ -44,16 +45,11 @@ const formatEffectsJson = (v: unknown): string => {
 };
 
 export const SPELL_FORM_FIELDS = [
-  {
-    name: 'name',
-    label: 'Name',
-    kind: 'text' as const,
-    required: true,
-    placeholder: 'Spell name',
-    defaultValue: '' as SpellFormValues['name'],
-    parse: (v: unknown) => (typeof v === 'string' ? v.trim() : undefined),
-    format: (v: unknown) => (v != null ? String(v) : '') as SpellFormValues['name'],
-  },
+  ...getBaseContentFieldSpecs<
+    SpellFormValues,
+    SpellInput & Record<string, unknown>,
+    Spell & Record<string, unknown>
+  >(),
   {
     name: 'school',
     label: 'School',

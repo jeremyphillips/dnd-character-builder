@@ -45,6 +45,13 @@ import {
   deleteCampaignSkillProficiency,
 } from '../controllers/campaignSkillProficiency.controller'
 import {
+  listCampaignSpells,
+  getCampaignSpell,
+  createCampaignSpell,
+  updateCampaignSpell,
+  deleteCampaignSpell,
+} from '../controllers/campaignSpell.controller'
+import {
   weaponHandlers,
   armorHandlers,
   gearHandlers,
@@ -98,6 +105,13 @@ router.get('/:id/races/:raceId', requireCampaignRole('observer'), getCampaignRac
 router.post('/:id/races', requireCampaignRole('observer'), requireCampaignOwner(), createCampaignRace)
 router.patch('/:id/races/:raceId', requireCampaignRole('observer'), requireCampaignOwner(), updateCampaignRace)
 router.delete('/:id/races/:raceId', requireCampaignRole('observer'), requireCampaignOwner(), deleteCampaignRace)
+
+// Campaign spells — any member can read, owner can manage
+router.get('/:id/spells', requireCampaignRole('observer'), listCampaignSpells)
+router.get('/:id/spells/:spellId', requireCampaignRole('observer'), getCampaignSpell)
+router.post('/:id/spells', requireCampaignRole('observer'), requireCampaignOwner(), createCampaignSpell)
+router.patch('/:id/spells/:spellId', requireCampaignRole('observer'), requireCampaignOwner(), updateCampaignSpell)
+router.delete('/:id/spells/:spellId', requireCampaignRole('observer'), requireCampaignOwner(), deleteCampaignSpell)
 
 // Campaign skill proficiencies — any member can read, owner can manage
 router.get('/:id/skill-proficiencies', requireCampaignRole('observer'), listCampaignSkillProficiencies)

@@ -3,7 +3,7 @@
  * Registry-backed.
  */
 import type { FieldConfig } from '@/ui/patterns';
-import { buildDefaultValues } from '@/ui/patterns';
+import { buildDefaultValues, DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { buildFieldConfigs } from '@/features/content/forms/registry';
 import { SPELL_FORM_FIELDS } from './spellForm.registry';
 import type { SpellFormValues } from './spellForm.types';
@@ -21,8 +21,9 @@ export const getSpellFieldConfigs = (
 
 /**
  * Default values for spell forms (RHF defaultValues).
- * Derived from field configs.
+ * Derived from field configs with overrides for accessPolicy.
  */
 export const SPELL_FORM_DEFAULTS: SpellFormValues = buildDefaultValues<SpellFormValues>(
-  getSpellFieldConfigs()
+  getSpellFieldConfigs(),
+  { accessPolicy: DEFAULT_VISIBILITY_PUBLIC },
 );

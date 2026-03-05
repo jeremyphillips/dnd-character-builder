@@ -12,7 +12,11 @@ import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 
 import { AppDataGrid } from '@/ui/patterns';
-import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
+import type {
+  AppDataGridColumn,
+  AppDataGridFilter,
+} from '@/ui/patterns';
+import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { AppPageHeader } from '@/ui/patterns';
 import type { BreadcrumbItem } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
@@ -52,6 +56,8 @@ export interface ContentTypeListPageProps<T> {
   emptyMessage?: string;
   density?: 'compact' | 'standard' | 'comfortable';
   height?: number | string;
+  /** Optional row class name (e.g. for muted allowedInCampaign=false rows) */
+  getRowClassName?: (params: GridRowClassNameParams) => string;
 }
 
 const ContentTypeListPage = <T,>({
@@ -74,6 +80,7 @@ const ContentTypeListPage = <T,>({
   emptyMessage,
   density = 'compact',
   height = 500,
+  getRowClassName,
 }: ContentTypeListPageProps<T>) => {
   const defaultBreadcrumbs = useBreadcrumbs();
   const resolvedBreadcrumbs = breadcrumbData ?? defaultBreadcrumbs;
@@ -115,6 +122,7 @@ const ContentTypeListPage = <T,>({
         toolbar={toolbarNode}
         density={density}
         height={height}
+        getRowClassName={getRowClassName}
       />
     </Box>
   );

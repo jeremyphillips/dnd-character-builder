@@ -15,9 +15,11 @@ import {
   buildCampaignContentFilters,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
+import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { raceRepo } from '@/features/content/domain/repo';
 import { validateRaceChange } from '@/features/content/domain/validateRaceChange';
 import type { RaceSummary } from '@/features/content/domain/types';
+import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
@@ -48,6 +50,11 @@ export default function RaceListRoute() {
     basePath,
   });
 
+  const { characterNameById } = useCampaignPartyCharacterNameMap(
+    campaignId,
+    canManage,
+  );
+
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleToggleAllowed = useCallback(
@@ -72,9 +79,10 @@ export default function RaceListRoute() {
     () =>
       buildCampaignContentColumns<RaceSummary>({
         canManage,
+        characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,
       }),
-    [canManage, handleToggleAllowed],
+    [canManage, characterNameById, handleToggleAllowed],
   );
 
   const filters = useMemo(
@@ -122,6 +130,14 @@ export default function RaceListRoute() {
       filters={filters}
       getRowId={(r) => r.id}
       getDetailLink={controller.getDetailLink}
+      getRowClassName={
+        canManage
+          ? (params: GridRowClassNameParams) =>
+              (params.row as RaceSummary).allowedInCampaign === false
+                ? 'AppDataGrid-row--disabled'
+                : ''
+          : undefined
+      }
       loading={controller.loading}
       error={controller.error}
       toolbar={

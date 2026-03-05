@@ -6,16 +6,14 @@
  * for full composition, or the smaller helpers for custom composition.
  */
 import type { ReactNode } from 'react';
-import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import { makeOwnedColumn, makeOwnedFilter } from '@/ui/patterns';
-import { AppBadge } from '@/ui/primitives';
+import { AppTooltip } from '@/ui/primitives';
 import type { Visibility } from '@/shared/types/visibility';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
 import { canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
@@ -23,6 +21,91 @@ import {
   SOURCE_FILTER_OPTIONS,
   formatContentSource,
 } from '@/features/content/domain/sourceLabels';
+
+// ---------------------------------------------------------------------------
+// Visibility icon spec (for Name column)
+// ---------------------------------------------------------------------------
+
+export type VisibilityIconSpec = {
+  icon: ReactNode;
+  tooltip: string;
+} | null;
+
+export type GetVisibilityIconSpecParams = {
+  policy: { scope?: string; allowCharacterIds?: string[] } | undefined;
+  canManage: boolean;
+  characterNameById?: Record<string, string>;
+};
+
+/**
+ * Maps access policy scope to an icon + tooltip spec for the Name column.
+ * Returns null for public or missing policy (no icon shown).
+ * PC (canManage=false): restricted => "Restricted: visible to you"
+ * DM (canManage=true): restricted => shows names when available, else count-based fallback
+ */
+export function getVisibilityIconSpec(params: GetVisibilityIconSpecParams): VisibilityIconSpec {
+  const { policy, canManage, characterNameById } = params;
+  if (!policy?.scope || policy.scope === 'public') return null;
+
+  if (policy.scope === 'restricted') {
+    let tooltip: string;
+    if (!canManage) {
+      tooltip = 'Restricted: visible to you';
+    } else {
+      const ids = policy.allowCharacterIds ?? [];
+      const count = ids.length;
+      if (characterNameById && ids.length > 0) {
+        const names = ids
+          .map((id) => characterNameById[id] ?? null)
+          .filter((n): n is string => n != null);
+        if (names.length > 0) {
+          const first3 = names.slice(0, 3).join(', ');
+          const remaining = ids.length - 3;
+          tooltip =
+            remaining > 0
+              ? `Restricted: visible to ${first3} +${remaining}`
+              : `Restricted: visible to ${first3}`;
+        } else {
+          tooltip = `Restricted: visible to ${count} character${count === 1 ? '' : 's'}`;
+        }
+      } else {
+        tooltip = `Restricted: visible to ${count} character${count === 1 ? '' : 's'}`;
+      }
+    }
+    return {
+      icon: (
+        <LockIcon
+          fontSize="small"
+          sx={{
+            color: 'warning.main',
+            opacity: 0.85,
+            ml: 0.75,
+            verticalAlign: 'middle',
+          }}
+        />
+      ),
+      tooltip,
+    };
+  }
+
+  if (policy.scope === 'dm') {
+    return {
+      icon: (
+        <VisibilityOffIcon
+          fontSize="small"
+          sx={{
+            color: 'error.main',
+            opacity: 0.85,
+            ml: 0.75,
+            verticalAlign: 'middle',
+          }}
+        />
+      ),
+      tooltip: 'DM only',
+    };
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Row type constraints
@@ -37,7 +120,7 @@ export type CampaignContentListRow = {
 };
 
 // ---------------------------------------------------------------------------
-// Visibility column (managers only)
+// Visibility filter (managers only; no dedicated Visibility column)
 // ---------------------------------------------------------------------------
 
 const VISIBILITY_FILTER_OPTIONS = [
@@ -47,68 +130,56 @@ const VISIBILITY_FILTER_OPTIONS = [
   { label: 'DM only', value: 'dm' },
 ] as const;
 
-const VISIBILITY_SCOPE_META: Record<
-  string,
-  { icon: ReactNode; label: string; tone: 'info' | 'warning' | 'danger' | 'default' }
-> = {
-  public: {
-    icon: <VisibilityIcon fontSize="small" />,
-    label: 'Public',
-    tone: 'info',
-  },
-  restricted: {
-    icon: <LockIcon fontSize="small" />,
-    label: 'Restricted',
-    tone: 'warning',
-  },
-  dm: {
-    icon: <VisibilityOffIcon fontSize="small" />,
-    label: 'Hidden',
-    tone: 'danger',
-  },
-};
-
-function getVisibilityMeta(scope: string | undefined) {
-  return VISIBILITY_SCOPE_META[scope ?? 'public'] ?? VISIBILITY_SCOPE_META.public;
-}
-
 // ---------------------------------------------------------------------------
 // Column helpers
 // ---------------------------------------------------------------------------
 
 export function makePreColumns<T extends CampaignContentListRow>(params: {
   canManage?: boolean;
+  characterNameById?: Record<string, string>;
 }): AppDataGridColumn<T>[] {
-  const { canManage = false } = params;
-
+  const { canManage = false, characterNameById } = params;
   const nameColumn: AppDataGridColumn<T> = {
     field: 'name',
     headerName: 'Name',
     flex: 1,
     minWidth: 160,
     linkColumn: true,
-  };
-
-  if (!canManage) {
-    nameColumn.renderCell = (params: GridRenderCellParams) => {
-      const row = params.row as T & { accessPolicy?: { scope?: string } };
-      const policy = row.accessPolicy;
-      const isRestricted = policy?.scope === 'restricted';
-      const name = (params.value as string) ?? '';
+    renderCell: (params: GridRenderCellParams) => {
+      const row = params.row as T & { accessPolicy?: { scope?: string; allowCharacterIds?: string[] } };
+      const name = (params.value as string) ?? (row.name as string) ?? '';
+      const spec = getVisibilityIconSpec({
+        policy: row.accessPolicy,
+        canManage,
+        characterNameById,
+      });
+      const iconWithTooltip = spec ? (
+        <Box component="span" sx={{ flexShrink: 0 }}>
+          <AppTooltip title={spec.tooltip}>
+            <Box component="span" sx={{ display: 'inline-flex' }}>
+              {spec.icon}
+            </Box>
+          </AppTooltip>
+        </Box>
+      ) : null;
       return (
-        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ overflow: 'hidden' }}>
-          {isRestricted && (
-            <LockOutlinedIcon
-              sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }}
-            />
-          )}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            overflow: 'hidden',
+            minWidth: 0,
+          }}
+        >
           <Typography component="span" noWrap variant="body2">
             {name}
           </Typography>
-        </Stack>
+          {iconWithTooltip}
+        </Box>
       );
-    };
-  }
+    },
+  };
 
   return [
     {
@@ -151,22 +222,6 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
     valueFormatter: (v) => formatContentSource(v as string | null | undefined),
   });
 
-  if (canManage) {
-    cols.push({
-      field: 'accessPolicy',
-      headerName: 'Visibility',
-      width: 110,
-      renderCell: (params) => {
-        const row = params.row as T & { accessPolicy?: { scope?: string } };
-        const scope = row.accessPolicy?.scope;
-        const meta = getVisibilityMeta(scope);
-        return (
-          <AppBadge label={meta.label} icon={meta.icon} tone={meta.tone} />
-        );
-      },
-    });
-  }
-
   if (canManage && onToggleAllowedInCampaign) {
     cols.push({
       field: 'allowedInCampaign',
@@ -185,11 +240,15 @@ export function buildCampaignContentColumns<T extends CampaignContentListRow>(pa
   customColumns?: AppDataGridColumn<T>[];
   ownedIds?: ReadonlySet<string>;
   canManage?: boolean;
+  characterNameById?: Record<string, string>;
   onToggleAllowedInCampaign?: (id: string, checked: boolean) => void;
   allowedField?: keyof T;
 }): AppDataGridColumn<T>[] {
   const { customColumns = [] } = params;
-  const pre = makePreColumns<T>({ canManage: params.canManage });
+  const pre = makePreColumns<T>({
+    canManage: params.canManage,
+    characterNameById: params.characterNameById,
+  });
   const post = makePostColumns<T>(params);
   return [...pre, ...customColumns, ...post];
 }

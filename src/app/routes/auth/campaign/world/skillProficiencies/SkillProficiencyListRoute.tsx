@@ -219,11 +219,11 @@ export default function SkillProficiencyListRoute() {
           canManage && (
             <Button
               variant="contained"
-              size="small"
+              //size="small"
               startIcon={<AddIcon />}
               onClick={() => navigate(`${basePath}/new`)}
             >
-              Add Skill Proficiency
+              Add New
             </Button>
           )
         }

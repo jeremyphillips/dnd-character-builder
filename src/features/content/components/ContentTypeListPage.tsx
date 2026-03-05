@@ -18,7 +18,7 @@ import type { BreadcrumbItem } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
 import { AppAlert } from '@/ui/primitives';
 
-export type ContentListItem = { id: string; name: string; allowed?: boolean };
+export type ContentListItem = { id: string; name: string; allowedInCampaign?: boolean };
 
 export type ContentViewerContext = import('@/shared/domain/capabilities').ViewerContext;
 

@@ -105,7 +105,7 @@ export function buildCampaignContentColumns<T extends CampaignContentListRow>(pa
 export function makePostFilters<T extends CampaignContentListRow>(params: {
   ownedIds?: ReadonlySet<string>;
   canManage?: boolean;
-  /** When provided, data is assumed to have allowed field; include allowedInCampaign filter. */
+  /** When provided with canManage, include allowedInCampaign column. Filter shows when canManage. */
   onToggleAllowedInCampaign?: (id: string, checked: boolean) => void;
   /** Backend may return 'allowed'; use this to map. Default: 'allowedInCampaign' */
   allowedField?: keyof T;
@@ -113,7 +113,6 @@ export function makePostFilters<T extends CampaignContentListRow>(params: {
   const {
     ownedIds,
     canManage = false,
-    onToggleAllowedInCampaign,
     allowedField = 'allowedInCampaign' as keyof T,
   } = params;
 
@@ -123,7 +122,7 @@ export function makePostFilters<T extends CampaignContentListRow>(params: {
     filters.push(makeOwnedFilter<T>({ ownedIds }));
   }
 
-  if (canManage && onToggleAllowedInCampaign) {
+  if (canManage) {
     filters.push({
       id: 'allowedInCampaign',
       label: 'Allowed',
@@ -141,6 +140,7 @@ export function buildCampaignContentFilters<T extends CampaignContentListRow>(pa
   customFilters?: AppDataGridFilter<T>[];
   ownedIds?: ReadonlySet<string>;
   canManage?: boolean;
+  /** When provided with canManage, include allowedInCampaign column. Filter shows when canManage. */
   onToggleAllowedInCampaign?: (id: string, checked: boolean) => void;
   allowedField?: keyof T;
 }): AppDataGridFilter<T>[] {

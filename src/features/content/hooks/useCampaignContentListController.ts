@@ -91,10 +91,11 @@ export function useCampaignContentListController(
   const contentRule = patch?.content?.[contentKey as keyof RulesetContent] as ContentRule | undefined;
   const policy: ContentPolicy = contentRule?.policy ?? 'all_except';
 
-  const items: ContentListItem[] = useMemo(
-    () => buildItemsWithAllowed(summaries, contentRule),
-    [summaries, contentRule],
-  );
+  const items: ContentListItem[] = useMemo(() => {
+    const withAllowed = buildItemsWithAllowed(summaries, contentRule);
+    if (canManage) return withAllowed;
+    return withAllowed.filter((item) => item.allowedInCampaign);
+  }, [summaries, contentRule, canManage]);
 
   const savePolicy = useCallback(async (
     nextPolicy: ContentPolicy,

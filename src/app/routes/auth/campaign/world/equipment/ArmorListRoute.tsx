@@ -13,23 +13,26 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
-  makeBooleanGlyphColumn,
-} from '@/features/content/components';
-import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
-import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
-import { armorRepo } from '@/features/content/domain/repo';
-import { validateArmorChange } from '@/features/content/domain/validateArmorChange';
-import type { ArmorSummary } from '@/features/content/domain/types';
-import type { ContentSummary } from '@/features/content/domain/types';
+  ValidationBlockedAlert,
+} from '@/features/content/shared/components';
+import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import {
+  useValidatedAllowedToggle,
+  type ValidationBlockedState,
+} from '@/features/content/shared/hooks/useValidatedAllowedToggle';
+import { useCampaignPartyCharacterNameMap } from '@/features/content/shared/hooks/useCampaignPartyCharacterNameMap';
+import {
+  armorRepo,
+  validateArmorChange,
+  buildArmorCustomColumns,
+  buildArmorCustomFilters,
+  type ArmorListRow,
+} from '@/features/content/equipment/armor/domain';
+import type { ContentSummary } from '@/features/content/shared/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
-import { formatCp } from '@/shared/money';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
-
-type ArmorListRow = ArmorSummary & { allowedInCampaign?: boolean };
-
-const EMPTY_PLACEHOLDER = '—';
 
 export default function ArmorListRoute() {
   const { campaign, campaignId } = useActiveCampaign();
@@ -64,96 +67,30 @@ export default function ArmorListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<ValidationBlockedState | null>(null);
 
   const items = controller.items as ArmorListRow[];
   const hasCampaignSources = items.some(
     (r) => (r as { source?: string }).source === 'campaign',
   );
 
-  const handleToggleAllowed = useCallback(
-    async (id: string, allowed: boolean) => {
-      setValidationError(null);
-      if (allowed) {
-        controller.onToggleAllowed(id, true);
-        return;
-      }
-      if (!campaignId) return;
-      const result = await validateArmorChange({
-        campaignId,
+  const handleToggleAllowed = useValidatedAllowedToggle({
+    campaignId,
+    onToggleAllowed: controller.onToggleAllowed,
+    setValidationBlocked,
+    validateDisallow: (id) =>
+      validateArmorChange({
+        campaignId: campaignId!,
         armorId: id,
         mode: 'disallow',
-      });
-      if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this armor.');
-        return;
-      }
-      controller.onToggleAllowed(id, false);
-    },
-    [campaignId, controller.onToggleAllowed],
-  );
+      }),
+  });
 
-  const categoryOptions = useMemo(() => {
-    const cats = [...new Set(items.map((i) => i.category))].sort();
-    return [{ label: 'All', value: '' }, ...cats.map((c) => ({ label: c, value: c }))];
-  }, [items]);
-
-  const customColumns = useMemo(
-    () => [
-      {
-        field: 'baseAC',
-        headerName: 'AC',
-        width: 80,
-        type: 'number' as const,
-        valueFormatter: (v: unknown) =>
-          v != null ? String(v) : EMPTY_PLACEHOLDER,
-      },
-      {
-        field: 'acBonus',
-        headerName: 'AC Bonus',
-        width: 100,
-        type: 'number' as const,
-        valueFormatter: (v: unknown) =>
-          v != null ? `+${v}` : EMPTY_PLACEHOLDER,
-      },
-      {
-        field: 'category',
-        headerName: 'Category',
-        width: 110,
-      },
-      makeBooleanGlyphColumn<ArmorListRow>(
-        'stealthDisadvantage',
-        'Stealth Disadv.',
-        (row) => Boolean(row.stealthDisadvantage),
-      ),
-      {
-        field: 'costCp',
-        headerName: 'Cost',
-        width: 110,
-        type: 'number' as const,
-        valueFormatter: (v: unknown) => formatCp(v as number),
-      },
-    ],
-    [],
-  );
+  const customColumns = useMemo(() => buildArmorCustomColumns(), []);
 
   const customFilters = useMemo(
-    () => [
-      {
-        id: 'category',
-        label: 'Category',
-        type: 'select' as const,
-        options: categoryOptions,
-        accessor: (r: ArmorListRow) => r.category,
-      },
-      {
-        id: 'stealth',
-        label: 'Stealth Disadvantage',
-        type: 'boolean' as const,
-        accessor: (r: ArmorListRow) => r.stealthDisadvantage,
-      },
-    ],
-    [categoryOptions],
+    () => buildArmorCustomFilters(items),
+    [items],
   );
 
   const columns = useMemo(
@@ -199,10 +136,22 @@ export default function ArmorListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="armor"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this armor.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<ArmorListRow>
         typeLabel="Armor"

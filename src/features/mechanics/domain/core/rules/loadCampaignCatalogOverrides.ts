@@ -5,18 +5,18 @@
  * system catalog in buildCampaignCatalog.
  */
 import type { CampaignCatalog } from './systemCatalog';
-import { listCampaignRaces } from '@/features/content/domain/campaignRaceRepo';
-import { listCampaignClasses } from '@/features/content/domain/campaignClassRepo';
-import { listCampaignSpells } from '@/features/content/domain/campaignSpellRepo';
+import { listCampaignRaces } from '@/features/content/races/domain/repo/raceRepo';
+import { listCampaignClasses } from '@/features/content/classes/domain/repo/classRepo';
+import { listCampaignSpells } from '@/features/content/spells/domain/repo/spellRepo';
 import {
   campaignWeaponRepo,
   campaignArmorRepo,
   campaignGearRepo,
   campaignMagicItemRepo,
-} from '@/features/content/domain/campaignEquipmentRepo';
-import { campaignEnchantmentRepo } from '@/features/content/domain/campaignEnchantmentRepo';
-import type { CampaignEquipmentEntry } from '@/features/content/domain/campaignEquipmentRepo';
-import type { EnchantmentTemplate } from '@/features/content/domain/types';
+  type CampaignEquipmentEntry,
+} from '@/features/content/equipment/shared/domain/campaignEquipmentApi';
+import { enchantmentRepo } from '@/features/content/shared/domain/repo/enchantmentRepo';
+import type { EnchantmentTemplate } from '@/features/content/shared/domain/types';
 
 function keyById<T extends { id: string }>(items: readonly T[]): Record<string, T> {
   const map: Record<string, T> = {};
@@ -77,7 +77,7 @@ export async function loadCampaignCatalogOverrides(
     campaignArmorRepo.list(campaignId).catch(() => []),
     campaignGearRepo.list(campaignId).catch(() => []),
     campaignMagicItemRepo.list(campaignId).catch(() => []),
-    campaignEnchantmentRepo.list(campaignId).catch(() => []),
+    enchantmentRepo.listCampaign(campaignId).catch(() => []),
     listCampaignSpells(campaignId).catch(() => []),
   ]);
 

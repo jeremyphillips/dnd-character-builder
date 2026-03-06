@@ -1,21 +1,20 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { EntryEditorLayout } from '@/features/content/components';
+import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
+import { useCreateEntrySubmit } from '@/features/content/shared/hooks/useCreateEntrySubmit';
+import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
 import { skillProficiencyRepo } from '@/features/content/domain/repo';
-import type { SkillProficiencyInput } from '@/features/content/domain/types';
 import {
   type SkillProficiencyFormValues,
   getSkillProficiencyFieldConfigs,
   SKILL_PROFICIENCY_FORM_DEFAULTS,
   toSkillProficiencyInput,
-} from '@/features/skillProficiency/forms';
+} from '@/features/content/skillProficiencies/domain';
 import { ConditionalFormRenderer } from '@/ui/patterns';
-
-type ValidationError = { path: string; code: string; message: string };
 
 const FORM_ID = 'skill-proficiency-create-form';
 
@@ -34,38 +33,23 @@ export default function SkillProficiencyCreateRoute() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => {
-      setValue('accessPolicy', next, { shouldDirty: true });
-    },
-    [setValue],
-  );
+  const { policyValue, handlePolicyChange } =
+    useAccessPolicyField<SkillProficiencyFormValues>(watch, setValue);
 
-  const handleSubmit = useCallback(
-    async (values: SkillProficiencyFormValues) => {
-      if (!campaignId) return;
-      setSaving(true);
-      setErrors([]);
-
-      const input: SkillProficiencyInput = toSkillProficiencyInput(values);
-
-      try {
-        const created = await skillProficiencyRepo.createEntry(campaignId, input);
-        navigate(
-          `/campaigns/${campaignId}/world/skill-proficiencies/${created.id}`,
-          { replace: true },
-        );
-      } catch (err) {
-        setErrors([
-          { path: '', code: 'SAVE_FAILED', message: (err as Error).message },
-        ]);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [campaignId, navigate],
-  );
+  const handleSubmit = useCreateEntrySubmit<
+    SkillProficiencyFormValues,
+    Parameters<typeof skillProficiencyRepo.createEntry>[1],
+    Awaited<ReturnType<typeof skillProficiencyRepo.createEntry>>
+  >({
+    campaignId,
+    navigate,
+    createEntry: skillProficiencyRepo.createEntry,
+    toInput: toSkillProficiencyInput,
+    getSuccessPath: (cid, created) =>
+      `/campaigns/${cid}/world/skill-proficiencies/${created.id}`,
+    setSaving,
+    setErrors,
+  });
 
   const handleBack = useCallback(() => {
     navigate(`/campaigns/${campaignId}/world/skill-proficiencies`);

@@ -4,7 +4,7 @@
  * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
  */
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -13,24 +13,12 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import {
-  EntryEditorLayout,
-  type DeleteValidationResult,
-} from '@/features/content/components';
-import { validateClassChange } from '@/features/content/domain/validateClassChange';
+import { EntryEditorLayout } from '@/features/content/shared/components';
+import { validateClassChange } from '@/features/content/classes/domain/validation/validateClassChange';
 import { useCampaignMembers } from '@/features/campaign/hooks';
-import { classRepo } from '@/features/content/domain/repo';
-import type { ClassContentItem, ClassInput } from '@/features/content/domain/repo';
-import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
-import {
-  getContentPatch,
-  getEntryPatch,
-  upsertEntryPatch,
-  removeEntryPatch,
-} from '@/features/content/domain/contentPatchRepo';
-import { createPatchDriver } from '@/features/content/editor/patchDriver';
+import { classRepo, type ClassContentItem } from '@/features/content/classes/domain';
+import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { ConditionalFormRenderer } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import {
@@ -39,9 +27,16 @@ import {
   CLASS_FORM_DEFAULTS,
   classToFormValues,
   toClassInput,
-} from '@/features/classes/forms';
-
-type ValidationError = { path: string; code: string; message: string };
+} from '@/features/content/classes/domain/forms';
+import { useEditRouteFeedbackState } from '@/features/content/shared/hooks/useEditRouteFeedbackState';
+import { useResetEditFeedbackOnChange } from '@/features/content/shared/hooks/useResetEditFeedbackOnChange';
+import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCampaignEntryFormReset';
+import { useSystemEntryPatchState } from '@/features/content/shared/hooks/useSystemEntryPatchState';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
+import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
+import { useCampaignEntrySubmit } from '@/features/content/shared/hooks/useCampaignEntrySubmit';
+import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystemPatchActions';
+import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDeleteAction';
 
 const FORM_ID = 'class-edit-form';
 
@@ -68,151 +63,88 @@ export default function ClassEditRoute() {
     reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const [initialPatch, setInitialPatch] = useState<Record<string, unknown>>({});
-  const [, setPatchDraft] = useState<Record<string, unknown>>({});
+  const {
+    saving,
+    success,
+    errors,
+    setSaving,
+    setSuccess,
+    setErrors,
+    clearFeedback,
+  } = useEditRouteFeedbackState();
 
   const isSystem = charClass?.source === 'system';
   const isCampaign = charClass?.source === 'campaign';
 
-  useEffect(() => {
-    if (!charClass || !isCampaign) return;
-    reset(classToFormValues(charClass));
-  }, [charClass, isCampaign, reset]);
-
-  useEffect(() => {
-    if (!campaignId || !classId || !charClass || !isSystem) return;
-    let cancelled = false;
-    getContentPatch(campaignId)
-      .then((doc) => {
-        if (cancelled) return;
-        const existing = (getEntryPatch(doc, 'classes', classId) ?? {}) as Record<string, unknown>;
-        setInitialPatch(existing);
-        setPatchDraft(existing);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [campaignId, classId, charClass, isSystem]);
-
-  useEffect(() => {
-    const sub = watch(() => {
-      setSuccess(false);
-      setErrors([]);
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
-
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => setValue('accessPolicy', next, { shouldDirty: true }),
-    [setValue]
+  const {
+    initialPatch,
+    setInitialPatch,
+    hasExistingPatch,
+    onPatchChange,
+  } = useSystemEntryPatchState(
+    campaignId ?? undefined,
+    classId,
+    charClass,
+    !!isSystem,
+    'classes'
   );
 
-  const handleCampaignSubmit = useCallback(
-    async (values: ClassFormValues) => {
-      if (!campaignId || !classId) return;
-      setSaving(true);
-      setSuccess(false);
-      setErrors([]);
-      const input: ClassInput = toClassInput(values);
-      try {
-        const updated = await classRepo.updateEntry(campaignId, classId, input);
-        reset(classToFormValues(updated));
-        setSuccess(true);
-      } catch (err) {
-        setErrors([
-          { path: '', code: 'SAVE_FAILED', message: (err as Error).message },
-        ]);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [campaignId, classId, reset]
-  );
+  useCampaignEntryFormReset(charClass, isCampaign ?? false, reset, classToFormValues);
+  useResetEditFeedbackOnChange(watch, clearFeedback);
 
-  const driver = useMemo(() => {
-    if (!charClass) return null;
-    return createPatchDriver({
-      base: charClass as unknown as Record<string, unknown>,
-      initialPatch,
-      onChange: (p) => {
-        setPatchDraft(p);
-        setSuccess(false);
-      },
-    });
-  }, [charClass, initialPatch]);
+  const { policyValue, handlePolicyChange } = useAccessPolicyField<ClassFormValues>(watch, setValue);
+
+  const driver = usePatchDriverState(
+    charClass ? (charClass as unknown as Record<string, unknown>) : null,
+    initialPatch,
+    onPatchChange,
+    clearFeedback
+  );
 
   const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
-  const handlePatchSave = useCallback(async () => {
-    if (!campaignId || !classId || !driver) return;
-    const ok = validationApiRef.current?.validateAll?.() ?? true;
-    if (!ok) {
-      setSuccess(false);
-      return;
-    }
-    setSaving(true);
-    setSuccess(false);
-    setErrors([]);
-    const next = driver.getPatch();
-    try {
-      await upsertEntryPatch(campaignId, 'classes', classId, next);
-      setInitialPatch(next);
-      setPatchDraft(next);
-      setSuccess(true);
-    } catch (err) {
-      setErrors([
-        { path: '', code: 'SAVE_FAILED', message: (err as Error).message },
-      ]);
-    } finally {
-      setSaving(false);
-    }
-  }, [campaignId, classId, driver]);
+  const handleCampaignSubmit = useCampaignEntrySubmit({
+    campaignId: campaignId ?? undefined,
+    entryId: classId,
+    updateEntry: classRepo.updateEntry,
+    reset,
+    toFormValues: classToFormValues,
+    toInput: toClassInput,
+    feedback: { setSaving, setSuccess, setErrors },
+  });
 
-  const handleRemovePatch = useCallback(async () => {
-    if (!campaignId || !classId) return;
-    setSaving(true);
-    setSuccess(false);
-    setErrors([]);
-    try {
-      await removeEntryPatch(campaignId, 'classes', classId);
-      setInitialPatch({});
-      setPatchDraft({});
-      setSuccess(true);
-    } catch (err) {
-      setErrors([
-        { path: '', code: 'REMOVE_FAILED', message: (err as Error).message },
-      ]);
-    } finally {
-      setSaving(false);
-    }
-  }, [campaignId, classId]);
-
-  const handleDelete = useCallback(async () => {
-    if (!campaignId || !classId) return;
-    await classRepo.deleteEntry(campaignId, classId);
-    navigate(`/campaigns/${campaignId}/world/classes`, {
-      replace: true,
+  const { savePatch: handlePatchSave, removePatch: handleRemovePatch } =
+    useSystemPatchActions({
+      campaignId: campaignId ?? undefined,
+      entryId: classId,
+      collectionKey: 'classes',
+      driver,
+      setInitialPatch,
+      validationApiRef,
+      feedback: { setSaving, setSuccess, setErrors },
     });
-  }, [campaignId, classId, navigate]);
+
+  const handleDelete = useEntryDeleteAction({
+    campaignId: campaignId ?? undefined,
+    entryId: classId,
+    deleteEntry: (cid, eid) => classRepo.deleteEntry(cid, eid).then(() => {}),
+    navigate,
+    backPath: `/campaigns/${campaignId}/world/classes`,
+  });
 
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/classes`),
     [navigate, campaignId]
   );
 
-  const handleValidateDelete = useCallback(async (): Promise<DeleteValidationResult> => {
+  const handleValidateDelete = useCallback(async () => {
     if (!campaignId || !classId) return { allowed: true as const };
     return validateClassChange({
       campaignId,
       classId,
       mode: 'delete',
-    }) as Promise<DeleteValidationResult>;
+    });
   }, [campaignId, classId]);
 
   if (loading)
@@ -259,7 +191,7 @@ export default function ClassEditRoute() {
               validationApiRef.current = api;
             }}
           />
-          {Object.keys(initialPatch).length > 0 && (
+          {hasExistingPatch && (
             <Button
               variant="outlined"
               color="error"

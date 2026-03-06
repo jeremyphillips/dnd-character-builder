@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useCharacterBuilder } from '@/features/characterBuilder/context';
-import { ABILITY_KEYS, type AbilityKey } from '@/features/mechanics/domain/core/character';
+import { ABILITY_KEYS, type AbilityKey, type AbilityScoreValue } from '@/features/mechanics/domain/core/character';
 
 function formatAbilityLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
@@ -27,7 +27,7 @@ const AbilityScoresStep = () => {
 
   const handleChange = (abilityKey: AbilityKey, raw: string) => {
     const parsed = parseInt(raw, 10);
-    setAbilityScore(abilityKey, Number.isNaN(parsed) ? null : Math.max(1, parsed));
+    setAbilityScore(abilityKey, Number.isNaN(parsed) ? null : Math.max(1, parsed) as AbilityScoreValue);
   };
 
   return (

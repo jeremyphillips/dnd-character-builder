@@ -13,12 +13,21 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
-} from '@/features/content/components';
-import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
-import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
-import { raceRepo } from '@/features/content/domain/repo';
-import { validateRaceChange } from '@/features/content/domain/validateRaceChange';
-import type { RaceSummary } from '@/features/content/domain/types';
+  ValidationBlockedAlert,
+} from '@/features/content/shared/components';
+import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import {
+  useValidatedAllowedToggle,
+  type ValidationBlockedState,
+} from '@/features/content/shared/hooks/useValidatedAllowedToggle';
+import { useCampaignPartyCharacterNameMap } from '@/features/content/shared/hooks/useCampaignPartyCharacterNameMap';
+import {
+  raceRepo,
+  validateRaceChange,
+  buildRaceCustomColumns,
+  buildRaceCustomFilters,
+  type RaceListRow,
+} from '@/features/content/races/domain';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
@@ -55,48 +64,47 @@ export default function RaceListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<ValidationBlockedState | null>(null);
 
-  const items = controller.items as RaceSummary[];
+  const items = controller.items as RaceListRow[];
   const hasCampaignSources = items.some((r) => (r as { source?: string }).source === 'campaign');
 
-  const handleToggleAllowed = useCallback(
-    async (id: string, allowed: boolean) => {
-      setValidationError(null);
-      if (allowed) {
-        controller.onToggleAllowed(id, true);
-        return;
-      }
-      if (!campaignId) return;
-      const result = await validateRaceChange({ campaignId, raceId: id, mode: 'disallow' });
-      if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this race.');
-        return;
-      }
-      controller.onToggleAllowed(id, false);
-    },
-    [campaignId, controller.onToggleAllowed],
-  );
+  const customColumns = useMemo(() => buildRaceCustomColumns(), []);
+  const customFilters = useMemo(() => buildRaceCustomFilters(), []);
+
+  const handleToggleAllowed = useValidatedAllowedToggle({
+    campaignId,
+    onToggleAllowed: controller.onToggleAllowed,
+    setValidationBlocked,
+    validateDisallow: (id) =>
+      validateRaceChange({
+        campaignId: campaignId!,
+        raceId: id,
+        mode: 'disallow',
+      }),
+  });
 
   const columns = useMemo(
     () =>
-      buildCampaignContentColumns<RaceSummary>({
+      buildCampaignContentColumns<RaceListRow>({
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,
+        customColumns,
         hasCampaignSources,
       }),
-    [canManage, characterNameById, handleToggleAllowed, hasCampaignSources],
+    [canManage, characterNameById, handleToggleAllowed, customColumns, hasCampaignSources],
   );
 
   const filters = useMemo(
     () =>
-      buildCampaignContentFilters<RaceSummary>({
+      buildCampaignContentFilters<RaceListRow>({
         canManage,
         onToggleAllowedInCampaign: handleToggleAllowed,
+        customFilters,
         hasCampaignSources,
       }),
-    [canManage, handleToggleAllowed, hasCampaignSources],
+    [canManage, handleToggleAllowed, customFilters, hasCampaignSources],
   );
 
   if (controller.loading) {
@@ -109,12 +117,24 @@ export default function RaceListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="race"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this race.'}
+          </AppAlert>
+        )
       )}
-      <ContentTypeListPage<RaceSummary>
+      <ContentTypeListPage<RaceListRow>
       typeLabel="Race"
       typeLabelPlural="Races"
       headline="Races"
@@ -130,7 +150,7 @@ export default function RaceListRoute() {
           World
         </Button>,
       ]}
-      rows={controller.items as RaceSummary[]}
+      rows={items}
       columns={columns}
       filters={filters}
       getRowId={(r) => r.id}
@@ -138,7 +158,7 @@ export default function RaceListRoute() {
       getRowClassName={
         canManage
           ? (params: GridRowClassNameParams) =>
-              (params.row as RaceSummary).allowedInCampaign === false
+              (params.row as RaceListRow).allowedInCampaign === false
                 ? 'AppDataGrid-row--disabled'
                 : ''
           : undefined

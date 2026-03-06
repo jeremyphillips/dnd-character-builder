@@ -15,7 +15,7 @@ import type { CharacterClassInfo } from '@/features/character/domain/types'
 import { getSystemClass } from '@/features/mechanics/domain/core/rules/systemCatalog.classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
 import { resolveImageUrl } from '@/utils/image'
-import { Breadcrumbs } from '@/ui/patterns'
+import { AppPageHeader } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { CharacterBuilderLauncher } from '@/features/characterBuilder/components'
@@ -59,6 +59,7 @@ function formatDate(iso: string): string {
 export default function CharactersRoute() {
   const { characters, loading } = useCharacters()
   const breadcrumbs = useBreadcrumbs()
+  const userHasCharacters = characters.length > 0
 
   if (loading) {
     return (
@@ -70,14 +71,15 @@ export default function CharactersRoute() {
 
   return (
     <Box>
-      <Breadcrumbs items={breadcrumbs} />
+      <AppPageHeader
+        headline="My Player Characters"
+        breadcrumbData={breadcrumbs}
+        actions={userHasCharacters ? [
+          <CharacterBuilderLauncher characterType="pc" />
+        ] : []}
+      />
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4">My Player Characters</Typography>
-        <CharacterBuilderLauncher characterType="pc" />
-      </Stack>
-
-      {characters.length === 0 ? (
+      {!userHasCharacters ? (
         <AppAlert tone="info">
           <h2>You have no player characters.</h2>
           <p>Create your first one!</p>

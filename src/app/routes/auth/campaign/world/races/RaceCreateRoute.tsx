@@ -2,21 +2,20 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { EntryEditorLayout } from '@/features/content/components';
+import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
-import { raceRepo } from '@/features/content/domain/repo';
-import type { RaceInput } from '@/features/content/domain/types';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
+import { useCreateEntrySubmit } from '@/features/content/shared/hooks/useCreateEntrySubmit';
+import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
 import {
+  raceRepo,
   type RaceFormValues,
   getRaceFieldConfigs,
   RACE_FORM_DEFAULTS,
   toRaceInput,
-} from '@/features/race/forms';
+} from '@/features/content/races/domain';
 import { ConditionalFormRenderer } from '@/ui/patterns';
-
-type ValidationError = { path: string; code: string; message: string };
 
 const FORM_ID = 'race-create-form';
 
@@ -35,37 +34,23 @@ export default function RaceCreateRoute() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => {
-      setValue('accessPolicy', next, { shouldDirty: true });
-    },
-    [setValue],
-  );
+  const { policyValue, handlePolicyChange } =
+    useAccessPolicyField<RaceFormValues>(watch, setValue);
 
-  const handleSubmit = useCallback(
-    async (values: RaceFormValues) => {
-      if (!campaignId) return;
-      setSaving(true);
-      setErrors([]);
-
-      const input: RaceInput = toRaceInput(values);
-
-      try {
-        const created = await raceRepo.createEntry(campaignId, input);
-        navigate(`/campaigns/${campaignId}/world/races/${created.id}`, {
-          replace: true,
-        });
-      } catch (err) {
-        setErrors([
-          { path: '', code: 'SAVE_FAILED', message: (err as Error).message },
-        ]);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [campaignId, navigate],
-  );
+  const handleSubmit = useCreateEntrySubmit<
+    RaceFormValues,
+    Parameters<typeof raceRepo.createEntry>[1],
+    Awaited<ReturnType<typeof raceRepo.createEntry>>
+  >({
+    campaignId,
+    navigate,
+    createEntry: raceRepo.createEntry,
+    toInput: toRaceInput,
+    getSuccessPath: (cid, created) =>
+      `/campaigns/${cid}/world/races/${created.id}`,
+    setSaving,
+    setErrors,
+  });
 
   const handleBack = useCallback(() => {
     navigate(`/campaigns/${campaignId}/world/races`);

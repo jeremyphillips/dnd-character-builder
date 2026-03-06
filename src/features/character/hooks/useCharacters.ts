@@ -14,6 +14,7 @@ export function useCharacters(filters?: {
 }) {
   const [characters, setCharacters] = useState<CharacterDoc[]>([])
   const [loading, setLoading] = useState(true)
+  
   const type = filters?.type ?? 'pc'
   const params = new URLSearchParams()
 

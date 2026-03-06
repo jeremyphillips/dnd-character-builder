@@ -7,6 +7,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { DynamicFormRenderer, type FormDriver } from '@/ui/patterns';
 import type { FieldConfig } from '@/ui/patterns';
 import type { Visibility } from '@/shared/types/visibility';
+import type { ChangeValidationResult } from '@/features/content/domain/validation';
 import EntryEditorLayout from '../EntryEditorLayout';
 import { createPatchDriver } from '@/features/content/editor/patchDriver';
 
@@ -33,10 +34,7 @@ type BaseProps = {
   policyCharacters?: { id: string; name: string }[];
   canDelete?: boolean;
   onDelete?: () => Promise<void> | void;
-  validateDelete?: () => Promise<
-    | { allowed: true }
-    | { allowed: false; message: string; reason?: string; blockingEntities?: { id: string; label: string; to?: string }[] }
-  >;
+  validateDelete?: () => Promise<ChangeValidationResult>;
 };
 
 type CreateEditProps = BaseProps & {

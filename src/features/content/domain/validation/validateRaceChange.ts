@@ -1,0 +1,46 @@
+/**
+ * Race change validator.
+ *
+ * Used to block destructive changes (delete or disable) when
+ * the race is referenced by active campaign entities.
+ *
+ * Future extensions:
+ * - NPC validation
+ * - monster race validation
+ * - campaign encounter validation
+ */
+import type { CharacterDoc } from '@/features/character/domain/types';
+import {
+  validateCharacterReferenceChange,
+  type ChangeValidationResult,
+} from './validateCharacterReferenceChange';
+
+export type RaceValidationMode = 'delete' | 'disallow';
+
+export type { ChangeValidationResult } from './validateCharacterReferenceChange';
+
+type CharacterWithRace = Pick<CharacterDoc, '_id' | 'name' | 'race'>;
+
+/**
+ * Validates whether a race can be deleted or disabled.
+ *
+ * Checks characters in the campaign. NPC validation will be added later.
+ *
+ * TODO: extend to also check NPC usage once NPC race support exists
+ */
+export async function validateRaceChange(params: {
+  campaignId: string;
+  raceId: string;
+  mode: RaceValidationMode;
+  includeNpcs?: boolean;
+}): Promise<ChangeValidationResult> {
+  const { campaignId, raceId, mode, includeNpcs } = params;
+
+  return validateCharacterReferenceChange<CharacterWithRace>({
+    campaignId,
+    mode,
+    includeNpcs,
+    contentType: 'race',
+    matcher: (c) => c.race === raceId,
+  });
+}

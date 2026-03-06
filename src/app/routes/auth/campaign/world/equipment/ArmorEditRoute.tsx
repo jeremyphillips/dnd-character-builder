@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { armorRepo } from '@/features/content/domain/repo';
+import { validateArmorChange } from '@/features/content/domain/validation';
 import type { Armor, ArmorInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -197,6 +198,11 @@ export default function ArmorEditRoute() {
     });
   }, [campaignId, armorId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !armorId) return { allowed: true as const };
+    return validateArmorChange({ campaignId, armorId, mode: 'delete' });
+  }, [campaignId, armorId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/equipment/armor`),
     [navigate, campaignId]
@@ -276,7 +282,7 @@ export default function ArmorEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

@@ -14,11 +14,12 @@ import {
   buildCampaignContentColumns,
   buildCampaignContentFilters,
   makeBooleanGlyphColumn,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { magicItemRepo } from '@/features/content/domain/repo';
-import { validateMagicItemChange } from '@/features/content/domain/validateMagicItemChange';
+import { validateMagicItemChange } from '@/features/content/domain/validation';
 import type { MagicItemSummary } from '@/features/content/domain/types';
 import type { ContentSummary } from '@/features/content/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
@@ -64,7 +65,10 @@ export default function MagicItemsListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const items = controller.items as MagicItemListRow[];
   const hasCampaignSources = items.some(
@@ -73,7 +77,7 @@ export default function MagicItemsListRoute() {
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -85,7 +89,10 @@ export default function MagicItemsListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this magic item.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -203,10 +210,22 @@ export default function MagicItemsListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="magic item"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this magic item.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<MagicItemListRow>
         typeLabel="Magic Item"

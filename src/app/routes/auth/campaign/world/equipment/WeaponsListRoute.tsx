@@ -13,11 +13,12 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { weaponRepo } from '@/features/content/domain/repo';
-import { validateWeaponChange } from '@/features/content/domain/validateWeaponChange';
+import { validateWeaponChange } from '@/features/content/domain/validation';
 import type { WeaponSummary } from '@/features/content/domain/types';
 import type { ContentSummary } from '@/features/content/domain/types';
 import type { AppDataGridFilter } from '@/ui/patterns';
@@ -64,7 +65,10 @@ export default function WeaponsListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const items = controller.items as WeaponListRow[];
   const hasCampaignSources = items.some(
@@ -73,7 +77,7 @@ export default function WeaponsListRoute() {
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -85,7 +89,10 @@ export default function WeaponsListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this weapon.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -205,10 +212,22 @@ export default function WeaponsListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="weapon"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this weapon.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<WeaponListRow>
         typeLabel="Weapon"

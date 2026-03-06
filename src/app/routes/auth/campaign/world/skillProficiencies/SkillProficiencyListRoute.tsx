@@ -13,6 +13,7 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
@@ -24,7 +25,7 @@ import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
-import { validateSkillProficiencyChange } from '@/features/content/domain/validateSkillProficiencyChange';
+import { validateSkillProficiencyChange } from '@/features/content/domain/validation';
 import { AppAlert } from '@/ui/primitives';
 import { filterAllowedIds } from '@/features/content/domain/utils';
 
@@ -72,11 +73,14 @@ export default function SkillProficiencyListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -88,7 +92,10 @@ export default function SkillProficiencyListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this skill proficiency.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -221,10 +228,22 @@ export default function SkillProficiencyListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="skill proficiency"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this skill proficiency.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<SkillProficiencyListRow>
         typeLabel="Skill Proficiency"

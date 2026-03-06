@@ -13,11 +13,12 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { gearRepo } from '@/features/content/domain/repo';
-import { validateGearChange } from '@/features/content/domain/validateGearChange';
+import { validateGearChange } from '@/features/content/domain/validation';
 import type { GearSummary } from '@/features/content/domain/types';
 import type { ContentSummary } from '@/features/content/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
@@ -63,7 +64,10 @@ export default function GearListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const items = controller.items as GearListRow[];
   const hasCampaignSources = items.some(
@@ -72,7 +76,7 @@ export default function GearListRoute() {
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -84,7 +88,10 @@ export default function GearListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this gear.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -179,10 +186,22 @@ export default function GearListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="gear"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this gear.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<GearListRow>
         typeLabel="Gear"

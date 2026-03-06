@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { spellRepo } from '@/features/content/domain/repo';
+import { validateSpellChange } from '@/features/content/domain/validation';
 import type { Spell, SpellInput } from '@/features/content/domain/types/spell.types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -197,6 +198,11 @@ export default function SpellEditRoute() {
     });
   }, [campaignId, spellId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !spellId) return { allowed: true as const };
+    return validateSpellChange({ campaignId, spellId, mode: 'delete' });
+  }, [campaignId, spellId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/spells`),
     [navigate, campaignId],
@@ -276,7 +282,7 @@ export default function SpellEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

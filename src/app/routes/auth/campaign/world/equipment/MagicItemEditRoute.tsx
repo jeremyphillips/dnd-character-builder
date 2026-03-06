@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { magicItemRepo } from '@/features/content/domain/repo';
+import { validateMagicItemChange } from '@/features/content/domain/validation';
 import type { MagicItem, MagicItemInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -197,6 +198,11 @@ export default function MagicItemEditRoute() {
     });
   }, [campaignId, magicItemId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !magicItemId) return { allowed: true as const };
+    return validateMagicItemChange({ campaignId, magicItemId, mode: 'delete' });
+  }, [campaignId, magicItemId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/equipment/magic-items`),
     [navigate, campaignId]
@@ -276,7 +282,7 @@ export default function MagicItemEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

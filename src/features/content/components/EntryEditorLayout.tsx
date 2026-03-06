@@ -11,6 +11,7 @@ import MuiLink from '@mui/material/Link';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import type { Visibility } from '@/shared/types/visibility';
+import type { ChangeValidationResult } from '@/features/content/domain/validation';
 import { AppAlert } from '@/ui/primitives';
 import { AppPageHeader, AppModal, ConfirmModal, VisibilityField } from '@/ui/patterns';
 import { useBreadcrumbs } from '@/hooks';
@@ -28,19 +29,6 @@ export interface BlockingEntity {
   /** If provided, entity label renders as a router Link. */
   to?: string;
 }
-
-/** @deprecated Use ChangeValidationResult from validateRaceChange. Kept for validateDelete compatibility. */
-export type DeleteValidationResult =
-  | { allowed: true }
-  | {
-      allowed: false;
-      message: string;
-      reason?: DeleteBlockReason;
-      blockingEntities?: BlockingEntity[];
-    };
-
-/** Result of validating a destructive change (delete or disable). */
-export type ChangeValidationResult = DeleteValidationResult;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -82,7 +70,7 @@ interface EntryEditorLayoutProps {
    * confirmation, or `{ allowed: false, message, ... }` to show a
    * "blocked" modal explaining why deletion is not possible.
    */
-  validateDelete?: () => Promise<DeleteValidationResult>;
+  validateDelete?: () => Promise<ChangeValidationResult>;
   /** Override the default "Delete {typeLabel}" button label. */
   deleteLabel?: string;
 
@@ -134,7 +122,7 @@ export default function EntryEditorLayout({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [blockedOpen, setBlockedOpen] = useState(false);
   const [blockedResult, setBlockedResult] = useState<
-    Extract<DeleteValidationResult, { allowed: false }> | null
+    Extract<ChangeValidationResult, { allowed: false }> | null
   >(null);
 
   const busy = saving || validating || deleting;

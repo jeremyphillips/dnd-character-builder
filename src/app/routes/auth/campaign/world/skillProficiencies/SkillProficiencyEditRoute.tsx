@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { skillProficiencyRepo } from '@/features/content/domain/repo';
+import { validateSkillProficiencyChange } from '@/features/content/domain/validation';
 import type { SkillProficiency, SkillProficiencyInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -218,6 +219,15 @@ export default function SkillProficiencyEditRoute() {
     });
   }, [campaignId, skillProficiencyId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !skillProficiencyId) return { allowed: true as const };
+    return validateSkillProficiencyChange({
+      campaignId,
+      skillProficiencyId,
+      mode: 'delete',
+    });
+  }, [campaignId, skillProficiencyId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/skill-proficiencies`),
     [navigate, campaignId],
@@ -299,7 +309,7 @@ export default function SkillProficiencyEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

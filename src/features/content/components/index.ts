@@ -17,11 +17,10 @@ export {
 } from './contentListColumnHelpers';
 export {
   default as EntryEditorLayout,
-  type DeleteValidationResult,
-  type ChangeValidationResult,
   type DeleteBlockReason,
   type BlockingEntity,
 } from './EntryEditorLayout';
+export { default as ValidationBlockedAlert } from './ValidationBlockedAlert';
 export { default as ContentDetailScaffold } from './ContentDetailScaffold';
 export {
   EntryFormEditorLayout,

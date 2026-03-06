@@ -18,8 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { raceRepo } from '@/features/content/domain/repo';
-import type { DeleteValidationResult } from '@/features/content/components';
-import { validateRaceChange } from '@/features/content/domain/validateRaceChange';
+import { validateRaceChange } from '@/features/content/domain/validation';
 import type { Race, RaceInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -201,7 +200,7 @@ export default function RaceEditRoute() {
 
   const handleValidateDelete = useCallback(async () => {
     if (!campaignId || !raceId) return { allowed: true as const };
-    return validateRaceChange({ campaignId, raceId, mode: 'delete' }) as Promise<DeleteValidationResult>;
+    return validateRaceChange({ campaignId, raceId, mode: 'delete' });
   }, [campaignId, raceId]);
 
   const handleBack = useCallback(

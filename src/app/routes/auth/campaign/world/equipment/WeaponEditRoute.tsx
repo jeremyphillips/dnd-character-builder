@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { weaponRepo } from '@/features/content/domain/repo';
+import { validateWeaponChange } from '@/features/content/domain/validation';
 import type { Weapon, WeaponInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -206,6 +207,11 @@ export default function WeaponEditRoute() {
     });
   }, [campaignId, weaponId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !weaponId) return { allowed: true as const };
+    return validateWeaponChange({ campaignId, weaponId, mode: 'delete' });
+  }, [campaignId, weaponId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/equipment/weapons`),
     [navigate, campaignId]
@@ -285,7 +291,7 @@ export default function WeaponEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

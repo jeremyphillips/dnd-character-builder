@@ -12,11 +12,12 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { classRepo } from '@/features/content/domain/repo';
-import { validateClassChange } from '@/features/content/domain/validateClassChange';
+import { validateClassChange } from '@/features/content/domain/validation';
 import type { ContentSummary } from '@/features/content/domain/types';
 import type { ClassSummary } from '@/features/content/domain/repo';
 
@@ -59,11 +60,14 @@ export default function ClassListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -75,7 +79,10 @@ export default function ClassListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this class.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -223,10 +230,22 @@ export default function ClassListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="class"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this class.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<ClassSummary>
         typeLabel="Class"

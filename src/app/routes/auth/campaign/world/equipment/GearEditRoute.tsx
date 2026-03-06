@@ -18,6 +18,7 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { gearRepo } from '@/features/content/domain/repo';
+import { validateGearChange } from '@/features/content/domain/validation';
 import type { Gear, GearInput } from '@/features/content/domain/types';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
@@ -197,6 +198,11 @@ export default function GearEditRoute() {
     });
   }, [campaignId, gearId, navigate]);
 
+  const handleValidateDelete = useCallback(async () => {
+    if (!campaignId || !gearId) return { allowed: true as const };
+    return validateGearChange({ campaignId, gearId, mode: 'delete' });
+  }, [campaignId, gearId]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/equipment/gear`),
     [navigate, campaignId]
@@ -276,7 +282,7 @@ export default function GearEditRoute() {
         onBack={handleBack}
         canDelete={canDelete}
         onDelete={handleDelete}
-        validateDelete={async () => ({ allowed: true as const })}
+        validateDelete={handleValidateDelete}
         showPolicyField
         policyValue={policyValue}
         onPolicyChange={handlePolicyChange}

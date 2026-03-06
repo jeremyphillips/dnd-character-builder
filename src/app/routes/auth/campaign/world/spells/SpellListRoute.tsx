@@ -15,11 +15,12 @@ import {
   buildCampaignContentColumns,
   buildCampaignContentFilters,
   makeBooleanGlyphColumn,
+  ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
 import { spellRepo } from '@/features/content/domain/repo';
-import { validateSpellChange } from '@/features/content/domain/validateSpellChange';
+import { validateSpellChange } from '@/features/content/domain/validation';
 import type { ContentSummary } from '@/features/content/domain/types';
 import { filterAllowedIds } from '@/features/content/domain/utils';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/domain/vocab/magicSchools.vocab';
@@ -73,11 +74,14 @@ export default function SpellListRoute() {
     canManage,
   );
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationBlocked, setValidationBlocked] = useState<
+    | { blockingEntities: { id: string; label: string; to?: string }[]; message?: string }
+    | null
+  >(null);
 
   const handleToggleAllowed = useCallback(
     async (id: string, allowed: boolean) => {
-      setValidationError(null);
+      setValidationBlocked(null);
       if (allowed) {
         controller.onToggleAllowed(id, true);
         return;
@@ -89,7 +93,10 @@ export default function SpellListRoute() {
         mode: 'disallow',
       });
       if (!result.allowed) {
-        setValidationError(result.message ?? 'Cannot disable this spell.');
+        setValidationBlocked({
+          blockingEntities: result.blockingEntities ?? [],
+          message: result.message,
+        });
         return;
       }
       controller.onToggleAllowed(id, false);
@@ -236,10 +243,22 @@ export default function SpellListRoute() {
 
   return (
     <Stack spacing={2}>
-      {validationError && (
-        <AppAlert tone="warning" onClose={() => setValidationError(null)}>
-          {validationError}
-        </AppAlert>
+      {validationBlocked && (
+        validationBlocked.blockingEntities.length > 0 ? (
+          <ValidationBlockedAlert
+            contentType="spell"
+            mode="disallow"
+            blockingEntities={validationBlocked.blockingEntities}
+            onClose={() => setValidationBlocked(null)}
+          />
+        ) : (
+          <AppAlert
+            tone="warning"
+            onClose={() => setValidationBlocked(null)}
+          >
+            {validationBlocked.message ?? 'Cannot disable this spell.'}
+          </AppAlert>
+        )
       )}
       <ContentTypeListPage<SpellListRow>
         typeLabel="Spell"

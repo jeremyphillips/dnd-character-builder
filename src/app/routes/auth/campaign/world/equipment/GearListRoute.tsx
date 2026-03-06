@@ -17,19 +17,18 @@ import {
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
-import { gearRepo } from '@/features/content/domain/repo';
-import { validateGearChange } from '@/features/content/domain/validation';
-import type { GearSummary } from '@/features/content/domain/types';
+import {
+  gearRepo,
+  validateGearChange,
+  buildGearCustomColumns,
+  buildGearCustomFilters,
+  type GearListRow,
+} from '@/features/content/equipment/gear/domain';
 import type { ContentSummary } from '@/features/content/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
-import { formatCp } from '@/shared/money';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
-
-type GearListRow = GearSummary & { allowedInCampaign?: boolean };
-
-const EMPTY_PLACEHOLDER = '—';
 
 export default function GearListRoute() {
   const { campaign, campaignId } = useActiveCampaign();
@@ -99,48 +98,11 @@ export default function GearListRoute() {
     [campaignId, controller.onToggleAllowed],
   );
 
-  const categoryOptions = useMemo(() => {
-    const cats = [...new Set(items.map((i) => i.category))].sort();
-    return [{ label: 'All', value: '' }, ...cats.map((c) => ({ label: c, value: c }))];
-  }, [items]);
-
-  const customColumns = useMemo(
-    () => [
-      {
-        field: 'category',
-        headerName: 'Category',
-        width: 160,
-      },
-      {
-        field: 'costCp',
-        headerName: 'Cost',
-        width: 110,
-        type: 'number' as const,
-        valueFormatter: (v: unknown) => formatCp(v as number),
-      },
-      {
-        field: 'weightLb',
-        headerName: 'Weight (lb)',
-        width: 120,
-        type: 'number' as const,
-        valueFormatter: (v: unknown) =>
-          v != null ? `${v} lb` : EMPTY_PLACEHOLDER,
-      },
-    ],
-    [],
-  );
+  const customColumns = useMemo(() => buildGearCustomColumns(), []);
 
   const customFilters = useMemo(
-    () => [
-      {
-        id: 'category',
-        label: 'Category',
-        type: 'select' as const,
-        options: categoryOptions,
-        accessor: (r: GearListRow) => r.category,
-      },
-    ],
-    [categoryOptions],
+    () => buildGearCustomFilters(items),
+    [items],
   );
 
   const columns = useMemo(

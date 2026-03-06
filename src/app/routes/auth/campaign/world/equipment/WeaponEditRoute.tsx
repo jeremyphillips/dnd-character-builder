@@ -3,8 +3,11 @@
  *
  * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
+ *
+ * Weapon is an intentional route-level exception: patches are stored in domain
+ * format but the driver uses form-style. The route handles both mappings.
  */
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -13,7 +16,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
@@ -22,8 +24,6 @@ import { validateWeaponChange } from '@/features/content/domain/validation';
 import type { Weapon, WeaponInput } from '@/features/content/shared/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import {
-  getContentPatch,
-  getEntryPatch,
   upsertEntryPatch,
   removeEntryPatch,
 } from '@/features/content/shared/domain/contentPatchRepo';
@@ -39,8 +39,11 @@ import {
   weaponDomainPatchToForm,
   weaponPatchToDomain,
 } from '@/features/content/equipment/weapons/domain';
-
-type ValidationError = { path: string; code: string; message: string };
+import { useEditRouteFeedbackState } from '@/features/content/shared/hooks/useEditRouteFeedbackState';
+import { useResetEditFeedbackOnChange } from '@/features/content/shared/hooks/useResetEditFeedbackOnChange';
+import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCampaignEntryFormReset';
+import { useSystemEntryPatchState } from '@/features/content/shared/hooks/useSystemEntryPatchState';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
 
 const FORM_ID = 'weapon-edit-form';
 
@@ -68,50 +71,62 @@ export default function WeaponEditRoute() {
     reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const [initialPatch, setInitialPatch] = useState<Record<string, unknown>>({});
-  const [, setPatchDraft] = useState<Record<string, unknown>>({});
+  const {
+    saving,
+    success,
+    errors,
+    setSaving,
+    setSuccess,
+    setErrors,
+    clearFeedback,
+  } = useEditRouteFeedbackState();
 
   const isSystem = weapon?.source === 'system';
   const isCampaign = weapon?.source === 'campaign';
 
-  useEffect(() => {
-    if (!weapon || !isCampaign) return;
-    reset(weaponToFormValues(weapon));
-  }, [weapon, isCampaign, reset]);
-
-  useEffect(() => {
-    if (!campaignId || !weaponId || !weapon || !isSystem) return;
-    let cancelled = false;
-    getContentPatch(campaignId)
-      .then((doc) => {
-        if (cancelled) return;
-        const existing = (getEntryPatch(doc, 'weapons', weaponId) ?? {}) as Record<string, unknown>;
-        setInitialPatch(existing);
-        setPatchDraft(existing);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [campaignId, weaponId, weapon, isSystem]);
-
-  useEffect(() => {
-    const sub = watch(() => {
-      setSuccess(false);
-      setErrors([]);
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
-
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => setValue('accessPolicy', next, { shouldDirty: true }),
-    [setValue]
+  const {
+    initialPatch,
+    setInitialPatch,
+    hasExistingPatch,
+    onPatchChange,
+  } = useSystemEntryPatchState(
+    campaignId ?? undefined,
+    weaponId,
+    weapon,
+    !!isSystem,
+    'weapons'
   );
+
+  useCampaignEntryFormReset(weapon, isCampaign ?? false, reset, weaponToFormValues);
+  useResetEditFeedbackOnChange(watch, clearFeedback);
+
+  const { policyValue, handlePolicyChange } = useAccessPolicyField<WeaponFormValues>(watch, setValue);
+
+  const baseWithFormValues = useMemo(
+    () =>
+      weapon
+        ? ({ ...weapon, ...weaponToFormValues(weapon) } as unknown as Record<string, unknown>)
+        : null,
+    [weapon]
+  );
+  const formStylePatch = useMemo(
+    () => weaponDomainPatchToForm(initialPatch),
+    [initialPatch]
+  );
+  const driver = useMemo(() => {
+    if (!baseWithFormValues) return null;
+    return createPatchDriver({
+      base: baseWithFormValues,
+      initialPatch: formStylePatch,
+      onChange: (p) => {
+        onPatchChange(p);
+        clearFeedback();
+      },
+    });
+  }, [baseWithFormValues, formStylePatch, onPatchChange, clearFeedback]);
+
+  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handleCampaignSubmit = useCallback(
     async (values: WeaponFormValues) => {
@@ -132,27 +147,8 @@ export default function WeaponEditRoute() {
         setSaving(false);
       }
     },
-    [campaignId, weaponId, reset]
+    [campaignId, weaponId, reset, setSaving, setSuccess, setErrors]
   );
-
-  const driver = useMemo(() => {
-    if (!weapon) return null;
-    const baseWithFormValues = {
-      ...weapon,
-      ...weaponToFormValues(weapon),
-    } as unknown as Record<string, unknown>;
-    const formStylePatch = weaponDomainPatchToForm(initialPatch);
-    return createPatchDriver({
-      base: baseWithFormValues,
-      initialPatch: formStylePatch,
-      onChange: (p) => {
-        setPatchDraft(p);
-        setSuccess(false);
-      },
-    });
-  }, [weapon, initialPatch]);
-
-  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handlePatchSave = useCallback(async () => {
     if (!campaignId || !weaponId || !driver) return;
@@ -169,7 +165,6 @@ export default function WeaponEditRoute() {
     try {
       await upsertEntryPatch(campaignId, 'weapons', weaponId, domainPatch);
       setInitialPatch(next);
-      setPatchDraft(next);
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -178,7 +173,7 @@ export default function WeaponEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, weaponId, driver]);
+  }, [campaignId, weaponId, driver, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleRemovePatch = useCallback(async () => {
     if (!campaignId || !weaponId) return;
@@ -188,7 +183,6 @@ export default function WeaponEditRoute() {
     try {
       await removeEntryPatch(campaignId, 'weapons', weaponId);
       setInitialPatch({});
-      setPatchDraft({});
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -197,7 +191,7 @@ export default function WeaponEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, weaponId]);
+  }, [campaignId, weaponId, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !weaponId) return;
@@ -261,7 +255,7 @@ export default function WeaponEditRoute() {
               validationApiRef.current = api;
             }}
           />
-          {Object.keys(initialPatch).length > 0 && (
+          {hasExistingPatch && (
             <Button
               variant="outlined"
               color="error"

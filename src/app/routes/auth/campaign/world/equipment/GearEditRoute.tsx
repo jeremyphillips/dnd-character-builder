@@ -4,7 +4,7 @@
  * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
  */
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -13,7 +13,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
@@ -22,12 +21,9 @@ import { validateGearChange } from '@/features/content/domain/validation';
 import type { Gear, GearInput } from '@/features/content/shared/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import {
-  getContentPatch,
-  getEntryPatch,
   upsertEntryPatch,
   removeEntryPatch,
 } from '@/features/content/shared/domain/contentPatchRepo';
-import { createPatchDriver } from '@/features/content/shared/editor/patchDriver';
 import { ConditionalFormRenderer } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import {
@@ -37,8 +33,12 @@ import {
   gearToFormValues,
   toGearInput,
 } from '@/features/content/equipment/gear/domain';
-
-type ValidationError = { path: string; code: string; message: string };
+import { useEditRouteFeedbackState } from '@/features/content/shared/hooks/useEditRouteFeedbackState';
+import { useResetEditFeedbackOnChange } from '@/features/content/shared/hooks/useResetEditFeedbackOnChange';
+import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCampaignEntryFormReset';
+import { useSystemEntryPatchState } from '@/features/content/shared/hooks/useSystemEntryPatchState';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
+import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
 
 const FORM_ID = 'gear-edit-form';
 
@@ -65,50 +65,46 @@ export default function GearEditRoute() {
     reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const [initialPatch, setInitialPatch] = useState<Record<string, unknown>>({});
-  const [, setPatchDraft] = useState<Record<string, unknown>>({});
+  const {
+    saving,
+    success,
+    errors,
+    setSaving,
+    setSuccess,
+    setErrors,
+    clearFeedback,
+  } = useEditRouteFeedbackState();
 
   const isSystem = gear?.source === 'system';
   const isCampaign = gear?.source === 'campaign';
 
-  useEffect(() => {
-    if (!gear || !isCampaign) return;
-    reset(gearToFormValues(gear));
-  }, [gear, isCampaign, reset]);
-
-  useEffect(() => {
-    if (!campaignId || !gearId || !gear || !isSystem) return;
-    let cancelled = false;
-    getContentPatch(campaignId)
-      .then((doc) => {
-        if (cancelled) return;
-        const existing = (getEntryPatch(doc, 'gear', gearId) ?? {}) as Record<string, unknown>;
-        setInitialPatch(existing);
-        setPatchDraft(existing);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [campaignId, gearId, gear, isSystem]);
-
-  useEffect(() => {
-    const sub = watch(() => {
-      setSuccess(false);
-      setErrors([]);
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
-
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => setValue('accessPolicy', next, { shouldDirty: true }),
-    [setValue]
+  const {
+    initialPatch,
+    setInitialPatch,
+    hasExistingPatch,
+    onPatchChange,
+  } = useSystemEntryPatchState(
+    campaignId ?? undefined,
+    gearId,
+    gear,
+    !!isSystem,
+    'gear'
   );
+
+  useCampaignEntryFormReset(gear, isCampaign ?? false, reset, gearToFormValues);
+  useResetEditFeedbackOnChange(watch, clearFeedback);
+
+  const { policyValue, handlePolicyChange } = useAccessPolicyField<GearFormValues>(watch, setValue);
+
+  const driver = usePatchDriverState(
+    gear ? (gear as unknown as Record<string, unknown>) : null,
+    initialPatch,
+    onPatchChange,
+    clearFeedback
+  );
+
+  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handleCampaignSubmit = useCallback(
     async (values: GearFormValues) => {
@@ -129,22 +125,8 @@ export default function GearEditRoute() {
         setSaving(false);
       }
     },
-    [campaignId, gearId, reset]
+    [campaignId, gearId, reset, setSaving, setSuccess, setErrors]
   );
-
-  const driver = useMemo(() => {
-    if (!gear) return null;
-    return createPatchDriver({
-      base: gear as unknown as Record<string, unknown>,
-      initialPatch,
-      onChange: (p) => {
-        setPatchDraft(p);
-        setSuccess(false);
-      },
-    });
-  }, [gear, initialPatch]);
-
-  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handlePatchSave = useCallback(async () => {
     if (!campaignId || !gearId || !driver) return;
@@ -160,7 +142,6 @@ export default function GearEditRoute() {
     try {
       await upsertEntryPatch(campaignId, 'gear', gearId, next);
       setInitialPatch(next);
-      setPatchDraft(next);
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -169,7 +150,7 @@ export default function GearEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, gearId, driver]);
+  }, [campaignId, gearId, driver, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleRemovePatch = useCallback(async () => {
     if (!campaignId || !gearId) return;
@@ -179,7 +160,6 @@ export default function GearEditRoute() {
     try {
       await removeEntryPatch(campaignId, 'gear', gearId);
       setInitialPatch({});
-      setPatchDraft({});
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -188,7 +168,7 @@ export default function GearEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, gearId]);
+  }, [campaignId, gearId, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !gearId) return;
@@ -252,7 +232,7 @@ export default function GearEditRoute() {
               validationApiRef.current = api;
             }}
           />
-          {Object.keys(initialPatch).length > 0 && (
+          {hasExistingPatch && (
             <Button
               variant="outlined"
               color="error"

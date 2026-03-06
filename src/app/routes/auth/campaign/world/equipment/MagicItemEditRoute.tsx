@@ -4,7 +4,7 @@
  * - source === 'system': field-config patch form via contentPatchRepo
  * - source === 'campaign': real form editor with delete support
  */
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -13,7 +13,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
@@ -22,12 +21,9 @@ import { validateMagicItemChange } from '@/features/content/domain/validation';
 import type { MagicItem, MagicItemInput } from '@/features/content/shared/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import {
-  getContentPatch,
-  getEntryPatch,
   upsertEntryPatch,
   removeEntryPatch,
 } from '@/features/content/shared/domain/contentPatchRepo';
-import { createPatchDriver } from '@/features/content/shared/editor/patchDriver';
 import { ConditionalFormRenderer } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import {
@@ -37,8 +33,12 @@ import {
   magicItemToFormValues,
   toMagicItemInput,
 } from '@/features/content/equipment/magicItems/domain';
-
-type ValidationError = { path: string; code: string; message: string };
+import { useEditRouteFeedbackState } from '@/features/content/shared/hooks/useEditRouteFeedbackState';
+import { useResetEditFeedbackOnChange } from '@/features/content/shared/hooks/useResetEditFeedbackOnChange';
+import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCampaignEntryFormReset';
+import { useSystemEntryPatchState } from '@/features/content/shared/hooks/useSystemEntryPatchState';
+import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
+import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
 
 const FORM_ID = 'magic-item-edit-form';
 
@@ -65,50 +65,46 @@ export default function MagicItemEditRoute() {
     reValidateMode: 'onChange',
   });
   const { reset, setValue, watch, formState: { isDirty } } = methods;
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const [initialPatch, setInitialPatch] = useState<Record<string, unknown>>({});
-  const [, setPatchDraft] = useState<Record<string, unknown>>({});
+  const {
+    saving,
+    success,
+    errors,
+    setSaving,
+    setSuccess,
+    setErrors,
+    clearFeedback,
+  } = useEditRouteFeedbackState();
 
   const isSystem = item?.source === 'system';
   const isCampaign = item?.source === 'campaign';
 
-  useEffect(() => {
-    if (!item || !isCampaign) return;
-    reset(magicItemToFormValues(item));
-  }, [item, isCampaign, reset]);
-
-  useEffect(() => {
-    if (!campaignId || !magicItemId || !item || !isSystem) return;
-    let cancelled = false;
-    getContentPatch(campaignId)
-      .then((doc) => {
-        if (cancelled) return;
-        const existing = (getEntryPatch(doc, 'magicItems', magicItemId) ?? {}) as Record<string, unknown>;
-        setInitialPatch(existing);
-        setPatchDraft(existing);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [campaignId, magicItemId, item, isSystem]);
-
-  useEffect(() => {
-    const sub = watch(() => {
-      setSuccess(false);
-      setErrors([]);
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
-
-  const policyValue = watch('accessPolicy');
-  const handlePolicyChange = useCallback(
-    (next: Visibility) => setValue('accessPolicy', next, { shouldDirty: true }),
-    [setValue]
+  const {
+    initialPatch,
+    setInitialPatch,
+    hasExistingPatch,
+    onPatchChange,
+  } = useSystemEntryPatchState(
+    campaignId ?? undefined,
+    magicItemId,
+    item,
+    !!isSystem,
+    'magicItems'
   );
+
+  useCampaignEntryFormReset(item, isCampaign ?? false, reset, magicItemToFormValues);
+  useResetEditFeedbackOnChange(watch, clearFeedback);
+
+  const { policyValue, handlePolicyChange } = useAccessPolicyField<MagicItemFormValues>(watch, setValue);
+
+  const driver = usePatchDriverState(
+    item ? (item as unknown as Record<string, unknown>) : null,
+    initialPatch,
+    onPatchChange,
+    clearFeedback
+  );
+
+  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handleCampaignSubmit = useCallback(
     async (values: MagicItemFormValues) => {
@@ -129,22 +125,8 @@ export default function MagicItemEditRoute() {
         setSaving(false);
       }
     },
-    [campaignId, magicItemId, reset]
+    [campaignId, magicItemId, reset, setSaving, setSuccess, setErrors]
   );
-
-  const driver = useMemo(() => {
-    if (!item) return null;
-    return createPatchDriver({
-      base: item as unknown as Record<string, unknown>,
-      initialPatch,
-      onChange: (p) => {
-        setPatchDraft(p);
-        setSuccess(false);
-      },
-    });
-  }, [item, initialPatch]);
-
-  const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
   const handlePatchSave = useCallback(async () => {
     if (!campaignId || !magicItemId || !driver) return;
@@ -160,7 +142,6 @@ export default function MagicItemEditRoute() {
     try {
       await upsertEntryPatch(campaignId, 'magicItems', magicItemId, next);
       setInitialPatch(next);
-      setPatchDraft(next);
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -169,7 +150,7 @@ export default function MagicItemEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, magicItemId, driver]);
+  }, [campaignId, magicItemId, driver, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleRemovePatch = useCallback(async () => {
     if (!campaignId || !magicItemId) return;
@@ -179,7 +160,6 @@ export default function MagicItemEditRoute() {
     try {
       await removeEntryPatch(campaignId, 'magicItems', magicItemId);
       setInitialPatch({});
-      setPatchDraft({});
       setSuccess(true);
     } catch (err) {
       setErrors([
@@ -188,7 +168,7 @@ export default function MagicItemEditRoute() {
     } finally {
       setSaving(false);
     }
-  }, [campaignId, magicItemId]);
+  }, [campaignId, magicItemId, setSaving, setSuccess, setErrors, setInitialPatch]);
 
   const handleDelete = useCallback(async () => {
     if (!campaignId || !magicItemId) return;
@@ -252,7 +232,7 @@ export default function MagicItemEditRoute() {
               validationApiRef.current = api;
             }}
           />
-          {Object.keys(initialPatch).length > 0 && (
+          {hasExistingPatch && (
             <Button
               variant="outlined"
               color="error"

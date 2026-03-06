@@ -14,31 +14,23 @@ import {
   ContentTypeListPage,
   buildCampaignContentColumns,
   buildCampaignContentFilters,
-  makeBooleanGlyphColumn,
   ValidationBlockedAlert,
 } from '@/features/content/components';
 import { useCampaignContentListController } from '@/features/content/hooks/useCampaignContentListController';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/hooks/useCampaignPartyCharacterNameMap';
-import { spellRepo } from '@/features/content/domain/repo';
-import { validateSpellChange } from '@/features/content/domain/validation';
+import {
+  spellRepo,
+  validateSpellChange,
+  buildSpellCustomColumns,
+  buildSpellCustomFilters,
+  type SpellListRow,
+} from '@/features/content/spells/domain';
 import type { ContentSummary } from '@/features/content/domain/types';
-import { filterAllowedIds } from '@/features/content/domain/utils';
-import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/domain/vocab/magicSchools.vocab';
 import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
-import type { SpellSummary } from '@/features/content/domain/repo';
-import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
-
-const schoolLabel = (value: string) =>
-  MAGIC_SCHOOL_OPTIONS.find((o) => o.value === value)?.label ?? value;
-
-/** Spell list row includes allowedInCampaign from controller. */
-type SpellListRow = SpellSummary & { allowedInCampaign?: boolean };
-
-const EMPTY_PLACEHOLDER = '—';
 
 export default function SpellListRoute() {
   const { campaign, campaignId } = useActiveCampaign();
@@ -107,105 +99,14 @@ export default function SpellListRoute() {
   const items = controller.items as SpellListRow[];
   const hasCampaignSources = items.some((r) => (r as { source?: string }).source === 'campaign');
 
-  const schoolOptions = useMemo(() => {
-    const schools = [...new Set(items.map((i) => i.school))].sort();
-    return [
-      { label: 'All', value: '' },
-      ...schools.map((s) => ({ label: schoolLabel(s), value: s })),
-    ];
-  }, [items]);
-
-  const levelOptions = useMemo(() => {
-    const levels = [...new Set(items.map((i) => i.level))].sort((a, b) => a - b);
-    return [
-      { label: 'All', value: '' },
-      ...levels.map((l) => ({
-        label: l === 0 ? 'Cantrip' : String(l),
-        value: String(l),
-      })),
-    ];
-  }, [items]);
-
-  const classOptions = useMemo(() => {
-    const classIds = [...new Set(items.flatMap((i) => i.classes ?? []))].sort();
-    const classesById = catalog.classesById ?? {};
-    const allowedClassIds = filterAllowedIds(classIds, classesById) ?? classIds;
-    return allowedClassIds.map((id) => ({
-      label: classesById[id]?.name ?? id,
-      value: id,
-    }));
-  }, [items, catalog.classesById]);
-
-  const customColumns: AppDataGridColumn<SpellListRow>[] = useMemo(
-    () => [
-      {
-        field: 'school',
-        headerName: 'School',
-        width: 120,
-        valueFormatter: (v) => (v ? schoolLabel(v as string) : '—'),
-      },
-      {
-        field: 'level',
-        headerName: 'Level',
-        width: 90,
-        type: 'number',
-        valueFormatter: (v) =>
-          v === 0 ? 'Cantrip' : v != null ? String(v) : '—',
-      },
-      {
-        field: 'classes',
-        headerName: 'Classes',
-        flex: 1,
-        minWidth: 180,
-        accessor: (row) => {
-          const classesById = catalog.classesById ?? {};
-          const allowed = filterAllowedIds(row.classes, classesById);
-          if (!allowed?.length) return EMPTY_PLACEHOLDER;
-          return allowed
-            .map((id) => classesById[id]?.name ?? id)
-            .join(', ');
-        },
-        valueFormatter: (v) => (v != null && v !== '' ? String(v) : EMPTY_PLACEHOLDER),
-      },
-      makeBooleanGlyphColumn<SpellListRow>(
-        'ritual',
-        'Ritual',
-        (row) => Boolean(row.ritual),
-      ),
-      makeBooleanGlyphColumn<SpellListRow>(
-        'concentration',
-        'Concentration',
-        (row) => Boolean(row.concentration),
-      ),
-    ],
+  const customColumns = useMemo(
+    () => buildSpellCustomColumns(catalog.classesById),
     [catalog.classesById],
   );
 
-  const customFilters: AppDataGridFilter<SpellListRow>[] = useMemo(
-    () => [
-      {
-        id: 'school',
-        label: 'School',
-        type: 'select' as const,
-        options: schoolOptions,
-        accessor: (r) => r.school,
-      },
-      {
-        id: 'level',
-        label: 'Level',
-        type: 'select' as const,
-        options: levelOptions,
-        accessor: (r) => String(r.level),
-      },
-      {
-        id: 'classes',
-        label: 'Class',
-        type: 'multiSelect' as const,
-        options: classOptions,
-        accessor: (r) => r.classes ?? [],
-      },
-    ],
-    [schoolOptions, levelOptions, classOptions],
+  const customFilters = useMemo(
+    () => buildSpellCustomFilters(items, catalog.classesById),
+    [items, catalog.classesById],
   );
 
   const columns = useMemo(

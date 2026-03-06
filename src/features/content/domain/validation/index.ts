@@ -23,5 +23,5 @@ export {
   validateSkillProficiencyChange,
   type SkillProficiencyValidationMode,
 } from './validateSkillProficiencyChange';
-export { validateSpellChange, type SpellValidationMode } from './validateSpellChange';
+export { validateSpellChange, type SpellValidationMode } from '@/features/content/spells/domain/validation/validateSpellChange';
 export { validateWeaponChange, type WeaponValidationMode } from './validateWeaponChange';

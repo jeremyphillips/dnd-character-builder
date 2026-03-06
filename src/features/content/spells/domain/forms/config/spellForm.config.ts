@@ -5,8 +5,8 @@
 import type { FieldConfig } from '@/ui/patterns';
 import { buildDefaultValues, DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { buildFieldConfigs } from '@/features/content/forms/registry';
-import { SPELL_FORM_FIELDS } from './spellForm.registry';
-import type { SpellFormValues } from './spellForm.types';
+import { SPELL_FORM_FIELDS } from '../registry/spellForm.registry';
+import type { SpellFormValues } from '../types/spellForm.types';
 
 export type GetSpellFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];

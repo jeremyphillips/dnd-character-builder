@@ -1,8 +1,9 @@
-export type { SpellFormValues } from './spellForm.types';
+export type { SpellFormValues } from '@/features/content/spells/domain/forms';
 export {
   getSpellFieldConfigs,
   SPELL_FORM_DEFAULTS,
   type GetSpellFieldConfigsOptions,
-} from './spellForm.config';
-export { spellToFormValues, toSpellInput } from './spellForm.mappers';
-export { SPELL_DETAIL_SPECS } from './spellDetail.spec';
+  spellToFormValues,
+  toSpellInput,
+} from '@/features/content/spells/domain/forms';
+export { SPELL_DETAIL_SPECS } from '@/features/content/spells/domain/details/spellDetail.spec';

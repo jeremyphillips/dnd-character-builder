@@ -3,13 +3,13 @@
  * Registry-backed with required-field merging.
  */
 import type { Spell, SpellInput } from '@/features/content/domain/types/spell.types';
-import type { SpellFormValues } from './spellForm.types';
+import type { SpellFormValues } from '../types/spellForm.types';
 import {
   buildToInput,
   buildToFormValues,
   buildDefaultFormValues,
 } from '@/features/content/forms/registry';
-import { SPELL_FORM_FIELDS } from './spellForm.registry';
+import { SPELL_FORM_FIELDS } from '../registry/spellForm.registry';
 
 const toInput = buildToInput(SPELL_FORM_FIELDS);
 const toFormValuesFromItem = buildToFormValues(SPELL_FORM_FIELDS);
@@ -20,7 +20,7 @@ const defaultFormValues = buildDefaultFormValues(SPELL_FORM_FIELDS);
  */
 export const spellToFormValues = (spell: Spell): SpellFormValues => ({
   ...(defaultFormValues as SpellFormValues),
-  ...toFormValuesFromItem(spell),
+  ...toFormValuesFromItem(spell as Spell & Record<string, unknown>),
 });
 
 /**

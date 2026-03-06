@@ -7,12 +7,13 @@
  * 3) Raw system entry
  */
 import { apiFetch, ApiError } from '@/app/api';
-import type { Spell, SpellInput } from '../types/spell.types';
-import type { ContentSource } from '../types';
+import type { Spell, SpellInput } from '@/features/content/domain/types/spell.types';
+import type { ContentSource } from '@/features/content/domain/types';
 import type { SystemRulesetId } from '@/features/mechanics/domain/core/rules';
 import { getSystemSpells, getSystemSpell } from '@/features/mechanics/domain/core/rules/systemCatalog.spells';
-import { getContentPatch } from '../contentPatchRepo';
-import { applyContentPatch } from '../patches/applyContentPatch';
+import { getContentPatch } from '@/features/content/domain/contentPatchRepo';
+import { applyContentPatch } from '@/features/content/domain/patches/applyContentPatch';
+import type { ListOptions } from '@/features/content/domain/repo/contentRepo.types';
 
 // ---------------------------------------------------------------------------
 // API response shapes
@@ -161,7 +162,7 @@ export const spellRepo = {
   async listSummaries(
     campaignId: string,
     systemId: SystemRulesetId,
-    opts?: { search?: string },
+    opts?: ListOptions & { search?: string },
   ): Promise<SpellSummary[]> {
     const [system, campaign, contentPatch] = await Promise.all([
       Promise.resolve(getSystemSpells(systemId)),

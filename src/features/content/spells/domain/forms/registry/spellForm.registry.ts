@@ -8,7 +8,7 @@ import { numberRange, type FieldSpec } from '@/features/content/forms/registry';
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes/queries';
 import { getSystemClasses } from '@/features/mechanics/domain/core/rules/systemCatalog.classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
-import type { SpellFormValues } from './spellForm.types';
+import type { SpellFormValues } from '../types/spellForm.types';
 
 const SPELL_CLASS_OPTIONS = getSpellcastingClasses([...getSystemClasses(DEFAULT_SYSTEM_RULESET_ID)]).map((c) => ({
   value: c.id,
@@ -80,7 +80,7 @@ export const SPELL_FORM_FIELDS = [
     options: SPELL_CLASS_OPTIONS,
     defaultValue: [] as SpellFormValues['classes'],
     parse: (v: unknown) => (Array.isArray(v) ? (v as SpellInput['classes']) : undefined),
-    format: (v: unknown) => arrOrEmpty(v) as SpellFormValues['classes'],
+    format: (v: unknown) => arrOrEmpty(v) as SpellInput['classes'],
   },
   {
     name: 'ritual',

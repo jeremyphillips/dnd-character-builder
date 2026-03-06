@@ -5,8 +5,8 @@
 import type { FieldConfig } from '@/ui/patterns';
 import { buildDefaultValues, DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { buildFieldConfigs } from '@/features/content/forms/registry';
-import { CLASS_FORM_FIELDS } from './classForm.registry';
-import type { ClassFormValues } from './classForm.types';
+import { CLASS_FORM_FIELDS } from '../registry/classForm.registry';
+import type { ClassFormValues } from '../types/classForm.types';
 
 export type GetClassFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];

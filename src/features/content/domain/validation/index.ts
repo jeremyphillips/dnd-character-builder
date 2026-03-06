@@ -13,7 +13,6 @@ export {
 } from './validateCharacterReferenceChange';
 export { buildBlockedMessage, type ValidationMode } from './validationMessage';
 export { validateArmorChange, type ArmorValidationMode } from './validateArmorChange';
-export { validateClassChange, type ClassValidationMode } from './validateClassChange';
 export { validateGearChange, type GearValidationMode } from './validateGearChange';
 export {
   validateMagicItemChange,

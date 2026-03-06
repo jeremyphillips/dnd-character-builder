@@ -5,7 +5,7 @@
 import type { CharacterClass } from '@/features/classes/domain/types';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { type FieldSpec } from '@/features/content/forms/registry';
-import type { ClassFormValues, ClassInput } from './classForm.types';
+import type { ClassFormValues, ClassInput } from '../types/classForm.types';
 
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');

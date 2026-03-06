@@ -11,15 +11,14 @@
  * - NPC validation
  * - campaign encounter validation
  */
-import type { CharacterDoc } from '@/features/character/domain/types';
 import {
   validateCharacterReferenceChange,
   type ChangeValidationResult,
-} from './validateCharacterReferenceChange';
+} from '@/features/content/domain/validation/validateCharacterReferenceChange';
 
 export type ClassValidationMode = 'delete' | 'disallow';
 
-type CharacterWithClasses = Pick<CharacterDoc, '_id' | 'name' | 'classes'>;
+type CharacterWithClasses = { _id: string; name: string; classes?: { classId: string }[] };
 
 /**
  * Validates whether a class can be deleted or disabled.

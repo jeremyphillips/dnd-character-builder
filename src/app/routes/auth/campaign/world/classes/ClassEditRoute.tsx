@@ -16,10 +16,9 @@ import Typography from '@mui/material/Typography';
 import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
-import { validateClassChange } from '@/features/content/domain/validation';
+import { validateClassChange } from '@/features/content/classes/domain/validation/validateClassChange';
 import { useCampaignMembers } from '@/features/campaign/hooks';
-import { classRepo } from '@/features/content/domain/repo';
-import type { ClassContentItem, ClassInput } from '@/features/content/domain/repo';
+import { classRepo, type ClassContentItem, type ClassInput } from '@/features/content/classes/domain';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import {
   getContentPatch,
@@ -36,7 +35,7 @@ import {
   CLASS_FORM_DEFAULTS,
   classToFormValues,
   toClassInput,
-} from '@/features/classes/forms';
+} from '@/features/content/classes/domain/forms';
 
 type ValidationError = { path: string; code: string; message: string };
 

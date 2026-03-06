@@ -4,13 +4,13 @@
  */
 import type { CharacterClass } from '@/features/classes/domain/types';
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
-import type { ClassFormValues, ClassInput } from './classForm.types';
+import type { ClassFormValues, ClassInput } from '../types/classForm.types';
 import {
   buildToInput,
   buildToFormValues,
   buildDefaultFormValues,
 } from '@/features/content/forms/registry';
-import { CLASS_FORM_FIELDS } from './classForm.registry';
+import { CLASS_FORM_FIELDS } from '../registry/classForm.registry';
 
 const toInput = buildToInput(CLASS_FORM_FIELDS);
 const toFormValuesFromItem = buildToFormValues(CLASS_FORM_FIELDS);

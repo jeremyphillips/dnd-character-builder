@@ -5,14 +5,13 @@ import type { Visibility } from '@/shared/types/visibility';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { EntryEditorLayout } from '@/features/content/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
-import { classRepo } from '@/features/content/domain/repo';
-import type { ClassInput } from '@/features/content/domain/repo';
+import { classRepo, type ClassInput } from '@/features/content/classes/domain';
 import {
   type ClassFormValues,
   getClassFieldConfigs,
   CLASS_FORM_DEFAULTS,
   toClassInput,
-} from '@/features/classes/forms';
+} from '@/features/content/classes/domain/forms';
 import { ConditionalFormRenderer } from '@/ui/patterns';
 
 type ValidationError = { path: string; code: string; message: string };

@@ -6,7 +6,7 @@
  */
 import type { CampaignCatalog } from './systemCatalog';
 import { listCampaignRaces } from '@/features/content/domain/repo/raceRepo';
-import { listCampaignClasses } from '@/features/content/domain/repo/classRepo';
+import { listCampaignClasses } from '@/features/content/classes/domain/repo/classRepo';
 import { listCampaignSpells } from '@/features/content/domain/repo/spellRepo';
 import {
   campaignWeaponRepo,

@@ -5,15 +5,14 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { ContentDetailScaffold } from '@/features/content/components';
-import { classRepo } from '@/features/content/domain/repo';
+import { classRepo, type ClassContentItem } from '@/features/content/classes/domain';
 import { useCampaignContentEntry } from '@/features/content/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/hooks';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
 import { buildDetailItemsFromSpecs } from '@/features/content/forms/registry';
-import { CLASS_DETAIL_SPECS } from '@/features/classes/forms';
-import type { ClassContentItem } from '@/features/content/domain/repo';
+import { CLASS_DETAIL_SPECS } from '@/features/content/classes/domain/forms';
 
 export default function ClassDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();

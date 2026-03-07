@@ -110,17 +110,6 @@ export async function getPartyCharacters(req: Request, res: Response) {
   try {
     const status = req.query.status as string | undefined
     const characters = await campaignService.getPartyCharacters(req.params.id, status)
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getPartyCharacters] character IDs returned', {
-        campaignId: req.params.id,
-        characters: characters.map((c: any) => ({
-          _id: c._id?.toString(),
-          campaignMemberId: c.campaignMemberId,
-        })),
-      })
-    }
-
     res.json({ characters })
   } catch (err) {
     console.error('Failed to get party characters:', err)

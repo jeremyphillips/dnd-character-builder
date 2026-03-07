@@ -2,6 +2,12 @@ import mongoose from 'mongoose'
 import { env } from '../config/env'
 import type { CampaignMemberStoredRole } from '../../shared/types'
 import { getPublicUrl } from '../services/image.service'
+import {
+  type CharacterRosterSummary,
+  type CharacterDocForCard,
+  loadCharacterReadReferences,
+  toCharacterCardSummary,
+} from '../../src/features/character/read-model'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const campaignsCollection = () => db().collection('campaigns')
@@ -233,7 +239,14 @@ export async function getMembersForMessaging(campaignId: string) {
   }))
 }
 
-export async function getPartyCharacters(campaignId: string, status?: string) {
+/**
+ * Get party characters for a campaign as CharacterRosterSummary DTOs.
+ * Reuses character read-model for race/class/subclass resolution.
+ */
+export async function getPartyCharacters(
+  campaignId: string,
+  status?: string,
+): Promise<CharacterRosterSummary[]> {
   const usersCol = () => db().collection('users')
   const charsCol = () => db().collection('characters')
 
@@ -268,10 +281,12 @@ export async function getPartyCharacters(campaignId: string, status?: string) {
     .toArray()
 
   const memberByCharId = new Map(
-    memberDocs.map((m) => [m.characterId.toString(), m])
+    memberDocs.map((m) => [m.characterId.toString(), m]),
   )
 
-  const userIds = [...new Set(characters.map((c) => (c.userId as mongoose.Types.ObjectId).toString()))]
+  const userIds = [
+    ...new Set(characters.map((c) => (c.userId as mongoose.Types.ObjectId).toString())),
+  ]
   const users = await usersCol()
     .find(
       { _id: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) } },
@@ -286,16 +301,36 @@ export async function getPartyCharacters(campaignId: string, status?: string) {
     ]),
   )
 
-  return characters.map((c) => {
-    const m = memberByCharId.get(c._id.toString())
-    const status = (m?.status ?? 'approved') as 'pending' | 'approved'
+  const campaignSummary = {
+    id: campaignId,
+    name: (campaign.identity?.name as string) ?? '',
+  }
+
+  const refs = loadCharacterReadReferences()
+
+  return characters.map((c): CharacterRosterSummary => {
+    const charId = (c._id as mongoose.Types.ObjectId).toString()
+    const m = memberByCharId.get(charId)
+    const memberStatus = (m?.status ?? 'approved') as 'pending' | 'approved'
     const owner = userMap.get((c.userId as mongoose.Types.ObjectId).toString())
+
+    const doc: CharacterDocForCard = {
+      _id: c._id as { toString(): string },
+      name: c.name as string,
+      type: c.type as string | undefined,
+      imageKey: c.imageKey as string | null | undefined,
+      race: c.race as string | undefined,
+      classes: (c.classes as CharacterDocForCard['classes']) ?? [],
+    }
+
+    const card = toCharacterCardSummary(doc, campaignSummary, refs, getPublicUrl)
+
     return {
-      ...c,
+      ...card,
+      status: memberStatus,
       ownerName: owner?.username ?? 'Unknown',
-      ownerAvatarUrl: owner?.avatarUrl,
-      status,
-      campaignMemberId: m?._id?.toString(),
+      ownerAvatarUrl: owner?.avatarUrl ?? null,
+      campaignMemberId: m?._id?.toString() ?? null,
     }
   })
 }

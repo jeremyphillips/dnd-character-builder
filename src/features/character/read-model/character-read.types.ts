@@ -25,6 +25,17 @@ export type CharacterCardSummary = {
   campaign: { id: string; name: string } | null
 }
 
+/**
+ * Campaign roster extension of CharacterCardSummary.
+ * Used by GET /campaigns/:id/party.
+ */
+export type CharacterRosterSummary = CharacterCardSummary & {
+  status: 'pending' | 'approved'
+  ownerName: string
+  ownerAvatarUrl?: string | null
+  campaignMemberId?: string | null
+}
+
 // ---------------------------------------------------------------------------
 // Detail DTO (GET /characters/:id)
 // ---------------------------------------------------------------------------

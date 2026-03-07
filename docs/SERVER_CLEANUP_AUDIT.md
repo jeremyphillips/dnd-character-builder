@@ -408,13 +408,13 @@ Build 12 (Error/valid)    → Build 1
 
 ### Ideal State Checklist (Post-Build)
 
-- [ ] No controller accesses `db()` or `mongoose.connection`
-- [ ] No controller contains business logic (field whitelist, notification triggers, membership loops)
-- [ ] Permission resolution in service or auth module
-- [ ] Read endpoints return DTOs from service (read-model where applicable)
-- [ ] Write endpoints delegate validation + orchestration to service
-- [ ] Shared `ApiError` and `asyncHandler` used
-- [ ] Validation in service or validators module
+- [x] No controller accesses `db()` or `mongoose.connection` (Character ✓)
+- [x] No controller contains business logic (Character ✓)
+- [x] Permission resolution in service or auth module (Character ✓)
+- [x] Read endpoints return DTOs from service (Character ✓)
+- [x] Write endpoints delegate validation + orchestration to service (Character ✓)
+- [x] Shared `ApiError` and `asyncHandler` used (Character ✓)
+- [x] Validation in service or validators module (Character ✓)
 
 ---
 

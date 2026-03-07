@@ -3,13 +3,12 @@
  * Throw from services; errorHandler maps to appropriate status.
  */
 export class ApiError extends Error {
-  constructor(
-    public readonly statusCode: number,
-    message: string,
-  ) {
+  readonly statusCode: number
+
+  constructor(statusCode: number, message: string) {
     super(message)
     this.name = 'ApiError'
-    Object.setPrototypeOf(this, ApiError.prototype)
+    this.statusCode = statusCode
   }
 
   toJson(): { error: string } {

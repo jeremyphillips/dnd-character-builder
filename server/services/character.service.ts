@@ -1,7 +1,10 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
-import { getDb } from '../utils/db'
+import { getDb, toObjectId } from '../utils/db'
 import { forbidden, notFound } from '../errors/ApiError'
+import * as campaignMemberService from './campaignMember.service'
+import * as notificationService from './notification.service'
+import { getCampaignById } from './campaign.service'
 import { resolveCharacterAccess } from '../auth/resolveCharacterAccess'
 import type { CharacterDoc } from '../../src/features/character/domain/types/characterDoc.types'
 import { getPublicUrl } from '../services/image.service'
@@ -182,6 +185,186 @@ export async function createCharacter(userId: string, data: CharacterDoc) {
   return normalizeCharacter(created)
 }
 
+/**
+ * Create character and optionally link to campaign (when campaignId in data).
+ * Handles campaign member find/update/create and pending-character notifications.
+ */
+export async function createCharacterWithCampaignLink(
+  userId: string,
+  data: CharacterDoc & { campaignId?: string },
+) {
+  const character = await createCharacter(userId, data)
+  const campaignId = data.campaignId
+  if (!campaignId || !character?._id) return character
+
+  const characterId = character._id.toString()
+  const db = getDb()
+  const campaignMembersCol = db.collection('campaignMembers')
+
+  const existing = await campaignMembersCol.findOne({
+    campaignId: toObjectId(campaignId),
+    userId: toObjectId(userId),
+  })
+
+  if (existing) {
+    await campaignMembersCol.updateOne(
+      { _id: existing._id },
+      { $set: { characterId: toObjectId(characterId) } },
+    )
+  } else {
+    await campaignMemberService.createCampaignMember({
+      campaignId,
+      characterId,
+      userId,
+      role: 'pc',
+      status: 'pending',
+    })
+  }
+
+  const [campaign, user] = await Promise.all([
+    db.collection('campaigns').findOne(
+      { _id: toObjectId(campaignId) },
+      { projection: { identity: 1, membership: 1 } },
+    ),
+    db.collection('users').findOne(
+      { _id: toObjectId(userId) },
+      { projection: { username: 1 } },
+    ),
+  ])
+
+  if (campaign && user) {
+    const ownerId = campaign.membership?.ownerId ?? campaign.membership?.adminId
+    const campaignName = (campaign.identity?.name as string) ?? ''
+    const characterName = (data.name as string) ?? ''
+
+    if (ownerId) {
+      await notificationService.createNotification({
+        userId: ownerId,
+        type: 'character_pending_approval',
+        requiresAction: true,
+        context: {
+          campaignId: toObjectId(campaignId),
+          characterId: toObjectId(characterId),
+        },
+        payload: {
+          characterName,
+          userName: (user.username as string) ?? 'Unknown',
+          campaignName,
+        },
+      })
+    }
+
+    await notificationService.createNotification({
+      userId: toObjectId(userId),
+      type: 'character_pending_approval',
+      requiresAction: false,
+      context: {
+        campaignId: toObjectId(campaignId),
+        characterId: toObjectId(characterId),
+      },
+      payload: {
+        characterName,
+        campaignName,
+      },
+    })
+  }
+
+  return character
+}
+
+export type UpdateCharacterBody = Partial<{
+  name: string
+  imageKey: string | null
+  narrative: Record<string, unknown>
+  combat: Record<string, unknown>
+  totalLevel: number
+  classes: unknown[]
+  hitPoints: Record<string, unknown>
+  spells: string[]
+  levelUpPending: boolean
+  pendingLevel: number
+  subclassId: string
+}>
+
+/**
+ * Update character with access policy and level-up cancel notification.
+ * Non-admins are restricted to name, imageKey, narrative, combat, and level-up fields.
+ * Throws ApiError on 404 or 403.
+ */
+export async function updateCharacterWithPolicy(
+  characterId: string,
+  userId: string,
+  userRole: string | null | undefined,
+  body: UpdateCharacterBody,
+) {
+  const character = await getCharacterById(characterId)
+  if (!character) throw notFound('Character not found')
+
+  const isCampaignAdmin = await isCampaignAdminForCharacter(characterId, userId)
+  const access = resolveCharacterAccess({
+    character: character as { userId: mongoose.Types.ObjectId },
+    userId,
+    userRole,
+    isCampaignAdmin,
+  })
+  if (!access.canWrite) throw forbidden()
+
+  let updateData: UpdateCharacterBody = body
+  if (!isCampaignAdmin && !access.isPlatformAdmin) {
+    const {
+      name,
+      imageKey,
+      narrative,
+      combat,
+      totalLevel,
+      classes,
+      hitPoints,
+      spells,
+      levelUpPending,
+      pendingLevel,
+      subclassId,
+    } = body
+    updateData = {}
+    if (name !== undefined) updateData.name = name
+    if (imageKey !== undefined) updateData.imageKey = imageKey
+    if (narrative !== undefined) updateData.narrative = narrative
+    if (combat !== undefined) updateData.combat = combat
+    if ((character as { levelUpPending?: boolean }).levelUpPending) {
+      if (totalLevel !== undefined) updateData.totalLevel = totalLevel
+      if (classes !== undefined) updateData.classes = classes
+      if (hitPoints !== undefined) updateData.hitPoints = hitPoints
+      if (spells !== undefined) updateData.spells = spells
+      if (levelUpPending !== undefined) updateData.levelUpPending = levelUpPending
+      if (pendingLevel !== undefined) updateData.pendingLevel = pendingLevel
+      if (subclassId !== undefined) updateData.subclassId = subclassId
+    }
+  }
+
+  const updated = await updateCharacter(characterId, updateData)
+
+  const wasPending = (character as { levelUpPending?: boolean }).levelUpPending === true
+  const isNowCleared = updateData.levelUpPending === false
+  const levelNotBumped =
+    updateData.totalLevel === undefined ||
+    updateData.totalLevel === (character as { totalLevel?: number }).totalLevel
+  if (wasPending && isNowCleared && levelNotBumped) {
+    await notificationService.createNotification({
+      userId: character.userId as mongoose.Types.ObjectId,
+      type: 'levelUp.cancelled',
+      requiresAction: false,
+      context: {
+        characterId: character._id as mongoose.Types.ObjectId,
+      },
+      payload: {
+        characterName: character.name,
+        pendingLevel: (character as { pendingLevel?: number }).pendingLevel,
+      },
+    })
+  }
+
+  return updated
+}
+
 export async function updateCharacter(id: string, data: Partial<CharacterData>) {
   // Strip out undefined values so we don't overwrite with undefined
   const cleaned = Object.fromEntries(
@@ -205,6 +388,90 @@ export async function softDeleteCharacter(id: string) {
     { $set: { deletedAt: new Date() } },
     { returnDocument: 'after' },
   )
+}
+
+/**
+ * Delete character with membership handling and notifications.
+ * Hard delete if no campaign memberships; soft delete and notify party if in campaigns.
+ * Throws ApiError on 404 or 403.
+ */
+export async function deleteCharacterWithMemberships(
+  characterId: string,
+  userId: string,
+  userRole: string | null | undefined,
+): Promise<{ message: string }> {
+  const character = await getCharacterById(characterId)
+  if (!character) throw notFound('Character not found')
+
+  const access = resolveCharacterAccess({
+    character: character as { userId: mongoose.Types.ObjectId },
+    userId,
+    userRole,
+  })
+  if (!access.canDelete) throw forbidden()
+
+  const characterName = (character.name as string) ?? 'Unknown'
+  const campaignMembersCol = db().collection('campaignMembers')
+
+  const memberships = (await campaignMembersCol
+    .find({
+      characterId: toObjectId(characterId),
+      status: 'approved',
+    })
+    .toArray()) as {
+    _id: mongoose.Types.ObjectId
+    campaignId: mongoose.Types.ObjectId
+    characterStatus?: string
+  }[]
+
+  if (memberships.length === 0) {
+    await deleteCharacter(characterId)
+    return { message: 'Character deleted' }
+  }
+
+  await softDeleteCharacter(characterId)
+
+  for (const membership of memberships) {
+    const charStatus = membership.characterStatus ?? 'active'
+    if (charStatus === 'active') {
+      await campaignMemberService.updateCharacterStatus(
+        membership._id.toString(),
+        'inactive',
+      )
+
+      const campaign = await getCampaignById(membership.campaignId.toString())
+      if (!campaign) continue
+
+      const allMembers = await campaignMemberService.getCampaignMembersByCampaign(
+        membership.campaignId.toString(),
+      )
+      const partyUserIds = (allMembers as { userId: mongoose.Types.ObjectId; status: string }[])
+        .filter(
+          (mbr) =>
+            mbr.status === 'approved' &&
+            !mbr.userId.equals(toObjectId(userId)),
+        )
+        .map((mbr) => mbr.userId)
+
+      for (const memberUserId of partyUserIds) {
+        await notificationService.createNotification({
+          userId: memberUserId,
+          type: 'character.left',
+          requiresAction: false,
+          context: {
+            characterId: toObjectId(characterId),
+            campaignId: membership.campaignId,
+          },
+          payload: {
+            characterName,
+            campaignName: campaign.identity?.name ?? '',
+          },
+        })
+      }
+    }
+  }
+
+  return { message: 'Character deleted' }
 }
 
 /**

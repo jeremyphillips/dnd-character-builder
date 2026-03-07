@@ -3,6 +3,8 @@ import { env } from '../shared/config/env'
 import { toObjectId } from '../shared/utils/db'
 import type { CampaignMemberStoredRole } from '../../shared/types'
 import type { CampaignViewerContext } from '../shared/auth/resolveCampaignViewerContext'
+import { resolveCampaignViewerContext } from '../shared/auth/resolveCampaignViewerContext'
+import { notFound, forbidden } from '../shared/errors/ApiError'
 import {
   getViewerMembershipContext,
   hydrateMemberViews,
@@ -182,6 +184,48 @@ export async function getCampaignWithMembers(
       },
     } as GetCampaignWithMembersResult['campaign'],
   }
+}
+
+/**
+ * Fetch campaign with visibility-filtered members and hydrated views.
+ * Used by GET /campaigns/:id. Service owns all data access and visibility logic.
+ *
+ * When called from the controller after requireCampaignRole middleware,
+ * pass pre-fetched campaign and viewerContext to avoid redundant fetches.
+ */
+export async function getCampaignWithViewerContext(
+  campaignId: string,
+  userId: string,
+  userRole: string | undefined,
+  options?: {
+    campaign?: Awaited<ReturnType<typeof getCampaignById>>
+    viewerContext?: CampaignViewerContext
+  },
+): Promise<GetCampaignWithMembersResult> {
+  let campaign = options?.campaign
+  let viewerContext = options?.viewerContext
+
+  if (!campaign) {
+    campaign = await getCampaignById(campaignId)
+    if (!campaign) throw notFound('Campaign not found')
+  }
+
+  if (!viewerContext) {
+    viewerContext = await resolveCampaignViewerContext({
+      campaignId,
+      userId,
+      userRole,
+      campaignDoc: campaign,
+    })
+  }
+
+  const hasAccess =
+    viewerContext.campaignRole || viewerContext.isOwner || viewerContext.isPlatformAdmin
+  if (!hasAccess) {
+    throw forbidden('You are not a member of this campaign')
+  }
+
+  return getCampaignWithMembers(campaignId, userId, campaign, viewerContext)
 }
 
 export async function createCampaign(

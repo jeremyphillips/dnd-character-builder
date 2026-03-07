@@ -17,11 +17,11 @@ export async function getCampaigns(req: Request, res: Response) {
 }
 
 export async function getCampaign(req: Request, res: Response) {
-  const { campaign } = await campaignService.getCampaignWithMembers(
+  const { campaign } = await campaignService.getCampaignWithViewerContext(
     req.params.id,
     req.userId!,
-    req.campaign!,
-    req.viewerContext!,
+    req.userRole,
+    { campaign: req.campaign, viewerContext: req.viewerContext },
   )
   res.json({ campaign })
 }

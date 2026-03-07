@@ -19,7 +19,7 @@ import type {
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { AppPageHeader } from '@/ui/patterns';
 import type { BreadcrumbItem } from '@/ui/patterns';
-import { useBreadcrumbs } from '@/hooks';
+import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert } from '@/ui/primitives';
 
 export type ContentListItem = {

@@ -1,4 +1,4 @@
-import { resolveImageUrl } from '@/utils/image'
+import { resolveImageUrl } from '@/shared/lib/media'
 import { useCharacters } from '@/features/character/hooks'
 import { NpcMediaTopCard } from '@/features/npc/cards'
 import Box from '@mui/material/Box'

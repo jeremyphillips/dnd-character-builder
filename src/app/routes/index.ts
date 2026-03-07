@@ -1,14 +1,11 @@
 export { 
-  PublicLayout, 
   HomeRoute, 
-  CharacterBuilderRoute, 
   LoginRoute, 
   RegisterRoute,  
   AcceptInviteRoute
 } from './public'
 
 export {
-  AuthLayout,
   DashboardRoute,
   UsersRoute,
   CharactersRoute,

@@ -1,6 +1,3 @@
-import { getNameById } from '@/utils'
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
@@ -9,6 +6,8 @@ import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import EditIcon from '@mui/icons-material/Edit'
+
+import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 
 type EquipmentItem = { id: string; name: string }
 type EquipmentInput = {
@@ -23,9 +22,9 @@ type EquipmentCardProps = {
   onEdit?: () => void
 }
 
-function getLabel(item: string | EquipmentItem, catalog: { id: string; name: string }[]): string {
-  return typeof item === 'object' ? item.name : getNameById(catalog, item)
-}
+// function getLabel(item: string | EquipmentItem, catalog: { id: string; name: string }[]): string {
+//   return item?.name
+// }
 
 export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps) {
   const { catalog } = useCampaignRules()
@@ -61,7 +60,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {weapons.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {weapons.map((w, i) => (
-                <Chip key={i} label={getLabel(w, weaponsCatalog)} size="small" variant="outlined" />
+                <Chip key={i} label={w.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -75,7 +74,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {armor.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {armor.map((a, i) => (
-                <Chip key={i} label={getLabel(a, armorCatalog)} size="small" variant="outlined" />
+                <Chip key={i} label={a.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -89,7 +88,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {gear.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {gear.map((g, i) => (
-                <Chip key={i} label={getLabel(g, gearCatalog)} size="small" variant="outlined" />
+                <Chip key={i} label={g.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (

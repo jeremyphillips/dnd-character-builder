@@ -51,14 +51,14 @@ export async function getCharactersAvailableForCampaign(req: Request, res: Respo
 }
 
 export async function getCharacter(req: Request, res: Response) {
-  const character = await characterService.getCharacterById(req.params.id)
+  const characterDoc = await characterService.getCharacterById(req.params.id)
 
-  if (!character) {
+  if (!characterDoc) {
     res.status(404).json({ error: 'Character not found' })
     return
   }
 
-  const access = resolveCharacterAccess({ character, userId: req.userId!, userRole: req.userRole })
+  const access = resolveCharacterAccess({ character: characterDoc, userId: req.userId!, userRole: req.userRole })
 
   if (!access.canRead) {
     res.status(403).json({ error: 'Forbidden' })
@@ -72,15 +72,20 @@ export async function getCharacter(req: Request, res: Response) {
     const ownerUser = await mongoose.connection
       .useDb(process.env.DB_NAME || 'dnd')
       .collection('users')
-      .findOne({ _id: character.userId }, { projection: { username: 1 } })
+      .findOne({ _id: characterDoc.userId }, { projection: { username: 1 } })
     ownerName = ownerUser?.username ?? undefined
   }
 
   const campaigns = await characterService.getCampaignsForCharacter(req.params.id)
   const pendingMemberships = await characterService.getPendingMembershipsForAdmin(req.params.id, req.userId!)
-  const normalizedCharacter = await characterService.getCharacterByIdNormalized(req.params.id)
+  const character = await characterService.getCharacterDetail(req.params.id)
 
-  res.json({ character: normalizedCharacter, campaigns, isOwner: access.isOwner, isAdmin: isCampaignAdmin, pendingMemberships, ownerName })
+  if (!character) {
+    res.status(404).json({ error: 'Character not found' })
+    return
+  }
+
+  res.json({ character, campaigns, isOwner: access.isOwner, isAdmin: isCampaignAdmin, pendingMemberships, ownerName })
 }
 
 export async function createCharacter(req: Request, res: Response) {

@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom'
-import { useAuth } from '@/app/providers/AuthProvider'
 import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
 import { CharacterView } from '@/features/character/view'
@@ -10,24 +9,24 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 
-export default function NpcRoute() {
+const NpcRoute = () => {
   const { npcId } = useParams<{ npcId: string }>()
-  
+
   const breadcrumbs = useBreadcrumbs()
 
-  const { 
-    character: npc, 
+  const {
+    character: npc,
     loading: loadingNpc,
     setCharacter: setNpc,
     setCampaigns: setCampaigns,
     setPendingMemberships: setPendingMemberships,
     setError: setError,
     setSuccess: setSuccess,
-    error: error,
-    success: success,
+    error,
+    success,
     isOwner,
     isAdmin,
-    campaigns
+    campaigns,
   } = useCharacter(npcId)
 
   const form = useCharacterForm(npc)
@@ -56,7 +55,7 @@ export default function NpcRoute() {
       <CharacterView
         name={npc.name ?? ''}
         character={npc as Character}
-        campaigns={campaigns} 
+        campaigns={campaigns}
         pendingMemberships={[]}
         isOwner={isOwner}
         isAdmin={isAdmin}
@@ -78,3 +77,5 @@ export default function NpcRoute() {
     </Box>
   )
 }
+
+export default NpcRoute

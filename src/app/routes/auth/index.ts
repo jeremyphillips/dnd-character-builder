@@ -1,4 +1,4 @@
-export { CharactersRoute, CharacterRoute, NewCharacterRoute } from '@/features/character/routes'
+export { CharactersRoute, CharacterRoute, NewCharacterRoute, NpcsRoute, NpcRoute } from '@/features/character/routes'
 export {
   CampaignsRoute,
   DashboardRoute,
@@ -6,12 +6,6 @@ export {
   PartyRoute,
   RulesRoute,
   WorldLayout,
-  LocationsRoute,
-  LocationRoute,
-  NpcsRoute,
-  NpcRoute,
-  MonstersRoute,
-  MonsterRoute,
   SessionsRoute,
   SessionRoute,
   MessagingRoute,
@@ -22,6 +16,8 @@ export {
   CampaignRulesetEditorRoute,
   ContentManageGuard,
 } from '@/features/campaign/routes'
+export { LocationsRoute, LocationRoute } from '@/features/content/locations/routes'
+export { MonstersRoute, MonsterRoute } from '@/features/content/monsters/routes'
 export {
   ClassListRoute,
   ClassDetailRoute,

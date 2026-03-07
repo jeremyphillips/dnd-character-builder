@@ -3,12 +3,15 @@ import { useParams, Link as RouterLink } from 'react-router-dom'
 
 import type { Visibility } from '@/shared/types/visibility'
 import type { Location } from '@/data/locations'
+import { locations as locationData } from '@/data/locations'
+import { resolveImageUrl } from '@/shared/lib/media'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROUTES } from '@/app/routes'
 import { apiFetch } from '@/app/api'
 import { useBreadcrumbs } from '@/app/navigation'
 import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers'
 import { useCampaigns } from '@/features/campaign/hooks/useCampaigns'
+import { getLegacyType } from '@/features/location/locationLegacy'
 import {
   AppHero,
   Breadcrumbs,
@@ -23,7 +26,6 @@ import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
@@ -53,30 +55,12 @@ const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'warning
 // Helpers
 // ---------------------------------------------------------------------------
 
-// function getSettingLocations(settingId: string): Location[] {
-//   const setting = settings.find((s) => s.id === settingId)
-//   return setting?.locations ?? []
-// }
-
 interface LocationOverride {
   name?: string
   type?: string
   description?: string
   imageUrl?: string | null
   visibility?: Visibility
-}
-
-async function fetchSettingData(settingId: string): Promise<{
-  worldMapUrl?: string | null
-  locations?: Location[]
-  customLocations?: Location[]
-  locationOverrides?: Record<string, LocationOverride>
-} | null> {
-  try {
-    return await apiFetch(`/api/setting-data/${settingId}`)
-  } catch {
-    return null
-  }
 }
 
 async function apiUpdateLocation(settingId: string, locationId: string, updates: Record<string, unknown>) {
@@ -90,57 +74,29 @@ async function apiUpdateLocation(settingId: string, locationId: string, updates:
 // Component
 // ---------------------------------------------------------------------------
 
-export default function LocationRoute() {
+const LocationRoute = () => {
   const { id: campaignId, locationId } = useParams<{ id: string; locationId: string }>()
   const { user } = useAuth()
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin'
   const { campaigns } = useCampaigns({ campaignId })
   const { approvedCharacters } = useCampaignMembers()
-  const [loading, setLoading] = useState(true)
-  const [location, setLocation] = useState<Location | null>(null)
-  const [allLocations, setAllLocations] = useState<Location[]>([])
+  const [locationOverride, setLocationOverride] = useState<Partial<Location> | null>(null)
   const breadcrumbs = useBreadcrumbs()
+
+  const allLocations = useMemo(
+    () =>
+      campaignId
+        ? (locationData as readonly Location[]).filter((l) => l.campaignId === campaignId)
+        : [],
+    [campaignId],
+  )
+  const location = useMemo(() => {
+    const found = (locationData as readonly Location[]).find((l) => l.id === locationId)
+    if (!found) return null
+    return { ...found, ...locationOverride } as Location
+  }, [locationId, locationOverride])
   const campaign = campaigns?.[0] ?? null
-  const activeSetting = campaign?.identity.setting ?? ''
-
-  // ── Load location data ───────────────────────────────────────────────
-  // useEffect(() => {
-  //   if (!activeSetting || !locationId) return
-  //   let cancelled = false
-
-  //   async function load() {
-  //     const data = await fetchSettingData(activeSetting)
-  //     if (cancelled || !data) {
-  //       setLoading(false)
-  //       return
-  //     }
-
-  //     const dataLocations = getSettingLocations(activeSetting)
-  //     const overrides = data.locationOverrides ?? {}
-  //     const merged = dataLocations.map((loc) => {
-  //       const o = overrides[loc.id]
-  //       if (!o) return loc
-  //       return {
-  //         ...loc,
-  //         name: o.name ?? loc.name,
-  //         type: (o.type as LocationType) ?? loc.type,
-  //         description: o.description ?? loc.description,
-  //         imageUrl: o.imageUrl === null ? undefined : (o.imageUrl ?? loc.imageUrl),
-  //         visibility: o.visibility ?? loc.visibility,
-  //       }
-  //     })
-  //     const customs = data.customLocations ?? []
-  //     const all = [...merged, ...customs]
-  //     setAllLocations(all)
-
-  //     const found = all.find((l) => l.id === locationId) ?? null
-  //     setLocation(found)
-  //     setLoading(false)
-  //   }
-
-  //   load()
-  //   return () => { cancelled = true }
-  // }, [activeSetting, locationId])
+  const activeSetting = campaign?.identity?.setting ?? ''
 
   // ── Save field ───────────────────────────────────────────────────────
   const saveField = useCallback(
@@ -148,18 +104,18 @@ export default function LocationRoute() {
       if (!location) return
       const updates: Record<string, unknown> = {
         [field]: value,
-        isCustom: !!location.isCustom,
+        isCustom: !!(location as { isCustom?: boolean }).isCustom,
       }
       await apiUpdateLocation(activeSetting, location.id, updates)
-      setLocation((prev) => (prev ? { ...prev, [field]: value } : prev))
+      setLocationOverride((prev) => ({ ...prev, [field]: value }))
     },
     [location, activeSetting],
   )
 
   // ── Derived ──────────────────────────────────────────────────────────
   const parentName = useMemo(() => {
-    if (!location?.parentLocationId) return undefined
-    return allLocations.find((l) => l.id === location.parentLocationId)?.name ?? location.parentLocationId
+    if (!location?.parentId) return undefined
+    return allLocations.find((l) => l.id === location.parentId)?.name ?? location.parentId
   }, [location, allLocations])
 
   const backLink = campaignId
@@ -167,14 +123,6 @@ export default function LocationRoute() {
     : '#'
 
   // ── Render ───────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    )
-  }
-
   if (!location) {
     return (
       <Box sx={{ py: 4, textAlign: 'center' }}>
@@ -186,27 +134,30 @@ export default function LocationRoute() {
     )
   }
 
+  const locationType = getLegacyType(location)
+  const locationVisibility = location.visibility
+
   return (
     <Box>
       <Breadcrumbs items={breadcrumbs} />
 
-      {/* Hero — location image (leave as-is for now, inline editing refactored later) */}
+      {/* Hero — location image */}
       <AppHero
         headline={location.name}
-        subheadline={location.type.charAt(0).toUpperCase() + location.type.slice(1)}
-        image={location.imageUrl}
+        subheadline={locationType.charAt(0).toUpperCase() + locationType.slice(1)}
+        image={resolveImageUrl(location.imageKey ?? undefined)}
       />
 
       {/* Badges */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2, mb: 3 }}>
         <Chip
-          label={location.type}
+          label={locationType}
           size="small"
-          color={TYPE_COLORS[location.type] ?? 'primary'}
+          color={TYPE_COLORS[locationType] ?? 'primary'}
           variant="outlined"
           sx={{ textTransform: 'capitalize' }}
         />
-        {location.isCustom && (
+        {(location as { isCustom?: boolean }).isCustom && (
           <Chip label="Custom" size="small" variant="outlined" color="info" />
         )}
       </Stack>
@@ -224,7 +175,7 @@ export default function LocationRoute() {
 
         <EditableSelect
           label="Type"
-          value={location.type}
+          value={locationType}
           options={LOCATION_TYPE_OPTIONS}
           onSave={(v) => saveField('type', v)}
           disabled={!canEdit}
@@ -253,7 +204,7 @@ export default function LocationRoute() {
             Visibility
           </Typography>
           <VisibilityField
-            value={location.visibility}
+            value={locationVisibility}
             onChange={(v) => saveField('visibility', v)}
             disabled={!canEdit}
             characters={approvedCharacters}
@@ -263,3 +214,5 @@ export default function LocationRoute() {
     </Box>
   )
 }
+
+export default LocationRoute

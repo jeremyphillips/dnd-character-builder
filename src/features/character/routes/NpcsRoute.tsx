@@ -1,7 +1,7 @@
 import { useBreadcrumbs } from '@/app/navigation'
 import { CharacterBuilderLauncher } from '@/features/characterBuilder/components'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
-import { NpcGallerySection } from '@/features/npc/sections' 
+import { NpcGallerySection } from '@/features/npc/sections'
 
 import { Breadcrumbs } from '@/ui/patterns'
 import Typography from '@mui/material/Typography'
@@ -9,7 +9,7 @@ import Stack from '@mui/material/Stack'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 
-export default function NpcsRoute() {
+const NpcsRoute = () => {
   const { loading: activeCampaignLoading } = useActiveCampaign()
 
   const breadcrumbs = useBreadcrumbs()
@@ -20,7 +20,7 @@ export default function NpcsRoute() {
     <Box>
       <Breadcrumbs items={breadcrumbs} />
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h1" >
+        <Typography variant="h1">
           NPCs
         </Typography>
         <CharacterBuilderLauncher
@@ -33,3 +33,5 @@ export default function NpcsRoute() {
     </Box>
   )
 }
+
+export default NpcsRoute

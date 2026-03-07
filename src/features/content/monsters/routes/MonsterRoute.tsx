@@ -9,7 +9,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import { AppAlert } from '@/ui/primitives'
 
-export default function MonsterRoute() {
+const MonsterRoute = () => {
   const { monsterId } = useParams<{ id: string; monsterId: string }>()
 
   const breadcrumbs = useBreadcrumbs()
@@ -39,3 +39,5 @@ export default function MonsterRoute() {
     </Box>
   )
 }
+
+export default MonsterRoute

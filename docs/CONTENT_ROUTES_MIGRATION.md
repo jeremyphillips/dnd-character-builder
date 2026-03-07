@@ -12,7 +12,7 @@
 
 | Location | Content Types |
 |----------|---------------|
-| `src/features/campaign/routes/world/` | classes, races, spells, skillProficiencies, equipment, locations, npcs, monsters |
+| `src/features/campaign/routes/world/` | WorldLayout only (locations, monsters → content; npcs → character) |
 | `src/features/content/shared/` | Shared components (ContentTypeListPage, EntryEditorLayout), hooks, domain logic |
 | `src/features/content/{feature}/domain/` | Domain logic already exists for: classes, races, spells, skillProficiencies, equipment sub-types |
 
@@ -31,10 +31,12 @@
 - `/classes`, `/races`, `/spells`, `/skill-proficiencies`
 - `/equipment/weapons`, `/equipment/armor`, `/equipment/gear`, `/equipment/magic-items`
 
+**Migrated (Locations & Monsters):**
+- **Locations:** Moved to `src/features/content/locations/routes/` (LocationsRoute, LocationRoute).
+- **Monsters:** Moved to `src/features/content/monsters/routes/` (MonstersRoute, MonsterRoute).
+
 **Out of scope for this plan (future migrations):**
-- **Locations:** Will be content; migrating soon in separate plan.
-- **Monsters:** Will be content; migrating soon in separate plan.
-- **NPCs:** Owned by `feature/character` — NPCs are characters with `type: 'npc'`. Routes move to character feature.
+- **NPCs:** Migrated to `src/features/character/routes/` (NpcsRoute, NpcRoute). NPCs are characters with `type: 'npc'`.
 
 ---
 
@@ -149,7 +151,7 @@ Migrate in dependency order. Each build: create dirs → move files → update i
 | **2.4** | Skill Proficiencies | Same pattern |
 | **2.5** | Equipment | Create `src/features/content/equipment/routes/` + `equipment/shared/`. Move routes. Add thin wrappers in shared/ for split-ready structure. Create index.ts. |
 
-**Out of scope:** Locations, monsters (future content migration). NPCs → move to `src/features/character/routes/` in character feature.
+**Migrated:** Locations, monsters → content; NPCs → `src/features/character/routes/` (NpcsRoute, NpcRoute).
 
 ### Phase 3: Cleanup
 
@@ -168,8 +170,8 @@ Migrate in dependency order. Each build: create dirs → move files → update i
 |-------|----------|
 | **Equipment** | Monolithic to start. Hierarchy: equipment > gear, weapons, armor, magicItems. Add equipment/shared/ with thin wrappers for future split. |
 | **Campaign router** | Only campaign-specific routes. Content mounts directly in register-routes. |
-| **Locations, Monsters** | Treated as content; migrating soon in separate plan. Not in this scope. |
-| **NPCs** | Owned by feature/character. Routes move to character feature. |
+| **Locations, Monsters** | Migrated to `src/features/content/locations/routes/` and `src/features/content/monsters/routes/`. |
+| **NPCs** | Migrated to `src/features/character/routes/` (NpcsRoute, NpcRoute). |
 | **World** | Not first class. UI presentation only. WorldLayout is a shell in campaign. |
 | **contentPatch, rulesetPatch** | Stay in campaign feature (campaign configuration). |
 
@@ -300,7 +302,7 @@ Phase 3 (Cleanup):
 - [x] Server: `campaign.routes.ts` no longer contains content CRUD routes
 - [x] Client: `src/features/content/{feature}/routes/` exists for each migrated feature
 - [x] Client: `campaign/routes/index.ts` no longer exports content; `auth/index.ts` imports directly from `@/features/content/*/routes`
-- [x] Client: `campaign/routes/world/` removed for migrated features (classes, races, spells, skillProficiencies, equipment)
+- [x] Client: `campaign/routes/world/` removed for migrated features (classes, races, spells, skillProficiencies, equipment, locations, monsters)
 - [x] Equipment: Ownership boundaries respected (routes vs subtype vs shared — see Implementation Constraints §3)
 - [ ] All content routes work; manual smoke test of list/detail/create/edit flows
 - [x] Report back completed (Implementation Constraints §6)
@@ -332,3 +334,31 @@ Phase 3 (Cleanup):
 3. **Route mounting order** — Content routes (`/api/campaigns/:id/classes`, etc.) are registered *before* the campaign router (`/api/campaigns`) so the more specific paths match first.
 
 4. **Legacy cleanup** — Removed `server/controllers/campaignClass.controller.ts`, `campaignRace.controller.ts`, `campaignSpell.controller.ts`, `campaignSkillProficiency.controller.ts`, `campaignEquipment.controller.ts` and their corresponding services. Models remain in `server/shared/models/`.
+
+---
+
+## Phase 4 Report Back (Locations & Monsters Migration)
+
+1. **Locations** — Moved to `src/features/content/locations/routes/`:
+   - `LocationsRoute.tsx` — list view using `@/data/locations`, `FilterableCardGroup`, `LocationHorizontalCard`, `getLegacyType`/`sortLocations`/`getIndentLevel` from `@/features/location/locationLegacy`
+   - `LocationRoute.tsx` — detail view using `@/data/locations` for lookup, `resolveImageUrl` for images, `getLegacyType` for type display, editable fields with `apiUpdateLocation` (setting-data API)
+
+2. **Monsters** — Moved to `src/features/content/monsters/routes/`:
+   - `MonstersRoute.tsx` — list view using `@/data/monsters`, `MonsterMediaTopCard`
+   - `MonsterRoute.tsx` — detail view using `MonsterView`, `@/data/monsters` for lookup
+
+3. **Exports** — `auth/index.ts` imports `LocationsRoute`, `LocationRoute` from `@/features/content/locations/routes` and `MonstersRoute`, `MonsterRoute` from `@/features/content/monsters/routes`. Campaign routes index and world index no longer export these.
+
+4. **Removed** — Deleted `src/features/campaign/routes/world/locations/` and `src/features/campaign/routes/world/monsters/`.
+
+---
+
+## Phase 5 Report Back (NPCs Migration)
+
+1. **NPCs** — Moved to `src/features/character/routes/`:
+   - `NpcsRoute.tsx` — list view with `CharacterBuilderLauncher` (Create NPC), `NpcGallerySection`
+   - `NpcRoute.tsx` — detail view using `useCharacter`, `useCharacterForm`, `useCharacterActions`, `CharacterView`
+
+2. **Exports** — `auth/index.ts` imports `NpcsRoute`, `NpcRoute` from `@/features/character/routes`. Campaign routes index and world index no longer export these.
+
+3. **Removed** — Deleted `src/features/campaign/routes/world/npcs/`.

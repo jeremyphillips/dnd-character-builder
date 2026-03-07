@@ -7,7 +7,7 @@ import { monsters } from '@/data/monsters'
 import { MonsterMediaTopCard } from '@/features/monster/components'
 import { ROUTES } from '@/app/routes'
 
-export default function MonstersRoute() {
+const MonstersRoute = () => {
   const { id: campaignId } = useParams<{ id: string }>()
 
   const breadcrumbs = useBreadcrumbs()
@@ -41,3 +41,5 @@ export default function MonstersRoute() {
     </Box>
   )
 }
+
+export default MonstersRoute

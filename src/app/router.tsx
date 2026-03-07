@@ -1,14 +1,13 @@
 import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom'
 import { ROUTES } from './routes'
-import { AppProviders } from './providers'
+import { AppProviders } from './providers/AppProviders'
 
 // MUI Layouts
-import PublicLayout from './layouts/PublicLayout'
-import AuthLayout from './layouts/AuthLayout'
+import { PublicLayout, AuthLayout } from './layouts'
 
 // Route components
 import {
-  CharacterBuilderRoute,
+  HomeRoute,
   LoginRoute,
   RegisterRoute,
   AcceptInviteRoute,
@@ -89,8 +88,7 @@ export const router = createBrowserRouter([
       {
         element: <PublicLayout />,
         children: [
-          { path: ROUTES.HOME, element: <CharacterBuilderRoute /> },
-          { path: ROUTES.CHARACTER_BUILDER, element: <CharacterBuilderRoute /> },
+          { path: ROUTES.HOME, element: <HomeRoute /> },
           { path: ROUTES.LOGIN, element: <LoginRoute /> },
           { path: ROUTES.REGISTER, element: <RegisterRoute /> },
           { path: ROUTES.ACCEPT_INVITE, element: <AcceptInviteRoute /> },

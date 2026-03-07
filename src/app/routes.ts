@@ -1,6 +1,5 @@
 export const ROUTES = {
   HOME: '/',
-  CHARACTER_BUILDER: '/character-builder',
   LOGIN: '/login',
   REGISTER: '/register',
   ACCEPT_INVITE: '/accept-invite',

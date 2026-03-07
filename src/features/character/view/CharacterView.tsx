@@ -37,7 +37,8 @@ import Grid from '@mui/material/Grid'
 import { AppAlert } from '@/ui/primitives'
 import type { AlignmentId } from '@/features/content/shared/domain/types'
 import type { RaceId } from '@/features/content/shared/domain/types'
-
+import type { AbilityScoreMapResolved } from '@/features/mechanics/domain/core/character'
+import { resolveXpTable } from '@/features/mechanics/domain/core/rules/xp/resolveXpTable'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,7 +60,7 @@ export type CharacterViewProps = {
   imageKey: string | null
   setImageKey: React.Dispatch<React.SetStateAction<string | null>>
   narrative: CharacterNarrative
-  race: string
+  race: RaceId
   alignment: AlignmentId
   totalLevel: number
   alignmentOptions: { id: AlignmentId; label: string }[]
@@ -99,9 +100,7 @@ export default function CharacterView({
 }: CharacterViewProps) {
   const navigate = useNavigate()
   const { ruleset, catalog } = useCampaignRules()
-  const xpTable = ruleset.mechanics?.progression?.xp?.tableId === 'standard'
-
-  console.log('character', character)
+  const xpTable = resolveXpTable(ruleset.mechanics?.progression?.xp)
   
   // ── UI toggle state ────────────────────────────────────────────────
   const [awardXpOpen, setAwardXpOpen] = useState(false)
@@ -128,7 +127,7 @@ export default function CharacterView({
 
   const profSlots = useMemo(
     () => getProficiencySlotSummary(
-      character.classes.map((c) => ({ classId: c.classId, subclassId: c.subclassId, level: c.level })),
+      character.classes.map((c) => ({ classId: c.classId, subclassId: c.subclassId ?? undefined, level: c.level })),
       { skills: character.proficiencies.map((p) => p.id) },
       catalog.classesById,
     ),
@@ -202,7 +201,7 @@ export default function CharacterView({
   const onEditWealthSave = async (wealth: { gp: number; sp: number; cp: number }) => {
     const currentBudgetGp = moneyToCp(character.wealth?.baseBudget ?? undefined) / 100
     const newBudgetGp = Math.max(currentBudgetGp, wealth.gp)
-    const baseBudget: import('@/shared/money/types').Money = character.wealth?.baseBudget
+    const baseBudget = character.wealth?.baseBudget
       ?? { coin: 'gp', value: newBudgetGp }
     await actions.saveCharacter({
       wealth: { ...character.wealth, gp: wealth.gp, sp: wealth.sp, cp: wealth.cp, baseBudget },
@@ -254,7 +253,7 @@ export default function CharacterView({
       <Grid container spacing={2} sx={{ mb: 2 }}>
         {hasStats && (
           <Grid size={{ xs: 12, md: 2 }}>
-            <AbilityScoresCard abilityScores={character.abilityScores!} />
+            <AbilityScoresCard abilityScores={character.abilityScores as AbilityScoreMapResolved} />
           </Grid>
         )}
         <Grid size={{ xs: 12, md: hasStats ? 6 : 7 }}>

@@ -12,7 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ImageIcon from '@mui/icons-material/Image'
 
 import { Lightbox } from '@/ui/patterns'
-import { resolveImageUrl } from '@/utils/image'
+import { resolveImageUrl } from '@/shared/lib/media'
 import { AppAlert } from '@/ui/primitives'
 
 interface ImageUploadFieldProps {

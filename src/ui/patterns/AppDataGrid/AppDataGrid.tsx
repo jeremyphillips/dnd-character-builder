@@ -20,7 +20,7 @@ import Avatar from '@mui/material/Avatar'
 
 import SearchIcon from '@mui/icons-material/Search'
 
-import { resolveImageUrl } from '@/utils/image'
+import { resolveImageUrl } from '@/shared/lib/media'
 
 
 // ---------------------------------------------------------------------------

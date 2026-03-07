@@ -1,17 +1,7 @@
-export { default as AuthLayout } from './AuthLayout'
-export { default as DashboardRoute } from './DashboardRoute'
-export { default as UsersRoute } from './UsersRoute'
-export { default as CharactersRoute } from './CharactersRoute'
-export { default as CharacterRoute } from './CharacterRoute'
-export { default as NewCharacterRoute } from './NewCharacterRoute'
-export { default as CampaignsRoute } from './CampaignsRoute'
-export { default as InviteRoute } from './InviteRoute'
-
-// Account
-export { AccountRoute, AccountSettingsRoute } from './account'
-
-// Campaign tree
+export { CharactersRoute, CharacterRoute, NewCharacterRoute } from '@/features/character/routes'
 export {
+  CampaignsRoute,
+  DashboardRoute,
   CampaignRoute,
   PartyRoute,
   RulesRoute,
@@ -64,4 +54,7 @@ export {
   RaceCreateRoute,
   RaceEditRoute,
   ContentManageGuard,
-} from './campaign'
+} from '@/features/campaign/routes'
+export { InviteRoute } from '@/features/auth/routes'
+export { UsersRoute } from '@/features/user/routes'
+export { AccountRoute, AccountSettingsRoute } from '@/features/account/routes'

@@ -71,10 +71,12 @@
       "@/shared/*": ["../shared/*"],
       "@/shared/money": ["../shared/money/index.ts"],
       "@/shared/money/*": ["../shared/money/*"],
+      "@/shared/lib/media": ["../shared/lib/media/index.ts"],
       "@/shared/permissions": ["../shared/permissions/index.ts"],
       "@/shared/weight": ["../shared/weight/index.ts"],
       "@/shared/weight/*": ["../shared/weight/*"],
       "@/utils/*": ["utils/*"],
+
       "@/utils": ["utils/index.ts"]
     }  
   },

@@ -3,6 +3,8 @@
  * Used by GET /characters/me and GET /characters/:id.
  */
 
+import type { Money } from "@/shared/money/types"
+
 // ---------------------------------------------------------------------------
 // Class summary (shared by card, detail, roster)
 // ---------------------------------------------------------------------------
@@ -96,7 +98,7 @@ export type CharacterDetailDto = {
     gp?: number
     sp?: number
     cp?: number
-    baseBudget?: { coin: string; value: number }
+    baseBudget?: Money
   }
 
   hitPoints: {

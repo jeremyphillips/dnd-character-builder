@@ -14,7 +14,7 @@ import type { Visibility } from '@/shared/types/visibility';
 import type { ChangeValidationResult } from '@/features/content/shared/domain/validation';
 import { AppAlert } from '@/ui/primitives';
 import { AppPageHeader, AppModal, ConfirmModal, VisibilityField } from '@/ui/patterns';
-import { useBreadcrumbs } from '@/hooks';
+import { useBreadcrumbs } from '@/app/navigation';
 
 
 // ---------------------------------------------------------------------------

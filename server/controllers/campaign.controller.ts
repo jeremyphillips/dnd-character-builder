@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type { CampaignMemberStoredRole } from '../../shared/types'
-import { validateRequired } from '../validators/common'
+import { validateRequired } from '../shared/validators/common'
 import * as campaignService from '../services/campaign.service'
 import {
   preCheckMember as preCheckMemberService,
@@ -17,11 +17,11 @@ export async function getCampaigns(req: Request, res: Response) {
 }
 
 export async function getCampaign(req: Request, res: Response) {
-  const { campaign } = await campaignService.getCampaignWithMembers(
+  const { campaign } = await campaignService.getCampaignWithViewerContext(
     req.params.id,
     req.userId!,
-    req.campaign!,
-    req.viewerContext!,
+    req.userRole,
+    { campaign: req.campaign, viewerContext: req.viewerContext },
   )
   res.json({ campaign })
 }
@@ -34,13 +34,8 @@ export async function createCampaign(req: Request, res: Response) {
   }
 
   const { name, description } = req.body
-  try {
-    const campaign = await campaignService.createCampaign(req.userId!, { name, description })
-    res.status(201).json({ campaign })
-  } catch (err) {
-    console.error('Failed to create campaign:', err)
-    res.status(500).json({ error: 'Failed to create campaign' })
-  }
+  const campaign = await campaignService.createCampaign(req.userId!, { name, description })
+  res.status(201).json({ campaign })
 }
 
 export async function updateCampaign(req: Request, res: Response) {
@@ -63,14 +58,9 @@ export async function deleteCampaign(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 
 export async function getPartyCharacters(req: Request, res: Response) {
-  try {
-    const status = req.query.status as string | undefined
-    const characters = await campaignService.getPartyCharacters(req.params.id, status)
-    res.json({ characters })
-  } catch (err) {
-    console.error('Failed to get party characters:', err)
-    res.status(500).json({ error: 'Failed to load party characters' })
-  }
+  const status = req.query.status as string | undefined
+  const characters = await campaignService.getPartyCharacters(req.params.id, status)
+  res.json({ characters })
 }
 
 // ---------------------------------------------------------------------------

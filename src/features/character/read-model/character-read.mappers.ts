@@ -3,6 +3,8 @@
  * Transforms stored character documents to DTOs using pre-loaded references.
  */
 
+import type { Coin } from '@/shared/money/types'
+import type { AlignmentId } from '@/features/content/shared/domain/types'
 import type {
   CharacterCardSummary,
   CharacterClassReadSource,
@@ -172,7 +174,9 @@ export function toCharacterDetailDto(
       gp: char.wealth?.gp,
       sp: char.wealth?.sp,
       cp: char.wealth?.cp,
-      baseBudget: char.wealth?.baseBudget,
+      baseBudget: char.wealth?.baseBudget
+        ? { coin: char.wealth.baseBudget.coin as Coin, value: char.wealth.baseBudget.value }
+        : undefined,
     },
     hitPoints: {
       total: char.hitPoints?.total ?? 0,
@@ -197,13 +201,17 @@ export function toCharacterForEngine(dto: CharacterDetailDto): import('@/feature
     name: dto.name,
     type: dto.type,
     race: dto.race?.id,
-    alignment: dto.alignment ?? undefined,
-    classes: dto.classes.map((c) => ({ classId: c.classId, subclassId: c.subclassId, level: c.level })),
+    alignment: (dto.alignment ?? undefined) as AlignmentId | undefined,
+    classes: dto.classes.map((c) => ({
+      classId: c.classId,
+      subclassId: c.subclassId ?? undefined,
+      level: c.level,
+    })),
     xp: dto.xp ?? 0,
     totalLevel: dto.totalLevel ?? dto.level,
     levelUpPending: dto.levelUpPending,
     pendingLevel: dto.pendingLevel,
-    abilityScores: dto.abilityScores,
+    abilityScores: dto.abilityScores as import('@/features/mechanics/domain/core/character/abilities.types').AbilityScoreMapResolved,
     hitPoints: dto.hitPoints,
     armorClass: dto.armorClass,
     combat: dto.combat,

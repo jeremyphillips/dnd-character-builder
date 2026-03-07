@@ -7,14 +7,13 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import EditIcon from '@mui/icons-material/Edit'
 
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-
 type EquipmentItem = { id: string; name: string }
 type EquipmentInput = {
   armor?: string[] | EquipmentItem[]
   weapons?: string[] | EquipmentItem[]
   gear?: string[] | EquipmentItem[]
   magicItems?: string[]
+  weight?: number | { value: number; unit?: string }
 }
 
 type EquipmentCardProps = {
@@ -22,16 +21,7 @@ type EquipmentCardProps = {
   onEdit?: () => void
 }
 
-// function getLabel(item: string | EquipmentItem, catalog: { id: string; name: string }[]): string {
-//   return item?.name
-// }
-
 export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps) {
-  const { catalog } = useCampaignRules()
-  const weaponsCatalog = Object.values(catalog.weaponsById)
-  const armorCatalog = Object.values(catalog.armorById)
-  const gearCatalog = Object.values(catalog.gearById)
-
   const weapons = (equipment?.weapons ?? []) as (string | EquipmentItem)[]
   const armor = (equipment?.armor ?? []) as (string | EquipmentItem)[]
   const gear = (equipment?.gear ?? []) as (string | EquipmentItem)[]
@@ -60,7 +50,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {weapons.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {weapons.map((w, i) => (
-                <Chip key={i} label={w.name} size="small" variant="outlined" />
+                <Chip key={i} label={typeof w === 'string' ? w : w.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -74,7 +64,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {armor.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {armor.map((a, i) => (
-                <Chip key={i} label={a.name} size="small" variant="outlined" />
+                <Chip key={i} label={typeof a === 'string' ? a : a.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -88,7 +78,7 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           {gear.length > 0 ? (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               {gear.map((g, i) => (
-                <Chip key={i} label={g.name} size="small" variant="outlined" />
+                <Chip key={i} label={typeof g === 'string' ? g : g.name} size="small" variant="outlined" />
               ))}
             </Stack>
           ) : (
@@ -96,9 +86,9 @@ export default function EquipmentCard({ equipment, onEdit }: EquipmentCardProps)
           )}
         </Box>
 
-        {(equipment?.weight ?? 0) > 0 && (
+        {(typeof equipment?.weight === 'number' ? equipment.weight : equipment?.weight?.value ?? 0) > 0 && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
-            Total weight: {equipment?.weight ?? 0} {equipment?.weight?.unit ?? 'lbs'}
+            Total weight: {typeof equipment?.weight === 'number' ? equipment.weight : equipment?.weight?.value ?? 0} {typeof equipment?.weight === 'object' ? equipment?.weight?.unit ?? 'lbs' : 'lbs'}
           </Typography>
         )}
       </CardContent>

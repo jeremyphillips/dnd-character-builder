@@ -1,8 +1,10 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env'
-import type { CharacterDoc } from '../../src/features/character/domain/types/characterDoc.types'; 
+import type { CharacterDoc } from '../../src/features/character/domain/types/characterDoc.types'
 import { getPublicUrl } from '../services/image.service'
-import type { CharacterClassInfo } from '../../src/features/character/domain/types';
+import { getSystemRaces } from '../../src/features/mechanics/domain/core/rules/systemCatalog.races'
+import { getSystemClasses } from '../../src/features/mechanics/domain/core/rules/systemCatalog.classes'
+import { DEFAULT_SYSTEM_RULESET_ID } from '../../src/features/mechanics/domain/core/rules/systemIds'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const charactersCollection = () => db().collection('characters')
@@ -224,45 +226,100 @@ export async function isCampaignAdminForCharacter(
   return match !== null
 }
 
-/** Card-ready character summary with campaign context. */
+// ---------------------------------------------------------------------------
+// Card DTO types (for GET /characters/me)
+// ---------------------------------------------------------------------------
+
+export type CharacterCardClassSummary = {
+  classId: string
+  className: string
+  subclassId?: string | null
+  subclassName?: string | null
+  level: number
+}
+
 export type CharacterCardSummary = {
   id: string
   name: string
   type?: string
-  imageUrl?: string | null
-  race?: string | null
-  classes?: CharacterClassInfo[] | undefined
+  imageUrl: string | null
+  race: { id: string; name: string } | null
+  classes: CharacterCardClassSummary[]
   campaign: { id: string; name: string } | null
-  createdAt?: string | null
 }
 
-/** Map character doc to card summary DTO. */
+/** Typed character document shape returned by getCharactersByUser (normalized). */
+type CharacterDocForCard = {
+  _id: mongoose.Types.ObjectId
+  name: string
+  type?: string
+  imageKey?: string | null
+  race?: string
+  classes: Array<{ classId?: string; subclassId?: string; level: number }>
+}
+
+/** Reference lookup maps for resolving ids to display names. */
+type CardReferenceMaps = {
+  raceById: Map<string, string>
+  classById: Map<string, string>
+  subclassById: Map<string, string>
+}
+
+/** Build lookup maps from system catalog for race/class/subclass name resolution. */
+function loadCardReferenceMaps(): CardReferenceMaps {
+  const races = getSystemRaces(DEFAULT_SYSTEM_RULESET_ID)
+  const classes = getSystemClasses(DEFAULT_SYSTEM_RULESET_ID)
+
+  const raceById = new Map<string, string>()
+  for (const r of races) {
+    raceById.set(r.id, r.name)
+  }
+
+  const classById = new Map<string, string>()
+  const subclassById = new Map<string, string>()
+  for (const c of classes) {
+    classById.set(c.id, c.name)
+    const opts = c.definitions?.options ?? []
+    for (const opt of opts) {
+      if (opt.id && opt.name) subclassById.set(opt.id, opt.name)
+    }
+  }
+
+  return { raceById, classById, subclassById }
+}
+
+/** Map character doc to card summary DTO using pre-loaded reference maps. */
 function toCharacterCardSummary(
-  char: Record<string, unknown>,
+  char: CharacterDocForCard,
   campaign: { id: string; name: string } | null,
+  refs: CardReferenceMaps,
 ): CharacterCardSummary {
-  const charId = (char._id as mongoose.Types.ObjectId).toString()
-  const classes = (char.classes as { classId?: string; level: number }[]) ?? []
-  const primaryClass = classes[0]
-  const secondaryClass = classes?.length > 1 ? classes[1] : undefined
-  const primaryClassDetails = primaryClass ? {
-    classId: primaryClass.classId,
-    level: primaryClass.level,
-  } : undefined
-  const secondaryClassDetails = secondaryClass ? {
-    classId: secondaryClass.classId,
-    level: secondaryClass.level,
-  } : undefined
-  const imageKey = (char.imageKey as string | null) ?? null
+  const charId = char._id.toString()
+  const raceId = char.race ?? ''
+
+  const classes = (char.classes ?? []).map((cls) => {
+    const classId = cls.classId ?? ''
+    const subclassId = cls.subclassId ?? null
+    const className = classId ? refs.classById.get(classId) ?? classId : ''
+    const subclassName = subclassId ? refs.subclassById.get(subclassId) ?? subclassId : null
+    return {
+      classId,
+      className,
+      subclassId: subclassId ?? undefined,
+      subclassName: subclassName ?? undefined,
+      level: cls.level ?? 1,
+    }
+  })
+
+  const imageKey = char.imageKey ?? null
   return {
     id: charId,
-    name: (char.name as string) ?? '',
-    type: char.type as string | undefined,
-    imageUrl: imageKey ? getPublicUrl(imageKey) : null,
-    race: (char.race as string) ?? null,
-    classes: [ primaryClassDetails, secondaryClassDetails ] as CharacterClassInfo[] | undefined,
+    name: char.name ?? '',
+    type: char.type,
+    imageUrl: imageKey ? (getPublicUrl(imageKey) ?? null) : null,
+    race: raceId ? { id: raceId, name: (refs.raceById.get(raceId) ?? raceId) } : null,
+    classes,
     campaign,
-    createdAt: (char.createdAt as Date)?.toISOString?.() ?? (char.createdAt as string) ?? null,
   }
 }
 
@@ -310,11 +367,21 @@ export async function getMyCharactersWithCampaign(userId: string, type?: string)
     })
   }
 
+  const refs = loadCardReferenceMaps()
+
   return characters.map((char) => {
     const charId = (char._id as mongoose.Types.ObjectId).toString()
     const membership = membershipByCharacterId.get(charId)
     const campaign = membership ? campaignById.get(membership.campaignId) ?? null : null
-    return toCharacterCardSummary(char, campaign)
+    const doc: CharacterDocForCard = {
+      _id: char._id as mongoose.Types.ObjectId,
+      name: char.name as string,
+      type: char.type as string | undefined,
+      imageKey: char.imageKey as string | null | undefined,
+      race: char.race as string | undefined,
+      classes: (char.classes as CharacterDocForCard['classes']) ?? [],
+    }
+    return toCharacterCardSummary(doc, campaign, refs)
   })
 }
 

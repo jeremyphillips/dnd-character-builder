@@ -1,10 +1,13 @@
 import type { Request, Response } from 'express'
 import mongoose from 'mongoose'
 import type { CampaignMemberStoredRole } from '../../shared/types'
+import { validateRequired } from '../validators/common'
 import * as campaignService from '../services/campaign.service'
 import {
   getViewerMembershipContext,
   hydrateMemberViews,
+  preCheckMember as preCheckMemberService,
+  addMemberOrInvite as addMemberOrInviteService,
   type CampaignMemberDoc,
 } from '../services/campaignMember.service'
 
@@ -132,113 +135,40 @@ export async function getMembersForMessaging(req: Request, res: Response) {
 }
 
 export async function preCheckMember(req: Request, res: Response) {
-  const campaign = req.campaign!
-  const { email } = req.body
-
-  if (!email) {
-    res.status(400).json({ error: 'email is required' })
+  const emailCheck = validateRequired(req.body.email, 'email')
+  if (!emailCheck.valid) {
+    res.status(400).json({ error: emailCheck.message })
     return
   }
 
-  const db = mongoose.connection.useDb(process.env.DB_NAME ?? 'dnd')
-  const user = await db.collection('users').findOne({ email })
-
-  if (!user) {
-    res.json({ status: 'no_account' })
-    return
-  }
-
-  const userName = (user.username as string) ?? email
-
-  // Check if user is already a campaign member
-  const member = await db.collection('campaignMembers').findOne({
-    campaignId: new mongoose.Types.ObjectId(req.params.id),
-    userId: user._id,
-    status: { $in: ['pending', 'approved'] },
-  })
-
-  if (!member) {
-    res.json({ status: 'ok', userName })
-    return
-  }
-
-  // Check if their character is active in this campaign
-  const characterStatus = (member as { characterStatus?: string }).characterStatus ?? 'active'
-  if (characterStatus === 'active') {
-    res.json({
-      status: 'active_character',
-      userName,
-    })
-    return
-  }
-
-  res.json({ status: 'already_member', userName })
+  const result = await preCheckMemberService(req.params.id, req.body.email)
+  res.json(result)
 }
 
 export async function addMember(req: Request, res: Response) {
-  const campaign = req.campaign!
-  const { email, role } = req.body
-
-  if (!email) {
-    res.status(400).json({ error: 'email is required' })
+  const emailCheck = validateRequired(req.body.email, 'email')
+  if (!emailCheck.valid) {
+    res.status(400).json({ error: emailCheck.message })
     return
   }
 
+  const { email, role } = req.body
   const validRoles: CampaignMemberStoredRole[] = ['dm', 'co_dm', 'pc']
   const memberRole = validRoles.includes(role) ? role : 'pc'
 
-  // Look up user by email
-  const db = mongoose.connection.useDb(process.env.DB_NAME ?? 'dnd')
-  const user = await db.collection('users').findOne({ email })
+  const result = await addMemberOrInviteService(
+    req.params.id,
+    email,
+    memberRole,
+    req.userId!,
+  )
 
-  if (!user) {
-    // User doesn't exist yet — generate invite token and send email
-    const { createInviteToken } = await import('../services/invite.service')
-    const { sendCampaignInvite } = await import('../services/email.service')
-
-    const inviteToken = await createInviteToken({
-      campaignId: req.params.id as string,
-      email,
-      invitedByUserId: req.userId!,
-      role: memberRole,
-    })
-
-    const ownerUser = await db.collection('users').findOne(
-      { _id: campaign.membership.ownerId },
-      { projection: { username: 1 } },
-    )
-    await sendCampaignInvite({
-      to: email,
-      campaignName: campaign.identity.name as string,
-      invitedBy: (ownerUser?.username as string) ?? 'A dungeon master',
-      inviteToken,
-    })
-    res.status(200).json({ message: `Invite email sent to ${email}` })
+  if (result.type === 'email_sent') {
+    res.status(200).json({ message: result.message })
     return
   }
 
-  // User exists — create a campaign invite (with notification)
-  try {
-    const { createInvite } = await import('../services/invite.service')
-    const ownerUser = await db.collection('users').findOne(
-      { _id: campaign.membership.ownerId },
-      { projection: { username: 1 } },
-    )
-
-    const invite = await createInvite({
-      campaignId: req.params.id,
-      invitedUserId: user._id.toString(),
-      invitedByUserId: req.userId!,
-      role: memberRole,
-      campaignName: campaign.identity.name as string,
-      invitedByName: (ownerUser?.username as string) ?? 'A dungeon master',
-    })
-
-    res.status(201).json({ invite, message: `Invite sent to ${email}` })
-  } catch (err) {
-    console.error('Failed to create invite:', err)
-    res.status(500).json({ error: 'Failed to create invite' })
-  }
+  res.status(201).json({ invite: result.invite, message: result.message })
 }
 
 export async function updateMember(req: Request, res: Response) {

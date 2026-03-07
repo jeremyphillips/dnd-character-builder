@@ -447,6 +447,114 @@ export async function deleteCampaignMember(campaignId: string, characterId: stri
   })
 }
 
+// ---------------------------------------------------------------------------
+// Pre-check and add member (for campaign add-member flow)
+// ---------------------------------------------------------------------------
+
+export type PreCheckMemberResult =
+  | { status: 'no_account' }
+  | { status: 'ok'; userName: string }
+  | { status: 'active_character'; userName: string }
+  | { status: 'already_member'; userName: string }
+
+/**
+ * Pre-check whether a user can be added to a campaign by email.
+ * Returns status and userName for the controller response.
+ */
+export async function preCheckMember(
+  campaignId: string,
+  email: string,
+): Promise<PreCheckMemberResult> {
+  const db = getDb()
+  const user = await db.collection('users').findOne({ email })
+
+  if (!user) {
+    return { status: 'no_account' }
+  }
+
+  const userName = (user.username as string) ?? email
+
+  const member = await campaignMembersCollection().findOne({
+    campaignId: toObjectId(campaignId),
+    userId: user._id,
+    status: { $in: ['pending', 'approved'] },
+  })
+
+  if (!member) {
+    return { status: 'ok', userName }
+  }
+
+  const characterStatus = (member as { characterStatus?: string }).characterStatus ?? 'active'
+  if (characterStatus === 'active') {
+    return { status: 'active_character', userName }
+  }
+
+  return { status: 'already_member', userName }
+}
+
+export type AddMemberOrInviteResult =
+  | { type: 'email_sent'; message: string }
+  | { type: 'invite_created'; invite: unknown; message: string }
+
+/**
+ * Add a member by email: send invite email if no account, create invite if user exists.
+ */
+export async function addMemberOrInvite(
+  campaignId: string,
+  email: string,
+  role: CampaignMemberStoredRole,
+  invitedByUserId: string,
+): Promise<AddMemberOrInviteResult> {
+  const db = getDb()
+  const user = await db.collection('users').findOne({ email })
+
+  const validRoles: CampaignMemberStoredRole[] = ['dm', 'co_dm', 'pc']
+  const memberRole = validRoles.includes(role) ? role : 'pc'
+
+  const campaign = await getCampaignById(campaignId)
+  if (!campaign) throw notFound('Campaign not found')
+
+  const campaignName = (campaign.identity?.name as string) ?? ''
+  const ownerId = campaign.membership?.ownerId ?? campaign.membership?.adminId
+  const ownerUser = ownerId
+    ? await db.collection('users').findOne({ _id: ownerId }, { projection: { username: 1 } })
+    : null
+  const invitedByName = (ownerUser?.username as string) ?? 'A dungeon master'
+
+  if (!user) {
+    const { createInviteToken } = await import('./invite.service')
+    const { sendCampaignInvite } = await import('./email.service')
+
+    const inviteToken = await createInviteToken({
+      campaignId,
+      email,
+      invitedByUserId,
+      role: memberRole,
+    })
+
+    await sendCampaignInvite({
+      to: email,
+      campaignName,
+      invitedBy: invitedByName,
+      inviteToken,
+    })
+
+    return { type: 'email_sent', message: `Invite email sent to ${email}` }
+  }
+
+  const { createInvite } = await import('./invite.service')
+  const invite = await createInvite({
+    campaignId,
+    invitedUserId: user._id.toString(),
+    invitedByUserId,
+    role: memberRole,
+    campaignName,
+    invitedByName,
+  })
+
+  return { type: 'invite_created', invite, message: `Invite sent to ${email}` }
+}
+
 /** Returns the character IDs belonging to `userId` in the given campaign. */
 export async function getUserCharacterIds(
   campaignId: string,

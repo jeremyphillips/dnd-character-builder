@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { ABILITY_IDS } from '../../src/features/mechanics/domain/core/character/abilities';
+import { ABILITY_IDS } from '../../../src/features/mechanics/domain/core/character/abilities';
 
 const accessPolicySchema = new Schema(
   {

@@ -80,8 +80,10 @@ export default function MagicItemsCard({
                     {attunement && <Chip label={attunement} size="small" color="info" variant="outlined" />}
                     {item.bonus != null && <Chip label={`+${item.bonus}`} size="small" variant="outlined" />}
                   </Stack>
-                  {item.effect && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>{item.effect}</Typography>
+                  {(item.description || (item.effects?.length ?? 0) > 0) && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+                      {item.description ?? `${item.effects!.length} effect${item.effects!.length !== 1 ? 's' : ''}`}
+                    </Typography>
                   )}
                   {item.charges != null && (
                     <Typography variant="caption" color="text.secondary" display="block">

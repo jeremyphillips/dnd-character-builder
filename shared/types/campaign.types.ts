@@ -22,6 +22,8 @@ export type CampaignIdentity = {
   name: string
   description?: string
   imageKey?: string
+  /** Resolved image URL (populated by API when imageKey is present) */
+  imageUrl?: string
 }
 
 export type CampaignConfiguration = {}

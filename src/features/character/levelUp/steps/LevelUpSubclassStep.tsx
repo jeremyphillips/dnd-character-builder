@@ -32,9 +32,7 @@ export default function LevelUpSubclassStep({
 
   const subclassOptions = useMemo(() => {
     const definitions = getAvailableSubclassesByLevel(primaryClassId, pendingLevel)
-    return definitions.flatMap(d =>
-      d.options.map(opt => ({ id: opt.id, label: opt.name })),
-    )
+    return definitions.map((d) => ({ id: d.id, label: d.name }))
   }, [primaryClassId, pendingLevel])
 
   const handleSelect = useCallback(

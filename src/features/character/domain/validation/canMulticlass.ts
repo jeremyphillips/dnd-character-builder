@@ -6,6 +6,7 @@ import { getSystemClass } from '@/features/mechanics/domain/core/rules/systemCat
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
 import { resolveRule, type RuleResolveContext } from '@/features/mechanics/domain/core/rules';
 import { ABILITY_KEYS } from '@/features/mechanics/domain/core/character';
+import { abilityIdToKey } from '@/features/mechanics/domain/core/character/abilities.utils';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -38,7 +39,10 @@ function meetsRequirementGroup(
   group: AbilityRequirementGroup,
   scores: AbilityScoreMapResolved,
 ): boolean {
-  return group.all.every(req => ((scores[req.ability] as AbilityScoreValue) ?? 0) >= req.min);
+  return group.all.every(req => {
+    const key = abilityIdToKey(req.ability);
+    return ((scores[key] as AbilityScoreValue) ?? 0) >= req.min;
+  });
 }
 
 function meetsRequirement(
@@ -115,7 +119,7 @@ export const canAddClass = (
     const currentClassData = getSystemClass(DEFAULT_SYSTEM_RULESET_ID, context.classId);
     const classExitReq: RequirementExpr | undefined = currentClassData?.requirements?.multiclassing;
     const rulesetExitReq = rules.entryRequirementsByTargetClass?.[context.classId];
-    const exitReq: EffectiveRequirement | undefined = rulesetExitReq ?? classExitReq;
+    const exitReq: EffectiveRequirement | undefined = (rulesetExitReq ?? classExitReq) as EffectiveRequirement | undefined;
 
     if (exitReq && exitReq.anyOf.length > 0 && !meetsRequirement(exitReq, abilityScores)) {
       return { allowed: false, reason: formatRequirement(exitReq) };
@@ -127,7 +131,7 @@ export const canAddClass = (
     const classReq: RequirementExpr | undefined = classData?.requirements?.multiclassing;
 
     const rulesetReq = rules.entryRequirementsByTargetClass?.[targetClassId];
-    const effective: EffectiveRequirement | undefined = rulesetReq ?? classReq;
+    const effective: EffectiveRequirement | undefined = (rulesetReq ?? classReq) as EffectiveRequirement | undefined;
 
     if (effective) {
       if (effective.anyOf.length === 0) {

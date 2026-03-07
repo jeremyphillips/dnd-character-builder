@@ -1,4 +1,6 @@
 import type { Express } from 'express'
+import { requireAuth } from '../shared/middleware/requireAuth'
+import { requireCampaignRole } from '../shared/middleware/requireCampaignRole'
 import chatRoutes from './chat.routes'
 import userRoutes from './user.routes'
 import campaignRoutes from './campaign.routes'
@@ -10,10 +12,22 @@ import sessionRoutes from './session.routes'
 import sessionInviteRoutes from './sessionInvite.routes'
 import campaignMemberRoutes from './campaignMember.routes'
 import messageRoutes from './message.routes'
+import classesRoutes from '../features/content/classes/routes/classes.routes'
+import racesRoutes from '../features/content/races/routes/races.routes'
+import spellsRoutes from '../features/content/spells/routes/spells.routes'
+import skillProficienciesRoutes from '../features/content/skillProficiencies/routes/skillProficiencies.routes'
+import equipmentRoutes from '../features/content/equipment/routes/equipment.routes'
+
+const campaignScopedContent = [requireAuth, requireCampaignRole('observer')]
 
 export function registerRoutes(app: Express) {
   app.use('/api/chat', chatRoutes)
   app.use('/api/users', userRoutes)
+  app.use('/api/campaigns/:id/classes', ...campaignScopedContent, classesRoutes)
+  app.use('/api/campaigns/:id/races', ...campaignScopedContent, racesRoutes)
+  app.use('/api/campaigns/:id/spells', ...campaignScopedContent, spellsRoutes)
+  app.use('/api/campaigns/:id/skill-proficiencies', ...campaignScopedContent, skillProficienciesRoutes)
+  app.use('/api/campaigns/:id/equipment', ...campaignScopedContent, equipmentRoutes)
   app.use('/api/campaigns', campaignRoutes)
   app.use('/api/uploads', uploadRoutes)
   app.use('/api/setting-data', settingDataRoutes)

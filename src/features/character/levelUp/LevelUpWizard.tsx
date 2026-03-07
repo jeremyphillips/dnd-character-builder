@@ -7,7 +7,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { AppModal } from '@/ui/patterns'
 import type { CharacterDetailDto } from '@/features/character/read-model'
-import type { LevelUpState, LevelUpResult, LevelUpStepId } from './levelUp.types'
+import type { LevelUpState, LevelUpResult } from './levelUp.types'
 import { useLevelUpSteps } from './useLevelUpSteps'
 import {
   LevelUpHitPointsStep,
@@ -50,7 +50,7 @@ function buildInitialState(character: CharacterDetailDto): LevelUpState {
     characterName: character.name,
     currentLevel: character.totalLevel ?? character.level ?? 1,
     pendingLevel: character.pendingLevel ?? (character.totalLevel ?? character.level ?? 1) + 1,
-    classes: (character.classes ?? []).map((c) => ({ classId: c.classId, subclassId: c.subclassId, level: c.level })),
+    classes: (character.classes ?? []).map((c) => ({ classId: c.classId, subclassId: c.subclassId ?? undefined, level: c.level })),
     primaryClassId,
     currentSpells: character.spells ?? [],
 

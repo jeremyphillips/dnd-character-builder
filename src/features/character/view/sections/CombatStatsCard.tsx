@@ -41,7 +41,8 @@ function formatAbilityContributions(breakdown: BreakdownToken[]): string {
 }
 
 function formatHitDie(prog: ClassProgression): string {
-  if (prog.hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
+  const hitDie = prog.hitDie as number
+  if (hitDie === 0 && prog.hpPerLevel) return `${prog.hpPerLevel} HP/level`
   return `d${prog.hitDie}`
 }
 
@@ -234,8 +235,8 @@ export default function CombatStatsCard({
                   <Chip label={`Saves: ${prog.savingThrows.map(s => s.toUpperCase()).join(', ')}`} size="small" variant="outlined" />
                 )}
                 {spellLabel && <Chip label={spellLabel} size="small" variant="outlined" />}
-                {prog.role && (
-                  <Chip label={`${prog.role}${prog.powerSource ? ` (${prog.powerSource})` : ''}`} size="small" variant="outlined" />
+                {(prog as { role?: string; powerSource?: string }).role && (
+                  <Chip label={`${(prog as { role?: string; powerSource?: string }).role}${(prog as { powerSource?: string }).powerSource ? ` (${(prog as { powerSource?: string }).powerSource})` : ''}`} size="small" variant="outlined" />
                 )}
               </Stack>
             </Box>

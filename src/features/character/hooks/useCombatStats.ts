@@ -121,7 +121,7 @@ export function useCombatStats(character: Character) {
     ]
 
     const acResult = resolveStatDetailed('armor_class', context, allEffects)
-    const maxHp = resolveStat('hp_max', context, allEffects)
+    const maxHp = resolveStat('hit_points_max', context, allEffects)
     const initiative = resolveStat('initiative', context, allEffects)
 
     const loadoutOptions = getLoadoutPickerOptions(character, intrinsicEffects, catalog.armorById)

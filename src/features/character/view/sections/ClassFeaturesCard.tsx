@@ -34,7 +34,7 @@ export default function ClassFeaturesCard({
           if (!prog) return null
           const clsLevel = cls.level ?? character.totalLevel ?? character.level ?? 1
           const activeFeatures = (prog.features ?? []).filter(f => f.level <= clsLevel)
-          const subFeatures = getSubclassFeatures(cls.classId, cls.subclassId, clsLevel)
+          const subFeatures = getSubclassFeatures(cls.classId, cls.subclassId ?? undefined, clsLevel)
 
           if (activeFeatures.length === 0 && subFeatures.length === 0) return null
 

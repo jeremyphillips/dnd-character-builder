@@ -5,7 +5,6 @@
 
 import type { CharacterClassInfo } from '@/features/character/domain/types'
 import type { ClassId } from '@/shared/types/ruleset'
-import type { Spell } from '@/features/content/shared/domain/types'
 
 // ---------------------------------------------------------------------------
 // Wizard state
@@ -71,8 +70,8 @@ export interface LevelUpResult {
   classes: CharacterClassInfo[]
   /** New HP total */
   hitPoints: { total: number; generationMethod: string }
-  /** Complete spell list after additions/removals */
-  spells: Spell[]
+  /** Complete spell IDs after additions/removals */
+  spells: string[]
   /** Subclass ID (if newly chosen) */
   subclassId?: string
 }

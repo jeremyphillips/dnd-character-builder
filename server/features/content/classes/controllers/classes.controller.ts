@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import * as campaignClassService from '../services/campaignClass.service';
-import { canViewContent } from '../../shared/domain/capabilities';
+import * as classesService from '../services/classes.service';
+import { canViewContent } from '../../../../../shared/domain/capabilities';
 
 export async function listCampaignClasses(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const allClasses = await campaignClassService.listByCampaign(campaignId);
+  const allClasses = await classesService.listByCampaign(campaignId);
 
   const ctx = req.viewerContext!;
   const classes = allClasses.filter((c) => canViewContent(ctx, c.accessPolicy));
@@ -14,7 +14,7 @@ export async function listCampaignClasses(req: Request, res: Response) {
 
 export async function getCampaignClass(req: Request, res: Response) {
   const { id: campaignId, classId } = req.params;
-  const classItem = await campaignClassService.getById(campaignId, classId);
+  const classItem = await classesService.getById(campaignId, classId);
   if (!classItem) {
     res.status(404).json({ error: 'Campaign class not found' });
     return;
@@ -30,7 +30,7 @@ export async function getCampaignClass(req: Request, res: Response) {
 
 export async function createCampaignClass(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const result = await campaignClassService.create(campaignId, req.body);
+  const result = await classesService.create(campaignId, req.body);
   if ('errors' in result) {
     res.status(400).json({ errors: result.errors });
     return;
@@ -40,7 +40,7 @@ export async function createCampaignClass(req: Request, res: Response) {
 
 export async function updateCampaignClass(req: Request, res: Response) {
   const { id: campaignId, classId } = req.params;
-  const result = await campaignClassService.update(campaignId, classId, req.body);
+  const result = await classesService.update(campaignId, classId, req.body);
   if (!result) {
     res.status(404).json({ error: 'Campaign class not found' });
     return;
@@ -54,7 +54,7 @@ export async function updateCampaignClass(req: Request, res: Response) {
 
 export async function deleteCampaignClass(req: Request, res: Response) {
   const { id: campaignId, classId } = req.params;
-  const deleted = await campaignClassService.remove(campaignId, classId);
+  const deleted = await classesService.remove(campaignId, classId);
   if (!deleted) {
     res.status(404).json({ error: 'Campaign class not found' });
     return;

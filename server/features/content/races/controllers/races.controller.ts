@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import * as campaignRaceService from '../services/campaignRace.service';
-import { canViewContent } from '../../shared/domain/capabilities';
+import * as racesService from '../services/races.service';
+import { canViewContent } from '../../../../../shared/domain/capabilities';
 
 export async function listCampaignRaces(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const allRaces = await campaignRaceService.listByCampaign(campaignId);
+  const allRaces = await racesService.listByCampaign(campaignId);
 
   const ctx = req.viewerContext!;
   const races = allRaces.filter((race) => canViewContent(ctx, race.accessPolicy));
@@ -14,7 +14,7 @@ export async function listCampaignRaces(req: Request, res: Response) {
 
 export async function getCampaignRace(req: Request, res: Response) {
   const { id: campaignId, raceId } = req.params;
-  const race = await campaignRaceService.getById(campaignId, raceId);
+  const race = await racesService.getById(campaignId, raceId);
   if (!race) {
     res.status(404).json({ error: 'Campaign race not found' });
     return;
@@ -30,7 +30,7 @@ export async function getCampaignRace(req: Request, res: Response) {
 
 export async function createCampaignRace(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const result = await campaignRaceService.create(campaignId, req.body);
+  const result = await racesService.create(campaignId, req.body);
   if ('errors' in result) {
     res.status(400).json({ errors: result.errors });
     return;
@@ -40,7 +40,7 @@ export async function createCampaignRace(req: Request, res: Response) {
 
 export async function updateCampaignRace(req: Request, res: Response) {
   const { id: campaignId, raceId } = req.params;
-  const result = await campaignRaceService.update(campaignId, raceId, req.body);
+  const result = await racesService.update(campaignId, raceId, req.body);
   if (!result) {
     res.status(404).json({ error: 'Campaign race not found' });
     return;
@@ -54,7 +54,7 @@ export async function updateCampaignRace(req: Request, res: Response) {
 
 export async function deleteCampaignRace(req: Request, res: Response) {
   const { id: campaignId, raceId } = req.params;
-  const deleted = await campaignRaceService.remove(campaignId, raceId);
+  const deleted = await racesService.remove(campaignId, raceId);
   if (!deleted) {
     res.status(404).json({ error: 'Campaign race not found' });
     return;

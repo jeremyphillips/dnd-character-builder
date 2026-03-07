@@ -1,5 +1,5 @@
-import { CampaignClass } from '../shared/models/CampaignClass.model';
-import type { AccessPolicy, AccessPolicyScope } from '../../shared/domain/accessPolicy';
+import { CampaignClass } from '../../../../shared/models/CampaignClass.model';
+import type { AccessPolicy, AccessPolicyScope } from '../../../../../shared/domain/accessPolicy';
 
 const VALID_SCOPES: AccessPolicyScope[] = ['public', 'dm', 'restricted'];
 

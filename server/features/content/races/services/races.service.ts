@@ -1,5 +1,5 @@
-import { CampaignRace } from '../shared/models/CampaignRace.model';
-import type { AccessPolicy, AccessPolicyScope } from '../../shared/domain/accessPolicy';
+import { CampaignRace } from '../../../../shared/models/CampaignRace.model';
+import type { AccessPolicy, AccessPolicyScope } from '../../../../../shared/domain/accessPolicy';
 
 const VALID_SCOPES: AccessPolicyScope[] = ['public', 'dm', 'restricted'];
 
@@ -12,12 +12,6 @@ export type CampaignRaceDoc = {
   accessPolicy?: AccessPolicy;
   createdAt: string;
   updatedAt: string;
-};
-
-export type CampaignRaceInput = {
-  raceId?: string;
-  name: string;
-  description?: string;
 };
 
 type ValidationError = {

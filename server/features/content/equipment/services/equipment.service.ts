@@ -4,12 +4,8 @@
  * Handles CRUD for all 4 equipment types (weapon, armor, gear, magicItem)
  * using a single collection with an `equipmentType` discriminator.
  */
-import { CampaignEquipment } from '../shared/models/CampaignEquipment.model';
-import type { AccessPolicy, AccessPolicyScope } from '../../shared/domain/accessPolicy';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { CampaignEquipment } from '../../../../shared/models/CampaignEquipment.model';
+import type { AccessPolicy, AccessPolicyScope } from '../../../../../shared/domain/accessPolicy';
 
 export type EquipmentType = 'weapon' | 'armor' | 'gear' | 'magicItem';
 
@@ -34,10 +30,6 @@ type ValidationError = {
 };
 
 const VALID_SCOPES: AccessPolicyScope[] = ['public', 'dm', 'restricted'];
-
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
 
 function validateInput(body: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -68,10 +60,6 @@ function validateInput(body: Record<string, unknown>): ValidationError[] {
   return errors;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function toDoc(doc: Record<string, unknown>): CampaignEquipmentDoc {
   return {
     _id: String(doc._id),
@@ -91,10 +79,6 @@ function toDoc(doc: Record<string, unknown>): CampaignEquipmentDoc {
 function generateItemId(name: string): string {
   return `custom-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 }
-
-// ---------------------------------------------------------------------------
-// CRUD
-// ---------------------------------------------------------------------------
 
 export async function listByCampaign(
   campaignId: string,
@@ -133,11 +117,7 @@ export async function create(
   const existing = await CampaignEquipment.findOne({ campaignId, equipmentType, itemId }).lean();
   if (existing) {
     return {
-      errors: [{
-        path: 'itemId',
-        code: 'DUPLICATE',
-        message: `An item with id "${itemId}" already exists in this campaign`,
-      }],
+      errors: [{ path: 'itemId', code: 'DUPLICATE', message: `An item with id "${itemId}" already exists in this campaign` }],
     };
   }
 

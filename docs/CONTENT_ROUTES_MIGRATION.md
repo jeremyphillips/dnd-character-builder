@@ -22,9 +22,10 @@
 
 | Location | Content Types |
 |----------|---------------|
-| `server/routes/campaign.routes.ts` | All content routes nested under `/api/campaigns/:id/` |
-| `server/controllers/` | campaignClass, campaignRace, campaignSpell, campaignSkillProficiency, campaignEquipment, contentPatch, rulesetPatch |
-| `server/services/` | campaignClass, campaignRace, campaignSpell, campaignSkillProficiency, campaignEquipment, contentPatch, rulesetPatch |
+| `server/routes/index.ts` | Content routes mounted at `/api/campaigns/:id/{resource}` |
+| `server/features/content/` | classes, races, spells, skillProficiencies, equipment (controllers, routes, services) |
+| `server/controllers/` | contentPatch, rulesetPatch (campaign config only) |
+| `server/services/` | contentPatch, rulesetPatch |
 
 **Content API paths (all under `/api/campaigns/:id/`):**
 - `/classes`, `/races`, `/spells`, `/skill-proficiencies`
@@ -292,14 +293,42 @@ Phase 3 (Cleanup):
 
 ## Checklist (Post-Migration)
 
-- [ ] Server: `server/features/content/{feature}/` exists for classes, races, spells, skillProficiencies, equipment
-- [ ] Server: Each feature has `controllers/{feature}.controller.ts`, `routes/{feature}.routes.ts`, `services/{feature}.service.ts`
-- [ ] Server: `register-routes.ts` mounts content routes at `/api/campaigns/:id/{resource}`
-- [ ] Server: Campaign-scoped middleware/context applied to all content routes (see Implementation Constraints §2)
-- [ ] Server: `campaign.routes.ts` no longer contains content CRUD routes
-- [ ] Client: `src/features/content/{feature}/routes/` exists for each migrated feature
-- [ ] Client: `campaign/routes/index.ts` re-exports from content features (or app imports directly from content)
-- [ ] Client: `campaign/routes/world/` removed for migrated features
-- [ ] Equipment: Ownership boundaries respected (routes vs subtype vs shared — see Implementation Constraints §3)
+- [x] Server: `server/features/content/{feature}/` exists for classes, races, spells, skillProficiencies, equipment
+- [x] Server: Each feature has `controllers/{feature}.controller.ts`, `routes/{feature}.routes.ts`, `services/{feature}.service.ts`
+- [x] Server: `routes/index.ts` mounts content routes at `/api/campaigns/:id/{resource}` (before campaign router)
+- [x] Server: Campaign-scoped middleware (requireAuth + requireCampaignRole('observer')) applied to all content routes
+- [x] Server: `campaign.routes.ts` no longer contains content CRUD routes
+- [x] Client: `src/features/content/{feature}/routes/` exists for each migrated feature
+- [x] Client: `campaign/routes/index.ts` no longer exports content; `auth/index.ts` imports directly from `@/features/content/*/routes`
+- [x] Client: `campaign/routes/world/` removed for migrated features (classes, races, spells, skillProficiencies, equipment)
+- [x] Equipment: Ownership boundaries respected (routes vs subtype vs shared — see Implementation Constraints §3)
 - [ ] All content routes work; manual smoke test of list/detail/create/edit flows
-- [ ] Report back completed (Implementation Constraints §6)
+- [x] Report back completed (Implementation Constraints §6)
+
+---
+
+## Phase 2 Report Back (Client Migration Complete)
+
+1. **Pluralization convention used** — `classes`, `races`, `spells`, `skillProficiencies`, `equipment` (plural feature folders and route names).
+
+2. **Campaign-scoped middleware/context** — N/A for Phase 2 (client only). Server Phase 1 not yet executed.
+
+3. **`equipment/routes`** — Route components for hub, list/detail/create/edit for weapons, armor, gear, magic-items. Uses `@/features/content/domain/repo` and subtype domains (weapons, armor, gear, magicItems).
+
+4. **Subtype folders** — Domain logic remains in `equipment/weapons/domain`, `equipment/armor/domain`, `equipment/gear/domain`, `equipment/magicItems/domain` (repos, validation, forms, list configs).
+
+5. **`equipment/shared`** — Exists with `campaignEquipmentApi.ts`; no new items added. Route-surface logic stays in `equipment/routes`.
+
+6. **Ambiguous ownership** — None. Routes own route components; domain owns repos/validation/forms; campaign owns WorldLayout shell.
+
+---
+
+## Phase 1 Report Back (Server Migration Complete)
+
+1. **Pluralization convention used** — `classes`, `races`, `spells`, `skillProficiencies`, `equipment` (plural feature folders).
+
+2. **Campaign-scoped middleware/context** — Content routes mounted with `requireAuth` and `requireCampaignRole('observer')` before each content router. Write operations use `requireCampaignOwner()` in the route handlers. `req.viewerContext` is set by `requireCampaignRole` for `canViewContent` checks in controllers.
+
+3. **Route mounting order** — Content routes (`/api/campaigns/:id/classes`, etc.) are registered *before* the campaign router (`/api/campaigns`) so the more specific paths match first.
+
+4. **Legacy cleanup** — Removed `server/controllers/campaignClass.controller.ts`, `campaignRace.controller.ts`, `campaignSpell.controller.ts`, `campaignSkillProficiency.controller.ts`, `campaignEquipment.controller.ts` and their corresponding services. Models remain in `server/shared/models/`.

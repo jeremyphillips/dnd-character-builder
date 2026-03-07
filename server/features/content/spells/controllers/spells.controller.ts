@@ -1,25 +1,20 @@
 import type { Request, Response } from 'express';
-import * as campaignSpellService from '../services/campaignSpell.service';
-import { canViewContent } from '../../shared/domain/capabilities';
+import * as spellsService from '../services/spells.service';
+import { canViewContent } from '../../../../../shared/domain/capabilities';
 
 export async function listCampaignSpells(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const all = await campaignSpellService.listByCampaign(campaignId);
+  const all = await spellsService.listByCampaign(campaignId);
 
   const ctx = req.viewerContext!;
-  const items = all.filter((item) =>
-    canViewContent(ctx, item.accessPolicy),
-  );
+  const items = all.filter((item) => canViewContent(ctx, item.accessPolicy));
 
   res.json({ spells: items });
 }
 
 export async function getCampaignSpell(req: Request, res: Response) {
   const { id: campaignId, spellId } = req.params;
-  const item = await campaignSpellService.getById(
-    campaignId,
-    spellId,
-  );
+  const item = await spellsService.getById(campaignId, spellId);
   if (!item) {
     res.status(404).json({ error: 'Campaign spell not found' });
     return;
@@ -35,10 +30,7 @@ export async function getCampaignSpell(req: Request, res: Response) {
 
 export async function createCampaignSpell(req: Request, res: Response) {
   const { id: campaignId } = req.params;
-  const result = await campaignSpellService.create(
-    campaignId,
-    req.body,
-  );
+  const result = await spellsService.create(campaignId, req.body);
   if ('errors' in result) {
     res.status(400).json({ errors: result.errors });
     return;
@@ -48,11 +40,7 @@ export async function createCampaignSpell(req: Request, res: Response) {
 
 export async function updateCampaignSpell(req: Request, res: Response) {
   const { id: campaignId, spellId } = req.params;
-  const result = await campaignSpellService.update(
-    campaignId,
-    spellId,
-    req.body,
-  );
+  const result = await spellsService.update(campaignId, spellId, req.body);
   if (!result) {
     res.status(404).json({ error: 'Campaign spell not found' });
     return;
@@ -66,10 +54,7 @@ export async function updateCampaignSpell(req: Request, res: Response) {
 
 export async function deleteCampaignSpell(req: Request, res: Response) {
   const { id: campaignId, spellId } = req.params;
-  const deleted = await campaignSpellService.remove(
-    campaignId,
-    spellId,
-  );
+  const deleted = await spellsService.remove(campaignId, spellId);
   if (!deleted) {
     res.status(404).json({ error: 'Campaign spell not found' });
     return;

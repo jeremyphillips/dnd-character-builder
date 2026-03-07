@@ -12,14 +12,41 @@ export {
   NpcRoute,
   MonstersRoute,
   MonsterRoute,
+  SessionsRoute,
+  SessionRoute,
+  MessagingRoute,
+  AdminGuard,
+  CampaignAdminRoute,
+  CampaignAdminSettingsRoute,
+  CampaignAdminInvitesRoute,
+  CampaignRulesetEditorRoute,
+  ContentManageGuard,
+} from '@/features/campaign/routes'
+export {
+  ClassListRoute,
+  ClassDetailRoute,
+  ClassCreateRoute,
+  ClassEditRoute,
+} from '@/features/content/classes/routes'
+export {
+  RaceListRoute,
+  RaceDetailRoute,
+  RaceCreateRoute,
+  RaceEditRoute,
+} from '@/features/content/races/routes'
+export {
   SpellListRoute,
   SpellDetailRoute,
   SpellCreateRoute,
   SpellEditRoute,
+} from '@/features/content/spells/routes'
+export {
   SkillProficiencyListRoute,
   SkillProficiencyDetailRoute,
   SkillProficiencyCreateRoute,
   SkillProficiencyEditRoute,
+} from '@/features/content/skillProficiencies/routes'
+export {
   EquipmentHubRoute,
   WeaponsListRoute,
   ArmorListRoute,
@@ -37,24 +64,7 @@ export {
   ArmorCreateRoute,
   GearCreateRoute,
   MagicItemCreateRoute,
-  SessionsRoute,
-  SessionRoute,
-  MessagingRoute,
-  AdminGuard,
-  CampaignAdminRoute,
-  CampaignAdminSettingsRoute,
-  CampaignAdminInvitesRoute,
-  CampaignRulesetEditorRoute,
-  ClassListRoute,
-  ClassDetailRoute,
-  ClassCreateRoute,
-  ClassEditRoute,
-  RaceListRoute,
-  RaceDetailRoute,
-  RaceCreateRoute,
-  RaceEditRoute,
-  ContentManageGuard,
-} from '@/features/campaign/routes'
+} from '@/features/content/equipment/routes'
 export { InviteRoute } from '@/features/auth/routes'
 export { UsersRoute } from '@/features/user/routes'
 export { AccountRoute, AccountSettingsRoute } from '@/features/account/routes'

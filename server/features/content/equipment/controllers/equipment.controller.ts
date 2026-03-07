@@ -6,17 +6,14 @@
  * handler factories serves weapons, armor, gear, and magic items.
  */
 import type { Request, Response } from 'express';
-import * as service from '../services/campaignEquipment.service';
-import type { EquipmentType } from '../services/campaignEquipment.service';
-import { canViewContent } from '../../shared/domain/capabilities';
+import * as service from '../services/equipment.service';
+import type { EquipmentType } from '../services/equipment.service';
+import { canViewContent } from '../../../../../shared/domain/capabilities';
 
 type HandlerConfig = {
   equipmentType: EquipmentType;
-  /** Key used in the JSON response, e.g. 'weapon', 'armor' */
   responseKey: string;
-  /** Plural key used in list responses, e.g. 'weapons', 'armors' */
   responsePluralKey: string;
-  /** URL param name for the item id, e.g. 'weaponId', 'armorId' */
   paramKey: string;
 };
 

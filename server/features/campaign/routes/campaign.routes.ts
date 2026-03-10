@@ -31,6 +31,13 @@ import {
   getContentPatch,
   upsertContentPatch,
 } from '../controllers/contentPatch.controller'
+import {
+  getSettingData,
+  updateWorldMap,
+  createLocation,
+  updateLocation,
+  deleteLocation,
+} from '../controllers/settingData.controller'
 const router = Router()
 
 // All campaign routes require authentication
@@ -71,5 +78,12 @@ router.put('/:id/ruleset-patch', requireCampaignRole('observer'), requireCampaig
 // Content patches — owner can read/write
 router.get('/:id/content-patch', requireCampaignRole('observer'), getContentPatch)
 router.put('/:id/content-patch', requireCampaignRole('observer'), requireCampaignOwner(), upsertContentPatch)
+
+// Setting data (world map, locations) — observer can read, owner can write
+router.get('/:id/setting-data', requireCampaignRole('observer'), asyncHandler(getSettingData))
+router.patch('/:id/setting-data/world-map', requireCampaignRole('observer'), requireCampaignOwner(), asyncHandler(updateWorldMap))
+router.post('/:id/setting-data/locations', requireCampaignRole('observer'), requireCampaignOwner(), asyncHandler(createLocation))
+router.patch('/:id/setting-data/locations/:locationId', requireCampaignRole('observer'), requireCampaignOwner(), asyncHandler(updateLocation))
+router.delete('/:id/setting-data/locations/:locationId', requireCampaignRole('observer'), requireCampaignOwner(), asyncHandler(deleteLocation))
 
 export default router

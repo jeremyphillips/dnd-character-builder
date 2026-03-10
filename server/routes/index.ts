@@ -5,7 +5,6 @@ import chatRoutes from '../features/chat/routes/chat.routes'
 import userRoutes from '../features/user/routes/user.routes'
 import campaignRoutes from '../features/campaign/routes/campaign.routes'
 import uploadRoutes from '../features/upload/routes/upload.routes'
-import settingDataRoutes from './settingData.routes'
 import notificationRoutes from '../features/notification/routes/notification.routes'
 import inviteRoutes from '../features/campaign/routes/invite.routes'
 import sessionRoutes from '../features/session/routes/session.routes'
@@ -30,7 +29,6 @@ export function registerRoutes(app: Express) {
   app.use('/api/campaigns/:id/equipment', ...campaignScopedContent, equipmentRoutes)
   app.use('/api/campaigns', campaignRoutes)
   app.use('/api/uploads', uploadRoutes)
-  app.use('/api/setting-data', settingDataRoutes)
   app.use('/api/notifications', notificationRoutes)
   app.use('/api/invites', inviteRoutes)
   app.use('/api/sessions', sessionRoutes)

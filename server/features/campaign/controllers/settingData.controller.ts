@@ -1,26 +1,26 @@
 import type { Request, Response } from 'express'
 import * as settingDataService from '../services/settingData.service'
-import { getPublicUrl } from '../services/image.service'
+import { getPublicUrl } from '../../../services/image.service'
 
-function normalizeLocation(loc: any) {
+function normalizeLocation(loc: Record<string, unknown> | null | undefined) {
   const { imageKey, ...rest } = loc ?? {}
-  return { ...rest, imageUrl: getPublicUrl(imageKey) }
+  return { ...rest, imageUrl: getPublicUrl(imageKey as string) }
 }
 
-function normalizeOverrides(overrides: Record<string, any>) {
-  const result: Record<string, any> = {}
+function normalizeOverrides(overrides: Record<string, unknown>) {
+  const result: Record<string, unknown> = {}
   for (const [id, o] of Object.entries(overrides)) {
-    const { imageKey, ...rest } = o ?? {}
-    result[id] = { ...rest, imageUrl: getPublicUrl(imageKey) }
+    const { imageKey, ...rest } = (o as Record<string, unknown>) ?? {}
+    result[id] = { ...rest, imageUrl: getPublicUrl(imageKey as string) }
   }
   return result
 }
 
-// GET /api/setting-data/:settingId
+// GET /api/campaigns/:id/setting-data
 export async function getSettingData(req: Request, res: Response) {
   try {
-    const { settingId } = req.params
-    const data = await settingDataService.getSettingData(settingId)
+    const campaignId = req.params.id
+    const data = await settingDataService.getSettingData(campaignId)
 
     res.json({
       worldMapUrl: data?.worldMapUrl ?? null,
@@ -33,13 +33,13 @@ export async function getSettingData(req: Request, res: Response) {
   }
 }
 
-// PATCH /api/setting-data/:settingId/world-map
+// PATCH /api/campaigns/:id/setting-data/world-map
 export async function updateWorldMap(req: Request, res: Response) {
   try {
-    const { settingId } = req.params
+    const campaignId = req.params.id
     const { worldMapUrl } = req.body
 
-    await settingDataService.updateWorldMapUrl(settingId, worldMapUrl ?? null)
+    await settingDataService.updateWorldMapUrl(campaignId, worldMapUrl ?? null)
     res.json({ worldMapUrl: worldMapUrl ?? null })
   } catch (err) {
     console.error('Failed to update world map:', err)
@@ -47,10 +47,10 @@ export async function updateWorldMap(req: Request, res: Response) {
   }
 }
 
-// POST /api/setting-data/:settingId/locations
+// POST /api/campaigns/:id/setting-data/locations
 export async function createLocation(req: Request, res: Response) {
   try {
-    const { settingId } = req.params
+    const campaignId = req.params.id
     const location = req.body
 
     if (!location.id || !location.name) {
@@ -58,9 +58,9 @@ export async function createLocation(req: Request, res: Response) {
       return
     }
 
-    await settingDataService.addCustomLocation(settingId, {
+    await settingDataService.addCustomLocation(campaignId, {
       ...location,
-      settingId,
+      campaignId,
       isCustom: true,
     })
 
@@ -71,18 +71,18 @@ export async function createLocation(req: Request, res: Response) {
   }
 }
 
-// PATCH /api/setting-data/:settingId/locations/:locationId
+// PATCH /api/campaigns/:id/setting-data/locations/:locationId
 export async function updateLocation(req: Request, res: Response) {
   try {
-    const { settingId, locationId } = req.params
+    const campaignId = req.params.id
+    const { locationId } = req.params
     const updates = req.body
     const isCustom = updates.isCustom
 
     if (isCustom) {
-      await settingDataService.updateCustomLocation(settingId, locationId, updates)
+      await settingDataService.updateCustomLocation(campaignId, locationId, updates)
     } else {
-      // For data-defined locations, store as an override
-      await settingDataService.setLocationOverride(settingId, locationId, updates)
+      await settingDataService.setLocationOverride(campaignId, locationId, updates)
     }
 
     res.json({ message: 'Location updated' })
@@ -92,11 +92,12 @@ export async function updateLocation(req: Request, res: Response) {
   }
 }
 
-// DELETE /api/setting-data/:settingId/locations/:locationId
+// DELETE /api/campaigns/:id/setting-data/locations/:locationId
 export async function deleteLocation(req: Request, res: Response) {
   try {
-    const { settingId, locationId } = req.params
-    await settingDataService.deleteCustomLocation(settingId, locationId)
+    const campaignId = req.params.id
+    const { locationId } = req.params
+    await settingDataService.deleteCustomLocation(campaignId, locationId)
     res.json({ message: 'Location deleted' })
   } catch (err) {
     console.error('Failed to delete location:', err)

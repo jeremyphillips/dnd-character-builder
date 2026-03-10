@@ -272,6 +272,14 @@ When migrating, add these TODO comments at server→src import sites:
 
 ---
 
+## Phase 2 Complete (Setting Scope Replacement)
+
+**Completed:** settingData migrated to campaign scope. Routes now at `/api/campaigns/:id/setting-data`, `/api/campaigns/:id/setting-data/world-map`, `/api/campaigns/:id/setting-data/locations`, etc. Access controlled by `requireCampaignRole` / `requireCampaignOwner`. LocationRoute.tsx updated to use campaignId and new API. Legacy settingData controller, service, routes removed.
+
+**Data migration note:** Existing `settingData` documents use `settingId`. The new service uses `campaignId`. If you have existing data where `settingId` corresponded to a campaign ID, run a one-time migration to add `campaignId` or rename the field. Documents are created on first write per campaign.
+
+---
+
 ## Summary Checklist
 
 | Feature | Controller | Routes | Services | Notes |
@@ -288,5 +296,5 @@ When migrating, add these TODO comments at server→src import sites:
 | note | ✓ | — | note.service | **DONE** – inside features/campaign (routes in campaign.routes) |
 | contentPatch | ✓ | — | contentPatch.service | **DONE** – inside features/campaign (routes in campaign.routes) |
 | rulesetPatch | ✓ | — | rulesetPatch.service | **DONE** – inside features/campaign (routes in campaign.routes) |
-| settingData | ✓ | ✓ | settingData.service | Pending (Phase 2) – **replace scope**: settingId → campaignId; nest under /api/campaigns/:id/ |
+| settingData | ✓ | ✓ | settingData.service | **DONE** (Phase 2) – campaign-scoped under features/campaign |
 | upload | ✓ | ✓ | image.service | **DONE** (Phase 1) – standalone features/upload |

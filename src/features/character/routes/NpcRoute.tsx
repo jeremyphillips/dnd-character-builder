@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
-import { CharacterView } from '@/features/character/view'
+import { CharacterView } from '@/features/character/components/views'
 import type { Character } from '@/features/character/domain/types'
 import { useCharacter, useCharacterActions, useCharacterForm } from '@/features/character/hooks'
 

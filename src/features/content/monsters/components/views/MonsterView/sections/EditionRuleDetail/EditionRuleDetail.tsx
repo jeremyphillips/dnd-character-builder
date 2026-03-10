@@ -1,7 +1,6 @@
 import { MONSTER_LABELS, type EditionRule } from '@/data/monsters'
 import { StatRow } from '../../components'
-import { formatHitDice } from '../../../utils'
-import { formatNumberAppearing, formatMovement, formatAttacks, formatMorale } from '../../../utils'
+import { formatHitDice, formatNumberAppearing, formatMovement, formatAttacks, formatMorale } from '@/features/content/monsters/utils'
 
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'

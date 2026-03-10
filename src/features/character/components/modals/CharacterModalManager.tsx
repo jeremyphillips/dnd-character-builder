@@ -1,6 +1,6 @@
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { LevelUpResult } from '@/features/character/levelUp'
-import { AwardXpModal } from '@/features/character/modals'
+import { AwardXpModal } from '@/features/character/components/modals'
 import { LevelUpWizard } from '@/features/character/levelUp'
 import CancelLevelUpModal from './CancelLevelUpModal'
 import CharacterDeleteModal from './CharacterDeleteModal'

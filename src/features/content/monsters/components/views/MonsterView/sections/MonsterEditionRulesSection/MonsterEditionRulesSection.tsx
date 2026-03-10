@@ -1,4 +1,4 @@
-import { useMonsterEditionState } from '../../../hooks'
+import { useMonsterEditionState } from '@/features/content/monsters/hooks'
 import { EditionRuleDetail } from '../EditionRuleDetail/EditionRuleDetail'
 import { type Monster } from '@/data/monsters'
 import { AppAlert } from '@/ui/primitives'

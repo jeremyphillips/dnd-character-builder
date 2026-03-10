@@ -11,7 +11,7 @@ import { apiFetch } from '@/app/api'
 import { useBreadcrumbs } from '@/app/navigation'
 import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers'
 import { useCampaigns } from '@/features/campaign/hooks/useCampaigns'
-import { getLegacyType } from '@/features/location/locationLegacy'
+import { getLegacyType } from '@/features/content/locations/locationLegacy'
 import {
   AppHero,
   Breadcrumbs,

@@ -3,7 +3,7 @@ import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
 import { monsters } from '@/data/monsters'
 import type { Monster } from '@/data/monsters'
-import MonsterView from '@/features/monster/MonsterView/MonsterView'
+import { MonsterView } from '@/features/content/monsters/components'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'

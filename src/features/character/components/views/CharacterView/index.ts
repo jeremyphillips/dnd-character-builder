@@ -1,0 +1,1 @@
+export { default as CharacterView } from './CharacterView'

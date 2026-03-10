@@ -4,7 +4,7 @@ import Box from '@mui/material/Box'
 import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
 import { monsters } from '@/data/monsters'
-import { MonsterMediaTopCard } from '@/features/monster/components'
+import { MonsterMediaTopCard } from '@/features/content/monsters/components'
 import { ROUTES } from '@/app/routes'
 
 const MonstersRoute = () => {

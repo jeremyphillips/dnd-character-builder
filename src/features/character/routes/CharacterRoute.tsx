@@ -9,7 +9,7 @@ import { ROUTES } from '@/app/routes'
 import { useCharacter } from '@/features/character/hooks'
 import { useCharacterForm } from '@/features/character/hooks'
 import { useCharacterActions } from '@/features/character/hooks'
-import { CharacterView } from '@/features/character/view'
+import { CharacterView } from '@/features/character/components/views'
 import { AppAlert } from '@/ui/primitives';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'

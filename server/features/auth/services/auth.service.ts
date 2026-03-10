@@ -129,7 +129,7 @@ export async function registerWithInviteToken(body: {
     email = tokenDoc.email
   }
 
-  const { createUser } = await import('../../../services/user.service')
+  const { createUser } = await import('../../user/services/user.service')
   const user = await createUser({
     username,
     email: email ?? '',

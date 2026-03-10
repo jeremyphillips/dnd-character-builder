@@ -9,7 +9,7 @@ import {
 } from './campaignMember.service'
 import { getCampaignById, getOwnedCampaignIds } from './campaign.service'
 import { toSessionSummary } from '../../src/features/session/read-model'
-import * as notificationService from './notification.service'
+import * as notificationService from '../features/notification/services/notification.service'
 import * as sessionInviteService from './sessionInvite.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)

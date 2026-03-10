@@ -4,7 +4,7 @@ import { getDb, toObjectId } from '../shared/utils/db'
 import { badRequest, forbidden, notFound } from '../shared/errors/ApiError'
 import { getCampaignById } from './campaign.service'
 import { getPublicUrl } from './image.service'
-import * as notificationService from './notification.service'
+import * as notificationService from '../features/notification/services/notification.service'
 import type {
   CampaignMemberStatus,
   CampaignMemberStoredRole,

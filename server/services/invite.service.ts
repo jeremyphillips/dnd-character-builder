@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import mongoose from 'mongoose'
 import { env } from '../shared/config/env'
 import { notFound, forbidden } from '../shared/errors/ApiError'
-import * as notificationService from './notification.service'
+import * as notificationService from '../features/notification/services/notification.service'
 import type { CampaignMemberStatus, CampaignMemberStoredRole } from '../../shared/types'
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const invitesCollection = () => db().collection('campaignInvites')

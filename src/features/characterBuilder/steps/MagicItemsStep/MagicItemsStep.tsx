@@ -16,7 +16,7 @@ import type { EquipmentItemInstance } from '@/features/character/domain/types'
 import type { EnchantableSlot } from '@/features/content/shared/domain/types'
 import { moneyToCp, cpToDenoms, formatCp } from '@/shared/money'
 import type { Money } from '@/shared/money/types'
-import { MAGIC_ITEM_RARITY_OPTIONS } from '@/features/content/shared/domain/vocab/magicItems.vocab'
+import { MAGIC_ITEM_RARITY_OPTIONS } from '@/features/content/shared/domain/vocab'
 
 // ---------------------------------------------------------------------------
 // Enhancement types & constants

@@ -6,7 +6,7 @@
  */
 import type { Effect } from '../effects.types'
 import type { EnchantableSlot } from '@/features/content/shared/domain/types'
-import { enchantmentRepo } from '@/features/content/shared/domain/repo/enchantmentRepo'
+import { enchantmentRepo } from '@/features/content/shared/domain/repo'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
 import { resolveEffectDescriptors } from '../descriptors/resolveEffectDescriptors'
 import type { ResolvedEquipmentLoadout, ResolvedSlot } from './equipment-to-effects'

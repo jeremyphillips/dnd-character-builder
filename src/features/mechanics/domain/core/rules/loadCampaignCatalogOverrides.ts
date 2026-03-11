@@ -15,7 +15,7 @@ import {
   campaignMagicItemRepo,
   type CampaignEquipmentEntry,
 } from '@/features/content/equipment/shared/domain/campaignEquipmentApi';
-import { enchantmentRepo } from '@/features/content/shared/domain/repo/enchantmentRepo';
+import { enchantmentRepo } from '@/features/content/shared/domain/repo';
 import type { EnchantmentTemplate } from '@/features/content/shared/domain/types';
 
 function keyById<T extends { id: string }>(items: readonly T[]): Record<string, T> {

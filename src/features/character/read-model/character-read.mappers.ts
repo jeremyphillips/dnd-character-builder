@@ -6,6 +6,7 @@
 import type { Coin } from '@/shared/money/types'
 import { getSkillIds } from '@/features/character/domain/utils/character-proficiency.utils'
 import type { AlignmentId } from '@/features/content/shared/domain/types'
+import type { ProficiencyAdjustment } from '@/features/character/domain/types'
 import type {
   CharacterCardSummary,
   CharacterClassReadSource,
@@ -44,7 +45,7 @@ export type CharacterDocForDetail = {
   classes: CharacterClassReadSource[]
   totalLevel?: number
   abilityScores?: Record<string, number>
-  proficiencies?: { skills?: Record<string, import('@/features/character/domain/types').SkillAdjustment> }
+  proficiencies?: { skills?: Record<string, ProficiencyAdjustment> }
   equipment?: {
     armor?: string[]
     weapons?: string[]

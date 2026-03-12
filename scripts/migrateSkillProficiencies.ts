@@ -1,6 +1,6 @@
 /**
  * One-time migration: convert character proficiencies.skills from string[]
- * to Record<string, SkillAdjustment> shape.
+ * to Record<string, ProficiencyAdjustment> shape.
  *
  * Safe to run multiple times — only touches documents where proficiencies.skills
  * is still an array.
@@ -22,7 +22,7 @@ function isLegacySkills(value: unknown): value is string[] {
   return Array.isArray(value)
 }
 
-function toSkillProficienciesRecord(ids: string[]): Record<string, { proficiencyLevel: 1 }> {
+function toSkillProficienciesRecord(ids: string[]): Record<string, ProficiencyAdjustment> {
   return Object.fromEntries(ids.map((id) => [id, { proficiencyLevel: 1 }]))
 }
 

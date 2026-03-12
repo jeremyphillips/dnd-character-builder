@@ -58,24 +58,33 @@ export const monsters: readonly Monster[] = [
       armorClass: { kind: 'equipment' },
       movement: { ground: 30 },
       abilities: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
-      traits: ["nimble-escape"],
       actions: [
-        { kind: 'weapon', weaponId: "scimitar" },
-        { kind: 'weapon', weaponId: "shortbow" },
+        { kind: 'weapon', weaponRef: "scimitar" },
+        { kind: 'weapon', weaponRef: "shortbow" },
       ],
+      bonusActions: [{
+        kind: 'special',
+        name: 'Nimble Escape',
+        description: 'The goblin takes the Disengage or Hide action.',
+        effects: [
+          { kind: 'action', action: 'disengage' },
+          { kind: 'action', action: 'hide' },
+        ],
+      }],
       senses: {
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 9,
       },
       proficiencies: {
-        skills: { stealth: { proficiencyLevel: 1 } },
-        skillBonuses: {
-          stealth: 2,
-        },
+        skills: { stealth: { proficiencyLevel: 2 } },
         weapons: ["scimitar", "shortbow"],
       },
+      proficiencyBonus: 2,
       equipment: {
-        weapons: ["scimitar", "shortbow"],
+        weapons: {
+          scimitar: { weaponId: "scimitar" },
+          shortbow: { weaponId: "shortbow" },
+        },
         armor: ["hide", "shield-wood"],
       },
     },
@@ -108,22 +117,27 @@ export const monsters: readonly Monster[] = [
       },
       movement: { ground: 30 },
       actions: [
-        { kind: 'weapon', weaponId: "shortsword" },
-        { kind: 'weapon', weaponId: "shortbow" },
+        { kind: 'weapon', weaponRef: "shortsword" },
+        { kind: 'weapon', weaponRef: "shortbow" },
       ],
       equipment: {
-        weapons: ["shortsword", "shortbow"],
+        weapons: {
+          shortsword: { weaponId: "shortsword" },
+          shortbow: { weaponId: "shortbow" },
+        },
         armor: ["scraps"],
       },
       proficiencies: {
         weapons: ["shortsword", "shortbow"],
       },
+      proficiencyBonus: 2,
       abilities: { str: 10, dex: 14, con: 15, int: 6, wis: 8, cha: 5 },
       senses: {
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 9,
       },
-      traits: ["vulnerable-to-bludgeoning", "immune-to-poison", "immune-to-exhaustion"],
+      immunities: ["poison", "exhaustion"],
+      vulnerabilities: ["bludgeoning"],
     },
     lore: {
       alignment: "le",
@@ -150,7 +164,6 @@ export const monsters: readonly Monster[] = [
       armorClass: {
         kind: 'equipment'
       },
-      // attackBonus: 4,
       movement: { ground: 30 },
       actions: [
         {
@@ -163,21 +176,46 @@ export const monsters: readonly Monster[] = [
           damageBonus: 2,
           damageType: "piercing"
         },
-        {
-          kind: "weapon",
-          weaponId: "longbow",
-          aliasName: "Bone Bow",
-          toHitBonus: 3,
-          damageOverride: "1d10",
-          damageBonus: 1,
-          notes: "Uses a monster-specific bow profile."
-        }
+        { kind: "weapon", weaponRef: "bone-spear" }
       ],
+      bonusActions: [{
+        kind: "special",
+        name: "Rampage",
+        description:
+          "Immediately after dealing damage to a creature that is already Bloodied, the gnoll moves up to half its Speed and makes one Rend attack.",
+        uses: {
+          count: 1,
+          period: "day",
+        },
+        trigger: {
+          when: "after-dealing-damage",
+          targetState: "bloodied",
+        },
+        movement: {
+          upToSpeedFraction: 0.5,
+        },
+        sequence: [
+          {
+            actionName: "Rend",
+            count: 1,
+          },
+        ],
+      }],
       proficiencies: {
-        weapons: ["spear"],
+        weapons: ["longbow"],
       },
+      proficiencyBonus: 2,
       equipment: {
-        weapons: ["spear"],
+        weapons: {
+          'bone-bow': {
+            weaponId: "longbow",
+            aliasName: "Bone Bow",
+            toHitBonus: 3,
+            damageOverride: "1d10",
+            damageBonus: 1,
+            notes: "Uses a monster-specific bow profile.",
+          },
+        },
         armor: ["hide"],
       },
       senses: {
@@ -185,7 +223,6 @@ export const monsters: readonly Monster[] = [
         passivePerception: 10,
       },
       abilities: { str: 14, dex: 12, con: 11, int: 6, wis: 10, cha: 7 },
-      traits: ["rampage"],
     },
     lore: {
       alignment: "ce",
@@ -213,8 +250,8 @@ export const monsters: readonly Monster[] = [
       armorClass: { kind: 'equipment' },
       movement: { ground: 30 },
       actions: [
-        { kind: "weapon", weaponId: "greataxe", toHitBonus: 3 },
-        { kind: "weapon", weaponId: "javelin", toHitBonus: 3 },
+        { kind: "weapon", weaponRef: "greataxe" },
+        { kind: "weapon", weaponRef: "javelin" },
       ],
       abilities: { str: 16, dex: 12, con: 16, int: 7, wis: 11, cha: 10 },
       senses: { 
@@ -222,14 +259,18 @@ export const monsters: readonly Monster[] = [
         passivePerception: 10,
       },
       equipment: {
-        weapons: ["greataxe", "javelin"],
+        weapons: {
+          'greataxe': { weaponId: "greataxe", toHitBonus: 3 },
+          'javelin': { weaponId: "javelin", toHitBonus: 3 },
+        },
         armor: ["hide"],
       },
       proficiencies: {
         weapons: ["greataxe", "javelin"],
         skills: { intimidation: { proficiencyLevel: 1 } },
       },
-      traits: ["aggressive"],
+      proficiencyBonus: 2,
+      // traits: ["aggressive"],
     },
     lore: {
       alignment: "ce",
@@ -265,7 +306,42 @@ export const monsters: readonly Monster[] = [
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 8,
       },
-      traits: ["sunlight-sensitivity", "pack-tactics"],
+      proficiencyBonus: 2,
+      traits: [
+        {
+          name: 'Pack Tactics',
+          description:
+            'The creature has Advantage on attack rolls against a creature if at least one of its allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.',
+          trigger: {
+            kind: 'ally-near-target',
+            withinFeet: 5,
+            allyConditionNot: 'incapacitated',
+          },
+          effects: [
+            {
+              kind: 'roll-modifier',
+              appliesTo: 'attack-rolls',
+              modifier: 'advantage',
+            },
+          ],
+        },
+        {
+          name: 'Sunlight Sensitivity',
+          description:
+            'While in sunlight, the kobold has Disadvantage on ability checks and attack rolls.',
+          trigger: {
+            kind: 'in-environment',
+            environment: 'sunlight',
+          },
+          effects: [
+            {
+              kind: 'roll-modifier',
+              appliesTo: ['ability-checks', 'attack-rolls'],
+              modifier: 'disadvantage',
+            },
+          ],
+        }
+      ]
     },
     lore: {
       alignment: "le",
@@ -301,7 +377,9 @@ export const monsters: readonly Monster[] = [
           attackType: 'bite',
           damage: '2d4',
           damageBonus: 2,
+          damageType: "piercing",
           toHitBonus: 4,
+          reach: 5,
           onHitEffects: [
             {
               kind: 'save',
@@ -312,7 +390,25 @@ export const monsters: readonly Monster[] = [
         },
       ],
       abilities: { str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6 },
-      traits: ["pack-tactics"],
+      traits: [
+        {
+          name: 'Pack Tactics',
+          description:
+            'The creature has Advantage on attack rolls against a creature if at least one of its allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.',
+          trigger: {
+            kind: 'ally-near-target',
+            withinFeet: 5,
+            allyConditionNot: 'incapacitated',
+          },
+          effects: [
+            {
+              kind: 'roll-modifier',
+              appliesTo: 'attack-rolls',
+              modifier: 'advantage',
+            },
+          ],
+        }
+      ],
     },
     lore: {
       alignment: "n",
@@ -340,9 +436,30 @@ export const monsters: readonly Monster[] = [
         kind: 'equipment',
       },
       movement: { ground: 20 },
-      actions: [{ kind: "natural", attackType: "slam", damage: "1d6" }],
+      actions: [{ kind: "natural", attackType: "slam", reach: 5, damage: "1d8", toHitBonus: 3, damageBonus: 1, damageType: "bludgeoning" }],
+      traits: [
+        {
+          name: 'Undead Fortitude',
+          description:
+            'If damage reduces the zombie to 0 Hit Points, it makes a Constitution saving throw...',
+          trigger: {
+            kind: 'reduced-to-0-hp',
+          },
+          save: {
+            ability: 'con',
+            dc: { kind: '5-plus-damage-taken' },
+            except: {
+              damageTypes: ['radiant'],
+              criticalHit: true,
+            },
+            onSuccess: [
+              { kind: 'text', description: 'Drops to 1 Hit Point instead.' },
+            ],
+          },
+        }
+      ],
       abilities: { str: 13, dex: 6, con: 16, int: 3, wis: 6, cha: 5 },
-      traits: ["undead-fortitude"],
+      immunities: ["poison", "exhaustion"],
     },
     lore: {
       alignment: "ne",
@@ -385,24 +502,37 @@ export const monsters: readonly Monster[] = [
             { kind: 'condition', condition: 'grappled', targetSizeMax: 'medium', escapeDc: 12 }
           ]
         },
-        {
-          kind: "weapon",
-          weaponId: "light-hammer",
-          toHitBonus: 4,
-          damageOverride: "3d4",
-          reach: 10,
-          notes: "Has advantage if the target is grappled by the bugbear.",
-        }
+        { kind: "weapon", weaponRef: "light-hammer" }
       ],
-      proficiencies: {
-        skills: { stealth: { proficiencyLevel: 1 }, survival: { proficiencyLevel: 1 } },
-        skillBonuses: {
-          stealth: 2
+      traits: [{
+        name: 'Abduct',
+        description:
+          'The bugbear needn’t spend extra movement to move a creature it is grappling.',
+        trigger: {
+          kind: 'while-moving-grappled-creature',
         },
+        effects: [
+          {
+            kind: 'move',
+            ignoresExtraCostForGrappledCreature: true,
+          },
+        ],
+      }],
+      proficiencies: {
+        skills: { stealth: { proficiencyLevel: 2 }, survival: { proficiencyLevel: 1 } },
         weapons: ["light-hammer"],
       },
+      proficiencyBonus: 2,
       equipment: {
-        weapons: ["light-hammer"],
+        weapons: {
+          'light-hammer': { 
+            weaponId: "light-hammer",
+            toHitBonus: 4,
+            damageOverride: "3d4",
+            reach: 10,
+            notes: "Has advantage if the target is grappled by the bugbear.",
+          },
+        },
         armor: ["hide"],
       },
       senses: {
@@ -410,7 +540,6 @@ export const monsters: readonly Monster[] = [
         passivePerception: 10,
       },
       abilities: { str: 15, dex: 14, con: 13, int: 8, wis: 11, cha: 9 },
-      traits: ["abduct"],
     },
     lore: {
       alignment: "ce",
@@ -438,12 +567,15 @@ export const monsters: readonly Monster[] = [
       armorClass: { kind: 'equipment' },
       movement: { ground: 40 },
       actions: [
-        { kind: "weapon", weaponId: "greatclub",  damageOverride: "2d8" },
-        { kind: "weapon", weaponId: "javelin", damageOverride: "2d6" },
+        { kind: "weapon", weaponRef: "greatclub" },
+        { kind: "weapon", weaponRef: "javelin" },
       ],
       abilities: { str: 19, dex: 8, con: 16, int: 5, wis: 7, cha: 7 },
       equipment: {
-        weapons: ["greatclub", "javelin"],
+        weapons: {
+          'greatclub': { weaponId: "greatclub", damageOverride: "2d8" },
+          'javelin': { weaponId: "javelin", damageOverride: "2d6" },
+        },
         armor: ["hide"],
       },
       proficiencies: {
@@ -478,7 +610,6 @@ export const monsters: readonly Monster[] = [
         base: 15,
         dexApplies: false,
       },
-      // attackBonus: 7,
       movement: { ground: 30 },
       actions: [
         {
@@ -500,12 +631,73 @@ export const monsters: readonly Monster[] = [
           damageType: "slashing"
         }
       ],
+      bonusActions: [{
+        kind: 'special',
+        name: 'Charge',
+        description: 'The troll moves up to half its Speed straight toward an enemy it can see.',
+        movement: {
+          upToSpeedFraction: 0.5,
+          straightTowardVisibleEnemy: true,
+        },
+      }],
       senses: {
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 15,
       },
       abilities: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 },
-      traits: ["loathsome-limbs", "regeneration"],
+      traits: [
+        {
+          name: 'Loathsome Limbs',
+          description:
+            'If the troll ends any turn Bloodied and took 15+ Slashing damage during that turn, one limb is severed and becomes a Troll Limb.',
+          uses: {
+            count: 4,
+            period: 'day',
+          },
+          trigger: {
+            kind: 'end-of-turn',
+          },
+          requirements: [
+            { kind: 'self-state', state: 'bloodied' },
+            { kind: 'damage-taken-this-turn', damageType: 'slashing', min: 15 },
+          ],
+          effects: [
+            { kind: 'limb', mode: 'sever', count: 1 },
+            {
+              kind: 'spawn',
+              creature: 'Troll Limb',
+              count: 1,
+              location: 'self-space',
+              actsWhen: 'immediately-after-source-turn',
+            },
+            {
+              kind: 'resource',
+              resource: 'exhaustion',
+              mode: 'set',
+              value: 'per-missing-limb',
+            },
+          ],
+          notes:
+            'Replacement limbs grow the next time the troll regains Hit Points.',
+        },
+        {
+          name: 'Regeneration',
+          description:
+            'The troll regains 15 Hit Points at the start of each of its turns. Acid or Fire damage suppresses this trait on its next turn.',
+          trigger: {
+            kind: 'start-of-turn',
+          },
+          effects: [
+            { kind: 'hit-points', mode: 'heal', value: 15 },
+          ],
+          suppression: {
+            ifTookDamageTypes: ['acid', 'fire'],
+            duration: 'next-turn',
+          },
+          notes:
+            'The troll dies only if it starts its turn with 0 Hit Points and does not regenerate.',
+        }
+      ],
     },
     lore: {
       alignment: "ce",
@@ -535,7 +727,6 @@ export const monsters: readonly Monster[] = [
         base: 13,
         dexApplies: false,
       },
-      // attackBonus: 7,
       movement: { ground: 40, climb: 40 },
       actions: [
         {
@@ -553,16 +744,14 @@ export const monsters: readonly Monster[] = [
           toHitBonus: 7,
           reach: 5,
           damage: "2d8",
-          damageBonus: 5,
+          damageBonus: 5, // remove? accounted for in str bonus
           damageType: "slashing"
         }
       ],
       proficiencies: {
-        skills: { perception: { proficiencyLevel: 1 } },
-        skillBonuses: {
-          perception: 2,
-        },
+        skills: { perception: { proficiencyLevel: 2 } },
       },
+      proficiencyBonus: 2,
       senses: {
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 15,
@@ -599,28 +788,56 @@ export const monsters: readonly Monster[] = [
       },
       movement: { ground: 15 },
       actions: [
-        { kind: 'natural', attackType: "pseudopod", damage: "1d6", damageBonus: 2 },
+        { kind: 'natural', attackType: "pseudopod", damage: "3d6", damageBonus: 2, damageType: "acid", toHitBonus: 4, reach: 5 },
         {
-          kind: "natural",
-          attackType: "bite",
-          damage: "2d4",
-          damageBonus: 2,
-          toHitBonus: 4,
-          onHitEffects: [
+          kind: 'special',
+          name: 'Engulf',
+          description:
+            'The cube moves up to its Speed without provoking opportunity attacks and can enter the spaces of Large or smaller creatures if it has room to contain them.',
+          target: 'creatures-entered-during-move',
+          movement: {
+            upToSpeed: true,
+            noOpportunityAttacks: true,
+            canEnterCreatureSpaces: true,
+            targetSizeMax: 'large',
+          },
+          save: {
+            ability: 'dex',
+            dc: 12,
+          },
+          onFail: [
+            { kind: 'damage', damage: '3d6', damageType: 'acid' },
             {
-              kind: "save",
-              save: {
+              kind: 'state',
+              state: 'engulfed',
+              targetSizeMax: 'large',
+              escape: {
+                dc: 12,
                 ability: 'str',
-                dc: 11,
+                skill: 'athletics',
+                actionRequired: true,
               },
-              onFail: [
-                {
-                  kind: "condition",
-                  condition: "prone"
-                }
-              ]
-            }
-          ]
+              ongoingEffects: [
+                { kind: 'condition', condition: 'restrained' },
+                { kind: 'damage', damage: '3d6', damageType: 'acid' },
+                { kind: 'text', description: 'Target is suffocating.' },
+                { kind: 'text', description: 'Target cannot cast spells with verbal components.' },
+                { kind: 'move', movesWithSource: true },
+              ],
+              notes: 'Target takes the acid damage at the start of the cube’s turns.',
+            },
+          ],
+          onSuccess: [
+            { kind: 'damage', damage: '3d6', damageType: 'acid' },
+            {
+              kind: 'move',
+              forced: true,
+              withinFeetOfSource: 5,
+              toNearestUnoccupiedSpace: true,
+              failIfNoSpace: true,
+            },
+          ],
+          halfDamageOnSave: true,
         }
       ],
       abilities: { str: 14, dex: 3, con: 20, int: 1, wis: 6, cha: 1 },
@@ -628,7 +845,82 @@ export const monsters: readonly Monster[] = [
         special: [{ type: "blindsight", range: 60 }],
         passivePerception: 8,
       },
-      traits: ["ooze-cube", "transparent"],
+      proficiencyBonus: 2,
+      immunities: ["acid", "blinded", "charmed", "deafened", "exhaustion", "frightened", "prone"],
+      traits: [
+        {
+          name: 'Ooze Cube',
+          description:
+            'The cube fills its entire space and is transparent. Other creatures can enter that space, but a creature that does so is subjected to the cube’s Engulf and has Disadvantage on the saving throw. Creatures inside the cube have Total Cover, and the cube can hold one Large creature or up to four Medium or Small creatures inside itself at a time. As an action, a creature within 5 feet of the cube can pull a creature or an object out of the cube by succeeding on a DC 12 Strength (Athletics) check, and the puller takes 10 (3d6) Acid damage.',
+          containment: {
+            fillsEntireSpace: true,
+            canContainCreatures: true,
+            creatureCover: 'total-cover',
+            capacity: {
+              large: 1,
+              mediumOrSmall: 4,
+            },
+          },
+          visibility: {
+            transparent: true,
+          },
+          modifiesAction: [
+            {
+              actionName: 'Engulf',
+              trigger: {
+                kind: 'enters-space',
+              },
+              saveModifier: 'disadvantage',
+            },
+          ],
+          checks: [
+            {
+              name: 'Pull From Cube',
+              actor: 'nearby-creature',
+              distanceFeet: 5,
+              actionRequired: true,
+              target: 'creature-inside',
+              check: {
+                ability: 'str',
+                skill: 'athletics',
+                dc: 12,
+              },
+              onSuccess: [
+                { kind: 'damage', damage: '3d6', damageType: 'acid' },
+              ],
+            },
+            {
+              name: 'Pull Object From Cube',
+              actor: 'nearby-creature',
+              distanceFeet: 5,
+              actionRequired: true,
+              target: 'object-inside',
+              check: {
+                ability: 'str',
+                skill: 'athletics',
+                dc: 12,
+              },
+              onSuccess: [
+                { kind: 'damage', damage: '3d6', damageType: 'acid' },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'Transparent',
+          description:
+            'Even when the cube is in plain sight, a creature must succeed on a DC 15 Wisdom (Perception) check to notice the cube if it hasn’t witnessed the cube move or otherwise act.',
+          visibility: {
+            transparent: true,
+            noticeCheck: {
+              ability: 'wis',
+              skill: 'perception',
+              dc: 15,
+              unlessWitnessedMoveOrAction: true,
+            },
+          },
+        }
+      ],
     },
     lore: {
       alignment: "unaligned",
@@ -658,7 +950,6 @@ export const monsters: readonly Monster[] = [
         base: 12,
         dexApplies: false,
       },
-      // attackBonus: 5,
       movement: { ground: 20 },
       actions: [
         {
@@ -703,18 +994,50 @@ export const monsters: readonly Monster[] = [
           ]
         }
       ],
+      bonusActions: [{
+        kind: 'special',
+        name: 'Shape Shift',
+        description: 'The mimic transforms into a Small or Medium creature.',
+        effects: [
+          {
+            kind: 'form',
+            form: 'object',
+            allowedSizes: ['small', 'medium'],
+            canReturnToTrueForm: true,
+            retainsStatistics: true,
+            equipmentTransforms: false,
+          }
+        ],
+        notes: 'The mimic retains its statistics and equipment.',
+      }],
+      traits: [{
+        name: 'Adhesive',
+        description:
+          'The mimic adheres to anything that touches it while in object form.',
+        trigger: [
+          { kind: 'in-form', form: 'object' },
+          { kind: 'contact' },
+        ],
+        effects: [
+          {
+            kind: 'condition',
+            condition: 'grappled',
+            targetSizeMax: 'huge',
+            escapeDc: 13,
+            escapeCheckDisadvantage: true,
+          },
+        ],
+      }],
       abilities: { str: 17, dex: 12, con: 15, int: 5, wis: 13, cha: 8 },
       senses: {
         special: [{ type: "darkvision", range: 60 }],
         passivePerception: 11,
       },
       proficiencies: {
-        skills: { stealth: { proficiencyLevel: 1 } },
-        skillBonuses: {
-          stealth: 2,
-        },
+        skills: { stealth: { proficiencyLevel: 2 } },
       },
-      traits: ["adhesive"],
+      proficiencyBonus: 2,
+      immunities: ["acid", "prone"],
     },
     lore: {
       alignment: "n",
@@ -742,8 +1065,7 @@ export const monsters: readonly Monster[] = [
         base: 18,
         dexApplies: false,
       },
-      // attackBonus: 11,
-      movement: { ground: 40 },
+      movement: { ground: 40, climb: 40, fly: 80 },
       actions: [
         {
           kind: "special",
@@ -763,7 +1085,7 @@ export const monsters: readonly Monster[] = [
           toHitBonus: 10,
           reach: 10,
           damage: "2d6",
-          damageBonus: 6,
+          damageBonus: 6, // remove? accounted for in str bonus
           damageType: "slashing",
           onHitEffects: [
             {
@@ -786,8 +1108,26 @@ export const monsters: readonly Monster[] = [
           recharge: { min: 5, max: 6 }
         }
       ],
+      senses: {
+        special: [
+          { type: "darkvision", range: 120 },
+          { type: "blindsight", range: 30 }
+        ],
+        passivePerception: 18,
+      },
+      proficiencies: {
+        skills: { 
+          perception: { proficiencyLevel: 2 },
+          stealth: { proficiencyLevel: 1 }
+        }
+      },
+      proficiencyBonus: 4,
       abilities: { str: 23, dex: 10, con: 17, int: 12, wis: 11, cha: 15 },
-      traits: ["fire-breath", "legendary-resistance"],
+      savingThrows: {
+        dex: { proficiencyLevel: 1 },
+        wis: { proficiencyLevel: 1 },
+      },
+      immunities: ["fire"],
     },
     lore: {
       alignment: "ce",

@@ -9,7 +9,7 @@ import type { AbilityScoreMapResolved } from "@/features/mechanics/domain/core/c
 import type { AbilityId } from "@/features/mechanics/domain/core/character/abilities.types";
 import type { AlignmentId } from "@/features/content/shared/domain/types";
 import type { WeaponDamageType } from "@/features/content/equipment/weapons/domain/vocab";
-import type { CharacterProficiencies, Equipment } from "@/features/character/domain/types";
+import type { CharacterProficiencies, Equipment, ProficiencyAdjustment } from "@/features/character/domain/types";
 
 // TODO: create dynamic type
 export type MonsterId = ContentId;
@@ -46,10 +46,24 @@ export type MonsterAttackType =
   | 'touch'
 
 export type MonsterAppliedEffect =
-  | { kind: 'condition'; condition: 'prone' }
-  | { kind: 'text'; description: string };
+  | MonsterConditionEffect
+  | {
+    kind: 'state';
+    state: string;
+    escape?: {
+      dc: number;
+      ability?: AbilityId;
+      skill?: string;
+      actionRequired?: boolean;
+    };
+    ongoingEffects?: MonsterEffect[];
+    notes?: string;
+  }
+  | { kind: 'text'; description: string }
+
 
 export type MonsterOnHitEffect = 
+  | MonsterConditionEffect
   | {
     kind: 'save';
     save: {
@@ -64,32 +78,33 @@ export type MonsterOnHitEffect =
     damage: DiceOrFlat;
     damageType?: DamageType;
   }
-  | {
-    kind: 'condition';
-    condition: ConditionId;
-    targetSizeMax?: MonsterSizeCategory;
-    escapeDc?: number;
-    escapeCheckDisadvantage?: boolean;
-  }
 
 
 export type MonsterWeaponAction = {
   kind: 'weapon';
+  weaponRef: string;
+};
+
+export type MonsterEquippedWeapon = {
   weaponId: string;
-  // only use if bonus is not calculated by the mechanics engine
-  // ie: bonus does not match calculated dex/str bonus
+  aliasName?: string; // only used for display purposes
   toHitBonus?: number;
   damageOverride?: DiceOrFlat;
   damageBonus?: number;
   reach?: number;
-  aliasName?: string; // only used for display purposes
   notes?: string;
+};
+
+export type MonsterEquipment = {
+  weapons?: Record<string, MonsterEquippedWeapon>;
+  armor?: string[]; // TODO: MonsterEquippedArmor[];
 };
 
 export type DamageType = 
   | WeaponDamageType
   | 'fire'
-  | 'acid';
+  | 'acid'
+  | 'radiant';
 
 export type MonsterNaturalAttackAction = {
   kind: 'natural';
@@ -122,11 +137,188 @@ export type ConditionId =
   | 'stunned'
   | 'unconscious';
 
-export type MonsterActionEffect =
+export type MonsterConditionEffect = {
+  kind: 'condition';
+  condition: ConditionId;
+  targetSizeMax?: MonsterSizeCategory;
+  escapeDc?: number;
+  escapeCheckDisadvantage?: boolean;
+};
+
+export type MonsterRollModifierEffect = {
+  kind: 'roll-modifier';
+  appliesTo: TraitRollTarget | TraitRollTarget[];
+  modifier: 'advantage' | 'disadvantage';
+};
+
+export type MonsterEffect =
+  | MonsterConditionEffect
+  | MonsterRollModifierEffect
   | { kind: 'damage'; damage: DiceOrFlat; damageType?: DamageType }
-  | { kind: 'condition'; condition: ConditionId, targetSizeMax?: MonsterSizeCategory, escapeDc?: number }
-  | { kind: 'move'; distance: number; forced?: boolean }
-  | { kind: 'text'; description: string };
+  | {
+      kind: 'state';
+      state: string;
+      targetSizeMax?: MonsterSizeCategory;
+      escape?: {
+        dc: number;
+        ability?: AbilityId;
+        skill?: string;
+        actionRequired?: boolean;
+      };
+      ongoingEffects?: MonsterEffect[];
+      notes?: string;
+    }
+  | {
+    kind: 'move';
+    distance?: number;
+    forced?: boolean;
+    toNearestUnoccupiedSpace?: boolean;
+    withinFeetOfSource?: number;
+    failIfNoSpace?: boolean;
+    movesWithSource?: boolean;
+    ignoresExtraCostForGrappledCreature?: boolean;
+  }
+  | {
+      kind: 'form';
+      form: 'true-form' | 'object';
+      allowedSizes?: MonsterSizeCategory[];
+      canReturnToTrueForm?: boolean;
+      retainsStatistics?: boolean;
+      equipmentTransforms?: boolean;
+      notes?: string;
+    }
+  | { kind: 'text'; description: string }
+  | { kind: 'action'; action: 'disengage' | 'hide' }
+  | { kind: 'limb'; mode: 'sever' | 'grow'; count: number }
+  | { kind: 'spawn'; creature: string; count: number; location: 'self-space' | 'self-cell'; actsWhen: 'immediately-after-source-turn' }
+  | { kind: 'resource'; resource: 'exhaustion'; mode: 'set' | 'add'; value: 'per-missing-limb' }
+  | { kind: 'hit-points'; mode: 'heal' | 'damage'; value: number }
+
+export type MonsterActionTrigger =
+| {
+    when: 'after-dealing-damage';
+    targetState?: 'bloodied';
+  };
+
+export type MonsterTriggeredSave = {
+  ability: AbilityId;
+  dc:
+    | number
+    | {
+        kind: '5-plus-damage-taken';
+      };
+  except?: {
+    damageTypes?: DamageType[];
+    criticalHit?: boolean;
+  };
+  onSuccess?: MonsterEffect[];
+  onFail?: MonsterEffect[];
+};
+
+export type TraitRollTarget =
+  | 'attack-rolls'
+  | 'ability-checks'
+  | 'saving-throws';
+
+/*------------------------------------------------------------*/
+/* Traits                                                      */
+/*------------------------------------------------------------*/
+
+export type MonsterTraitActionModifier = {
+  actionName: string;
+  trigger: {
+    kind: 'enters-space';
+  };
+  saveModifier?: 'advantage' | 'disadvantage';
+};
+
+export type MonsterTraitCheckRule = {
+  name?: string;
+  actor: 'nearby-creature';
+  distanceFeet?: number;
+  actionRequired?: boolean;
+  check: {
+    ability: AbilityId;
+    skill?: string;
+    dc: number;
+  };
+  onSuccess?: MonsterEffect[];
+  onFail?: MonsterEffect[];
+  target?: 'creature-inside' | 'object-inside';
+};
+
+type MonsterContainmentRule = {
+  fillsEntireSpace?: boolean;
+  canContainCreatures?: boolean;
+  creatureCover?: 'total-cover';
+  capacity?: {
+    large?: number;
+    mediumOrSmall?: number;
+  };
+};
+
+type MonsterVisibilityRule = {
+  transparent?: boolean;
+  noticeCheck?: {
+    ability: AbilityId;
+    skill?: string;
+    dc: number;
+    unlessWitnessedMoveOrAction?: boolean;
+  };
+};
+
+export type MonsterTrait = {
+  name: string;
+  description: string;
+  trigger?: MonsterTraitTrigger | MonsterTraitTrigger[];
+  requirements?: MonsterTraitRequirement[];
+  save?: MonsterTriggeredSave;
+  effects?: MonsterEffect[];
+  modifiesAction?: MonsterTraitActionModifier[];
+  checks?: MonsterTraitCheckRule[];
+  containment?: MonsterContainmentRule;
+  visibility?: MonsterVisibilityRule;
+  uses?: {
+    count: number;
+    period: 'day';
+  }
+  suppression?: {
+    ifTookDamageTypes?: DamageType[];
+    duration: 'next-turn';
+  }
+  notes?: string;
+};  
+
+export type MonsterTraitRequirement =
+  | { kind: 'self-state'; state: 'bloodied' }
+  | { kind: 'damage-taken-this-turn'; damageType?: DamageType; min?: number }
+  | { kind: 'hit-points-equals'; value: number };
+
+export type MonsterTraitTrigger =
+  | { kind: 'start-of-turn' }
+  | { kind: 'end-of-turn' }
+  | {
+      kind: 'ally-near-target';
+      withinFeet: number;
+      allyConditionNot?: ConditionId;
+    }
+  | {
+      kind: 'in-environment';
+      environment: 'sunlight';
+    }
+  | {
+      kind: 'in-form';
+      form: 'object' | 'true-form';
+    }
+  | {
+      kind: 'while-moving-grappled-creature';
+    }
+  | {
+      kind: 'reduced-to-0-hp';
+    } 
+  | {
+      kind: 'contact';
+    }
 
 export type MonsterSpecialAction = {
   kind: 'special';
@@ -145,14 +337,28 @@ export type MonsterSpecialAction = {
     kind: "cone" | "sphere" | "line" | "square" | "cylinder" | "cube";
     size: number
   }
-  target?: "creatures-in-area"
+  target?: "creatures-in-area" | 'creatures-entered-during-move'
+  movement?: {
+    upToSpeed?: boolean;
+    upToSpeedFraction?: 0.5 | 1;
+    noOpportunityAttacks?: boolean;
+    canEnterCreatureSpaces?: boolean;
+    targetSizeMax?: MonsterSizeCategory;
+    straightTowardVisibleEnemy?: boolean;
+  };
   recharge?: {
     min: number;
     max: number;
   };
+  uses?: {
+    count: number;
+    period: 'day';
+  };
+  trigger?: MonsterActionTrigger;
   halfDamageOnSave?: boolean;
-  onFail?: MonsterActionEffect[];
-  onSuccess?: MonsterActionEffect[];
+  onFail?: MonsterEffect[];
+  onSuccess?: MonsterEffect[];
+  effects?: MonsterEffect[];
   sequence?: { 
     actionName: string, 
     count: number 
@@ -229,44 +435,14 @@ export type MonsterSubtype =
   | 'gnome'
 
 export type MonsterChallengeRating =
-  | 0
-  | 0.125
-  | 0.25
-  | 0.5
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18
-  | 19
-  | 20
-
-
-export type MonsterTrait =
-  | 'aggressive'
-  | 'brave'
-  | 'immune-to-poison'
-  | 'immune-to-exhaustion'
+  | 0 | 0.125 | 0.25 | 0.5 | 1
+  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 
+  | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 
+  | 19 | 20 | 21 | 22 | 23 | 24
 
 export type MonsterProficiencies = CharacterProficiencies & {
   // TODO: reference weapon IDs
   weapons?: string[]
-  skillBonuses?: {
-    [key: string]: number;
-  },
 }
 
 export type MonsterArmorClass =
@@ -290,6 +466,27 @@ export type MonsterArmorClass =
       notes?: string;
     };
 
+export type ImmunityType =
+  | 'fire'
+  | 'acid'
+  | 'poison'
+  | 'necrotic'
+  | 'radiant'
+  | 'psychic'
+  | 'force'
+  | 'charmed'
+  | 'exhaustion'
+  | 'blinded'
+  | 'deafened'
+  | 'frightened'
+  | 'prone'
+  | 'restrained'
+  | 'stunned'
+  | 'unconscious'
+
+export type VulnerabilityType =
+  | 'bludgeoning'
+
 export interface MonsterFields {
   id: string
   name: string
@@ -310,15 +507,18 @@ export interface MonsterFields {
     }
     hitDieSize: DieFace
     armorClass: MonsterArmorClass,
-    // attackBonus?: number
     movement: MonsterMovement
     abilities?: AbilityScoreMapResolved
-    traits?: string[]
+    savingThrows?: Partial<Record<AbilityId, ProficiencyAdjustment>>;
+    traits?: MonsterTrait[]
     actions?: MonsterAction[]
+    bonusActions?: MonsterAction[]
     senses?: MonsterSenses
     proficiencies?: MonsterProficiencies
-    proficiencyBonus?: number
-    equipment?: Equipment
+    proficiencyBonus: number
+    equipment?: MonsterEquipment
+    immunities?: ImmunityType[]
+    vulnerabilities?: VulnerabilityType[]
   }
 
   lore: {

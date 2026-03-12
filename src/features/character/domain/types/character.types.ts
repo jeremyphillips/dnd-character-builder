@@ -67,16 +67,20 @@ export type EquipmentLoadout = {
   weaponEnhancementId?: string
 }
 
-export type SkillAdjustment = {
-  proficiencyLevel?: 0 | 1 | 2
-  bonus?: number
-  fixedBonus?: number
+export type ProficiencyLevel = 0 | 1 | 2
+
+export type ProficiencyAdjustment = {
+  proficiencyLevel?: ProficiencyLevel
   advantage?: boolean
   disadvantage?: boolean
+  // these may not be neccessary
+  // avoid using unless calculations do not match the expected output
+  bonus?: number
+  fixedBonus?: number
 }
 
 export type CharacterProficiencies = {
-  skills?: Record<string, SkillAdjustment>
+  skills?: Record<string, ProficiencyAdjustment>
 }
 
 export type CharacterType = 'pc' | 'npc'

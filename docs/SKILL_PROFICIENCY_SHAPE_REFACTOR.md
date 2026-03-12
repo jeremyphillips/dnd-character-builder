@@ -1,13 +1,13 @@
 # Phased Plan: Skill Proficiency Shape Refactor
 
-This document outlines the migration from `proficiencies.skills` as `string[]` to a `Record<string, SkillAdjustment>` shape. Legacy `skills?: string[]` support will be removed entirely. Data migration uses a one-time DB script.
+This document outlines the migration from `proficiencies.skills` as `string[]` to a `Record<string, ProficiencyAdjustment>` shape. Legacy `skills?: string[]` support will be removed entirely. Data migration uses a one-time DB script.
 
 ---
 
 ## Target Shape
 
 ```ts
-type SkillAdjustment = {
+type ProficiencyAdjustment = {
   proficiencyLevel?: 0 | 1 | 2;
   bonus?: number;
   fixedBonus?: number;
@@ -18,7 +18,7 @@ type SkillAdjustment = {
 // proficiencies.skills becomes:
 proficiencies: {
   skills: {
-    [skillId: string]: SkillAdjustment;
+    [skillId: string]: ProficiencyAdjustment;
     // e.g. perception: { proficiencyLevel: 1 }
   }
 }
@@ -33,19 +33,19 @@ proficiencies: {
 
 **Goal:** Introduce new types and helpers. No legacy support yet; code still uses array shape.
 
-### 1.1 Add SkillAdjustment and update CharacterProficiencies
+### 1.1 Add ProficiencyAdjustment and update CharacterProficiencies
 
 **File:** `src/features/character/domain/types/character.types.ts`
 
-- Add `SkillAdjustment` type
-- Change `CharacterProficiencies.skills` from `string[]` to `Record<string, SkillAdjustment>`
+- Add `ProficiencyAdjustment` type
+- Change `CharacterProficiencies.skills` from `string[]` to `Record<string, ProficiencyAdjustment>`
 
 ### 1.2 Create migration helpers
 
 **New file:** `src/features/character/domain/utils/character-proficiency.utils.ts` (or similar)
 
 - `getSkillIds(proficiencies: CharacterProficiencies | undefined): string[]` — extract skill IDs from the new shape (used during transition and after)
-- `toSkillProficienciesRecord(ids: string[]): Record<string, SkillAdjustment>` — convert array to record with `proficiencyLevel: 1` per entry
+- `toSkillProficienciesRecord(ids: string[]): Record<string, ProficiencyAdjustment>` — convert array to record with `proficiencyLevel: 1` per entry
 
 ---
 
@@ -98,12 +98,12 @@ proficiencies: {
 
 ### 3.2 character-read.types.ts
 
-- `CharacterReadSource.proficiencies` and `CharacterDocForDetail.proficiencies`: use `{ skills?: Record<string, SkillAdjustment> }` only (no `string[]`)
+- `CharacterReadSource.proficiencies` and `CharacterDocForDetail.proficiencies`: use `{ skills?: Record<string, ProficiencyAdjustment> }` only (no `string[]`)
 
 ### 3.3 ProficienciesCard.tsx
 
 - Accept resolved `ProficiencyItem[]` from parent (no change if CharacterView passes DTO shape)
-- If card ever receives raw proficiencies, support `{ skills: Record<string, SkillAdjustment> }` and resolve IDs to names via context/props
+- If card ever receives raw proficiencies, support `{ skills: Record<string, ProficiencyAdjustment> }` and resolve IDs to names via context/props
 
 ### 3.4 CharacterView.tsx
 
@@ -136,7 +136,7 @@ proficiencies: {
 
 ## Phase 5: One-Time DB Migration Script
 
-**Goal:** Migrate all existing character documents from `skills: string[]` to `skills: Record<string, SkillAdjustment>`.
+**Goal:** Migrate all existing character documents from `skills: string[]` to `skills: Record<string, ProficiencyAdjustment>`.
 
 ### 5.1 Script location and approach
 
@@ -171,7 +171,7 @@ proficiencies: {
 **Goal:** Remove all support for `skills?: string[]`.
 
 - Remove any dual-shape handling in mappers, utils, or UI
-- Ensure `CharacterProficiencies.skills` is typed strictly as `Record<string, SkillAdjustment>` (no union with `string[]`)
+- Ensure `CharacterProficiencies.skills` is typed strictly as `Record<string, ProficiencyAdjustment>` (no union with `string[]`)
 - Delete migration helpers that converted array → record (keep only `getSkillIds` if still needed for consumers)
 
 ---
@@ -180,7 +180,7 @@ proficiencies: {
 
 | File | Phases | Change |
 |------|--------|--------|
-| `character.types.ts` | 1 | Add `SkillAdjustment`, change `CharacterProficiencies.skills` |
+| `character.types.ts` | 1 | Add `ProficiencyAdjustment`, change `CharacterProficiencies.skills` |
 | `character-proficiency.utils.ts` (new) | 1 | `getSkillIds`, `toSkillProficienciesRecord` |
 | `character-read.types.ts` | 3 | `CharacterReadSource` / doc types use new shape only |
 | `character-read.mappers.ts` | 3 | Use helpers, update `toCharacterDetailDto`, `toCharacterForEngine` |

@@ -1,10 +1,3 @@
-import { useMemo, useCallback } from 'react'
-import { useCharacterBuilder } from '@/features/characterBuilder/context'
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { getSuggestedSkillProficienciesByClass } from '@/features/characterBuilder/domain/classes'
-import { skillProficiencyIdToName } from '@/features/mechanics/domain/core/character/skillProficiencies.utils'
-import { getSkillIds } from '@/features/character/domain/utils/character-proficiency.utils'
-
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -12,6 +5,14 @@ import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import LockIcon from '@mui/icons-material/Lock'
+
+import { useMemo, useCallback } from 'react'
+import { useCharacterBuilder } from '@/features/characterBuilder/context'
+import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
+import { getSuggestedSkillProficienciesByClass } from '@/features/characterBuilder/domain/classes'
+import { skillProficiencyIdToName } from '@/features/mechanics/domain/core/character/skillProficiencies.utils'
+import { getSkillIds } from '@/features/character/domain/utils/character-proficiency.utils'
+import type { ProficiencyAdjustment } from '@/features/character/domain/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,7 +80,7 @@ const ProficiencyStep = () => {
       if (isSelected && isLocked) return
 
       const currentSkills = proficiencies?.skills ?? {}
-      let next: Record<string, import('@/features/character/domain/types').SkillAdjustment>
+      let next: Record<string, ProficiencyAdjustment>
       if (isSelected) {
         const { [skillId]: _, ...rest } = currentSkills
         next = rest

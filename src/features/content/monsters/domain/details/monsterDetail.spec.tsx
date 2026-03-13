@@ -1,41 +1,13 @@
-import type { ReactNode } from 'react';
-import Box from '@mui/material/Box';
 import type { Monster } from '@/features/content/monsters/domain/types';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
 import { AppBadge } from '@/ui/primitives';
-import { VisibilityBadge } from '@/ui/patterns';
+import { StructuredValue, VisibilityBadge } from '@/ui/patterns';
 import {
   formatHitPointsWithAverage,
   formatMovement,
 } from '@/features/content/monsters/utils/formatters';
 
 export type MonsterDetailCtx = Record<string, never>;
-
-function JsonDisplay({ value }: { value: unknown }): ReactNode {
-  if (value === undefined || value === null) return '—';
-  try {
-    const str = JSON.stringify(value, null, 2);
-    return (
-      <Box
-        component="pre"
-        sx={{
-          m: 0,
-          p: 1.5,
-          bgcolor: 'action.hover',
-          borderRadius: 1,
-          fontSize: '0.75rem',
-          fontFamily: 'monospace',
-          overflow: 'auto',
-          maxHeight: 200,
-        }}
-      >
-        {str}
-      </Box>
-    );
-  } catch {
-    return String(value);
-  }
-}
 
 export const MONSTER_DETAIL_SPECS: DetailSpec<Monster, MonsterDetailCtx>[] = [
   {
@@ -83,7 +55,7 @@ export const MONSTER_DETAIL_SPECS: DetailSpec<Monster, MonsterDetailCtx>[] = [
     key: 'armorClass',
     label: 'Armor Class',
     order: 90,
-    render: (m) => <JsonDisplay value={m.mechanics?.armorClass} />,
+    render: (m) => <StructuredValue value={m.mechanics?.armorClass} />,
   },
   {
     key: 'movement',
@@ -98,61 +70,61 @@ export const MONSTER_DETAIL_SPECS: DetailSpec<Monster, MonsterDetailCtx>[] = [
     key: 'actions',
     label: 'Actions',
     order: 110,
-    render: (m) => <JsonDisplay value={m.mechanics?.actions} />,
+    render: (m) => <StructuredValue value={m.mechanics?.actions} />,
   },
   {
     key: 'bonusActions',
     label: 'Bonus Actions',
     order: 120,
-    render: (m) => <JsonDisplay value={m.mechanics?.bonusActions} />,
+    render: (m) => <StructuredValue value={m.mechanics?.bonusActions} />,
   },
   {
     key: 'traits',
     label: 'Traits',
     order: 130,
-    render: (m) => <JsonDisplay value={m.mechanics?.traits} />,
+    render: (m) => <StructuredValue value={m.mechanics?.traits} />,
   },
   {
     key: 'abilities',
     label: 'Abilities',
     order: 140,
-    render: (m) => <JsonDisplay value={m.mechanics?.abilities} />,
+    render: (m) => <StructuredValue value={m.mechanics?.abilities} />,
   },
   {
     key: 'senses',
     label: 'Senses',
     order: 150,
-    render: (m) => <JsonDisplay value={m.mechanics?.senses} />,
+    render: (m) => <StructuredValue value={m.mechanics?.senses} />,
   },
   {
     key: 'proficiencies',
     label: 'Proficiencies',
     order: 160,
-    render: (m) => <JsonDisplay value={m.mechanics?.proficiencies} />,
+    render: (m) => <StructuredValue value={m.mechanics?.proficiencies} />,
   },
   {
     key: 'equipment',
     label: 'Equipment',
     order: 170,
-    render: (m) => <JsonDisplay value={m.mechanics?.equipment} />,
+    render: (m) => <StructuredValue value={m.mechanics?.equipment} />,
   },
   {
     key: 'immunities',
     label: 'Immunities',
     order: 180,
-    render: (m) => <JsonDisplay value={m.mechanics?.immunities} />,
+    render: (m) => <StructuredValue value={m.mechanics?.immunities} />,
   },
   {
     key: 'vulnerabilities',
     label: 'Vulnerabilities',
     order: 190,
-    render: (m) => <JsonDisplay value={m.mechanics?.vulnerabilities} />,
+    render: (m) => <StructuredValue value={m.mechanics?.vulnerabilities} />,
   },
   {
     key: 'languages',
     label: 'Languages',
     order: 200,
-    render: (m) => <JsonDisplay value={m.languages} />,
+    render: (m) => <StructuredValue value={m.languages} />,
   },
   {
     key: 'alignment',

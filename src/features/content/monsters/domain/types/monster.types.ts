@@ -137,6 +137,7 @@ export type MonsterNaturalAttackAction = {
   attackAbilityOverride?: AttackAbility;
   damageAbilityOverride?: AttackAbility | null;
   onHitEffects?: MonsterOnHitEffect[];
+  rules?: MonsterActionRule[];
 };
 
 export type ConditionId =
@@ -212,6 +213,70 @@ export type MonsterEffect =
   | { kind: 'resource'; resource: 'exhaustion'; mode: 'set' | 'add'; value: 'per-missing-limb' }
   | { kind: 'hit-points'; mode: 'heal' | 'damage'; value: number }
 
+export type MonsterRuleDuration =
+  | {
+      kind: 'fixed';
+      value: number;
+      unit: 'round' | 'minute' | 'hour' | 'day';
+    }
+  | {
+      kind: 'until-end-of-source-next-turn';
+    };
+
+export type MonsterActionRule =
+  | {
+      kind: 'targeting';
+      target: 'one-creature';
+      targetType?: 'creature';
+      rangeFeet: number;
+      requiresSight?: boolean;
+    }
+  | {
+      kind: 'apply-state';
+      trigger: 'on-hit' | 'on-failed-save';
+      state: string;
+      targetType?: 'creature';
+      duration?: MonsterRuleDuration;
+      ongoingEffects?: MonsterEffect[];
+      notes?: string;
+    }
+  | {
+      kind: 'duration';
+      trigger: 'on-hit' | 'on-failed-save';
+      appliesTo:
+        | {
+            kind: 'condition';
+            condition: ConditionId;
+          }
+        | {
+            kind: 'state';
+            state: string;
+          };
+      duration: MonsterRuleDuration;
+    }
+  | {
+      kind: 'interval-effect';
+      state: string;
+      every: {
+        value: number;
+        unit: 'hour' | 'day';
+      };
+      effects: MonsterEffect[];
+    }
+  | {
+      kind: 'immunity-on-success';
+      trigger: 'on-successful-save';
+      scope: 'source-action';
+      duration: MonsterRuleDuration;
+      notes?: string;
+    }
+  | {
+      kind: 'death-outcome';
+      trigger: 'reduced-to-0-hit-points-by-this-action';
+      targetType?: 'creature';
+      outcome: 'turns-to-dust';
+    };
+
 export type MonsterActionTrigger =
 | {
     when: 'after-dealing-damage';
@@ -285,6 +350,42 @@ type MonsterVisibilityRule = {
   };
 };
 
+export type MonsterTraitRule =
+  | {
+      kind: 'hold-breath';
+      duration: {
+        value: number;
+        unit: 'round' | 'minute' | 'hour' | 'day';
+      };
+    }
+  | {
+      kind: 'tracked-part';
+      part: 'head' | 'limb';
+      initialCount: number;
+      loss?: {
+        trigger: 'damage-taken-in-single-turn';
+        minDamage: number;
+        count: number;
+      };
+      deathWhenCountReaches?: number;
+      regrowth?: {
+        trigger: 'end-of-turn';
+        requiresLivingPart?: boolean;
+        countPerPartLostSinceLastTurn: number;
+        suppressedByDamageTypes?: DamageType[];
+        healHitPoints?: number;
+      };
+    }
+  | {
+      kind: 'extra-reaction';
+      appliesTo: 'opportunity-attacks-only';
+      count: {
+        kind: 'per-part-beyond';
+        part: 'head' | 'limb';
+        baseline: number;
+      };
+    };
+
 export type MonsterTrait = {
   name: string;
   description: string;
@@ -292,6 +393,7 @@ export type MonsterTrait = {
   requirements?: MonsterTraitRequirement[];
   save?: MonsterTriggeredSave;
   effects?: MonsterEffect[];
+  rules?: MonsterTraitRule[];
   modifiesAction?: MonsterTraitActionModifier[];
   checks?: MonsterTraitCheckRule[];
   containment?: MonsterContainmentRule;
@@ -377,6 +479,7 @@ export type MonsterSpecialAction = {
   onFail?: MonsterEffect[];
   onSuccess?: MonsterEffect[];
   effects?: MonsterEffect[];
+  rules?: MonsterActionRule[];
   sequence?: { 
     actionName: string, 
     count: number 

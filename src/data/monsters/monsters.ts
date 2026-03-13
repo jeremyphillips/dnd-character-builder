@@ -550,6 +550,45 @@ export const monsters: readonly Monster[] = [
               damageType: "necrotic",
             },
           ],
+          rules: [
+            {
+              kind: "apply-state",
+              trigger: "on-hit",
+              state: "mummy-rot",
+              targetType: "creature",
+              ongoingEffects: [
+                {
+                  kind: "text",
+                  description: "Target can't regain Hit Points.",
+                },
+                {
+                  kind: "text",
+                  description:
+                    "Target's Hit Point maximum doesn't return to normal when finishing a Long Rest.",
+                },
+              ],
+            },
+            {
+              kind: "interval-effect",
+              state: "mummy-rot",
+              every: {
+                value: 24,
+                unit: "hour",
+              },
+              effects: [
+                {
+                  kind: "text",
+                  description: "Target's Hit Point maximum decreases by 10 (3d6).",
+                },
+              ],
+            },
+            {
+              kind: "death-outcome",
+              trigger: "reduced-to-0-hit-points-by-this-action",
+              targetType: "creature",
+              outcome: "turns-to-dust",
+            },
+          ],
           notes:
             "If the target is a creature, it is cursed. While cursed, the target can't regain Hit Points, its Hit Point maximum doesn't return to normal when finishing a Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours. A creature dies and turns to dust if reduced to 0 Hit Points by this attack.",
         },
@@ -563,6 +602,37 @@ export const monsters: readonly Monster[] = [
             {
               kind: "condition",
               condition: "frightened",
+            },
+          ],
+          rules: [
+            {
+              kind: "targeting",
+              target: "one-creature",
+              targetType: "creature",
+              rangeFeet: 60,
+              requiresSight: true,
+            },
+            {
+              kind: "duration",
+              trigger: "on-failed-save",
+              appliesTo: {
+                kind: "condition",
+                condition: "frightened",
+              },
+              duration: {
+                kind: "until-end-of-source-next-turn",
+              },
+            },
+            {
+              kind: "immunity-on-success",
+              trigger: "on-successful-save",
+              scope: "source-action",
+              duration: {
+                kind: "fixed",
+                value: 24,
+                unit: "hour",
+              },
+              notes: "Target is immune to this mummy's Dreadful Glare.",
             },
           ],
         },
@@ -1309,16 +1379,56 @@ export const monsters: readonly Monster[] = [
         {
           name: "Hold Breath",
           description: "The hydra can hold its breath for 1 hour.",
+          rules: [
+            {
+              kind: "hold-breath",
+              duration: {
+                value: 1,
+                unit: "hour",
+              },
+            },
+          ],
         },
         {
           name: "Multiple Heads",
           description:
             "The hydra has five heads. Whenever the hydra takes 25 damage or more on a single turn, one of its heads dies. The hydra dies if all its heads are dead. At the end of each of its turns when it has at least one living head, the hydra grows two heads for each of its heads that died since its last turn, unless it has taken Fire damage since its last turn. The hydra regains 20 Hit Points when it grows new heads.",
+          rules: [
+            {
+              kind: "tracked-part",
+              part: "head",
+              initialCount: 5,
+              loss: {
+                trigger: "damage-taken-in-single-turn",
+                minDamage: 25,
+                count: 1,
+              },
+              deathWhenCountReaches: 0,
+              regrowth: {
+                trigger: "end-of-turn",
+                requiresLivingPart: true,
+                countPerPartLostSinceLastTurn: 2,
+                suppressedByDamageTypes: ["fire"],
+                healHitPoints: 20,
+              },
+            },
+          ],
         },
         {
           name: "Reactive Heads",
           description:
             "For each head the hydra has beyond one, it gets an extra Reaction that can be used only for Opportunity Attacks.",
+          rules: [
+            {
+              kind: "extra-reaction",
+              appliesTo: "opportunity-attacks-only",
+              count: {
+                kind: "per-part-beyond",
+                part: "head",
+                baseline: 1,
+              },
+            },
+          ],
         },
       ],
       senses: {

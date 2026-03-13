@@ -49,18 +49,32 @@ describe('system catalog normalization', () => {
     expect(nestedTrigger?.trigger).toBe('weapon_hit')
   })
 
-  it('uses structured duration objects for active class buffs', () => {
+  it('uses canonical activation wrappers for active class buffs', () => {
     const feature = getSubclassFeature(
       'paladin',
       'paladin.subclass.sacred_oath.oath_of_devotion',
       'paladin.subclass.sacred_oath.oath_of_devotion.sacred_weapon',
-    ) as { duration?: unknown } | undefined
+    ) as { kind?: unknown; activation?: unknown; cost?: unknown; effects?: unknown[] } | undefined
 
-    expect(feature?.duration).toEqual({
-      kind: 'fixed',
-      value: 1,
-      unit: 'minute',
+    expect(feature).toMatchObject({
+      kind: 'activation',
+      activation: 'action',
+      cost: { resource: 'channel_divinity', amount: 1 },
     })
+
+    expect(feature?.effects).toEqual([
+      {
+        kind: 'modifier',
+        target: 'attack_roll',
+        mode: 'add',
+        value: { ability: 'charisma' },
+        duration: {
+          kind: 'fixed',
+          value: 1,
+          unit: 'minute',
+        },
+      },
+    ])
   })
 
   it('uses canonical state conditions for unarmored formulas', () => {
@@ -75,6 +89,25 @@ describe('system catalog normalization', () => {
       target: 'self',
       property: 'equipment.armorEquipped',
       equals: null,
+    })
+  })
+
+  it('uses canonical save effects for class riders', () => {
+    const feature = getSubclassFeature(
+      'fighter',
+      'fighter.martial_archetype.battle_master',
+      'fighter.martial_archetype.battle_master.combat_superiority',
+    )
+
+    const nestedTrigger = hasNestedFeatures(feature) ? feature.features[1] : undefined
+    const nestedSave = (nestedTrigger as { effects?: unknown[] } | undefined)?.effects?.[1] as
+      | { kind?: unknown; save?: unknown; onFail?: unknown[] }
+      | undefined
+
+    expect(nestedSave).toEqual({
+      kind: 'save',
+      save: { ability: 'strength' },
+      onFail: [{ kind: 'condition', conditionId: 'prone' }],
     })
   })
 
@@ -100,9 +133,41 @@ describe('system catalog normalization', () => {
     })
   })
 
+  it('uses canonical monster save outcomes and condition ids', () => {
+    const wolf = getSystemMonster(DEFAULT_SYSTEM_RULESET_ID, 'wolf')
+    const bite = wolf?.mechanics.actions?.find(
+      (action) => action.kind === 'natural' && action.name === 'Bite',
+    )
+
+    const rider = (bite as { onHitEffects?: unknown[] } | undefined)?.onHitEffects?.[0]
+
+    expect(rider).toEqual({
+      kind: 'save',
+      save: { ability: 'str', dc: 11 },
+      onFail: [{ kind: 'condition', conditionId: 'prone' }],
+    })
+  })
+
+  it('uses canonical shared effect kinds for monster traits', () => {
+    const kobold = getSystemMonster(DEFAULT_SYSTEM_RULESET_ID, 'kobold-warrior')
+    const packTactics = kobold?.mechanics.traits?.find((trait) => trait.name === 'Pack Tactics')
+
+    expect(packTactics?.effects).toEqual([
+      {
+        kind: 'roll_modifier',
+        appliesTo: 'attack-rolls',
+        modifier: 'advantage',
+      },
+    ])
+  })
+
   it('uses shared turn-boundary durations for monster suppression windows', () => {
     const troll = getSystemMonster(DEFAULT_SYSTEM_RULESET_ID, 'troll')
     const regeneration = troll?.mechanics.traits?.find((trait) => trait.name === 'Regeneration')
+
+    expect(regeneration?.effects).toEqual([
+      { kind: 'hit_points', mode: 'heal', value: 15 },
+    ])
 
     expect(regeneration?.suppression?.duration).toEqual({
       kind: 'until_turn_boundary',

@@ -280,7 +280,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           },
           effects: [
             {
-              kind: 'roll-modifier',
+              kind: 'roll_modifier',
               appliesTo: 'attack-rolls',
               modifier: 'advantage',
             },
@@ -296,7 +296,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           },
           effects: [
             {
-              kind: 'roll-modifier',
+              kind: 'roll_modifier',
               appliesTo: ['ability-checks', 'attack-rolls'],
               modifier: 'disadvantage',
             },
@@ -347,7 +347,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             {
               kind: 'save',
               save: { ability: 'str', dc: 11 },
-              onFail: [{ kind: 'condition', condition: 'prone' }],
+              onFail: [{ kind: 'condition', conditionId: 'prone' }],
             },
           ],
         },
@@ -365,7 +365,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           },
           effects: [
             {
-              kind: 'roll-modifier',
+              kind: 'roll_modifier',
               appliesTo: 'attack-rolls',
               modifier: 'advantage',
             },
@@ -415,7 +415,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               criticalHit: true,
             },
             onSuccess: [
-              { kind: 'text', description: 'Drops to 1 Hit Point instead.' },
+              { kind: 'note', text: 'Drops to 1 Hit Point instead.' },
             ],
           },
         }
@@ -491,12 +491,12 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               targetType: "creature",
               ongoingEffects: [
                 {
-                  kind: "text",
-                  description: "Target can't regain Hit Points.",
+                  kind: "note",
+                  text: "Target can't regain Hit Points.",
                 },
                 {
-                  kind: "text",
-                  description:
+                  kind: "note",
+                  text:
                     "Target's Hit Point maximum doesn't return to normal when finishing a Long Rest.",
                 },
               ],
@@ -510,8 +510,8 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               },
               effects: [
                 {
-                  kind: "text",
-                  description: "Target's Hit Point maximum decreases by 10 (3d6).",
+                  kind: "note",
+                  text: "Target's Hit Point maximum decreases by 10 (3d6).",
                 },
               ],
             },
@@ -534,7 +534,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           onFail: [
             {
               kind: "condition",
-              condition: "frightened",
+              conditionId: "frightened",
             },
           ],
           rules: [
@@ -624,7 +624,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           damageType: "bludgeoning",
           description: "If the target is a Medium or smaller creature, it has the Grappled condition with an escape DC of 12.",
           onSuccess: [
-            { kind: 'condition', condition: 'grappled', targetSizeMax: 'medium', escapeDc: 12 }
+            { kind: 'condition', conditionId: 'grappled', targetSizeMax: 'medium', escapeDc: 12 }
           ]
         },
         { kind: "weapon", weaponRef: "light-hammer" }
@@ -821,7 +821,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             kind: 'turn_start',
           },
           effects: [
-            { kind: 'hit-points', mode: 'heal', value: 15 },
+            { kind: 'hit_points', mode: 'heal', value: 15 },
           ],
           suppression: {
             ifTookDamageTypes: ['acid', 'fire'],
@@ -947,7 +947,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             { kind: 'damage', damage: '3d6', damageType: 'acid' },
             {
               kind: 'state',
-              state: 'engulfed',
+              stateId: 'engulfed',
               targetSizeMax: 'large',
               escape: {
                 dc: 12,
@@ -956,10 +956,10 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
                 actionRequired: true,
               },
               ongoingEffects: [
-                { kind: 'condition', condition: 'restrained' },
+                { kind: 'condition', conditionId: 'restrained' },
                 { kind: 'damage', damage: '3d6', damageType: 'acid' },
-                { kind: 'text', description: 'Target is suffocating.' },
-                { kind: 'text', description: 'Target cannot cast spells with verbal components.' },
+                { kind: 'note', text: 'Target is suffocating.' },
+                { kind: 'note', text: 'Target cannot cast spells with verbal components.' },
                 { kind: 'move', movesWithSource: true },
               ],
               notes: 'Target takes the acid damage at the start of the cube’s turns.',
@@ -1124,7 +1124,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             },
             {
               kind: "condition",
-              condition: "grappled",
+              conditionId: "grappled",
               targetSizeMax: "large",
               escapeDc: 13,
               escapeCheckDisadvantage: true
@@ -1159,7 +1159,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         effects: [
           {
             kind: 'condition',
-            condition: 'grappled',
+            conditionId: 'grappled',
             targetSizeMax: 'huge',
             escapeDc: 13,
             escapeCheckDisadvantage: true,

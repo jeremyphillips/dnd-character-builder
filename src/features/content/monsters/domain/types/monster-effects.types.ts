@@ -1,98 +1,76 @@
-import type { DiceOrFlat } from "@/features/mechanics/domain/dice";
 import type { AbilityId } from "@/features/mechanics/domain/core/character/abilities.types";
 import type { MonsterSizeCategory } from "@/features/content/monsters/domain/vocab/monster.vocab";
 import type { ConditionId, DamageType, TraitRollTarget } from "./monster-combat.types";
 import type { EffectDuration, EffectInterval } from "@/features/mechanics/domain/effects/timing.types";
+import type {
+  ActionEffect,
+  ConditionEffect,
+  DamageEffect,
+  FormEffect,
+  HitPointsEffect,
+  MoveEffect,
+  NoteEffect,
+  RollModifierEffect,
+  SaveDcSpec,
+  SaveEffect,
+  SpawnEffect,
+  StateEffect,
+} from "@/features/mechanics/domain/effects/effects.types";
 
-export type MonsterConditionEffect = {
-  kind: 'condition';
-  condition: ConditionId;
+export type MonsterConditionEffect = Omit<ConditionEffect, 'conditionId' | 'targetSizeMax'> & {
+  conditionId: ConditionId;
   targetSizeMax?: MonsterSizeCategory;
-  escapeDc?: number;
-  escapeCheckDisadvantage?: boolean;
 };
 
-export type MonsterRollModifierEffect = {
-  kind: 'roll-modifier';
+export type MonsterRollModifierEffect = Omit<RollModifierEffect, 'appliesTo'> & {
   appliesTo: TraitRollTarget | TraitRollTarget[];
-  modifier: 'advantage' | 'disadvantage';
 };
+
+export type MonsterDamageEffect = DamageEffect & {
+  damageType?: DamageType;
+};
+
+export type MonsterStateEffect = Omit<StateEffect, 'stateId' | 'targetSizeMax' | 'ongoingEffects'> & {
+  stateId: string;
+  targetSizeMax?: MonsterSizeCategory;
+  ongoingEffects?: MonsterEffect[];
+};
+
+export type MonsterMoveEffect = MoveEffect;
+export type MonsterFormEffect = Omit<FormEffect, 'allowedSizes'> & {
+  allowedSizes?: MonsterSizeCategory[];
+};
+export type MonsterActionEffect = ActionEffect;
+export type MonsterSpawnEffect = SpawnEffect;
+export type MonsterNoteEffect = NoteEffect;
+export type MonsterHitPointsEffect = HitPointsEffect;
 
 export type MonsterEffect =
   | MonsterConditionEffect
   | MonsterRollModifierEffect
-  | { kind: 'damage'; damage: DiceOrFlat; damageType?: DamageType }
-  | {
-      kind: 'state';
-      state: string;
-      targetSizeMax?: MonsterSizeCategory;
-      escape?: {
-        dc: number;
-        ability?: AbilityId;
-        skill?: string;
-        actionRequired?: boolean;
-      };
-      ongoingEffects?: MonsterEffect[];
-      notes?: string;
-    }
-  | {
-    kind: 'move';
-    distance?: number;
-    forced?: boolean;
-    toNearestUnoccupiedSpace?: boolean;
-    withinFeetOfSource?: number;
-    failIfNoSpace?: boolean;
-    movesWithSource?: boolean;
-    ignoresExtraCostForGrappledCreature?: boolean;
-  }
-  | {
-      kind: 'form';
-      form: 'true-form' | 'object';
-      allowedSizes?: MonsterSizeCategory[];
-      canReturnToTrueForm?: boolean;
-      retainsStatistics?: boolean;
-      equipmentTransforms?: boolean;
-      notes?: string;
-    }
-  | { kind: 'text'; description: string }
-  | { kind: 'action'; action: 'disengage' | 'hide' }
+  | MonsterDamageEffect
+  | MonsterStateEffect
+  | MonsterMoveEffect
+  | MonsterFormEffect
+  | MonsterNoteEffect
+  | MonsterActionEffect
   | { kind: 'limb'; mode: 'sever' | 'grow'; count: number }
-  | { kind: 'spawn'; creature: string; count: number; location: 'self-space' | 'self-cell'; actsWhen: 'immediately-after-source-turn' }
+  | MonsterSpawnEffect
   | { kind: 'resource'; resource: 'exhaustion'; mode: 'set' | 'add'; value: 'per-missing-limb' }
-  | { kind: 'hit-points'; mode: 'heal' | 'damage'; value: number };
+  | MonsterHitPointsEffect;
 
 export type MonsterAppliedEffect =
   | MonsterConditionEffect
-  | {
-    kind: 'state';
-    state: string;
-    escape?: {
-      dc: number;
-      ability?: AbilityId;
-      skill?: string;
-      actionRequired?: boolean;
-    };
-    ongoingEffects?: MonsterEffect[];
-    notes?: string;
-  }
-  | { kind: 'text'; description: string };
+  | MonsterStateEffect
+  | MonsterNoteEffect;
 
 export type MonsterOnHitEffect =
   | MonsterConditionEffect
-  | {
-    kind: 'save';
-    save: {
-      ability: AbilityId;
-      dc: number;
-    }
-    onFail: MonsterAppliedEffect[];
-    onSuccess?: MonsterAppliedEffect[];
-  }
-  | {
-    kind: 'damage';
-    damage: DiceOrFlat;
-    damageType?: DamageType;
-  };
+  | (Omit<SaveEffect, 'onFail' | 'onSuccess'> & {
+      onFail: MonsterAppliedEffect[];
+      onSuccess?: MonsterAppliedEffect[];
+    })
+  | MonsterDamageEffect;
 
 export type MonsterRuleDuration = EffectDuration;
 
@@ -154,11 +132,7 @@ export type MonsterActionTrigger = {
 
 export type MonsterTriggeredSave = {
   ability: AbilityId;
-  dc:
-    | number
-    | {
-        kind: '5-plus-damage-taken';
-      };
+  dc: SaveDcSpec;
   except?: {
     damageTypes?: DamageType[];
     criticalHit?: boolean;

@@ -3,7 +3,7 @@ import type { TriggerType } from '../triggers/trigger.types';
 import type { StatTarget } from '../resolution/stat-resolver';
 import type { FormulaEffect } from '../resolution/formula.engine';
 import type { DiceOrFlat } from '../dice/dice.types';
-import type { AbilityKey } from '../core/character';
+import type { AbilityKey, AbilityRef } from '../core/character';
 import type { EffectDuration } from './timing.types';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/formula.engine';
@@ -14,6 +14,9 @@ export type ResourceCost = {
   resource: string;
   amount: number;
 };
+
+export type ActivationKind = 'action' | 'bonus_action' | 'reaction' | 'special';
+export type SaveDcSpec = number | { kind: '5-plus-damage-taken' };
 
 export type EffectMode = 'add' | 'set' | 'multiply';
 
@@ -103,6 +106,86 @@ export type TriggeredEffect = EffectBase<'trigger'> & {
   cost?: ResourceCost;
 };
 
+export type SaveEffect = EffectBase<'save'> & {
+  save: {
+    ability: AbilityRef;
+    dc?: SaveDcSpec;
+  };
+  onFail: Effect[];
+  onSuccess?: Effect[];
+};
+
+export type ConditionEffect = EffectBase<'condition'> & {
+  conditionId: string;
+  targetSizeMax?: string;
+  escapeDc?: number;
+  escapeCheckDisadvantage?: boolean;
+};
+
+export type ActivationEffect = EffectBase<'activation'> & {
+  activation: ActivationKind;
+  effects: Effect[];
+  cost?: ResourceCost;
+};
+
+export type DamageEffect = EffectBase<'damage'> & {
+  damage: DiceOrFlat;
+  damageType?: string;
+};
+
+export type RollModifierEffect = EffectBase<'roll_modifier'> & {
+  appliesTo: string | string[];
+  modifier: 'advantage' | 'disadvantage';
+};
+
+export type StateEffect = EffectBase<'state'> & {
+  stateId: string;
+  targetSizeMax?: string;
+  escape?: {
+    dc: number;
+    ability?: AbilityRef;
+    skill?: string;
+    actionRequired?: boolean;
+  };
+  ongoingEffects?: Effect[];
+  notes?: string;
+};
+
+export type MoveEffect = EffectBase<'move'> & {
+  distance?: number;
+  forced?: boolean;
+  toNearestUnoccupiedSpace?: boolean;
+  withinFeetOfSource?: number;
+  failIfNoSpace?: boolean;
+  movesWithSource?: boolean;
+  ignoresExtraCostForGrappledCreature?: boolean;
+};
+
+export type ActionEffect = EffectBase<'action'> & {
+  action: string;
+};
+
+export type FormEffect = EffectBase<'form'> & {
+  form: 'true-form' | 'object';
+  allowedSizes?: string[];
+  canReturnToTrueForm?: boolean;
+  retainsStatistics?: boolean;
+  equipmentTransforms?: boolean;
+  notes?: string;
+};
+
+export type SpawnEffect = EffectBase<'spawn'> & {
+  creature: string;
+  count: number;
+  location: 'self-space' | 'self-cell';
+  actsWhen: 'immediately-after-source-turn';
+};
+
+export type HitPointsEffect = EffectBase<'hit_points'> & {
+  mode: 'heal' | 'damage';
+  value: number;
+};
+
 export type AuraEffect = EffectBase<'aura'> & {
   range: number;
   affects: 'allies' | 'enemies' | 'self';
@@ -121,6 +204,17 @@ export type Effect =
   | GrantEffect
   | ResourceEffect
   | TriggeredEffect
+  | SaveEffect
+  | ConditionEffect
+  | ActivationEffect
+  | DamageEffect
+  | RollModifierEffect
+  | StateEffect
+  | MoveEffect
+  | ActionEffect
+  | FormEffect
+  | SpawnEffect
+  | HitPointsEffect
   | AuraEffect
   | NoteEffect
   | CustomEffect;

@@ -68,7 +68,7 @@ function getActionTargets(
   selection: ResolveCombatActionSelection,
   action: CombatActionDefinition,
 ): CombatantInstance[] {
-  if (action.targeting?.kind === 'all_enemies') {
+  if (action.targeting?.kind === 'all-enemies') {
     return Object.values(state.combatantsById).filter(
       (combatant) => combatant.side !== actor.side && combatant.stats.currentHitPoints > 0,
     )
@@ -282,7 +282,7 @@ function applyActionEffects(
       return
     }
 
-    if (effect.kind === 'death_outcome') {
+    if (effect.kind === 'death-outcome') {
       if (target.stats.currentHitPoints <= 0) {
         nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${target.source.label} ${effect.outcome.replaceAll('-', ' ')}.`, {
           actorId: actor.instanceId,
@@ -466,7 +466,7 @@ function resolveCombatActionInternal(
 
   const targets = getActionTargets(state, actor, selection, action)
   const target = targets[0]
-  if (action.resolutionMode === 'attack_roll') {
+  if (action.resolutionMode === 'attack-roll') {
     if (!target) {
       return state
     }
@@ -477,7 +477,7 @@ function resolveCombatActionInternal(
   const targetLabel = target ? getEncounterCombatantLabel(state, target.instanceId) : 'no target'
 
   let nextState = appendEncounterLogEvent(state, {
-    type: 'action_declared',
+    type: 'action-declared',
     actorId: actor.instanceId,
     targetIds: target ? [target.instanceId] : undefined,
     round: state.roundNumber,
@@ -489,7 +489,7 @@ function resolveCombatActionInternal(
     nextState = appendEncounterNote(
       nextState,
       `${actionLabel}: ${formatMovementSummary(action.movement)}${
-        action.targeting?.kind === 'entered_during_move'
+        action.targeting?.kind === 'entered-during-move'
           ? ' Resolution uses the selected target as the creature crossed during movement.'
           : ''
       }`,
@@ -523,7 +523,7 @@ function resolveCombatActionInternal(
     }
 
     nextState = appendEncounterLogEvent(nextState, {
-      type: 'action_resolved',
+      type: 'action-resolved',
       actorId: actor.instanceId,
       targetIds: target ? [target.instanceId] : undefined,
       round: state.roundNumber,
@@ -543,7 +543,7 @@ function resolveCombatActionInternal(
         }))
   }
 
-  if (action.resolutionMode === 'attack_roll') {
+  if (action.resolutionMode === 'attack-roll') {
     const attackBonus = action.attackProfile?.attackBonus
     if (target == null || attackBonus == null) return nextState
 
@@ -552,7 +552,7 @@ function resolveCombatActionInternal(
     const hit = totalRoll >= target.stats.armorClass
 
     nextState = appendEncounterLogEvent(nextState, {
-      type: hit ? 'attack_hit' : 'attack_missed',
+      type: hit ? 'attack-hit' : 'attack-missed',
       actorId: actor.instanceId,
       targetIds: [target.instanceId],
       round: state.roundNumber,
@@ -572,7 +572,7 @@ function resolveCombatActionInternal(
           damageType: action.attackProfile?.damageType,
         })
         nextState = appendEncounterLogEvent(nextState, {
-          type: 'action_resolved',
+          type: 'action-resolved',
           actorId: actor.instanceId,
           targetIds: [target.instanceId],
           round: state.roundNumber,
@@ -582,7 +582,7 @@ function resolveCombatActionInternal(
         })
       } else {
         nextState = appendEncounterLogEvent(nextState, {
-          type: 'action_resolved',
+          type: 'action-resolved',
           actorId: actor.instanceId,
           targetIds: [target.instanceId],
           round: state.roundNumber,
@@ -601,7 +601,7 @@ function resolveCombatActionInternal(
       )
     } else {
       nextState = appendEncounterLogEvent(nextState, {
-        type: 'action_resolved',
+        type: 'action-resolved',
         actorId: actor.instanceId,
         targetIds: [target.instanceId],
         round: state.roundNumber,
@@ -609,7 +609,7 @@ function resolveCombatActionInternal(
         summary: `${actionLabel} resolves with no damage dealt.`,
       })
     }
-  } else if (action.resolutionMode === 'saving_throw') {
+  } else if (action.resolutionMode === 'saving-throw') {
     if (targets.length === 0 || !action.saveProfile) return nextState
 
     for (const saveTarget of targets) {
@@ -632,7 +632,7 @@ function resolveCombatActionInternal(
       const succeeded = totalRoll >= action.saveProfile.dc
 
       nextState = appendEncounterLogEvent(nextState, {
-        type: 'action_resolved',
+        type: 'action-resolved',
         actorId: actor.instanceId,
         targetIds: [saveTarget.instanceId],
         round: state.roundNumber,
@@ -672,7 +672,7 @@ function resolveCombatActionInternal(
     }
   } else {
     nextState = appendEncounterLogEvent(nextState, {
-      type: action.kind === 'spell' ? 'spell_logged' : 'action_resolved',
+      type: action.kind === 'spell' ? 'spell-logged' : 'action-resolved',
       actorId: actor.instanceId,
       targetIds: target ? [target.instanceId] : undefined,
       round: state.roundNumber,

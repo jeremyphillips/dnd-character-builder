@@ -166,7 +166,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         effects: [
           {
             kind: 'trigger',
-            trigger: 'damage_dealt',
+            trigger: 'damage-dealt',
             condition: {
               kind: 'state',
               target: 'target',
@@ -293,13 +293,13 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description:
             'The creature has Advantage on attack rolls against a creature if at least one of its allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.',
           trigger: {
-            kind: 'ally_near_target',
+            kind: 'ally-near-target',
             withinFeet: 5,
             allyConditionNot: 'incapacitated',
           },
           effects: [
             {
-              kind: 'roll_modifier',
+              kind: 'roll-modifier',
               appliesTo: 'attack-rolls',
               modifier: 'advantage',
             },
@@ -310,12 +310,12 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description:
             'While in sunlight, the kobold has Disadvantage on ability checks and attack rolls.',
           trigger: {
-            kind: 'in_environment',
+            kind: 'in-environment',
             environment: 'sunlight',
           },
           effects: [
             {
-              kind: 'roll_modifier',
+              kind: 'roll-modifier',
               appliesTo: ['ability-checks', 'attack-rolls'],
               modifier: 'disadvantage',
             },
@@ -378,13 +378,13 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description:
             'The creature has Advantage on attack rolls against a creature if at least one of its allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition.',
           trigger: {
-            kind: 'ally_near_target',
+            kind: 'ally-near-target',
             withinFeet: 5,
             allyConditionNot: 'incapacitated',
           },
           effects: [
             {
-              kind: 'roll_modifier',
+              kind: 'roll-modifier',
               appliesTo: 'attack-rolls',
               modifier: 'advantage',
             },
@@ -424,7 +424,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description:
             'If damage reduces the zombie to 0 Hit Points, it makes a Constitution saving throw...',
           trigger: {
-            kind: 'reduced_to_0_hp',
+            kind: 'reduced-to-0-hp',
           },
           effects: [
             {
@@ -543,7 +543,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             },
             {
               // Engine caveat: death outcome is currently modeled as a descriptive rider, not a full outcome pipeline.
-              kind: "death_outcome",
+              kind: "death-outcome",
               trigger: "reduced-to-0-hit-points-by-this-action",
               targetType: "creature",
               outcome: "turns-to-dust",
@@ -563,7 +563,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               kind: "condition",
               conditionId: "frightened",
               duration: {
-                kind: "until_turn_boundary",
+                kind: "until-turn-boundary",
                 subject: "source",
                 turn: "next",
                 boundary: "end",
@@ -654,7 +654,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         description:
           'The bugbear needn’t spend extra movement to move a creature it is grappling.',
         trigger: {
-          kind: 'while_moving_grappled_creature',
+          kind: 'while-moving-grappled-creature',
         },
         effects: [
           {
@@ -808,7 +808,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             period: 'day',
           },
           trigger: {
-            kind: 'turn_end',
+            kind: 'turn-end',
           },
           requirements: [
             { kind: 'self-state', state: 'bloodied' },
@@ -816,7 +816,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           ],
           effects: [
             {
-              kind: 'tracked_part',
+              kind: 'tracked-part',
               part: 'limb',
               change: {
                 mode: 'sever',
@@ -851,15 +851,15 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description:
             'The troll regains 15 Hit Points at the start of each of its turns. Acid or Fire damage suppresses this trait on its next turn.',
           trigger: {
-            kind: 'turn_start',
+            kind: 'turn-start',
           },
           effects: [
-            { kind: 'hit_points', mode: 'heal', value: 15 },
+            { kind: 'hit-points', mode: 'heal', value: 15 },
           ],
           suppression: {
             ifTookDamageTypes: ['acid', 'fire'],
             duration: {
-              kind: 'until_turn_boundary',
+              kind: 'until-turn-boundary',
               subject: 'self',
               turn: 'next',
               boundary: 'end',
@@ -1036,7 +1036,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               },
             },
             {
-              kind: 'visibility_rule',
+              kind: 'visibility-rule',
               transparent: true,
             },
             {
@@ -1090,7 +1090,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             'Even when the cube is in plain sight, a creature must succeed on a DC 15 Wisdom (Perception) check to notice the cube if it hasn’t witnessed the cube move or otherwise act.',
           effects: [
             {
-              kind: 'visibility_rule',
+              kind: 'visibility-rule',
               transparent: true,
               noticeCheck: {
                 ability: 'wis',
@@ -1196,7 +1196,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         description:
           'The mimic adheres to anything that touches it while in object form.',
         trigger: [
-          { kind: 'in_form', form: 'object' },
+          { kind: 'in-form', form: 'object' },
           { kind: 'contact' },
         ],
         effects: [
@@ -1365,7 +1365,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           description: "The hydra can hold its breath for 1 hour.",
           effects: [
             {
-              kind: "hold_breath",
+              kind: "hold-breath",
               duration: {
                 kind: "fixed",
                 value: 1,
@@ -1380,17 +1380,17 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             "The hydra has five heads. Whenever the hydra takes 25 damage or more on a single turn, one of its heads dies. The hydra dies if all its heads are dead. At the end of each of its turns when it has at least one living head, the hydra grows two heads for each of its heads that died since its last turn, unless it has taken Fire damage since its last turn. The hydra regains 20 Hit Points when it grows new heads.",
           effects: [
             {
-              kind: "tracked_part",
+              kind: "tracked-part",
               part: "head",
               initialCount: 5,
               loss: {
-                trigger: "damage_taken_in_single_turn",
+                trigger: "damage-taken-in-single-turn",
                 minDamage: 25,
                 count: 1,
               },
               deathWhenCountReaches: 0,
               regrowth: {
-                trigger: "turn_end",
+                trigger: "turn-end",
                 requiresLivingPart: true,
                 countPerPartLostSinceLastTurn: 2,
                 suppressedByDamageTypes: ["fire"],
@@ -1406,7 +1406,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           effects: [
             {
               // Engine caveat: extra reaction pools are not fully enforced yet.
-              kind: "extra_reaction",
+              kind: "extra-reaction",
               appliesTo: "opportunity-attacks-only",
               count: {
                 kind: "per-part-beyond",

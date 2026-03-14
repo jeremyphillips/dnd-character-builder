@@ -27,11 +27,11 @@ function areSupportedContextTriggersMatched(
   if (triggers.length === 0) return true
 
   return triggers.every((trigger) => {
-    if (trigger.kind === 'in_environment') return context.environment === trigger.environment
-    if (trigger.kind === 'in_form') return context.form === trigger.form
+    if (trigger.kind === 'in-environment') return context.environment === trigger.environment
+    if (trigger.kind === 'in-form') return context.form === trigger.form
     if (trigger.kind === 'contact') return context.manual.contact
-    if (trigger.kind === 'ally_near_target') return context.manual.allyNearTarget
-    if (trigger.kind === 'while_moving_grappled_creature') return context.manual.movingGrappledCreature
+    if (trigger.kind === 'ally-near-target') return context.manual.allyNearTarget
+    if (trigger.kind === 'while-moving-grappled-creature') return context.manual.movingGrappledCreature
     return false
   })
 }
@@ -57,12 +57,12 @@ function toRuntimeTurnDuration(duration: {
   value: number
   unit: 'turn' | 'round' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year'
 } | {
-  kind: 'until_turn_boundary'
+  kind: 'until-turn-boundary'
   subject: 'self' | 'source' | 'target'
   turn: 'current' | 'next'
   boundary: 'start' | 'end'
 }): { remainingTurns: number; tickOn: 'start' | 'end' } | undefined {
-  if (duration.kind === 'until_turn_boundary') {
+  if (duration.kind === 'until-turn-boundary') {
     return {
       remainingTurns: duration.turn === 'current' ? 0 : 1,
       tickOn: duration.boundary,
@@ -99,14 +99,14 @@ export function buildMonsterTurnHooks(monster: Monster): RuntimeTurnHook[] {
     const triggers = monsterTriggersArray(trait.trigger)
 
     return triggers.flatMap((trigger, triggerIndex) => {
-      if (trigger.kind !== 'turn_start' && trigger.kind !== 'turn_end') return []
+      if (trigger.kind !== 'turn-start' && trigger.kind !== 'turn-end') return []
       if (!trait.effects || trait.effects.length === 0) return []
 
       return [
         {
           id: `${monster.id}-trait-${traitIndex}-${triggerIndex}`,
           label: trait.name,
-          boundary: trigger.kind === 'turn_start' ? 'start' : 'end',
+          boundary: trigger.kind === 'turn-start' ? 'start' : 'end',
           effects: trait.effects,
           requirements: toRuntimeTurnHookRequirements(trait.requirements),
           suppression: trait.suppression?.ifTookDamageTypes
@@ -123,21 +123,21 @@ export function buildMonsterTurnHooks(monster: Monster): RuntimeTurnHook[] {
 
 export function formatMonsterTriggerLabel(trigger: MonsterTraitTrigger): string {
   switch (trigger.kind) {
-    case 'ally_near_target':
+    case 'ally-near-target':
       return `Ally within ${trigger.withinFeet} ft of target${trigger.allyConditionNot ? ` and not ${trigger.allyConditionNot}` : ''}`
     case 'contact':
       return 'Contact'
-    case 'in_environment':
+    case 'in-environment':
       return `In ${trigger.environment}`
-    case 'in_form':
+    case 'in-form':
       return `In ${trigger.form}`
-    case 'reduced_to_0_hp':
+    case 'reduced-to-0-hp':
       return 'Reduced to 0 HP'
-    case 'turn_end':
+    case 'turn-end':
       return 'Turn End'
-    case 'turn_start':
+    case 'turn-start':
       return 'Turn Start'
-    case 'while_moving_grappled_creature':
+    case 'while-moving-grappled-creature':
       return 'While moving grappled creature'
   }
 }
@@ -150,14 +150,14 @@ export function buildMonsterContextTriggers(
     const triggers = monsterTriggersArray(trait.trigger)
 
     return triggers.flatMap((trigger, triggerIndex) => {
-      if (trigger.kind === 'turn_start' || trigger.kind === 'turn_end') return []
+      if (trigger.kind === 'turn-start' || trigger.kind === 'turn-end') return []
 
       const status =
-        trigger.kind === 'in_environment'
+        trigger.kind === 'in-environment'
           ? context.environment === trigger.environment
             ? 'matched'
             : 'inactive'
-          : trigger.kind === 'in_form'
+          : trigger.kind === 'in-form'
             ? context.form === trigger.form
               ? 'matched'
               : 'inactive'
@@ -165,11 +165,11 @@ export function buildMonsterContextTriggers(
               ? context.manual.contact
                 ? 'matched'
                 : 'inactive'
-              : trigger.kind === 'ally_near_target'
+              : trigger.kind === 'ally-near-target'
                 ? context.manual.allyNearTarget
                   ? 'matched'
                   : 'inactive'
-                : trigger.kind === 'while_moving_grappled_creature'
+                : trigger.kind === 'while-moving-grappled-creature'
                   ? context.manual.movingGrappledCreature
                     ? 'matched'
                     : 'inactive'
@@ -189,13 +189,13 @@ export function buildMonsterContextTriggers(
 
 export function buildReducedToZeroTraits(monster: Monster) {
   return (monster.mechanics.traits ?? []).filter((trait) =>
-    monsterTriggersArray(trait.trigger).some((trigger) => trigger.kind === 'reduced_to_0_hp'),
+    monsterTriggersArray(trait.trigger).some((trigger) => trigger.kind === 'reduced-to-0-hp'),
   )
 }
 
 export function monsterHasFormTriggers(monster: Monster): boolean {
   return (monster.mechanics.traits ?? []).some((trait) =>
-    monsterTriggersArray(trait.trigger).some((trigger) => trigger.kind === 'in_form'),
+    monsterTriggersArray(trait.trigger).some((trigger) => trigger.kind === 'in-form'),
   )
 }
 
@@ -207,8 +207,8 @@ export function monsterSupportedManualTriggers(
   ;(monster.mechanics.traits ?? []).forEach((trait) => {
     monsterTriggersArray(trait.trigger).forEach((trigger) => {
       if (trigger.kind === 'contact') triggerSet.add('contact')
-      if (trigger.kind === 'ally_near_target') triggerSet.add('allyNearTarget')
-      if (trigger.kind === 'while_moving_grappled_creature') triggerSet.add('movingGrappledCreature')
+      if (trigger.kind === 'ally-near-target') triggerSet.add('allyNearTarget')
+      if (trigger.kind === 'while-moving-grappled-creature') triggerSet.add('movingGrappledCreature')
     })
   })
 

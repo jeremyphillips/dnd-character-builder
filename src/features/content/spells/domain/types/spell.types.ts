@@ -6,7 +6,6 @@ import type { ContentItem } from '@/features/content/shared/domain/types/content
 import type { Distance } from '@/shared/distance';
 import type { Coin } from '@/shared/money/types';
 import type { TimeUnit } from '@/shared/time';
-import type { TriggerType } from '@/features/mechanics/domain/triggers/trigger.types';
 
 // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
@@ -31,7 +30,7 @@ export type CastingTimeUnit =
 export type SpellCastingTimeMode = {
   value: number;
   unit: CastingTimeUnit;
-  trigger?: TriggerType;
+  trigger?: string;
   ritual?: boolean;
 };
 
@@ -81,6 +80,19 @@ export type SpellComponents = {
   material?: MaterialComponent;
 };
 
+export type SpellScalingCategory =
+  | 'extra-damage'
+  | 'extra-targets'
+  | 'expanded-area'
+  | 'expanded-range'
+  | 'longer-duration'
+  | 'other';
+
+export type SpellScalingRule = {
+  category: SpellScalingCategory;
+  description: string;
+};
+
 export interface SpellBase {
   id: string;
   name: string;
@@ -92,9 +104,10 @@ export interface SpellBase {
   duration: SpellDuration;
   components: SpellComponents;
   effects: SpellEffects;
+  scaling?: SpellScalingRule[];
   description: {
-    full: string; // Entire rules text
-    summary: string; // Short summary for UI
+    full: string;
+    summary: string;
   }
   imageKey?: string | null;
 }

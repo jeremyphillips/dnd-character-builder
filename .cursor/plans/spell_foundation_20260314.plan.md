@@ -4,28 +4,28 @@ overview: Establish spells as canonical content authored with shared effect prim
 todos:
   - id: lock-canonical-vocabulary
     content: Freeze the canonical cross-domain vocabulary for timing/effect discriminants, spell trigger authoring, concentration ownership, and area ownership.
-    status: pending
+    status: completed
   - id: normalize-system-spell-ids
     content: Convert all `systemCatalog.spells.ts` spell IDs to kebab-case and add a manual DB migration script under `scripts/` for persisted spell references.
-    status: pending
+    status: completed
   - id: normalize-global-timing-names
     content: Migrate shared timing/effect discriminants and all content/runtime consumers to one canonical naming style.
-    status: pending
+    status: completed
   - id: loosen-spell-reaction-trigger-typing
     content: Change spell reaction triggers to descriptive strings until the shared trigger model is mature enough to replace them.
-    status: pending
+    status: completed
   - id: define-save-spell-pattern
     content: Define and document the default save-based spell authoring pattern using shared targeting, save, and outcome effects.
-    status: pending
+    status: completed
   - id: add-foundation-fixtures
     content: Add anchor fixtures for Fireball and one object-targeting spell to validate the schema and authoring rules.
-    status: pending
+    status: completed
   - id: document-under-modeling-and-scaling
     content: Document intentional under-modeling rules, targeting scope, adapter philosophy, and reserve a structured scaling extension point.
-    status: pending
+    status: completed
   - id: publish-authoritative-effects-reference
     content: Create and finalize an authoritative effects reference in `docs/reference/` covering philosophy, current shared shapes, cross-domain usage, and known unsupported/undefined areas.
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -327,15 +327,15 @@ Do not solve this with a spell-only hack.
 Prioritize tests and fixture assertions that enforce authoring consistency, not just runtime translation.
 
 1. Vocabulary normalization tests
-   Assert canonical discriminants and reject drift in representative content.
+  Assert canonical discriminants and reject drift in representative content.
 2. Save-based spell pattern tests
-   Lock the expected shape for `targeting + save + branched outcomes`.
+  Lock the expected shape for `targeting + save + branched outcomes`.
 3. Fixture regression tests
-   Snapshot or assert representative spell entries so authoring does not drift.
+  Snapshot or assert representative spell entries so authoring does not drift.
 4. Adapter boundary tests
-   Confirm runtime consumers degrade unsupported spell mechanics to log/text instead of inventing fake behavior.
+  Confirm runtime consumers degrade unsupported spell mechanics to log/text instead of inventing fake behavior.
 5. ID migration validation
-   Verify legacy spell IDs are mapped safely to canonical kebab-case IDs by the manual migration script and any affected reference checks.
+  Verify legacy spell IDs are mapped safely to canonical kebab-case IDs by the manual migration script and any affected reference checks.
 
 ## Definition Of Done
 
@@ -351,3 +351,4 @@ This plan is complete when:
 - targeting guidance is explicitly non-creature-biased
 - a structured scaling extension point exists for future upcasting work
 - `docs/reference/effects.md` exists and is authoritative about current shared effect philosophy, shapes, usage, and known gaps
+

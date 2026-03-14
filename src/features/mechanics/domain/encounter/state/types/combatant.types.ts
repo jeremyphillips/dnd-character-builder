@@ -95,13 +95,13 @@ export interface RuntimeTrackedPart {
   damageTakenByTypeThisTurn: Record<string, number>
   regrowthSuppressedByDamageTypes: string[]
   loss?: {
-    trigger: 'damage_taken_in_single_turn'
+    trigger: 'damage-taken-in-single-turn'
     minDamage: number
     count: number
   }
   deathWhenCountReaches?: number
   regrowth?: {
-    trigger: 'turn_end'
+    trigger: 'turn-end'
     requiresLivingPart?: boolean
     countPerPartLostSinceLastTurn: number
     suppressedByDamageTypes?: string[]

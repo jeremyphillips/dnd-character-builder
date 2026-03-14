@@ -55,7 +55,7 @@ function applyManualEffectToCombatant(
     })
   }
 
-  if (effect.kind === 'hit_points') {
+  if (effect.kind === 'hit-points') {
     return effect.mode === 'heal'
       ? applyHealingToCombatant(state, targetId, effect.value, {
           sourceLabel,

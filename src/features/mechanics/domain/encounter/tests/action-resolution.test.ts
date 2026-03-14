@@ -81,9 +81,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'slash',
               label: 'Slash',
-              kind: 'weapon_attack',
+              kind: 'weapon-attack',
               cost: { action: true },
-              resolutionMode: 'attack_roll',
+              resolutionMode: 'attack-roll',
               attackProfile: {
                 attackBonus: 5,
                 damage: '1d6 + 2',
@@ -116,10 +116,10 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['target']?.stats.currentHitPoints).toBe(5)
     expect(resolved.combatantsById['actor']?.turnResources?.actionAvailable).toBe(false)
     expect(resolved.log.slice(-4).map((entry) => entry.type)).toEqual([
-      'action_declared',
-      'attack_hit',
-      'damage_applied',
-      'action_resolved',
+      'action-declared',
+      'attack-hit',
+      'damage-applied',
+      'action-resolved',
     ])
   })
 
@@ -137,9 +137,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'slash',
               label: 'Slash',
-              kind: 'weapon_attack',
+              kind: 'weapon-attack',
               cost: { action: true },
-              resolutionMode: 'attack_roll',
+              resolutionMode: 'attack-roll',
               attackProfile: {
                 attackBonus: 2,
                 damage: '7',
@@ -171,9 +171,9 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['target']?.stats.currentHitPoints).toBe(12)
     expect(resolved.combatantsById['actor']?.turnResources?.actionAvailable).toBe(false)
     expect(resolved.log.slice(-3).map((entry) => entry.type)).toEqual([
-      'action_declared',
-      'attack_missed',
-      'action_resolved',
+      'action-declared',
+      'attack-missed',
+      'action-resolved',
     ])
   })
 
@@ -191,9 +191,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'slash',
               label: 'Slash',
-              kind: 'weapon_attack',
+              kind: 'weapon-attack',
               cost: { action: true },
-              resolutionMode: 'attack_roll',
+              resolutionMode: 'attack-roll',
               attackProfile: {
                 attackBonus: 5,
                 damage: '5',
@@ -243,9 +243,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'rampage',
               label: 'Rampage',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { bonusAction: true },
-              resolutionMode: 'log_only',
+              resolutionMode: 'log-only',
               usage: {
                 uses: {
                   max: 1,
@@ -296,7 +296,7 @@ describe('resolveCombatAction', () => {
               label: 'Magic Missile',
               kind: 'spell',
               cost: { action: true },
-              resolutionMode: 'log_only',
+              resolutionMode: 'log-only',
               logText: 'Three glowing darts strike automatically.',
             },
           ],
@@ -322,8 +322,8 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['target']?.stats.currentHitPoints).toBe(12)
     expect(resolved.combatantsById['actor']?.turnResources?.actionAvailable).toBe(false)
     expect(resolved.log.slice(-2).map((entry) => entry.type)).toEqual([
-      'action_declared',
-      'spell_logged',
+      'action-declared',
+      'spell-logged',
     ])
   })
 
@@ -341,9 +341,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'nimble-escape',
               label: 'Nimble Escape',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { bonusAction: true },
-              resolutionMode: 'log_only',
+              resolutionMode: 'log-only',
               logText: 'The goblin takes the Disengage or Hide action.',
             },
           ],
@@ -375,8 +375,8 @@ describe('resolveCombatAction', () => {
       hasCastBonusActionSpell: false,
     })
     expect(resolved.log.slice(-2).map((entry) => entry.type)).toEqual([
-      'action_declared',
-      'action_resolved',
+      'action-declared',
+      'action-resolved',
     ])
   })
 
@@ -395,9 +395,9 @@ describe('resolveCombatAction', () => {
               {
                 id: 'multiattack',
                 label: 'Multiattack',
-                kind: 'monster_action',
+                kind: 'monster-action',
                 cost: { action: true },
-                resolutionMode: 'log_only',
+                resolutionMode: 'log-only',
                 sequence: [
                   {
                     actionLabel: 'Bite',
@@ -409,9 +409,9 @@ describe('resolveCombatAction', () => {
               {
                 id: 'bite',
                 label: 'Bite',
-                kind: 'monster_action',
+                kind: 'monster-action',
                 cost: { action: true },
-                resolutionMode: 'attack_roll',
+                resolutionMode: 'attack-roll',
                 attackProfile: {
                   attackBonus: 8,
                   damage: '1',
@@ -477,9 +477,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'dreadful-glare',
               label: 'Dreadful Glare',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'saving_throw',
+              resolutionMode: 'saving-throw',
               saveProfile: {
                 ability: 'wis',
                 dc: 11,
@@ -553,9 +553,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'fire-breath',
               label: 'Fire Breath',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'saving_throw',
+              resolutionMode: 'saving-throw',
               damage: '16',
               damageType: 'fire',
               saveProfile: {
@@ -564,7 +564,7 @@ describe('resolveCombatAction', () => {
                 halfDamageOnSave: true,
               },
               targeting: {
-                kind: 'all_enemies',
+                kind: 'all-enemies',
               },
             },
           ],
@@ -620,15 +620,15 @@ describe('resolveCombatAction', () => {
             {
               id: 'engulf',
               label: 'Engulf',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'saving_throw',
+              resolutionMode: 'saving-throw',
               saveProfile: {
                 ability: 'dex',
                 dc: 12,
                 halfDamageOnSave: true,
               },
-              targeting: { kind: 'entered_during_move' },
+              targeting: { kind: 'entered-during-move' },
               movement: {
                 upToSpeed: true,
                 noOpportunityAttacks: true,
@@ -733,9 +733,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'fire-breath',
               label: 'Fire Breath',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'saving_throw',
+              resolutionMode: 'saving-throw',
               damage: '8d6',
               damageType: 'fire',
               saveProfile: {
@@ -743,7 +743,7 @@ describe('resolveCombatAction', () => {
                 dc: 17,
                 halfDamageOnSave: true,
               },
-              targeting: { kind: 'all_enemies' },
+              targeting: { kind: 'all-enemies' },
               usage: {
                 recharge: {
                   min: 5,
@@ -804,9 +804,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'bite',
               label: 'Bite',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'attack_roll',
+              resolutionMode: 'attack-roll',
               attackProfile: {
                 attackBonus: 4,
                 damage: '2d4 + 2',
@@ -868,9 +868,9 @@ describe('resolveCombatAction', () => {
             {
               id: 'grab',
               label: 'Grab',
-              kind: 'monster_action',
+              kind: 'monster-action',
               cost: { action: true },
-              resolutionMode: 'attack_roll',
+              resolutionMode: 'attack-roll',
               attackProfile: {
                 attackBonus: 4,
                 damage: '2d6 + 2',

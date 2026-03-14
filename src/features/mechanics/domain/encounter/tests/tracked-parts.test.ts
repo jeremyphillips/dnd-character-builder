@@ -24,17 +24,17 @@ function createHydra(): CombatantInstance {
     actions: [],
     activeEffects: [
       {
-        kind: 'tracked_part',
+        kind: 'tracked-part',
         part: 'head',
         initialCount: 5,
         loss: {
-          trigger: 'damage_taken_in_single_turn',
+          trigger: 'damage-taken-in-single-turn',
           minDamage: 25,
           count: 1,
         },
         deathWhenCountReaches: 0,
         regrowth: {
-          trigger: 'turn_end',
+          trigger: 'turn-end',
           requiresLivingPart: true,
           countPerPartLostSinceLastTurn: 2,
           suppressedByDamageTypes: ['fire'],

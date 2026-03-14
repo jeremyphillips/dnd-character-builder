@@ -69,7 +69,7 @@ export function applyDamageToCombatant(
                 (baseDamageTakenByTypeThisTurn[normalizedDamageType] ?? 0) + amount,
             }
       const thresholdCrossings =
-        trackedPart.loss?.trigger === 'damage_taken_in_single_turn'
+        trackedPart.loss?.trigger === 'damage-taken-in-single-turn'
           ? Math.floor(damageTakenThisTurn / trackedPart.loss.minDamage) * trackedPart.loss.count
           : 0
       const newLossCount = Math.max(0, thresholdCrossings - baseLossAppliedThisTurn)
@@ -128,7 +128,7 @@ export function applyDamageToCombatant(
   })
 
   let loggedState = appendLog(nextState, {
-    type: 'damage_applied',
+    type: 'damage-applied',
     actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,
@@ -202,7 +202,7 @@ export function applyHealingToCombatant(
   }))
 
   return appendLog(nextState, {
-    type: 'healing_applied',
+    type: 'healing-applied',
     actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,
@@ -235,7 +235,7 @@ export function addConditionToCombatant(
   }))
 
   return appendLog(nextState, {
-    type: 'condition_applied',
+    type: 'condition-applied',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,
@@ -271,7 +271,7 @@ export function removeConditionFromCombatant(
   }))
 
   return appendLog(nextState, {
-    type: 'condition_removed',
+    type: 'condition-removed',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,
@@ -303,7 +303,7 @@ export function addStateToCombatant(
   }))
 
   return appendLog(nextState, {
-    type: 'state_applied',
+    type: 'state-applied',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,
@@ -339,7 +339,7 @@ export function removeStateFromCombatant(
   }))
 
   return appendLog(nextState, {
-    type: 'state_removed',
+    type: 'state-removed',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
     round: state.roundNumber,

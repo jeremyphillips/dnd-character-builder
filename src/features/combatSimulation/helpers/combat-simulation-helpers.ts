@@ -141,7 +141,7 @@ export function formatEffectLabel(effect: Effect): string {
     case 'damage':
       return `Damage: ${formatDice(effect.damage) ?? '—'}`
     case 'grant':
-      return effect.grantType === 'condition_immunity'
+      return effect.grantType === 'condition-immunity'
         ? `Immunity: ${effect.value}`
         : 'Proficiency grant'
     case 'modifier':
@@ -317,12 +317,12 @@ function buildMonsterActionDefinition(
     return {
       id: `${monster.id}-action-${action.weaponRef}-${index}-${cost.bonusAction ? 'bonus' : 'action'}`,
       label: equippedWeapon?.aliasName ?? weapon?.name ?? action.weaponRef,
-      kind: 'monster_action',
+      kind: 'monster-action',
       cost,
       resolutionMode:
         equippedWeapon?.attackBonus != null || resolvedWeaponAttack?.attackBonus != null
-          ? 'attack_roll'
-          : 'log_only',
+          ? 'attack-roll'
+          : 'log-only',
       attackProfile:
         equippedWeapon?.attackBonus != null || resolvedWeaponAttack != null
           ? {
@@ -345,9 +345,9 @@ function buildMonsterActionDefinition(
     return {
       id: `${monster.id}-natural-${index}-${cost.bonusAction ? 'bonus' : 'action'}`,
       label: action.name ?? action.attackType,
-      kind: 'monster_action',
+      kind: 'monster-action',
       cost,
-      resolutionMode: action.attackBonus != null ? 'attack_roll' : 'log_only',
+      resolutionMode: action.attackBonus != null ? 'attack-roll' : 'log-only',
       attackProfile:
         action.attackBonus != null
           ? {
@@ -367,14 +367,14 @@ function buildMonsterActionDefinition(
   return {
     id: `${monster.id}-special-${index}-${cost.bonusAction ? 'bonus' : 'action'}`,
     label: action.name,
-    kind: 'monster_action',
+    kind: 'monster-action',
     cost,
     resolutionMode:
       action.attackBonus != null
-        ? 'attack_roll'
+        ? 'attack-roll'
         : action.save?.dc != null
-          ? 'saving_throw'
-          : 'log_only',
+          ? 'saving-throw'
+          : 'log-only',
     damage: damageWithBonus,
     damageType: action.damageType,
     attackProfile:
@@ -395,10 +395,10 @@ function buildMonsterActionDefinition(
         : undefined,
     targeting:
       action.target === 'creatures-in-area'
-        ? { kind: 'all_enemies' }
+        ? { kind: 'all-enemies' }
         : action.target === 'creatures-entered-during-move'
-          ? { kind: 'entered_during_move' }
-          : { kind: 'single_target' },
+          ? { kind: 'entered-during-move' }
+          : { kind: 'single-target' },
     movement: action.movement,
     usage: buildMonsterActionUsage(action),
     onHitEffects: action.attackBonus != null ? action.onSuccess : undefined,
@@ -445,13 +445,13 @@ export function buildMonsterEffectLabels(
 export function buildTurnHooksFromEffects(effects: Effect[]): RuntimeTurnHook[] {
   return effects.flatMap((effect, index) => {
     if (effect.kind !== 'trigger') return []
-    if (effect.trigger !== 'turn_start' && effect.trigger !== 'turn_end') return []
+    if (effect.trigger !== 'turn-start' && effect.trigger !== 'turn-end') return []
 
     return [
       {
         id: `effect-trigger-${effect.trigger}-${index}`,
         label: effect.text ?? `Trigger: ${effect.trigger}`,
-        boundary: effect.trigger === 'turn_start' ? 'start' : 'end',
+        boundary: effect.trigger === 'turn-start' ? 'start' : 'end',
         effects: effect.effects,
       },
     ]
@@ -464,14 +464,14 @@ export function formatRuntimeLabel(name: string, runtimeId: string, sourceId: st
 
 function buildAttackActions(
   attacks: CombatantAttackEntry[],
-  kind: 'weapon_attack' | 'monster_action',
+  kind: 'weapon-attack' | 'monster-action',
 ): CombatActionDefinition[] {
   return attacks.map((attack) => ({
     id: attack.id,
     label: attack.name,
     kind,
     cost: { action: true },
-    resolutionMode: attack.attackBonus != null ? 'attack_roll' : 'log_only',
+    resolutionMode: attack.attackBonus != null ? 'attack-roll' : 'log-only',
     attackProfile:
       attack.attackBonus != null
         ? {
@@ -512,7 +512,7 @@ export function buildSpellPlaceholderActions(args: {
         label: spell.name,
         kind: 'spell',
         cost: { action: true },
-        resolutionMode: 'log_only',
+        resolutionMode: 'log-only',
         logText: buildSpellLogText(spell),
       },
     ]
@@ -548,7 +548,7 @@ export function buildCharacterCombatantInstance(args: {
       abilityScores: character.abilityScores,
     },
     attacks,
-    actions: [...buildAttackActions(attacks, 'weapon_attack'), ...extraActions],
+    actions: [...buildAttackActions(attacks, 'weapon-attack'), ...extraActions],
     activeEffects: combatStats.activeEffects,
     runtimeEffects: [],
     turnHooks,

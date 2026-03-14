@@ -3,18 +3,59 @@
  *
  * These are the "factory defaults" for spells (SRD_CC_v5_2_1). Campaign-owned
  * custom spells would be stored in the DB and merged at runtime.
+ *
+ * Fully-authored spells include all SpellBase fields.
+ * Stub entries use SpellEntry and are minimally typed until authoring reaches them.
  */
 import type { Spell, SpellBase } from '@/features/content/spells/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
 
+type SpellEntry = Partial<SpellBase> & Pick<SpellBase, 'id' | 'name' | 'school' | 'level' | 'classes' | 'effects'>;
+
+// ---------------------------------------------------------------------------
+// Legacy ID → canonical kebab-case ID mapping (for migration scripts)
+// ---------------------------------------------------------------------------
+
+export const LEGACY_SPELL_ID_MAP: Record<string, string> = {
+  fireBolt: 'fire-bolt',
+  eldritchBlast: 'eldritch-blast',
+  sacredFlame: 'sacred-flame',
+  mageHand: 'mage-hand',
+  magicMissile: 'magic-missile',
+  cureWounds: 'cure-wounds',
+  healingWord: 'healing-word',
+  detectMagic: 'detect-magic',
+  guidingBolt: 'guiding-bolt',
+  charmPerson: 'charm-person',
+  protectionFromEvil: 'protection-from-evil',
+  featherFall: 'feather-fall',
+  mistyStep: 'misty-step',
+  spiritualWeapon: 'spiritual-weapon',
+  holdPerson: 'hold-person',
+  scorchingRay: 'scorching-ray',
+  lesserRestoration: 'lesser-restoration',
+  spiritGuardians: 'spirit-guardians',
+  lightningBolt: 'lightning-bolt',
+  dispelMagic: 'dispel-magic',
+  removeCurse: 'remove-curse',
+  dimensionDoor: 'dimension-door',
+  iceStorm: 'ice-storm',
+  wallOfForce: 'wall-of-force',
+  greaterRestoration: 'greater-restoration',
+  raiseDead: 'raise-dead',
+  chainLightning: 'chain-lightning',
+  powerWordStun: 'power-word-stun',
+  powerWordKill: 'power-word-kill',
+};
+
 // ---------------------------------------------------------------------------
 // 5e v1 system spells (SRD_CC_v5_2_1)
 // ---------------------------------------------------------------------------
 
-const SPELLS_RAW: readonly SpellBase[] = [
+const SPELLS_RAW: readonly SpellEntry[] = [
   {
-    id: 'fireBolt',
+    id: 'fire-bolt',
     name: 'Fire Bolt',
     school: 'evocation',
     level: 0,
@@ -22,7 +63,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'eldritchBlast',
+    id: 'eldritch-blast',
     name: 'Eldritch Blast',
     school: 'evocation',
     level: 0,
@@ -30,7 +71,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'sacredFlame',
+    id: 'sacred-flame',
     name: 'Sacred Flame',
     school: 'evocation',
     level: 0,
@@ -38,7 +79,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'mageHand',
+    id: 'mage-hand',
     name: 'Mage Hand',
     school: 'conjuration',
     level: 0,
@@ -59,10 +100,28 @@ const SPELLS_RAW: readonly SpellBase[] = [
     school: 'evocation',
     level: 0,
     classes: ['bard', 'cleric', 'sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, material: { description: 'a firefly or phosphorescent moss' } },
+    effects: [
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+      },
+      {
+        kind: 'note',
+        text: 'You touch one object that is no larger than 10 feet in any dimension. The object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.',
+      },
+    ],
+    description: {
+      full: 'You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet. The light can be colored as you like. Completely covering the object with something opaque blocks the light. The spell ends if you cast it again or dismiss it as an action.',
+      summary: 'An object you touch sheds bright light in a 20-foot radius for 1 hour.',
+    },
   },
   {
-    id: 'magicMissile',
+    id: 'magic-missile',
     name: 'Magic Missile',
     school: 'evocation',
     level: 1,
@@ -97,6 +156,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
         text: 'Each dart hits automatically and can be directed at one creature or split among several creatures you can see within range.',
       },
     ],
+    scaling: [{ category: 'extra-damage', description: 'One additional dart per slot level above 1st.' }],
     description: {
       full: 'You create three glowing darts of magical force. Each dart strikes a creature of your choice that you can see within range. A dart deals 1d4 + 1 Force damage to its target. The darts all strike simultaneously, and you can direct them to hit one creature or several.',
       summary: 'Three automatic-hit darts deal 1d4 + 1 force damage each and can be split among visible creatures in range.',
@@ -112,6 +172,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
       normal: {
         value: 1,
         unit: 'reaction',
+        trigger: 'when you are hit by an attack or targeted by the magic missile spell',
       },
     },
     range: { kind: 'self' },
@@ -128,20 +189,14 @@ const SPELLS_RAW: readonly SpellBase[] = [
         target: 'armor_class',
         mode: 'add',
         value: 5,
-        duration: {
-          kind: 'until_turn_boundary',
-          subject: 'self',
-          turn: 'next',
-          boundary: 'start',
-        },
         text: 'Including against the triggering attack.',
       },
       {
         kind: 'immunity',
         scope: 'spell',
-        spellIds: ['magicMissile'],
+        spellIds: ['magic-missile'],
         duration: {
-          kind: 'until_turn_boundary',
+          kind: 'until-turn-boundary',
           subject: 'self',
           turn: 'next',
           boundary: 'start',
@@ -155,7 +210,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     },
   },
   {
-    id: 'cureWounds',
+    id: 'cure-wounds',
     name: 'Cure Wounds',
     school: 'evocation',
     level: 1,
@@ -163,7 +218,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'healingWord',
+    id: 'healing-word',
     name: 'Healing Word',
     school: 'evocation',
     level: 1,
@@ -179,7 +234,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'detectMagic',
+    id: 'detect-magic',
     name: 'Detect Magic',
     school: 'divination',
     level: 1,
@@ -188,10 +243,10 @@ const SPELLS_RAW: readonly SpellBase[] = [
     description: {
       full: '',
       summary: '',
-    }
+    },
   },
   {
-    id: 'guidingBolt',
+    id: 'guiding-bolt',
     name: 'Guiding Bolt',
     school: 'evocation',
     level: 1,
@@ -207,7 +262,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'charmPerson',
+    id: 'charm-person',
     name: 'Charm Person',
     school: 'enchantment',
     level: 1,
@@ -215,7 +270,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'protectionFromEvil',
+    id: 'protection-from-evil',
     name: 'Protection from Evil and Good',
     school: 'abjuration',
     level: 1,
@@ -231,7 +286,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'featherFall',
+    id: 'feather-fall',
     name: 'Feather Fall',
     school: 'transmutation',
     level: 1,
@@ -250,7 +305,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
   // 2nd Level
   // ═══════════════════════════════════════════════════════════════
   {
-    id: 'mistyStep',
+    id: 'misty-step',
     name: 'Misty Step',
     school: 'conjuration',
     level: 2,
@@ -258,7 +313,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'spiritualWeapon',
+    id: 'spiritual-weapon',
     name: 'Spiritual Weapon',
     school: 'evocation',
     level: 2,
@@ -266,7 +321,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'holdPerson',
+    id: 'hold-person',
     name: 'Hold Person',
     school: 'enchantment',
     level: 2,
@@ -274,7 +329,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'scorchingRay',
+    id: 'scorching-ray',
     name: 'Scorching Ray',
     school: 'evocation',
     level: 2,
@@ -306,7 +361,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'lesserRestoration',
+    id: 'lesser-restoration',
     name: 'Lesser Restoration',
     school: 'abjuration',
     level: 2,
@@ -345,11 +400,11 @@ const SPELLS_RAW: readonly SpellBase[] = [
         text: "Flammable objects in the area that aren't being worn or carried start burning.",
       },
     ],
+    scaling: [{ category: 'extra-damage', description: 'Damage increases by 1d6 for each slot level above 3rd.' }],
     description: {
       full: "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren't being worn or carried start burning.",
-      summary: "20-foot-radius fire explosion dealing 8d6 fire damage; Dexterity save for half.",
-    }
-    
+      summary: '20-foot-radius fire explosion dealing 8d6 fire damage; Dexterity save for half.',
+    },
   },
   {
     id: 'counterspell',
@@ -360,7 +415,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'spiritGuardians',
+    id: 'spirit-guardians',
     name: 'Spirit Guardians',
     school: 'conjuration',
     level: 3,
@@ -384,7 +439,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'lightningBolt',
+    id: 'lightning-bolt',
     name: 'Lightning Bolt',
     school: 'evocation',
     level: 3,
@@ -400,7 +455,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'dispelMagic',
+    id: 'dispel-magic',
     name: 'Dispel Magic',
     school: 'abjuration',
     level: 3,
@@ -408,7 +463,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'removeCurse',
+    id: 'remove-curse',
     name: 'Remove Curse',
     school: 'abjuration',
     level: 3,
@@ -427,7 +482,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
   // 4th Level
   // ═══════════════════════════════════════════════════════════════
   {
-    id: 'dimensionDoor',
+    id: 'dimension-door',
     name: 'Dimension Door',
     school: 'conjuration',
     level: 4,
@@ -451,7 +506,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'iceStorm',
+    id: 'ice-storm',
     name: 'Ice Storm',
     school: 'evocation',
     level: 4,
@@ -459,7 +514,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'wallOfForce',
+    id: 'wall-of-force',
     name: 'Wall of Force',
     school: 'evocation',
     level: 5,
@@ -467,7 +522,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'greaterRestoration',
+    id: 'greater-restoration',
     name: 'Greater Restoration',
     school: 'abjuration',
     level: 5,
@@ -475,7 +530,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'raiseDead',
+    id: 'raise-dead',
     name: 'Raise Dead',
     school: 'necromancy',
     level: 5,
@@ -483,7 +538,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'chainLightning',
+    id: 'chain-lightning',
     name: 'Chain Lightning',
     school: 'evocation',
     level: 6,
@@ -515,7 +570,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'powerWordStun',
+    id: 'power-word-stun',
     name: 'Power Word Stun',
     school: 'enchantment',
     level: 8,
@@ -531,7 +586,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
     effects: [{ kind: 'note', text: '' }],
   },
   {
-    id: 'powerWordKill',
+    id: 'power-word-kill',
     name: 'Power Word Kill',
     school: 'enchantment',
     level: 9,
@@ -541,7 +596,7 @@ const SPELLS_RAW: readonly SpellBase[] = [
 ];
 
 function toSystemSpell(
-  spell: SpellBase,
+  spell: SpellEntry,
   systemId: SystemRulesetId,
 ): Spell {
   return {
@@ -549,7 +604,7 @@ function toSystemSpell(
     source: 'system',
     systemId,
     patched: false,
-  };
+  } as Spell;
 }
 
 const SYSTEM_SPELLS_SRD_CC_V5_2_1: readonly Spell[] = SPELLS_RAW.map(

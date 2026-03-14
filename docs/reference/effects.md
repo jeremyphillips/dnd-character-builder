@@ -130,7 +130,7 @@ Status meanings:
 - Status: `canonical`
 - Purpose: numeric or formulaic change to a shared stat target
 - Use when: changing AC, attack, damage, resistance, speed, save bonus, or similar
-- Do not use when: the mechanic is better represented by `condition`, `state`, or `roll_modifier`
+- Do not use when: the mechanic is better represented by `condition`, `state`, or `roll-modifier`
 - Key fields: `target`, `mode`, `value`
 
 ```ts
@@ -242,7 +242,7 @@ Status meanings:
 - Key fields: `grantType`, `value`
 
 ```ts
-{ kind: 'grant', grantType: 'condition_immunity', value: 'poisoned' }
+{ kind: 'grant', grantType: 'condition-immunity', value: 'poisoned' }
 ```
 
 ### `resource`
@@ -254,7 +254,7 @@ Status meanings:
 - Key fields: `resource.id`, `resource.max`, `resource.recharge`
 
 ```ts
-{ kind: 'resource', resource: { id: 'channel_divinity', max: 1, recharge: 'short_rest' } }
+{ kind: 'resource', resource: { id: 'channel_divinity', max: 1, recharge: 'short-rest' } }
 ```
 
 ### `trigger`
@@ -266,10 +266,10 @@ Status meanings:
 - Key fields: `trigger`, `effects`, `cost`
 
 ```ts
-{ kind: 'trigger', trigger: 'weapon_hit', effects: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }] }
+{ kind: 'trigger', trigger: 'weapon-hit', effects: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }] }
 ```
 
-### `roll_modifier`
+### `roll-modifier`
 
 - Status: `canonical`
 - Purpose: advantage or disadvantage on a roll family
@@ -278,7 +278,7 @@ Status meanings:
 - Key fields: `appliesTo`, `modifier`
 
 ```ts
-{ kind: 'roll_modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
+{ kind: 'roll-modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
 ```
 
 ### Other Current Shared Kinds
@@ -286,14 +286,14 @@ Status meanings:
 - `formula`: `canonical`
 - `check`: `canonical`
 - `containment`: `provisional`
-- `visibility_rule`: `provisional`
+- `visibility-rule`: `provisional`
 - `interval`: `canonical`
-- `death_outcome`: `provisional`
-- `hold_breath`: `canonical`
-- `tracked_part`: `provisional`
-- `extra_reaction`: `provisional`
+- `death-outcome`: `provisional`
+- `hold-breath`: `canonical`
+- `tracked-part`: `provisional`
+- `extra-reaction`: `provisional`
 - `spawn`: `provisional`
-- `hit_points`: `canonical`
+- `hit-points`: `canonical`
 - `aura`: `canonical`
 - `custom`: escape hatch only
 - Use these only when their current shared meaning fits.
@@ -311,13 +311,13 @@ Status meanings:
 Current shared trigger vocabulary includes:
 
 - `attack`
-- `weapon_hit`
+- `weapon-hit`
 - `hit`
-- `damage_dealt`
-- `damage_taken`
-- `turn_start`
-- `turn_end`
-- `spell_cast`
+- `damage-dealt`
+- `damage-taken`
+- `turn-start`
+- `turn-end`
+- `spell-cast`
 
 ### Timing Rules
 
@@ -362,7 +362,7 @@ Current shared trigger vocabulary includes:
 - effect owns the resulting modifier, roll mode, immunity, or state
 
 ```ts
-{ kind: 'roll_modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
+{ kind: 'roll-modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
 ```
 
 ### Reaction Defense Spell
@@ -397,7 +397,64 @@ Current shared trigger vocabulary includes:
 ]
 ```
 
-## 8. Anti-Patterns
+### Object-Targeting Spell
+
+- spell range defines placement
+- `targeting` describes the affected object(s)
+- effects describe the outcome
+
+```ts
+[
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'note', text: 'You touch one object that is no larger than 10 feet in any dimension. The object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.' },
+]
+```
+
+Targeting guidance must support: creatures, objects, creatures or objects, points in space, self, self plus secondary targets, and areas originating from self or a chosen point. Do not let spell authoring drift into creature-only assumptions.
+
+## 8. Intentional Under-Modeling
+
+Some spells and mechanics are intentionally only partially modeled when the shared effect schema cannot yet represent the full mechanic cleanly.
+
+Rules:
+
+- Use the supported shared primitives for the parts that are real and repeatable.
+- Put the unsupported remainder in `note` or owned description text.
+- Treat partial modeling as an explicit temporary state, not as complete modeling.
+- Document what is under-modeled so future work knows what remains.
+
+Example — Magic Missile currently models targeting, damage, and notes, but does not yet fully model auto-hit semantics, simultaneous resolution, or split/stack nuances.
+
+Do not solve under-modeling gaps with domain-specific hacks. If a gap proves recurring, promote it to a shared primitive per the extension policy.
+
+## 9. Scaling Direction
+
+Spells may define structured scaling rules via an optional `scaling` field:
+
+```ts
+scaling?: SpellScalingRule[];
+
+type SpellScalingRule = {
+  category: 'extra-damage' | 'extra-targets' | 'expanded-area' | 'expanded-range' | 'longer-duration' | 'other';
+  description: string;
+};
+```
+
+This is a reserved extension point for future upcasting work. Do not defer scaling information into ad hoc `higherLevelText` or scattered notes.
+
+## 10. Adapter Philosophy
+
+Runtime systems should consume spells through adapters.
+
+Rules:
+
+- Spell content reflects the rules cleanly.
+- Runtime systems may support only a subset.
+- Unsupported spell behavior degrades to log/text.
+- Content authoring must not be distorted to satisfy current runtime limits.
+- Adapters may translate discriminant naming for runtime constraints, but canonical content does not preserve legacy naming drift.
+
+## 11. Anti-Patterns
 
 - duplicating range, duration, or concentration in multiple places without a real distinction
 - inventing domain-specific effect kinds when a shared one already exists
@@ -408,7 +465,7 @@ Current shared trigger vocabulary includes:
 - letting runtime adapter needs dictate content schema
 - repeating full rules text inside effects when an owning description field already exists
 
-## 9. Extension Policy
+## 12. Extension Policy
 
 Add a new shared effect kind only when all of the following are true:
 

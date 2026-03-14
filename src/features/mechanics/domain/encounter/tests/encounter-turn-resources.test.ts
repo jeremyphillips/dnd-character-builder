@@ -131,17 +131,17 @@ describe('encounter turn resources', () => {
           speed: 30,
           activeEffects: [
             {
-              kind: 'tracked_part',
+              kind: 'tracked-part',
               part: 'head',
               initialCount: 5,
               loss: {
-                trigger: 'damage_taken_in_single_turn',
+                trigger: 'damage-taken-in-single-turn',
                 minDamage: 25,
                 count: 1,
               },
             },
             {
-              kind: 'extra_reaction',
+              kind: 'extra-reaction',
               appliesTo: 'opportunity-attacks-only',
               count: {
                 kind: 'per-part-beyond',

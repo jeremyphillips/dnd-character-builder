@@ -71,7 +71,7 @@ export function formatEffectLabel(effect: Effect): string {
       return `State: ${effect.stateId}`
     case 'immunity':
       return effect.notes ?? 'Immunity effect'
-    case 'hold_breath':
+    case 'hold-breath':
       return 'Hold Breath'
     default:
       return effect.text ?? effect.kind.replaceAll('_', ' ')
@@ -82,7 +82,7 @@ export function effectDurationToRuntimeDuration(effect: Effect): RuntimeMarkerDu
   const duration = effect.duration
   if (!duration) return null
 
-  if (duration.kind === 'until_turn_boundary') {
+  if (duration.kind === 'until-turn-boundary') {
     return {
       remainingTurns: duration.turn === 'current' ? 0 : 1,
       tickOn: duration.boundary,
@@ -117,7 +117,7 @@ export function deriveRuntimeEffects(combatant: CombatantInstance): RuntimeEffec
 
 export function deriveTrackedParts(combatant: CombatantInstance): RuntimeTrackedPart[] {
   return combatant.activeEffects.flatMap((effect) => {
-    if (effect.kind !== 'tracked_part' || typeof effect.initialCount !== 'number') return []
+    if (effect.kind !== 'tracked-part' || typeof effect.initialCount !== 'number') return []
 
     return [
       {
@@ -162,7 +162,7 @@ export function getTrackedPartCount(combatant: CombatantInstance, part: 'head' |
 
 export function getCombatantExtraOpportunityAttackReactions(combatant: CombatantInstance): number {
   return combatant.activeEffects.reduce((total, effect) => {
-    if (effect.kind !== 'extra_reaction' || effect.appliesTo !== 'opportunity-attacks-only') {
+    if (effect.kind !== 'extra-reaction' || effect.appliesTo !== 'opportunity-attacks-only') {
       return total
     }
 
@@ -253,7 +253,7 @@ export function unmetHookRequirements(
 
 export function formatTurnHookNote(effect: Effect): string | null {
   switch (effect.kind) {
-    case 'tracked_part': {
+    case 'tracked-part': {
       const change = 'change' in effect ? effect.change : undefined
       if (change) {
         const verb = change.mode === 'sever' ? 'Sever' : 'Grow'

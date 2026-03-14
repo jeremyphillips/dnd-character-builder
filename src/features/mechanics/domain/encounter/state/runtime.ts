@@ -108,7 +108,7 @@ function processTrackedPartTurnEnd(
 
   const trackedParts = combatant.trackedParts ?? []
   const updatedTrackedParts = trackedParts.map((trackedPart) => {
-    if (trackedPart.regrowth?.trigger !== 'turn_end') {
+    if (trackedPart.regrowth?.trigger !== 'turn-end') {
       return {
         ...trackedPart,
         lostSinceLastTurn: 0,
@@ -213,7 +213,7 @@ function processMarkerBoundary(
 
   conditionTick.expired.forEach((marker) => {
     nextState = appendLog(nextState, {
-      type: 'condition_removed',
+      type: 'condition-removed',
       actorId: combatantId,
       targetIds: [combatantId],
       round: nextState.roundNumber,
@@ -225,7 +225,7 @@ function processMarkerBoundary(
 
   stateTick.expired.forEach((marker) => {
     nextState = appendLog(nextState, {
-      type: 'state_removed',
+      type: 'state-removed',
       actorId: combatantId,
       targetIds: [combatantId],
       round: nextState.roundNumber,
@@ -270,7 +270,7 @@ function processRuntimeEffectBoundary(
 
   effectTick.expired.forEach((effect) => {
     nextState = appendLog(nextState, {
-      type: 'effect_expired',
+      type: 'effect-expired',
       actorId: combatantId,
       targetIds: [combatantId],
       round: nextState.roundNumber,
@@ -327,7 +327,7 @@ function executeTurnHooks(
     }
 
     nextState = appendLog(nextState, {
-      type: 'hook_triggered',
+      type: 'hook-triggered',
       actorId: combatantId,
       targetIds: [combatantId],
       round: nextState.roundNumber,
@@ -337,7 +337,7 @@ function executeTurnHooks(
     })
 
     hook.effects.forEach((effect) => {
-      if (effect.kind === 'hit_points') {
+      if (effect.kind === 'hit-points') {
         nextState =
           effect.mode === 'heal'
             ? applyHealingToCombatant(nextState, combatantId, effect.value, {

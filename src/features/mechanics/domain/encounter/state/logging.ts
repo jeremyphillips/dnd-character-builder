@@ -11,9 +11,9 @@ export function getCombatantLabel(state: EncounterState, combatantId: string | n
 
 export function createEncounterStartedLog(state: EncounterState): CombatLogEvent {
   return {
-    id: createLogId('encounter_started', 1),
+    id: createLogId('encounter-started', 1),
     timestamp: new Date().toISOString(),
-    type: 'encounter_started',
+    type: 'encounter-started',
     round: 1,
     turn: 1,
     summary: 'Encounter started.',
@@ -28,9 +28,9 @@ export function createEncounterStartedLog(state: EncounterState): CombatLogEvent
 
 export function createTurnStartedLog(state: EncounterState): CombatLogEvent {
   return {
-    id: createLogId('turn_started', state.log.length + 1),
+    id: createLogId('turn-started', state.log.length + 1),
     timestamp: new Date().toISOString(),
-    type: 'turn_started',
+    type: 'turn-started',
     actorId: state.activeCombatantId ?? undefined,
     round: state.roundNumber,
     turn: state.turnIndex + 1,
@@ -40,9 +40,9 @@ export function createTurnStartedLog(state: EncounterState): CombatLogEvent {
 
 export function createTurnEndedLog(state: EncounterState): CombatLogEvent {
   return {
-    id: createLogId('turn_ended', state.log.length + 1),
+    id: createLogId('turn-ended', state.log.length + 1),
     timestamp: new Date().toISOString(),
-    type: 'turn_ended',
+    type: 'turn-ended',
     actorId: state.activeCombatantId ?? undefined,
     round: state.roundNumber,
     turn: state.turnIndex + 1,
@@ -52,9 +52,9 @@ export function createTurnEndedLog(state: EncounterState): CombatLogEvent {
 
 export function createRoundStartedLog(state: EncounterState): CombatLogEvent {
   return {
-    id: createLogId('round_started', state.log.length + 1),
+    id: createLogId('round-started', state.log.length + 1),
     timestamp: new Date().toISOString(),
-    type: 'round_started',
+    type: 'round-started',
     round: state.roundNumber,
     turn: 1,
     summary: `Round ${state.roundNumber} starts.`,
@@ -116,7 +116,7 @@ export function appendHookTriggeredLog(
   details?: string,
 ): EncounterState {
   return appendLog(state, {
-    type: 'hook_triggered',
+    type: 'hook-triggered',
     actorId: combatantId,
     targetIds: [combatantId],
     round: state.roundNumber,

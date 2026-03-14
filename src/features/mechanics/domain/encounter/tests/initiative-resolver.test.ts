@@ -70,7 +70,7 @@ describe('rollInitiative', () => {
     expect(state.roundNumber).toBe(1)
     expect(state.partyCombatantIds).toEqual(['pc-1'])
     expect(state.enemyCombatantIds).toEqual(['monster-1'])
-    expect(state.log.map((entry) => entry.type)).toEqual(['encounter_started', 'turn_started'])
+    expect(state.log.map((entry) => entry.type)).toEqual(['encounter-started', 'turn-started'])
   })
 
   it('advances turn order and starts a new round when initiative wraps', () => {
@@ -109,14 +109,14 @@ describe('rollInitiative', () => {
 
     expect(secondTurn.activeCombatantId).toBe('pc-1')
     expect(secondTurn.roundNumber).toBe(1)
-    expect(secondTurn.log.slice(-2).map((entry) => entry.type)).toEqual(['turn_ended', 'turn_started'])
+    expect(secondTurn.log.slice(-2).map((entry) => entry.type)).toEqual(['turn-ended', 'turn-started'])
 
     expect(wrappedTurn.activeCombatantId).toBe('monster-1')
     expect(wrappedTurn.roundNumber).toBe(2)
     expect(wrappedTurn.log.slice(-3).map((entry) => entry.type)).toEqual([
-      'turn_ended',
-      'round_started',
-      'turn_started',
+      'turn-ended',
+      'round-started',
+      'turn-started',
     ])
   })
 
@@ -153,12 +153,12 @@ describe('rollInitiative', () => {
     expect(stateRemoved.combatantsById['pc-1'].conditions).toEqual([])
     expect(stateRemoved.combatantsById['pc-1'].states).toEqual([])
     expect(stateRemoved.log.slice(-6).map((entry) => entry.type)).toEqual([
-      'damage_applied',
-      'healing_applied',
-      'condition_applied',
-      'state_applied',
-      'condition_removed',
-      'state_removed',
+      'damage-applied',
+      'healing-applied',
+      'condition-applied',
+      'state-applied',
+      'condition-removed',
+      'state-removed',
     ])
   })
 
@@ -210,15 +210,15 @@ describe('rollInitiative', () => {
     expect(secondTurn.combatantsById['monster-1'].states).toEqual([])
     expect(secondTurn.combatantsById['pc-1'].conditions).toEqual([])
     expect(secondTurn.log.slice(-4).map((entry) => entry.type)).toEqual([
-      'turn_ended',
-      'state_removed',
-      'turn_started',
-      'condition_removed',
+      'turn-ended',
+      'state-removed',
+      'turn-started',
+      'condition-removed',
     ])
     expect(wrappedTurn.log.slice(-3).map((entry) => entry.type)).toEqual([
-      'turn_ended',
-      'round_started',
-      'turn_started',
+      'turn-ended',
+      'round-started',
+      'turn-started',
     ])
   })
 
@@ -235,7 +235,7 @@ describe('rollInitiative', () => {
             kind: 'condition',
             conditionId: 'frightened',
             duration: {
-              kind: 'until_turn_boundary',
+              kind: 'until-turn-boundary',
               subject: 'self',
               turn: 'next',
               boundary: 'end',
@@ -273,7 +273,7 @@ describe('rollInitiative', () => {
     )
     expect(secondTurn.combatantsById['pc-1'].runtimeEffects).toHaveLength(1)
     expect(wrappedTurn.combatantsById['pc-1'].runtimeEffects).toHaveLength(0)
-    expect(wrappedTurn.log.some((entry) => entry.type === 'effect_expired')).toBe(true)
+    expect(wrappedTurn.log.some((entry) => entry.type === 'effect-expired')).toBe(true)
   })
 
   it('fires start-of-turn hooks and applies simple hit point effects', () => {
@@ -303,7 +303,7 @@ describe('rollInitiative', () => {
             id: 'regen',
             label: 'Regeneration',
             boundary: 'start',
-            effects: [{ kind: 'hit_points', mode: 'heal', value: 15 }],
+            effects: [{ kind: 'hit-points', mode: 'heal', value: 15 }],
           },
         ],
         conditions: [],
@@ -317,8 +317,8 @@ describe('rollInitiative', () => {
 
     expect(started.combatantsById['monster-1'].stats.currentHitPoints).toBe(30)
     expect(started.log.slice(-2).map((entry) => entry.type)).toEqual([
-      'hook_triggered',
-      'healing_applied',
+      'hook-triggered',
+      'healing-applied',
     ])
   })
 
@@ -342,7 +342,7 @@ describe('rollInitiative', () => {
                 kind: 'condition',
                 conditionId: 'invisible',
                 duration: {
-                  kind: 'until_turn_boundary',
+                  kind: 'until-turn-boundary',
                   subject: 'self',
                   turn: 'next',
                   boundary: 'end',
@@ -422,7 +422,7 @@ describe('rollInitiative', () => {
             id: 'regen',
             label: 'Regeneration',
             boundary: 'start',
-            effects: [{ kind: 'hit_points', mode: 'heal', value: 15 }],
+            effects: [{ kind: 'hit-points', mode: 'heal', value: 15 }],
             suppression: {
               damageTypes: ['fire', 'acid'],
               duration: {
@@ -525,7 +525,7 @@ describe('rollInitiative', () => {
             ],
             effects: [
               {
-                kind: 'tracked_part',
+                kind: 'tracked-part',
                 part: 'limb',
                 change: {
                   mode: 'sever',
@@ -640,10 +640,10 @@ describe('rollInitiative', () => {
 
     expect(succeeded.combatantsById['monster-1'].stats.currentHitPoints).toBe(1)
     expect(succeeded.log.map((entry) => entry.type).slice(-4)).toEqual([
-      'hook_triggered',
+      'hook-triggered',
       'note',
       'note',
-      'healing_applied',
+      'healing-applied',
     ])
     expect(failed.combatantsById['monster-1'].stats.currentHitPoints).toBe(0)
     expect(failed.log.map((entry) => entry.summary).slice(-2)).toEqual([

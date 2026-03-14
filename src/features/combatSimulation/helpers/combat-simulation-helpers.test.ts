@@ -109,7 +109,7 @@ describe('combat simulation monster action helpers', () => {
     expect(actions).toEqual([
       expect.objectContaining({
         label: 'Rend',
-        resolutionMode: 'attack_roll',
+        resolutionMode: 'attack-roll',
         attackProfile: expect.objectContaining({
           attackBonus: 4,
           damage: '1d6 + 2',
@@ -118,7 +118,7 @@ describe('combat simulation monster action helpers', () => {
       }),
       expect.objectContaining({
         label: 'Acid Spit',
-        resolutionMode: 'attack_roll',
+        resolutionMode: 'attack-roll',
         attackProfile: expect.objectContaining({
           attackBonus: 5,
           damage: '2d4 + 3',
@@ -159,7 +159,7 @@ describe('combat simulation monster action helpers', () => {
     expect(actions[0]).toEqual(
       expect.objectContaining({
         label: 'Bone Bow',
-        resolutionMode: 'attack_roll',
+        resolutionMode: 'attack-roll',
         attackProfile: expect.objectContaining({
           attackBonus: 5,
           damage: '1d10 + 4',
@@ -271,7 +271,7 @@ describe('combat simulation monster action helpers', () => {
     expect(actions[0]).toEqual(
       expect.objectContaining({
         label: 'Engulf',
-        targeting: { kind: 'entered_during_move' },
+        targeting: { kind: 'entered-during-move' },
         movement: {
           upToSpeed: true,
           noOpportunityAttacks: true,

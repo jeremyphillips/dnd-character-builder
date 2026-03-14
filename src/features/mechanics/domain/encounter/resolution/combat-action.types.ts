@@ -3,12 +3,12 @@ import type { AbilityId } from '@/features/mechanics/domain/core/character/abili
 import type { BreakdownToken } from '../../resolution/stat-resolver'
 
 export type CombatActionKind =
-  | 'weapon_attack'
-  | 'monster_action'
+  | 'weapon-attack'
+  | 'monster-action'
   | 'spell'
-  | 'combat_effect'
+  | 'combat-effect'
 
-export type CombatActionResolutionMode = 'attack_roll' | 'saving_throw' | 'log_only'
+export type CombatActionResolutionMode = 'attack-roll' | 'saving-throw' | 'log-only'
 
 export interface CombatActionCost {
   action?: boolean
@@ -38,7 +38,7 @@ export interface CombatActionSaveProfile {
 }
 
 export interface CombatActionTargetingProfile {
-  kind: 'single_target' | 'all_enemies' | 'entered_during_move'
+  kind: 'single-target' | 'all-enemies' | 'entered-during-move'
 }
 
 export interface CombatActionMovementProfile {

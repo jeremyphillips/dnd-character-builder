@@ -17,7 +17,7 @@ export type ResourceCost = {
   amount: number;
 };
 
-export type ActivationKind = 'action' | 'bonus_action' | 'reaction' | 'special';
+export type ActivationKind = 'action' | 'bonus-action' | 'reaction' | 'special';
 export type SaveDcSpec = number | { kind: '5-plus-damage-taken' };
 
 export type EffectMode = 'add' | 'set' | 'multiply';
@@ -109,7 +109,7 @@ export type ModifierEffect = EffectBase<'modifier'> & {
 };
 
 export type ProficiencyGrantValue = {
-  target: 'armor' | 'weapon' | 'tool' | 'skill' | 'saving_throw';
+  target: 'armor' | 'weapon' | 'tool' | 'skill' | 'saving-throw';
   categories?: string[];
   items?: string[];
 };
@@ -120,7 +120,7 @@ export type ProficiencyGrantEffect = EffectBase<'grant'> & {
 };
 
 export type ConditionImmunityGrantEffect = EffectBase<'grant'> & {
-  grantType: 'condition_immunity';
+  grantType: 'condition-immunity';
   value: ConditionImmunityId;
 };
 
@@ -130,7 +130,7 @@ export type ResourceEffect = EffectBase<'resource'> & {
   resource: {
     id: string;
     max: number | ScalingRule;
-    recharge: 'short_rest' | 'long_rest' | 'none';
+    recharge: 'short-rest' | 'long-rest' | 'none';
     dice?: DiceOrFlat;
   };
 };
@@ -189,7 +189,7 @@ export type DamageEffect = EffectBase<'damage'> & {
   };
 };
 
-export type RollModifierEffect = EffectBase<'roll_modifier'> & {
+export type RollModifierEffect = EffectBase<'roll-modifier'> & {
   appliesTo: string | string[];
   modifier: 'advantage' | 'disadvantage';
 };
@@ -204,7 +204,7 @@ export type ContainmentEffect = EffectBase<'containment'> & {
   };
 };
 
-export type VisibilityRuleEffect = EffectBase<'visibility_rule'> & {
+export type VisibilityRuleEffect = EffectBase<'visibility-rule'> & {
   transparent?: boolean;
   noticeCheck?: {
     ability: AbilityRef;
@@ -268,26 +268,26 @@ export type SpellImmunityEffect = EffectBase<'immunity'> & {
 
 export type ImmunityEffect = SourceActionImmunityEffect | SpellImmunityEffect;
 
-export type DeathOutcomeEffect = EffectBase<'death_outcome'> & {
+export type DeathOutcomeEffect = EffectBase<'death-outcome'> & {
   trigger: 'reduced-to-0-hit-points-by-this-action';
   targetType?: 'creature';
   outcome: 'turns-to-dust';
 };
 
-export type HoldBreathEffect = EffectBase<'hold_breath'> & {
+export type HoldBreathEffect = EffectBase<'hold-breath'> & {
   duration: EffectDuration;
 };
 
 type TrackedPartDefinition = {
   initialCount: number;
   loss?: {
-    trigger: 'damage_taken_in_single_turn';
+    trigger: 'damage-taken-in-single-turn';
     minDamage: number;
     count: number;
   };
   deathWhenCountReaches?: number;
   regrowth?: {
-    trigger: 'turn_end';
+    trigger: 'turn-end';
     requiresLivingPart?: boolean;
     countPerPartLostSinceLastTurn: number;
     suppressedByDamageTypes?: EffectDamageType[];
@@ -307,11 +307,11 @@ type TrackedPartChange = {
   regrowth?: never;
 };
 
-export type TrackedPartEffect = EffectBase<'tracked_part'> & {
+export type TrackedPartEffect = EffectBase<'tracked-part'> & {
   part: 'head' | 'limb';
 } & (TrackedPartDefinition | TrackedPartChange);
 
-export type ExtraReactionEffect = EffectBase<'extra_reaction'> & {
+export type ExtraReactionEffect = EffectBase<'extra-reaction'> & {
   appliesTo: 'opportunity-attacks-only';
   count: {
     kind: 'per-part-beyond';
@@ -351,7 +351,7 @@ export type SpawnEffect = EffectBase<'spawn'> & {
   actsWhen: 'immediately-after-source-turn';
 };
 
-export type HitPointsEffect = EffectBase<'hit_points'> & {
+export type HitPointsEffect = EffectBase<'hit-points'> & {
   mode: 'heal' | 'damage';
   value: number;
 };

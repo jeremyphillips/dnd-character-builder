@@ -181,6 +181,12 @@ export type ActivationEffect = EffectBase<'activation'> & {
 export type DamageEffect = EffectBase<'damage'> & {
   damage: DiceOrFlat;
   damageType?: EffectDamageType;
+  instances?: {
+    count: number;
+    simultaneous?: boolean;
+    canSplitTargets?: boolean;
+    canStackOnSingleTarget?: boolean;
+  };
 };
 
 export type RollModifierEffect = EffectBase<'roll_modifier'> & {
@@ -222,10 +228,16 @@ export type StateEffect = EffectBase<'state'> & {
 };
 
 export type TargetingEffect = EffectBase<'targeting'> & {
-  target: 'one-creature' | 'creatures-in-area' | 'creatures-entered-during-move';
+  target:
+    | 'one-creature'
+    | 'chosen-creatures'
+    | 'creatures-in-area'
+    | 'creatures-entered-during-move';
   targetType?: 'creature';
   rangeFeet?: number;
   requiresSight?: boolean;
+  count?: number;
+  canSelectSameTargetMultipleTimes?: boolean;
   area?: {
     kind: 'cone' | 'sphere' | 'line' | 'square' | 'cylinder' | 'cube';
     size: number;
@@ -241,11 +253,20 @@ export type IntervalEffect = EffectBase<'interval'> & {
   effects: Effect[];
 };
 
-export type ImmunityEffect = EffectBase<'immunity'> & {
+export type SourceActionImmunityEffect = EffectBase<'immunity'> & {
   scope: 'source-action';
   duration: EffectDuration;
   notes?: string;
 };
+
+export type SpellImmunityEffect = EffectBase<'immunity'> & {
+  scope: 'spell';
+  spellIds: string[];
+  duration: EffectDuration;
+  notes?: string;
+};
+
+export type ImmunityEffect = SourceActionImmunityEffect | SpellImmunityEffect;
 
 export type DeathOutcomeEffect = EffectBase<'death_outcome'> & {
   trigger: 'reduced-to-0-hit-points-by-this-action';

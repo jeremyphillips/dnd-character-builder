@@ -5,7 +5,8 @@ import type { Visibility } from '@/shared/types/visibility';
 import type { ContentItem } from '@/features/content/shared/domain/types/content.types';
 import type { Distance } from '@/shared/distance';
 import type { Coin } from '@/shared/money/types';
-import type { DurationUnit } from '@/shared/duration';
+import type { TimeUnit } from '@/shared/time';
+import type { TriggerType } from '@/features/mechanics/domain/triggers/trigger.types';
 
 // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
@@ -18,7 +19,7 @@ export type SpellRange =
   | { kind: 'distance'; value: Distance }
   | { kind: 'sight' }
   | { kind: 'unlimited' }
-  | { kind: 'special'; description: string };
+  | { kind: 'special'; description: string }
 
 export type CastingTimeUnit =
   | 'action'
@@ -30,7 +31,7 @@ export type CastingTimeUnit =
 export type SpellCastingTimeMode = {
   value: number;
   unit: CastingTimeUnit;
-  trigger?: string;
+  trigger?: TriggerType;
   ritual?: boolean;
 };
 
@@ -42,14 +43,23 @@ export type SpellCastingTime = {
 export type TimedDuration = {
   kind: 'timed';
   value: number;
-  unit: DurationUnit;
+  unit: TimeUnit;
   concentration?: boolean;
   upTo?: boolean;
+};
+
+export type TurnBoundarySpellDuration = {
+  kind: 'until-turn-boundary';
+  subject: 'self' | 'source' | 'target';
+  turn: 'current' | 'next';
+  boundary: 'start' | 'end';
+  concentration?: boolean;
 };
 
 export type SpellDuration =
   | { kind: 'instantaneous' }
   | TimedDuration
+  | TurnBoundarySpellDuration
   | { kind: 'until-dispelled'; concentration?: boolean }
   | { kind: 'until-triggered'; concentration?: boolean; description?: string }
   | { kind: 'special'; description: string; concentration?: boolean };
@@ -81,9 +91,11 @@ export interface SpellBase {
   range: SpellRange;
   duration: SpellDuration;
   components: SpellComponents;
-  ritual?: boolean;
-  effects?: SpellEffects;
-  description?: string;
+  effects: SpellEffects;
+  description: {
+    full: string; // Entire rules text
+    summary: string; // Short summary for UI
+  }
   imageKey?: string | null;
 }
 

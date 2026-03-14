@@ -1,0 +1,431 @@
+# Effects Reference
+
+## 1. Purpose And Scope
+
+The shared effects system is the canonical cross-domain mechanic vocabulary for authored content.
+
+- spells
+- monster actions
+- monster traits
+- character and class effects
+- runtime and combat adapters
+
+- content models are canonical
+- runtime systems are consumers
+- adapters may support only a subset
+- adapters may translate for runtime needs
+- runtime limits must not shape authored content
+
+## 2. Core Rules
+
+- Effects describe outcomes.
+- Triggers, conditions, and timing describe when outcomes apply.
+- Containers own effects.
+- Prefer one shared effect primitive over domain-specific duplicates.
+- Prefer under-modeling over fake precision.
+- Use structured data only when the shape is reliable and repeatable.
+- Put unsupported nuance in owned text or `note`, not invented structure.
+- Do not duplicate sources of truth.
+
+Boundaries:
+
+- Effect: damage, modifier, condition, move, state, immunity, grant, action availability.
+- Trigger or condition: when hit, at turn start, while unarmored, on failed save.
+- Container: spell, monster action, monster trait, class feature, runtime adapter payload.
+
+## 3. Source-Of-Truth / Ownership Rules
+
+### General
+
+- The owning container stores metadata about activation, range, duration, and description.
+- Effects store outcomes.
+- Effect-level duration is only authored when it differs from the owner duration.
+
+### Spells
+
+- `castingTime` owns casting cadence and reaction trigger text.
+- `range` owns placement distance.
+- `duration` owns spell duration and concentration by default.
+- `components` own V/S/M facts.
+- `description.full` is authoritative rules text.
+- `description.summary` is short UI copy.
+
+### Range
+
+- Top-level spell range = where the origin or target point can be chosen.
+- `targeting` = who or what is affected after placement.
+- Do not restate spell range in `targeting` unless it is distinct from the parent range.
+
+### Duration
+
+- Spell-level duration is primary for spells.
+- Concentration belongs on spell duration by default.
+- Effect duration appears only when the effect differs from the owner duration.
+
+### Saving Throws
+
+- `targeting` defines affected entities.
+- `save` defines the saving throw.
+- `save.onFail` and `save.onSuccess` own branching outcomes.
+- If damage changes on success or failure, that damage belongs under `save` outcomes.
+
+### Rituals And Alternate Modes
+
+- Ritual handling belongs in `castingTime.normal` or `castingTime.alternate`.
+- Do not duplicate ritual facts in unrelated fields.
+
+## 4. Canonical Naming Rules
+
+- Discriminants must be globally consistent across domains.
+- Canonical authored naming should use `kebab-case`.
+- Adapters may translate for runtime use.
+- Authored content must not preserve naming drift just because an older consumer still does.
+
+## 5. Shared Effect Kind Reference
+
+Status meanings:
+
+- `canonical`: stable shared primitive
+- `provisional`: shared today but likely to evolve
+- `under-modeled`: intentionally partial support
+
+### `targeting`
+
+- Status: `canonical`
+- Purpose: selection and affected-entity shape
+- Use when: modeling targets, areas, sight requirements, target count, repeat-target rules
+- Do not use when: storing spell placement range or save/damage outcomes
+- Key fields: `target`, `targetType`, `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
+
+```ts
+{ kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } }
+```
+
+### `damage`
+
+- Status: `canonical`; `instances` is `provisional`
+- Purpose: damage payload
+- Use when: a mechanic directly deals damage
+- Do not use when: save branches own the differing result
+- Key fields: `damage`, `damageType`, `instances`
+
+```ts
+{ kind: 'damage', damage: '8d6', damageType: 'fire' }
+```
+
+### `save`
+
+- Status: `canonical`
+- Purpose: saving throw plus branched outcomes
+- Use when: success and failure change the result
+- Do not use when: there is no real branching save outcome
+- Key fields: `save.ability`, `save.dc`, `onFail`, `onSuccess`
+
+```ts
+{ kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '8d6', damageType: 'fire' }], onSuccess: [{ kind: 'damage', damage: '4d6', damageType: 'fire' }] }
+```
+
+### `modifier`
+
+- Status: `canonical`
+- Purpose: numeric or formulaic change to a shared stat target
+- Use when: changing AC, attack, damage, resistance, speed, save bonus, or similar
+- Do not use when: the mechanic is better represented by `condition`, `state`, or `roll_modifier`
+- Key fields: `target`, `mode`, `value`
+
+```ts
+{ kind: 'modifier', target: 'armor_class', mode: 'add', value: 5 }
+```
+
+### `immunity`
+
+- Status: `canonical`; scope variants are `provisional`
+- Purpose: bounded immunity or protection window
+- Use when: protecting against a spell or source action
+- Do not use when: the mechanic is a permanent or granted immunity better owned by `grant`
+- Key fields: `scope`, `duration`, `spellIds`, `notes`
+
+```ts
+{ kind: 'immunity', scope: 'spell', spellIds: ['magic-missile'], duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } }
+```
+
+### `condition`
+
+- Status: `canonical`
+- Purpose: apply a standard condition
+- Use when: the mechanic applies a shared condition
+- Do not use when: the mechanic is a broader ongoing state
+- Key fields: `conditionId`, `targetSizeMax`, `escapeDc`
+
+```ts
+{ kind: 'condition', conditionId: 'prone' }
+```
+
+### `move`
+
+- Status: `canonical`
+- Purpose: movement outcome
+- Use when: movement is a real rules payload
+- Do not use when: movement is flavor only
+- Key fields: `distance`, `upToSpeedFraction`, `forced`, `toNearestUnoccupiedSpace`, `movesWithSource`
+
+```ts
+{ kind: 'move', distance: 10, forced: true }
+```
+
+### `note`
+
+- Status: `canonical`
+- Purpose: preserve meaningful unsupported or partially supported rules text
+- Use when: the mechanic cannot yet be modeled honestly
+- Do not use when: a supported shared shape already fits
+- Key fields: `text`
+
+```ts
+{ kind: 'note', text: "Flammable objects in the area that aren't being worn or carried start burning." }
+```
+
+### `state`
+
+- Status: `canonical`
+- Purpose: named ongoing state with nested or escape-driven rules
+- Use when: the mechanic is more than a simple condition
+- Do not use when: `condition` is enough
+- Key fields: `stateId`, `escape`, `ongoingEffects`, `notes`
+
+```ts
+{ kind: 'state', stateId: 'engulfed', ongoingEffects: [{ kind: 'condition', conditionId: 'restrained' }] }
+```
+
+### `form`
+
+- Status: `canonical`, domain-skewed
+- Purpose: form change
+- Use when: transformation is repeatable and fits the shared shape
+- Do not use when: the transformation is a bespoke one-off with unsupported custom logic
+- Key fields: `form`, `allowedSizes`, `retainsStatistics`, `equipmentTransforms`
+
+```ts
+{ kind: 'form', form: 'object', retainsStatistics: false }
+```
+
+### `action`
+
+- Status: `provisional`
+- Purpose: lightweight action reference or grant
+- Use when: action availability is the mechanic
+- Do not use when: the real mechanic is activation timing or a modifier
+- Key fields: `action`
+
+```ts
+{ kind: 'action', action: 'dash' }
+```
+
+### `activation`
+
+- Status: `canonical`
+- Purpose: activation wrapper around nested effects
+- Use when: a feature or trait spends an action, bonus action, reaction, or special activation to apply effects
+- Do not use when: the owner already cleanly stores activation and no wrapper is needed
+- Key fields: `activation`, `effects`, `cost`
+
+```ts
+{ kind: 'activation', activation: 'action', effects: [{ kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 }] }
+```
+
+### `grant`
+
+- Status: `canonical`
+- Purpose: grant proficiencies or condition immunities
+- Use when: a mechanic grants a reusable capability or immunity
+- Do not use when: the mechanic is a temporary modifier or bounded protection window
+- Key fields: `grantType`, `value`
+
+```ts
+{ kind: 'grant', grantType: 'condition_immunity', value: 'poisoned' }
+```
+
+### `resource`
+
+- Status: `canonical`, domain-skewed
+- Purpose: define a tracked resource
+- Use when: the mechanic creates a pool with recharge rules
+- Do not use when: the mechanic only spends an already-defined resource
+- Key fields: `resource.id`, `resource.max`, `resource.recharge`
+
+```ts
+{ kind: 'resource', resource: { id: 'channel_divinity', max: 1, recharge: 'short_rest' } }
+```
+
+### `trigger`
+
+- Status: `provisional`
+- Purpose: structured trigger gate around nested effects
+- Use when: the shared trigger vocabulary is expressive enough
+- Do not use when: the true trigger is more specific than the shared model can express honestly
+- Key fields: `trigger`, `effects`, `cost`
+
+```ts
+{ kind: 'trigger', trigger: 'weapon_hit', effects: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }] }
+```
+
+### `roll_modifier`
+
+- Status: `canonical`
+- Purpose: advantage or disadvantage on a roll family
+- Use when: the mechanic changes roll mode rather than numeric value
+- Do not use when: the mechanic is a flat numeric modifier
+- Key fields: `appliesTo`, `modifier`
+
+```ts
+{ kind: 'roll_modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
+```
+
+### Other Current Shared Kinds
+
+- `formula`: `canonical`
+- `check`: `canonical`
+- `containment`: `provisional`
+- `visibility_rule`: `provisional`
+- `interval`: `canonical`
+- `death_outcome`: `provisional`
+- `hold_breath`: `canonical`
+- `tracked_part`: `provisional`
+- `extra_reaction`: `provisional`
+- `spawn`: `provisional`
+- `hit_points`: `canonical`
+- `aura`: `canonical`
+- `custom`: escape hatch only
+- Use these only when their current shared meaning fits.
+- Do not invent near-duplicate local variants.
+
+## 6. Trigger / Timing Reference
+
+### Trigger Rules
+
+- Use structured triggers only when the shared trigger vocabulary expresses the rule honestly.
+- Use descriptive text when the current shared trigger model is too coarse.
+- Reaction spell triggers should remain descriptive text until a richer shared trigger model exists.
+- Do not force highly specific reaction text into the current shared `TriggerType`.
+
+Current shared trigger vocabulary includes:
+
+- `attack`
+- `weapon_hit`
+- `hit`
+- `damage_dealt`
+- `damage_taken`
+- `turn_start`
+- `turn_end`
+- `spell_cast`
+
+### Timing Rules
+
+- Turn-boundary timing should be modeled structurally when the exact boundary is the mechanic.
+- Do not flatten turn-boundary timing into generic time units when that loses meaning.
+- Effect-level duration is only authored when it differs from the owner duration.
+
+### Condition Rules
+
+- Use `EffectMeta.condition` for passive applicability gates.
+- Conditions gate effects; they are not replacement effect kinds.
+- Examples: while unarmored, while wielding a shield, while in an area.
+
+## 7. Common Authoring Patterns
+
+### Save-Based Spell
+
+- `targeting` defines affected entities
+- `save` defines the save
+- `save.onFail` and `save.onSuccess` own branching outcomes
+- damage belongs under `save` outcomes when it changes by save result
+
+```ts
+[
+  { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } },
+  { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '8d6', damageType: 'fire' }], onSuccess: [{ kind: 'damage', damage: '4d6', damageType: 'fire' }] },
+]
+```
+
+### Attack-Roll Rider
+
+- container owns attack metadata
+- hit riders own hit outcomes
+
+```ts
+{ kind: 'save', save: { ability: 'str', dc: 11 }, onFail: [{ kind: 'condition', conditionId: 'prone' }] }
+```
+
+### Passive Trait
+
+- trait owns passive context
+- effect owns the resulting modifier, roll mode, immunity, or state
+
+```ts
+{ kind: 'roll_modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
+```
+
+### Reaction Defense Spell
+
+- spell owns reaction trigger text
+- spell duration owns the main timing
+- effects own the protection outcomes
+
+```ts
+[
+  { kind: 'modifier', target: 'armor_class', mode: 'add', value: 5 },
+  { kind: 'immunity', scope: 'spell', spellIds: ['magic-missile'], duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } },
+]
+```
+
+### Area Effect
+
+- owner range chooses placement
+- `targeting.area` describes the template
+- `save`, `damage`, and riders describe outcomes after placement
+
+### Intentionally Under-Modeled Effect
+
+- use the supported shared primitives for the parts that are real and repeatable
+- put the unsupported remainder in `note` or owned description text
+
+```ts
+[
+  { kind: 'targeting', target: 'chosen-creatures', count: 3, canSelectSameTargetMultipleTimes: true, requiresSight: true },
+  { kind: 'damage', damage: '1d4+1', damageType: 'force', instances: { count: 3, simultaneous: true, canSplitTargets: true, canStackOnSingleTarget: true } },
+  { kind: 'note', text: 'Auto-hit and exact simultaneous dart resolution remain intentionally under-modeled.' },
+]
+```
+
+## 8. Anti-Patterns
+
+- duplicating range, duration, or concentration in multiple places without a real distinction
+- inventing domain-specific effect kinds when a shared one already exists
+- encoding unsupported mechanics with misleading structure
+- mixing naming styles for equivalent discriminants
+- using `note` as a substitute for already-supported structure
+- overfitting authored content to current combat or runtime limits
+- letting runtime adapter needs dictate content schema
+- repeating full rules text inside effects when an owning description field already exists
+
+## 9. Extension Policy
+
+Add a new shared effect kind only when all of the following are true:
+
+- the pattern is recurring
+- it applies across more than one domain
+- existing shared primitives cannot represent it honestly
+- it has a stable ownership boundary
+- it reduces duplication instead of creating another dialect
+
+Do not add a new shared effect kind:
+
+- for one spell
+- for one monster
+- only for runtime convenience
+
+Default decision rule:
+
+- under-model first
+- document the gap
+- promote to a shared primitive only after the pattern proves repeatable

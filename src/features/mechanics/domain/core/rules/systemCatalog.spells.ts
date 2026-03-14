@@ -524,7 +524,38 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     school: 'enchantment',
     level: 2,
     classes: ['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a straight piece of iron' } },
+    effects: [
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresSight: true,
+        condition: { kind: 'creature-type', target: 'target', creatureTypes: ['humanoid'] },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'condition', conditionId: 'paralyzed' }],
+      },
+      {
+        kind: 'note',
+        text: 'At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-targets',
+      description: 'You can target one additional Humanoid for each spell slot level above 2.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 2,
+    }],
+    description: {
+      full: 'Choose a Humanoid that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success. Using a Higher-Level Spell Slot. You can target one additional Humanoid for each spell slot level above 2.',
+      summary: 'A humanoid you can see makes a Wisdom save or is Paralyzed; repeats save at end of each turn.',
+    },
   },
   {
     id: 'scorching-ray',
@@ -532,7 +563,38 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     school: 'evocation',
     level: 2,
     classes: ['sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'targeting',
+        target: 'chosen-creatures',
+        targetType: 'creature',
+        canSelectSameTargetMultipleTimes: true,
+      },
+      {
+        kind: 'damage',
+        damage: '2d6',
+        damageType: 'fire',
+        instances: { count: 3, canSplitTargets: true, canStackOnSingleTarget: true },
+      },
+      {
+        kind: 'note',
+        text: 'Each ray requires a separate ranged spell attack roll.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-damage',
+      description: 'You create one additional ray for each spell slot level above 2.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 2,
+    }],
+    description: {
+      full: 'You hurl three fiery rays. You can hurl them at one target within range or at several. Make a ranged spell attack for each ray. On a hit, the target takes 2d6 Fire damage. Using a Higher-Level Spell Slot. You create one additional ray for each spell slot level above 2.',
+      summary: 'Three ranged spell attacks dealing 2d6 fire damage each; rays can be split among targets.',
+    },
   },
   {
     id: 'web',
@@ -540,7 +602,39 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     school: 'conjuration',
     level: 2,
     classes: ['sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a bit of spiderweb' } },
+    effects: [
+      {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        area: { kind: 'cube', size: 20 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'condition', conditionId: 'restrained' }],
+        text: 'First time a creature enters the webs on a turn or starts its turn there.',
+      },
+      {
+        kind: 'check',
+        actor: 'nearby-creature',
+        actionRequired: true,
+        check: { ability: 'str', skill: 'athletics', dc: 0 },
+        onSuccess: [{ kind: 'note', text: 'The creature is no longer Restrained.' }],
+        text: 'DC equals your spell save DC. A creature Restrained by the webs can take an action to attempt this check.',
+      },
+      {
+        kind: 'note',
+        text: 'The webs are Difficult Terrain and the area is Lightly Obscured. If not anchored between two solid masses or layered across a surface, the web collapses and the spell ends at the start of your next turn. The webs are flammable; any 5-foot Cube exposed to fire burns away in 1 round, dealing 2d4 Fire damage to any creature that starts its turn in the fire.',
+      },
+    ],
+    description: {
+      full: "You conjure a mass of sticky webbing at a point within range. The webs fill a 20-foot Cube there for the duration. The webs are Difficult Terrain, and the area within them is Lightly Obscured. If the webs aren't anchored between two solid masses (such as walls or trees) or layered across a floor, wall, or ceiling, the web collapses on itself, and the spell ends at the start of your next turn. Webs layered over a flat surface have a depth of 5 feet. The first time a creature enters the webs on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained condition while in the webs or until it breaks free. A creature Restrained by the webs can take an action to make a Strength (Athletics) check against your spell save DC. If it succeeds, it is no longer Restrained. The webs are flammable. Any 5-foot Cube of webs exposed to fire burns away in 1 round, dealing 2d4 Fire damage to any creature that starts its turn in the fire.",
+      summary: '20-foot cube of webs; creatures entering or starting a turn make a Dex save or are Restrained. Flammable.',
+    },
   },
   {
     id: 'invisibility',
@@ -548,7 +642,28 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     school: 'illusion',
     level: 2,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'an eyelash in gum arabic' } },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'condition', conditionId: 'invisible' },
+      {
+        kind: 'note',
+        text: 'The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-targets',
+      description: 'You can target one additional creature for each spell slot level above 2.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 2,
+    }],
+    description: {
+      full: 'A creature you touch has the Invisible condition until the spell ends. The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2.',
+      summary: 'A creature you touch becomes Invisible for up to 1 hour; ends if the target attacks, deals damage, or casts a spell.',
+    },
   },
   {
     id: 'silence',

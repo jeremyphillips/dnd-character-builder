@@ -3,6 +3,7 @@ export {
   CampaignsRoute,
   DashboardRoute,
   CampaignRoute,
+  CombatTestRoute,
   PartyRoute,
   RulesRoute,
   WorldLayout,
@@ -14,6 +15,7 @@ export {
   CampaignAdminSettingsRoute,
   CampaignAdminInvitesRoute,
   CampaignRulesetEditorRoute,
+  CombatTestGuard,
   ContentManageGuard,
 } from '@/features/campaign/routes'
 export { LocationsRoute, LocationRoute } from '@/features/content/locations/routes'

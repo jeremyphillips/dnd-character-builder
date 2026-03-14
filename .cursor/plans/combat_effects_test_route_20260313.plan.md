@@ -4,28 +4,28 @@ overview: Add a campaign-scoped test route for assembling a party and enemy line
 todos:
   - id: define-route-surface
     content: Add a campaign-scoped combat test route and decide its URL, navigation entry, and access guard.
-    status: pending
+    status: completed
   - id: define-combatant-selection
     content: Define how party, monster, and NPC options are loaded and normalized into a shared selectable combatant model.
-    status: pending
+    status: completed
   - id: define-encounter-state
     content: Introduce encounter state for sides, combatants, initiative order, round, active turn, and combat log events.
-    status: pending
+    status: in_progress
   - id: define-turn-rules
     content: Define the minimum turn and round rules needed to step combat forward and trigger timed effects.
     status: pending
   - id: define-log-model
     content: Define the combat log event schema and the actions that should emit log entries.
-    status: pending
+    status: completed
   - id: implement-test-route-ui
     content: Build the two-column encounter setup UI and the full-width combat log panel.
-    status: pending
+    status: in_progress
   - id: implement-encounter-controls
     content: Add initiative, next-turn, reset, and targeted test controls for validating combat effects.
     status: pending
   - id: add-guardrails
     content: Add tests around turn order, encounter state transitions, and combat log output for the test route milestone.
-    status: pending
+    status: in_progress
 isProject: false
 ---
 
@@ -72,6 +72,17 @@ Recommendation:
 - gate the route to:
   - campaign owner
   - platform owner
+
+Status update:
+
+- added `/campaigns/:id/combat-test`
+- route is wired into the campaign router and admin-only campaign navigation
+- added a dedicated owner/platform-admin guard for the route
+- added initial encounter domain types for combatants, encounter state, initiative rolls, and combat log events
+- added a first deterministic initiative test file to anchor the pure helper layer
+- party multiselect now loads approved party members into detailed combatant cards
+- enemy multiselect now loads NPC and monster sources, with duplicate monster copies supported from the rendered cards
+- combatant cards now surface core stats, attacks, and currently derivable effect chips
 
 ## Locked Decisions
 

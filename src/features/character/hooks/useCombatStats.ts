@@ -140,6 +140,7 @@ export function useCombatStats(character: Character) {
       armorClass: acResult.value,
       maxHp,
       initiative,
+      activeEffects: allEffects,
       calculatedArmorClass: {
         value: acResult.value,
         breakdown: acResult.breakdown,

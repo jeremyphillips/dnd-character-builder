@@ -492,7 +492,7 @@ function buildSpellLogText(spell: Spell): string {
     .filter((text): text is string => Boolean(text))
     .join(' ')
 
-  return effectText || spell.description?.trim() || `${spell.name} effect resolution not implemented yet.`
+  return effectText || spell.description.summary?.trim() || `${spell.name} effect resolution not implemented yet.`
 }
 
 export function buildSpellPlaceholderActions(args: {

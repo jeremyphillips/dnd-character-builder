@@ -48,7 +48,7 @@ const formatEffectsJson = (v: unknown): string => {
 export const SPELL_FORM_FIELDS = [
   ...getBaseContentFieldSpecs<
     SpellFormValues,
-    SpellInput & Record<string, unknown>,
+    Omit<SpellInput, 'description'> & Record<string, unknown>,
     Spell & Record<string, unknown>
   >(),
   {

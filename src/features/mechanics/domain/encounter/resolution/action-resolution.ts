@@ -670,6 +670,37 @@ function resolveCombatActionInternal(
         { rng, sourceLabel: actionLabel },
       )
     }
+  } else if (action.resolutionMode === 'effects') {
+    if (targets.length === 0 && action.effects?.length) {
+      nextState = appendEncounterLogEvent(nextState, {
+        type: 'action-resolved',
+        actorId: actor.instanceId,
+        round: state.roundNumber,
+        turn: state.turnIndex + 1,
+        summary: `${actionLabel} resolves with no valid targets.`,
+      })
+    } else {
+      for (const effectTarget of targets) {
+        nextState = applyActionEffects(
+          nextState,
+          actor,
+          nextState.combatantsById[effectTarget.instanceId] ?? effectTarget,
+          action,
+          action.effects,
+          { rng, sourceLabel: actionLabel },
+        )
+      }
+
+      nextState = appendEncounterLogEvent(nextState, {
+        type: 'action-resolved',
+        actorId: actor.instanceId,
+        targetIds: targets.map((t) => t.instanceId),
+        round: state.roundNumber,
+        turn: state.turnIndex + 1,
+        summary: `${actionLabel} resolves its effects.`,
+        details: action.logText,
+      })
+    }
   } else {
     nextState = appendEncounterLogEvent(nextState, {
       type: action.kind === 'spell' ? 'spell-logged' : 'action-resolved',

@@ -8,7 +8,7 @@ export type CombatActionKind =
   | 'spell'
   | 'combat-effect'
 
-export type CombatActionResolutionMode = 'attack-roll' | 'saving-throw' | 'log-only'
+export type CombatActionResolutionMode = 'attack-roll' | 'saving-throw' | 'effects' | 'log-only'
 
 export interface CombatActionCost {
   action?: boolean
@@ -76,6 +76,7 @@ export interface CombatActionDefinition {
   targeting?: CombatActionTargetingProfile
   movement?: CombatActionMovementProfile
   usage?: CombatActionUsage
+  effects?: Effect[]
   onHitEffects?: Effect[]
   onFailEffects?: Effect[]
   onSuccessEffects?: Effect[]

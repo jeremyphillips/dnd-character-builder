@@ -81,6 +81,8 @@ export type SpellComponents = {
   material?: MaterialComponent;
 };
 
+export type SpellDeliveryMethod = 'melee-spell-attack' | 'ranged-spell-attack';
+
 export type SpellScalingCategory =
   | 'extra-damage'
   | 'extra-healing'
@@ -108,6 +110,7 @@ export interface SpellBase {
   range: SpellRange;
   duration: SpellDuration;
   components: SpellComponents;
+  deliveryMethod?: SpellDeliveryMethod;
   effects: SpellEffects;
   scaling?: SpellScalingRule[];
   description: {

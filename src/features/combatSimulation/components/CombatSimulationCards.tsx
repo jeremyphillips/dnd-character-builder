@@ -38,7 +38,8 @@ import {
   type CombatantSide,
 } from '@/features/mechanics/domain/encounter'
 import {
-  buildSpellPlaceholderActions,
+  buildSpellCombatActions,
+  getCharacterSpellcastingStats,
   buildCharacterCombatantInstance,
   buildMonsterExecutableActions,
   buildMonsterAttackEntries,
@@ -560,14 +561,21 @@ function LoadedCharacterCombatantCard({
     () => buildTurnHooksFromEffects(combatStats.activeEffects),
     [combatStats.activeEffects],
   )
+  const spellStats = useMemo(
+    () => getCharacterSpellcastingStats(character),
+    [character],
+  )
   const spellActions = useMemo(
     () =>
-      buildSpellPlaceholderActions({
+      buildSpellCombatActions({
         runtimeId,
         spellIds: character.spells,
         spellsById: catalog.spellsById as Record<string, Spell>,
+        spellSaveDc: spellStats.spellSaveDc,
+        spellAttackBonus: spellStats.spellAttackBonus,
+        casterLevel: character.level ?? 1,
       }),
-    [catalog.spellsById, character.spells, runtimeId],
+    [catalog.spellsById, character.spells, character.level, runtimeId, spellStats],
   )
   const combatant = useMemo(
     () =>

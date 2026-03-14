@@ -83,6 +83,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    deliveryMethod: 'ranged-spell-attack',
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
@@ -93,7 +94,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
       },
       {
         kind: 'note',
-        text: "Requires a ranged spell attack. A flammable object hit by this spell starts burning if it isn't being worn or carried.",
+        text: "A flammable object hit by this spell starts burning if it isn't being worn or carried.",
       },
     ],
     description: {
@@ -111,6 +112,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    deliveryMethod: 'ranged-spell-attack',
     effects: [
       {
         kind: 'targeting',
@@ -482,6 +484,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['cleric', 'paladin'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'feather-fall',
@@ -490,6 +496,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['bard', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'identify',
@@ -498,6 +508,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['bard', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   // ═══════════════════════════════════════════════════════════════
   // 2nd Level
@@ -509,6 +523,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 2,
     classes: ['sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'spiritual-weapon',
@@ -517,6 +535,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 2,
     classes: ['cleric'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'hold-person',
@@ -567,6 +589,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    deliveryMethod: 'ranged-spell-attack',
     effects: [
       {
         kind: 'targeting',
@@ -672,6 +695,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 2,
     classes: ['bard', 'cleric', 'ranger'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'lesser-restoration',
@@ -680,6 +707,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 2,
     classes: ['bard', 'cleric', 'druid', 'paladin', 'ranger'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'fireball',
@@ -726,6 +757,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'spirit-guardians',
@@ -734,6 +769,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['cleric'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'revivify',
@@ -742,6 +781,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['cleric', 'paladin'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'haste',
@@ -750,6 +793,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'lightning-bolt',
@@ -758,6 +805,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'fly',
@@ -774,6 +825,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['bard', 'cleric', 'druid', 'paladin', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'remove-curse',
@@ -782,6 +837,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['cleric', 'paladin', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'slow',
@@ -790,6 +849,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   // ═══════════════════════════════════════════════════════════════
   // 4th Level
@@ -801,6 +864,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 4,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'banishment',
@@ -809,6 +876,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 4,
     classes: ['cleric', 'paladin', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'polymorph',
@@ -817,6 +888,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 4,
     classes: ['bard', 'druid', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'ice-storm',
@@ -825,6 +900,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 4,
     classes: ['druid', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'fire-shield',
@@ -868,6 +947,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 5,
     classes: ['bard', 'cleric', 'druid'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'raise-dead',
@@ -876,6 +959,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 5,
     classes: ['bard', 'cleric', 'paladin'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'chain-lightning',
@@ -892,6 +979,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 6,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'teleport',
@@ -900,6 +991,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 7,
     classes: ['bard', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'resurrection',
@@ -908,6 +1003,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 7,
     classes: ['bard', 'cleric'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'power-word-stun',
@@ -916,6 +1015,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 8,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'wish',
@@ -924,6 +1027,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 9,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'power-word-kill',
@@ -932,6 +1039,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 9,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
 ];
 

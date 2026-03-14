@@ -9,6 +9,7 @@ import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import { resolveWeaponAttackBonus, resolveWeaponDamage } from '@/features/mechanics/domain/resolution/attack-resolver'
+import { getProficiencyAttackBonus } from '@/features/mechanics/domain/character/progression'
 import {
   buildActiveMonsterEffects,
   type CombatActionDefinition,
@@ -28,6 +29,33 @@ export function formatSigned(value: number): string {
 
 export function toAbilityModifier(score: number | null | undefined): number {
   return Math.floor(((score ?? 10) - 10) / 2)
+}
+
+const CLASS_SPELLCASTING_ABILITY: Record<string, 'intelligence' | 'wisdom' | 'charisma'> = {
+  wizard: 'intelligence',
+  cleric: 'wisdom',
+  druid: 'wisdom',
+  ranger: 'wisdom',
+  bard: 'charisma',
+  sorcerer: 'charisma',
+  warlock: 'charisma',
+  paladin: 'charisma',
+}
+
+export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
+  spellSaveDc: number
+  spellAttackBonus: number
+} {
+  const primaryClass = character.classes?.[0]
+  const abilityKey = primaryClass ? CLASS_SPELLCASTING_ABILITY[primaryClass.classId] : undefined
+  const abilityScore = abilityKey ? character.abilityScores?.[abilityKey] ?? 10 : 10
+  const abilityMod = toAbilityModifier(abilityScore)
+  const profBonus = getProficiencyAttackBonus(character.level ?? 1)
+
+  return {
+    spellSaveDc: 8 + profBonus + abilityMod,
+    spellAttackBonus: profBonus + abilityMod,
+  }
 }
 
 function toSavingThrowModifier(score: number | null | undefined, proficiencyLevel = 0, proficiencyBonus = 2): number {
@@ -495,27 +523,182 @@ function buildSpellLogText(spell: Spell): string {
   return effectText || spell.description.summary?.trim() || `${spell.name} effect resolution not implemented yet.`
 }
 
-export function buildSpellPlaceholderActions(args: {
+function classifySpellResolutionMode(
+  spell: Spell,
+): 'attack-roll' | 'effects' | 'log-only' {
+  if (spell.deliveryMethod) return 'attack-roll'
+
+  const effects = spell.effects ?? []
+  const hasSave = effects.some((e) => e.kind === 'save')
+  if (hasSave) return 'effects'
+
+  return 'log-only'
+}
+
+function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: boolean; reaction?: boolean } {
+  const unit = spell.castingTime?.normal?.unit
+  if (unit === 'bonus-action') return { bonusAction: true }
+  if (unit === 'reaction') return { reaction: true }
+  return { action: true }
+}
+
+function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' } {
+  const targeting = (spell.effects ?? []).find((e) => e.kind === 'targeting')
+  if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies' }
+  if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies' }
+  return { kind: 'single-target' }
+}
+
+function injectSpellSaveDc(effects: Effect[], spellSaveDc: number): Effect[] {
+  return effects.map((effect) => {
+    if (effect.kind !== 'save') return effect
+    if (typeof effect.save.dc === 'number') return effect
+    return { ...effect, save: { ...effect.save, dc: spellSaveDc } }
+  })
+}
+
+function findSpellDamageEffect(spell: Spell): Extract<Effect, { kind: 'damage' }> | undefined {
+  return (spell.effects ?? []).find((e): e is Extract<Effect, { kind: 'damage' }> => e.kind === 'damage')
+}
+
+function resolveInstanceCount(spell: Spell, casterLevel: number): number {
+  const damageEffect = findSpellDamageEffect(spell)
+  if (!damageEffect?.instances) return 1
+
+  let count = damageEffect.instances.count
+  const thresholds = damageEffect.levelScaling?.thresholds
+  if (thresholds) {
+    for (const t of thresholds) {
+      if (casterLevel >= t.level && t.instances != null) {
+        count = t.instances
+      }
+    }
+  }
+  return count
+}
+
+function buildSpellAttackAction(
+  spell: Spell,
+  runtimeId: string,
+  spellAttackBonus: number,
+  casterLevel: number,
+): CombatActionDefinition[] {
+  const damageEffect = findSpellDamageEffect(spell)
+  const instanceCount = resolveInstanceCount(spell, casterLevel)
+  const damage = damageEffect ? String(damageEffect.damage) : undefined
+  const damageType = damageEffect?.damageType as string | undefined
+
+  const onHitEffects = (spell.effects ?? []).filter(
+    (e) => e.kind !== 'targeting' && e.kind !== 'damage' && e.kind !== 'note',
+  )
+
+  if (instanceCount <= 1) {
+    return [{
+      id: `${runtimeId}-spell-${spell.id}`,
+      label: spell.name,
+      kind: 'spell',
+      cost: buildSpellActionCost(spell),
+      resolutionMode: 'attack-roll',
+      attackProfile: {
+        attackBonus: spellAttackBonus,
+        damage,
+        damageType,
+      },
+      targeting: { kind: 'single-target' },
+      onHitEffects: onHitEffects.length > 0 ? onHitEffects : undefined,
+      logText: buildSpellLogText(spell),
+    }]
+  }
+
+  const beamLabel = `${spell.name} Beam`
+  const beamId = `${runtimeId}-spell-${spell.id}-beam`
+
+  const beamAction: CombatActionDefinition = {
+    id: beamId,
+    label: beamLabel,
+    kind: 'spell',
+    cost: {},
+    resolutionMode: 'attack-roll',
+    attackProfile: {
+      attackBonus: spellAttackBonus,
+      damage,
+      damageType,
+    },
+    targeting: { kind: 'single-target' },
+    onHitEffects: onHitEffects.length > 0 ? onHitEffects : undefined,
+  }
+
+  const parentAction: CombatActionDefinition = {
+    id: `${runtimeId}-spell-${spell.id}`,
+    label: spell.name,
+    kind: 'spell',
+    cost: buildSpellActionCost(spell),
+    resolutionMode: 'attack-roll',
+    attackProfile: {
+      attackBonus: spellAttackBonus,
+      damage,
+      damageType,
+    },
+    targeting: { kind: 'single-target' },
+    sequence: [{ actionLabel: beamLabel, count: instanceCount }],
+    logText: buildSpellLogText(spell),
+  }
+
+  return [parentAction, beamAction]
+}
+
+function buildSpellEffectsAction(
+  spell: Spell,
+  runtimeId: string,
+  spellSaveDc: number,
+): CombatActionDefinition {
+  const enrichedEffects = injectSpellSaveDc(spell.effects ?? [], spellSaveDc)
+  const resolvableEffects = enrichedEffects.filter((e) => e.kind !== 'targeting')
+
+  return {
+    id: `${runtimeId}-spell-${spell.id}`,
+    label: spell.name,
+    kind: 'spell',
+    cost: buildSpellActionCost(spell),
+    resolutionMode: 'effects',
+    effects: resolvableEffects,
+    targeting: buildSpellTargeting(spell),
+    logText: buildSpellLogText(spell),
+  }
+}
+
+export function buildSpellCombatActions(args: {
   runtimeId: string
   spellIds?: string[]
   spellsById: Record<string, Spell>
+  spellSaveDc: number
+  spellAttackBonus: number
+  casterLevel: number
 }): CombatActionDefinition[] {
-  const { runtimeId, spellIds = [], spellsById } = args
+  const { runtimeId, spellIds = [], spellsById, spellSaveDc, spellAttackBonus, casterLevel } = args
 
   return spellIds.flatMap((spellId) => {
     const spell = spellsById[spellId]
     if (!spell) return []
 
-    return [
-      {
-        id: `${runtimeId}-spell-${spell.id}`,
-        label: spell.name,
-        kind: 'spell',
-        cost: { action: true },
-        resolutionMode: 'log-only',
-        logText: buildSpellLogText(spell),
-      },
-    ]
+    const mode = classifySpellResolutionMode(spell)
+
+    if (mode === 'attack-roll') {
+      return buildSpellAttackAction(spell, runtimeId, spellAttackBonus, casterLevel)
+    }
+
+    if (mode === 'effects') {
+      return [buildSpellEffectsAction(spell, runtimeId, spellSaveDc)]
+    }
+
+    return [{
+      id: `${runtimeId}-spell-${spell.id}`,
+      label: spell.name,
+      kind: 'spell',
+      cost: buildSpellActionCost(spell),
+      resolutionMode: 'log-only',
+      logText: buildSpellLogText(spell),
+    }]
   })
 }
 

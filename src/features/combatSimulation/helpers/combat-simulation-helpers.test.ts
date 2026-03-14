@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
-import { buildMonsterAttackEntries, buildMonsterExecutableActions } from './combat-simulation-helpers'
+import type { Spell } from '@/features/content/spells/domain/types/spell.types'
+import { buildMonsterAttackEntries, buildMonsterExecutableActions, buildSpellCombatActions, getCharacterSpellcastingStats } from './combat-simulation-helpers'
+import type { CharacterDetailDto } from '@/features/character/read-model'
 
 const TEST_MONSTER = {
   id: 'test-monster',
@@ -280,5 +282,283 @@ describe('combat simulation monster action helpers', () => {
         },
       }),
     )
+  })
+})
+
+describe('buildSpellCombatActions', () => {
+  const baseArgs = {
+    runtimeId: 'pc-1',
+    spellSaveDc: 13,
+    spellAttackBonus: 5,
+    casterLevel: 1,
+  }
+
+  function makeSpell(partial: Partial<Spell> & Pick<Spell, 'id' | 'name' | 'effects'>): Spell {
+    return {
+      school: 'evocation',
+      level: 0,
+      classes: ['wizard'],
+      castingTime: { normal: { value: 1, unit: 'action' } },
+      range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+      duration: { kind: 'instantaneous' },
+      components: { verbal: true, somatic: true },
+      description: { full: '', summary: '' },
+      ...partial,
+    } as Spell
+  }
+
+  it('classifies save-based spells as effects resolution mode', () => {
+    const spell = makeSpell({
+      id: 'sacred-flame',
+      name: 'Sacred Flame',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        {
+          kind: 'save',
+          save: { ability: 'dex' },
+          onFail: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }],
+        },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['sacred-flame'],
+      spellsById: { 'sacred-flame': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.effects).toBeDefined()
+    expect(actions[0]!.effects!.some((e) => e.kind === 'save')).toBe(true)
+  })
+
+  it('injects spell save DC into save effects that lack a DC', () => {
+    const spell = makeSpell({
+      id: 'charm-person',
+      name: 'Charm Person',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        {
+          kind: 'save',
+          save: { ability: 'wis' },
+          onFail: [{ kind: 'condition', conditionId: 'charmed' }],
+        },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['charm-person'],
+      spellsById: { 'charm-person': spell },
+    })
+
+    const saveEffect = actions[0]!.effects!.find((e) => e.kind === 'save')
+    expect(saveEffect).toBeDefined()
+    if (saveEffect?.kind === 'save') {
+      expect(saveEffect.save.dc).toBe(13)
+    }
+  })
+
+  it('classifies attack spells with deliveryMethod as attack-roll', () => {
+    const spell = makeSpell({
+      id: 'fire-bolt',
+      name: 'Fire Bolt',
+      deliveryMethod: 'ranged-spell-attack',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'damage', damage: '1d10', damageType: 'fire' },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['fire-bolt'],
+      spellsById: { 'fire-bolt': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.resolutionMode).toBe('attack-roll')
+    expect(actions[0]!.attackProfile?.attackBonus).toBe(5)
+    expect(actions[0]!.attackProfile?.damage).toBe('1d10')
+    expect(actions[0]!.attackProfile?.damageType).toBe('fire')
+  })
+
+  it('generates sequence for multi-instance attack spells', () => {
+    const spell = makeSpell({
+      id: 'scorching-ray',
+      name: 'Scorching Ray',
+      level: 2,
+      deliveryMethod: 'ranged-spell-attack',
+      effects: [
+        { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature' },
+        { kind: 'damage', damage: '2d6', damageType: 'fire', instances: { count: 3, canSplitTargets: true, canStackOnSingleTarget: true } },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['scorching-ray'],
+      spellsById: { 'scorching-ray': spell },
+    })
+
+    expect(actions).toHaveLength(2)
+    const parent = actions[0]!
+    const beam = actions[1]!
+    expect(parent.sequence).toEqual([{ actionLabel: 'Scorching Ray Beam', count: 3 }])
+    expect(beam.resolutionMode).toBe('attack-roll')
+    expect(beam.attackProfile?.damage).toBe('2d6')
+  })
+
+  it('scales cantrip instance count with caster level for eldritch blast', () => {
+    const spell = makeSpell({
+      id: 'eldritch-blast',
+      name: 'Eldritch Blast',
+      deliveryMethod: 'ranged-spell-attack',
+      effects: [
+        { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature' },
+        {
+          kind: 'damage',
+          damage: '1d10',
+          damageType: 'force',
+          instances: { count: 1, canSplitTargets: true, canStackOnSingleTarget: true },
+          levelScaling: { thresholds: [{ level: 5, instances: 2 }, { level: 11, instances: 3 }, { level: 17, instances: 4 }] },
+        },
+      ],
+    })
+
+    const level1 = buildSpellCombatActions({
+      ...baseArgs,
+      casterLevel: 1,
+      spellIds: ['eldritch-blast'],
+      spellsById: { 'eldritch-blast': spell },
+    })
+    expect(level1).toHaveLength(1)
+    expect(level1[0]!.sequence).toBeUndefined()
+
+    const level5 = buildSpellCombatActions({
+      ...baseArgs,
+      casterLevel: 5,
+      spellIds: ['eldritch-blast'],
+      spellsById: { 'eldritch-blast': spell },
+    })
+    expect(level5).toHaveLength(2)
+    expect(level5[0]!.sequence).toEqual([{ actionLabel: 'Eldritch Blast Beam', count: 2 }])
+  })
+
+  it('classifies stub spells as log-only', () => {
+    const spell = makeSpell({
+      id: 'mage-hand',
+      name: 'Mage Hand',
+      effects: [{ kind: 'note', text: '' }],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['mage-hand'],
+      spellsById: { 'mage-hand': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.resolutionMode).toBe('log-only')
+  })
+
+  it('maps bonus-action casting time to bonus action cost', () => {
+    const spell = makeSpell({
+      id: 'healing-word',
+      name: 'Healing Word',
+      level: 1,
+      castingTime: { normal: { value: 1, unit: 'bonus-action' } },
+      effects: [{ kind: 'note', text: 'Heals 2d4 + modifier.' }],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['healing-word'],
+      spellsById: { 'healing-word': spell },
+    })
+
+    expect(actions[0]!.cost).toEqual({ bonusAction: true })
+  })
+
+  it('maps area targeting to all-enemies', () => {
+    const spell = makeSpell({
+      id: 'fireball',
+      name: 'Fireball',
+      level: 3,
+      effects: [
+        { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } },
+        { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '8d6', damageType: 'fire' }], onSuccess: [{ kind: 'damage', damage: '4d6', damageType: 'fire' }] },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['fireball'],
+      spellsById: { 'fireball': spell },
+    })
+
+    expect(actions[0]!.targeting).toEqual({ kind: 'all-enemies' })
+  })
+
+  it('strips targeting effects from resolved effects list', () => {
+    const spell = makeSpell({
+      id: 'sacred-flame',
+      name: 'Sacred Flame',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }] },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['sacred-flame'],
+      spellsById: { 'sacred-flame': spell },
+    })
+
+    expect(actions[0]!.effects!.every((e) => e.kind !== 'targeting')).toBe(true)
+  })
+})
+
+describe('getCharacterSpellcastingStats', () => {
+  it('computes spell save DC and attack bonus from primary class ability', () => {
+    const character = {
+      level: 5,
+      classes: [{ classId: 'wizard', level: 5, className: 'Wizard' }],
+      abilityScores: {
+        strength: 8,
+        dexterity: 14,
+        constitution: 12,
+        intelligence: 16,
+        wisdom: 10,
+        charisma: 10,
+      },
+    } as CharacterDetailDto
+
+    const stats = getCharacterSpellcastingStats(character)
+
+    expect(stats.spellAttackBonus).toBe(6)
+    expect(stats.spellSaveDc).toBe(14)
+  })
+
+  it('uses charisma for sorcerer', () => {
+    const character = {
+      level: 3,
+      classes: [{ classId: 'sorcerer', level: 3, className: 'Sorcerer' }],
+      abilityScores: {
+        strength: 8,
+        dexterity: 14,
+        constitution: 12,
+        intelligence: 10,
+        wisdom: 10,
+        charisma: 18,
+      },
+    } as CharacterDetailDto
+
+    const stats = getCharacterSpellcastingStats(character)
+
+    expect(stats.spellAttackBonus).toBe(6)
+    expect(stats.spellSaveDc).toBe(14)
   })
 })

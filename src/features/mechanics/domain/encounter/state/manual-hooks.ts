@@ -1,6 +1,6 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 
-import type { EncounterState } from '../encounter.types'
+import type { EncounterState } from './types'
 import { formatEffectLabel } from './shared'
 import { appendEncounterNote, appendHookTriggeredLog } from './logging'
 import {

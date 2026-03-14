@@ -1,20 +1,30 @@
-import { addConditionToCombatant, addStateToCombatant, applyDamageToCombatant, appendEncounterLogEvent, appendEncounterNote, getEncounterCombatantLabel, updateEncounterCombatant } from './encounter-state'
-import { getAbilityModifier } from '../core/ability.utils'
-import type { AbilityId, AbilityKey } from '../core/character/abilities.types'
-import type { Effect } from '../effects/effects.types'
-import type { CombatActionCost, CombatActionDefinition, CombatActionSequenceStep } from './combat-actions.types'
-import { createCombatTurnResources, type CombatantInstance, type CombatantTurnResources } from './combatant.types'
-import type { EncounterState } from './encounter.types'
+import {
+  addConditionToCombatant,
+  addStateToCombatant,
+  applyDamageToCombatant,
+  appendEncounterLogEvent,
+  appendEncounterNote,
+  getEncounterCombatantLabel,
+  updateEncounterCombatant,
+} from '../state'
+import { getAbilityModifier } from '../../core/ability.utils'
+import { abilityIdToKey } from '../../core/character/abilities.utils'
+import type { AbilityRef } from '../../core/character/abilities.types'
+import type { Effect } from '../../effects/effects.types'
+import type {
+  CombatActionCost,
+  CombatActionDefinition,
+  CombatActionSequenceStep,
+} from './combat-action.types'
+import {
+  createCombatTurnResources,
+  type CombatantInstance,
+  type CombatantTurnResources,
+} from '../state'
+import type { EncounterState } from '../state/types'
+import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from './action-resolution.types'
 
-export interface ResolveCombatActionSelection {
-  actorId: string
-  targetId?: string
-  actionId: string
-}
-
-export interface ResolveCombatActionOptions {
-  rng?: () => number
-}
+export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from './action-resolution.types'
 
 type ParsedDamageExpression =
   | { kind: 'flat'; value: number }
@@ -30,23 +40,6 @@ function getActionLabel(action: CombatActionDefinition): string {
 
 function getCombatantActions(combatant: CombatantInstance): CombatActionDefinition[] {
   return combatant.actions ?? []
-}
-
-function abilityIdToKey(ability: AbilityId): AbilityKey {
-  switch (ability) {
-    case 'str':
-      return 'strength'
-    case 'dex':
-      return 'dexterity'
-    case 'con':
-      return 'constitution'
-    case 'int':
-      return 'intelligence'
-    case 'wis':
-      return 'wisdom'
-    case 'cha':
-      return 'charisma'
-  }
 }
 
 function getTrackedPartCount(
@@ -87,7 +80,7 @@ function getActionTargets(
   return [target]
 }
 
-function getSaveModifier(combatant: CombatantInstance, ability: AbilityId): number {
+function getSaveModifier(combatant: CombatantInstance, ability: AbilityRef): number {
   const abilityKey = abilityIdToKey(ability)
   return (
     combatant.stats.savingThrowModifiers?.[abilityKey] ??

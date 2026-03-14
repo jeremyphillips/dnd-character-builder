@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
-import { advanceEncounterTurn, applyDamageToCombatant, createEncounterState } from './encounter-state'
-import type { CombatantInstance } from './combatant.types'
+import { advanceEncounterTurn, applyDamageToCombatant, createEncounterState } from '../state'
+import type { CombatantInstance } from '../state'
 
 function createCombatant(args: {
   instanceId: string

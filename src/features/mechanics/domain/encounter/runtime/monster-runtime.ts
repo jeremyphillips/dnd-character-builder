@@ -5,35 +5,14 @@ import type {
 } from '@/features/content/monsters/domain/types/monster-traits.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 
-import type { RuntimeTurnHook } from './combatant.types'
+import type { RuntimeTurnHook } from '../state'
+import type {
+  ManualMonsterTriggerContext,
+  MonsterContextTriggerStatus,
+  MonsterRuntimeContext,
+} from './monster-runtime.types'
 
-export type ManualEnvironmentContext = 'none' | 'sunlight'
-export type MonsterFormContext = 'object' | 'true-form'
-
-export type ManualMonsterTriggerContext = {
-  contact: boolean
-  allyNearTarget: boolean
-  movingGrappledCreature: boolean
-}
-
-export type MonsterRuntimeContext = {
-  environment: ManualEnvironmentContext
-  form: MonsterFormContext
-  manual: ManualMonsterTriggerContext
-}
-
-export type MonsterContextTriggerStatus = {
-  id: string
-  traitName: string
-  label: string
-  status: 'matched' | 'inactive' | 'manual'
-}
-
-export const DEFAULT_MANUAL_MONSTER_TRIGGER_CONTEXT: ManualMonsterTriggerContext = {
-  contact: false,
-  allyNearTarget: false,
-  movingGrappledCreature: false,
-}
+export type { ManualMonsterTriggerContext, MonsterContextTriggerStatus, MonsterRuntimeContext } from './monster-runtime.types'
 
 export function monsterTriggersArray(
   triggers?: MonsterTraitTrigger | MonsterTraitTrigger[],

@@ -10,9 +10,9 @@ import type {
   RuntimeTrackedPart,
   RuntimeTurnHook,
   RuntimeTurnHookRequirement,
-} from '../combatant.types'
-import { createCombatTurnResources } from '../combatant.types'
-import type { EncounterState } from '../encounter.types'
+} from './types'
+import { createCombatTurnResources } from './types'
+import type { EncounterState } from './types'
 
 export function indexCombatants(combatants: CombatantInstance[]): Record<string, CombatantInstance> {
   return Object.fromEntries(combatants.map((combatant) => [combatant.instanceId, combatant]))

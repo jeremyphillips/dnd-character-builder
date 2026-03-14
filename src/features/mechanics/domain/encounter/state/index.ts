@@ -4,6 +4,7 @@ export {
   appendHookTriggeredLog,
   getEncounterCombatantLabel,
 } from './logging'
+export * from './types'
 export {
   addConditionToCombatant,
   addStateToCombatant,

@@ -1,5 +1,4 @@
-import type { RuntimeMarker, RuntimeMarkerDuration } from '../combatant.types'
-import type { EncounterState } from '../encounter.types'
+import type { CombatantInstance, EncounterState, RuntimeMarker, RuntimeMarkerDuration } from './types'
 import {
   buildRuntimeMarker,
   createEmptyTurnContext,
@@ -14,7 +13,7 @@ import { appendLog, getCombatantLabel } from './logging'
 export function updateEncounterCombatant(
   state: EncounterState,
   combatantId: string,
-  updater: (combatant: import('../combatant.types').CombatantInstance) => import('../combatant.types').CombatantInstance,
+  updater: (combatant: CombatantInstance) => CombatantInstance,
 ): EncounterState {
   return updateCombatant(state, combatantId, updater)
 }

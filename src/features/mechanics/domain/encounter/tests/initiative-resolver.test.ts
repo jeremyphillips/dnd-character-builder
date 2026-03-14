@@ -12,9 +12,9 @@ import {
   removeConditionFromCombatant,
   removeStateFromCombatant,
   triggerManualHook,
-} from './encounter-state'
-import { rollInitiative } from './initiative-resolver'
-import type { CombatantInstance } from './combatant.types'
+} from '../state'
+import { rollInitiative } from '../resolution'
+import type { CombatantInstance } from '../state'
 
 describe('rollInitiative', () => {
   it('sorts by total, then modifier, then dexterity, then name', () => {

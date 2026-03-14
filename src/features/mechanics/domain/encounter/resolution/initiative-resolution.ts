@@ -1,22 +1,7 @@
-export interface InitiativeParticipant {
-  instanceId: string
-  label: string
-  initiativeModifier: number
-  dexterityScore?: number
-}
+import type { InitiativeParticipant, InitiativeResolverOptions } from './initiative-resolution.types'
+import type { InitiativeRoll } from './initiative-resolution.types'
 
-export interface InitiativeRoll {
-  combatantId: string
-  label: string
-  roll: number
-  modifier: number
-  total: number
-  dexterityScore?: number
-}
-
-export interface InitiativeResolverOptions {
-  rng?: () => number
-}
+export type { InitiativeParticipant, InitiativeRoll, InitiativeResolverOptions } from './initiative-resolution.types'
 
 function rollD20(rng: () => number): number {
   return Math.floor(rng() * 20) + 1

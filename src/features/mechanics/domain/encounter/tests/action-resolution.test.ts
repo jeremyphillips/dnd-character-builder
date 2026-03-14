@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CombatActionDefinition } from './combat-actions.types'
-import { getCombatantAvailableActions, resolveCombatAction } from './action-resolution'
-import { advanceEncounterTurn, createEncounterState } from './encounter-state'
-import type { CombatantInstance } from './combatant.types'
+import type { CombatActionDefinition } from '../resolution'
+import { getCombatantAvailableActions, resolveCombatAction } from '../resolution'
+import { advanceEncounterTurn, createEncounterState } from '../state'
+import type { CombatantInstance } from '../state'
 
 function createCombatant(args: {
   instanceId: string

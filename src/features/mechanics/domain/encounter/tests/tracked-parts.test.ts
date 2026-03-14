@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyDamageToCombatant, advanceEncounterTurn, createEncounterState } from './encounter-state'
-import type { CombatantInstance } from './combatant.types'
+import { applyDamageToCombatant, advanceEncounterTurn, createEncounterState } from '../state'
+import type { CombatantInstance } from '../state'
 
 function createHydra(): CombatantInstance {
   return {

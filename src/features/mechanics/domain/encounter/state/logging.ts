@@ -1,5 +1,4 @@
-import type { CombatLogEvent } from '../combat-log.types'
-import type { EncounterState } from '../encounter.types'
+import type { EncounterState, CombatLogEvent } from './types'
 
 function createLogId(prefix: string, count: number): string {
   return `${prefix}_${count}`

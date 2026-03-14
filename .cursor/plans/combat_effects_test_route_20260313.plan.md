@@ -92,6 +92,9 @@ Status update:
 - condition and state markers can now carry turn-based duration metadata
 - `Next Turn` now ticks timed markers on turn start/end boundaries and logs automatic expirations
 - combatant cards now show remaining timed-marker duration inline
+- encounter start now seeds timed runtime effects from canonical effect duration metadata when the duration is turn-boundary compatible
+- effect-derived timers render separately from manual conditions/states and expire with their own log entries
+- added encounter helper coverage for seeded effect expiration alongside manual marker ticking
 
 ## Locked Decisions
 

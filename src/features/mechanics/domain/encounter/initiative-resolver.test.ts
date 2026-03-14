@@ -8,6 +8,7 @@ import {
   applyHealingToCombatant,
   createEncounterState,
   formatMarkerLabel,
+  formatRuntimeEffectLabel,
   removeConditionFromCombatant,
   removeStateFromCombatant,
 } from './encounter-state'
@@ -40,6 +41,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 18, maxHitPoints: 20, currentHitPoints: 20, initiativeModifier: 0, dexterityScore: 10 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -50,6 +52,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 15, maxHitPoints: 7, currentHitPoints: 7, initiativeModifier: 2, dexterityScore: 14 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -76,6 +79,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 18, maxHitPoints: 20, currentHitPoints: 20, initiativeModifier: 0, dexterityScore: 10 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -86,6 +90,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 15, maxHitPoints: 7, currentHitPoints: 7, initiativeModifier: 2, dexterityScore: 14 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -119,6 +124,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 18, maxHitPoints: 20, currentHitPoints: 20, initiativeModifier: 0, dexterityScore: 10 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -159,6 +165,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 18, maxHitPoints: 20, currentHitPoints: 20, initiativeModifier: 0, dexterityScore: 10 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -169,6 +176,7 @@ describe('rollInitiative', () => {
         stats: { armorClass: 15, maxHitPoints: 7, currentHitPoints: 7, initiativeModifier: 2, dexterityScore: 14 },
         attacks: [],
         activeEffects: [],
+        runtimeEffects: [],
         conditions: [],
         states: [],
       },
@@ -204,5 +212,57 @@ describe('rollInitiative', () => {
       'round_started',
       'turn_started',
     ])
+  })
+
+  it('seeds timed runtime effects from canonical effect durations and expires them', () => {
+    const combatants: CombatantInstance[] = [
+      {
+        instanceId: 'pc-1',
+        side: 'party',
+        source: { kind: 'pc', sourceId: 'pc-1', label: 'Cleric' },
+        stats: { armorClass: 18, maxHitPoints: 20, currentHitPoints: 20, initiativeModifier: 0, dexterityScore: 10 },
+        attacks: [],
+        activeEffects: [
+          {
+            kind: 'condition',
+            conditionId: 'frightened',
+            duration: {
+              kind: 'until_turn_boundary',
+              subject: 'self',
+              turn: 'next',
+              boundary: 'end',
+            },
+          },
+        ],
+        runtimeEffects: [],
+        conditions: [],
+        states: [],
+      },
+      {
+        instanceId: 'monster-1',
+        side: 'enemies',
+        source: { kind: 'monster', sourceId: 'goblin', label: 'Goblin' },
+        stats: { armorClass: 15, maxHitPoints: 7, currentHitPoints: 7, initiativeModifier: 2, dexterityScore: 14 },
+        attacks: [],
+        activeEffects: [],
+        runtimeEffects: [],
+        conditions: [],
+        states: [],
+      },
+    ]
+
+    const started = createEncounterState(combatants, {
+      rng: () => 0.45,
+    })
+    const secondTurn = advanceEncounterTurn(started)
+    const wrappedTurn = advanceEncounterTurn(secondTurn)
+
+    expect(started.combatantsById['pc-1'].runtimeEffects).toHaveLength(1)
+    expect(formatRuntimeEffectLabel(started.combatantsById['pc-1'].runtimeEffects[0]!)).toBe(
+      'Condition: frightened (1 turn end)',
+    )
+    expect(secondTurn.combatantsById['pc-1'].runtimeEffects).toHaveLength(1)
+    expect(wrappedTurn.combatantsById['pc-1'].runtimeEffects).toHaveLength(0)
+    expect(wrappedTurn.log.some((entry) => entry.type === 'effect_expired')).toBe(true)
   })
 })

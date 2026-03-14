@@ -39,6 +39,13 @@ export interface RuntimeMarker {
   duration?: RuntimeMarkerDuration
 }
 
+export interface RuntimeEffectInstance {
+  id: string
+  label: string
+  effectKind: string
+  duration: RuntimeMarkerDuration
+}
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
@@ -46,6 +53,7 @@ export interface CombatantInstance {
   stats: CombatantStatBlock
   attacks: CombatantAttackEntry[]
   activeEffects: Effect[]
+  runtimeEffects: RuntimeEffectInstance[]
   conditions: RuntimeMarker[]
   states: RuntimeMarker[]
 }

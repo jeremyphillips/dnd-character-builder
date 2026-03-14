@@ -35,10 +35,12 @@ import {
   applyHealingToCombatant,
   createEncounterState,
   formatMarkerLabel,
+  formatRuntimeEffectLabel,
   removeConditionFromCombatant,
   removeStateFromCombatant,
   type CombatantAttackEntry,
   type CombatantInstance,
+  type RuntimeEffectInstance,
   type RuntimeMarker,
   type CombatantSide,
   type EncounterState,
@@ -226,6 +228,7 @@ function buildCharacterCombatantInstance(args: {
     },
     attacks,
     activeEffects: combatStats.activeEffects,
+    runtimeEffects: [],
     conditions: [],
     states: [],
   }
@@ -259,6 +262,7 @@ function buildMonsterCombatantInstance(args: {
     },
     attacks,
     activeEffects: (monster.mechanics.traits ?? []).flatMap((trait) => trait.effects ?? []),
+    runtimeEffects: [],
     conditions: [],
     states: [],
   }
@@ -383,6 +387,31 @@ function MarkerList({
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {labels.map((label) => (
             <Chip key={label.id} label={formatMarkerLabel(label)} size="small" variant="outlined" />
+          ))}
+        </Stack>
+      )}
+    </Box>
+  )
+}
+
+function RuntimeEffectList({
+  effects,
+}: {
+  effects: RuntimeEffectInstance[]
+}) {
+  return (
+    <Box>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        Timed Effects
+      </Typography>
+      {effects.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          None.
+        </Typography>
+      ) : (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {effects.map((effect) => (
+            <Chip key={effect.id} label={formatRuntimeEffectLabel(effect)} size="small" variant="outlined" />
           ))}
         </Stack>
       )}
@@ -566,6 +595,7 @@ function LoadedCharacterCombatantCard({
           <EffectList labels={effectLabels} />
         </Box>
 
+        <RuntimeEffectList effects={displayCombatant.runtimeEffects} />
         <MarkerList title="Conditions" labels={displayCombatant.conditions} />
         <MarkerList title="States" labels={displayCombatant.states} />
       </Stack>
@@ -687,6 +717,7 @@ function MonsterCombatantCard({
           <EffectList labels={effectLabels} />
         </Box>
 
+        <RuntimeEffectList effects={displayCombatant.runtimeEffects} />
         <MarkerList title="Conditions" labels={displayCombatant.conditions} />
         <MarkerList title="States" labels={displayCombatant.states} />
       </Stack>

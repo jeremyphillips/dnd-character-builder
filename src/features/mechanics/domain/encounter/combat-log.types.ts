@@ -3,6 +3,7 @@ export type CombatLogEventType =
   | 'turn_started'
   | 'turn_ended'
   | 'round_started'
+  | 'effect_expired'
   | 'damage_applied'
   | 'healing_applied'
   | 'condition_applied'

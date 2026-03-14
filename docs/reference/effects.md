@@ -341,6 +341,28 @@ Current shared trigger vocabulary includes:
 - Conditions gate effects; they are not replacement effect kinds.
 - Examples: while unarmored, while wielding a shield, while in an area.
 
+#### Condition Kinds
+
+- `state`: checks a property on a snapshot (`self`, `target`, `source`, `ally`)
+- `compare`: numeric comparison against a snapshot property
+- `event`: matches a trigger event type
+- `creature-type`: gates effect by the creature type of a snapshot entity
+- `and` / `or` / `not`: logical combinators
+
+#### `creature-type` Condition
+
+Scopes an effect to interactions involving specific creature types. The `target` field selects which entity to check:
+
+- `source`: the creature initiating the interaction (attacker, spell caster)
+- `target`: the creature being affected
+- `self`: the creature bearing the effect
+
+```ts
+{ kind: 'creature-type', target: 'source', creatureTypes: ['aberration', 'celestial', 'elemental', 'fey', 'fiend', 'undead'] }
+```
+
+`EvaluationContext.source` provides the initiating creature's snapshot. `CreatureSnapshot.creatureType` carries the creature's type for runtime evaluation.
+
 ## 7. Common Authoring Patterns
 
 ### Save-Based Spell

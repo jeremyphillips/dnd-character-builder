@@ -6,6 +6,7 @@ import type { ContentItem } from '@/features/content/shared/domain/types/content
 import type { Distance } from '@/shared/distance';
 import type { Coin } from '@/shared/money/types';
 import type { TimeUnit } from '@/shared/time';
+import type { DiceOrFlat } from '@/features/mechanics/domain/dice';
 
 // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
@@ -82,6 +83,7 @@ export type SpellComponents = {
 
 export type SpellScalingCategory =
   | 'extra-damage'
+  | 'extra-healing'
   | 'extra-targets'
   | 'expanded-area'
   | 'expanded-range'
@@ -91,6 +93,9 @@ export type SpellScalingCategory =
 export type SpellScalingRule = {
   category: SpellScalingCategory;
   description: string;
+  mode: 'per-slot-level' | 'threshold';
+  startsAtSlotLevel?: SpellLevel;
+  amount?: DiceOrFlat;
 };
 
 export interface SpellBase {

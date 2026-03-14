@@ -9,8 +9,15 @@
  */
 import type { Spell, SpellBase } from '@/features/content/spells/domain/types';
 import type { DiceOrFlat, dY } from '@/features/mechanics/domain/dice';
+import type { CreatureTypeCondition } from '@/features/mechanics/domain/conditions/condition.types';
 import type { SystemRulesetId } from './ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+
+const EXTRAPLANAR_CREATURE_TYPES: CreatureTypeCondition = {
+  kind: 'creature-type',
+  target: 'source',
+  creatureTypes: ['aberration', 'celestial', 'elemental', 'fey', 'fiend', 'undead'],
+};
 
 /** Standard cantrip damage upgrade thresholds (levels 5, 11, 17). */
 function cantripDamageScaling(die: dY) {
@@ -244,7 +251,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
         text: 'Each dart hits automatically and can be directed at one creature or split among several creatures you can see within range.',
       },
     ],
-    scaling: [{ category: 'extra-damage', description: 'One additional dart per slot level above 1st.' }],
+    scaling: [{ category: 'extra-damage', description: 'One additional dart per slot level above 1st.', mode: 'per-slot-level', startsAtSlotLevel: 1 }],
     description: {
       full: 'You create three glowing darts of magical force. Each dart strikes a creature of your choice that you can see within range. A dart deals 1d4 + 1 Force damage to its target. The darts all strike simultaneously, and you can direct them to hit one creature or several.',
       summary: 'Three automatic-hit darts deal 1d4 + 1 force damage each and can be split among visible creatures in range.',
@@ -300,18 +307,60 @@ const SPELLS_RAW: readonly SpellEntry[] = [
   {
     id: 'cure-wounds',
     name: 'Cure Wounds',
-    school: 'evocation',
+    school: 'abjuration',
     level: 1,
     classes: ['bard', 'cleric', 'druid', 'paladin', 'ranger'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'note',
+        text: 'The target regains 2d8 + your spellcasting ability modifier Hit Points. Dice-based healing with ability modifier is under-modeled.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-healing',
+      description: 'The healing increases by 2d8 for each spell slot level above 1.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 1,
+      amount: '2d8',
+    }],
+    description: {
+      full: 'A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier. Using a Higher-Level Spell Slot. The healing increases by 2d8 for each spell slot level above 1.',
+      summary: 'Touch a creature to restore 2d8 + spellcasting modifier HP.',
+    },
   },
   {
     id: 'healing-word',
     name: 'Healing Word',
-    school: 'evocation',
+    school: 'abjuration',
     level: 1,
     classes: ['bard', 'cleric', 'druid'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'bonus-action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'note',
+        text: 'The target regains 2d4 + your spellcasting ability modifier Hit Points. Dice-based healing with ability modifier is under-modeled.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-healing',
+      description: 'The healing increases by 2d4 for each spell slot level above 1.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 1,
+      amount: '2d4',
+    }],
+    description: {
+      full: 'A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier. Using a Higher-Level Spell Slot. The healing increases by 2d4 for each spell slot level above 1.',
+      summary: 'A creature you can see within 60 feet regains 2d4 + spellcasting modifier HP.',
+    },
   },
   {
     id: 'thunderwave',
@@ -355,15 +404,76 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     school: 'enchantment',
     level: 1,
     classes: ['bard', 'druid', 'sorcerer', 'warlock', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'condition', conditionId: 'charmed' },
+        ],
+        text: 'The target has Advantage on this save if you or your allies are fighting it.',
+      },
+      {
+        kind: 'note',
+        text: 'The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you. The spell ends early if you or your allies damage the target.',
+      },
+    ],
+    scaling: [{
+      category: 'extra-targets',
+      description: 'You can target one additional creature for each spell slot level above 1.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 1,
+    }],
+    description: {
+      full: 'One Humanoid you can see within range makes a Wisdom saving throw. It does so with Advantage if you or your allies are fighting it. On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it. The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.',
+      summary: 'A humanoid makes a Wisdom save or is Charmed for 1 hour; Friendly to you while Charmed.',
+    },
   },
   {
     id: 'protection-from-evil',
     name: 'Protection from Evil and Good',
     school: 'abjuration',
     level: 1,
-    classes: ['cleric', 'paladin', 'warlock', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    classes: ['cleric', 'druid', 'paladin', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true },
+    components: { verbal: true, somatic: true, material: { description: 'a flask of Holy Water', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'roll-modifier',
+        appliesTo: 'attack-rolls',
+        modifier: 'disadvantage',
+        condition: EXTRAPLANAR_CREATURE_TYPES,
+      },
+      {
+        kind: 'grant',
+        grantType: 'condition-immunity',
+        value: 'charmed',
+        condition: EXTRAPLANAR_CREATURE_TYPES,
+        text: 'Also immune to possession from these creature types.',
+      },
+      {
+        kind: 'grant',
+        grantType: 'condition-immunity',
+        value: 'frightened',
+        condition: EXTRAPLANAR_CREATURE_TYPES,
+      },
+      {
+        kind: 'note',
+        text: 'If the target is already possessed, Charmed, or Frightened by such a creature, the target has Advantage on any new saving throw against the relevant effect.',
+      },
+    ],
+    description: {
+      full: 'Until the spell ends, one willing creature you touch is protected against creatures that are Aberrations, Celestials, Elementals, Fey, Fiends, or Undead. The protection grants several benefits. Creatures of those types have Disadvantage on attack rolls against the target. The target also can\'t be possessed by or gain the Charmed or Frightened conditions from them. If the target is already possessed, Charmed, or Frightened by such a creature, the target has Advantage on any new saving throw against the relevant effect.',
+      summary: 'Touch a willing creature to protect it against Aberrations, Celestials, Elementals, Fey, Fiends, and Undead for up to 10 minutes.',
+    },
   },
   {
     id: 'bless',
@@ -488,7 +598,7 @@ const SPELLS_RAW: readonly SpellEntry[] = [
         text: "Flammable objects in the area that aren't being worn or carried start burning.",
       },
     ],
-    scaling: [{ category: 'extra-damage', description: 'Damage increases by 1d6 for each slot level above 3rd.' }],
+    scaling: [{ category: 'extra-damage', description: 'Damage increases by 1d6 for each slot level above 3rd.', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d6' }],
     description: {
       full: "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren't being worn or carried start burning.",
       summary: '20-foot-radius fire explosion dealing 8d6 fire damage; Dexterity save for half.',

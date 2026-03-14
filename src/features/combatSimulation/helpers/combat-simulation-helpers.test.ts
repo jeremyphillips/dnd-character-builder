@@ -236,4 +236,49 @@ describe('combat simulation monster action helpers', () => {
       }),
     )
   })
+
+  it('preserves movement-targeting metadata for containment-style monster actions', () => {
+    const monster = {
+      id: 'cube-test-monster',
+      name: 'Gelatinous Cube',
+      mechanics: {
+        hitPoints: { count: 2, die: 8 },
+        armorClass: { kind: 'fixed', value: 12 },
+        movement: { ground: 15 },
+        actions: [
+          {
+            kind: 'special',
+            name: 'Engulf',
+            description: 'The cube moves through creature spaces and engulfs them.',
+            target: 'creatures-entered-during-move',
+            movement: {
+              upToSpeed: true,
+              noOpportunityAttacks: true,
+              canEnterCreatureSpaces: true,
+              targetSizeMax: 'large',
+            },
+            save: { ability: 'dex', dc: 12 },
+            onFail: [{ kind: 'state', stateId: 'engulfed' }],
+          },
+        ],
+        bonusActions: [],
+      },
+      lore: {},
+    } as unknown as Monster
+
+    const actions = buildMonsterExecutableActions(monster, {})
+
+    expect(actions[0]).toEqual(
+      expect.objectContaining({
+        label: 'Engulf',
+        targeting: { kind: 'entered_during_move' },
+        movement: {
+          upToSpeed: true,
+          noOpportunityAttacks: true,
+          canEnterCreatureSpaces: true,
+          targetSizeMax: 'large',
+        },
+      }),
+    )
+  })
 })

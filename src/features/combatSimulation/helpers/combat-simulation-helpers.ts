@@ -399,6 +399,7 @@ function buildMonsterActionDefinition(
         : action.target === 'creatures-entered-during-move'
           ? { kind: 'entered_during_move' }
           : { kind: 'single_target' },
+    movement: action.movement,
     usage: buildMonsterActionUsage(action),
     onHitEffects: action.attackBonus != null ? action.onSuccess : undefined,
     onFailEffects: action.onFail,

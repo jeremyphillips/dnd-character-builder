@@ -99,6 +99,83 @@ function getImmunityStateLabel(actionLabel: string): string {
   return `immune to ${actionLabel}`
 }
 
+function formatMovementSummary(effect: {
+  upToSpeed?: boolean
+  upToSpeedFraction?: 0.5 | 1
+  noOpportunityAttacks?: boolean
+  canEnterCreatureSpaces?: boolean
+  targetSizeMax?: string
+  straightTowardVisibleEnemy?: boolean
+  forced?: boolean
+  toNearestUnoccupiedSpace?: boolean
+  withinFeetOfSource?: number
+  failIfNoSpace?: boolean
+  movesWithSource?: boolean
+}): string {
+  const parts: string[] = []
+
+  if (effect.upToSpeed) {
+    parts.push('move up to its Speed')
+  } else if (effect.upToSpeedFraction != null) {
+    parts.push(`move up to ${effect.upToSpeedFraction * 100}% of its Speed`)
+  }
+
+  if (effect.noOpportunityAttacks) {
+    parts.push('without provoking opportunity attacks')
+  }
+
+  if (effect.canEnterCreatureSpaces) {
+    const sizeLimit = effect.targetSizeMax ? `${effect.targetSizeMax} or smaller` : 'eligible'
+    parts.push(`may enter ${sizeLimit} creature spaces`)
+  }
+
+  if (effect.straightTowardVisibleEnemy) {
+    parts.push('must move straight toward a visible enemy')
+  }
+
+  if (effect.movesWithSource) {
+    parts.push('target moves with the source')
+  }
+
+  if (effect.forced) {
+    parts.push('forced movement')
+  }
+
+  if (effect.withinFeetOfSource != null) {
+    parts.push(`ends within ${effect.withinFeetOfSource} feet of the source`)
+  }
+
+  if (effect.toNearestUnoccupiedSpace) {
+    parts.push('moves to the nearest unoccupied space')
+  }
+
+  if (effect.failIfNoSpace) {
+    parts.push('fails if no space is available')
+  }
+
+  return parts.length > 0 ? `${parts.join('; ')}.` : 'Movement effect noted.'
+}
+
+function formatNestedEffectSummary(effect: Effect): string | null {
+  if (effect.kind === 'condition') {
+    return `Condition: ${effect.conditionId}.`
+  }
+
+  if (effect.kind === 'damage') {
+    return `Damage: ${effect.damage}${effect.damageType ? ` ${effect.damageType}` : ''}.`
+  }
+
+  if (effect.kind === 'note') {
+    return effect.text
+  }
+
+  if (effect.kind === 'move') {
+    return formatMovementSummary(effect)
+  }
+
+  return null
+}
+
 function applyActionEffects(
   state: EncounterState,
   actor: CombatantInstance,
@@ -170,6 +247,38 @@ function applyActionEffects(
       nextState = addStateToCombatant(nextState, target.instanceId, effect.stateId, {
         sourceLabel: options.sourceLabel,
       })
+
+      if (effect.escape) {
+        nextState = appendEncounterNote(
+          nextState,
+          `${options.sourceLabel}: Escape DC ${effect.escape.dc} ${effect.escape.ability?.toUpperCase() ?? ''}${effect.escape.skill ? ` (${effect.escape.skill})` : ''}${effect.escape.actionRequired ? ' as an action' : ''}.`
+            .replace(/\s+/g, ' ')
+            .trim(),
+          {
+            actorId: actor.instanceId,
+            targetIds: [target.instanceId],
+          },
+        )
+      }
+
+      if (effect.notes) {
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${effect.notes}`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+      }
+
+      const ongoingSummary = (effect.ongoingEffects ?? [])
+        .map((nestedEffect) => formatNestedEffectSummary(nestedEffect))
+        .filter((summary): summary is string => Boolean(summary))
+        .join(' ')
+
+      if (ongoingSummary) {
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${ongoingSummary}`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+      }
       return
     }
 
@@ -192,6 +301,14 @@ function applyActionEffects(
 
     if (effect.kind === 'interval') {
       nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Interval effect ${effect.stateId} is noted for later runtime support.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'move') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${formatMovementSummary(effect)}`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],
       })
@@ -374,6 +491,21 @@ function resolveCombatActionInternal(
     turn: state.turnIndex + 1,
     summary: `${actor.source.label} uses ${actionLabel}${target ? ` against ${targetLabel}` : ''}.`,
   })
+
+  if (action.movement) {
+    nextState = appendEncounterNote(
+      nextState,
+      `${actionLabel}: ${formatMovementSummary(action.movement)}${
+        action.targeting?.kind === 'entered_during_move'
+          ? ' Resolution uses the selected target as the creature crossed during movement.'
+          : ''
+      }`,
+      {
+        actorId: actor.instanceId,
+        targetIds: target ? [target.instanceId] : undefined,
+      },
+    )
+  }
 
   if (action.sequence && action.sequence.length > 0) {
     for (const step of action.sequence) {

@@ -41,6 +41,15 @@ export interface CombatActionTargetingProfile {
   kind: 'single_target' | 'all_enemies' | 'entered_during_move'
 }
 
+export interface CombatActionMovementProfile {
+  upToSpeed?: boolean
+  upToSpeedFraction?: 0.5 | 1
+  noOpportunityAttacks?: boolean
+  canEnterCreatureSpaces?: boolean
+  targetSizeMax?: string
+  straightTowardVisibleEnemy?: boolean
+}
+
 export interface CombatActionUsage {
   recharge?: {
     min: number
@@ -65,6 +74,7 @@ export interface CombatActionDefinition {
   damageType?: string
   saveProfile?: CombatActionSaveProfile
   targeting?: CombatActionTargetingProfile
+  movement?: CombatActionMovementProfile
   usage?: CombatActionUsage
   onHitEffects?: Effect[]
   onFailEffects?: Effect[]

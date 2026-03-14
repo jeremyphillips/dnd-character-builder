@@ -193,6 +193,7 @@ export default function CombatSimulationRoute() {
           selectedActionTargetId={selectedActionTargetId}
           onSelectedActionTargetIdChange={setSelectedActionTargetId}
           onResolveAction={handleResolveAction}
+          onPassTurn={handleNextTurn}
           onPartySelectionChange={setSelectedPartyIds}
           onResolvedCombatant={handleResolvedCombatant}
           onRemovePartyCombatant={removePartyCombatant}
@@ -213,6 +214,7 @@ export default function CombatSimulationRoute() {
           selectedActionTargetId={selectedActionTargetId}
           onSelectedActionTargetIdChange={setSelectedActionTargetId}
           onResolveAction={handleResolveAction}
+          onPassTurn={handleNextTurn}
           environmentContext={environmentContext}
           monsterFormsById={monsterFormsById}
           monsterManualTriggersById={monsterManualTriggersById}

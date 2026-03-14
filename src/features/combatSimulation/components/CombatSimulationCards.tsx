@@ -447,6 +447,7 @@ export function CharacterCombatantCard({
   runtimeCombatant,
   onResolved,
   onRemove,
+  onPassTurn,
   isActive = false,
   activeActionControls,
 }: {
@@ -457,6 +458,7 @@ export function CharacterCombatantCard({
   runtimeCombatant?: CombatantInstance
   onResolved: (combatant: CombatantInstance | null) => void
   onRemove: () => void
+  onPassTurn: () => void
   isActive?: boolean
   activeActionControls?: ActiveActionControlsProps
 }) {
@@ -505,6 +507,7 @@ export function CharacterCombatantCard({
       runtimeCombatant={runtimeCombatant}
       onResolved={onResolved}
       onRemove={onRemove}
+      onPassTurn={onPassTurn}
       isActive={isActive}
       activeActionControls={activeActionControls}
     />
@@ -519,6 +522,7 @@ function LoadedCharacterCombatantCard({
   runtimeCombatant,
   onResolved,
   onRemove,
+  onPassTurn,
   isActive = false,
   activeActionControls,
 }: {
@@ -529,6 +533,7 @@ function LoadedCharacterCombatantCard({
   runtimeCombatant?: CombatantInstance
   onResolved: (combatant: CombatantInstance) => void
   onRemove: () => void
+  onPassTurn: () => void
   isActive?: boolean
   activeActionControls?: ActiveActionControlsProps
 }) {
@@ -585,6 +590,9 @@ function LoadedCharacterCombatantCard({
   }, [combatant, onResolved])
 
   const displayCombatant = runtimeCombatant ?? combatant
+  const canPassTurn =
+    !displayCombatant.turnResources?.actionAvailable ||
+    !displayCombatant.turnResources?.bonusActionAvailable
 
   return (
     <Paper
@@ -606,9 +614,16 @@ function LoadedCharacterCombatantCard({
               {formatCharacterSubtitle(character)}
             </Typography>
           </Box>
-          <Button size="small" color="inherit" onClick={onRemove} startIcon={<DeleteOutlineIcon />}>
-            Remove
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {isActive && (
+              <Button size="small" variant="outlined" onClick={onPassTurn} disabled={!canPassTurn}>
+                Pass turn
+              </Button>
+            )}
+            <Button size="small" color="inherit" onClick={onRemove}>
+              <DeleteOutlineIcon fontSize="small" />
+            </Button>
+          </Stack>
         </Stack>
 
         <StatChips
@@ -663,6 +678,7 @@ export function MonsterCombatantCard({
   onResolved,
   onAddCopy,
   onRemove,
+  onPassTurn,
   isActive = false,
   activeActionControls,
 }: {
@@ -677,6 +693,7 @@ export function MonsterCombatantCard({
   onResolved: (combatant: CombatantInstance) => void
   onAddCopy: () => void
   onRemove: () => void
+  onPassTurn: () => void
   isActive?: boolean
   activeActionControls?: ActiveActionControlsProps
 }) {
@@ -749,6 +766,9 @@ export function MonsterCombatantCard({
   }, [combatant, onResolved])
 
   const displayCombatant = runtimeCombatant ?? combatant
+  const canPassTurn =
+    !displayCombatant.turnResources?.actionAvailable ||
+    !displayCombatant.turnResources?.bonusActionAvailable
 
   return (
     <Paper
@@ -774,11 +794,16 @@ export function MonsterCombatantCard({
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
-            <Button size="small" onClick={onAddCopy} startIcon={<AddIcon />}>
-              Add Copy
+            <Button size="small" onClick={onAddCopy}>
+              +
             </Button>
-            <Button size="small" color="inherit" onClick={onRemove} startIcon={<DeleteOutlineIcon />}>
-              Remove
+            {isActive && (
+              <Button size="small" variant="outlined" onClick={onPassTurn} disabled={!canPassTurn}>
+                Pass turn
+              </Button>
+            )}
+            <Button size="small" color="inherit" onClick={onRemove}>
+              <DeleteOutlineIcon fontSize="small" />
             </Button>
           </Stack>
         </Stack>

@@ -27,6 +27,7 @@ type PartyLaneProps = {
   selectedActionTargetId: string
   onSelectedActionTargetIdChange: (value: string) => void
   onResolveAction: () => void
+  onPassTurn: () => void
   onPartySelectionChange: (ids: string[]) => void
   onResolvedCombatant: (runtimeId: string, combatant: CombatantInstance | null) => void
   onRemovePartyCombatant: (characterId: string) => void
@@ -46,6 +47,7 @@ export function PartyRosterLane({
   selectedActionTargetId,
   onSelectedActionTargetIdChange,
   onResolveAction,
+  onPassTurn,
   onPartySelectionChange,
   onResolvedCombatant,
   onRemovePartyCombatant,
@@ -95,6 +97,7 @@ export function PartyRosterLane({
               runtimeCombatant={encounterState?.combatantsById[characterId]}
               onResolved={(combatant) => onResolvedCombatant(characterId, combatant)}
               onRemove={() => onRemovePartyCombatant(characterId)}
+              onPassTurn={onPassTurn}
               isActive={activeCombatantId === characterId}
               activeActionControls={
                 activeCombatantId === characterId
@@ -132,6 +135,7 @@ type EnemyLaneProps = {
   selectedActionTargetId: string
   onSelectedActionTargetIdChange: (value: string) => void
   onResolveAction: () => void
+  onPassTurn: () => void
   environmentContext: ManualEnvironmentContext
   monsterFormsById: Record<string, MonsterFormContext>
   monsterManualTriggersById: Record<string, ManualMonsterTriggerContext>
@@ -159,6 +163,7 @@ export function EnemyRosterLane({
   selectedActionTargetId,
   onSelectedActionTargetIdChange,
   onResolveAction,
+  onPassTurn,
   environmentContext,
   monsterFormsById,
   monsterManualTriggersById,
@@ -220,6 +225,7 @@ export function EnemyRosterLane({
                   runtimeCombatant={encounterState?.combatantsById[entry.runtimeId]}
                   onResolved={(combatant) => onResolvedCombatant(entry.runtimeId, combatant)}
                   onRemove={() => onRemoveEnemyCombatant(entry.runtimeId)}
+                  onPassTurn={onPassTurn}
                   isActive={activeCombatantId === entry.runtimeId}
                   activeActionControls={
                     activeCombatantId === entry.runtimeId
@@ -250,9 +256,8 @@ export function EnemyRosterLane({
                       size="small"
                       color="inherit"
                       onClick={() => onRemoveEnemyCombatant(entry.runtimeId)}
-                      startIcon={<DeleteOutlineIcon />}
                     >
-                      Remove
+                      <DeleteOutlineIcon fontSize="small" />
                     </Button>
                   </Stack>
                 </Paper>
@@ -277,6 +282,7 @@ export function EnemyRosterLane({
                 onResolved={(combatant) => onResolvedCombatant(entry.runtimeId, combatant)}
                 onAddCopy={() => onAddEnemyCopy(entry)}
                 onRemove={() => onRemoveEnemyCombatant(entry.runtimeId)}
+                onPassTurn={onPassTurn}
                 isActive={activeCombatantId === entry.runtimeId}
                 activeActionControls={
                   activeCombatantId === entry.runtimeId

@@ -1,4 +1,7 @@
-import { applyDamageToCombatant, appendEncounterLogEvent, getEncounterCombatantLabel, updateEncounterCombatant } from './encounter-state'
+import { addConditionToCombatant, addStateToCombatant, applyDamageToCombatant, appendEncounterLogEvent, appendEncounterNote, getEncounterCombatantLabel, updateEncounterCombatant } from './encounter-state'
+import { getAbilityModifier } from '../core/ability.utils'
+import type { AbilityId, AbilityKey } from '../core/character/abilities.types'
+import type { Effect } from '../effects/effects.types'
 import type { CombatActionCost, CombatActionDefinition, CombatActionSequenceStep } from './combat-actions.types'
 import { createCombatTurnResources, type CombatantInstance, type CombatantTurnResources } from './combatant.types'
 import type { EncounterState } from './encounter.types'
@@ -29,6 +32,23 @@ function getCombatantActions(combatant: CombatantInstance): CombatActionDefiniti
   return combatant.actions ?? []
 }
 
+function abilityIdToKey(ability: AbilityId): AbilityKey {
+  switch (ability) {
+    case 'str':
+      return 'strength'
+    case 'dex':
+      return 'dexterity'
+    case 'con':
+      return 'constitution'
+    case 'int':
+      return 'intelligence'
+    case 'wis':
+      return 'wisdom'
+    case 'cha':
+      return 'charisma'
+  }
+}
+
 function getTrackedPartCount(
   state: EncounterState,
   actorId: string,
@@ -47,6 +67,152 @@ function getSequenceStepCount(
   }
 
   return step.count
+}
+
+function getActionTargets(
+  state: EncounterState,
+  actor: CombatantInstance,
+  selection: ResolveCombatActionSelection,
+  action: CombatActionDefinition,
+): CombatantInstance[] {
+  if (action.targeting?.kind === 'all_enemies') {
+    return Object.values(state.combatantsById).filter(
+      (combatant) => combatant.side !== actor.side && combatant.stats.currentHitPoints > 0,
+    )
+  }
+
+  if (!selection.targetId) return []
+  const target = state.combatantsById[selection.targetId]
+  if (!target || target.side === actor.side || target.stats.currentHitPoints <= 0) return []
+  return [target]
+}
+
+function getSaveModifier(combatant: CombatantInstance, ability: AbilityId): number {
+  const abilityKey = abilityIdToKey(ability)
+  return (
+    combatant.stats.savingThrowModifiers?.[abilityKey] ??
+    getAbilityModifier(combatant.stats.abilityScores?.[abilityKey] ?? 10)
+  )
+}
+
+function getImmunityStateLabel(actionLabel: string): string {
+  return `immune to ${actionLabel}`
+}
+
+function applyActionEffects(
+  state: EncounterState,
+  actor: CombatantInstance,
+  target: CombatantInstance,
+  action: CombatActionDefinition,
+  effects: Effect[] | undefined,
+  options: { rng: () => number; sourceLabel: string },
+): EncounterState {
+  if (!effects || effects.length === 0) return state
+
+  let nextState = state
+
+  effects.forEach((effect) => {
+    if (effect.kind === 'save') {
+      if (typeof effect.save.dc !== 'number') {
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Unsupported save DC rule.`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+        return
+      }
+
+      const rawRoll = rollDie(20, options.rng)
+      const saveModifier = getSaveModifier(target, effect.save.ability)
+      const totalRoll = rawRoll + saveModifier
+      const succeeded = totalRoll >= effect.save.dc
+
+      nextState = appendEncounterNote(
+        nextState,
+        `${options.sourceLabel}: ${target.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${effect.save.ability.toUpperCase()} save.`,
+        {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+          details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${totalRoll} vs DC ${effect.save.dc}.`,
+        },
+      )
+
+      nextState = applyActionEffects(
+        nextState,
+        actor,
+        target,
+        action,
+        succeeded ? effect.onSuccess : effect.onFail,
+        options,
+      )
+      return
+    }
+
+    if (effect.kind === 'damage') {
+      const rolledDamage = rollDamage(String(effect.damage), options.rng)
+      if (rolledDamage && rolledDamage.total > 0) {
+        nextState = applyDamageToCombatant(nextState, target.instanceId, rolledDamage.total, {
+          actorId: actor.instanceId,
+          sourceLabel: options.sourceLabel,
+          damageType: effect.damageType,
+        })
+      }
+      return
+    }
+
+    if (effect.kind === 'condition') {
+      nextState = addConditionToCombatant(nextState, target.instanceId, effect.conditionId, {
+        sourceLabel: options.sourceLabel,
+      })
+      return
+    }
+
+    if (effect.kind === 'state') {
+      nextState = addStateToCombatant(nextState, target.instanceId, effect.stateId, {
+        sourceLabel: options.sourceLabel,
+      })
+      return
+    }
+
+    if (effect.kind === 'immunity' && effect.scope === 'source-action') {
+      nextState = addStateToCombatant(nextState, target.instanceId, getImmunityStateLabel(action.label), {
+        sourceLabel: options.sourceLabel,
+      })
+      return
+    }
+
+    if (effect.kind === 'death_outcome') {
+      if (target.stats.currentHitPoints <= 0) {
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${target.source.label} ${effect.outcome.replaceAll('-', ' ')}.`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+      }
+      return
+    }
+
+    if (effect.kind === 'interval') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Interval effect ${effect.stateId} is noted for later runtime support.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'note') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${effect.text}`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Unsupported effect ${effect.kind}.`, {
+      actorId: actor.instanceId,
+      targetIds: [target.instanceId],
+    })
+  })
+
+  return nextState
 }
 
 function parseDamageExpression(input?: string): ParsedDamageExpression | null {
@@ -115,6 +281,34 @@ function getCombatantTurnResources(combatant: CombatantInstance): CombatantTurnR
   return combatant.turnResources ?? createCombatTurnResources()
 }
 
+function canUseCombatAction(action: CombatActionDefinition): boolean {
+  if (action.usage?.recharge && !action.usage.recharge.ready) return false
+  if (action.usage?.uses && action.usage.uses.remaining <= 0) return false
+  return true
+}
+
+function spendCombatActionUsage(action: CombatActionDefinition): CombatActionDefinition {
+  if (!action.usage) return action
+
+  return {
+    ...action,
+    usage: {
+      recharge: action.usage.recharge
+        ? {
+            ...action.usage.recharge,
+            ready: false,
+          }
+        : undefined,
+      uses: action.usage.uses
+        ? {
+            ...action.usage.uses,
+            remaining: Math.max(0, action.usage.uses.remaining - 1),
+          }
+        : undefined,
+    },
+  }
+}
+
 export function canSpendActionCost(resources: CombatantTurnResources, cost: CombatActionCost): boolean {
   if (cost.action && !resources.actionAvailable) return false
   if (cost.bonusAction && !resources.bonusActionAvailable) return false
@@ -131,7 +325,9 @@ export function getCombatantAvailableActions(
   if (!combatant) return []
 
   const resources = getCombatantTurnResources(combatant)
-  return getCombatantActions(combatant).filter((action) => canSpendActionCost(resources, action.cost))
+  return getCombatantActions(combatant).filter(
+    (action) => canSpendActionCost(resources, action.cost) && canUseCombatAction(action),
+  )
 }
 
 export function resolveCombatAction(
@@ -156,10 +352,12 @@ function resolveCombatActionInternal(
 
   const resources = getCombatantTurnResources(actor)
   if (!behavior.skipCost && !canSpendActionCost(resources, action.cost)) return state
+  if (!behavior.skipCost && !canUseCombatAction(action)) return state
 
-  const target = selection.targetId ? state.combatantsById[selection.targetId] : undefined
+  const targets = getActionTargets(state, actor, selection, action)
+  const target = targets[0]
   if (action.resolutionMode === 'attack_roll') {
-    if (!target || target.side === actor.side || target.stats.currentHitPoints <= 0) {
+    if (!target) {
       return state
     }
   }
@@ -213,6 +411,9 @@ function resolveCombatActionInternal(
       ? nextState
       : updateEncounterCombatant(nextState, actor.instanceId, (combatant) => ({
           ...combatant,
+          actions: getCombatantActions(combatant).map((candidate) =>
+            candidate.id === action.id ? spendCombatActionUsage(candidate) : candidate,
+          ),
           turnResources: spendActionCost(getCombatantTurnResources(combatant), action.cost),
         }))
   }
@@ -264,6 +465,15 @@ function resolveCombatActionInternal(
           summary: `${actionLabel} resolves with no damage roll.`,
         })
       }
+
+      nextState = applyActionEffects(
+        nextState,
+        actor,
+        nextState.combatantsById[target.instanceId] ?? target,
+        action,
+        action.onHitEffects,
+        { rng, sourceLabel: actionLabel },
+      )
     } else {
       nextState = appendEncounterLogEvent(nextState, {
         type: 'action_resolved',
@@ -273,6 +483,67 @@ function resolveCombatActionInternal(
         turn: state.turnIndex + 1,
         summary: `${actionLabel} resolves with no damage dealt.`,
       })
+    }
+  } else if (action.resolutionMode === 'saving_throw') {
+    if (targets.length === 0 || !action.saveProfile) return nextState
+
+    for (const saveTarget of targets) {
+      if (saveTarget.states.some((stateMarker) => stateMarker.label === getImmunityStateLabel(action.label))) {
+        nextState = appendEncounterNote(
+          nextState,
+          `${saveTarget.source.label} ignores ${actionLabel}.`,
+          {
+            actorId: actor.instanceId,
+            targetIds: [saveTarget.instanceId],
+            details: `Target is already immune to ${actionLabel}.`,
+          },
+        )
+        continue
+      }
+
+      const rawRoll = rollDie(20, rng)
+      const saveModifier = getSaveModifier(saveTarget, action.saveProfile.ability)
+      const totalRoll = rawRoll + saveModifier
+      const succeeded = totalRoll >= action.saveProfile.dc
+
+      nextState = appendEncounterLogEvent(nextState, {
+        type: 'action_resolved',
+        actorId: actor.instanceId,
+        targetIds: [saveTarget.instanceId],
+        round: state.roundNumber,
+        turn: state.turnIndex + 1,
+        summary: `${saveTarget.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${action.saveProfile.ability.toUpperCase()} save against ${actionLabel}.`,
+        details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${totalRoll} vs DC ${action.saveProfile.dc}.`,
+      })
+
+      if (action.damage) {
+        const rolledDamage = rollDamage(action.damage, rng)
+        if (rolledDamage && rolledDamage.total > 0) {
+          const damageTotal =
+            succeeded && action.saveProfile.halfDamageOnSave
+              ? Math.floor(rolledDamage.total / 2)
+              : succeeded
+                ? 0
+                : rolledDamage.total
+
+          if (damageTotal > 0) {
+            nextState = applyDamageToCombatant(nextState, saveTarget.instanceId, damageTotal, {
+              actorId: actor.instanceId,
+              sourceLabel: actionLabel,
+              damageType: action.damageType,
+            })
+          }
+        }
+      }
+
+      nextState = applyActionEffects(
+        nextState,
+        actor,
+        saveTarget,
+        action,
+        succeeded ? action.onSuccessEffects : action.onFailEffects,
+        { rng, sourceLabel: actionLabel },
+      )
     }
   } else {
     nextState = appendEncounterLogEvent(nextState, {
@@ -293,6 +564,9 @@ function resolveCombatActionInternal(
     ? nextState
     : updateEncounterCombatant(nextState, actor.instanceId, (combatant) => ({
         ...combatant,
+        actions: getCombatantActions(combatant).map((candidate) =>
+          candidate.id === action.id ? spendCombatActionUsage(candidate) : candidate,
+        ),
         turnResources: spendActionCost(getCombatantTurnResources(combatant), action.cost),
       }))
 }

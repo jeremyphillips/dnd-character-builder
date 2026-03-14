@@ -1,4 +1,5 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import type { AbilityKey } from '@/features/mechanics/domain/core/character/abilities.types'
 import type { BreakdownToken } from '../resolution/stat-resolver'
 import type { CombatActionDefinition } from './combat-actions.types'
 
@@ -29,6 +30,8 @@ export interface CombatantStatBlock {
   currentHitPoints: number
   initiativeModifier: number
   dexterityScore?: number
+  abilityScores?: Partial<Record<AbilityKey, number>>
+  savingThrowModifiers?: Partial<Record<AbilityKey, number>>
   speeds?: Partial<Record<'ground' | 'climb' | 'fly' | 'swim' | 'burrow', number>>
 }
 
@@ -76,6 +79,7 @@ export interface CombatantTurnResources {
   actionAvailable: boolean
   bonusActionAvailable: boolean
   reactionAvailable: boolean
+  opportunityAttackReactionsRemaining: number
   movementRemaining: number
   hasCastBonusActionSpell: boolean
 }
@@ -105,11 +109,15 @@ export interface RuntimeTrackedPart {
   }
 }
 
-export function createCombatTurnResources(movementRemaining = 0): CombatantTurnResources {
+export function createCombatTurnResources(
+  movementRemaining = 0,
+  opportunityAttackReactionsRemaining = 0,
+): CombatantTurnResources {
   return {
     actionAvailable: true,
     bonusActionAvailable: true,
     reactionAvailable: true,
+    opportunityAttackReactionsRemaining,
     movementRemaining,
     hasCastBonusActionSpell: false,
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CombatActionDefinition } from './combat-actions.types'
 import { getCombatantAvailableActions, resolveCombatAction } from './action-resolution'
-import { createEncounterState } from './encounter-state'
+import { advanceEncounterTurn, createEncounterState } from './encounter-state'
 import type { CombatantInstance } from './combatant.types'
 
 function createCombatant(args: {
@@ -12,6 +12,22 @@ function createCombatant(args: {
   initiativeModifier: number
   dexterityScore: number
   armorClass: number
+  abilityScores?: {
+    strength?: number
+    dexterity?: number
+    constitution?: number
+    intelligence?: number
+    wisdom?: number
+    charisma?: number
+  }
+  savingThrowModifiers?: {
+    strength?: number
+    dexterity?: number
+    constitution?: number
+    intelligence?: number
+    wisdom?: number
+    charisma?: number
+  }
   actions?: CombatActionDefinition[]
 }): CombatantInstance {
   return {
@@ -28,6 +44,16 @@ function createCombatant(args: {
       currentHitPoints: 12,
       initiativeModifier: args.initiativeModifier,
       dexterityScore: args.dexterityScore,
+      abilityScores: {
+        strength: 10,
+        dexterity: args.dexterityScore,
+        constitution: 10,
+        intelligence: 10,
+        wisdom: 10,
+        charisma: 10,
+        ...args.abilityScores,
+      },
+      savingThrowModifiers: args.savingThrowModifiers,
       speeds: { ground: 30 },
     },
     attacks: [],
@@ -203,6 +229,57 @@ describe('resolveCombatAction', () => {
     expect(second).toEqual(first)
   })
 
+  it('enforces limited-use monster actions after their uses are spent', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'actor',
+          label: 'Gnoll',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 14,
+          armorClass: 15,
+          actions: [
+            {
+              id: 'rampage',
+              label: 'Rampage',
+              kind: 'monster_action',
+              cost: { bonusAction: true },
+              resolutionMode: 'log_only',
+              usage: {
+                uses: {
+                  max: 1,
+                  remaining: 1,
+                  period: 'day',
+                },
+              },
+              logText: 'The gnoll surges forward.',
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'target',
+          label: 'Guard',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 12,
+          armorClass: 12,
+        }),
+      ],
+      { rng: () => 0.1 }
+    )
+
+    expect(getCombatantAvailableActions(state, 'actor').map((action) => action.id)).toContain('rampage')
+
+    const resolved = resolveCombatAction(state, {
+      actorId: 'actor',
+      actionId: 'rampage',
+    })
+
+    expect(resolved.combatantsById['actor']?.actions?.find((action) => action.id === 'rampage')?.usage?.uses?.remaining).toBe(0)
+    expect(getCombatantAvailableActions(resolved, 'actor').map((action) => action.id)).not.toContain('rampage')
+  })
+
   it('logs placeholder spell actions without changing hit points', () => {
     const state = createEncounterState(
       [
@@ -293,6 +370,7 @@ describe('resolveCombatAction', () => {
       actionAvailable: true,
       bonusActionAvailable: false,
       reactionAvailable: true,
+      opportunityAttackReactionsRemaining: 0,
       movementRemaining: 30,
       hasCastBonusActionSpell: false,
     })
@@ -383,5 +461,347 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['hydra']?.turnResources?.actionAvailable).toBe(false)
     expect(resolved.log.filter((entry) => entry.summary.includes('Hydra hits Fighter with Bite.'))).toHaveLength(2)
     expect(resolved.log[resolved.log.length - 1]?.summary).toBe('Multiattack resolves its action sequence.')
+  })
+
+  it('resolves single-target saving throw actions and applies branch effects', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'mummy',
+          label: 'Mummy',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 8,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'dreadful-glare',
+              label: 'Dreadful Glare',
+              kind: 'monster_action',
+              cost: { action: true },
+              resolutionMode: 'saving_throw',
+              saveProfile: {
+                ability: 'wis',
+                dc: 11,
+              },
+              onFailEffects: [{ kind: 'condition', conditionId: 'frightened' }],
+              onSuccessEffects: [
+                {
+                  kind: 'immunity',
+                  scope: 'source-action',
+                  duration: { kind: 'fixed', value: 24, unit: 'hour' },
+                },
+              ],
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'target',
+          label: 'Cleric',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 12,
+          armorClass: 16,
+          abilityScores: { wisdom: 10 },
+        }),
+      ],
+      { rng: () => 0.9 }
+    )
+
+    const failed = resolveCombatAction(
+      state,
+      {
+        actorId: 'mummy',
+        targetId: 'target',
+        actionId: 'dreadful-glare',
+      },
+      {
+        rng: () => 0.2,
+      },
+    )
+
+    expect(failed.combatantsById['target']?.conditions.map((marker) => marker.label)).toContain('frightened')
+
+    const succeeded = resolveCombatAction(
+      state,
+      {
+        actorId: 'mummy',
+        targetId: 'target',
+        actionId: 'dreadful-glare',
+      },
+      {
+        rng: () => 0.9,
+      },
+    )
+
+    expect(succeeded.combatantsById['target']?.states.map((marker) => marker.label)).toContain(
+      'immune to Dreadful Glare',
+    )
+  })
+
+  it('applies half damage on successful save to all enemy targets for area actions', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'dragon',
+          label: 'Young Red Dragon',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 18,
+          actions: [
+            {
+              id: 'fire-breath',
+              label: 'Fire Breath',
+              kind: 'monster_action',
+              cost: { action: true },
+              resolutionMode: 'saving_throw',
+              damage: '16',
+              damageType: 'fire',
+              saveProfile: {
+                ability: 'dex',
+                dc: 17,
+                halfDamageOnSave: true,
+              },
+              targeting: {
+                kind: 'all_enemies',
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'rogue',
+          label: 'Rogue',
+          side: 'party',
+          initiativeModifier: 3,
+          dexterityScore: 18,
+          armorClass: 15,
+          savingThrowModifiers: { dexterity: 8 },
+        }),
+        createCombatant({
+          instanceId: 'fighter',
+          label: 'Fighter',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 12,
+          armorClass: 16,
+          savingThrowModifiers: { dexterity: 1 },
+        }),
+      ],
+      { rng: () => 0.9 }
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      {
+        actorId: 'dragon',
+        actionId: 'fire-breath',
+      },
+      {
+        rng: () => 0.4, // d20 = 9, flat damage = 16
+      },
+    )
+
+    expect(resolved.combatantsById['rogue']?.stats.currentHitPoints).toBe(4)
+    expect(resolved.combatantsById['fighter']?.stats.currentHitPoints).toBe(0)
+  })
+
+  it('recharges monster actions at the start of their turn before they become available again', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'dragon',
+          label: 'Dragon',
+          side: 'enemies',
+          initiativeModifier: 8,
+          dexterityScore: 14,
+          armorClass: 18,
+          actions: [
+            {
+              id: 'fire-breath',
+              label: 'Fire Breath',
+              kind: 'monster_action',
+              cost: { action: true },
+              resolutionMode: 'saving_throw',
+              damage: '8d6',
+              damageType: 'fire',
+              saveProfile: {
+                ability: 'dex',
+                dc: 17,
+                halfDamageOnSave: true,
+              },
+              targeting: { kind: 'all_enemies' },
+              usage: {
+                recharge: {
+                  min: 5,
+                  max: 6,
+                  ready: true,
+                },
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'fighter',
+          label: 'Fighter',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 10,
+          armorClass: 16,
+          savingThrowModifiers: { dexterity: 0 },
+        }),
+      ],
+      { rng: () => 0.1 }
+    )
+
+    const spent = resolveCombatAction(
+      state,
+      {
+        actorId: 'dragon',
+        actionId: 'fire-breath',
+      },
+      {
+        rng: () => 0.1,
+      },
+    )
+
+    expect(getCombatantAvailableActions(spent, 'dragon').map((action) => action.id)).not.toContain('fire-breath')
+
+    const toFighter = advanceEncounterTurn(spent, { rng: () => 0.1 })
+    const recharged = advanceEncounterTurn(toFighter, { rng: () => 0.9 })
+
+    expect(recharged.activeCombatantId).toBe('dragon')
+    expect(
+      recharged.combatantsById['dragon']?.actions?.find((action) => action.id === 'fire-breath')?.usage?.recharge?.ready,
+    ).toBe(true)
+    expect(getCombatantAvailableActions(recharged, 'dragon').map((action) => action.id)).toContain('fire-breath')
+  })
+
+  it('executes on-hit rider saves for attack-roll monster actions', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'wolf',
+          label: 'Wolf',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 15,
+          armorClass: 13,
+          actions: [
+            {
+              id: 'bite',
+              label: 'Bite',
+              kind: 'monster_action',
+              cost: { action: true },
+              resolutionMode: 'attack_roll',
+              attackProfile: {
+                attackBonus: 4,
+                damage: '2d4 + 2',
+                damageType: 'piercing',
+              },
+              onHitEffects: [
+                {
+                  kind: 'save',
+                  save: { ability: 'str', dc: 11 },
+                  onFail: [{ kind: 'condition', conditionId: 'prone' }],
+                },
+              ],
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'target',
+          label: 'Cleric',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 12,
+          armorClass: 12,
+          abilityScores: { strength: 10 },
+        }),
+      ],
+      { rng: () => 0.9 }
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      {
+        actorId: 'wolf',
+        targetId: 'target',
+        actionId: 'bite',
+      },
+      {
+        rng: (() => {
+          const rolls = [0.5, 0.1, 0.1]
+          let index = 0
+          return () => rolls[index++] ?? 0.1
+        })(), // hit, low damage, then fail STR save
+      },
+    )
+
+    expect(resolved.combatantsById['target']?.conditions.map((marker) => marker.label)).toContain('prone')
+  })
+
+  it('uses attack-roll onSuccess branches as on-hit effects for monster special actions', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'bugbear',
+          label: 'Bugbear',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 14,
+          armorClass: 15,
+          actions: [
+            {
+              id: 'grab',
+              label: 'Grab',
+              kind: 'monster_action',
+              cost: { action: true },
+              resolutionMode: 'attack_roll',
+              attackProfile: {
+                attackBonus: 4,
+                damage: '2d6 + 2',
+                damageType: 'bludgeoning',
+              },
+              onHitEffects: [
+                {
+                  kind: 'condition',
+                  conditionId: 'grappled',
+                  targetSizeMax: 'medium',
+                  escapeDc: 12,
+                },
+              ],
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'target',
+          label: 'Rogue',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 12,
+        }),
+      ],
+      { rng: () => 0.9 }
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      {
+        actorId: 'bugbear',
+        targetId: 'target',
+        actionId: 'grab',
+      },
+      {
+        rng: (() => {
+          const rolls = [0.5, 0.2, 0.2]
+          let index = 0
+          return () => rolls[index++] ?? 0.2
+        })(),
+      },
+    )
+
+    expect(resolved.combatantsById['target']?.conditions.map((marker) => marker.label)).toContain('grappled')
   })
 })

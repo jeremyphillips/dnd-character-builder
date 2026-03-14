@@ -183,6 +183,11 @@ export function EncounterControlsPanel({
                     variant="outlined"
                   />
                   <Chip
+                    label={`OA Reactions: ${activeCombatant.turnResources?.opportunityAttackReactionsRemaining ?? 0}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                  <Chip
                     label={`Move: ${activeCombatant.turnResources?.movementRemaining ?? 0} ft`}
                     size="small"
                     variant="outlined"

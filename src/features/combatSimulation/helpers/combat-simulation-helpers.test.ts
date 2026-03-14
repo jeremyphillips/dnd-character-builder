@@ -189,4 +189,51 @@ describe('combat simulation monster action helpers', () => {
       }),
     )
   })
+
+  it('seeds recharge and limited-use metadata for executable monster special actions', () => {
+    const monster = {
+      id: 'usage-test-monster',
+      name: 'Usage Test Monster',
+      mechanics: {
+        hitPoints: { count: 2, die: 8 },
+        armorClass: { kind: 'fixed', value: 12 },
+        movement: { ground: 30 },
+        actions: [
+          {
+            kind: 'special',
+            name: 'Fire Breath',
+            description: 'Each creature in a cone must make a saving throw.',
+            save: { ability: 'dex', dc: 13 },
+            damage: '4d6',
+            damageType: 'fire',
+            target: 'creatures-in-area',
+            recharge: { min: 5, max: 6 },
+            uses: { count: 1, period: 'day' },
+          },
+        ],
+        bonusActions: [],
+      },
+      lore: {},
+    } as unknown as Monster
+
+    const actions = buildMonsterExecutableActions(monster, {})
+
+    expect(actions[0]).toEqual(
+      expect.objectContaining({
+        label: 'Fire Breath',
+        usage: {
+          recharge: {
+            min: 5,
+            max: 6,
+            ready: true,
+          },
+          uses: {
+            max: 1,
+            remaining: 1,
+            period: 'day',
+          },
+        },
+      }),
+    )
+  })
 })

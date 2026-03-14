@@ -30,6 +30,10 @@ export function toAbilityModifier(score: number | null | undefined): number {
   return Math.floor(((score ?? 10) - 10) / 2)
 }
 
+function toSavingThrowModifier(score: number | null | undefined, proficiencyLevel = 0, proficiencyBonus = 2): number {
+  return toAbilityModifier(score) + proficiencyLevel * proficiencyBonus
+}
+
 export function formatDice(value: DiceOrFlat | undefined): string | undefined {
   if (value == null) return undefined
   return String(value)
@@ -269,6 +273,27 @@ function buildMonsterActionSequence(action: MonsterAction): CombatActionDefiniti
   }))
 }
 
+function buildMonsterActionUsage(action: MonsterAction): CombatActionDefinition['usage'] {
+  if (action.kind !== 'special' || (!action.recharge && !action.uses)) return undefined
+
+  return {
+    recharge: action.recharge
+      ? {
+          min: action.recharge.min,
+          max: action.recharge.max,
+          ready: true,
+        }
+      : undefined,
+    uses: action.uses
+      ? {
+          max: action.uses.count,
+          remaining: action.uses.count,
+          period: action.uses.period,
+        }
+      : undefined,
+  }
+}
+
 function buildMonsterActionDefinition(
   monster: Monster,
   action: MonsterAction,
@@ -331,6 +356,7 @@ function buildMonsterActionDefinition(
               damageType: action.damageType,
             }
           : undefined,
+      onHitEffects: action.onHitEffects,
       logText: action.notes,
     }
   }
@@ -343,7 +369,14 @@ function buildMonsterActionDefinition(
     label: action.name,
     kind: 'monster_action',
     cost,
-    resolutionMode: action.attackBonus != null ? 'attack_roll' : 'log_only',
+    resolutionMode:
+      action.attackBonus != null
+        ? 'attack_roll'
+        : action.save?.dc != null
+          ? 'saving_throw'
+          : 'log_only',
+    damage: damageWithBonus,
+    damageType: action.damageType,
     attackProfile:
       action.attackBonus != null
         ? {
@@ -352,6 +385,24 @@ function buildMonsterActionDefinition(
             damageType: action.damageType,
           }
         : undefined,
+    saveProfile:
+      action.save?.dc != null
+        ? {
+            ability: action.save.ability,
+            dc: action.save.dc,
+            halfDamageOnSave: action.halfDamageOnSave,
+          }
+        : undefined,
+    targeting:
+      action.target === 'creatures-in-area'
+        ? { kind: 'all_enemies' }
+        : action.target === 'creatures-entered-during-move'
+          ? { kind: 'entered_during_move' }
+          : { kind: 'single_target' },
+    usage: buildMonsterActionUsage(action),
+    onHitEffects: action.attackBonus != null ? action.onSuccess : undefined,
+    onFailEffects: action.onFail,
+    onSuccessEffects: action.onSuccess,
     sequence: buildMonsterActionSequence(action),
     logText: buildMonsterActionLogText(action),
   }
@@ -493,6 +544,7 @@ export function buildCharacterCombatantInstance(args: {
       currentHitPoints: character.hitPoints.total,
       initiativeModifier: combatStats.initiative,
       dexterityScore: character.abilityScores.dexterity,
+      abilityScores: character.abilityScores,
     },
     attacks,
     actions: [...buildAttackActions(attacks, 'weapon_attack'), ...extraActions],
@@ -536,7 +588,51 @@ export function buildMonsterCombatantInstance(args: {
       maxHitPoints: currentHitPoints,
       currentHitPoints,
       initiativeModifier,
-      dexterityScore: monster.mechanics.abilities?.dexterity ?? undefined,
+      dexterityScore: monster.mechanics.abilities?.dex ?? undefined,
+      abilityScores: monster.mechanics.abilities
+        ? {
+            strength: monster.mechanics.abilities.str ?? 10,
+            dexterity: monster.mechanics.abilities.dex ?? 10,
+            constitution: monster.mechanics.abilities.con ?? 10,
+            intelligence: monster.mechanics.abilities.int ?? 10,
+            wisdom: monster.mechanics.abilities.wis ?? 10,
+            charisma: monster.mechanics.abilities.cha ?? 10,
+          }
+        : undefined,
+      savingThrowModifiers: monster.mechanics.abilities
+        ? {
+            strength: toSavingThrowModifier(
+              monster.mechanics.abilities.str,
+              monster.mechanics.savingThrows?.str?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+            dexterity: toSavingThrowModifier(
+              monster.mechanics.abilities.dex,
+              monster.mechanics.savingThrows?.dex?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+            constitution: toSavingThrowModifier(
+              monster.mechanics.abilities.con,
+              monster.mechanics.savingThrows?.con?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+            intelligence: toSavingThrowModifier(
+              monster.mechanics.abilities.int,
+              monster.mechanics.savingThrows?.int?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+            wisdom: toSavingThrowModifier(
+              monster.mechanics.abilities.wis,
+              monster.mechanics.savingThrows?.wis?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+            charisma: toSavingThrowModifier(
+              monster.mechanics.abilities.cha,
+              monster.mechanics.savingThrows?.cha?.proficiencyLevel ?? 0,
+              monster.mechanics.proficiencyBonus,
+            ),
+          }
+        : undefined,
       speeds: monster.mechanics.movement,
     },
     attacks,

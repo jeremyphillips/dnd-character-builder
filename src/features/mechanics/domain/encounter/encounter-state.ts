@@ -189,11 +189,15 @@ function deriveRuntimeEffects(combatant: CombatantInstance): RuntimeEffectInstan
 }
 
 function seedRuntimeEffects(combatant: CombatantInstance): CombatantInstance {
+  const trackedParts = combatant.trackedParts ?? deriveTrackedParts(combatant)
   return {
     ...combatant,
     actions: combatant.actions ?? [],
-    trackedParts: combatant.trackedParts ?? deriveTrackedParts(combatant),
-    turnResources: combatant.turnResources ?? createCombatantTurnResources(combatant),
+    trackedParts,
+    turnResources: createCombatantTurnResources({
+      ...combatant,
+      trackedParts,
+    }),
     runtimeEffects:
       combatant.runtimeEffects.length > 0 ? combatant.runtimeEffects : deriveRuntimeEffects(combatant),
   }
@@ -201,7 +205,7 @@ function seedRuntimeEffects(combatant: CombatantInstance): CombatantInstance {
 
 function deriveTrackedParts(combatant: CombatantInstance): RuntimeTrackedPart[] {
   return combatant.activeEffects.flatMap((effect) => {
-    if (effect.kind !== 'tracked_part' || !('initialCount' in effect)) return []
+    if (effect.kind !== 'tracked_part' || typeof effect.initialCount !== 'number') return []
 
     return [
       {
@@ -302,8 +306,45 @@ function getCombatantBaseMovement(combatant: CombatantInstance): number {
   return speeds.length > 0 ? Math.max(...speeds) : 0
 }
 
+function getTrackedPartCount(combatant: CombatantInstance, part: 'head' | 'limb'): number {
+  return combatant.trackedParts?.find((trackedPart) => trackedPart.part === part)?.currentCount ?? 0
+}
+
+function getCombatantExtraOpportunityAttackReactions(combatant: CombatantInstance): number {
+  return combatant.activeEffects.reduce((total, effect) => {
+    if (effect.kind !== 'extra_reaction' || effect.appliesTo !== 'opportunity-attacks-only') {
+      return total
+    }
+
+    return total + Math.max(0, getTrackedPartCount(combatant, effect.count.part) - effect.count.baseline)
+  }, 0)
+}
+
 function createCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {
-  return createCombatTurnResources(getCombatantBaseMovement(combatant))
+  return createCombatTurnResources(
+    getCombatantBaseMovement(combatant),
+    getCombatantExtraOpportunityAttackReactions(combatant),
+  )
+}
+
+function syncCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {
+  const extraOpportunityAttackReactions = getCombatantExtraOpportunityAttackReactions(combatant)
+  const current = combatant.turnResources
+  if (!current) {
+    return createCombatantTurnResources(combatant)
+  }
+
+  return {
+    ...current,
+    opportunityAttackReactionsRemaining: Math.min(
+      current.opportunityAttackReactionsRemaining,
+      extraOpportunityAttackReactions,
+    ),
+  }
+}
+
+function rollRechargeDie(rng: () => number): number {
+  return Math.floor(rng() * 6) + 1
 }
 
 function normalizeDamageType(damageType?: string): string | null {
@@ -420,6 +461,10 @@ function processTrackedPartTurnEnd(
   let nextState = updateCombatant(state, combatantId, (current) => ({
     ...current,
     trackedParts: updatedTrackedParts,
+    turnResources: syncCombatantTurnResources({
+      ...current,
+      trackedParts: updatedTrackedParts,
+    }),
   }))
 
   trackedParts.forEach((trackedPart, index) => {
@@ -698,6 +743,74 @@ function resetCombatantTurnState(state: EncounterState, combatantId: string | nu
   }))
 }
 
+function processActionRecharge(
+  state: EncounterState,
+  combatantId: string | null,
+  rng: () => number,
+): EncounterState {
+  if (!combatantId) return state
+
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant || !combatant.actions || combatant.actions.length === 0) return state
+
+  const rechargeResults = combatant.actions.flatMap((action) => {
+    const recharge = action.usage?.recharge
+    const remainingUses = action.usage?.uses?.remaining
+    if (!recharge || recharge.ready || remainingUses === 0) return []
+
+    const roll = rollRechargeDie(rng)
+    const recharged = roll >= recharge.min && roll <= recharge.max
+
+    return [
+      {
+        actionId: action.id,
+        actionLabel: action.label,
+        roll,
+        min: recharge.min,
+        max: recharge.max,
+        recharged,
+      },
+    ]
+  })
+
+  if (rechargeResults.length === 0) return state
+
+  let nextState = updateCombatant(state, combatantId, (current) => ({
+    ...current,
+    actions: (current.actions ?? []).map((action) => {
+      const result = rechargeResults.find((entry) => entry.actionId === action.id)
+      if (!result || !action.usage?.recharge) return action
+
+      return {
+        ...action,
+        usage: {
+          ...action.usage,
+          recharge: {
+            ...action.usage.recharge,
+            ready: result.recharged,
+          },
+        },
+      }
+    }),
+  }))
+
+  rechargeResults.forEach((result) => {
+    nextState = appendLog(nextState, {
+      type: 'note',
+      actorId: combatantId,
+      targetIds: [combatantId],
+      round: nextState.roundNumber,
+      turn: nextState.turnIndex + 1,
+      summary: result.recharged
+        ? `${getCombatantLabel(nextState, combatantId)} recharges ${result.actionLabel}.`
+        : `${getCombatantLabel(nextState, combatantId)} does not recharge ${result.actionLabel}.`,
+      details: `Recharge roll: d6 ${result.roll} vs ${result.min}-${result.max}.`,
+    })
+  })
+
+  return nextState
+}
+
 export function createEncounterState(
   combatants: CombatantInstance[],
   options: InitiativeResolverOptions = {},
@@ -738,7 +851,8 @@ export function createEncounterState(
   if (state.activeCombatantId) {
     state.log.push(createTurnStartedLog(state))
     const withResetContext = resetCombatantTurnState(state, state.activeCombatantId)
-    const withStartExpiry = processRuntimeEffectBoundary(withResetContext, state.activeCombatantId, 'start')
+    const withRecharge = processActionRecharge(withResetContext, state.activeCombatantId, options.rng ?? Math.random)
+    const withStartExpiry = processRuntimeEffectBoundary(withRecharge, state.activeCombatantId, 'start')
     const withMarkerExpiry = processMarkerBoundary(withStartExpiry, state.activeCombatantId, 'start')
     return executeTurnHooks(withMarkerExpiry, state.activeCombatantId, 'start')
   }
@@ -746,7 +860,10 @@ export function createEncounterState(
   return state
 }
 
-export function advanceEncounterTurn(state: EncounterState): EncounterState {
+export function advanceEncounterTurn(
+  state: EncounterState,
+  options: InitiativeResolverOptions = {},
+): EncounterState {
   if (!state.started || state.initiativeOrder.length === 0 || !state.activeCombatantId) {
     return state
   }
@@ -796,14 +913,19 @@ export function advanceEncounterTurn(state: EncounterState): EncounterState {
   }
 
   const withResetContext = resetCombatantTurnState(startedState, startedState.activeCombatantId)
+  const withRecharge = processActionRecharge(
+    withResetContext,
+    withResetContext.activeCombatantId,
+    options.rng ?? Math.random,
+  )
 
   return executeTurnHooks(
     processMarkerBoundary(
-      processRuntimeEffectBoundary(withResetContext, withResetContext.activeCombatantId, 'start'),
-      withResetContext.activeCombatantId,
+      processRuntimeEffectBoundary(withRecharge, withRecharge.activeCombatantId, 'start'),
+      withRecharge.activeCombatantId,
       'start',
     ),
-    withResetContext.activeCombatantId,
+    withRecharge.activeCombatantId,
     'start',
   )
 }
@@ -898,6 +1020,10 @@ export function applyDamageToCombatant(
           : Math.max(0, combatant.stats.currentHitPoints - amount),
       },
       trackedParts,
+      turnResources: syncCombatantTurnResources({
+        ...combatant,
+        trackedParts,
+      }),
       suppressedHooks,
       turnContext: {
         totalDamageTaken: currentTurnContext.totalDamageTaken + amount,

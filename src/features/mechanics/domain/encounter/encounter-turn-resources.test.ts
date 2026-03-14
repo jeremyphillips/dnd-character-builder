@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { advanceEncounterTurn, createEncounterState } from './encounter-state'
+import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import { advanceEncounterTurn, applyDamageToCombatant, createEncounterState } from './encounter-state'
 import type { CombatantInstance } from './combatant.types'
 
 function createCombatant(args: {
@@ -10,6 +11,7 @@ function createCombatant(args: {
   initiativeModifier: number
   dexterityScore: number
   speed: number
+  activeEffects?: Effect[]
 }): CombatantInstance {
   return {
     instanceId: args.instanceId,
@@ -28,7 +30,7 @@ function createCombatant(args: {
       speeds: { ground: args.speed },
     },
     attacks: [],
-    activeEffects: [],
+    activeEffects: args.activeEffects ?? [],
     runtimeEffects: [],
     turnHooks: [],
     conditions: [],
@@ -57,6 +59,7 @@ describe('encounter turn resources', () => {
       actionAvailable: true,
       bonusActionAvailable: true,
       reactionAvailable: true,
+      opportunityAttackReactionsRemaining: 0,
       movementRemaining: 30,
       hasCastBonusActionSpell: false,
     })
@@ -95,6 +98,7 @@ describe('encounter turn resources', () => {
             actionAvailable: false,
             bonusActionAvailable: false,
             reactionAvailable: false,
+            opportunityAttackReactionsRemaining: 0,
             movementRemaining: 0,
             hasCastBonusActionSpell: true,
           },
@@ -109,8 +113,55 @@ describe('encounter turn resources', () => {
       actionAvailable: true,
       bonusActionAvailable: true,
       reactionAvailable: true,
+      opportunityAttackReactionsRemaining: 0,
       movementRemaining: 25,
       hasCastBonusActionSpell: false,
     })
+  })
+
+  it('derives opportunity-only extra reactions from tracked parts and keeps them synced', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'hydra',
+          label: 'Hydra',
+          side: 'enemies',
+          initiativeModifier: 5,
+          dexterityScore: 12,
+          speed: 30,
+          activeEffects: [
+            {
+              kind: 'tracked_part',
+              part: 'head',
+              initialCount: 5,
+              loss: {
+                trigger: 'damage_taken_in_single_turn',
+                minDamage: 25,
+                count: 1,
+              },
+            },
+            {
+              kind: 'extra_reaction',
+              appliesTo: 'opportunity-attacks-only',
+              count: {
+                kind: 'per-part-beyond',
+                part: 'head',
+                baseline: 1,
+              },
+            },
+          ],
+        }),
+      ],
+      { rng: () => 0.4 }
+    )
+
+    expect(state.combatantsById['hydra']?.turnResources?.opportunityAttackReactionsRemaining).toBe(4)
+
+    const damaged = applyDamageToCombatant(state, 'hydra', 25)
+    expect(damaged.combatantsById['hydra']?.turnResources?.opportunityAttackReactionsRemaining).toBe(3)
+
+    const next = advanceEncounterTurn(damaged)
+
+    expect(next.combatantsById['hydra']?.turnResources?.opportunityAttackReactionsRemaining).toBe(3)
   })
 })

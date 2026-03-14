@@ -527,6 +527,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               ],
             },
             {
+              // Engine caveat: long-lived interval resolution is still log-first.
               kind: "interval",
               stateId: "mummy-rot",
               every: {
@@ -541,6 +542,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               ],
             },
             {
+              // Engine caveat: death outcome is currently modeled as a descriptive rider, not a full outcome pipeline.
               kind: "death_outcome",
               trigger: "reduced-to-0-hit-points-by-this-action",
               targetType: "creature",
@@ -822,6 +824,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               },
             },
             {
+              // Engine caveat: spawn is still partial and does not yet create a fully simulated combatant.
               kind: 'spawn',
               creature: 'Troll Limb',
               count: 1,
@@ -829,6 +832,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
               actsWhen: 'immediately-after-source-turn',
             },
             {
+              // Engine caveat: custom tracked-part resource mapping still needs a canonical runtime model.
               kind: 'custom',
               id: 'monster.resource_from_tracked_parts',
               params: {
@@ -1016,6 +1020,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       immunities: ["acid", "blinded", "charmed", "deafened", "exhaustion", "frightened", "prone"],
       traits: [
         {
+          // Engine caveat: full movement + containment + action modifier semantics remain partial/log-first.
           name: 'Ooze Cube',
           description:
             'The cube fills its entire space and is transparent. Other creatures can enter that space, but a creature that does so is subjected to the cube’s Engulf and has Disadvantage on the saving throw. Creatures inside the cube have Total Cover, and the cube can hold one Large creature or up to four Medium or Small creatures inside itself at a time. As an action, a creature within 5 feet of the cube can pull a creature or an object out of the cube by succeeding on a DC 12 Strength (Athletics) check, and the puller takes 10 (3d6) Acid damage.',
@@ -1400,6 +1405,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             "For each head the hydra has beyond one, it gets an extra Reaction that can be used only for Opportunity Attacks.",
           effects: [
             {
+              // Engine caveat: extra reaction pools are not fully enforced yet.
               kind: "extra_reaction",
               appliesTo: "opportunity-attacks-only",
               count: {

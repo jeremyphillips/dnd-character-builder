@@ -56,6 +56,12 @@ export default function CombatSimulationRoute() {
     encounterState,
     activeCombatantId,
     activeCombatant,
+    availableActions,
+    availableActionTargets,
+    selectedActionId,
+    setSelectedActionId,
+    selectedActionTargetId,
+    setSelectedActionTargetId,
     unresolvedCombatantCount,
     selectedCombatants,
     controlTargetId,
@@ -85,6 +91,7 @@ export default function CombatSimulationRoute() {
     handleResolvedCombatant,
     handleStartEncounter,
     handleNextTurn,
+    handleResolveAction,
     handleResetEncounter,
     handleApplyDamage,
     handleApplyHealing,
@@ -130,9 +137,16 @@ export default function CombatSimulationRoute() {
         unresolvedCombatantCount={unresolvedCombatantCount}
         encounterState={encounterState}
         activeCombatant={activeCombatant}
+        availableActions={availableActions}
+        availableActionTargets={availableActionTargets}
+        selectedActionId={selectedActionId}
+        onSelectedActionIdChange={setSelectedActionId}
+        selectedActionTargetId={selectedActionTargetId}
+        onSelectedActionTargetIdChange={setSelectedActionTargetId}
         canStartEncounter={selectedCombatants.length > 0 && unresolvedCombatantCount === 0}
         onStartEncounter={handleStartEncounter}
         onNextTurn={handleNextTurn}
+        onResolveAction={handleResolveAction}
         onResetEncounter={handleResetEncounter}
         environmentContext={environmentContext}
         onEnvironmentContextChange={setEnvironmentContext}

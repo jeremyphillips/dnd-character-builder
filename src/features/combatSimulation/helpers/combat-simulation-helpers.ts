@@ -1,6 +1,7 @@
 import { useCombatStats } from '@/features/character/hooks'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { Monster } from '@/features/content/monsters/domain/types'
+import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import {
@@ -200,6 +201,39 @@ function buildAttackActions(
   }))
 }
 
+function buildSpellLogText(spell: Spell): string {
+  const effectText = (spell.effects ?? [])
+    .map((effect) => effect.text?.trim())
+    .filter((text): text is string => Boolean(text))
+    .join(' ')
+
+  return effectText || spell.description?.trim() || `${spell.name} effect resolution not implemented yet.`
+}
+
+export function buildSpellPlaceholderActions(args: {
+  runtimeId: string
+  spellIds?: string[]
+  spellsById: Record<string, Spell>
+}): CombatActionDefinition[] {
+  const { runtimeId, spellIds = [], spellsById } = args
+
+  return spellIds.flatMap((spellId) => {
+    const spell = spellsById[spellId]
+    if (!spell) return []
+
+    return [
+      {
+        id: `${runtimeId}-spell-${spell.id}`,
+        label: spell.name,
+        kind: 'spell',
+        cost: { action: true },
+        resolutionMode: 'log_only',
+        logText: buildSpellLogText(spell),
+      },
+    ]
+  })
+}
+
 export function buildCharacterCombatantInstance(args: {
   runtimeId: string
   side: CombatantSide
@@ -207,9 +241,10 @@ export function buildCharacterCombatantInstance(args: {
   character: CharacterDetailDto
   combatStats: ReturnType<typeof useCombatStats>
   attacks: CombatantAttackEntry[]
+  extraActions?: CombatActionDefinition[]
   turnHooks: RuntimeTurnHook[]
 }): CombatantInstance {
-  const { runtimeId, side, sourceKind, character, combatStats, attacks, turnHooks } = args
+  const { runtimeId, side, sourceKind, character, combatStats, attacks, extraActions = [], turnHooks } = args
 
   return {
     instanceId: runtimeId,
@@ -227,7 +262,7 @@ export function buildCharacterCombatantInstance(args: {
       dexterityScore: character.abilityScores.dexterity,
     },
     attacks,
-    actions: buildAttackActions(attacks, 'weapon_attack'),
+    actions: [...buildAttackActions(attacks, 'weapon_attack'), ...extraActions],
     activeEffects: combatStats.activeEffects,
     runtimeEffects: [],
     turnHooks,

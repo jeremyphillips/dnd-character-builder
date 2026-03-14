@@ -9,7 +9,9 @@ import {
   buildReducedToZeroTraits,
   createEncounterState,
   DEFAULT_MANUAL_MONSTER_TRIGGER_CONTEXT,
+  getCombatantAvailableActions,
   removeConditionFromCombatant,
+  resolveCombatAction,
   removeStateFromCombatant,
   triggerManualHook,
   type CombatantInstance,
@@ -49,6 +51,8 @@ export function useCombatSimulationEncounter({
     Record<string, ManualMonsterTriggerContext>
   >({})
   const [reducedToZeroSaveOutcome, setReducedToZeroSaveOutcome] = useState<'success' | 'fail'>('success')
+  const [selectedActionId, setSelectedActionId] = useState('')
+  const [selectedActionTargetId, setSelectedActionTargetId] = useState('')
 
   const selectedCombatants = useMemo(
     () =>
@@ -61,6 +65,29 @@ export function useCombatSimulationEncounter({
   const unresolvedCombatantCount = selectedCombatantIds.length - selectedCombatants.length
   const activeCombatantId = encounterState?.activeCombatantId ?? null
   const activeCombatant = activeCombatantId ? encounterState?.combatantsById[activeCombatantId] ?? null : null
+  const availableActions = useMemo(
+    () =>
+      encounterState && activeCombatantId
+        ? getCombatantAvailableActions(encounterState, activeCombatantId)
+        : [],
+    [activeCombatantId, encounterState],
+  )
+  const availableActionTargets = useMemo(() => {
+    if (!encounterState || !activeCombatant) return []
+
+    return encounterState.initiativeOrder
+      .map((combatantId) => encounterState.combatantsById[combatantId])
+      .filter(
+        (combatant): combatant is CombatantInstance =>
+          Boolean(combatant) &&
+          combatant.side !== activeCombatant.side &&
+          combatant.stats.currentHitPoints > 0,
+      )
+      .map((combatant) => ({
+        id: combatant.instanceId,
+        label: combatant.source.label,
+      }))
+  }, [activeCombatant, encounterState])
   const controlTargetCombatant =
     encounterState && controlTargetId ? encounterState.combatantsById[controlTargetId] : null
   const controlTargetMonster =
@@ -121,6 +148,8 @@ export function useCombatSimulationEncounter({
   useEffect(() => {
     if (!encounterState) {
       setControlTargetId('')
+      setSelectedActionId('')
+      setSelectedActionTargetId('')
       return
     }
 
@@ -129,6 +158,20 @@ export function useCombatSimulationEncounter({
       setControlTargetId(encounterState.activeCombatantId ?? encounterState.initiativeOrder[0] ?? '')
     }
   }, [controlTargetId, encounterState])
+
+  useEffect(() => {
+    const nextActionId = availableActions[0]?.id ?? ''
+    if (!selectedActionId || !availableActions.some((action) => action.id === selectedActionId)) {
+      setSelectedActionId(nextActionId)
+    }
+  }, [availableActions, selectedActionId])
+
+  useEffect(() => {
+    const validTargetIds = new Set(availableActionTargets.map((target) => target.id))
+    if (!selectedActionTargetId || !validTargetIds.has(selectedActionTargetId)) {
+      setSelectedActionTargetId(availableActionTargets[0]?.id ?? '')
+    }
+  }, [availableActionTargets, selectedActionTargetId])
 
   function handleResolvedCombatant(runtimeId: string, combatant: CombatantInstance | null) {
     setResolvedCombatantsById((prev) => {
@@ -153,6 +196,18 @@ export function useCombatSimulationEncounter({
 
   function handleNextTurn() {
     setEncounterState((prev) => (prev ? advanceEncounterTurn(prev) : prev))
+  }
+
+  function handleResolveAction() {
+    if (!encounterState || !activeCombatantId || !selectedActionId) return
+
+    setEncounterState(
+      resolveCombatAction(encounterState, {
+        actorId: activeCombatantId,
+        targetId: selectedActionTargetId || undefined,
+        actionId: selectedActionId,
+      }),
+    )
   }
 
   function handleResetEncounter() {
@@ -261,6 +316,12 @@ export function useCombatSimulationEncounter({
     encounterState,
     activeCombatantId,
     activeCombatant,
+    availableActions,
+    availableActionTargets,
+    selectedActionId,
+    setSelectedActionId,
+    selectedActionTargetId,
+    setSelectedActionTargetId,
     unresolvedCombatantCount,
     selectedCombatants,
     controlTargetId,
@@ -290,6 +351,7 @@ export function useCombatSimulationEncounter({
     handleResolvedCombatant,
     handleStartEncounter,
     handleNextTurn,
+    handleResolveAction,
     handleResetEncounter,
     handleApplyDamage,
     handleApplyHealing,

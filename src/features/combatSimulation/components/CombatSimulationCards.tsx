@@ -18,6 +18,7 @@ import { useCharacter, useCombatStats } from '@/features/character/hooks'
 import { toCharacterForEngine, type CharacterDetailDto } from '@/features/character/read-model'
 import { calculateMonsterArmorClass } from '@/features/content/monsters/domain/mechanics/calculateMonsterArmorClass'
 import type { Monster } from '@/features/content/monsters/domain/types'
+import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import { formatHitPointsWithAverage, formatMovement } from '@/features/content/monsters/utils/formatters'
 import {
   buildActiveMonsterEffects,
@@ -38,6 +39,7 @@ import {
   type CombatantSide,
 } from '@/features/mechanics/domain/encounter'
 import {
+  buildSpellPlaceholderActions,
   buildCharacterCombatantInstance,
   buildMonsterAttackEntries,
   buildMonsterCombatantInstance,
@@ -440,6 +442,7 @@ function LoadedCharacterCombatantCard({
   onRemove: () => void
   isActive?: boolean
 }) {
+  const { catalog } = useCampaignRules()
   const engineCharacter = useMemo(() => toCharacterForEngine(character), [character])
   const combatStats = useCombatStats(engineCharacter)
   const effectLabels = useMemo(
@@ -463,6 +466,15 @@ function LoadedCharacterCombatantCard({
     () => buildTurnHooksFromEffects(combatStats.activeEffects),
     [combatStats.activeEffects],
   )
+  const spellActions = useMemo(
+    () =>
+      buildSpellPlaceholderActions({
+        runtimeId,
+        spellIds: character.spells,
+        spellsById: catalog.spellsById as Record<string, Spell>,
+      }),
+    [catalog.spellsById, character.spells, runtimeId],
+  )
   const combatant = useMemo(
     () =>
       buildCharacterCombatantInstance({
@@ -472,9 +484,10 @@ function LoadedCharacterCombatantCard({
         character,
         combatStats,
         attacks,
+        extraActions: spellActions,
         turnHooks,
       }),
-    [attacks, character, combatStats, runtimeId, side, sourceKind, turnHooks],
+    [attacks, character, combatStats, runtimeId, side, sourceKind, spellActions, turnHooks],
   )
 
   useEffect(() => {

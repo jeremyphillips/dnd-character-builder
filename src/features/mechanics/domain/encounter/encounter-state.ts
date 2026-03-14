@@ -1043,6 +1043,25 @@ export function appendEncounterNote(
   })
 }
 
+export function appendEncounterLogEvent(
+  state: EncounterState,
+  event: Omit<CombatLogEvent, 'id' | 'timestamp'>,
+): EncounterState {
+  return appendLog(state, event)
+}
+
+export function updateEncounterCombatant(
+  state: EncounterState,
+  combatantId: string,
+  updater: (combatant: CombatantInstance) => CombatantInstance,
+): EncounterState {
+  return updateCombatant(state, combatantId, updater)
+}
+
+export function getEncounterCombatantLabel(state: EncounterState, combatantId: string | null): string {
+  return getCombatantLabel(state, combatantId)
+}
+
 export function appendHookTriggeredLog(
   state: EncounterState,
   combatantId: string,

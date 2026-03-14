@@ -17,9 +17,16 @@ type EncounterControlsPanelProps = {
   unresolvedCombatantCount: number
   encounterState: EncounterState | null
   activeCombatant: CombatantInstance | null
+  availableActions: { id: string; label: string; resolutionMode: string; kind: string }[]
+  availableActionTargets: { id: string; label: string }[]
+  selectedActionId: string
+  onSelectedActionIdChange: (value: string) => void
+  selectedActionTargetId: string
+  onSelectedActionTargetIdChange: (value: string) => void
   canStartEncounter: boolean
   onStartEncounter: () => void
   onNextTurn: () => void
+  onResolveAction: () => void
   onResetEncounter: () => void
   environmentContext: ManualEnvironmentContext
   onEnvironmentContextChange: (value: ManualEnvironmentContext) => void
@@ -58,9 +65,16 @@ export function EncounterControlsPanel({
   unresolvedCombatantCount,
   encounterState,
   activeCombatant,
+  availableActions,
+  availableActionTargets,
+  selectedActionId,
+  onSelectedActionIdChange,
+  selectedActionTargetId,
+  onSelectedActionTargetIdChange,
   canStartEncounter,
   onStartEncounter,
   onNextTurn,
+  onResolveAction,
   onResetEncounter,
   environmentContext,
   onEnvironmentContextChange,
@@ -144,20 +158,84 @@ export function EncounterControlsPanel({
               Active combatant: {activeCombatant?.source.label ?? encounterState.activeCombatantId}
             </Typography>
             {activeCombatant && (
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {activeCombatant.turnHooks.length > 0 ? (
-                  activeCombatant.turnHooks.map((hook) => (
-                    <Chip
-                      key={hook.id}
-                      label={`${hook.boundary === 'start' ? 'Start' : 'End'} hook: ${hook.label}`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  ))
-                ) : (
-                  <Chip label="No turn hooks" size="small" variant="outlined" />
-                )}
-              </Stack>
+              <>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {activeCombatant.turnHooks.length > 0 ? (
+                    activeCombatant.turnHooks.map((hook) => (
+                      <Chip
+                        key={hook.id}
+                        label={`${hook.boundary === 'start' ? 'Start' : 'End'} hook: ${hook.label}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))
+                  ) : (
+                    <Chip label="No turn hooks" size="small" variant="outlined" />
+                  )}
+                </Stack>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Chip
+                    label={`Action: ${activeCombatant.turnResources?.actionAvailable ? 'ready' : 'spent'}`}
+                    size="small"
+                    color={activeCombatant.turnResources?.actionAvailable ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`Bonus: ${activeCombatant.turnResources?.bonusActionAvailable ? 'ready' : 'spent'}`}
+                    size="small"
+                    color={activeCombatant.turnResources?.bonusActionAvailable ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`Reaction: ${activeCombatant.turnResources?.reactionAvailable ? 'ready' : 'spent'}`}
+                    size="small"
+                    color={activeCombatant.turnResources?.reactionAvailable ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`Move: ${activeCombatant.turnResources?.movementRemaining ?? 0} ft`}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Action"
+                    value={selectedActionId}
+                    onChange={(event) => onSelectedActionIdChange(event.target.value)}
+                    disabled={!hasEncounter || availableActions.length === 0}
+                  >
+                    {availableActions.map((action) => (
+                      <MenuItem key={action.id} value={action.id}>
+                        {action.label} ({action.kind.replaceAll('_', ' ')}, {action.resolutionMode.replaceAll('_', ' ')})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Target"
+                    value={selectedActionTargetId}
+                    onChange={(event) => onSelectedActionTargetIdChange(event.target.value)}
+                    disabled={!hasEncounter || availableActionTargets.length === 0}
+                  >
+                    {availableActionTargets.map((target) => (
+                      <MenuItem key={target.id} value={target.id}>
+                        {target.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Button
+                    variant="contained"
+                    onClick={onResolveAction}
+                    disabled={!hasEncounter || !selectedActionId || availableActions.length === 0 || availableActionTargets.length === 0}
+                  >
+                    Resolve Action
+                  </Button>
+                </Stack>
+              </>
             )}
           </Stack>
         )}

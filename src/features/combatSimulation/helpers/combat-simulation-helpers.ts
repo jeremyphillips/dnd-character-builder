@@ -724,7 +724,7 @@ export function buildCharacterCombatantInstance(args: {
     },
     stats: {
       armorClass: combatStats.armorClass,
-      maxHitPoints: combatStats.maxHp,
+      maxHitPoints: character.hitPoints.total,
       currentHitPoints: character.hitPoints.total,
       initiativeModifier: combatStats.initiative,
       dexterityScore: character.abilityScores.dexterity,

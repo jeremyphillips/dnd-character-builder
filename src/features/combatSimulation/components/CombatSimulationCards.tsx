@@ -600,6 +600,7 @@ function LoadedCharacterCombatantCard({
   const canPassTurn =
     !displayCombatant.turnResources?.actionAvailable ||
     !displayCombatant.turnResources?.bonusActionAvailable
+  const isDefeated = displayCombatant.stats.currentHitPoints === 0
 
   return (
     <Paper
@@ -607,6 +608,7 @@ function LoadedCharacterCombatantCard({
         p: 2.5,
         border: isActive ? '2px solid' : undefined,
         borderColor: isActive ? 'primary.main' : undefined,
+        opacity: isDefeated ? 0.5 : 1,
       }}
     >
       <Stack spacing={2}>
@@ -776,6 +778,7 @@ export function MonsterCombatantCard({
   const canPassTurn =
     !displayCombatant.turnResources?.actionAvailable ||
     !displayCombatant.turnResources?.bonusActionAvailable
+  const isDefeated = displayCombatant.stats.currentHitPoints === 0
 
   return (
     <Paper
@@ -783,6 +786,7 @@ export function MonsterCombatantCard({
         p: 2.5,
         border: isActive ? '2px solid' : undefined,
         borderColor: isActive ? 'primary.main' : undefined,
+        opacity: isDefeated ? 0.5 : 1,
       }}
     >
       <Stack spacing={2}>

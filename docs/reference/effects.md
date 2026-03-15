@@ -47,8 +47,17 @@ Boundaries:
 - `range` owns placement distance.
 - `duration` owns spell duration and concentration by default.
 - `components` own V/S/M facts.
+- `deliveryMethod` owns attack delivery when the spell requires a spell attack roll.
 - `description.full` is authoritative rules text.
 - `description.summary` is short UI copy.
+
+### Delivery Method
+
+- `deliveryMethod` is an optional container-level field: `'melee-spell-attack' | 'ranged-spell-attack'`.
+- Use when: the spell requires a spell attack roll as its primary delivery.
+- Do not use when: the spell uses a saving throw, auto-hits, or has no attack roll.
+- The adapter uses `deliveryMethod` to classify the spell as an attack-roll action and to build the attack profile from the caster's spell attack bonus.
+- Attack metadata belongs on the spell container, not in the effects array.
 
 ### Range
 
@@ -68,6 +77,7 @@ Boundaries:
 - `save` defines the saving throw.
 - `save.onFail` and `save.onSuccess` own branching outcomes.
 - If damage changes on success or failure, that damage belongs under `save` outcomes.
+- Spell-authored `save.dc` should be left unset when the DC derives from the caster (the standard case). The combat adapter injects the caster's spell save DC at build time. Only author an explicit `save.dc` when the DC is intrinsic to the effect (e.g. monster on-hit rider saves with a fixed DC).
 
 ### Rituals And Alternate Modes
 
@@ -379,6 +389,40 @@ Scopes an effect to interactions involving specific creature types. The `target`
 ]
 ```
 
+### Attack-Roll Spell
+
+- `deliveryMethod` on the spell container declares the attack type
+- `targeting` defines affected entities
+- `damage` defines the hit payload
+- the adapter builds the attack profile (bonus, damage, type) from the caster's spell attack bonus and the spell's `damage` effect
+- on-hit riders beyond damage go into the effects array and are mapped to `onHitEffects`
+
+```ts
+// spell container fields
+{ deliveryMethod: 'ranged-spell-attack' }
+
+// effects array
+[
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'damage', damage: '1d10', damageType: 'fire', levelScaling: { thresholds: [{ level: 5, damage: '2d10' }] } },
+  { kind: 'note', text: "A flammable object hit by this spell starts burning if it isn't being worn or carried." },
+]
+```
+
+### Multi-Instance Attack Spell
+
+- `damage.instances.count` defines the number of independent attack rolls (beams, rays)
+- `damage.levelScaling.thresholds` may scale instance count at higher caster levels
+- the adapter generates a parent action with sequence steps, one per instance
+- each instance is resolved as a separate attack roll against the target
+
+```ts
+[
+  { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', canSelectSameTargetMultipleTimes: true },
+  { kind: 'damage', damage: '1d10', damageType: 'force', instances: { count: 1, canSplitTargets: true }, levelScaling: { thresholds: [{ level: 5, instances: 2 }, { level: 11, instances: 3 }, { level: 17, instances: 4 }] } },
+]
+```
+
 ### Attack-Roll Rider
 
 - container owns attack metadata
@@ -485,6 +529,30 @@ Rules:
 - Unsupported spell behavior degrades to log/text.
 - Content authoring must not be distorted to satisfy current runtime limits.
 - Adapters may translate discriminant naming for runtime constraints, but canonical content does not preserve legacy naming drift.
+
+### Spell Combat Adapter
+
+The spell combat adapter (`buildSpellCombatActions`) converts canonical spell content into executable `CombatActionDefinition` objects for the combat simulation. It classifies spells into three resolution modes:
+
+- `attack-roll`: spells with `deliveryMethod`. The adapter builds an attack profile from the caster's spell attack bonus and the spell's `damage` effect. Multi-instance spells (beams, rays) generate sequence steps for independent attack rolls.
+- `effects`: spells with a top-level `save` effect. The adapter injects the caster's spell save DC into save effects where `dc` is unset, strips targeting effects, and passes the enriched effects array to the resolution engine. The engine's `applyActionEffects` handles save branching, damage, conditions, states, and notes recursively.
+- `log-only`: all other spells (utility, buff, stubs). The adapter generates a log-text summary from effect text or the spell description.
+
+Adapter inputs derived from the caster:
+
+- `spellSaveDc`: 8 + proficiency bonus + spellcasting ability modifier
+- `spellAttackBonus`: proficiency bonus + spellcasting ability modifier
+- `casterLevel`: used to resolve cantrip level scaling (damage dice and instance count thresholds)
+
+### Known Unsupported Spell Mechanics
+
+The following spell mechanics are not yet resolved by the combat adapter and remain log-only or under-modeled:
+
+- Healing spells (dice + ability modifier formula not yet in the resolution engine)
+- Self-buff spells (effects target the caster, not an enemy)
+- Auto-hit spells (Magic Missile — no attack roll, no save)
+- Concentration tracking
+- Spell slot resource management
 
 ## 11. Anti-Patterns
 

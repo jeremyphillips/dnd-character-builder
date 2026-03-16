@@ -1215,6 +1215,185 @@ describe('resolveCombatAction', () => {
     )
   })
 
+  it('self-targeting effects mode applies modifier to caster AC', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'shield-spell',
+              label: 'Shield',
+              kind: 'spell',
+              cost: { reaction: true },
+              resolutionMode: 'effects',
+              effects: [
+                {
+                  kind: 'modifier',
+                  target: 'armor_class',
+                  mode: 'add',
+                  value: 5,
+                  duration: {
+                    kind: 'until-turn-boundary',
+                    subject: 'self' as const,
+                    turn: 'next' as const,
+                    boundary: 'start' as const,
+                  },
+                },
+              ],
+              targeting: { kind: 'self' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'enemy',
+          label: 'Goblin',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 13,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'caster', actionId: 'shield-spell' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolved.combatantsById['caster']?.stats.armorClass).toBe(17)
+    expect(resolved.combatantsById['caster']?.statModifiers).toHaveLength(1)
+    expect(resolved.combatantsById['caster']?.statModifiers?.[0]?.value).toBe(5)
+    expect(resolved.combatantsById['caster']?.turnResources?.reactionAvailable).toBe(false)
+  })
+
+  it('self-targeting effects mode applies spell immunity as state marker', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'shield-spell',
+              label: 'Shield',
+              kind: 'spell',
+              cost: { reaction: true },
+              resolutionMode: 'effects',
+              effects: [
+                {
+                  kind: 'immunity',
+                  scope: 'spell',
+                  spellIds: ['magic-missile'],
+                  duration: {
+                    kind: 'until-turn-boundary',
+                    subject: 'self' as const,
+                    turn: 'next' as const,
+                    boundary: 'start' as const,
+                  },
+                  notes: 'You take no damage from Magic Missile.',
+                },
+              ],
+              targeting: { kind: 'self' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'enemy',
+          label: 'Goblin',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 13,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'caster', actionId: 'shield-spell' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolved.combatantsById['caster']?.states.some((s) => s.label.includes('magic-missile'))).toBe(true)
+  })
+
+  it('stat modifier marker expires and reverts AC at turn boundary', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'shield-spell',
+              label: 'Shield',
+              kind: 'spell',
+              cost: { reaction: true },
+              resolutionMode: 'effects',
+              effects: [
+                {
+                  kind: 'modifier',
+                  target: 'armor_class',
+                  mode: 'add',
+                  value: 5,
+                  duration: {
+                    kind: 'until-turn-boundary',
+                    subject: 'self' as const,
+                    turn: 'next' as const,
+                    boundary: 'start' as const,
+                  },
+                },
+              ],
+              targeting: { kind: 'self' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'enemy',
+          label: 'Goblin',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 13,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const withShield = resolveCombatAction(
+      state,
+      { actorId: 'caster', actionId: 'shield-spell' },
+      { rng: () => 0.5 },
+    )
+
+    expect(withShield.combatantsById['caster']?.stats.armorClass).toBe(17)
+
+    const afterEnemyTurn = advanceEncounterTurn(withShield)
+    expect(afterEnemyTurn.combatantsById['caster']?.stats.armorClass).toBe(17)
+
+    const afterCasterTurnStart = advanceEncounterTurn(afterEnemyTurn)
+    expect(afterCasterTurnStart.combatantsById['caster']?.stats.armorClass).toBe(12)
+    expect(afterCasterTurnStart.combatantsById['caster']?.statModifiers).toHaveLength(0)
+    expect(afterCasterTurnStart.log.some((entry) => entry.summary.includes('stat modifier expires'))).toBe(true)
+  })
+
   it('effects resolution logs "no valid targets" when no enemies remain', () => {
     const state = createEncounterState(
       [

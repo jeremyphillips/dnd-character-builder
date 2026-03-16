@@ -123,6 +123,15 @@ export function createCombatTurnResources(
   }
 }
 
+export interface StatModifierMarker {
+  id: string
+  label: string
+  target: string
+  mode: 'add'
+  value: number
+  duration?: RuntimeMarkerDuration
+}
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
@@ -135,6 +144,7 @@ export interface CombatantInstance {
   turnHooks: RuntimeTurnHook[]
   trackedParts?: RuntimeTrackedPart[]
   suppressedHooks?: RuntimeMarker[]
+  statModifiers?: StatModifierMarker[]
   turnContext?: CombatantTurnContext
   turnResources?: CombatantTurnResources
   conditions: RuntimeMarker[]

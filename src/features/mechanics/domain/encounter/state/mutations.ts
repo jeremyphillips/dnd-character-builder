@@ -1,4 +1,4 @@
-import type { CombatantInstance, EncounterState, RuntimeMarker, RuntimeMarkerDuration } from './types'
+import type { CombatantInstance, EncounterState, RuntimeMarker, RuntimeMarkerDuration, StatModifierMarker } from './types'
 import {
   buildRuntimeMarker,
   createEmptyTurnContext,
@@ -346,4 +346,72 @@ export function removeStateFromCombatant(
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, targetId)} loses state: ${trimmedMarker}.`,
   })
+}
+
+function applyStatModifierToStats(
+  stats: CombatantInstance['stats'],
+  modifier: StatModifierMarker,
+): CombatantInstance['stats'] {
+  if (modifier.target === 'armor_class' && modifier.mode === 'add') {
+    return { ...stats, armorClass: stats.armorClass + modifier.value }
+  }
+  return stats
+}
+
+function reverseStatModifierFromStats(
+  stats: CombatantInstance['stats'],
+  modifier: StatModifierMarker,
+): CombatantInstance['stats'] {
+  if (modifier.target === 'armor_class' && modifier.mode === 'add') {
+    return { ...stats, armorClass: stats.armorClass - modifier.value }
+  }
+  return stats
+}
+
+export function addStatModifierToCombatant(
+  state: EncounterState,
+  targetId: string,
+  modifier: StatModifierMarker,
+  options?: { sourceLabel?: string },
+): EncounterState {
+  const target = state.combatantsById[targetId]
+  if (!target) return state
+
+  const nextState = updateCombatant(state, targetId, (combatant) => ({
+    ...combatant,
+    stats: applyStatModifierToStats(combatant.stats, modifier),
+    statModifiers: [...(combatant.statModifiers ?? []), modifier],
+  }))
+
+  return appendLog(nextState, {
+    type: 'note',
+    actorId: state.activeCombatantId ?? undefined,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} gains ${modifier.label}.`,
+    details: [
+      options?.sourceLabel ? `Source: ${options.sourceLabel}.` : null,
+      modifier.duration
+        ? `Duration: ${modifier.duration.remainingTurns} turn(s), tick on ${modifier.duration.tickOn}.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined,
+  })
+}
+
+export function expireStatModifier(
+  state: EncounterState,
+  targetId: string,
+  modifier: StatModifierMarker,
+): EncounterState {
+  const target = state.combatantsById[targetId]
+  if (!target) return state
+
+  return updateCombatant(state, targetId, (combatant) => ({
+    ...combatant,
+    stats: reverseStatModifierFromStats(combatant.stats, modifier),
+    statModifiers: (combatant.statModifiers ?? []).filter((m) => m.id !== modifier.id),
+  }))
 }

@@ -519,6 +519,66 @@ describe('buildSpellCombatActions', () => {
 
     expect(actions[0]!.effects!.every((e) => e.kind !== 'targeting')).toBe(true)
   })
+
+  it('classifies self-range spells with modifier effects as effects resolution mode', () => {
+    const spell = makeSpell({
+      id: 'shield',
+      name: 'Shield',
+      range: { kind: 'self' },
+      castingTime: { normal: { value: 1, unit: 'reaction' } },
+      duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' },
+      effects: [
+        { kind: 'modifier', target: 'armor_class', mode: 'add', value: 5 },
+        { kind: 'immunity', scope: 'spell', spellIds: ['magic-missile'], duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['shield'],
+      spellsById: { shield: spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.targeting).toEqual({ kind: 'self' })
+    expect(actions[0]!.cost).toEqual({ reaction: true })
+  })
+
+  it('injects spell-level duration into effects that lack their own duration', () => {
+    const spell = makeSpell({
+      id: 'shield',
+      name: 'Shield',
+      range: { kind: 'self' },
+      duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' },
+      effects: [
+        { kind: 'modifier', target: 'armor_class', mode: 'add', value: 5 },
+        { kind: 'immunity', scope: 'spell', spellIds: ['magic-missile'], duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['shield'],
+      spellsById: { shield: spell },
+    })
+
+    const modifierEffect = actions[0]!.effects!.find((e) => e.kind === 'modifier')
+    expect(modifierEffect?.duration).toEqual({
+      kind: 'until-turn-boundary',
+      subject: 'self',
+      turn: 'next',
+      boundary: 'start',
+    })
+
+    const immunityEffect = actions[0]!.effects!.find((e) => e.kind === 'immunity')
+    expect(immunityEffect?.duration).toEqual({
+      kind: 'until-turn-boundary',
+      subject: 'self',
+      turn: 'next',
+      boundary: 'start',
+    })
+  })
 })
 
 describe('getCharacterSpellcastingStats', () => {

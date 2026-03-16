@@ -4,7 +4,8 @@ import type { MonsterAction } from '@/features/content/monsters/domain/types/mon
 import type { MonsterEquippedWeapon } from '@/features/content/monsters/domain/types/monster-equipment.types'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
-import type { Spell } from '@/features/content/spells/domain/types/spell.types'
+import type { Spell, SpellDuration } from '@/features/content/spells/domain/types/spell.types'
+import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.types'
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
@@ -532,6 +533,11 @@ function classifySpellResolutionMode(
   const hasSave = effects.some((e) => e.kind === 'save')
   if (hasSave) return 'effects'
 
+  if (spell.range?.kind === 'self') {
+    const hasResolvable = effects.some((e) => e.kind === 'modifier' || e.kind === 'immunity')
+    if (hasResolvable) return 'effects'
+  }
+
   return 'log-only'
 }
 
@@ -542,7 +548,8 @@ function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: b
   return { action: true }
 }
 
-function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' } {
+function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' } {
+  if (spell.range?.kind === 'self') return { kind: 'self' }
   const targeting = (spell.effects ?? []).find((e) => e.kind === 'targeting')
   if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies' }
   if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies' }
@@ -647,12 +654,35 @@ function buildSpellAttackAction(
   return [parentAction, beamAction]
 }
 
+function spellDurationToEffectDuration(spellDuration: SpellDuration): EffectDuration | undefined {
+  if (spellDuration.kind === 'until-turn-boundary') {
+    return {
+      kind: 'until-turn-boundary',
+      subject: spellDuration.subject,
+      turn: spellDuration.turn,
+      boundary: spellDuration.boundary,
+    }
+  }
+  return undefined
+}
+
+function injectSpellEffectDuration(effects: Effect[], spellDuration: SpellDuration): Effect[] {
+  const effectDuration = spellDurationToEffectDuration(spellDuration)
+  if (!effectDuration) return effects
+
+  return effects.map((effect) => {
+    if (effect.duration) return effect
+    return { ...effect, duration: effectDuration } as Effect
+  })
+}
+
 function buildSpellEffectsAction(
   spell: Spell,
   runtimeId: string,
   spellSaveDc: number,
 ): CombatActionDefinition {
-  const enrichedEffects = injectSpellSaveDc(spell.effects ?? [], spellSaveDc)
+  let enrichedEffects = injectSpellSaveDc(spell.effects ?? [], spellSaveDc)
+  enrichedEffects = injectSpellEffectDuration(enrichedEffects, spell.duration)
   const resolvableEffects = enrichedEffects.filter((e) => e.kind !== 'targeting')
 
   return {

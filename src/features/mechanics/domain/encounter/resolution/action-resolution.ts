@@ -1,6 +1,7 @@
 import {
   addConditionToCombatant,
   addStateToCombatant,
+  addStatModifierToCombatant,
   applyDamageToCombatant,
   appendEncounterLogEvent,
   appendEncounterNote,
@@ -18,6 +19,7 @@ import type {
 } from './combat-action.types'
 import {
   createCombatTurnResources,
+  effectDurationToRuntimeDuration,
   type CombatantInstance,
   type CombatantTurnResources,
 } from '../state'
@@ -68,6 +70,10 @@ function getActionTargets(
   selection: ResolveCombatActionSelection,
   action: CombatActionDefinition,
 ): CombatantInstance[] {
+  if (action.targeting?.kind === 'self') {
+    return [actor]
+  }
+
   if (action.targeting?.kind === 'all-enemies') {
     return Object.values(state.combatantsById).filter(
       (combatant) => combatant.side !== actor.side && combatant.stats.currentHitPoints > 0,
@@ -272,6 +278,34 @@ function applyActionEffects(
           targetIds: [target.instanceId],
         })
       }
+      return
+    }
+
+    if (effect.kind === 'modifier' && effect.target === 'armor_class' && effect.mode === 'add' && typeof effect.value === 'number') {
+      const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      nextState = addStatModifierToCombatant(
+        nextState,
+        target.instanceId,
+        {
+          id: `stat-mod-ac-${action.id}-${target.instanceId}`,
+          label: `+${effect.value} AC`,
+          target: 'armor_class',
+          mode: 'add',
+          value: effect.value,
+          duration: runtimeDuration,
+        },
+        { sourceLabel: options.sourceLabel },
+      )
+      return
+    }
+
+    if (effect.kind === 'immunity' && effect.scope === 'spell') {
+      const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      const stateLabel = `Immune: ${effect.spellIds.join(', ')}`
+      nextState = addStateToCombatant(nextState, target.instanceId, stateLabel, {
+        duration: runtimeDuration,
+        sourceLabel: options.sourceLabel,
+      })
       return
     }
 

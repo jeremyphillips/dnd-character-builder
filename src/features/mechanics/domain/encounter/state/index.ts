@@ -8,6 +8,7 @@ export * from './types'
 export {
   addConditionToCombatant,
   addStateToCombatant,
+  addStatModifierToCombatant,
   applyDamageToCombatant,
   applyHealingToCombatant,
   removeConditionFromCombatant,
@@ -16,4 +17,4 @@ export {
 } from './mutations'
 export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel } from './runtime'
 export { triggerManualHook } from './manual-hooks'
-export { formatMarkerLabel } from './shared'
+export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'

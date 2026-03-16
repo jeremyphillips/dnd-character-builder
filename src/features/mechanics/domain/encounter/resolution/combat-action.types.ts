@@ -38,7 +38,7 @@ export interface CombatActionSaveProfile {
 }
 
 export interface CombatActionTargetingProfile {
-  kind: 'single-target' | 'all-enemies' | 'entered-during-move'
+  kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self'
 }
 
 export interface CombatActionMovementProfile {

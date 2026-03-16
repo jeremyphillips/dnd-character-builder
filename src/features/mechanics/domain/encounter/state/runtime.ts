@@ -33,14 +33,16 @@ import {
   addStateToCombatant,
   applyDamageToCombatant,
   applyHealingToCombatant,
+  expireStatModifier,
 } from './mutations'
+import type { StatModifierMarker } from './types'
 
-function tickMarkers(
-  markers: RuntimeMarker[],
+function tickMarkers<T extends RuntimeMarker>(
+  markers: T[],
   boundary: 'start' | 'end',
-): { nextMarkers: RuntimeMarker[]; expired: RuntimeMarker[] } {
-  const nextMarkers: RuntimeMarker[] = []
-  const expired: RuntimeMarker[] = []
+): { nextMarkers: T[]; expired: T[] } {
+  const nextMarkers: T[] = []
+  const expired: T[] = []
 
   markers.forEach((marker) => {
     if (!marker.duration || marker.duration.tickOn !== boundary) {
@@ -182,6 +184,34 @@ function processTrackedPartTurnEnd(
   return nextState
 }
 
+function tickStatModifiers(
+  modifiers: StatModifierMarker[],
+  boundary: 'start' | 'end',
+): { nextModifiers: StatModifierMarker[]; expired: StatModifierMarker[] } {
+  const nextModifiers: StatModifierMarker[] = []
+  const expired: StatModifierMarker[] = []
+
+  modifiers.forEach((modifier) => {
+    if (!modifier.duration || modifier.duration.tickOn !== boundary) {
+      nextModifiers.push(modifier)
+      return
+    }
+
+    const remainingTurns = modifier.duration.remainingTurns - 1
+    if (remainingTurns <= 0) {
+      expired.push(modifier)
+      return
+    }
+
+    nextModifiers.push({
+      ...modifier,
+      duration: { ...modifier.duration, remainingTurns },
+    })
+  })
+
+  return { nextModifiers, expired }
+}
+
 function processMarkerBoundary(
   state: EncounterState,
   combatantId: string | null,
@@ -195,10 +225,12 @@ function processMarkerBoundary(
   const conditionTick = tickMarkers(combatant.conditions, boundary)
   const stateTick = tickMarkers(combatant.states, boundary)
   const suppressionTick = tickMarkers(combatant.suppressedHooks ?? [], boundary)
+  const statModTick = tickStatModifiers(combatant.statModifiers ?? [], boundary)
   const hasChanges =
     conditionTick.expired.length > 0 ||
     stateTick.expired.length > 0 ||
-    suppressionTick.expired.length > 0
+    suppressionTick.expired.length > 0 ||
+    statModTick.expired.length > 0
 
   const withTicks = hasChanges
     ? updateCombatant(state, combatantId, (current) => ({
@@ -206,10 +238,24 @@ function processMarkerBoundary(
         conditions: conditionTick.nextMarkers,
         states: stateTick.nextMarkers,
         suppressedHooks: suppressionTick.nextMarkers,
+        statModifiers: statModTick.nextModifiers,
       }))
     : state
 
   let nextState = withTicks
+
+  statModTick.expired.forEach((modifier) => {
+    nextState = expireStatModifier(nextState, combatantId, modifier)
+    nextState = appendLog(nextState, {
+      type: 'note',
+      actorId: combatantId,
+      targetIds: [combatantId],
+      round: nextState.roundNumber,
+      turn: nextState.turnIndex + 1,
+      summary: `${getCombatantLabel(nextState, combatantId)} stat modifier expires: ${modifier.label}.`,
+      details: `Expired at turn ${boundary}.`,
+    })
+  })
 
   conditionTick.expired.forEach((marker) => {
     nextState = appendLog(nextState, {

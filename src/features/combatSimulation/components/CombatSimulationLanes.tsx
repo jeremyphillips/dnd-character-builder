@@ -66,16 +66,19 @@ export function PartyRosterLane({
         isOptionEqualToValue={(option, value) => option.id === value.id}
         getOptionLabel={(option) => option.label}
         noOptionsText="No approved party members found."
-        renderOption={(props, option) => (
-          <Box component="li" {...props}>
-            <Stack spacing={0.25}>
-              <Typography variant="body2">{option.label}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {option.subtitle}
-              </Typography>
-            </Stack>
-          </Box>
-        )}
+        renderOption={(props, option) => {
+          const { key, ...rest } = props
+          return (
+            <Box component="li" key={key} {...rest}>
+              <Stack spacing={0.25}>
+                <Typography variant="body2">{option.label}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {option.subtitle}
+                </Typography>
+              </Stack>
+            </Box>
+          )
+        }}
         renderInput={(params) => (
           <TextField {...params} label="Approved Party Members" placeholder="Search party members" />
         )}
@@ -189,19 +192,22 @@ export function EnemyRosterLane({
         isOptionEqualToValue={(option, value) => option.key === value.key}
         getOptionLabel={(option) => option.label}
         noOptionsText="No NPC or monster options found."
-        renderOption={(props, option) => (
-          <Box component="li" {...props}>
-            <Stack spacing={0.25}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2">{option.label}</Typography>
-                <Chip label={option.kind === 'npc' ? 'NPC' : 'Monster'} size="small" />
+        renderOption={(props, option) => {
+          const { key, ...rest } = props
+          return (
+            <Box component="li" key={key} {...rest}>
+              <Stack spacing={0.25}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2">{option.label}</Typography>
+                  <Chip label={option.kind === 'npc' ? 'NPC' : 'Monster'} size="small" />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {option.subtitle}
+                </Typography>
               </Stack>
-              <Typography variant="caption" color="text.secondary">
-                {option.subtitle}
-              </Typography>
-            </Stack>
-          </Box>
-        )}
+            </Box>
+          )
+        }}
         renderInput={(params) => (
           <TextField {...params} label="Enemy Sources" placeholder="Search NPCs and monsters" />
         )}

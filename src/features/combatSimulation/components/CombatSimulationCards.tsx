@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -463,12 +463,14 @@ export function CharacterCombatantCard({
   activeActionControls?: ActiveActionControlsProps
 }) {
   const { character, loading, error } = useCharacter(characterId)
+  const onResolvedRef = useRef(onResolved)
+  onResolvedRef.current = onResolved
 
   useEffect(() => {
     if (!loading && !character) {
-      onResolved(null)
+      onResolvedRef.current(null)
     }
-  }, [character, loading, onResolved])
+  }, [character, loading])
 
   if (loading) {
     return (
@@ -591,10 +593,12 @@ function LoadedCharacterCombatantCard({
       }),
     [attacks, character, combatStats, runtimeId, side, sourceKind, spellActions, turnHooks],
   )
+  const onResolvedRef = useRef(onResolved)
+  onResolvedRef.current = onResolved
 
   useEffect(() => {
-    onResolved(combatant)
-  }, [combatant, onResolved])
+    onResolvedRef.current(combatant)
+  }, [combatant])
 
   const displayCombatant = runtimeCombatant ?? combatant
   const canPassTurn =
@@ -769,10 +773,12 @@ export function MonsterCombatantCard({
       }),
     [activeEffects, armorClass, attacks, averageHitPoints, executableActions, initiativeModifier, monster, runtimeId, turnHooks],
   )
+  const onResolvedRef = useRef(onResolved)
+  onResolvedRef.current = onResolved
 
   useEffect(() => {
-    onResolved(combatant)
-  }, [combatant, onResolved])
+    onResolvedRef.current(combatant)
+  }, [combatant])
 
   const displayCombatant = runtimeCombatant ?? combatant
   const canPassTurn =

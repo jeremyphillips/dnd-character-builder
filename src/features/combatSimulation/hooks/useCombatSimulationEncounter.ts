@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   addConditionToCombatant,
@@ -173,7 +173,7 @@ export function useCombatSimulationEncounter({
     }
   }, [availableActionTargets, selectedActionTargetId])
 
-  function handleResolvedCombatant(runtimeId: string, combatant: CombatantInstance | null) {
+  const handleResolvedCombatant = useCallback((runtimeId: string, combatant: CombatantInstance | null) => {
     setResolvedCombatantsById((prev) => {
       if (combatant == null) {
         if (!(runtimeId in prev)) return prev
@@ -187,7 +187,7 @@ export function useCombatSimulationEncounter({
         [runtimeId]: combatant,
       }
     })
-  }
+  }, [])
 
   function handleStartEncounter() {
     if (selectedCombatants.length === 0 || unresolvedCombatantCount > 0) return

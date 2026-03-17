@@ -1,20 +1,24 @@
-import { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useRef } from 'react'
 
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { ROUTES } from '@/app/routes'
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { AppAlert } from '@/ui/primitives'
 import { useEncounterState, useEncounterOptions, useEncounterRoster } from '../hooks'
-import { CombatLogPanel, EncounterControlsPanel, OpponentRosterLane, AllyRosterLane } from '../components'
+import {
+  CombatLogPanel,
+  EncounterControlsPanel,
+  OpponentRosterLane,
+  AllyRosterLane,
+  EncounterView,
+  EncounterSetupHeader,
+  EncounterActiveHeader,
+  EncounterActiveFooter,
+} from '../components'
 
 export default function EncounterRoute() {
   const { campaignId, campaignName } = useActiveCampaign()
@@ -108,131 +112,279 @@ export default function EncounterRoute() {
     monstersById,
   })
 
+  const mode = encounterState ? 'active' : 'setup'
+  const canStartEncounter = selectedCombatants.length > 0 && unresolvedCombatantCount === 0
+
+  const selectedActionLabel = useMemo(
+    () => availableActions.find((a) => a.id === selectedActionId)?.label ?? null,
+    [availableActions, selectedActionId],
+  )
+  const selectedTargetLabel = useMemo(
+    () => availableActionTargets.find((t) => t.id === selectedActionTargetId)?.label ?? null,
+    [availableActionTargets, selectedActionTargetId],
+  )
+
+  const turnResources = activeCombatant?.turnResources
+    ? {
+        actionAvailable: activeCombatant.turnResources.actionAvailable,
+        bonusActionAvailable: activeCombatant.turnResources.bonusActionAvailable,
+        reactionAvailable: activeCombatant.turnResources.reactionAvailable,
+        movementRemaining: activeCombatant.turnResources.movementRemaining ?? 0,
+      }
+    : null
+
+  const environmentSummary =
+    environmentContext !== 'none' ? environmentContext : undefined
+
+  const setupHeader = (
+    <EncounterSetupHeader
+      allyCount={selectedAllyIds.length}
+      opponentCount={opponentRoster.length}
+      environmentSummary={environmentSummary}
+      canStartEncounter={canStartEncounter}
+      onStartEncounter={handleStartEncounter}
+    />
+  )
+
+  const activeHeader = encounterState ? (
+    <EncounterActiveHeader
+      roundNumber={encounterState.roundNumber}
+      turnIndex={encounterState.turnIndex}
+      activeCombatantLabel={activeCombatant?.source.label ?? null}
+      onNextTurn={handleNextTurn}
+      onResetEncounter={handleResetEncounter}
+    />
+  ) : undefined
+
+  const activeFooter = encounterState ? (
+    <EncounterActiveFooter
+      turnResources={turnResources}
+      selectedActionLabel={selectedActionLabel}
+      selectedTargetLabel={selectedTargetLabel}
+      canResolveAction={Boolean(selectedActionId && selectedActionTargetId)}
+      onResolveAction={handleResolveAction}
+      onEndTurn={handleNextTurn}
+    />
+  ) : undefined
+
   return (
-    <Stack spacing={3}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-        <Box>
-          <Typography variant="h4">Encounter</Typography>
-          <Typography variant="body1" color="text.secondary">
-            {campaignName ? `${campaignName} encounter sandbox` : 'Encounter sandbox'}
-          </Typography>
-        </Box>
-        <Button
-          component={Link}
-          to={campaignId ? ROUTES.CAMPAIGN.replace(':id', campaignId) : ROUTES.CAMPAIGNS}
-          startIcon={<ArrowBackIcon />}
-          size="small"
-        >
-          Campaign
-        </Button>
-      </Stack>
+    <EncounterView
+      mode={mode}
+      setupHeader={setupHeader}
+      activeHeader={activeHeader}
+      activeFooter={activeFooter}
+    >
+      {mode === 'setup' && (
+        <Stack spacing={3}>
+          <AppAlert tone="info">
+            Select allies and opponents below, then start the encounter to begin turn-by-turn combat with auto-rolled initiative.
+          </AppAlert>
 
-      <AppAlert tone="info">
-        This slice loads approved allies, campaign NPCs, and monsters into the sandbox, then starts a local encounter with auto-rolled initiative and a structured turn log.
-      </AppAlert>
+          <EncounterControlsPanel
+            selectedCombatantCount={selectedCombatantIds.length}
+            resolvedCombatantCount={selectedCombatants.length}
+            unresolvedCombatantCount={unresolvedCombatantCount}
+            encounterState={encounterState}
+            activeCombatant={activeCombatant}
+            canStartEncounter={canStartEncounter}
+            onStartEncounter={handleStartEncounter}
+            onNextTurn={handleNextTurn}
+            onResetEncounter={handleResetEncounter}
+            environmentContext={environmentContext}
+            onEnvironmentContextChange={setEnvironmentContext}
+            controlTargetId={controlTargetId}
+            onControlTargetIdChange={setControlTargetId}
+            damageAmount={damageAmount}
+            onDamageAmountChange={setDamageAmount}
+            damageTypeInput={damageTypeInput}
+            onDamageTypeInputChange={setDamageTypeInput}
+            onApplyDamage={handleApplyDamage}
+            healingAmount={healingAmount}
+            onHealingAmountChange={setHealingAmount}
+            onApplyHealing={handleApplyHealing}
+            controlTargetHasReducedToZeroSave={controlTargetHasReducedToZeroSave}
+            reducedToZeroSaveOutcome={reducedToZeroSaveOutcome}
+            onReducedToZeroSaveOutcomeChange={setReducedToZeroSaveOutcome}
+            onTriggerReducedToZeroHook={handleTriggerReducedToZeroHook}
+            canTriggerReducedToZeroHook={canTriggerReducedToZeroHook}
+            conditionInput={conditionInput}
+            onConditionInputChange={setConditionInput}
+            onAddCondition={handleAddCondition}
+            onRemoveCondition={handleRemoveCondition}
+            stateInput={stateInput}
+            onStateInputChange={setStateInput}
+            onAddState={handleAddState}
+            onRemoveState={handleRemoveState}
+            markerDurationTurns={markerDurationTurns}
+            onMarkerDurationTurnsChange={setMarkerDurationTurns}
+            markerDurationBoundary={markerDurationBoundary}
+            onMarkerDurationBoundaryChange={setMarkerDurationBoundary}
+          />
 
-      <EncounterControlsPanel
-        selectedCombatantCount={selectedCombatantIds.length}
-        resolvedCombatantCount={selectedCombatants.length}
-        unresolvedCombatantCount={unresolvedCombatantCount}
-        encounterState={encounterState}
-        activeCombatant={activeCombatant}
-        canStartEncounter={selectedCombatants.length > 0 && unresolvedCombatantCount === 0}
-        onStartEncounter={handleStartEncounter}
-        onNextTurn={handleNextTurn}
-        onResetEncounter={handleResetEncounter}
-        environmentContext={environmentContext}
-        onEnvironmentContextChange={setEnvironmentContext}
-        controlTargetId={controlTargetId}
-        onControlTargetIdChange={setControlTargetId}
-        damageAmount={damageAmount}
-        onDamageAmountChange={setDamageAmount}
-        damageTypeInput={damageTypeInput}
-        onDamageTypeInputChange={setDamageTypeInput}
-        onApplyDamage={handleApplyDamage}
-        healingAmount={healingAmount}
-        onHealingAmountChange={setHealingAmount}
-        onApplyHealing={handleApplyHealing}
-        controlTargetHasReducedToZeroSave={controlTargetHasReducedToZeroSave}
-        reducedToZeroSaveOutcome={reducedToZeroSaveOutcome}
-        onReducedToZeroSaveOutcomeChange={setReducedToZeroSaveOutcome}
-        onTriggerReducedToZeroHook={handleTriggerReducedToZeroHook}
-        canTriggerReducedToZeroHook={canTriggerReducedToZeroHook}
-        conditionInput={conditionInput}
-        onConditionInputChange={setConditionInput}
-        onAddCondition={handleAddCondition}
-        onRemoveCondition={handleRemoveCondition}
-        stateInput={stateInput}
-        onStateInputChange={setStateInput}
-        onAddState={handleAddState}
-        onRemoveState={handleRemoveState}
-        markerDurationTurns={markerDurationTurns}
-        onMarkerDurationTurnsChange={setMarkerDurationTurns}
-        markerDurationBoundary={markerDurationBoundary}
-        onMarkerDurationBoundaryChange={setMarkerDurationBoundary}
-      />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+              gap: 3,
+            }}
+          >
+            <AllyRosterLane
+              allyOptions={allyOptions}
+              selectedAllyOptions={selectedAllyOptions}
+              selectedAllyIds={selectedAllyIds}
+              loadingAllies={loadingParty}
+              encounterState={encounterState}
+              activeCombatantId={activeCombatantId}
+              availableActions={availableActions}
+              availableActionTargets={availableActionTargets}
+              selectedActionId={selectedActionId}
+              onSelectedActionIdChange={setSelectedActionId}
+              selectedActionTargetId={selectedActionTargetId}
+              onSelectedActionTargetIdChange={setSelectedActionTargetId}
+              onResolveAction={handleResolveAction}
+              onPassTurn={handleNextTurn}
+              onAllySelectionChange={setSelectedAllyIds}
+              onResolvedCombatant={handleResolvedCombatant}
+              onRemoveAllyCombatant={removeAllyCombatant}
+            />
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
-          gap: 3,
-        }}
-      >
-        <AllyRosterLane
-          allyOptions={allyOptions}
-          selectedAllyOptions={selectedAllyOptions}
-          selectedAllyIds={selectedAllyIds}
-          loadingAllies={loadingParty}
-          encounterState={encounterState}
-          activeCombatantId={activeCombatantId}
-          availableActions={availableActions}
-          availableActionTargets={availableActionTargets}
-          selectedActionId={selectedActionId}
-          onSelectedActionIdChange={setSelectedActionId}
-          selectedActionTargetId={selectedActionTargetId}
-          onSelectedActionTargetIdChange={setSelectedActionTargetId}
-          onResolveAction={handleResolveAction}
-          onPassTurn={handleNextTurn}
-          onAllySelectionChange={setSelectedAllyIds}
-          onResolvedCombatant={handleResolvedCombatant}
-          onRemoveAllyCombatant={removeAllyCombatant}
-        />
+            <OpponentRosterLane
+              opponentOptions={opponentOptions}
+              selectedOpponentOptions={selectedOpponentOptions}
+              opponentRoster={opponentRoster}
+              loadingOpponents={loadingNpcs}
+              monstersById={monstersById}
+              encounterState={encounterState}
+              activeCombatantId={activeCombatantId}
+              availableActions={availableActions}
+              availableActionTargets={availableActionTargets}
+              selectedActionId={selectedActionId}
+              onSelectedActionIdChange={setSelectedActionId}
+              selectedActionTargetId={selectedActionTargetId}
+              onSelectedActionTargetIdChange={setSelectedActionTargetId}
+              onResolveAction={handleResolveAction}
+              onPassTurn={handleNextTurn}
+              environmentContext={environmentContext}
+              monsterFormsById={monsterFormsById}
+              monsterManualTriggersById={monsterManualTriggersById}
+              opponentSourceCounts={opponentSourceCounts}
+              onOpponentSelectionChange={handleOpponentSelectionChange}
+              onResolvedCombatant={handleResolvedCombatant}
+              onRemoveOpponentCombatant={removeOpponentCombatant}
+              onAddOpponentCopy={addOpponentCopy}
+              onMonsterFormChange={handleMonsterFormChange}
+              onMonsterManualTriggerChange={handleMonsterManualTriggerChange}
+            />
+          </Box>
+        </Stack>
+      )}
 
-        <OpponentRosterLane
-          opponentOptions={opponentOptions}
-          selectedOpponentOptions={selectedOpponentOptions}
-          opponentRoster={opponentRoster}
-          loadingOpponents={loadingNpcs}
-          monstersById={monstersById}
-          encounterState={encounterState}
-          activeCombatantId={activeCombatantId}
-          availableActions={availableActions}
-          availableActionTargets={availableActionTargets}
-          selectedActionId={selectedActionId}
-          onSelectedActionIdChange={setSelectedActionId}
-          selectedActionTargetId={selectedActionTargetId}
-          onSelectedActionTargetIdChange={setSelectedActionTargetId}
-          onResolveAction={handleResolveAction}
-          onPassTurn={handleNextTurn}
-          environmentContext={environmentContext}
-          monsterFormsById={monsterFormsById}
-          monsterManualTriggersById={monsterManualTriggersById}
-          opponentSourceCounts={opponentSourceCounts}
-          onOpponentSelectionChange={handleOpponentSelectionChange}
-          onResolvedCombatant={handleResolvedCombatant}
-          onRemoveOpponentCombatant={removeOpponentCombatant}
-          onAddOpponentCopy={addOpponentCopy}
-          onMonsterFormChange={handleMonsterFormChange}
-          onMonsterManualTriggerChange={handleMonsterManualTriggerChange}
-        />
-      </Box>
+      {mode === 'active' && (
+        <Stack spacing={3}>
+          <EncounterControlsPanel
+            selectedCombatantCount={selectedCombatantIds.length}
+            resolvedCombatantCount={selectedCombatants.length}
+            unresolvedCombatantCount={unresolvedCombatantCount}
+            encounterState={encounterState}
+            activeCombatant={activeCombatant}
+            canStartEncounter={canStartEncounter}
+            onStartEncounter={handleStartEncounter}
+            onNextTurn={handleNextTurn}
+            onResetEncounter={handleResetEncounter}
+            environmentContext={environmentContext}
+            onEnvironmentContextChange={setEnvironmentContext}
+            controlTargetId={controlTargetId}
+            onControlTargetIdChange={setControlTargetId}
+            damageAmount={damageAmount}
+            onDamageAmountChange={setDamageAmount}
+            damageTypeInput={damageTypeInput}
+            onDamageTypeInputChange={setDamageTypeInput}
+            onApplyDamage={handleApplyDamage}
+            healingAmount={healingAmount}
+            onHealingAmountChange={setHealingAmount}
+            onApplyHealing={handleApplyHealing}
+            controlTargetHasReducedToZeroSave={controlTargetHasReducedToZeroSave}
+            reducedToZeroSaveOutcome={reducedToZeroSaveOutcome}
+            onReducedToZeroSaveOutcomeChange={setReducedToZeroSaveOutcome}
+            onTriggerReducedToZeroHook={handleTriggerReducedToZeroHook}
+            canTriggerReducedToZeroHook={canTriggerReducedToZeroHook}
+            conditionInput={conditionInput}
+            onConditionInputChange={setConditionInput}
+            onAddCondition={handleAddCondition}
+            onRemoveCondition={handleRemoveCondition}
+            stateInput={stateInput}
+            onStateInputChange={setStateInput}
+            onAddState={handleAddState}
+            onRemoveState={handleRemoveState}
+            markerDurationTurns={markerDurationTurns}
+            onMarkerDurationTurnsChange={setMarkerDurationTurns}
+            markerDurationBoundary={markerDurationBoundary}
+            onMarkerDurationBoundaryChange={setMarkerDurationBoundary}
+          />
 
-      <CombatLogPanel
-        encounterState={encounterState}
-        selectedAllyCount={selectedAllyIds.length}
-        opponentCombatantCount={opponentRoster.length}
-      />
-    </Stack>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+              gap: 3,
+            }}
+          >
+            <AllyRosterLane
+              allyOptions={allyOptions}
+              selectedAllyOptions={selectedAllyOptions}
+              selectedAllyIds={selectedAllyIds}
+              loadingAllies={loadingParty}
+              encounterState={encounterState}
+              activeCombatantId={activeCombatantId}
+              availableActions={availableActions}
+              availableActionTargets={availableActionTargets}
+              selectedActionId={selectedActionId}
+              onSelectedActionIdChange={setSelectedActionId}
+              selectedActionTargetId={selectedActionTargetId}
+              onSelectedActionTargetIdChange={setSelectedActionTargetId}
+              onResolveAction={handleResolveAction}
+              onPassTurn={handleNextTurn}
+              onAllySelectionChange={setSelectedAllyIds}
+              onResolvedCombatant={handleResolvedCombatant}
+              onRemoveAllyCombatant={removeAllyCombatant}
+            />
+
+            <OpponentRosterLane
+              opponentOptions={opponentOptions}
+              selectedOpponentOptions={selectedOpponentOptions}
+              opponentRoster={opponentRoster}
+              loadingOpponents={loadingNpcs}
+              monstersById={monstersById}
+              encounterState={encounterState}
+              activeCombatantId={activeCombatantId}
+              availableActions={availableActions}
+              availableActionTargets={availableActionTargets}
+              selectedActionId={selectedActionId}
+              onSelectedActionIdChange={setSelectedActionId}
+              selectedActionTargetId={selectedActionTargetId}
+              onSelectedActionTargetIdChange={setSelectedActionTargetId}
+              onResolveAction={handleResolveAction}
+              onPassTurn={handleNextTurn}
+              environmentContext={environmentContext}
+              monsterFormsById={monsterFormsById}
+              monsterManualTriggersById={monsterManualTriggersById}
+              opponentSourceCounts={opponentSourceCounts}
+              onOpponentSelectionChange={handleOpponentSelectionChange}
+              onResolvedCombatant={handleResolvedCombatant}
+              onRemoveOpponentCombatant={removeOpponentCombatant}
+              onAddOpponentCopy={addOpponentCopy}
+              onMonsterFormChange={handleMonsterFormChange}
+              onMonsterManualTriggerChange={handleMonsterManualTriggerChange}
+            />
+          </Box>
+
+          <CombatLogPanel
+            encounterState={encounterState}
+            selectedAllyCount={selectedAllyIds.length}
+            opponentCombatantCount={opponentRoster.length}
+          />
+        </Stack>
+      )}
+    </EncounterView>
   )
 }

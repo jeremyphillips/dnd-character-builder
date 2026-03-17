@@ -13,10 +13,10 @@ import { ROUTES } from '@/app/routes'
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { AppAlert } from '@/ui/primitives'
-import { useCombatSimulationEncounter, useCombatSimulationOptions, useCombatSimulationRoster } from '../hooks'
-import { CombatLogPanel, EncounterControlsPanel, EnemyRosterLane, PartyRosterLane } from '../components'
+import { useEncounterState, useEncounterOptions, useEncounterRoster } from '../hooks'
+import { CombatLogPanel, EncounterControlsPanel, OpponentRosterLane, AllyRosterLane } from '../components'
 
-export default function CombatSimulationRoute() {
+export default function EncounterRoute() {
   const { campaignId, campaignName } = useActiveCampaign()
   const { catalog } = useCampaignRules()
   const { party, loading: loadingParty } = useCampaignParty('approved')
@@ -29,27 +29,27 @@ export default function CombatSimulationRoute() {
   }
 
   const monstersById = catalog.monstersById
-  const { partyOptions, enemyOptions, enemyOptionsByKey } = useCombatSimulationOptions({
-    party,
+  const { allyOptions, opponentOptions, opponentOptionsByKey } = useEncounterOptions({
+    allies: party,
     npcs,
     monstersById,
   })
 
   const {
-    selectedPartyIds,
-    setSelectedPartyIds,
-    enemyRoster,
-    selectedPartyOptions,
-    selectedEnemyOptions,
-    enemySourceCounts,
+    selectedAllyIds,
+    setSelectedAllyIds,
+    opponentRoster,
+    selectedAllyOptions,
+    selectedOpponentOptions,
+    opponentSourceCounts,
     selectedCombatantIds,
-    handleEnemySelectionChange,
-    removePartyCombatant,
-    removeEnemyCombatant,
-    addEnemyCopy,
-  } = useCombatSimulationRoster({
-    partyOptions,
-    enemyOptionsByKey,
+    handleOpponentSelectionChange,
+    removeAllyCombatant,
+    removeOpponentCombatant,
+    addOpponentCopy,
+  } = useEncounterRoster({
+    allyOptions,
+    opponentOptionsByKey,
     nextRuntimeId,
   })
   const {
@@ -102,9 +102,9 @@ export default function CombatSimulationRoute() {
     handleTriggerReducedToZeroHook,
     handleMonsterFormChange,
     handleMonsterManualTriggerChange,
-  } = useCombatSimulationEncounter({
+  } = useEncounterState({
     selectedCombatantIds,
-    enemyRoster,
+    opponentRoster,
     monstersById,
   })
 
@@ -112,7 +112,7 @@ export default function CombatSimulationRoute() {
     <Stack spacing={3}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
         <Box>
-          <Typography variant="h4">Combat Simulation</Typography>
+          <Typography variant="h4">Encounter</Typography>
           <Typography variant="body1" color="text.secondary">
             {campaignName ? `${campaignName} encounter sandbox` : 'Encounter sandbox'}
           </Typography>
@@ -128,7 +128,7 @@ export default function CombatSimulationRoute() {
       </Stack>
 
       <AppAlert tone="info">
-        This slice loads approved party members, campaign NPCs, and monsters into the sandbox, then starts a local encounter with auto-rolled initiative and a structured turn log.
+        This slice loads approved allies, campaign NPCs, and monsters into the sandbox, then starts a local encounter with auto-rolled initiative and a structured turn log.
       </AppAlert>
 
       <EncounterControlsPanel
@@ -179,11 +179,11 @@ export default function CombatSimulationRoute() {
           gap: 3,
         }}
       >
-        <PartyRosterLane
-          partyOptions={partyOptions}
-          selectedPartyOptions={selectedPartyOptions}
-          selectedPartyIds={selectedPartyIds}
-          loadingParty={loadingParty}
+        <AllyRosterLane
+          allyOptions={allyOptions}
+          selectedAllyOptions={selectedAllyOptions}
+          selectedAllyIds={selectedAllyIds}
+          loadingAllies={loadingParty}
           encounterState={encounterState}
           activeCombatantId={activeCombatantId}
           availableActions={availableActions}
@@ -194,16 +194,16 @@ export default function CombatSimulationRoute() {
           onSelectedActionTargetIdChange={setSelectedActionTargetId}
           onResolveAction={handleResolveAction}
           onPassTurn={handleNextTurn}
-          onPartySelectionChange={setSelectedPartyIds}
+          onAllySelectionChange={setSelectedAllyIds}
           onResolvedCombatant={handleResolvedCombatant}
-          onRemovePartyCombatant={removePartyCombatant}
+          onRemoveAllyCombatant={removeAllyCombatant}
         />
 
-        <EnemyRosterLane
-          enemyOptions={enemyOptions}
-          selectedEnemyOptions={selectedEnemyOptions}
-          enemyRoster={enemyRoster}
-          loadingEnemies={loadingNpcs}
+        <OpponentRosterLane
+          opponentOptions={opponentOptions}
+          selectedOpponentOptions={selectedOpponentOptions}
+          opponentRoster={opponentRoster}
+          loadingOpponents={loadingNpcs}
           monstersById={monstersById}
           encounterState={encounterState}
           activeCombatantId={activeCombatantId}
@@ -218,11 +218,11 @@ export default function CombatSimulationRoute() {
           environmentContext={environmentContext}
           monsterFormsById={monsterFormsById}
           monsterManualTriggersById={monsterManualTriggersById}
-          enemySourceCounts={enemySourceCounts}
-          onEnemySelectionChange={handleEnemySelectionChange}
+          opponentSourceCounts={opponentSourceCounts}
+          onOpponentSelectionChange={handleOpponentSelectionChange}
           onResolvedCombatant={handleResolvedCombatant}
-          onRemoveEnemyCombatant={removeEnemyCombatant}
-          onAddEnemyCopy={addEnemyCopy}
+          onRemoveOpponentCombatant={removeOpponentCombatant}
+          onAddOpponentCopy={addOpponentCopy}
           onMonsterFormChange={handleMonsterFormChange}
           onMonsterManualTriggerChange={handleMonsterManualTriggerChange}
         />
@@ -230,8 +230,8 @@ export default function CombatSimulationRoute() {
 
       <CombatLogPanel
         encounterState={encounterState}
-        selectedPartyCount={selectedPartyIds.length}
-        enemyCombatantCount={enemyRoster.length}
+        selectedAllyCount={selectedAllyIds.length}
+        opponentCombatantCount={opponentRoster.length}
       />
     </Stack>
   )

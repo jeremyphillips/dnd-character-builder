@@ -1,4 +1,4 @@
-import { useCombatStats } from '@/features/character/hooks'
+import type { useCombatStats } from '@/features/character/hooks'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { MonsterAction } from '@/features/content/monsters/domain/types/monster-actions.types'
 import type { MonsterEquippedWeapon } from '@/features/content/monsters/domain/types/monster-equipment.types'
@@ -197,7 +197,7 @@ export function formatCharacterSubtitle(character: CharacterDetailDto): string {
   return `${raceName} • ${classes}`
 }
 
-export function formatPartyOptionSubtitle(option: {
+export function formatAllyOptionSubtitle(option: {
   race: { name: string } | null
   classes: { className: string; level: number }[]
   ownerName?: string

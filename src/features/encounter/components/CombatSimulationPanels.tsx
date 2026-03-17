@@ -376,17 +376,17 @@ export function EncounterControlsPanel({
 
 type CombatLogPanelProps = {
   encounterState: EncounterState | null
-  selectedPartyCount: number
-  enemyCombatantCount: number
+  selectedAllyCount: number
+  opponentCombatantCount: number
 }
 
-export function CombatLogPanel({ encounterState, selectedPartyCount, enemyCombatantCount }: CombatLogPanelProps) {
+export function CombatLogPanel({ encounterState, selectedAllyCount, opponentCombatantCount }: CombatLogPanelProps) {
   return (
     <Paper sx={{ p: 3, minHeight: 220 }}>
       <Stack spacing={2}>
         <Typography variant="h5">Combat Log</Typography>
         <Typography variant="body2" color="text.secondary">
-          Current setup: {selectedPartyCount} party combatant{selectedPartyCount === 1 ? '' : 's'} and {enemyCombatantCount} enemy combatant{enemyCombatantCount === 1 ? '' : 's'}.
+          Current setup: {selectedAllyCount} ally combatant{selectedAllyCount === 1 ? '' : 's'} and {opponentCombatantCount} opponent combatant{opponentCombatantCount === 1 ? '' : 's'}.
         </Typography>
 
         {encounterState ? (

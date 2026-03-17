@@ -23,19 +23,19 @@ import {
 } from '@/features/mechanics/domain/encounter'
 import type { Monster } from '@/features/content/monsters/domain/types'
 
-import type { EnemyRosterEntry } from '../types'
+import type { OpponentRosterEntry } from '../types'
 
-type UseCombatSimulationEncounterArgs = {
+type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
-  enemyRoster: EnemyRosterEntry[]
+  opponentRoster: OpponentRosterEntry[]
   monstersById: Record<string, Monster>
 }
 
-export function useCombatSimulationEncounter({
+export function useEncounterState({
   selectedCombatantIds,
-  enemyRoster,
+  opponentRoster,
   monstersById,
-}: UseCombatSimulationEncounterArgs) {
+}: UseEncounterStateArgs) {
   const [resolvedCombatantsById, setResolvedCombatantsById] = useState<Record<string, CombatantInstance>>({})
   const [encounterState, setEncounterState] = useState<EncounterState | null>(null)
   const [controlTargetId, setControlTargetId] = useState('')
@@ -127,7 +127,7 @@ export function useCombatSimulationEncounter({
 
   useEffect(() => {
     const validMonsterIds = new Set(
-      enemyRoster.filter((entry) => entry.kind === 'monster').map((entry) => entry.runtimeId),
+      opponentRoster.filter((entry) => entry.kind === 'monster').map((entry) => entry.runtimeId),
     )
 
     setMonsterFormsById((prev) =>
@@ -140,7 +140,7 @@ export function useCombatSimulationEncounter({
         Object.entries(prev).filter(([runtimeId]) => validMonsterIds.has(runtimeId)),
       ) as Record<string, ManualMonsterTriggerContext>,
     )
-  }, [enemyRoster])
+  }, [opponentRoster])
 
   useEffect(() => {
     setEncounterState(null)

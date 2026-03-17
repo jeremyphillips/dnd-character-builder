@@ -1,12 +1,12 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
 
-export type PartyOption = {
+export type AllyOption = {
   id: string
   label: string
   subtitle: string
 }
 
-export type EnemyOption = {
+export type OpponentOption = {
   key: string
   sourceId: string
   kind: 'npc' | 'monster'
@@ -14,7 +14,7 @@ export type EnemyOption = {
   subtitle: string
 }
 
-export type EnemyRosterEntry = {
+export type OpponentRosterEntry = {
   runtimeId: string
   sourceKey: string
   sourceId: string
@@ -22,7 +22,7 @@ export type EnemyRosterEntry = {
   label: string
 }
 
-export type CombatSimulationPartyMember = {
+export type EncounterAllyMember = {
   id: string
   name: string
   race: { name: string } | null
@@ -30,11 +30,11 @@ export type CombatSimulationPartyMember = {
   ownerName?: string
 }
 
-export type CombatSimulationNpc = {
+export type EncounterNpc = {
   _id: string
   name: string
   race?: unknown
   classes?: { classId?: string; level: number }[]
 }
 
-export type CombatSimulationMonstersById = Record<string, Monster>
+export type EncounterMonstersById = Record<string, Monster>

@@ -468,7 +468,7 @@ function LoadedCharacterCombatantCard({
           <Box>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
               <Typography variant="h6">{character.name}</Typography>
-              <AppBadge label={sourceKind === 'pc' ? 'Party' : 'NPC'} tone="primary" size="small" />
+              <AppBadge label={sourceKind === 'pc' ? 'Ally' : 'NPC'} tone="primary" size="small" />
               {isActive && <AppBadge label="Active Turn" tone="success" size="small" />}
               {displayCombatant && (
                 <PresentableEffectsHeaderChips combatant={displayCombatant} />

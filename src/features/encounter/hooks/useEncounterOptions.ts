@@ -1,32 +1,32 @@
 import { useMemo } from 'react'
 
-import { formatMonsterOptionSubtitle, formatNpcOptionSubtitle, formatPartyOptionSubtitle } from '../helpers'
+import { formatMonsterOptionSubtitle, formatNpcOptionSubtitle, formatAllyOptionSubtitle } from '../helpers'
 import type {
-  CombatSimulationMonstersById,
-  CombatSimulationNpc,
-  CombatSimulationPartyMember,
-  EnemyOption,
-  PartyOption,
+  EncounterMonstersById,
+  EncounterNpc,
+  EncounterAllyMember,
+  OpponentOption,
+  AllyOption,
 } from '../types'
 
-export function useCombatSimulationOptions(args: {
-  party: CombatSimulationPartyMember[]
-  npcs: CombatSimulationNpc[]
-  monstersById: CombatSimulationMonstersById
+export function useEncounterOptions(args: {
+  allies: EncounterAllyMember[]
+  npcs: EncounterNpc[]
+  monstersById: EncounterMonstersById
 }) {
-  const { party, npcs, monstersById } = args
+  const { allies, npcs, monstersById } = args
 
-  const partyOptions = useMemo<PartyOption[]>(
+  const allyOptions = useMemo<AllyOption[]>(
     () =>
-      party.map((member) => ({
+      allies.map((member) => ({
         id: member.id,
         label: member.name,
-        subtitle: formatPartyOptionSubtitle(member),
+        subtitle: formatAllyOptionSubtitle(member),
       })),
-    [party],
+    [allies],
   )
 
-  const monsterOptions = useMemo<EnemyOption[]>(
+  const monsterOptions = useMemo<OpponentOption[]>(
     () =>
       Object.values(monstersById)
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -40,7 +40,7 @@ export function useCombatSimulationOptions(args: {
     [monstersById],
   )
 
-  const npcOptions = useMemo<EnemyOption[]>(
+  const npcOptions = useMemo<OpponentOption[]>(
     () =>
       npcs
         .slice()
@@ -61,15 +61,15 @@ export function useCombatSimulationOptions(args: {
     [npcs],
   )
 
-  const enemyOptions = useMemo(
+  const opponentOptions = useMemo(
     () => [...npcOptions, ...monsterOptions].sort((a, b) => a.label.localeCompare(b.label)),
     [npcOptions, monsterOptions],
   )
 
-  const enemyOptionsByKey = useMemo(
-    () => Object.fromEntries(enemyOptions.map((option) => [option.key, option])),
-    [enemyOptions],
+  const opponentOptionsByKey = useMemo(
+    () => Object.fromEntries(opponentOptions.map((option) => [option.key, option])),
+    [opponentOptions],
   )
 
-  return { partyOptions, enemyOptions, enemyOptionsByKey }
+  return { allyOptions, opponentOptions, opponentOptionsByKey }
 }

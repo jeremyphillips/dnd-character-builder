@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
-import { buildMonsterAttackEntries, buildMonsterExecutableActions, buildSpellCombatActions, getCharacterSpellcastingStats } from './combat-simulation-helpers'
+import { buildMonsterAttackEntries, buildMonsterExecutableActions, buildSpellCombatActions, getCharacterSpellcastingStats } from './encounter-helpers'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 
 const TEST_MONSTER = {

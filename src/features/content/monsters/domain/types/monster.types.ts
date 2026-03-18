@@ -18,7 +18,7 @@ import type { MonsterSenses } from "./monster-senses.types";
 import type { MonsterTrait } from "./monster-traits.types";
 import type { MonsterAction } from "./monster-actions.types";
 import type { ImmunityType, VulnerabilityType } from "./monster-combat.types";
-import type { Movement } from "@/features/mechanics/domain/core/combat.types";
+import type { Movement } from "@/features/mechanics/domain/movement";
 
 // TODO: create dynamic type
 export type MonsterId = ContentId;

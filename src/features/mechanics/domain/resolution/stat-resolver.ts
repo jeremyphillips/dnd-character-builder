@@ -3,7 +3,7 @@ import type { Effect, ModifierEffect } from "../effects/effects.types"
 import { evaluateCondition } from "../effects/effect-engine"
 import { resolveFormulaProficiency, resolveFormulaValue } from "./formula.engine"
 import type { FormulaEffect, FormulaDefinition } from "./formula.engine"
-import { getBaseStat } from "../core/base-stat-resolver"
+import { getBaseStat } from "./base-stat-resolver"
 import { getAbilityModifier } from "../abilities/getAbilityModifier"
 import type { AbilityId, AbilityKey } from '../character'
 

@@ -5,7 +5,7 @@ import type { Spell, SpellInput } from '@/features/content/spells/domain/types';
 import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab';
 import { numberRange, type FieldSpec } from '@/features/content/shared/forms/registry';
-import { getSpellcastingClasses } from '@/features/mechanics/domain/classes/queries';
+import { getSpellcastingClasses } from '@/features/mechanics/domain/classes';
 import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
 import type { SpellFormValues } from '../types/spellForm.types';

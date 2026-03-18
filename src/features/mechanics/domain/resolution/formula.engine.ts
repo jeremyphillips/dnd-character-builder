@@ -2,7 +2,7 @@ import type { StatTarget } from "./stat-resolver"
 import type { EffectBase } from "../effects/effects.types"
 import type { EvaluationContext } from "../conditions/evaluation-context.types"
 import { getAbilityModifier } from "../core"
-import { getProficiencyAttackBonus } from "@/features/mechanics/domain/character/progression"
+import { getProficiencyAttackBonus } from "@/features/mechanics/domain/progression"
 import type { AbilityKey } from "../core/character"
 
 // Responsible for:

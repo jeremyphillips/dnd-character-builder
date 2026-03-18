@@ -4,7 +4,7 @@ import { evaluateCondition } from "../effects/effect-engine"
 import { resolveFormulaProficiency, resolveFormulaValue } from "./formula.engine"
 import type { FormulaEffect, FormulaDefinition } from "./formula.engine"
 import { getBaseStat } from "../core/base-stat-resolver"
-import { getAbilityModifier } from "../core/ability.utils"
+import { getAbilityModifier } from "../abilities/getAbilityModifier"
 import type { AbilityId, AbilityKey } from "../core/character"
 
 // ---------------------------------------------------------------------------

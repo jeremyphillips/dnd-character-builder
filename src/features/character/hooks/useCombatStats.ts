@@ -11,7 +11,7 @@ import {
   resolveWeaponDamage,
   type AttackHand,
 } from '@/features/mechanics/domain/resolution/attack-resolver'
-import { getProficiencyAttackBonus } from '@/features/mechanics/domain/character/progression'
+import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import {

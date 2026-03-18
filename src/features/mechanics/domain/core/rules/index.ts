@@ -40,6 +40,4 @@ export * from './systemIds';
 export * from './alignment/alignmentOptionSets';
 export * from './alignment/resolveAlignmentOptionIds';
 export * from './alignment/resolveAlignmentOptions';
-export * from './xp/resolveXpTableId';
-export * from './xp/resolveXpTable';
 export * from './abilityScores.types';

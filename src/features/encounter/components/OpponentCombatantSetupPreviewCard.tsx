@@ -12,13 +12,13 @@ import {
   type CombatantInstance,
 } from '@/features/mechanics/domain/encounter'
 import type { CombatantPreviewCardProps, PreviewStat } from '../domain'
+import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import {
   buildMonsterAttackEntries,
   buildMonsterCombatantInstance,
   buildMonsterExecutableActions,
   formatMonsterOptionSubtitle,
   formatSigned,
-  toAbilityModifier,
 } from '../helpers'
 import { CombatantPreviewCard } from './CombatantPreviewCard'
 
@@ -45,7 +45,7 @@ export function OpponentCombatantSetupPreviewCard({
 }: OpponentCombatantSetupPreviewCardProps) {
   const { catalog } = useCampaignRules()
 
-  const initiativeModifier = toAbilityModifier(monster.mechanics.abilities?.dexterity)
+  const initiativeModifier = getAbilityModifier(monster.mechanics.abilities?.dexterity ?? 10)
   const armorClass = calculateMonsterArmorClass(monster, catalog.armorById).value
   const averageHitPoints =
     Math.floor(monster.mechanics.hitPoints.count * ((monster.mechanics.hitPoints.die + 1) / 2)) +

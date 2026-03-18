@@ -8,7 +8,7 @@ import type {
 import type { WealthTier } from '@/features/content/classes/domain/types';
 import type { MagicItemRarity } from '@/features/content/equipment/magicItems/domain/types';
 import type { AbilityRef, AbilityId } from '@/features/mechanics/domain/core/character';
-import type { XpTable } from '@/features/mechanics/domain/core/progression/xp/xp.types';
+import type { XpTable } from '@/features/mechanics/domain/progression';
 import type { Coin } from '../money';
 
 export type {

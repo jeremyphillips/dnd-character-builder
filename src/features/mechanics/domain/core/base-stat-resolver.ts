@@ -1,6 +1,6 @@
 import type { StatTarget } from '../resolution/stat-resolver'
 import type { EvaluationContext } from '../conditions/evaluation-context.types'
-import { getAbilityModifier } from './ability.utils'
+import { getAbilityModifier } from '../abilities/getAbilityModifier'
 import { calculateBaseHitPoints } from '@/features/mechanics/domain/character/generation'
 
 /**

@@ -10,7 +10,7 @@ import type { CharacterClassInfo } from '@/features/character/domain/types'
 import { getSystemClass } from '@/features/mechanics/domain/core/rules/systemCatalog.classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
 import { generateAbilityScores, prioritizeAbilityScores } from '@/features/mechanics/domain/generation/ability-scores'
-import { generateHitPoints } from '@/features/mechanics/domain/character/progression/generateHitPoints'
+import { generateHitPoints } from '@/features/mechanics/domain/progression/hit-points'
 import { LoadingOverlay } from '@/ui/patterns'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'

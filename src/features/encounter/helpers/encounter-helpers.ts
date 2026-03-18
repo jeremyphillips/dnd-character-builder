@@ -9,8 +9,10 @@ import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
+import { findCharacterSpellcastingClassEntry } from '@/features/mechanics/domain/spellcasting'
 import { resolveWeaponAttackBonus, resolveWeaponDamage } from '@/features/mechanics/domain/resolution/attack-resolver'
-import { getProficiencyAttackBonus } from '@/features/mechanics/domain/character/progression'
+import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
 import {
   buildActiveMonsterEffects,
   type CombatActionDefinition,
@@ -28,30 +30,15 @@ export function formatSigned(value: number): string {
   return value >= 0 ? `+${value}` : String(value)
 }
 
-export function toAbilityModifier(score: number | null | undefined): number {
-  return Math.floor(((score ?? 10) - 10) / 2)
-}
-
-const CLASS_SPELLCASTING_ABILITY: Record<string, 'intelligence' | 'wisdom' | 'charisma'> = {
-  wizard: 'intelligence',
-  cleric: 'wisdom',
-  druid: 'wisdom',
-  ranger: 'wisdom',
-  bard: 'charisma',
-  sorcerer: 'charisma',
-  warlock: 'charisma',
-  paladin: 'charisma',
-}
-
 export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
   spellSaveDc: number
   spellAttackBonus: number
 } {
-  const primaryClass = character.classes?.[0]
-  const abilityKey = primaryClass ? CLASS_SPELLCASTING_ABILITY[primaryClass.classId] : undefined
+  const spellcastingClass = findCharacterSpellcastingClassEntry(character)
+  const abilityKey = spellcastingClass?.progression?.spellProgression?.ability
   const abilityScore = abilityKey ? character.abilityScores?.[abilityKey] ?? 10 : 10
-  const abilityMod = toAbilityModifier(abilityScore)
-  const profBonus = getProficiencyAttackBonus(character.level ?? 1)
+  const abilityMod = getAbilityModifier(abilityScore)
+  const profBonus = getProficiencyAttackBonus(spellcastingClass?.level ?? 1)
 
   return {
     spellSaveDc: 8 + profBonus + abilityMod,
@@ -60,7 +47,7 @@ export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
 }
 
 function toSavingThrowModifier(score: number | null | undefined, proficiencyLevel = 0, proficiencyBonus = 2): number {
-  return toAbilityModifier(score) + proficiencyLevel * proficiencyBonus
+  return getAbilityModifier(score ?? 10) + proficiencyLevel * proficiencyBonus
 }
 
 export function formatDice(value: DiceOrFlat | undefined): string | undefined {

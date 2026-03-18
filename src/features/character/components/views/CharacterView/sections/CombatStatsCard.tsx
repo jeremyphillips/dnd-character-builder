@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import { toCharacterForEngine } from '@/features/character/read-model'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { getClassProgression } from '@/features/mechanics/domain/classes/progression'
+import { getClassProgression } from '@/features/mechanics/domain/progression/class'
 import type { ClassProgression } from '@/features/content/classes/domain/types'
 import { useCombatStats } from '@/features/character/hooks'
 import type { LoadoutOption } from '@/features/character/domain/engine/getLoadoutPickerOptions'
@@ -158,7 +158,11 @@ export default function CombatStatsCard({
 
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700}>
-                {character.hitPoints?.total ?? '—'}{maxHp > 0 ? ` / ${maxHp}` : ''}
+                {character.hitPoints?.current ?? character.hitPoints?.total ?? '—'}
+                {(() => {
+                  const max = character.hitPoints?.total ?? maxHp
+                  return max > 0 ? ` / ${max}` : ''
+                })()}
               </Typography>
               <Typography variant="caption" color="text.secondary">HP</Typography>
               {character.hitPoints?.generationMethod && (

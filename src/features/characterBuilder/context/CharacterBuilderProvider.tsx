@@ -18,8 +18,8 @@ import { getSkillIds } from '@/features/character/domain/utils/character-profici
 import {
   generateAbilityScores,
 } from '@/features/mechanics/domain/generation/ability-scores'
-import { getXpForLevel } from '@/features/mechanics/domain/core/progression/xp'
-import { getSubclassUnlockLevel } from '@/features/mechanics/domain/classes/progression'
+import { getXpForLevel } from '@/features/mechanics/domain/progression'
+import { getSubclassUnlockLevel } from '@/features/mechanics/domain/progression/subclass'
 import {
   calculateEquipmentWeight,
   calculateEquipmentCostCp,
@@ -27,7 +27,7 @@ import {
 } from '@/features/characterBuilder/domain/equipment'
 import { moneyToCp, cpToDenoms } from '@/shared/money'
 import type { CharacterType } from "@/features/character/domain/types"
-import { resolveXpTable } from "@/features/mechanics/domain/core/rules/xp/resolveXpTable"
+import { resolveXpTable } from '@/features/mechanics/domain/progression'
 import type { AlignmentId } from '@/features/content/shared/domain/types'
 import { 
   ABILITY_KEYS, 

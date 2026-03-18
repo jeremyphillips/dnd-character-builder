@@ -8,7 +8,7 @@ import {
   getEncounterCombatantLabel,
   updateEncounterCombatant,
 } from '../state'
-import { getAbilityModifier } from '../../core/ability.utils'
+import { getAbilityModifier } from '../../abilities/getAbilityModifier'
 import { abilityIdToKey } from '../../core/character/abilities.utils'
 import type { AbilityRef } from '../../core/character/abilities.types'
 import type { Effect } from '../../effects/effects.types'

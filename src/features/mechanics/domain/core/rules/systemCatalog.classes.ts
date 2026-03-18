@@ -7,7 +7,7 @@
 import type { CharacterClass } from '@/features/content/classes/domain/types';
 import type { SystemRulesetId } from './ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
-import { FULL_CASTER_SLOTS_5E, WARLOCK_PACT_SLOTS_5E } from '@/data/ruleSets/spellSlotTables';
+import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E, WARLOCK_PACT_SLOTS_5E } from '@/data/ruleSets/spellSlotTables';
 
 // ---------------------------------------------------------------------------
 // 5e v1 system classes (SRD_CC_v5_2_1)
@@ -135,8 +135,8 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       savingThrows: ['wis', 'cha'],
       spellcasting: 'full',
       spellProgression: {
+        ability: 'wis',
         type: 'prepared',
-        preparedFormula: 'wis+level',
         cantripsKnown: [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         spellSlots: FULL_CASTER_SLOTS_5E,
         maxSpellLevel: 9,
@@ -268,7 +268,15 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       hitDie: 8,
       attackProgression: 'good',
       savingThrows: ['cha', 'dex'],
-      spellcasting: 'none',
+      spellcasting: 'half',
+      spellProgression: {
+        ability: 'cha',
+        type: 'prepared',
+        // TODO: double check cantripsKnown
+        cantripsKnown: [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        spellSlots: HALF_CASTER_SLOTS_5E,
+        maxSpellLevel: 9,
+      },
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
     },
@@ -297,7 +305,15 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       hitDie: 8,
       attackProgression: 'good',
       savingThrows: ['str', 'dex'],
-      spellcasting: 'none',
+      spellcasting: 'half',
+      spellProgression: {
+        ability: 'wis',
+        type: 'prepared',
+        // TODO: double check cantripsKnown
+        cantripsKnown: [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        spellSlots: HALF_CASTER_SLOTS_5E,
+        maxSpellLevel: 9,
+      },
       extraAttackLevel: 3,
       asiLevels: [4, 6, 8, 12, 14, 16, 19],
     },
@@ -388,6 +404,7 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       savingThrows: ['wis', 'cha'],
       spellcasting: 'pact',
       spellProgression: {
+        ability: 'cha',
         type: 'known',
         cantripsKnown: [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         spellsKnown: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
@@ -466,6 +483,7 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       savingThrows: ['con', 'cha'],
       spellcasting: 'full',
       spellProgression: {
+        ability: 'cha',
         type: 'known',
         cantripsKnown: [4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
         spellsKnown: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15],
@@ -572,15 +590,15 @@ const CLASSES_RAW: readonly CharacterClass[] = [
         { id: 'wizard.subclass.arcane_tradition.school_of_transmutation', name: 'School of Transmutation', source: 'PHB' },
       ],
     },
-    generation: { primaryAbilities: ['con', 'int'] },
+    generation: { primaryAbilities: ['int', 'con'] },
     progression: {
       hitDie: 6,
       attackProgression: 'poor',
       savingThrows: ['int', 'wis'],
       spellcasting: 'full',
       spellProgression: {
+        ability: 'int',
         type: 'prepared',
-        preparedFormula: 'int+level',
         cantripsKnown: [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         spellSlots: FULL_CASTER_SLOTS_5E,
         maxSpellLevel: 9,

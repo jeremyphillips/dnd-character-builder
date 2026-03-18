@@ -1,6 +1,6 @@
 import { getSystemClass } from '@/features/mechanics/domain/core/rules/systemCatalog.classes'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
-import { getSubclassNameById } from '@/features/mechanics/domain/classes/progression'
+import { getSubclassNameById } from '@/features/mechanics/domain/progression/subclass'
 
 export interface CharacterForLabel {
   name: string

@@ -1,4 +1,4 @@
 export * from './combat.types'
-export * from './ability.utils'
+export * from '../abilities/getAbilityModifier'
 export * from './base-stat-resolver'
 export * from './creatureArmorClass'

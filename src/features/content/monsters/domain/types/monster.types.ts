@@ -19,6 +19,7 @@ import type { MonsterSenses } from "./monster-senses.types";
 import type { MonsterTrait } from "./monster-traits.types";
 import type { MonsterAction } from "./monster-actions.types";
 import type { ImmunityType, VulnerabilityType } from "./monster-combat.types";
+import type { Movement } from "@/features/mechanics/domain/core/combat.types";
 
 // TODO: create dynamic type
 export type MonsterId = ContentId;
@@ -35,14 +36,6 @@ export type IntelligenceCategory =
   | 'low-to-average'
   | 'low-to-very'
   | 'semi-to-average';
-
-export type MonsterMovement = {
-  ground?: number;
-  climb?: number;
-  fly?: number;
-  swim?: number;
-  burrow?: number;
-};
 
 type MonsterLanguage = {
   id: string;
@@ -82,7 +75,7 @@ export interface MonsterFields {
       modifier?: number;
     };
     armorClass: MonsterArmorClass;
-    movement: MonsterMovement;
+    movement: Movement;
     abilities?: AbilityScoreMap;
     savingThrows?: Partial<Record<AbilityId, ProficiencySkillAdjustment>>;
     traits?: MonsterTrait[];

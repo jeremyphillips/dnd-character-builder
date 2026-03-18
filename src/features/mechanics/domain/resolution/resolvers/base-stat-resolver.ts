@@ -1,6 +1,6 @@
-import type { StatTarget } from './stat-resolver'
-import type { EvaluationContext } from '../conditions/evaluation-context.types'
-import { getAbilityModifier } from '../abilities/getAbilityModifier'
+import type { StatTarget } from '../types'
+import type { EvaluationContext } from '../../conditions/evaluation-context.types'
+import { getAbilityModifier } from '../../abilities/getAbilityModifier'
 import { calculateBaseHitPoints } from '@/features/mechanics/domain/character/generation'
 
 /**

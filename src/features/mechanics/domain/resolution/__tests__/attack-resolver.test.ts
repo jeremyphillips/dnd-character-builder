@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { EvaluationContext } from '../conditions/evaluation-context.types'
-import { resolveWeaponAttackBonus } from './attack-resolver'
+import type { EvaluationContext } from '../../conditions/evaluation-context.types'
+import { resolveWeaponAttackBonus } from '../resolvers/attack-resolver'
 
 function createContext(level: number): EvaluationContext {
   return {

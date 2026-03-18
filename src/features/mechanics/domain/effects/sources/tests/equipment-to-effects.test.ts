@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getSystemArmor } from '@/features/mechanics/domain/rulesets/system/armor'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
-import { resolveStat } from '@/features/mechanics/domain/resolution/stat-resolver'
+import { resolveStat } from '@/features/mechanics/domain/resolution'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { AbilityScoreValue } from '@/features/mechanics/domain/character'
 import { getEquipmentEffects, selectActiveEquipmentEffects } from '../equipment-to-effects'

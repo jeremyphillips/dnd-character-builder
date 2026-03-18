@@ -1,50 +1,16 @@
-import type { EvaluationContext } from "../conditions/evaluation-context.types"
-import type { Effect, ModifierEffect } from "../effects/effects.types"
-import { evaluateCondition } from "../effects/effect-engine"
-import { resolveFormulaProficiency, resolveFormulaValue } from "./formula.engine"
-import type { FormulaEffect, FormulaDefinition } from "./formula.engine"
-import { getBaseStat } from "./base-stat-resolver"
-import { getAbilityModifier } from "../abilities/getAbilityModifier"
-import type { AbilityId, AbilityKey } from '../character'
+import type { EvaluationContext } from '../../conditions/evaluation-context.types'
+import type { Effect, ModifierEffect } from '../../effects/effects.types'
+import { evaluateCondition } from '../engines/condition.engine'
+import { resolveFormulaProficiency, resolveFormulaValue } from '../engines/formula.engine'
+import type { FormulaEffect, FormulaDefinition } from '../engines/formula.engine'
+import { resolveModifierValue, buildModifierToken, sourceToLabel } from '../engines/modifier.engine'
+import { getBaseStat } from './base-stat-resolver'
+import { getAbilityModifier } from '../../abilities/getAbilityModifier'
+import type { StatTarget, BreakdownToken, StatResult } from '../types'
 
-// ---------------------------------------------------------------------------
-// Stat target
-// ---------------------------------------------------------------------------
-
-export type AbilityScoreTarget = `ability_score.${AbilityId}`;
-
-export type StatTarget =
-  | AbilityKey
-  | AbilityScoreTarget
-  | 'armor_class'
-  | 'attack_roll'
-  | 'damage'
-  | 'speed'
-  | 'initiative'
-  | 'saving_throw'
-  | 'spell_save_dc'
-  // TODO: figure out hit point targets
-  | 'hit_points'
-  | 'hit_points_temporary'
-  | 'hit_points_max'
-  | 'hit_points_temporary_max'
-  | 'spell_attack'
-  | 'resistance'
-
-// ---------------------------------------------------------------------------
-// Breakdown types
-// ---------------------------------------------------------------------------
-
-export type BreakdownToken = {
-  label: string
-  value: string
-  type: 'proficiency' | 'ability' | 'dice' | 'modifier' | 'damage_type' | 'formula'
-}
-
-export type StatResult = {
-  value: number
-  breakdown: BreakdownToken[]
-}
+// Re-export types for consumers
+export type { StatTarget, AbilityScoreTarget } from '../types'
+export type { BreakdownToken, StatResult }
 
 // ---------------------------------------------------------------------------
 // Breakdown formatting
@@ -60,13 +26,6 @@ export function formatBreakdown(tokens: BreakdownToken[]): string {
 
 function sign(n: number): string {
   return n >= 0 ? `+${n}` : `${n}`
-}
-
-function sourceToLabel(source: string | undefined): string {
-  if (!source) return 'Bonus'
-  const parts = source.split(':')
-  const id = parts[parts.length - 1]
-  return id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
 function isFormulaEffectForTarget(e: Effect, target: StatTarget): boolean {
@@ -90,19 +49,6 @@ function isModifierEffectForTarget(e: Effect, target: StatTarget): boolean {
     'target' in e &&
     e.target === target
   )
-}
-
-function resolveModifierValue(
-  mod: ModifierEffect,
-  context: EvaluationContext
-): number {
-  const val = mod.value
-  if (typeof val === 'number') return val
-  if (typeof val === 'object' && val?.perLevel) return val.perLevel * context.self.level
-  if (typeof val === 'object' && val?.ability) {
-    return context.self.abilities[val.ability] ?? 0
-  }
-  return 0
 }
 
 // ---------------------------------------------------------------------------
@@ -184,14 +130,6 @@ function buildFormulaTokens(
   return tokens
 }
 
-function buildModifierToken(
-  mod: ModifierEffect,
-  context: EvaluationContext
-): BreakdownToken {
-  const modValue = resolveModifierValue(mod, context)
-  return { label: sourceToLabel(mod.source), value: sign(modValue), type: 'modifier' }
-}
-
 // ---------------------------------------------------------------------------
 // Resolution
 // ---------------------------------------------------------------------------
@@ -227,7 +165,7 @@ export function resolveStatDetailed(
   const applicable = effects.filter(e => {
     const cond = 'condition' in e ? (e as { condition?: unknown }).condition : undefined
     if (!cond) return true
-    return evaluateCondition(cond as import('../conditions/condition.types').Condition, context)
+    return evaluateCondition(cond as import('../../conditions/condition.types').Condition, context)
   })
 
   const formulaEffects = applicable.filter((e) =>

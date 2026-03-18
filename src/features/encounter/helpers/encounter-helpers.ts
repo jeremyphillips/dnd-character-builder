@@ -11,7 +11,7 @@ import type { EvaluationContext } from '@/features/mechanics/domain/conditions/e
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import { findCharacterSpellcastingClassEntry } from '@/features/mechanics/domain/spellcasting'
-import { resolveWeaponAttackBonus, resolveWeaponDamage } from '@/features/mechanics/domain/resolution/attack-resolver'
+import { resolveWeaponAttackBonus, resolveWeaponDamage } from '@/features/mechanics/domain/resolution'
 import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
 import {
   buildActiveMonsterEffects,

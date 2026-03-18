@@ -1,7 +1,7 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 import type { AbilityKey } from '@/features/mechanics/domain/character'
-import type { BreakdownToken } from '../../../resolution/stat-resolver'
+import type { BreakdownToken } from '../../../resolution/resolvers/stat-resolver'
 import type { CombatActionDefinition } from '../../resolution/combat-action.types'
 
 export type CombatantSide = 'party' | 'enemies'

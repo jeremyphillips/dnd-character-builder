@@ -1,4 +1,4 @@
-import type { FormulaEffect } from "./formula.engine"
+import type { FormulaEffect } from '../engines/formula.engine'
 
 export function selectWinningFormula(
   base: number,

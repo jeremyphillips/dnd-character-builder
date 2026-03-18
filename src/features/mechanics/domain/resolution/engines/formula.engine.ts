@@ -1,20 +1,9 @@
-import type { StatTarget } from "./stat-resolver"
-import type { EffectBase } from "../effects/effects.types"
-import type { EvaluationContext } from "../conditions/evaluation-context.types"
-import { getAbilityModifier } from "../core"
-import { getProficiencyAttackBonus } from "@/features/mechanics/domain/progression"
-import type { AbilityKey } from '../character'
-
-// Responsible for:
-//   - Evaluating formula definitions
-//   - Returning candidate values
-//   - Choosing which formula wins
-
-// It does not know about:
-//   - Modifiers
-//   - Stacking
-//   - Combat
-//   - Features
+import type { StatTarget } from '../types'
+import type { EffectBase } from '../../effects/effects.types'
+import type { EvaluationContext } from '../../conditions/evaluation-context.types'
+import { getAbilityModifier } from '../../core'
+import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
+import type { AbilityKey } from '../../character'
 
 export type FormulaDefinition = {
   base?: number
@@ -27,9 +16,9 @@ export type FormulaDefinition = {
 }
 
 export type FormulaEffect = EffectBase<'formula'> & {
-  target: StatTarget;
-  formula: FormulaDefinition;
-};
+  target: StatTarget
+  formula: FormulaDefinition
+}
 
 export function resolveFormulaProficiency(
   proficiency: FormulaDefinition['proficiency'],

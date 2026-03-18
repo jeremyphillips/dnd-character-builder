@@ -8,7 +8,7 @@ import { useCombatStats } from '@/features/character/hooks'
 import type { LoadoutOption } from '@/features/character/domain/engine/getLoadoutPickerOptions'
 import type { WeaponPickerOption } from '@/features/character/domain/engine/getWeaponPickerOptions'
 import type { AttackEntry } from '@/features/character/hooks/useCombatStats'
-import { formatBreakdown } from '@/features/mechanics/domain/resolution/stat-resolver'
+import { formatBreakdown } from '@/features/mechanics/domain/resolution'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -27,7 +27,7 @@ import Tooltip from '@mui/material/Tooltip'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { StatShield } from '@/ui/primitives'
 import Divider from '@mui/material/Divider'
-import type { BreakdownToken } from '@/features/mechanics/domain/resolution/stat-resolver'
+import type { BreakdownToken } from '@/features/mechanics/domain/resolution'
 
 // ---------------------------------------------------------------------------
 // Helpers

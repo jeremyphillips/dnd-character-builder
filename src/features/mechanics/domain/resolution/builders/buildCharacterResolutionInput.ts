@@ -1,13 +1,13 @@
 import type { Character } from '@/features/character/domain/types'
-import type { CreatureArmorCatalogEntry } from '../../core/creatureArmorClass'
+import type { CreatureArmorCatalogEntry } from '../../equipment/armorClass'
 import type { ResolutionInput } from './types'
 import { buildCharacterContext } from '@/features/character/domain/engine/buildCharacterContext'
 import { collectIntrinsicEffects } from '@/features/character/domain/engine/collectCharacterEffects'
 import {
   getEquipmentEffects,
   selectActiveEquipmentEffects,
-  resolveLoadout,
 } from '@/features/mechanics/domain/effects/sources/equipment-to-effects'
+import { resolveLoadout } from '@/features/mechanics/domain/equipment/loadout'
 
 export type { ResolutionInput } from './types'
 

@@ -1,5 +1,5 @@
 export * from './types'
-export * from './engines/condition.engine'
+export { evaluateCondition } from '../conditions/evaluateCondition'
 export * from './engines/formula.engine'
 export * from './engines/modifier.engine'
 export * from './engines/dice.engine'

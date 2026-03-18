@@ -1,7 +1,7 @@
 import type { StatTarget } from '../types'
 import type { EffectBase } from '../../effects/effects.types'
 import type { EvaluationContext } from '../../conditions/evaluation-context.types'
-import { getAbilityModifier } from '../../core'
+import { getAbilityModifier } from '../../abilities/getAbilityModifier'
 import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
 import type { AbilityKey } from '../../character'
 

@@ -20,7 +20,7 @@ import {
   resolveLoadout,
   resolveEquipmentLoadoutDetailed,
   resolveWieldedWeaponIds,
-} from '@/features/mechanics/domain/effects/sources/equipment-to-effects'
+} from '@/features/mechanics/domain/equipment/loadout'
 import {
   getMagicItemCandidateEffects,
   selectActiveMagicItemEffects,

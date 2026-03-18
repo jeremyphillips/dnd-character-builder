@@ -9,7 +9,7 @@ import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
-import { findCharacterSpellcastingClassEntry } from '@/features/mechanics/domain/spellcasting'
+import { findCharacterSpellcastingClassEntry, getSpellcastingAbility, getSpellSaveDc, getSpellAttackBonus } from '@/features/mechanics/domain/spellcasting'
 import { resolveWeaponAttackBonus, resolveWeaponDamage, buildCreatureResolutionInput } from '@/features/mechanics/domain/resolution'
 import { resolveProficiencyBonusAtLevel, resolveProficiencyContribution } from '@/features/mechanics/domain/progression'
 import type { MechanicsRules } from '@/shared/types/ruleset'
@@ -38,7 +38,7 @@ export function getCharacterSpellcastingStats(
   spellAttackBonus: number
 } {
   const spellcastingClass = findCharacterSpellcastingClassEntry(character)
-  const abilityKey = spellcastingClass?.progression?.spellProgression?.ability
+  const abilityKey = getSpellcastingAbility(character)
   const abilityScore = abilityKey ? character.abilityScores?.[abilityKey] ?? 10 : 10
   const abilityMod = getAbilityModifier(abilityScore)
   const profBonus = resolveProficiencyBonusAtLevel({
@@ -47,8 +47,8 @@ export function getCharacterSpellcastingStats(
   })
 
   return {
-    spellSaveDc: 8 + profBonus + abilityMod,
-    spellAttackBonus: profBonus + abilityMod,
+    spellSaveDc: getSpellSaveDc(profBonus, abilityMod),
+    spellAttackBonus: getSpellAttackBonus(profBonus, abilityMod),
   }
 }
 

@@ -70,7 +70,26 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       name: 'Cleric Subclasses',
       selectionLevel: 3,
       options: [
-        { id: 'life_domain', name: 'Life Domain' },
+        { 
+          id: 'life_domain',
+          name: 'Life Domain',
+          features: [
+            {
+              id: 'life_domain.feature.life_domain_spells',
+              kind: 'spellcasting',
+              mode: 'always_prepared',
+              name: 'Life Domain Spells',
+              level: 3,
+              spellcastingClassId: 'cleric',
+              grants: [
+                { level: 3, spellIds: ['aid', 'bless', 'cure-wounds', 'lesser-restoration'] },
+                { level: 5, spellIds: ['mass-healing-word', 'revivify'] },
+                { level: 7, spellIds: ['aura-of-life', 'death-ward'] },
+                { level: 9, spellIds: ['greater-restoration', 'mass-cure-wounds'] },
+              ],
+            }
+          ],
+        }
       ],
     },
     generation: { primaryAbilities: ['wis'] },

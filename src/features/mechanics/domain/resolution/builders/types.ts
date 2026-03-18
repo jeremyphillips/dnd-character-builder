@@ -18,6 +18,7 @@ export type ResolutionInput = {
 export type CreatureResolutionShape = {
   id: string
   level: number
+  proficiencyBonus?: number
   hp: number
   hpMax: number
   hitDie?: DieFace

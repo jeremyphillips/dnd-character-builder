@@ -2,6 +2,7 @@ import type { EvaluationContext } from '../../conditions/evaluation-context.type
 import type { Effect } from '../../effects/effects.types'
 import { getAbilityModifier } from '../../abilities/getAbilityModifier'
 import { getWeaponAttackAbility } from '../../attacks/getWeaponAttackAbility'
+import { resolveProficiencyContribution } from '@/features/mechanics/domain/progression'
 import { resolveStatDetailed, type BreakdownToken } from './stat-resolver'
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab'
 import type { AbilityKey } from '@/features/mechanics/domain/character'
@@ -86,8 +87,8 @@ export function resolveWeaponAttackBonus(
   const abilityUsed = getWeaponAttackAbility(context, weapon)
   const abilityMod = getAbilityModifier(context.self, abilityUsed)
   const proficiencyLevel = options.proficiencyLevel ?? 1
-  const proficiencyBonus = options.proficiencyBonus ?? 2
-  const proficiencyContribution = proficiencyLevel * proficiencyBonus
+  const proficiencyBonus = options.proficiencyBonus ?? context.self.proficiencyBonus ?? 0
+  const proficiencyContribution = resolveProficiencyContribution(proficiencyBonus, proficiencyLevel)
 
   const weaponFormula: Effect = {
     kind: 'formula',

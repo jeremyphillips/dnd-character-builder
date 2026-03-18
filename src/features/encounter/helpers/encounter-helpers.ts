@@ -11,7 +11,8 @@ import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import { findCharacterSpellcastingClassEntry } from '@/features/mechanics/domain/spellcasting'
 import { resolveWeaponAttackBonus, resolveWeaponDamage, buildCreatureResolutionInput } from '@/features/mechanics/domain/resolution'
-import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
+import { resolveProficiencyBonusAtLevel, resolveProficiencyContribution } from '@/features/mechanics/domain/progression'
+import type { MechanicsRules } from '@/shared/types/ruleset'
 import {
   buildActiveMonsterEffects,
   type CombatActionDefinition,
@@ -29,7 +30,10 @@ export function formatSigned(value: number): string {
   return value >= 0 ? `+${value}` : String(value)
 }
 
-export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
+export function getCharacterSpellcastingStats(
+  character: CharacterDetailDto,
+  ruleset: { mechanics: MechanicsRules },
+): {
   spellSaveDc: number
   spellAttackBonus: number
 } {
@@ -37,7 +41,10 @@ export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
   const abilityKey = spellcastingClass?.progression?.spellProgression?.ability
   const abilityScore = abilityKey ? character.abilityScores?.[abilityKey] ?? 10 : 10
   const abilityMod = getAbilityModifier(abilityScore)
-  const profBonus = getProficiencyAttackBonus(spellcastingClass?.level ?? 1)
+  const profBonus = resolveProficiencyBonusAtLevel({
+    level: spellcastingClass?.level ?? 1,
+    ruleset,
+  })
 
   return {
     spellSaveDc: 8 + profBonus + abilityMod,
@@ -46,7 +53,7 @@ export function getCharacterSpellcastingStats(character: CharacterDetailDto): {
 }
 
 function toSavingThrowModifier(score: number | null | undefined, proficiencyLevel = 0, proficiencyBonus = 2): number {
-  return getAbilityModifier(score ?? 10) + proficiencyLevel * proficiencyBonus
+  return getAbilityModifier(score ?? 10) + resolveProficiencyContribution(proficiencyBonus, proficiencyLevel)
 }
 
 export function formatDice(value: DiceOrFlat | undefined): string | undefined {
@@ -74,6 +81,7 @@ function buildMonsterEvaluationContext(monster: Monster) {
   return buildCreatureResolutionInput({
     id: monster.id,
     level: 1,
+    proficiencyBonus: monster.mechanics.proficiencyBonus ?? 2,
     hp: 1,
     hpMax: 1,
     abilities: {

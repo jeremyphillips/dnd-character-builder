@@ -13,7 +13,7 @@ import {
   resolveWeaponDamage,
   type AttackHand,
 } from '@/features/mechanics/domain/resolution'
-import { getProficiencyAttackBonus } from '@/features/mechanics/domain/progression'
+import { resolveProficiencyBonusAtLevel } from '@/features/mechanics/domain/progression'
 import type { EvaluationContext } from '@/features/mechanics/domain/conditions/evaluation-context.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import {
@@ -56,8 +56,6 @@ export function getCharacterAttacks(
 ): AttackEntry[] {
   if (wieldedWeaponIds.length === 0) return []
 
-  const proficiencyBonus = getProficiencyAttackBonus(context.self.level)
-
   return wieldedWeaponIds.map((id, idx) => {
     const hand: AttackHand = idx === 0 ? 'main' : 'off'
     const weapon = weaponsById[id]
@@ -72,7 +70,6 @@ export function getCharacterAttacks(
     const atk = resolveWeaponAttackBonus(context, weaponInput, effects, {
       hand,
       proficiencyLevel: 1,
-      proficiencyBonus,
     })
     const dmg = resolveWeaponDamage(context, weaponInput, effects, { hand })
 
@@ -100,11 +97,20 @@ export type UseCombatStatsReturn = ReturnType<typeof useCombatStats>
 // ---------------------------------------------------------------------------
 
 export function useCombatStats(character: Character) {
-  const { catalog } = useCampaignRules()
+  const { catalog, ruleset } = useCampaignRules()
 
   return useMemo(() => {
     const base = buildCharacterResolutionInput(character, { armorById: catalog.armorById })
-    const { context } = base
+    const context: EvaluationContext = {
+      ...base.context,
+      self: {
+        ...base.context.self,
+        proficiencyBonus: resolveProficiencyBonusAtLevel({
+          level: base.context.self.level,
+          ruleset,
+        }),
+      },
+    }
 
     const resolved = resolveEquipmentLoadoutDetailed(character.combat, character.equipment)
     const enchantmentEffects = getEnchantmentCandidateEffects({ resolved })
@@ -157,5 +163,5 @@ export function useCombatStats(character: Character) {
       weaponOptions,
       wieldedWeaponIds,
     }
-  }, [character, catalog])
+  }, [character, catalog, ruleset])
 }

@@ -21,6 +21,7 @@ export function buildCreatureResolutionInput(
     self: {
       id: creature.id,
       level: creature.level,
+      proficiencyBonus: creature.proficiencyBonus,
       hp: creature.hp,
       hpMax: creature.hpMax,
       hitDie: creature.hitDie,

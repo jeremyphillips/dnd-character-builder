@@ -1,5 +1,5 @@
-import { getSystemSkillProficiencies } from '@/features/mechanics/domain/core/rules/systemCatalog.skillProficiencies'
-import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
+import { getSystemSkillProficiencies } from '@/features/mechanics/domain/rulesets/system/skillProficiencies'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 import type { SkillProficiencyId } from '@/features/content/skillProficiencies/domain/types'
 
 const skills = getSystemSkillProficiencies(DEFAULT_SYSTEM_RULESET_ID)

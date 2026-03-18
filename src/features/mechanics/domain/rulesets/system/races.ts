@@ -5,8 +5,8 @@
  * are stored in the DB and merged at runtime by buildCampaignCatalog.
  */
 import type { Race, RaceFields } from '@/features/content/races/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // 5e v1 system magic items (SRD_CC_v5_2_1)

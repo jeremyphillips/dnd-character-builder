@@ -5,8 +5,8 @@
  * returning structured reason codes instead of display strings.
  * UI maps codes to friendly copy.
  */
-import { getSystemClass } from '@/features/mechanics/domain/core/rules/systemCatalog.classes';
-import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds';
+import { getSystemClass } from '@/features/mechanics/domain/rulesets/system/classes';
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
 import type { ClassRequirement } from '@/features/content/classes/domain/types'
 import type { AlignmentId } from '@/features/content/shared/domain/types'
 import type { BuildDraft } from '../types'

@@ -4,8 +4,8 @@
  * These are the "factory defaults" for skill proficiencies (SRD_CC_v5_2_1).
  */
 import type { SkillProficiency, SkillProficiencyFields } from '@/features/content/skillProficiencies/domain/types'
-import type { SystemRulesetId } from './ruleset.types'
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds'
+import type { SystemRulesetId } from '../types/ruleset.types'
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds'
 
 // ---------------------------------------------------------------------------
 // Raw data (no type imports to allow derivation of SkillProficiencyId without circular deps)

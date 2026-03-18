@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { getSystemClass } from './systemCatalog.classes'
-import { getSystemMonster, getSystemMonsters } from './systemCatalog.monsters'
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds'
+import { getSystemClass } from './classes'
+import { getSystemMonster, getSystemMonsters } from './monsters'
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds'
 import type { SubclassFeature } from '@/features/content/classes/domain/types'
 
 function getSubclassFeature(

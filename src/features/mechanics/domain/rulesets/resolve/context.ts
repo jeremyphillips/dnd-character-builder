@@ -1,10 +1,10 @@
 import type { Campaign } from '@/shared/types/campaign.types';
 import type { Ruleset } from '@/shared/types/ruleset';
-import { getSystemRuleset, systemCatalog } from './systemCatalog';
-import { buildCampaignCatalog, type CampaignCatalogAdmin } from './buildCampaignCatalog';
-import type { SystemRulesetId } from './ruleset.types';
-import type { RulesetLike } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import { getSystemRuleset, systemCatalog } from '../system/catalog';
+import { buildCampaignCatalog, type CampaignCatalogAdmin } from '../campaign/buildCatalog';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import type { RulesetLike } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 export type CampaignRulesContext = {
   ruleset: RulesetLike;

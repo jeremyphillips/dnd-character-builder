@@ -5,8 +5,8 @@
  * are stored in the DB and merged at runtime by buildCampaignCatalog.
  */
 import type { Monster, MonsterFields } from '@/features/content/monsters/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 /** Build a Monster from the system catalog data (no DB fields). */
 function toSystemMonster(systemId: SystemRulesetId, raw: MonsterFields): Monster {

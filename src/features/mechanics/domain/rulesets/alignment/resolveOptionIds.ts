@@ -1,4 +1,4 @@
-import { ALIGNMENT_OPTION_SETS, type AlignmentOptionSetId } from './alignmentOptionSets';
+import { ALIGNMENT_OPTION_SETS, type AlignmentOptionSetId } from './optionSets';
 import type { AlignmentId } from '@/features/content/shared/domain/types';
 
 export function resolveAlignmentOptionIds(

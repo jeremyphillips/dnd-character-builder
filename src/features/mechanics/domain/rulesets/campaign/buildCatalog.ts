@@ -18,8 +18,8 @@
  *   - custom entries appear in allById AND can be excluded by rules
  *   - campaign overrides system on id collision in allById and allowedById
  */
-import type { CampaignCatalog } from './systemCatalog'
-import type { RulesetLike } from './ruleset.types'
+import type { CampaignCatalog } from '../system/catalog'
+import type { RulesetLike } from '../types/ruleset.types'
 import type { ContentRule, RulesetContent } from '@/shared/types/ruleset'
 import { getAllowedSet } from '@/features/content/shared/domain/contentPolicy'
 

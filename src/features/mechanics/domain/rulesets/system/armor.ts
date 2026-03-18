@@ -5,8 +5,8 @@
  * custom armor is stored in the DB and merged at runtime by the armorRepo.
  */
 import type { Armor, ArmorFields } from '@/features/content/equipment/armor/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // Mapper

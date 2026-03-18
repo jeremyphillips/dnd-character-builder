@@ -11,9 +11,9 @@ import type { InvalidationRule, InvalidationItem } from './types'
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
 
 import { evaluateClassEligibility } from '../rules'
-import { classIdToName } from '@/features/mechanics/domain/core/rules/systemCatalog.classes'
-import { getSystemSpells } from '@/features/mechanics/domain/core/rules/systemCatalog.spells'
-import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
+import { classIdToName } from '@/features/mechanics/domain/rulesets/system/classes'
+import { getSystemSpells } from '@/features/mechanics/domain/rulesets/system/spells'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 import { pruneSelectedSpells } from '../../spells/selection/prune-selected-spells'
 
 // ---------------------------------------------------------------------------

@@ -5,8 +5,8 @@
  * Campaign-owned custom enchantments would be merged at runtime by the catalog.
  */
 import type { EnchantmentTemplate } from '@/features/content/enchantments/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // 5e v1 system enhancement templates (SRD_CC_v5_2_1)

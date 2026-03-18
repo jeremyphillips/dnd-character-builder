@@ -10,8 +10,8 @@
 import type { Spell, SpellBase } from '@/features/content/spells/domain/types';
 import type { DiceOrFlat, dY } from '@/features/mechanics/domain/dice';
 import type { CreatureTypeCondition } from '@/features/mechanics/domain/conditions/condition.types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 const EXTRAPLANAR_CREATURE_TYPES: CreatureTypeCondition = {
   kind: 'creature-type',

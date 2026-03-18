@@ -1,9 +1,9 @@
 import type { Ruleset } from '@/shared/types/ruleset';
-import type { CampaignRulesetPatch } from './ruleset.types';
-import { getSystemRuleset } from './systemCatalog';
-import { resolveCampaignRuleset } from './resolveCampaignRuleset';
-import { normalizeCampaignRulesetPatch } from './normalizeCampaignRulesetPatch';
-import { validateCampaignRulesetPatch } from './validateCampaignRulesetPatch';
+import type { CampaignRulesetPatch } from '../types/ruleset.types';
+import { getSystemRuleset } from '../system/catalog';
+import { resolveCampaignRuleset } from '../resolve/ruleset';
+import { normalizeCampaignRulesetPatch } from './patch/normalize';
+import { validateCampaignRulesetPatch } from './patch/validate';
 
 export type CampaignRulesetSource = {
   listPatches: () => CampaignRulesetPatch[];

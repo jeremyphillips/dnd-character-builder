@@ -7,7 +7,7 @@
  * - Removes empty map containers so they don't create noise in the DB.
  * - Returns a new object; never mutates the input.
  */
-import type { CampaignRulesetPatch } from './ruleset.types';
+import type { CampaignRulesetPatch } from '../../types/ruleset.types';
 import type {
   ClassEntryRequirement,
   AbilityRequirementGroup,

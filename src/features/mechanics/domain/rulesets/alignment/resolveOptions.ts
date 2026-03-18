@@ -1,8 +1,8 @@
-import type { AlignmentOptionSetId } from './alignmentOptionSets';
+import type { AlignmentOptionSetId } from './optionSets';
 import type { AlignmentId } from '@/features/content/shared/domain/types';
 import type { AlignmentVocabItem } from '@/features/content/shared/domain/types';
-import { resolveAlignmentOptionIds } from './resolveAlignmentOptionIds';
-import { ALIGNMENT_BY_ID } from './alignmentOptionSets';
+import { resolveAlignmentOptionIds } from './resolveOptionIds';
+import { ALIGNMENT_BY_ID } from './optionSets';
 
 export function resolveAlignmentOptions(
   optionSet: AlignmentOptionSetId | readonly AlignmentId[]

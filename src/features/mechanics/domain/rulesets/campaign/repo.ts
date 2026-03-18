@@ -2,15 +2,15 @@
  * Campaign ruleset patch repository.
  */
 import { apiFetch, ApiError } from '@/app/api';
-import type { CampaignRulesetPatch, SystemRulesetId } from './ruleset.types';
+import type { CampaignRulesetPatch, SystemRulesetId } from '../types/ruleset.types';
 import type { Ruleset } from '@/shared/types/ruleset';
-import { getSystemRuleset } from './systemCatalog';
-import { normalizeCampaignRulesetPatch } from './normalizeCampaignRulesetPatch';
-import { validateCampaignRulesetPatch } from './validateCampaignRulesetPatch';
-import { resolveCampaignRuleset } from './resolveCampaignRuleset';
-import type { ValidationResult } from './validateCampaignRulesetPatch';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
-import { assertSystemRulesetId } from '@/features/mechanics/domain/core/rules';
+import { getSystemRuleset } from '../system/catalog';
+import { normalizeCampaignRulesetPatch } from './patch/normalize';
+import { validateCampaignRulesetPatch } from './patch/validate';
+import { resolveCampaignRuleset } from '../resolve/ruleset';
+import type { ValidationResult } from './patch/validate';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
+import { assertSystemRulesetId } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // Draft factory

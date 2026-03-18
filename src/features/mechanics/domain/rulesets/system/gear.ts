@@ -5,8 +5,8 @@
  * custom gear is stored in the DB and merged at runtime by the gearRepo.
  */
 import type { Gear, GearFields } from '@/features/content/equipment/gear/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // Mapper

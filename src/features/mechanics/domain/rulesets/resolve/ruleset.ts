@@ -7,7 +7,7 @@
  * merge for entryRequirementsByTargetClass so system keys and campaign
  * keys coexist (campaign wins on collision).
  */
-import type { SystemRuleset, CampaignRulesetPatch } from './ruleset.types';
+import type { SystemRuleset, CampaignRulesetPatch } from '../types/ruleset.types';
 import type {
   Ruleset,
   RulesetContent,

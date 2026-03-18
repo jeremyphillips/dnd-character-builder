@@ -1,4 +1,4 @@
-import type { SystemRulesetId } from './ruleset.types';
+import type { SystemRulesetId } from '../types/ruleset.types';
 
 export const SYSTEM_RULESET_IDS = ['SRD_CC_v5_2_1'] as const;
 

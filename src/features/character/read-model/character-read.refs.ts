@@ -4,13 +4,13 @@
  */
 
 import { abilityIdToKey } from '@/features/mechanics/domain/core/character/abilities.utils'
-import { getSystemRaces } from '@/features/mechanics/domain/core/rules/systemCatalog.races'
-import { getSystemClasses } from '@/features/mechanics/domain/core/rules/systemCatalog.classes'
-import { getSystemSkillProficiencies } from '@/features/mechanics/domain/core/rules/systemCatalog.skillProficiencies'
-import { getSystemArmor } from '@/features/mechanics/domain/core/rules/systemCatalog.armor'
-import { getSystemWeapons } from '@/features/mechanics/domain/core/rules/systemCatalog.weapons'
-import { getSystemGear } from '@/features/mechanics/domain/core/rules/systemCatalog.gear'
-import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/core/rules/systemIds'
+import { getSystemRaces } from '@/features/mechanics/domain/rulesets/system/races'
+import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes'
+import { getSystemSkillProficiencies } from '@/features/mechanics/domain/rulesets/system/skillProficiencies'
+import { getSystemArmor } from '@/features/mechanics/domain/rulesets/system/armor'
+import { getSystemWeapons } from '@/features/mechanics/domain/rulesets/system/weapons'
+import { getSystemGear } from '@/features/mechanics/domain/rulesets/system/gear'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 import type {
   CharacterReadReferences,
   ClassProgressionSummary,

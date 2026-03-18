@@ -5,8 +5,8 @@
  * custom magic items are stored in the DB and merged at runtime by the magicItemRepo.
  */
 import type { MagicItem, MagicItemFields } from '@/features/content/equipment/magicItems/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 
 // ---------------------------------------------------------------------------
 // Mapper

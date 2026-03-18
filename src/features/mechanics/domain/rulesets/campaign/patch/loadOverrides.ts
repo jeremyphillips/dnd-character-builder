@@ -4,7 +4,7 @@
  * Fetches in parallel and builds Partial<CampaignCatalog> for merge with
  * system catalog in buildCampaignCatalog.
  */
-import type { CampaignCatalog } from './systemCatalog';
+import type { CampaignCatalog } from '../../system/catalog';
 import { listCampaignRaces } from '@/features/content/races/domain/repo/raceRepo';
 import { listCampaignMonsters } from '@/features/content/monsters/domain/repo/monsterRepo';
 import { listCampaignClasses } from '@/features/content/classes/domain/repo/classRepo';

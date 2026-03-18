@@ -5,8 +5,8 @@
  * Campaign-owned custom classes would be stored in the DB and merged at runtime.
  */
 import type { CharacterClass } from '@/features/content/classes/domain/types';
-import type { SystemRulesetId } from './ruleset.types';
-import { DEFAULT_SYSTEM_RULESET_ID } from './systemIds';
+import type { SystemRulesetId } from '../types/ruleset.types';
+import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
 import { FULL_CASTER_SLOTS_5E, HALF_CASTER_SLOTS_5E, WARLOCK_PACT_SLOTS_5E } from '@/data/ruleSets/spellSlotTables';
 
 // ---------------------------------------------------------------------------

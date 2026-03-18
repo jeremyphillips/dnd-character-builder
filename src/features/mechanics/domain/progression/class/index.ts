@@ -11,4 +11,9 @@ export {
   getCantripsFromProfile,
   type CantripProgressionProfileId,
 } from './cantripProgressionProfiles' 
-export { FULL_CASTER_SLOTS, HALF_CASTER_SLOTS, WARLOCK_PACT_SLOTS_5E } from './spellSlotTables'
+export {
+  FULL_CASTER_SLOTS,
+  HALF_CASTER_SLOTS,
+  WARLOCK_CASTER_SLOTS,
+  PACT_CASTER_SLOTS,
+} from './spellSlotTables'

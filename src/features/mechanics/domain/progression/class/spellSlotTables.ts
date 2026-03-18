@@ -62,7 +62,7 @@ export const THIRD_CASTER_SLOTS: number[][] = [
 ]
 
 /** 5e Warlock Pact Magic slots — all slots are the same level, short-rest recharge — PHB p. 106 */
-export const WARLOCK_PACT_SLOTS_5E: number[][] = [
+export const WARLOCK_CASTER_SLOTS: number[][] = [
   /* L1  */ [1],
   /* L2  */ [2],
   /* L3  */ [0, 2],
@@ -85,4 +85,5 @@ export const WARLOCK_PACT_SLOTS_5E: number[][] = [
   /* L20 */ [0, 0, 0, 0, 4],
 ]
 
-// export const FULL_CASTER_CANTRIP
+/** Alias for WARLOCK_CASTER_SLOTS (pact magic) */
+export const PACT_CASTER_SLOTS = WARLOCK_CASTER_SLOTS

@@ -6,9 +6,10 @@
 // builder context).
 
 import { useMemo, useCallback } from 'react'
-import { getClassProgression } from '@/features/mechanics/domain/progression/class'
+import { getClassProgression, getClassSpellLimitsAtLevel } from '@/features/mechanics/domain/progression/class'
+import { getSystemRuleset } from '@/features/mechanics/domain/rulesets/system/catalog'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 import { groupSpellsByLevel } from '@/features/mechanics/domain/spells'
-import { getClassSpellLimitsAtLevel } from '@/features/mechanics/domain/progression/class'
 import { getAvailableSpellsByClass } from '@/features/mechanics/domain/spells/selection'
 import { SpellHorizontalCard } from '@/features/content/spells/components'
 import type { LevelUpState } from '../levelUp.types'
@@ -59,19 +60,24 @@ export default function LevelUpSpellStep({
   const oldClassLevel = primaryClass?.level ?? 1
   const newClassLevel = oldClassLevel + (pendingLevel - currentLevel)
 
+  const spellcastingConfig = useMemo(
+    () => getSystemRuleset(DEFAULT_SYSTEM_RULESET_ID).mechanics.progression.spellcasting,
+    [],
+  )
+
   const prog = useMemo(
     () => getClassProgression(primaryClassId),
     [primaryClassId],
   )
 
   const oldLimits = useMemo(
-    () => (prog ? getClassSpellLimitsAtLevel(prog, oldClassLevel) : null),
-    [prog, oldClassLevel],
+    () => (prog ? getClassSpellLimitsAtLevel(prog, oldClassLevel, spellcastingConfig) : null),
+    [prog, oldClassLevel, spellcastingConfig],
   )
 
   const newLimits = useMemo(
-    () => (prog ? getClassSpellLimitsAtLevel(prog, newClassLevel) : null),
-    [prog, newClassLevel],
+    () => (prog ? getClassSpellLimitsAtLevel(prog, newClassLevel, spellcastingConfig) : null),
+    [prog, newClassLevel, spellcastingConfig],
   )
 
   const availableByLevel = useMemo(() => {

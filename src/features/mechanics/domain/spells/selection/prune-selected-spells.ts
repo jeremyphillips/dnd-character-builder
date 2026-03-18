@@ -6,8 +6,10 @@
 import type { CharacterBuilderState } from '@/features/characterBuilder/types'
 import type { Spell } from '@/features/content/spells/domain/types'
 import type { CharacterClass } from '@/features/content/classes/domain/types'
+import type { SpellcastingProgression } from '@/shared/types/ruleset'
 import { getClassSpellLimitsAtLevel } from '@/features/mechanics/domain/progression/class'
-import { systemCatalog } from '../../rulesets/system/catalog'
+import { systemCatalog, getSystemRuleset } from '../../rulesets/system/catalog'
+import { DEFAULT_SYSTEM_RULESET_ID } from '../../rulesets/ids/systemIds'
 
 export type SpellPruneResult = {
   kept: string[]
@@ -18,17 +20,22 @@ export type SpellPruneResult = {
  * Given the selected spell IDs and the *new* builder state, return
  * which spells should be kept and which should be pruned.
  *
- * @param state       Current builder state
- * @param classesById Catalog class definitions
- * @param allSpells   Catalog spells (flat core spells)
+ * @param state              Current builder state
+ * @param classesById        Catalog class definitions
+ * @param allSpells          Catalog spells (flat core spells)
+ * @param spellcastingConfig Ruleset spellcasting config (defaults to system ruleset)
  */
 export function pruneSelectedSpells(
   state: CharacterBuilderState,
   classesById?: Record<string, CharacterClass>,
   allSpells?: Record<string, Spell>,
+  spellcastingConfig?: SpellcastingProgression,
 ): SpellPruneResult {
   const resolvedClasses = classesById ?? systemCatalog.classesById
   const resolvedSpells = allSpells ?? systemCatalog.spellsById
+  const resolvedSpellcasting =
+    spellcastingConfig ??
+    getSystemRuleset(DEFAULT_SYSTEM_RULESET_ID).mechanics.progression.spellcasting
   const selected = state.spells ?? []
   if (selected.length === 0) return { kept: [], removed: [] }
 
@@ -63,7 +70,7 @@ export function pruneSelectedSpells(
     const prog = classDef?.progression
     if (!prog?.spellProgression) continue
 
-    const lim = getClassSpellLimitsAtLevel(prog, cls.level)
+    const lim = getClassSpellLimitsAtLevel(prog, cls.level, resolvedSpellcasting)
     if (lim.cantrips > 0) {
       perLevelMax.set(0, (perLevelMax.get(0) ?? 0) + lim.cantrips)
     }

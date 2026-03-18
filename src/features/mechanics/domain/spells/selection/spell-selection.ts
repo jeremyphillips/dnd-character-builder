@@ -10,6 +10,7 @@
  */
 import type { Spell } from '@/features/content/spells/domain/types'
 import type { CharacterClass } from '@/features/content/classes/domain/types'
+import type { SpellcastingProgression } from '@/shared/types/ruleset'
 import { getClassSpellLimitsAtLevel, type CastingMode } from '@/features/mechanics/domain/progression/class'
 
 // ---------------------------------------------------------------------------
@@ -48,14 +49,16 @@ export type ToggleResult = {
 /**
  * Build the spell selection model from catalog data (no edition lookup).
  *
- * @param draft       Current builder state (selected classes + spells)
- * @param classesById Catalog class definitions (used for progression data)
- * @param allSpells   Catalog spells (flat core spells, filtered by campaign policy)
+ * @param draft               Current builder state (selected classes + spells)
+ * @param classesById         Catalog class definitions (used for progression data)
+ * @param allSpells           Catalog spells (flat core spells, filtered by campaign policy)
+ * @param spellcastingConfig  Ruleset spellcasting config (slot tables + max spell level)
  */
 export function buildSpellSelectionModel(
   draft: SpellSelectionDraft,
   classesById: Record<string, CharacterClass>,
   allSpells: Record<string, Spell>,
+  spellcastingConfig: SpellcastingProgression,
 ): SpellSelectionModel {
   const { classes, spells: selectedSpells = [] } = draft
 
@@ -105,7 +108,7 @@ export function buildSpellSelectionModel(
     const prog = classDef?.progression
     if (!prog?.spellProgression) continue
 
-    const lim = getClassSpellLimitsAtLevel(prog, cls.level)
+    const lim = getClassSpellLimitsAtLevel(prog, cls.level, spellcastingConfig)
     castingModeSet.add(lim.castingMode)
 
     if (lim.cantrips > 0) {

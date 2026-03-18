@@ -6,17 +6,18 @@
 import type { Money } from "@/shared/money/types"
 import type { ProficiencyAdjustment } from '@/features/character/domain/types'
 import type { AbilityKey } from '@/features/mechanics/domain/character'
-
+import type { SpellcastingAbility } from '@/features/content/classes/domain/types/progression.types'
+import type { CastingMode } from "@/features/mechanics/domain/progression"
 // ---------------------------------------------------------------------------
 // Class summary (shared by card, detail, roster)
 // ---------------------------------------------------------------------------
 
 /** Progression data exposed on class summaries in the detail DTO. */
 export type ClassProgressionSummary = {
-  spellcasting?: 'none' | 'half' | 'full' | 'third' | 'pact'
+  spellcasting?: SpellcastingAbility
   spellProgression?: {
     ability?: AbilityKey
-    type?: 'prepared' | 'known'
+    type?: CastingMode
   }
   hitDie: number
   attackProgression?: string

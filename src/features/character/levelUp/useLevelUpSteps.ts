@@ -5,11 +5,13 @@
 
 import { useMemo } from 'react'
 import type { LevelUpStepConfig, LevelUpState } from './levelUp.types'
-import { 
-  getClassSpellLimitsAtLevel, 
-  getClassProgression, 
-  getSubclassUnlockLevel 
+import {
+  getClassSpellLimitsAtLevel,
+  getClassProgression,
+  getSubclassUnlockLevel,
 } from '@/features/mechanics/domain/progression'
+import { getSystemRuleset } from '@/features/mechanics/domain/rulesets/system/catalog'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 
 /**
  * Returns the ordered list of level-up wizard steps required for this
@@ -51,9 +53,11 @@ export function useLevelUpSteps(state: LevelUpState): LevelUpStepConfig[] {
 
     // ── Spells ────────────────────────────────────────────────────────
     const prog = getClassProgression(primaryClassId)
+    const spellcastingConfig =
+      getSystemRuleset(DEFAULT_SYSTEM_RULESET_ID).mechanics.progression.spellcasting
     if (prog?.spellProgression) {
-      const oldLimits = getClassSpellLimitsAtLevel(prog, oldClassLevel)
-      const newLimits = getClassSpellLimitsAtLevel(prog, newClassLevel)
+      const oldLimits = getClassSpellLimitsAtLevel(prog, oldClassLevel, spellcastingConfig)
+      const newLimits = getClassSpellLimitsAtLevel(prog, newClassLevel, spellcastingConfig)
 
       const gainsSpells =
         newLimits.totalKnown > oldLimits.totalKnown ||

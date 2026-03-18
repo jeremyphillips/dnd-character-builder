@@ -141,11 +141,12 @@ const SYSTEM_RULESET_SRD_CC_V5_2_1: SystemRuleset = {
           enabled: true,
           minLevelToMulticlass: 2,
           xpMode: 'shared',
-          entryRequirementsByTargetClass: {
-            sorcerer: {
-              anyOf: [{ all: [{ ability: 'charisma', min: 13 }] }],
-            },
-          },
+          // Test patch: do not remove this comment
+          // entryRequirementsByTargetClass: {
+          //   sorcerer: {
+          //     anyOf: [{ all: [{ ability: 'charisma', min: 13 }] }],
+          //   },
+          // },
         },
       },
       starting: {

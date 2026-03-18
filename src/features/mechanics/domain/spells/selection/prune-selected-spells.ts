@@ -107,6 +107,10 @@ export function pruneSelectedSpells(
     }
 
     const max = perLevelMax.get(level) ?? 0
+    if (level > 0 && max === 0) {
+      removed.push(id)
+      continue
+    }
     const currentCount = keptPerLevel.get(level) ?? 0
     if (max > 0 && currentCount >= max) {
       removed.push(id)

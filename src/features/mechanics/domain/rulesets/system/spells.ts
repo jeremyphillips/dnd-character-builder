@@ -182,6 +182,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 0,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'prestidigitation',
@@ -190,6 +194,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 0,
     classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'light',
@@ -371,6 +379,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['bard', 'druid', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'detect-magic',
@@ -391,6 +403,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['cleric'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'sleep',
@@ -399,6 +415,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 1,
     classes: ['bard', 'sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'charm-person',
@@ -817,6 +837,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 3,
     classes: ['sorcerer', 'warlock', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'dispel-magic',
@@ -939,6 +963,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 5,
     classes: ['wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'greater-restoration',
@@ -971,6 +999,10 @@ const SPELLS_RAW: readonly SpellEntry[] = [
     level: 6,
     classes: ['sorcerer', 'wizard'],
     effects: [{ kind: 'note', text: '' }],
+    description: {
+      full: '',
+      summary: '',
+    },
   },
   {
     id: 'disintegrate',

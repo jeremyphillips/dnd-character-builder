@@ -124,12 +124,22 @@ export function buildSpellSelectionModel(
     totalKnown += lim.totalKnown
   }
 
-  // Count current selections per level
+  // Restrict availableByLevel to levels the character has slots for (from spell slot tables).
+  // Only show cantrips when cantrip slots > 0, and leveled spells when perLevelMax > 0.
+  const filteredAvailableByLevel = new Map<number, Spell[]>()
+  for (const [level, spells] of availableByLevel) {
+    const slotCount = perLevelMax.get(level) ?? 0
+    if (level === 0 ? slotCount > 0 : slotCount > 0 && level <= maxSpellLevel) {
+      filteredAvailableByLevel.set(level, spells)
+    }
+  }
+
+  // Count current selections per level (only for levels we allow)
   const selectedSet = new Set(selectedSpells)
   const selectedPerLevel = new Map<number, number>()
   let totalSelectedLeveled = 0
 
-  for (const [level, spells] of availableByLevel) {
+  for (const [level, spells] of filteredAvailableByLevel) {
     let count = 0
     for (const s of spells) {
       if (selectedSet.has(s.id)) count++
@@ -139,7 +149,7 @@ export function buildSpellSelectionModel(
   }
 
   return {
-    availableByLevel,
+    availableByLevel: filteredAvailableByLevel,
     limits: { castingModes: [...castingModeSet], perLevelMax, maxSpellLevel, totalKnown },
     selectedPerLevel,
     totalSelectedLeveled,

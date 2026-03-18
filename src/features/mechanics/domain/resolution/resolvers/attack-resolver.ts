@@ -1,6 +1,7 @@
 import type { EvaluationContext } from '../../conditions/evaluation-context.types'
 import type { Effect } from '../../effects/effects.types'
 import { getAbilityModifier } from '../../abilities/getAbilityModifier'
+import { getWeaponAttackAbility } from '../../attacks/getWeaponAttackAbility'
 import { resolveStatDetailed, type BreakdownToken } from './stat-resolver'
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab'
 import type { AbilityKey } from '@/features/mechanics/domain/character'
@@ -48,25 +49,6 @@ export type DamageResult = {
 // ---------------------------------------------------------------------------
 
 /**
- * Determine which ability score drives the attack/damage roll.
- */
-function pickAttackAbility(
-  context: EvaluationContext,
-  weapon: WeaponAttackInput
-): AbilityKey {
-  const isFinesse = weapon.properties?.includes('finesse') ?? false
-  const isRanged = weapon.type === 'ranged'
-
-  if (isFinesse) {
-    const str = getAbilityModifier(context.self, 'strength')
-    const dex = getAbilityModifier(context.self, 'dexterity')
-    return dex >= str ? 'dexterity' : 'strength'
-  }
-
-  return isRanged ? 'dexterity' : 'strength'
-}
-
-/**
  * Select the appropriate damage dice string from weapon data.
  *
  * - 1e/2e: prefer sm (Small/Medium) field
@@ -101,7 +83,7 @@ export function resolveWeaponAttackBonus(
   effects: Effect[],
   options: AttackOptions = {}
 ): AttackBonusResult {
-  const abilityUsed = pickAttackAbility(context, weapon)
+  const abilityUsed = getWeaponAttackAbility(context, weapon)
   const abilityMod = getAbilityModifier(context.self, abilityUsed)
   const proficiencyLevel = options.proficiencyLevel ?? 1
   const proficiencyBonus = options.proficiencyBonus ?? 2
@@ -156,7 +138,7 @@ export function resolveWeaponDamage(
   options: AttackOptions = {}
 ): DamageResult {
   const hand = options.hand ?? 'main'
-  const abilityUsed = pickAttackAbility(context, weapon)
+  const abilityUsed = getWeaponAttackAbility(context, weapon)
 
   // Off-hand attacks don't add ability mod to damage (5e default).
   // TODO: Check for Two-Weapon Fighting style to override this.

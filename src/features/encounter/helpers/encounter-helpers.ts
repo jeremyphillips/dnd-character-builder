@@ -43,6 +43,7 @@ export function getCharacterSpellcastingStats(
 ): {
   spellSaveDc: number
   spellAttackBonus: number
+  spellcastingAbilityModifier: number
 } {
   const spellcastingClass = findCharacterSpellcastingClassEntry(character)
   const abilityKey = getSpellcastingAbility(character)
@@ -56,6 +57,7 @@ export function getCharacterSpellcastingStats(
   return {
     spellSaveDc: getSpellSaveDc(profBonus, abilityMod),
     spellAttackBonus: getSpellAttackBonus(profBonus, abilityMod),
+    spellcastingAbilityModifier: abilityMod,
   }
 }
 
@@ -594,6 +596,9 @@ function classifySpellResolutionMode(
   const hasSave = effects.some((e) => e.kind === 'save')
   if (hasSave) return 'effects'
 
+  const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
+  if (hasHealing) return 'effects'
+
   if (spell.range?.kind === 'self') {
     const hasResolvable = effects.some((e) => e.kind === 'modifier' || e.kind === 'immunity')
     if (hasResolvable) return 'effects'
@@ -609,9 +614,12 @@ function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: b
   return { action: true }
 }
 
-function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' } {
+function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' } {
   if (spell.range?.kind === 'self') return { kind: 'self' }
-  const targeting = (spell.effects ?? []).find((e) => e.kind === 'targeting')
+  const effects = spell.effects ?? []
+  const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
+  if (hasHealing) return { kind: 'single-creature' }
+  const targeting = effects.find((e) => e.kind === 'targeting')
   if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies' }
   if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies' }
   return { kind: 'single-target' }
@@ -745,13 +753,27 @@ function injectSpellEffectDuration(effects: Effect[], spellDuration: SpellDurati
   })
 }
 
+function injectHealingAbilityModifier(effects: Effect[], abilityModifier: number): Effect[] {
+  return effects.map((effect) => {
+    if (effect.kind !== 'hit-points' || !effect.abilityModifier) return effect
+    const base = String(effect.value)
+    const sign = abilityModifier >= 0 ? '+' : '-'
+    const enrichedValue = `${base}${sign}${Math.abs(abilityModifier)}`
+    return { ...effect, value: enrichedValue, abilityModifier: undefined } as Effect
+  })
+}
+
 function buildSpellEffectsAction(
   spell: Spell,
   runtimeId: string,
   spellSaveDc: number,
   usage: CombatActionDefinition['usage'],
+  spellcastingAbilityModifier?: number,
 ): CombatActionDefinition {
   let enrichedEffects = injectSpellSaveDc(spell.effects ?? [], spellSaveDc)
+  if (typeof spellcastingAbilityModifier === 'number') {
+    enrichedEffects = injectHealingAbilityModifier(enrichedEffects, spellcastingAbilityModifier)
+  }
   enrichedEffects = injectSpellEffectDuration(enrichedEffects, spell.duration)
   const resolvableEffects = enrichedEffects.filter((e) => e.kind !== 'targeting')
 
@@ -775,6 +797,7 @@ export function buildSpellCombatActions(args: {
   spellsById: Record<string, Spell>
   spellSaveDc: number
   spellAttackBonus: number
+  spellcastingAbilityModifier?: number
   casterLevel: number
   /** Persisted resources e.g. { spell_used_fireball: 1 }. When absent, remaining = 1. */
   resources?: Record<string, number>
@@ -785,6 +808,7 @@ export function buildSpellCombatActions(args: {
     spellsById,
     spellSaveDc,
     spellAttackBonus,
+    spellcastingAbilityModifier,
     casterLevel,
     resources,
   } = args
@@ -794,7 +818,6 @@ export function buildSpellCombatActions(args: {
     if (!spell) return []
 
     const usage = resolveSpellUsage(spell.id, spell.level, resources)
-    // Cantrips: no usage. Leveled spells: 1 use per day.
     const effectiveUsage = spell.level > 0 ? usage : undefined
 
     const mode = classifySpellResolutionMode(spell)
@@ -804,7 +827,7 @@ export function buildSpellCombatActions(args: {
     }
 
     if (mode === 'effects') {
-      return [buildSpellEffectsAction(spell, runtimeId, spellSaveDc, effectiveUsage)]
+      return [buildSpellEffectsAction(spell, runtimeId, spellSaveDc, effectiveUsage, spellcastingAbilityModifier)]
     }
 
     return [{

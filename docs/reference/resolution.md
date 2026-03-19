@@ -110,15 +110,23 @@ The encounter action system resolves combat actions against encounter state:
 |--------|----------------|
 | `action-resolver` | Orchestrates action resolution: validates, targets, resolves, updates state |
 | `action-cost` | Turn resource management: spend/check action, bonus action, reaction, movement |
-| `action-targeting` | Target selection: self, all-enemies, single-target; sequence step counts |
-| `action-effects` | Applies effects to encounter state: damage, conditions, saves, immunities, movement |
+| `action-targeting` | Target selection: self, all-enemies, single-target, single-creature; sequence step counts |
+| `action-effects` | Applies effects to encounter state: damage, healing, conditions, saves, immunities, movement |
 
 **Action resolution modes:**
 
 - `attack-roll` — roll d20 + attack bonus vs AC, apply damage and on-hit effects
 - `saving-throw` — targets roll saves vs DC, apply damage (with half on save) and on-fail/on-success effects
-- `effects` — apply effects directly to targets (no roll)
+- `effects` — apply effects directly to targets (no roll). Used for save-based spells, healing spells, and self-buff spells
 - `log-only` — log the action with no mechanical resolution
+
+**Action targeting kinds:**
+
+- `single-target` — one enemy combatant (opposite side, HP > 0)
+- `all-enemies` — all living enemy combatants
+- `self` — the acting combatant
+- `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
+- `entered-during-move` — creatures entered during movement
 
 ## 5. Extension Points
 
@@ -211,3 +219,24 @@ const base = buildCharacterResolutionInput(character, { armorById: catalog.armor
 const allEffects = [...base.effects, ...enchantmentEffects, ...magicItemEffects]
 const result = resolveStatDetailed('armor_class', base.context, allEffects)
 ```
+
+### Healing spell resolution
+
+Healing spells are authored with `hit-points` effects and resolved through the `effects` action resolution mode. The spell adapter injects the caster's spellcasting ability modifier when `abilityModifier` is `true`, and the action effects engine rolls the dice and applies healing via `applyHealingToCombatant`.
+
+```typescript
+import { buildSpellCombatActions, getCharacterSpellcastingStats } from '@/features/encounter/helpers'
+
+const stats = getCharacterSpellcastingStats(character, ruleset)
+const actions = buildSpellCombatActions({
+  runtimeId,
+  spellIds: character.spells,
+  spellsById: catalog.spellsById,
+  spellSaveDc: stats.spellSaveDc,
+  spellAttackBonus: stats.spellAttackBonus,
+  spellcastingAbilityModifier: stats.spellcastingAbilityModifier,
+  casterLevel: character.level,
+})
+```
+
+Healing actions use `targeting: { kind: 'single-creature' }`, which allows any living combatant (ally, enemy, or self) as a target. The encounter UI shows all living combatants as valid targets when a `single-creature` action is selected.

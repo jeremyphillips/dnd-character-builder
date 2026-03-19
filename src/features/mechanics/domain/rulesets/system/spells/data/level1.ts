@@ -220,10 +220,7 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
-      {
-        kind: 'note',
-        text: 'The target regains 2d8 + your spellcasting ability modifier Hit Points. Dice-based healing with ability modifier is under-modeled.',
-      },
+      { kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true },
     ],
     scaling: [{
       category: 'extra-healing',
@@ -579,10 +576,7 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     components: { verbal: true },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
-      {
-        kind: 'note',
-        text: 'The target regains 2d4 + your spellcasting ability modifier Hit Points. Dice-based healing with ability modifier is under-modeled.',
-      },
+      { kind: 'hit-points', mode: 'heal', value: '2d4', abilityModifier: true },
     ],
     scaling: [{
       category: 'extra-healing',

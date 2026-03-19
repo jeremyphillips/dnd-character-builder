@@ -131,6 +131,7 @@ function LoadedAllyCombatantSetupPreviewCard({
         spellsById: catalog.spellsById as Record<string, Spell>,
         spellSaveDc: spellStats.spellSaveDc,
         spellAttackBonus: spellStats.spellAttackBonus,
+        spellcastingAbilityModifier: spellStats.spellcastingAbilityModifier,
         casterLevel: character.level ?? 1,
         resources: character.resources,
       }),

@@ -73,22 +73,28 @@ export function useEncounterState({
         : [],
     [activeCombatantId, encounterState],
   )
+  const selectedAction = useMemo(
+    () => availableActions.find((action) => action.id === selectedActionId) ?? null,
+    [availableActions, selectedActionId],
+  )
   const availableActionTargets = useMemo(() => {
     if (!encounterState || !activeCombatant) return []
+
+    const isCreatureTargeting = selectedAction?.targeting?.kind === 'single-creature'
 
     return encounterState.initiativeOrder
       .map((combatantId) => encounterState.combatantsById[combatantId])
       .filter(
         (combatant): combatant is CombatantInstance =>
           Boolean(combatant) &&
-          combatant.side !== activeCombatant.side &&
-          combatant.stats.currentHitPoints > 0,
+          combatant.stats.currentHitPoints > 0 &&
+          (isCreatureTargeting || combatant.side !== activeCombatant.side),
       )
       .map((combatant) => ({
         id: combatant.instanceId,
         label: combatant.source.label,
       }))
-  }, [activeCombatant, encounterState])
+  }, [activeCombatant, encounterState, selectedAction])
   const controlTargetCombatant =
     encounterState && controlTargetId ? encounterState.combatantsById[controlTargetId] : null
   const controlTargetMonster =

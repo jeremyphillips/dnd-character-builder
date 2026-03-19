@@ -301,6 +301,25 @@ Status meanings:
 { kind: 'roll-modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
 ```
 
+### `hit-points`
+
+- Status: `canonical`
+- Purpose: direct hit point change (healing or damage)
+- Use when: the mechanic directly heals or damages without a save, attack roll, or branching outcome
+- Do not use when: healing or damage depends on a save result (use `save` with nested effects)
+- Key fields: `mode`, `value`, `abilityModifier`
+- `mode`: `'heal'` or `'damage'`
+- `value`: flat number or dice expression (`DiceOrFlat`). Flat values are used directly; dice expressions are rolled at resolution time.
+- `abilityModifier`: optional boolean. When `true`, the spell combat adapter injects the caster's spellcasting ability modifier into the dice expression at build time (e.g. `'2d8'` becomes `'2d8+3'`).
+
+```ts
+{ kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true }
+```
+
+```ts
+{ kind: 'hit-points', mode: 'heal', value: 15 }
+```
+
 ### Other Current Shared Kinds
 
 - `formula`: `canonical`
@@ -313,7 +332,6 @@ Status meanings:
 - `tracked-part`: `provisional`
 - `extra-reaction`: `provisional`
 - `spawn`: `provisional`
-- `hit-points`: `canonical`
 - `aura`: `canonical`
 - `custom`: escape hatch only
 - Use these only when their current shared meaning fits.
@@ -454,6 +472,20 @@ Scopes an effect to interactions involving specific creature types. The `target`
 ]
 ```
 
+### Healing Spell
+
+- `targeting` defines the affected creature
+- `hit-points` with `mode: 'heal'` defines the healing payload
+- `abilityModifier: true` signals the adapter to inject the caster's spellcasting ability modifier
+- the adapter classifies healing spells as `effects` resolution mode with `single-creature` targeting
+
+```ts
+[
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true },
+]
+```
+
 ### Area Effect
 
 - owner range chooses placement
@@ -535,24 +567,25 @@ Rules:
 The spell combat adapter (`buildSpellCombatActions`) converts canonical spell content into executable `CombatActionDefinition` objects for the combat simulation. It classifies spells into three resolution modes:
 
 - `attack-roll`: spells with `deliveryMethod`. The adapter builds an attack profile from the caster's spell attack bonus and the spell's `damage` effect. Multi-instance spells (beams, rays) generate sequence steps for independent attack rolls.
-- `effects`: spells with a top-level `save` effect. The adapter injects the caster's spell save DC into save effects where `dc` is unset, strips targeting effects, and passes the enriched effects array to the resolution engine. The engine's `applyActionEffects` handles save branching, damage, conditions, states, and notes recursively.
+- `effects`: spells with a top-level `save` effect or a `hit-points` heal effect. The adapter injects the caster's spell save DC into save effects and the spellcasting ability modifier into `hit-points` effects where `abilityModifier` is `true`. Healing spells use `single-creature` targeting (any living combatant including self and allies). The engine's `applyActionEffects` handles save branching, damage, healing, conditions, states, and notes recursively.
 - `log-only`: all other spells (utility, buff, stubs). The adapter generates a log-text summary from effect text or the spell description.
 
 Adapter inputs derived from the caster:
 
 - `spellSaveDc`: 8 + proficiency bonus + spellcasting ability modifier
 - `spellAttackBonus`: proficiency bonus + spellcasting ability modifier
+- `spellcastingAbilityModifier`: spellcasting ability modifier (injected into healing dice expressions)
 - `casterLevel`: used to resolve cantrip level scaling (damage dice and instance count thresholds)
 
 ### Known Unsupported Spell Mechanics
 
 The following spell mechanics are not yet resolved by the combat adapter and remain log-only or under-modeled:
 
-- Healing spells (dice + ability modifier formula not yet in the resolution engine)
 - Self-buff spells (effects target the caster, not an enemy)
 - Auto-hit spells (Magic Missile — no attack roll, no save)
 - Concentration tracking
 - Spell slot resource management
+- Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
 
 ## 11. Anti-Patterns
 

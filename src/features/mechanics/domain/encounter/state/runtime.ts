@@ -1,4 +1,5 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
+import { rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
 import type {
   CombatantInstance,
   RuntimeEffectInstance,
@@ -385,16 +386,19 @@ function executeTurnHooks(
 
     hook.effects.forEach((effect) => {
       if (effect.kind === 'hit-points') {
-        nextState =
-          effect.mode === 'heal'
-            ? applyHealingToCombatant(nextState, combatantId, effect.value, {
-                actorId: combatantId,
-                sourceLabel: hook.label,
-              })
-            : applyDamageToCombatant(nextState, combatantId, effect.value, {
-                actorId: combatantId,
-                sourceLabel: hook.label,
-              })
+        const resolved = rollHealing(String(effect.value), Math.random)
+        if (resolved && resolved.total > 0) {
+          nextState =
+            effect.mode === 'heal'
+              ? applyHealingToCombatant(nextState, combatantId, resolved.total, {
+                  actorId: combatantId,
+                  sourceLabel: hook.label,
+                })
+              : applyDamageToCombatant(nextState, combatantId, resolved.total, {
+                  actorId: combatantId,
+                  sourceLabel: hook.label,
+                })
+        }
         return
       }
 

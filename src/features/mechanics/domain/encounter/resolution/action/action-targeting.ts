@@ -41,6 +41,13 @@ export function getActionTargets(
     )
   }
 
+  if (action.targeting?.kind === 'single-creature') {
+    if (!selection.targetId) return [actor]
+    const target = state.combatantsById[selection.targetId]
+    if (!target || target.stats.currentHitPoints <= 0) return []
+    return [target]
+  }
+
   if (!selection.targetId) return []
   const target = state.combatantsById[selection.targetId]
   if (!target || target.side === actor.side || target.stats.currentHitPoints <= 0) return []

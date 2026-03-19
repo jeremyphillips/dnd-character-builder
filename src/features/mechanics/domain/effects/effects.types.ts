@@ -362,7 +362,8 @@ export type SpawnEffect = EffectBase<'spawn'> & {
 
 export type HitPointsEffect = EffectBase<'hit-points'> & {
   mode: 'heal' | 'damage';
-  value: number;
+  value: DiceOrFlat;
+  abilityModifier?: boolean;
 };
 
 export type AuraEffect = EffectBase<'aura'> & {

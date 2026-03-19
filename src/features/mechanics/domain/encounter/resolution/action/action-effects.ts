@@ -3,6 +3,7 @@ import {
   addStateToCombatant,
   addStatModifierToCombatant,
   applyDamageToCombatant,
+  applyHealingToCombatant,
   appendEncounterNote,
   effectDurationToRuntimeDuration,
   type CombatantInstance,
@@ -12,7 +13,7 @@ import { abilityIdToKey, type AbilityRef } from '../../../character'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
-import { rollDie, rollDamage } from '../../../resolution/engines/dice.engine'
+import { rollDie, rollDamage, rollHealing } from '../../../resolution/engines/dice.engine'
 
 export function getSaveModifier(combatant: CombatantInstance, ability: AbilityRef): number {
   const abilityKey = abilityIdToKey(ability)
@@ -159,6 +160,24 @@ export function applyActionEffects(
           sourceLabel: options.sourceLabel,
           damageType: effect.damageType,
         })
+      }
+      return
+    }
+
+    if (effect.kind === 'hit-points') {
+      const resolved = rollHealing(String(effect.value), options.rng)
+      if (resolved && resolved.total > 0) {
+        if (effect.mode === 'heal') {
+          nextState = applyHealingToCombatant(nextState, target.instanceId, resolved.total, {
+            actorId: actor.instanceId,
+            sourceLabel: options.sourceLabel,
+          })
+        } else {
+          nextState = applyDamageToCombatant(nextState, target.instanceId, resolved.total, {
+            actorId: actor.instanceId,
+            sourceLabel: options.sourceLabel,
+          })
+        }
       }
       return
     }

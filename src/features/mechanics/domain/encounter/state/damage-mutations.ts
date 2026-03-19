@@ -11,6 +11,7 @@ import { appendLog, getCombatantLabel } from './logging'
 import type { RuntimeMarker } from './types'
 import { dropConcentration } from './concentration-mutations'
 import { getDamageAfterResistance } from './resistance-mutations'
+import { getDamageResistanceFromConditions } from './condition-rules'
 
 export function applyDamageToCombatant(
   state: EncounterState,
@@ -21,11 +22,22 @@ export function applyDamageToCombatant(
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
 
-  const { adjusted, applied } = getDamageAfterResistance(
+  let { adjusted, applied } = getDamageAfterResistance(
     amount,
     options?.damageType,
     target.damageResistanceMarkers ?? [],
   )
+
+  if (!applied) {
+    const conditionResistance = getDamageResistanceFromConditions(target, options?.damageType)
+    if (conditionResistance === 'resistance') {
+      adjusted = Math.floor(amount / 2)
+      applied = { damageType: options?.damageType ?? 'all', level: 'resistance', sourceId: 'condition', label: 'condition', id: 'condition-resistance' }
+    } else if (conditionResistance === 'vulnerability') {
+      adjusted = amount * 2
+      applied = { damageType: options?.damageType ?? 'all', level: 'vulnerability', sourceId: 'condition', label: 'condition', id: 'condition-vulnerability' }
+    }
+  }
 
   let resistanceLogState = state
   if (applied) {
@@ -35,7 +47,7 @@ export function applyDamageToCombatant(
       targetIds: [targetId],
       round: state.roundNumber,
       turn: state.turnIndex + 1,
-      summary: `${getCombatantLabel(state, targetId)} has ${applied.level} to ${applied.damageType} damage (${amount} → ${adjusted}).`,
+      summary: `${getCombatantLabel(state, targetId)} has ${applied.level} to ${applied.damageType ?? 'all'} damage (${amount} → ${adjusted}).`,
     })
   }
 

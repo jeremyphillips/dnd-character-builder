@@ -2,6 +2,7 @@ import type { CombatActionDefinition, CombatActionSequenceStep } from '../combat
 import type { CombatantInstance } from '../../state'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
+import { cannotTargetWithHostileAction } from '../../state/condition-rules'
 
 export function getTrackedPartCount(
   state: EncounterState,
@@ -54,7 +55,7 @@ export function isValidActionTarget(
   if (combatant.states.some((s) => s.label === 'banished')) return false
   if (!passesCreatureTypeFilter(combatant, action.targeting?.creatureTypeFilter)) return false
 
-  if (isHostileAction(action) && getCharmedSourceIds(actor).includes(combatant.instanceId)) {
+  if (isHostileAction(action) && cannotTargetWithHostileAction(actor, combatant.instanceId)) {
     return false
   }
 

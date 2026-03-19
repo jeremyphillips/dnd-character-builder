@@ -1,7 +1,7 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 import { rollDie } from '@/features/mechanics/domain/resolution/engines/dice.engine'
-import { canTakeActions, canTakeReactions } from './condition-rules'
+import { canTakeActions, canTakeReactions, getSpeedConsequences } from './condition-rules'
 
 import type {
   CombatantInstance,
@@ -199,6 +199,10 @@ export function createCombatantTurnResources(combatant: CombatantInstance): Comb
 
   if (!canTakeReactions(combatant)) {
     resources.reactionAvailable = false
+  }
+
+  if (getSpeedConsequences(combatant).speedBecomesZero) {
+    resources.movementRemaining = 0
   }
 
   return resources

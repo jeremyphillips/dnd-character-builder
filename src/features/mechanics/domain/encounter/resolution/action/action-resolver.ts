@@ -259,8 +259,13 @@ function resolveCombatActionInternal(
     const rollMod = resolveRollModifier(actor, target, 'attack rolls', attackRange)
     const { rawRoll, detail: rollDetail } = rollD20WithModifier(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
-    const hit = totalRoll >= target.stats.armorClass
+    const isNaturalTwenty = rawRoll === 20
+    const isNaturalOne = rawRoll === 1
+    const hit = isNaturalTwenty || (!isNaturalOne && totalRoll >= target.stats.armorClass)
+    const isCritical = isNaturalTwenty
 
+    const hitSuffix = isCritical ? ' (critical hit)' : ''
+    const missSuffix = isNaturalOne ? ' (natural 1)' : ''
     nextState = appendEncounterLogEvent(nextState, {
       type: hit ? 'attack-hit' : 'attack-missed',
       actorId: actor.instanceId,
@@ -268,13 +273,13 @@ function resolveCombatActionInternal(
       round: state.roundNumber,
       turn: state.turnIndex + 1,
       summary: hit
-        ? `${actor.source.label} hits ${targetLabel} with ${actionLabel}.`
-        : `${actor.source.label} misses ${targetLabel} with ${actionLabel}.`,
+        ? `${actor.source.label} hits ${targetLabel} with ${actionLabel}${hitSuffix}.`
+        : `${actor.source.label} misses ${targetLabel} with ${actionLabel}${missSuffix}.`,
       details: `Attack roll: ${rollDetail} + ${attackBonus} = ${totalRoll} vs AC ${target.stats.armorClass}.`,
     })
 
     if (hit) {
-      const damage = rollDamage(action.attackProfile?.damage, rng)
+      const damage = rollDamage(action.attackProfile?.damage, rng, { critical: isCritical })
       if (damage && damage.total > 0) {
         nextState = applyDamageToCombatant(nextState, target.instanceId, damage.total, {
           actorId: actor.instanceId,

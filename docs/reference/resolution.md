@@ -170,21 +170,51 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 - `canTakeActions(combatant)` / `canTakeReactions(combatant)` — used by `createCombatantTurnResources` in `shared.ts`
 - `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — used by `resolveRollModifier` in `action-resolver.ts`
 - `autoFailsSave(combatant, ability)` / `getSaveModifiersFromConditions(combatant, ability)` — used by saving-throw resolution in `action-resolver.ts`
-- `getSpeedConsequences(combatant)` — available for future movement wiring
+- `getSpeedConsequences(combatant)` — used by `createCombatantTurnResources` to zero movement for grappled, restrained, etc.
+- `getDamageResistanceFromConditions(combatant, damageType?)` — used by `applyDamageToCombatant` to apply petrified resistance-to-all
+- `incomingHitBecomesCrit(combatant, distanceFt?)` — available for future crit-window wiring when distance tracking exists
+- `getConditionSourceIds(combatant, conditionLabel)` — returns all `sourceInstanceId` values for markers matching the given condition label
+- `hasConditionFromSource(combatant, conditionLabel, sourceId)` — checks whether a specific source applied a specific condition
+- `getSourceRelativeRestrictions(actor)` — returns `{ sourceId, cannotAttackSource, cannotMoveCloserToSource }[]` by combining `source_relative` consequences with marker source data
+- `cannotTargetWithHostileAction(actor, targetId)` — returns `true` if any source-relative restriction prevents the actor from targeting `targetId` with a hostile action (e.g., charmed)
+- `canSpeak(combatant)` — seam query; returns `false` when any active condition has a `speech.cannotSpeak` consequence
+- `isAwareOfSurroundings(combatant)` — seam query; returns `false` when any active condition has an `awareness.unawareOfSurroundings` consequence
+- `canSee(combatant)` — seam query; returns `false` when any active condition has a `visibility.cannotSee` consequence
 - `getActiveConsequences(combatant)` — foundation helper that flattens all active conditions' consequences
 
 **Integration points:**
 
-- `shared.ts` `createCombatantTurnResources` — uses `canTakeActions`/`canTakeReactions` instead of a hard-coded `incapacitated` check. Paralyzed, stunned, unconscious, and petrified now correctly disable actions.
-- `action-resolver.ts` `resolveRollModifier` — combines spell/effect `RollModifierMarker` entries with condition-derived attack modifiers. Blinded, poisoned, prone, restrained, invisible, etc. now affect attack rolls.
+- `shared.ts` `createCombatantTurnResources` — uses `canTakeActions`/`canTakeReactions` to disable actions for incapacitated, paralyzed, stunned, unconscious, and petrified. Uses `getSpeedConsequences` to zero movement for grappled, restrained, paralyzed, stunned, unconscious, and petrified.
+- `action-resolver.ts` `resolveRollModifier` — combines spell/effect `RollModifierMarker` entries with condition-derived attack modifiers. Blinded, poisoned, prone, restrained, invisible, frightened, paralyzed, stunned, unconscious, and petrified now affect attack rolls.
 - `action-resolver.ts` saving-throw resolution — checks `autoFailsSave` before rolling. Paralyzed, stunned, unconscious, and petrified combatants auto-fail Str/Dex saves. Restrained combatants roll Dex saves at disadvantage.
+- `action-resolver.ts` attack-roll resolution — natural 20 = auto-hit + critical hit (doubled damage dice). Natural 1 = auto-miss.
+- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types.
+- `action-targeting.ts` `isValidActionTarget` — uses `cannotTargetWithHostileAction` (backed by `getSourceRelativeRestrictions`) to enforce the charmed targeting exclusion via the consequence framework instead of the ad-hoc `getCharmedSourceIds` helper.
 
-**Not yet wired:**
+**Consequence wiring status:**
 
-- `source_relative` consequences (charmed, frightened) — require source identity or line-of-sight evaluation
-- `crit_window` — requires distance between attacker and target
-- `movement` speed-becomes-zero — available via `getSpeedConsequences` but not yet consumed by movement spending
-- `check_mod` — ability checks are not part of encounter resolution
+*Supported now* — consequences with live integration points in the resolution layer:
+
+- `action_limit` — `canTakeActions` / `canTakeReactions` consumed by `createCombatantTurnResources`
+- `movement.speedBecomesZero` — `getSpeedConsequences` consumed by `createCombatantTurnResources`
+- `attack_mod` — `getIncomingAttackModifiers` / `getOutgoingAttackModifiers` consumed by `resolveRollModifier`
+- `save_mod` — `autoFailsSave` / `getSaveModifiersFromConditions` consumed by saving-throw resolution
+- `damage_interaction` — `getDamageResistanceFromConditions` consumed by `applyDamageToCombatant`
+- `source_relative` by source identity — `cannotTargetWithHostileAction` consumed by `isValidActionTarget` (charmed targeting exclusion)
+- `speech` / `awareness` derived queries — `canSpeak`, `isAwareOfSurroundings` defined and exported; ready for consumption when verbal components, surprise, or perception are added
+
+*Modeled but not enforced* — consequences and queries exist in the data layer but nothing in resolution reads them yet:
+
+- `crit_window` (paralyzed, unconscious) — `incomingHitBecomesCrit` query exists but requires distance input. Currently only natural 20 triggers critical hits.
+- `movement.standUpCostsHalfMovement` (prone) — consequence defined but movement spending is not granular enough to deduct half movement for standing.
+- `check_mod` (poisoned, frightened) — consequences defined but ability checks are not part of encounter resolution. Relevant if contested checks (grapple escape, shove) are added.
+- `visibility` — `canSee` seam query exists but has no mechanical consumer. Relevant when stealth, hiding, or heavily-obscured mechanics are added.
+
+*Requires future subsystem* — consequences that depend on infrastructure not yet built:
+
+- Line of sight / full visibility — frightened's `whileSourceInSight` gating and blinded sight-dependent check auto-fail need a `canSeeSource(combatant, sourceId)` predicate, which depends on position/LOS tracking.
+- Distance / proximity — `crit_window` evaluation and frightened's `cannotMoveCloserToSource` both need distance between combatants (even a simple adjacency flag would unblock crit_window).
+- Granular movement economy — prone stand-up cost and frightened movement restriction require movement spending to distinguish "standing up" and "approaching source" from general movement.
 
 ## 5. Extension Points
 
@@ -456,3 +486,23 @@ Any future naming cleanup should address all three usages together rather than r
 ### Stable ids over labels
 
 Targeting checks, condition/state queries, and authored rule matching should rely on stable machine ids rather than display labels. Where existing code matches on `label` strings (e.g., `s.label === 'banished'`), treat those as interim shortcuts and prefer typed ids when the relevant type surface is extended.
+
+## 10. Recommended Next Steps
+
+### Low-cost wiring (no new subsystem needed)
+
+These items can be connected to existing resolution code with minimal new surface.
+
+- **Wire `canSpeak` / `isAwareOfSurroundings` into action availability or spell component validation** — the queries exist and are exported. Once verbal spell components or surprise mechanics are added, they become immediate consumers.
+- **Wire `canSee` into targeting or action-availability guards** — e.g., blinded creatures auto-fail ability checks requiring sight, once ability check resolution exists.
+- **Unconscious on-apply state transitions** — when the unconscious condition is applied, 5e rules dictate the creature drops prone and drops whatever it is holding. These are one-time transitions, not ongoing consequences, and should be handled in `addConditionToCombatant` in `condition-mutations.ts`.
+- **Wire `check_mod` if contested checks are added** — poisoned and frightened already declare disadvantage on ability checks. Adding grapple escape or shove resolution would be the natural trigger.
+
+### Subsystem-gated wiring
+
+These items are modeled and queryable but blocked on infrastructure that does not exist yet.
+
+- **Condition-based critical hits** — `incomingHitBecomesCrit` is ready to call. Needs a distance or adjacency input. Even a simple `isWithinMeleeRange(attackerId, targetId, state): boolean` seam with a temporary `return true` default for the current simplified encounter model would unblock it.
+- **Prone stand-up cost** — `standUpCostsHalfMovement` is defined. Needs movement spending to distinguish "standing up" from general movement.
+- **Frightened source-relative effects** — `cannotMoveCloserToSource` needs movement/proximity tracking. `whileSourceInSight` gating needs a `canSeeSource(combatant, sourceId)` predicate. Until then, frightened disadvantage is applied unconditionally (more restrictive than 5e).
+- **Full visibility mechanics** — blinded/invisible integration into stealth, hiding, and heavily-obscured rules depends on line-of-sight and position tracking.

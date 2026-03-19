@@ -43,7 +43,9 @@ export {
   canSpeak,
   isAwareOfSurroundings,
   canSee,
+  getActiveConsequencesWithOrigin,
   type ConditionConsequence,
   type ConditionRule,
   type SourceRelativeRestriction,
+  type ConsequenceWithOrigin,
 } from './condition-rules'

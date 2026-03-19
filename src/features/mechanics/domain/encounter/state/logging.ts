@@ -1,4 +1,5 @@
 import type { EncounterState, CombatLogEvent } from './types'
+import { formatCombatantStatusSnapshot, formatConcentrationTimer } from '../resolution/action/resolution-debug'
 
 /** Maximum combat log entries to prevent unbounded memory growth during long encounters. */
 const MAX_LOG_ENTRIES = 500
@@ -30,6 +31,8 @@ export function createEncounterStartedLog(state: EncounterState): CombatLogEvent
 }
 
 export function createTurnStartedLog(state: EncounterState): CombatLogEvent {
+  const combatant = state.activeCombatantId ? state.combatantsById[state.activeCombatantId] : undefined
+  const snapshot = combatant ? formatCombatantStatusSnapshot(combatant) : []
   return {
     id: createLogId('turn-started', state.log.length + 1),
     timestamp: new Date().toISOString(),
@@ -38,10 +41,13 @@ export function createTurnStartedLog(state: EncounterState): CombatLogEvent {
     round: state.roundNumber,
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, state.activeCombatantId)} starts their turn.`,
+    debugDetails: snapshot.length > 0 ? snapshot : undefined,
   }
 }
 
 export function createTurnEndedLog(state: EncounterState): CombatLogEvent {
+  const combatant = state.activeCombatantId ? state.combatantsById[state.activeCombatantId] : undefined
+  const concLine = combatant ? formatConcentrationTimer(combatant) : null
   return {
     id: createLogId('turn-ended', state.log.length + 1),
     timestamp: new Date().toISOString(),
@@ -50,6 +56,7 @@ export function createTurnEndedLog(state: EncounterState): CombatLogEvent {
     round: state.roundNumber,
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, state.activeCombatantId)} ends their turn.`,
+    debugDetails: concLine ? [concLine] : undefined,
   }
 }
 
@@ -94,6 +101,7 @@ export function appendEncounterNote(
     actorId?: string
     targetIds?: string[]
     details?: string
+    debugDetails?: string[]
   },
 ): EncounterState {
   return appendLog(state, {
@@ -104,6 +112,7 @@ export function appendEncounterNote(
     turn: state.turnIndex + 1,
     summary,
     details: options?.details,
+    debugDetails: options?.debugDetails,
   })
 }
 

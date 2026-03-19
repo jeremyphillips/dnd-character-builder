@@ -2,6 +2,7 @@ import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.ty
 import type { EncounterState, RuntimeMarkerDuration } from './types'
 import { buildRuntimeMarker, markerMatches, updateCombatant } from './shared'
 import { appendLog, getCombatantLabel } from './logging'
+import { formatConditionConsequencesDebug } from '../resolution/action/resolution-debug'
 
 export function addConditionToCombatant(
   state: EncounterState,
@@ -26,6 +27,7 @@ export function addConditionToCombatant(
     conditions: [...combatant.conditions, buildRuntimeMarker(trimmedCondition, options)],
   }))
 
+  const condDebug = formatConditionConsequencesDebug(trimmedCondition)
   return appendLog(nextState, {
     type: 'condition-applied',
     actorId: state.activeCombatantId ?? undefined,
@@ -43,6 +45,7 @@ export function addConditionToCombatant(
     ]
       .filter(Boolean)
       .join(' ') || undefined,
+    debugDetails: condDebug.length > 0 ? condDebug : undefined,
   })
 }
 

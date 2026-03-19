@@ -12,6 +12,12 @@ import {
   type CombatantInstance,
   type RollModifierMarker,
 } from '../../state'
+import {
+  formatAttackRollDebug,
+  formatAutoFailDebug,
+  formatSaveDebug,
+  formatTurnResourceDebug,
+} from './resolution-debug'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
@@ -28,19 +34,25 @@ import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSa
 
 export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
 
+type RollModifierResult = {
+  rollMod: 'advantage' | 'disadvantage' | 'normal'
+  attackerMarkers: RollModifierMarker[]
+  defenderMarkers: RollModifierMarker[]
+}
+
 function resolveRollModifier(
   attacker: CombatantInstance,
   defender: CombatantInstance,
   rollType: string,
   attackRange: 'melee' | 'ranged' = 'melee',
-): 'advantage' | 'disadvantage' | 'normal' {
-  const attackerMods = (attacker.rollModifiers ?? []).filter((m) =>
+): RollModifierResult {
+  const attackerMarkers = (attacker.rollModifiers ?? []).filter((m) =>
     matchesRollContext(m, rollType),
   )
-  const defenderMods = (defender.rollModifiers ?? []).filter((m) =>
+  const defenderMarkers = (defender.rollModifiers ?? []).filter((m) =>
     matchesRollContext(m, `attacks against`),
   )
-  const markerModifiers = [...attackerMods, ...defenderMods].map((m) => m.modifier)
+  const markerModifiers = [...attackerMarkers, ...defenderMarkers].map((m) => m.modifier)
 
   const conditionModifiers = [
     ...getOutgoingAttackModifiers(attacker, attackRange),
@@ -50,10 +62,12 @@ function resolveRollModifier(
   const all = [...markerModifiers, ...conditionModifiers]
   const hasAdv = all.includes('advantage')
   const hasDisadv = all.includes('disadvantage')
-  if (hasAdv && hasDisadv) return 'normal'
-  if (hasAdv) return 'advantage'
-  if (hasDisadv) return 'disadvantage'
-  return 'normal'
+  const rollMod = hasAdv && hasDisadv ? 'normal'
+    : hasAdv ? 'advantage'
+    : hasDisadv ? 'disadvantage'
+    : 'normal'
+
+  return { rollMod, attackerMarkers, defenderMarkers }
 }
 
 function matchesRollContext(marker: RollModifierMarker, context: string): boolean {
@@ -162,7 +176,19 @@ function resolveCombatActionInternal(
   if (!action) return noOp
 
   const resources = getCombatantTurnResources(actor)
-  if (!behavior.skipCost && !canSpendActionCost(resources, action.cost)) return noOp
+  if (!behavior.skipCost && !canSpendActionCost(resources, action.cost)) {
+    const resourceDebug = formatTurnResourceDebug(actor, action.cost)
+    if (resourceDebug.length > 0) {
+      return {
+        state: appendEncounterNote(state, `${action.label || action.id} blocked: insufficient turn resources.`, {
+          actorId: actor.instanceId,
+          debugDetails: resourceDebug,
+        }),
+        createdMarkerIds: [],
+      }
+    }
+    return noOp
+  }
   if (!behavior.skipCost && !canUseCombatAction(action)) return noOp
 
   const targets = getActionTargets(state, actor, selection, action)
@@ -256,7 +282,7 @@ function resolveCombatActionInternal(
     if (target == null || attackBonus == null) return { state: nextState, createdMarkerIds: [] }
 
     const attackRange = deriveAttackRange(action)
-    const rollMod = resolveRollModifier(actor, target, 'attack rolls', attackRange)
+    const { rollMod, attackerMarkers, defenderMarkers } = resolveRollModifier(actor, target, 'attack rolls', attackRange)
     const { rawRoll, detail: rollDetail } = rollD20WithModifier(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
     const isNaturalTwenty = rawRoll === 20
@@ -266,6 +292,7 @@ function resolveCombatActionInternal(
 
     const hitSuffix = isCritical ? ' (critical hit)' : ''
     const missSuffix = isNaturalOne ? ' (natural 1)' : ''
+    const attackDebug = formatAttackRollDebug(actor, target, attackerMarkers, defenderMarkers, attackRange, rollMod)
     nextState = appendEncounterLogEvent(nextState, {
       type: hit ? 'attack-hit' : 'attack-missed',
       actorId: actor.instanceId,
@@ -276,6 +303,7 @@ function resolveCombatActionInternal(
         ? `${actor.source.label} hits ${targetLabel} with ${actionLabel}${hitSuffix}.`
         : `${actor.source.label} misses ${targetLabel} with ${actionLabel}${missSuffix}.`,
       details: `Attack roll: ${rollDetail} + ${attackBonus} = ${totalRoll} vs AC ${target.stats.armorClass}.`,
+      debugDetails: attackDebug.length > 1 ? attackDebug : undefined,
     })
 
     if (hit) {
@@ -346,6 +374,7 @@ function resolveCombatActionInternal(
       const saveAbility = action.saveProfile.ability
 
       if (autoFailsSave(saveTarget, saveAbility)) {
+        const autoFailDebug = formatAutoFailDebug(saveTarget, saveAbility)
         nextState = appendEncounterLogEvent(nextState, {
           type: 'action-resolved',
           actorId: actor.instanceId,
@@ -354,6 +383,7 @@ function resolveCombatActionInternal(
           turn: state.turnIndex + 1,
           summary: `${saveTarget.source.label} automatically fails the ${saveAbility.toUpperCase()} save against ${actionLabel}.`,
           details: `Auto-fail: condition prevents ${saveAbility.toUpperCase()} saving throw.`,
+          debugDetails: autoFailDebug.length > 0 ? autoFailDebug : undefined,
         })
 
         const saveEffectResult = applyActionEffects(
@@ -394,6 +424,7 @@ function resolveCombatActionInternal(
       const totalRoll = rawRoll + saveModifier
       const succeeded = totalRoll >= action.saveProfile.dc
 
+      const saveDebug = formatSaveDebug(saveTarget, saveAbility, saveRollMod)
       nextState = appendEncounterLogEvent(nextState, {
         type: 'action-resolved',
         actorId: actor.instanceId,
@@ -402,6 +433,7 @@ function resolveCombatActionInternal(
         turn: state.turnIndex + 1,
         summary: `${saveTarget.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${saveAbility.toUpperCase()} save against ${actionLabel}.`,
         details: `Saving throw: ${saveRollDetail} + ${saveModifier} = ${totalRoll} vs DC ${action.saveProfile.dc}.`,
+        debugDetails: saveDebug.length > 0 ? saveDebug : undefined,
       })
 
       if (action.damage) {

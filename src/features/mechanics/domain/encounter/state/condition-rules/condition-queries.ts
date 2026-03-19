@@ -17,6 +17,19 @@ export function getActiveConsequences(combatant: CombatantInstance): ConditionCo
   )
 }
 
+export type ConsequenceWithOrigin = {
+  conditionId: EffectConditionId
+  consequence: ConditionConsequence
+}
+
+export function getActiveConsequencesWithOrigin(
+  combatant: CombatantInstance,
+): ConsequenceWithOrigin[] {
+  return getActiveConditionIds(combatant).flatMap((id) =>
+    CONDITION_RULES[id].consequences.map((consequence) => ({ conditionId: id, consequence })),
+  )
+}
+
 export function canTakeActions(combatant: CombatantInstance): boolean {
   return !getActiveConsequences(combatant).some(
     (c) => c.kind === 'action_limit' && c.cannotTakeActions,

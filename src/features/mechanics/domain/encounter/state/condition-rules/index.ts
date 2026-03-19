@@ -32,5 +32,7 @@ export {
   canSpeak,
   isAwareOfSurroundings,
   canSee,
+  getActiveConsequencesWithOrigin,
   type SourceRelativeRestriction,
+  type ConsequenceWithOrigin,
 } from './condition-queries'

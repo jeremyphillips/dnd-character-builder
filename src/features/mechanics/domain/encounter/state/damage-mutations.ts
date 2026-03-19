@@ -12,6 +12,7 @@ import type { RuntimeMarker } from './types'
 import { dropConcentration } from './concentration-mutations'
 import { getDamageAfterResistance } from './resistance-mutations'
 import { getDamageResistanceFromConditions } from './condition-rules'
+import { formatDamageResistanceDebug } from '../resolution/action/resolution-debug'
 
 export function applyDamageToCombatant(
   state: EncounterState,
@@ -41,6 +42,9 @@ export function applyDamageToCombatant(
 
   let resistanceLogState = state
   if (applied) {
+    const condResDebug = applied.sourceId === 'condition'
+      ? formatDamageResistanceDebug(target, options?.damageType)
+      : []
     resistanceLogState = appendLog(state, {
       type: 'note',
       actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
@@ -48,6 +52,7 @@ export function applyDamageToCombatant(
       round: state.roundNumber,
       turn: state.turnIndex + 1,
       summary: `${getCombatantLabel(state, targetId)} has ${applied.level} to ${applied.damageType ?? 'all'} damage (${amount} → ${adjusted}).`,
+      debugDetails: condResDebug.length > 0 ? condResDebug : undefined,
     })
   }
 

@@ -216,6 +216,40 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 - Distance / proximity — `crit_window` evaluation and frightened's `cannotMoveCloserToSource` both need distance between combatants (even a simple adjacency flag would unblock crit_window).
 - Granular movement economy — prone stand-up cost and frightened movement restriction require movement spending to distinguish "standing up" and "approaching source" from general movement.
 
+### 4.6 Debug Logging
+
+The combat log supports three presentation modes: compact (headlines only), normal (headlines + supporting), and debug (all entries). Debug mode surfaces diagnostic information about how resolution decisions were derived.
+
+**Pipeline:**
+
+`CombatLogEvent` carries an optional `debugDetails?: string[]` field. The bridge (`toCombatLogEntry` in `combat-log-bridge.ts`) passes it through to `CombatLogEntry.debugDetails`. The UI renders debug details in monospace below the entry when debug mode is active.
+
+**Formatting helpers** (`resolution-debug.ts`):
+
+Pure formatting functions that take raw resolution data and return `string[]` for `debugDetails`. They use `getActiveConsequencesWithOrigin` to trace each modifier back to the originating condition ID.
+
+| Helper | Emitted from | Shows |
+|--------|-------------|-------|
+| `formatAttackRollDebug` | attack-hit / attack-missed events | Roll mode, contributing roll-modifier markers, condition-derived attack modifiers with range |
+| `formatAutoFailDebug` | save auto-fail events | Which conditions caused auto-fail and which abilities they cover |
+| `formatSaveDebug` | save-roll events | Save roll mode and contributing condition modifiers |
+| `formatDamageResistanceDebug` | damage-resistance notes | Which conditions provide resistance/vulnerability |
+| `formatTurnResourceDebug` | noOp resource-blocked notes | Which conditions disabled the required turn resource |
+| `formatConditionConsequencesDebug` | condition-applied events | Full consequence breakdown for the applied condition (action limits, movement, attack mods, save mods, speech, visibility, etc.) |
+| `formatCombatantStatusSnapshot` | turn-started events | HP, conditions, states, concentration timer, disabled resources with originating conditions |
+| `formatConcentrationTimer` | turn-ended events | Concentration spell name with elapsed/total time (e.g., `Banishment (12s/60s)`) |
+
+**Integration points:**
+
+- `action-resolver.ts` — attack-roll, save auto-fail, save-roll, and resource-blocked noOp events include `debugDetails`.
+- `damage-mutations.ts` — condition-based resistance notes include `debugDetails`.
+- `condition-mutations.ts` — condition-applied events include a consequence breakdown when the condition is a known `EffectConditionId`.
+- `logging.ts` `createTurnStartedLog` — includes a combatant status snapshot (HP, conditions, states, concentration, disabled resources).
+- `logging.ts` `createTurnEndedLog` — includes the concentration timer when the active combatant is concentrating.
+- `appendEncounterNote` — accepts `debugDetails` in its options, allowing any call site to attach debug lines.
+
+To add debug details to a new log event, format the relevant diagnostic data into `string[]` and pass it as `debugDetails` on the `CombatLogEvent`. The bridge and UI handle it automatically.
+
 ## 5. Extension Points
 
 ### Adding a new stat target

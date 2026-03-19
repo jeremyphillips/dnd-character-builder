@@ -24,7 +24,7 @@ export interface CombatActionAttackProfile {
   damageType?: string
   damageBreakdown?: BreakdownToken[]
 }
-
+ 
 export interface CombatActionSequenceStep {
   actionLabel: string
   count: number

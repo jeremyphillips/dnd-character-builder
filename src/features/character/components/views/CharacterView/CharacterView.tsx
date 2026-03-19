@@ -113,7 +113,7 @@ export default function CharacterView({
   } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editWealthOpen, setEditWealthOpen] = useState(false)
-
+  
   // ── Single-step edit via builder ────────────────────────────────────
   const [editingStep, setEditingStep] = useState<StepId | null>(null)
   const { state: builderState, loadCharacterIntoBuilder, resetState: resetBuilder } = useCharacterBuilder()

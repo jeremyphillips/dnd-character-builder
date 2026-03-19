@@ -7,7 +7,7 @@ export function formatCharacterClassLine(classes: CharacterClassSummary[]): stri
           .filter((c) => c && (c.className || c.classId))
           .map((c) => {
             const base = c.className || c.classId || ''
-            const sub = c.subclassName ? `, ${c.subclassName}` : ''
+            const sub = c.subclassName ? ` (${c.subclassName})` : ''
             const levelStr = c.level ? ` Lvl ${c.level}` : ''
             return `${base}${sub}${levelStr}`
           })

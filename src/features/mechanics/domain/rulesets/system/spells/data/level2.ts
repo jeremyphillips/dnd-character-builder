@@ -123,7 +123,10 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a handful of bark' } },
-    effects: [{ kind: 'note', text: 'Willing creature: skin becomes bark-like, AC 17 if lower.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'modifier', target: 'armor_class', mode: 'set', value: 17 },
+    ],
     description: {
       full: "You touch a willing creature. Until the spell ends, the target's skin assumes a bark-like appearance, and the target has an Armor Class of 17 if its AC is lower than that.",
       summary: 'Touch grants AC 17 (if lower) for 1 hour. Bark-like appearance.',
@@ -155,7 +158,10 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'Body blurred: Disadvantage on attack rolls against you. Immune if Blindsight or Truesight.' }],
+    effects: [
+      { kind: 'roll-modifier', appliesTo: 'attacks against', modifier: 'disadvantage' },
+      { kind: 'note', text: 'Creatures with Blindsight or Truesight are not affected.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "Your body becomes blurred. For the duration, any creature has Disadvantage on attack rolls against you. An attacker is immune to this effect if it perceives you with Blindsight or Truesight.",
       summary: 'Disadvantage on attacks against you. Blindsight/Truesight immune.',
@@ -369,11 +375,23 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a ball of wax' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
       {
-        kind: 'note',
-        text: '5-foot sphere of fire. Creatures ending turn within 5ft: Dex save or 2d6 fire. Bonus action: move sphere 30ft. +1d6 per slot above 2.',
+        kind: 'interval',
+        stateId: 'flaming-sphere-burn',
+        every: { value: 1, unit: 'turn' },
+        effects: [
+          {
+            kind: 'save',
+            save: { ability: 'dex' },
+            onFail: [{ kind: 'damage', damage: '2d6', damageType: 'fire' }],
+            onSuccess: [{ kind: 'damage', damage: '1d6', damageType: 'fire' }],
+          },
+        ],
       },
+      { kind: 'note', text: 'Bonus action to move sphere 30ft. Creatures ending turn within 5ft must save.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d6' }],
     description: {
       full: "You create a 5-foot-diameter sphere of fire in an unoccupied space on the ground within range. It lasts for the duration. Any creature that ends its turn within 5 feet of the sphere makes a Dexterity saving throw, taking 2d6 Fire damage on a failed save or half as much damage on a successful one. As a Bonus Action, you can move the sphere up to 30 feet, rolling it along the ground. If you move the sphere into a creature's space, that creature makes the save against the sphere, and the sphere stops moving for the turn. When you move the sphere, you can direct it over barriers up to 5 feet tall and jump it across pits up to 10 feet wide. Flammable objects that aren't being worn or carried start burning if touched by the sphere, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       summary: '5-foot fire sphere. Dex save 2d6 when ending turn within 5ft. Bonus to move. Damage scales.',
@@ -710,11 +728,23 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a moonseed leaf' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 5 } },
       {
-        kind: 'note',
-        text: '5-foot radius, 40-foot cylinder. Dim light. Con save or 2d10 radiant. Shape-shifted reverts, cannot shape-shift in cylinder. Save when area moves into space, enters, or ends turn. Magic action to move 60ft. +1d10 per slot.',
+        kind: 'interval',
+        stateId: 'moonbeam-radiance',
+        every: { value: 1, unit: 'turn' },
+        effects: [
+          {
+            kind: 'save',
+            save: { ability: 'con' },
+            onFail: [{ kind: 'damage', damage: '2d10', damageType: 'radiant' }],
+            onSuccess: [{ kind: 'damage', damage: '1d10', damageType: 'radiant' }],
+          },
+        ],
       },
+      { kind: 'note', text: 'Sheds Dim Light. Shape-shifted creature reverts and cannot shape-shift in area. Magic action to move beam 60ft.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 radiant per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d10' }],
     description: {
       full: "A silvery beam of pale light shines down in a 5-foot-radius, 40-foot-high Cylinder centered on a point within range. Until the spell ends, Dim Light fills the Cylinder, and you can take a Magic action on later turns to move the Cylinder up to 60 feet. When the Cylinder appears, each creature in it makes a Constitution saving throw. On a failed save, a creature takes 2d10 Radiant damage, and if the creature is shape-shifted (as a result of the Polymorph spell, for example), it reverts to its true form and can't shape-shift until it leaves the Cylinder. On a successful save, a creature takes half as much damage only. A creature also makes this save when the spell's area moves into its space and when it enters the spell's area or ends its turn there. A creature makes this save only once per turn. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 2.",
       summary: '5ft radius cylinder. Con save or 2d10 radiant. Shape-shifted reverts. +1d10 per slot.',
@@ -918,11 +948,16 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a chip of mica' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
       {
-        kind: 'note',
-        text: '10-foot sphere: Con save or 3d8 thunder. Construct has Disadvantage. Unattended nonmagical objects also take damage. +1d8 per slot above 2.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '3d8', damageType: 'thunder' }],
+        onSuccess: [{ kind: 'damage', damage: '1d8', damageType: 'thunder' }],
       },
+      { kind: 'note', text: 'Constructs have Disadvantage on the save. Nonmagical objects not being worn or carried also take damage.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 thunder per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d8' }],
     description: {
       full: "A loud noise erupts from a point of your choice within range. Each creature in a 10-foot-radius Sphere centered there makes a Constitution saving throw, taking 3d8 Thunder damage on a failed save or half as much damage on a successful one. A Construct has Disadvantage on the save. A nonmagical object that isn't being worn or carried also takes the damage if it's in the spell's area. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
       summary: '10ft sphere: Con save or 3d8 thunder. Construct Disadvantage. +1d8 per slot.',

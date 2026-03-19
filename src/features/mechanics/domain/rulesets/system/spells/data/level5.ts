@@ -75,7 +75,17 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '20ft radius sphere of fog. Con save or 5d8 poison. Moves 10ft from you each turn. +1d8 per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '5d8', damageType: 'poison' }],
+        onSuccess: [{ kind: 'damage', damage: '2d8', damageType: 'poison' }],
+      },
+      { kind: 'note', text: 'Area is Heavily Obscured. Sphere moves 10ft away from caster at start of each turn. Dispersed by strong wind.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 poison per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6, amount: '1d8' }],
     description: {
       full: "You create a 20-foot-radius Sphere of yellow-green fog centered on a point within range. The fog lasts for the duration or until strong wind disperses it. Its area is Heavily Obscured. Each creature in the Sphere makes a Constitution saving throw, taking 5d8 Poison damage on a failed save or half as much on a successful one. A creature must also make this save when the Sphere moves into its space and when it enters or ends its turn there. The Sphere moves 10 feet away from you at the start of each of your turns. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       summary: '20ft poison fog. Con save or 5d8. Moves 10ft/turn. Damage scales with slot.',
@@ -123,7 +133,17 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a small crystal or glass cone' } },
-    effects: [{ kind: 'note', text: '60-foot cone: Con save or 8d8 cold. Killed creatures become frozen statue. +1d8 per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '8d8', damageType: 'cold' }],
+        onSuccess: [{ kind: 'damage', damage: '4d8', damageType: 'cold' }],
+      },
+      { kind: 'note', text: 'A creature killed by this spell becomes a frozen statue until it thaws.', category: 'flavor' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 cold per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6, amount: '1d8' }],
     description: {
       full: "You unleash a blast of cold air. Each creature in a 60-foot Cone originating from you makes a Constitution saving throw, taking 8d8 Cold damage on a failed save or half as much on a successful one. A creature killed by this spell becomes a frozen statue until it thaws. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       summary: '60-foot cone: Con save or 8d8 cold. Killed become frozen. Damage scales with slot.',
@@ -171,7 +191,18 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 7, unit: 'day' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Touch: Con save or 11d8 necrotic and Poisoned. Choose ability: Disadvantage on saves with it. Best of 3 saves/fails. Healing requires Con save to end Poisoned.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [
+          { kind: 'damage', damage: '11d8', damageType: 'necrotic' },
+          { kind: 'condition', conditionId: 'poisoned' },
+        ],
+      },
+      { kind: 'note', text: 'Choose one ability: target has Disadvantage on saves with it while Poisoned. Track 3 successes/failures to end or lock in 7-day duration. Healing effects require Con save to end Poisoned.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "Your touch inflicts a magical contagion. The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition. Also, choose one ability when you cast the spell. While Poisoned, the target has Disadvantage on saving throws made with the chosen ability. The target must repeat the saving throw at the end of each of its turns until it gets three successes or failures. Three successes: spell ends. Three failures: spell lasts 7 days. Whenever the Poisoned target receives an effect that would end the Poisoned condition, the target must succeed on a Constitution saving throw, or the Poisoned condition doesn't end.",
       summary: 'Touch: Con save or 11d8 necrotic and Poisoned. Best of 3 saves/fails.',
@@ -252,11 +283,21 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of sulfur' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 10 } },
       {
-        kind: 'note',
-        text: '10-foot radius, 40-foot cylinder. Dex save or 5d6 fire + 5d6 radiant. +1d6 each per slot above 5.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          { kind: 'damage', damage: '5d6', damageType: 'fire' },
+          { kind: 'damage', damage: '5d6', damageType: 'radiant' },
+        ],
+        onSuccess: [
+          { kind: 'damage', damage: '2d6', damageType: 'fire' },
+          { kind: 'damage', damage: '2d6', damageType: 'radiant' },
+        ],
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire and +1d6 radiant per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6, amount: '1d6' }],
     description: {
       full: "A vertical column of brilliant fire roars down from above. Each creature in a 10-foot-radius, 40-foot-high Cylinder centered on a point within range makes a Dexterity saving throw, taking 5d6 Fire damage and 5d6 Radiant damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The Fire damage and the Radiant damage increase by 1d6 for each spell slot level above 5.",
       summary: '10ft radius cylinder: Dex save or 5d6 fire + 5d6 radiant. Both scale with slot.',
@@ -336,11 +377,15 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a straight piece of iron' } },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Creature: Wis save or Paralyzed. Repeat save at end of each turn. +1 target per slot above 5.',
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'condition', conditionId: 'paralyzed' }],
       },
+      { kind: 'note', text: 'Repeat save at end of each turn to end the effect.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6 }],
     description: {
       full: "Choose a creature that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 5.",
       summary: 'Wis save or Paralyzed. Repeat save each turn. Scales with targets.',
@@ -399,11 +444,16 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a locust' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
       {
-        kind: 'note',
-        text: '20-foot radius sphere of locusts. Con save or 4d10 piercing. Save when entering or ending turn. +1d10 per slot above 5.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '4d10', damageType: 'cold' }],
+        onSuccess: [{ kind: 'damage', damage: '2d10', damageType: 'cold' }],
       },
+      { kind: 'note', text: 'Area is Lightly Obscured and Difficult Terrain. Creature also saves when entering or ending turn in area.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 piercing per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6, amount: '1d10' }],
     description: {
       full: "Swarming locusts fill a 20-foot-radius Sphere centered on a point you choose within range. The Sphere remains for the duration, and its area is Lightly Obscured and Difficult Terrain. When the swarm appears, each creature in it makes a Constitution saving throw, taking 4d10 Piercing damage on a failed save or half as much damage on a successful one. A creature also makes this save when it enters the spell's area for the first time on a turn or ends its turn there. A creature makes this save only once per turn. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 5.",
       summary: '20ft sphere locusts. Con save or 4d10 piercing. Damage scales with slot.',
@@ -420,11 +470,10 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Up to 6 creatures in 30-foot sphere: 5d8+mod HP each. +1d8 per slot above 5.',
-      },
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', count: 6, area: { kind: 'sphere', size: 30 } },
+      { kind: 'hit-points', mode: 'heal', value: '5d8', abilityModifier: true },
     ],
+    scaling: [{ category: 'extra-healing', description: '+1d8 healing per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6, amount: '1d8' }],
     description: {
       full: "A wave of healing energy washes out from a point you can see within range. Choose up to six creatures in a 30-foot-radius Sphere centered on that point. Each target regains Hit Points equal to 5d8 plus your spellcasting ability modifier. Using a Higher-Level Spell Slot. The healing increases by 1d8 for each spell slot level above 5.",
       summary: 'Up to 6 creatures in 30ft sphere: 5d8+mod HP. +1d8 per slot.',
@@ -527,9 +576,11 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'rare oils worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
+      { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
+      { kind: 'hit-points', mode: 'heal', value: 1 },
       {
         kind: 'note',
-        text: 'Touch dead Humanoid (≤10 days). New body, roll 1d10 for species (or GM chooses). Retains capabilities, loses old species traits, gains new. 1=Roll again, 2=Dragonborn, 3=Dwarf, 4=Elf, 5=Gnome, 6=Goliath, 7=Halfling, 8=Human, 9=Orc, 10=Tiefling.',
+        text: 'Target must have been dead no longer than 10 days. New body, roll 1d10 for species (or GM chooses). Retains capabilities, loses old species traits, gains new. 1=Roll again, 2=Dragonborn, 3=Dwarf, 4=Elf, 5=Gnome, 6=Goliath, 7=Halfling, 8=Human, 9=Orc, 10=Tiefling.',
       },
     ],
     description: {

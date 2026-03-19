@@ -261,10 +261,9 @@ export const SPELLS_LEVEL_8: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: '150 HP or fewer: Stunned. Otherwise Speed 0 until start of your next turn. Stunned: Con save at end of each turn to end.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'condition', conditionId: 'stunned' },
+      { kind: 'note', text: 'Only affects targets with 150 HP or fewer; otherwise Speed is 0 until start of your next turn. Stunned target repeats Con save at end of each turn.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You overwhelm the mind of one creature you can see within range. If the target has 150 Hit Points or fewer, it has the Stunned condition. Otherwise, its Speed is 0 until the start of your next turn. The Stunned target makes a Constitution saving throw at the end of each of its turns, ending the condition on itself on a success.",
@@ -282,10 +281,17 @@ export const SPELLS_LEVEL_8: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a piece of sunstone' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 60 } },
       {
-        kind: 'note',
-        text: '60ft radius sphere. Con save or 12d6 Radiant + Blinded 1 min. Con save at end of each turn to end Blinded. Dispels Darkness in area.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [
+          { kind: 'damage', damage: '12d6', damageType: 'radiant' },
+          { kind: 'condition', conditionId: 'blinded' },
+        ],
+        onSuccess: [{ kind: 'damage', damage: '6d6', damageType: 'radiant' }],
       },
+      { kind: 'note', text: 'Blinded creature repeats Con save at end of each turn to end the condition. Dispels Darkness in the area.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Brilliant sunlight flashes in a 60-foot-radius Sphere centered on a point you choose within range. Each creature in the Sphere makes a Constitution saving throw. On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute. On a successful save, it takes half as much damage only. A creature Blinded by this spell makes another Constitution saving throw at the end of each of its turns, ending the effect on itself on a success. This spell dispels Darkness in its area that was created by any spell.",

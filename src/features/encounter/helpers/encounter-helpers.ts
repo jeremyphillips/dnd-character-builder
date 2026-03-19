@@ -599,10 +599,8 @@ function classifySpellResolutionMode(
   const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
   if (hasHealing) return 'effects'
 
-  if (spell.range?.kind === 'self') {
-    const hasResolvable = effects.some((e) => e.kind === 'modifier' || e.kind === 'immunity')
-    if (hasResolvable) return 'effects'
-  }
+  const hasResolvable = effects.some((e) => e.kind === 'modifier' || e.kind === 'immunity')
+  if (hasResolvable) return 'effects'
 
   return 'log-only'
 }

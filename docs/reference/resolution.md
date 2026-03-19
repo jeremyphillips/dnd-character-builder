@@ -111,7 +111,7 @@ The encounter action system resolves combat actions against encounter state:
 | `action-resolver` | Orchestrates action resolution: validates, targets, resolves, updates state |
 | `action-cost` | Turn resource management: spend/check action, bonus action, reaction, movement |
 | `action-targeting` | Target selection: self, all-enemies, single-target, single-creature; sequence step counts |
-| `action-effects` | Applies effects to encounter state: damage, healing, conditions, saves, immunities, movement |
+| `action-effects` | Applies effects to encounter state: damage, healing, conditions, states, saves, modifiers (AC add/set, speed add), roll-modifiers (advantage/disadvantage), immunities, intervals (registered as turn hooks), movement, and advanced effect logging (trigger, activation, check, grant, form) |
 
 **Action resolution modes:**
 
@@ -153,6 +153,39 @@ The encounter action system resolves combat actions against encounter state:
 1. Create a builder (e.g., `buildSummonResolutionInput`) that calls `buildCreatureResolutionInput`
 2. Layer entity-specific effects on top
 3. All existing resolvers work unchanged
+
+### Adding concentration tracking
+
+Concentration is tracked on `CombatantInstance` via a `ConcentrationState`:
+
+```typescript
+type ConcentrationState = {
+  spellId: string;
+  sourceId: string;
+  linkedEffects: string[];
+};
+```
+
+- `setConcentration` establishes concentration, automatically dropping any previous concentration (and cleaning up linked effects).
+- `dropConcentration` removes concentration state and cleans up linked effects.
+- When a concentrating combatant takes damage, `applyDamageToCombatant` triggers a CON save (DC = max(10, damage/2)). On failure, concentration drops.
+
+To add new linked effects to concentration cleanup, include their identifiers in `linkedEffects` when calling `setConcentration`.
+
+### Adding ongoing/interval effects
+
+Ongoing effects are resolved via `RuntimeTurnHook`s on `CombatantInstance`:
+
+- **Interval effects** (e.g., Moonbeam, Spirit Guardians) are registered as turn hooks by `applyActionEffects` when the `interval` effect is applied.
+- **State ongoing effects** (e.g., Flaming Sphere) are also registered as turn hooks from `state.ongoingEffects`.
+
+Turn hooks fire at `turn-start` or `turn-end` and apply their nested effects (damage, saves, conditions) to the combatant. The hook includes `sourceId` to trace back to the originating spell or action.
+
+To add a new ongoing effect pattern:
+
+1. Author it as an `interval` or `state` effect with `ongoingEffects`.
+2. The existing turn hook infrastructure will register and fire it automatically.
+3. For custom timing or logic, add a new hook type to `RuntimeTurnHook`.
 
 ### Edition-specific rules
 
@@ -241,3 +274,35 @@ const actions = buildSpellCombatActions({
 ```
 
 Healing actions use `targeting: { kind: 'single-creature' }`, which allows any living combatant (ally, enemy, or self) as a target. The encounter UI shows all living combatants as valid targets when a `single-creature` action is selected.
+
+## 8. Supported Effect Matrix
+
+How each effect kind is resolved at runtime by `action-effects.ts`:
+
+| Effect Kind | Resolution | Notes |
+|-------------|-----------|-------|
+| `damage` | **Full** | Rolls dice expression, applies to target HP |
+| `save` | **Full** | Target rolls ability save vs DC; gates subsequent effects |
+| `condition` | **Full** | Applies/removes conditions on target |
+| `hit-points` | **Full** | Rolls healing dice, applies via `applyHealingToCombatant`; supports `abilityModifier` injection |
+| `state` | **Full** | Sets state flags; registers `ongoingEffects` as turn hooks |
+| `note` | **Full** | Logs text; `category` distinguishes `under-modeled` from `flavor` |
+| `targeting` | **Handled** | Consumed by the action resolver for target selection, not by `applyActionEffects` |
+| `modifier` | **Partial** | `armor_class` (add/set) and `speed` (add) fully resolved; other targets log gracefully |
+| `roll-modifier` | **Full** | Registers `RollModifierMarker` on target; applied during attack-roll resolution |
+| `interval` | **Full** | Registers `RuntimeTurnHook` for per-turn effect application |
+| `immunity` | **Partial** | `spell` and `source-action` scopes resolved; other scopes log |
+| `move` | **Log** | Logs structured summary (direction, distance); no position tracking |
+| `death-outcome` | **Log** | Logs outcome description |
+| `trigger` | **Log** | Logs trigger condition and linked effects |
+| `activation` | **Log** | Logs activation cost and linked effects |
+| `check` | **Log** | Logs ability check requirement |
+| `grant` | **Log** | Logs granted capability |
+| `form` | **Log** | Logs form change description |
+
+**Resolution levels:**
+
+- **Full**: Mechanically resolved with state changes.
+- **Partial**: Some sub-cases resolved, others degrade to log.
+- **Handled**: Consumed elsewhere in the pipeline (not in `applyActionEffects`).
+- **Log**: Structured summary logged to encounter log; no mechanical state changes.

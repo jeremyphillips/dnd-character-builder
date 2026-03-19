@@ -375,8 +375,8 @@ export type AuraEffect = EffectBase<'aura'> & {
 };
 
 export type NoteEffect = EffectBase<'note'> & {
-  // For notes, text is the payload, so require it.
   text: string;
+  category?: 'under-modeled' | 'flavor';
 };
 
 export type Effect =

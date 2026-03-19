@@ -210,10 +210,20 @@ Status meanings:
 - Purpose: preserve meaningful unsupported or partially supported rules text
 - Use when: the mechanic cannot yet be modeled honestly
 - Do not use when: a supported shared shape already fits
-- Key fields: `text`
+- Key fields: `text`, `category`
+
+`category` distinguishes mechanical gaps from flavor text:
+
+- `'under-modeled'`: the note stands in for a mechanic that cannot yet be structurally modeled (e.g. "Charmed creature can still attack allies of caster"). Drives `partial` resolution status.
+- `'flavor'`: descriptive text that is not a mechanical gap (e.g. "Flammable objects start burning"). Does not affect resolution status.
+- Omitted: treated as ambiguous. Existing note-only stubs do not need retroactive categorization.
 
 ```ts
-{ kind: 'note', text: "Flammable objects in the area that aren't being worn or carried start burning." }
+{ kind: 'note', text: "Flammable objects in the area that aren't being worn or carried start burning.", category: 'flavor' }
+```
+
+```ts
+{ kind: 'note', text: 'Constructs have Disadvantage on the save.', category: 'under-modeled' }
 ```
 
 ### `state`
@@ -553,9 +563,16 @@ Some spells and mechanics are intentionally only partially modeled when the shar
 Rules:
 
 - Use the supported shared primitives for the parts that are real and repeatable.
-- Put the unsupported remainder in `note` or owned description text.
+- Put the unsupported remainder in `note` with `category: 'under-modeled'`.
+- Use `category: 'flavor'` for descriptive notes that are not mechanical gaps.
 - Treat partial modeling as an explicit temporary state, not as complete modeling.
 - Document what is under-modeled so future work knows what remains.
+
+The `category: 'under-modeled'` pattern is the canonical way to mark partial modeling. As the engine catches up to support new mechanics:
+
+1. Replace the `under-modeled` note with the structured effect.
+2. Change remaining notes to `category: 'flavor'` if they are purely descriptive.
+3. Remove notes entirely if the structured effects fully capture the mechanic.
 
 Example — Magic Missile currently models targeting, damage, and notes, but does not yet fully model auto-hit semantics, simultaneous resolution, or split/stack nuances.
 
@@ -575,6 +592,28 @@ type SpellScalingRule = {
 ```
 
 This is a reserved extension point for future upcasting work. Do not defer scaling information into ad hoc `higherLevelText` or scattered notes.
+
+### Resolution Status Tracking
+
+Spells carry an optional `resolution` field for per-spell qualitative metadata:
+
+```ts
+resolution?: {
+  caveats?: string[];
+};
+```
+
+`caveats` captures per-spell quirks that categorized notes cannot express (e.g. "target prevention behavior requires engine work"). Most spells will not need this.
+
+The derived `SpellResolutionStatus` is computed at runtime by `getSpellResolutionStatus`:
+
+| Status | Condition |
+|--------|-----------|
+| `stub` | No structured effects (only `note` effects) |
+| `partial` | Has structured effects but also has `under-modeled` notes or `resolution.caveats` |
+| `full` | All effects are structured; notes are `flavor`-only or absent |
+
+Status transitions automatically as effects are authored. The SpellListRoute exposes this as a filterable column.
 
 ## 10. Adapter Philosophy
 
@@ -617,14 +656,24 @@ When a combatant has the `charmed` condition, the `sourceInstanceId` on the cond
 
 ### Known Unsupported Spell Mechanics
 
-The following spell mechanics are not yet resolved by the combat adapter and remain log-only or under-modeled:
+The following spell mechanics are not yet fully resolved by the combat adapter:
 
-- Self-buff spells (effects target the caster, not an enemy)
+- ~~Self-buff spells~~ — **resolved**: modifier/immunity spells with any range now classify as `effects` mode
 - Auto-hit spells (Magic Missile — no attack roll, no save)
-- Concentration tracking
+- ~~Concentration tracking~~ — **resolved**: `ConcentrationState` on `CombatantInstance` with damage-triggered CON saves and linked effect cleanup
 - Spell slot resource management
 - Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
 - Charmed save advantage when allies are fighting the target (authored as `save.text`, not yet resolved)
+- Damage type resistance (authored as notes, no runtime halving)
+- Form changes (Polymorph, Shapechange — stat block replacement)
+
+Mechanics resolved since initial authoring:
+
+- **Modifier effects**: `armor_class` (add/set) and `speed` (add) are fully resolved. Other stat targets log gracefully.
+- **Roll-modifier effects**: advantage/disadvantage tracked on `CombatantInstance.rollModifiers` and applied to attack rolls.
+- **Interval/ongoing effects**: interval effects register as turn hooks; `state.ongoingEffects` also register as turn hooks for per-turn resolution.
+- **Concentration**: automatic CON saves on damage, linked effect cleanup on failure or new concentration spell.
+- **Advanced effect logging**: `trigger`, `activation`, `check`, `grant`, `form`, and `targeting` effects log meaningful summaries instead of "unsupported".
 
 ## 11. Anti-Patterns
 
@@ -637,7 +686,47 @@ The following spell mechanics are not yet resolved by the combat adapter and rem
 - letting runtime adapter needs dictate content schema
 - repeating full rules text inside effects when an owning description field already exists
 
-## 12. Extension Policy
+## 12. Effect Type Scaling Tiers
+
+How effect kinds evolve as more spells are authored:
+
+### Tier 1 — Canonical, Fully Resolved
+
+Already stable. No scaling concerns.
+
+- `save`, `damage`, `hit-points`, `condition`, `state`, `note`, `targeting`
+
+### Tier 2 — Extended Partial Support
+
+Small, bounded engine changes with high payoff.
+
+- `modifier`: `armor_class` (add/set) and `speed` (add) are fully resolved. Other stat targets (`attack`, `damage_bonus`, saving throw modifiers) and modes (`multiply`) log gracefully until resolved.
+- `immunity`: `spell` and `source-action` scopes resolved. Damage-type resistance and condition immunity scopes remain under-modeled.
+
+### Tier 3 — New Runtime Resolution
+
+Medium engine work, now landed.
+
+- `roll-modifier`: advantage/disadvantage tracked as runtime state on `CombatantInstance.rollModifiers`; wired into attack-roll resolution.
+- `interval`: per-turn effect application via turn hooks. Registered by `applyActionEffects` when an interval effect is applied.
+- `move`: forced movement logged with structured summary. Actual position tracking deferred.
+
+### Tier 4 — Deferred / Under-Model
+
+Follow the extension policy: under-model first, promote only when the pattern proves repeatable.
+
+- `trigger`, `activation`, `form`, `spawn`, `aura`, `check`, `grant` (runtime), `containment`, `visibility-rule`, `hold-breath`, `tracked-part`, `extra-reaction`, `resource`, `formula`
+- These remain authored as structured content but resolve to log-text at runtime until demand justifies engine investment.
+
+### Key Scaling Principle
+
+Content authoring should continue aggressively using the full `Effect` vocabulary regardless of runtime support. The adapter degrades unsupported kinds to log-text gracefully. This means:
+
+- Author all spells fully even if the engine can't resolve them yet.
+- Engine catches up stage by stage, each time unlocking a batch of already-authored spells.
+- This avoids the anti-pattern of authoring content to match current runtime limits (Section 11).
+
+## 13. Extension Policy
 
 Add a new shared effect kind only when all of the following are true:
 

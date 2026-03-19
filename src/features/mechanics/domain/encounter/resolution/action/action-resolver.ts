@@ -5,6 +5,7 @@ import {
   getEncounterCombatantLabel,
   updateEncounterCombatant,
   type CombatantInstance,
+  type RollModifierMarker,
 } from '../../state'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
@@ -21,6 +22,48 @@ import { getActionTargets, getSequenceStepCount } from './action-targeting'
 import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSaveModifier } from './action-effects'
 
 export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
+
+function resolveRollModifier(
+  attacker: CombatantInstance,
+  defender: CombatantInstance,
+  rollType: string,
+): 'advantage' | 'disadvantage' | 'normal' {
+  const attackerMods = (attacker.rollModifiers ?? []).filter((m) =>
+    matchesRollContext(m, rollType),
+  )
+  const defenderMods = (defender.rollModifiers ?? []).filter((m) =>
+    matchesRollContext(m, `attacks against`),
+  )
+  const all = [...attackerMods, ...defenderMods]
+  const hasAdv = all.some((m) => m.modifier === 'advantage')
+  const hasDisadv = all.some((m) => m.modifier === 'disadvantage')
+  if (hasAdv && hasDisadv) return 'normal'
+  if (hasAdv) return 'advantage'
+  if (hasDisadv) return 'disadvantage'
+  return 'normal'
+}
+
+function matchesRollContext(marker: RollModifierMarker, context: string): boolean {
+  const targets = Array.isArray(marker.appliesTo) ? marker.appliesTo : [marker.appliesTo]
+  return targets.some((t) => t === context || t === 'all' || context.includes(t))
+}
+
+function rollD20WithModifier(
+  rollMod: 'advantage' | 'disadvantage' | 'normal',
+  rng: () => number,
+): { rawRoll: number; detail: string } {
+  if (rollMod === 'normal') {
+    const rawRoll = rollDie(20, rng)
+    return { rawRoll, detail: `d20 ${rawRoll}` }
+  }
+  const roll1 = rollDie(20, rng)
+  const roll2 = rollDie(20, rng)
+  const rawRoll = rollMod === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2)
+  return {
+    rawRoll,
+    detail: `d20 ${roll1}, ${roll2} (${rollMod}: ${rawRoll})`,
+  }
+}
 
 function getActionLabel(action: CombatActionDefinition): string {
   return action.label || action.id
@@ -153,7 +196,8 @@ function resolveCombatActionInternal(
     const attackBonus = action.attackProfile?.attackBonus
     if (target == null || attackBonus == null) return nextState
 
-    const rawRoll = rollDie(20, rng)
+    const rollMod = resolveRollModifier(actor, target, 'attack rolls')
+    const { rawRoll, detail: rollDetail } = rollD20WithModifier(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
     const hit = totalRoll >= target.stats.armorClass
 
@@ -166,7 +210,7 @@ function resolveCombatActionInternal(
       summary: hit
         ? `${actor.source.label} hits ${targetLabel} with ${actionLabel}.`
         : `${actor.source.label} misses ${targetLabel} with ${actionLabel}.`,
-      details: `Attack roll: d20 ${rawRoll} + ${attackBonus} = ${totalRoll} vs AC ${target.stats.armorClass}.`,
+      details: `Attack roll: ${rollDetail} + ${attackBonus} = ${totalRoll} vs AC ${target.stats.armorClass}.`,
     })
 
     if (hit) {

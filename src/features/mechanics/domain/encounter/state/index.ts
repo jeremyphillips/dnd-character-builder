@@ -7,12 +7,15 @@ export {
 export * from './types'
 export {
   addConditionToCombatant,
+  addRollModifierToCombatant,
   addStateToCombatant,
   addStatModifierToCombatant,
   applyDamageToCombatant,
   applyHealingToCombatant,
+  dropConcentration,
   removeConditionFromCombatant,
   removeStateFromCombatant,
+  setConcentration,
   updateEncounterCombatant,
 } from './mutations'
 export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel } from './runtime'

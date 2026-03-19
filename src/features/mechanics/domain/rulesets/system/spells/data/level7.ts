@@ -43,7 +43,17 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a ball of bat guano and sulfur' } },
-    effects: [{ kind: 'note', text: 'Bead at point. Base 12d6 fire, +1d6 each turn. When spell ends or bead touched/thrown: 20ft sphere Dex save. Touch: Dex save or bead explodes. +1d6 per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '12d6', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '6d6', damageType: 'fire' }],
+      },
+      { kind: 'note', text: 'Bead accumulates +1d6 fire each turn it persists. If touched before detonation, creature makes Dex save or it explodes.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire base per slot level above 7', mode: 'per-slot-level', startsAtSlotLevel: 8, amount: '1d6' }],
     description: {
       full: "A beam of yellow light flashes from you, then condenses at a chosen point within range as a glowing bead for the duration. When the spell ends, the bead explodes. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw. A creature takes Fire damage equal to the total accumulated damage on a failed save or half as much on a successful one. The spell's base damage is 12d6, and the damage increases by 1d6 whenever your turn ends and the spell hasn't ended. If a creature touches the bead before the spell ends, that creature makes a Dexterity saving throw; on a failed save, the bead explodes. On a successful save, the creature can throw the bead up to 40 feet. Using a Higher-Level Spell Slot. The base damage increases by 1d6 for each spell slot level above 7.",
       summary: 'Delayed fire bead. 12d6 base, +1d6/turn. Explodes when spell ends or touched.',
@@ -133,7 +143,16 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Con save or 7d8+30 necrotic. Humanoid killed rises as Zombie under your control at start of next turn.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '7d8+30', damageType: 'necrotic' }],
+        onSuccess: [{ kind: 'damage', damage: '3d8+15', damageType: 'necrotic' }],
+      },
+      { kind: 'note', text: 'A Humanoid killed by this spell rises as a Zombie under your control at the start of your next turn.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You unleash negative energy toward a creature you can see within range. The target makes a Constitution saving throw, taking 7d8 + 30 Necrotic damage on a failed save or half as much on a successful one. A Humanoid killed by this spell rises at the start of your next turn as a Zombie that follows your verbal orders.",
       summary: 'Con save or 7d8+30 necrotic. Humanoid killed becomes Zombie.',
@@ -150,10 +169,14 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 10 } },
       {
-        kind: 'note',
-        text: 'Up to ten 10-foot cubes, contiguous. Dex save or 7d10 fire. Flammable objects ignite.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '7d10', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '3d10', damageType: 'fire' }],
       },
+      { kind: 'note', text: 'Up to ten 10-foot Cubes, each contiguous with at least one other. Flammable unattended objects start burning.', category: 'flavor' as const },
     ],
     description: {
       full: "A storm of fire appears within range. The area of the storm consists of up to ten 10-foot Cubes, which you arrange as you like. Each Cube must be contiguous with at least one other Cube. Each creature in the area makes a Dexterity saving throw, taking 7d10 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren't being worn or carried start burning.",
@@ -213,10 +236,14 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
       {
-        kind: 'note',
-        text: '60-foot cone. 8 rays. Roll 1d8 per creature: 1 Red 12d6 fire, 2 Orange 12d6 acid, 3 Yellow 12d6 lightning, 4 Green 12d6 poison, 5 Blue 12d6 cold, 6 Indigo Restrained→Petrified (3 fails), 7 Violet Blinded→plane shift (fail), 8 Special two rays.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '12d6', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '6d6', damageType: 'fire' }],
       },
+      { kind: 'note', text: 'Roll 1d8 per creature for ray color: 1-5 deal 12d6 of varying damage types (fire, acid, lightning, poison, cold). 6 Indigo: Restrained then track 3 fails for Petrified. 7 Violet: Blinded then Wis save or plane shift. 8: two rays.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Eight rays of light flash from you in a 60-foot Cone. Each creature in the Cone makes a Dexterity saving throw. For each target, roll 1d8 to determine which color ray affects it: 1 Red (12d6 Fire), 2 Orange (12d6 Acid), 3 Yellow (12d6 Lightning), 4 Green (12d6 Poison), 5 Blue (12d6 Cold), 6 Indigo (Restrained, Con save 3 fails=Petrified), 7 Violet (Blinded, Wis save fail=plane shift), 8 Special (two rays).",
@@ -255,10 +282,9 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a prayer wheel' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Touch: regain 4d8+15 HP. For duration: regain 1 HP at start of each turn. Severed body parts regrow after 2 minutes.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'hit-points', mode: 'heal', value: '4d8+15' },
+      { kind: 'note', text: 'For the duration, target regains 1 HP at start of each turn. Severed body parts regrow after 2 minutes.', category: 'under-modeled' as const },
     ],
     description: {
       full: "A creature you touch regains 4d8 + 15 Hit Points. For the duration, the target regains 1 Hit Point at the start of each of its turns, and any severed body parts regrow after 2 minutes.",
@@ -276,10 +302,9 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Revive dead creature (not dead >100 years, not old age, not Undead). Full HP. Neutralize poisons. Close wounds, restore body parts. -4 to d20 tests, -1 per Long Rest. Dead 365+ days: cannot cast until Long Rest, Disadvantage on d20 tests.',
-      },
+      { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
+      { kind: 'hit-points', mode: 'heal', value: 1 },
+      { kind: 'note', text: 'Revives to full HP. Not dead >100 years, not old age, not Undead. Neutralizes poisons, closes wounds, restores body parts. -4 penalty to d20 tests, reduced by 1 per Long Rest. If dead 365+ days, caster cannot cast spells and has Disadvantage on d20 tests until Long Rest.', category: 'under-modeled' as const },
     ],
     description: {
       full: "With a touch, you revive a dead creature that has been dead for no more than a century, didn't die of old age, and wasn't Undead when it died. The creature returns to life with all its Hit Points. This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds and restores any missing body parts. Coming back from the dead is an ordeal. The target takes a −4 penalty to D20 Tests. Every time the target finishes a Long Rest, the penalty is reduced by 1 until it becomes 0. Casting this spell to revive a creature that has been dead for 365 days or longer taxes you. Until you finish a Long Rest, you can't cast spells again, and you have Disadvantage on D20 Tests.",

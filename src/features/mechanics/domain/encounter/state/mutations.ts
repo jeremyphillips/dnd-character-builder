@@ -1,5 +1,5 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import type { CombatantInstance, EncounterState, RuntimeMarker, RuntimeMarkerDuration, StatModifierMarker } from './types'
+import type { CombatantInstance, ConcentrationState, EncounterState, RollModifierMarker, RuntimeMarker, RuntimeMarkerDuration, StatModifierMarker } from './types'
 import {
   buildRuntimeMarker,
   createEmptyTurnContext,
@@ -179,7 +179,42 @@ export function applyDamageToCombatant(
     }
   })
 
+  loggedState = checkConcentrationOnDamage(loggedState, targetId, amount)
+
   return loggedState
+}
+
+function checkConcentrationOnDamage(
+  state: EncounterState,
+  targetId: string,
+  damage: number,
+): EncounterState {
+  const target = state.combatantsById[targetId]
+  if (!target?.concentration) return state
+
+  const dc = Math.max(10, Math.floor(damage / 2))
+  const conModifier =
+    target.stats.savingThrowModifiers?.con ??
+    Math.floor(((target.stats.abilityScores?.con ?? 10) - 10) / 2)
+  const rawRoll = Math.floor(Math.random() * 20) + 1
+  const total = rawRoll + conModifier
+  const succeeded = total >= dc
+
+  let nextState = appendLog(state, {
+    type: 'note',
+    actorId: targetId,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} ${succeeded ? 'maintains' : 'loses'} concentration on ${target.concentration.spellLabel}.`,
+    details: `CON save: d20 ${rawRoll} + ${conModifier} = ${total} vs DC ${dc}.`,
+  })
+
+  if (!succeeded) {
+    nextState = dropConcentration(nextState, targetId)
+  }
+
+  return nextState
 }
 
 export function applyHealingToCombatant(
@@ -354,8 +389,18 @@ function applyStatModifierToStats(
   stats: CombatantInstance['stats'],
   modifier: StatModifierMarker,
 ): CombatantInstance['stats'] {
-  if (modifier.target === 'armor_class' && modifier.mode === 'add') {
-    return { ...stats, armorClass: stats.armorClass + modifier.value }
+  if (modifier.target === 'armor_class') {
+    if (modifier.mode === 'add') {
+      return { ...stats, armorClass: stats.armorClass + modifier.value }
+    }
+    if (modifier.mode === 'set') {
+      return { ...stats, armorClass: Math.max(stats.armorClass, modifier.value) }
+    }
+  }
+  if (modifier.target === 'speed' && modifier.mode === 'add') {
+    const speeds = { ...(stats.speeds ?? {}) }
+    const ground = (speeds.ground ?? 30) + modifier.value
+    return { ...stats, speeds: { ...speeds, ground } }
   }
   return stats
 }
@@ -364,8 +409,17 @@ function reverseStatModifierFromStats(
   stats: CombatantInstance['stats'],
   modifier: StatModifierMarker,
 ): CombatantInstance['stats'] {
-  if (modifier.target === 'armor_class' && modifier.mode === 'add') {
-    return { ...stats, armorClass: stats.armorClass - modifier.value }
+  if (modifier.target === 'armor_class') {
+    if (modifier.mode === 'add') {
+      return { ...stats, armorClass: stats.armorClass - modifier.value }
+    }
+    // 'set' modifiers can't be cleanly reversed without storing the original value;
+    // recalculating from base would be needed for full correctness.
+  }
+  if (modifier.target === 'speed' && modifier.mode === 'add') {
+    const speeds = { ...(stats.speeds ?? {}) }
+    const ground = (speeds.ground ?? 30) - modifier.value
+    return { ...stats, speeds: { ...speeds, ground } }
   }
   return stats
 }
@@ -416,4 +470,103 @@ export function expireStatModifier(
     stats: reverseStatModifierFromStats(combatant.stats, modifier),
     statModifiers: (combatant.statModifiers ?? []).filter((m) => m.id !== modifier.id),
   }))
+}
+
+export function addRollModifierToCombatant(
+  state: EncounterState,
+  targetId: string,
+  marker: RollModifierMarker,
+  options?: { sourceLabel?: string },
+): EncounterState {
+  const target = state.combatantsById[targetId]
+  if (!target) return state
+
+  const nextState = updateCombatant(state, targetId, (combatant) => ({
+    ...combatant,
+    rollModifiers: [...(combatant.rollModifiers ?? []), marker],
+  }))
+
+  return appendLog(nextState, {
+    type: 'note',
+    actorId: state.activeCombatantId ?? undefined,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} gains ${marker.modifier} on ${Array.isArray(marker.appliesTo) ? marker.appliesTo.join(', ') : marker.appliesTo}.`,
+    details: options?.sourceLabel ? `Source: ${options.sourceLabel}.` : undefined,
+  })
+}
+
+export function setConcentration(
+  state: EncounterState,
+  casterId: string,
+  concentration: ConcentrationState,
+): EncounterState {
+  let nextState = state
+  const caster = state.combatantsById[casterId]
+  if (!caster) return state
+
+  if (caster.concentration) {
+    nextState = dropConcentration(nextState, casterId)
+  }
+
+  nextState = updateCombatant(nextState, casterId, (combatant) => ({
+    ...combatant,
+    concentration,
+  }))
+
+  return appendLog(nextState, {
+    type: 'note',
+    actorId: casterId,
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, casterId)} begins concentrating on ${concentration.spellLabel}.`,
+  })
+}
+
+export function dropConcentration(
+  state: EncounterState,
+  casterId: string,
+): EncounterState {
+  const caster = state.combatantsById[casterId]
+  if (!caster?.concentration) return state
+
+  const spellLabel = caster.concentration.spellLabel
+  const linkedIds = new Set(caster.concentration.linkedMarkerIds)
+
+  let nextState = updateCombatant(state, casterId, (combatant) => ({
+    ...combatant,
+    concentration: undefined,
+    conditions: combatant.conditions.filter((m) => !linkedIds.has(m.id)),
+    states: combatant.states.filter((m) => !linkedIds.has(m.id)),
+    statModifiers: (combatant.statModifiers ?? []).filter((m) => !linkedIds.has(m.id)),
+    rollModifiers: (combatant.rollModifiers ?? []).filter((m) => !linkedIds.has(m.id)),
+  }))
+
+  for (const [id, instance] of Object.entries(nextState.combatantsById)) {
+    if (id === casterId) continue
+    const hasLinked =
+      instance.conditions.some((m) => linkedIds.has(m.id)) ||
+      instance.states.some((m) => linkedIds.has(m.id)) ||
+      (instance.statModifiers ?? []).some((m) => linkedIds.has(m.id)) ||
+      (instance.rollModifiers ?? []).some((m) => linkedIds.has(m.id))
+
+    if (hasLinked) {
+      nextState = updateCombatant(nextState, id, (combatant) => ({
+        ...combatant,
+        conditions: combatant.conditions.filter((m) => !linkedIds.has(m.id)),
+        states: combatant.states.filter((m) => !linkedIds.has(m.id)),
+        statModifiers: (combatant.statModifiers ?? []).filter((m) => !linkedIds.has(m.id)),
+        rollModifiers: (combatant.rollModifiers ?? []).filter((m) => !linkedIds.has(m.id)),
+      }))
+    }
+  }
+
+  return appendLog(nextState, {
+    type: 'note',
+    actorId: casterId,
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, casterId)} loses concentration on ${spellLabel}.`,
+  })
 }

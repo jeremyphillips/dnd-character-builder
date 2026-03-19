@@ -2,10 +2,17 @@ import type { AppDataGridColumn } from '@/ui/patterns';
 // import { makeBooleanGlyphColumn } from '@/features/content/shared/components';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab/magicSchools.vocab';
 import { filterAllowedIds } from '@/features/content/shared/domain/utils';
+import { getSpellResolutionStatus } from '@/features/content/spells/domain/types';
 import type { SpellListRow } from './spellList.types';
 
 const schoolLabel = (value: string) =>
   MAGIC_SCHOOL_OPTIONS.find((o) => o.value === value)?.label ?? value;
+
+const RESOLUTION_STATUS_LABELS: Record<string, string> = {
+  stub: 'Stub',
+  partial: 'Partial',
+  full: 'Full',
+};
 
 const EMPTY_PLACEHOLDER = '—';
 
@@ -41,15 +48,12 @@ export function buildSpellCustomColumns(
       },
       valueFormatter: (v) => (v != null && v !== '' ? String(v) : EMPTY_PLACEHOLDER),
     },
-    // makeBooleanGlyphColumn<SpellListRow>(
-    //   'ritual',
-    //   'Ritual',
-    //   (row) => Boolean(row.ritual),
-    // ),
-    // makeBooleanGlyphColumn<SpellListRow>(
-    //   'concentration',
-    //   'Concentration',
-    //   (row) => Boolean(row.concentration),
-    // ),
+    {
+      field: 'resolutionStatus',
+      headerName: 'Status',
+      width: 100,
+      accessor: (row) => getSpellResolutionStatus(row),
+      valueFormatter: (v) => RESOLUTION_STATUS_LABELS[v as string] ?? '—',
+    },
   ];
 }

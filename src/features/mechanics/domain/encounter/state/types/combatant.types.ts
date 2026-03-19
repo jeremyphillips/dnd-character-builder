@@ -125,13 +125,28 @@ export function createCombatTurnResources(
   }
 }
 
+export interface RollModifierMarker {
+  id: string
+  label: string
+  appliesTo: string | string[]
+  modifier: 'advantage' | 'disadvantage'
+  duration?: RuntimeMarkerDuration
+  sourceInstanceId?: string
+}
+
 export interface StatModifierMarker {
   id: string
   label: string
   target: string
-  mode: 'add'
+  mode: 'add' | 'set'
   value: number
   duration?: RuntimeMarkerDuration
+}
+
+export interface ConcentrationState {
+  spellId: string
+  spellLabel: string
+  linkedMarkerIds: string[]
 }
 
 export interface CombatantInstance {
@@ -148,6 +163,8 @@ export interface CombatantInstance {
   trackedParts?: RuntimeTrackedPart[]
   suppressedHooks?: RuntimeMarker[]
   statModifiers?: StatModifierMarker[]
+  rollModifiers?: RollModifierMarker[]
+  concentration?: ConcentrationState
   turnContext?: CombatantTurnContext
   turnResources?: CombatantTurnResources
   conditions: RuntimeMarker[]

@@ -75,7 +75,17 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '10ft tall, 60ft radius cylinder cloud. Magic action: lightning bolt to point, 5ft Dex save 3d10. +1d10 in storm or per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '3d10', damageType: 'lightning' }],
+        onSuccess: [{ kind: 'damage', damage: '1d10', damageType: 'lightning' }],
+      },
+      { kind: 'note', text: 'Requires Magic action each turn after first cast to call lightning again. +1d10 damage if outdoors in a storm.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 lightning per slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4, amount: '1d10' }],
     description: {
       full: "A storm cloud appears at a point within range that you can see above yourself. It takes the shape of a Cylinder that is 10 feet tall with a 60-foot radius. When you cast the spell, choose a point you can see under the cloud. A lightning bolt shoots from the cloud to that point. Each creature within 5 feet of that point makes a Dexterity saving throw, taking 3d10 Lightning damage on a failed save or half as much on a successful one. Until the spell ends, you can take a Magic action to call down lightning again. If outdoors in a storm, damage increases by 1d10. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
       summary: 'Storm cloud: Magic action to strike 3d10 lightning. +1d10 in storm or per slot.',
@@ -187,7 +197,15 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a white feather' } },
-    effects: [{ kind: 'note', text: '30ft cone: Wis save or drop held, Frightened. Must Dash away each turn. Save if no line of sight at turn end.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 30 } },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'condition', conditionId: 'frightened' }],
+      },
+      { kind: 'note', text: 'Frightened creature drops held items, must Dash away each turn. Repeats save at end of turn if no line of sight to caster.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration. A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn't have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.",
       summary: '30ft cone: Wis save or Frightened, must flee. Save if no line of sight.',
@@ -305,10 +323,10 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a shaving of licorice root' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature: Speed doubled, +2 AC, Advantage on Dex saves, extra action (Attack one only, Dash, Disengage, Hide, Utilize). When spell ends: Incapacitated, Speed 0 until end of next turn.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 },
+      { kind: 'modifier', target: 'speed', mode: 'add', value: 30 },
+      { kind: 'note', text: 'Advantage on Dex saves. Extra action each turn (Attack one weapon only, Dash, Disengage, Hide, Utilize). When spell ends: Incapacitated and Speed 0 until end of next turn.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Choose a willing creature that you can see within range. Until the spell ends, the target's Speed is doubled, it gains a +2 bonus to Armor Class, it has Advantage on Dexterity saving throws, and it gains an additional action on each of its turns. That action can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action. When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn, as a wave of lethargy washes over it.",
@@ -326,10 +344,16 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { somatic: true, material: { description: 'a pinch of confetti' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 30 } },
       {
-        kind: 'note',
-        text: '30-foot cube twisting pattern. Wis save or Charmed, Incapacitated, Speed 0. Ends if damage or action to shake creature.',
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'condition', conditionId: 'charmed' },
+          { kind: 'condition', conditionId: 'incapacitated' },
+        ],
       },
+      { kind: 'note', text: 'Charmed creature has Speed 0. Ends if creature takes damage or another creature uses an action to shake it.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You create a twisting pattern of colors in a 30-foot Cube within range. The pattern appears for a moment and vanishes. Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration. While Charmed, the creature has the Incapacitated condition and a Speed of 0. The spell ends for an affected creature if it takes any damage or if someone else uses an action to shake the creature out of its stupor.",
@@ -347,11 +371,16 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a bit of fur and a crystal rod' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'line', size: 100 } },
       {
-        kind: 'note',
-        text: '100-foot line, 5-foot wide. Dex save or 8d6 lightning. +1d6 per slot above 3.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '8d6', damageType: 'lightning' }],
+        onSuccess: [{ kind: 'damage', damage: '4d6', damageType: 'lightning' }],
       },
+      { kind: 'note', text: "The line is 5 feet wide. Flammable objects not being worn or carried start burning.", category: 'flavor' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 lightning per slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4, amount: '1d6' }],
     description: {
       full: "A stroke of lightning forming a 100-foot-long, 5-foot-wide Line blasts out from you in a direction you choose. Each creature in the Line makes a Dexterity saving throw, taking 8d6 Lightning damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
       summary: '100ft line: Dex save or 8d6 lightning. Damage scales with slot.',
@@ -410,11 +439,10 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Up to 6 creatures: 2d4+mod HP each. +1d4 per slot above 3.',
-      },
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', count: 6, requiresSight: true },
+      { kind: 'hit-points', mode: 'heal', value: '2d4', abilityModifier: true },
     ],
+    scaling: [{ category: 'extra-healing', description: '+1d4 healing per slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4, amount: '1d4' }],
     description: {
       full: "Up to six creatures of your choice that you can see within range regain Hit Points equal to 2d4 plus your spellcasting ability modifier. Using a Higher-Level Spell Slot. The healing increases by 1d4 for each spell slot level above 3.",
       summary: 'Up to 6 creatures: 2d4+mod HP. +1d4 per slot.',
@@ -515,10 +543,8 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature: Resistance to one damage type (Acid, Cold, Fire, Lightning, Thunder).',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'note', text: 'Target gains Resistance to one chosen damage type: Acid, Cold, Fire, Lightning, or Thunder.', category: 'under-modeled' as const },
     ],
     description: {
       full: "For the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder.",
@@ -557,10 +583,9 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 300+ GP', cost: { value: 300, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Touch creature dead within last minute. Revives with 1 HP. Cannot revive death from old age. Does not restore missing body parts.',
-      },
+      { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
+      { kind: 'hit-points', mode: 'heal', value: 1 },
+      { kind: 'note', text: "Must have died within the last minute. Can't revive creatures that died of old age. Does not restore missing body parts.", category: 'under-modeled' as const },
     ],
     description: {
       full: "You touch a creature that has died within the last minute. That creature revives with 1 Hit Point. This spell can't revive a creature that has died of old age, nor does it restore any missing body parts.",
@@ -620,10 +645,15 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a drop of molasses' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 40 } },
       {
-        kind: 'note',
-        text: 'Up to 6 creatures in 40ft cube: Wis save or Speed halved, -2 AC and Dex saves, no Reactions, action OR bonus (not both), one attack only. 25% spell fail if Somatic. Repeat save end of turn.',
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'state', stateId: 'slowed', notes: 'Speed halved, -2 AC and Dex saves, no Reactions, one attack only, action or bonus action (not both). 25% spell failure if casting requires Somatic.' },
+        ],
       },
+      { kind: 'note', text: 'Up to 6 creatures. Repeat Wis save at end of each turn to end the effect.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You alter time around up to six creatures of your choice in a 40-foot Cube within range. Each target must succeed on a Wisdom saving throw or be affected by this spell for the duration. An affected target's Speed is halved, it takes a −2 penalty to AC and Dexterity saving throws, and it can't take Reactions. On its turns, it can take either an action or a Bonus Action, not both, and it can make only one attack if it takes the Attack action. If it casts a spell with a Somatic component, there is a 25 percent chance the spell fails. An affected target repeats the save at the end of each of its turns, ending the spell on itself on a success.",
@@ -683,11 +713,23 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
       {
-        kind: 'note',
-        text: '15ft emanation. Designate creatures unaffected. Others: Speed halved. Enter/end turn: Wis save or 3d8 radiant (good/neutral) or necrotic (evil). +1d8 per slot above 3.',
+        kind: 'interval',
+        stateId: 'spirit-guardians-damage',
+        every: { value: 1, unit: 'turn' },
+        effects: [
+          {
+            kind: 'save',
+            save: { ability: 'wis' },
+            onFail: [{ kind: 'damage', damage: '3d8', damageType: 'radiant' }],
+            onSuccess: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }],
+          },
+        ],
       },
+      { kind: 'note', text: 'Caster designates creatures unaffected. Others have Speed halved in area. Damage type is necrotic if caster is evil.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 per slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4, amount: '1d8' }],
     description: {
       full: "Protective spirits flit around you in a 15-foot Emanation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish. When you cast this spell, you can designate creatures to be unaffected by it. Any other creature's Speed is halved in the Emanation, and whenever the Emanation enters a creature's space and whenever a creature enters the Emanation or ends its turn there, the creature must make a Wisdom saving throw. On a failed save, the creature takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic damage (if you are evil). On a successful save, the creature takes half as much damage. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 3.",
       summary: '15ft emanation: Speed halved, Wis save or 3d8 radiant/necrotic. +1d8 per slot.',
@@ -704,10 +746,13 @@ export const SPELLS_LEVEL_3: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a rotten egg' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
       {
-        kind: 'note',
-        text: '20-foot sphere yellow gas. Heavily Obscured. Start turn there: Con save or Poisoned until end of turn (cannot take action or bonus action). Dispersed by strong wind.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'condition', conditionId: 'poisoned' }],
       },
+      { kind: 'note', text: 'Area is Heavily Obscured. Creatures starting turn in the area must save. Poisoned creature wastes its action. Dispersed by strong wind.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You create a 20-foot-radius Sphere of yellow, nauseating gas centered on a point within range. The cloud is Heavily Obscured. The cloud lingers in the air for the duration or until a strong wind (such as the one created by Gust of Wind) disperses it. Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the current turn. While Poisoned in this way, the creature can't take an action or a Bonus Action.",

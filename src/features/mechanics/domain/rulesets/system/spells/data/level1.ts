@@ -54,7 +54,17 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a drop of blood' } },
-    effects: [{ kind: 'note', text: 'Up to 3 creatures make Cha save. On fail: subtract 1d4 from attack rolls and saves. +1 target per slot above 1.' }],
+    effects: [
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', count: 3, requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'cha' },
+        onFail: [
+          { kind: 'state', stateId: 'baned', notes: 'Subtract 1d4 from attack rolls and saving throws.' },
+        ],
+      },
+    ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "Up to three creatures of your choice that you can see within range must each make a Charisma saving throw. Whenever a target that fails this save makes an attack roll or a saving throw before the spell ends, the target must subtract 1d4 from the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Up to 3 creatures: Cha save or subtract 1d4 from attacks and saves. Scales with extra targets.',
@@ -70,7 +80,11 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a Holy Symbol worth 5+ GP', cost: { value: 5, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Up to 3 creatures add 1d4 to attack rolls and saving throws for 1 min. +1 target per slot above 1.' }],
+    effects: [
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', count: 3 },
+      { kind: 'state', stateId: 'blessed', notes: 'Add 1d4 to attack rolls and saving throws.' },
+    ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "You bless up to three creatures within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Up to 3 creatures add 1d4 to attacks and saves. Scales with extra targets.',
@@ -86,7 +100,17 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '15-foot cone: Dex save or 3d6 fire. Flammable objects ignite. +1d6 per slot above 1.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '3d6', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '1d6', damageType: 'fire' }],
+      },
+      { kind: 'note', text: "Flammable objects in the Cone that aren't being worn or carried start burning.", category: 'flavor' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "A thin sheet of flames shoots forth from you. Each creature in a 15-foot Cone makes a Dexterity saving throw, taking 3d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the Cone that aren't being worn or carried start burning. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       summary: '15-foot cone: Dex save or 3d6 fire. Damage scales with slot level.',
@@ -404,7 +428,17 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: '20ft cube: objects outlined. Dex save or creature outlined. Dim light 10ft, no Invisible, Advantage to hit.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          { kind: 'roll-modifier', appliesTo: 'attacks against', modifier: 'advantage' },
+          { kind: 'note', text: 'Target outlined in light; sheds Dim Light 10ft. Cannot benefit from being Invisible.', category: 'under-modeled' as const },
+        ],
+      },
+    ],
     description: {
       full: "Objects in a 20-foot Cube within range are outlined in blue, green, or violet light (your choice). Each creature in the Cube is also outlined if it fails a Dexterity saving throw. For the duration, objects and affected creatures shed Dim Light in a 10-foot radius and can't benefit from the Invisible condition. Attack rolls against an affected creature or object have Advantage if the attacker can see it.",
       summary: '20ft cube: Dex save or outlined. Advantage to hit affected. No Invisible.',
@@ -554,11 +588,12 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
     effects: [
-      {
-        kind: 'note',
-        text: 'Ranged spell attack: 4d6 radiant on hit. Next attack roll against target before end of your next turn has Advantage. +1d6 per slot above 1.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '4d6', damageType: 'radiant' },
+      { kind: 'roll-modifier', appliesTo: 'attacks against', modifier: 'advantage', duration: { kind: 'until-turn-boundary', subject: 'source', turn: 'next', boundary: 'end' } },
     ],
+    deliveryMethod: 'ranged-spell-attack',
+    scaling: [{ category: 'extra-damage', description: '+1d6 radiant per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       summary: 'Ranged spell attack 4d6 radiant. Next attack against target has Advantage. Scales with slot.',
@@ -607,11 +642,15 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Creature that damaged you: Dex save or 2d10 fire. Half on success. +1d10 per slot above 1.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '2d10', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '1d10', damageType: 'fire' }],
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 fire per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d10' }],
     description: {
       full: "The creature that damaged you is momentarily surrounded by green flames. It makes a Dexterity saving throw, taking 2d10 Fire damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
       summary: 'Reaction: creature that damaged you makes Dex save or takes 2d10 fire. Scales with slot.',
@@ -775,11 +814,15 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Touch creature: Con save or 2d10 necrotic. Half on success. +1d10 per slot above 1.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '2d10', damageType: 'necrotic' }],
+        onSuccess: [{ kind: 'damage', damage: '1d10', damageType: 'necrotic' }],
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 necrotic per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d10' }],
     description: {
       full: "A creature you touch makes a Constitution saving throw, taking 2d10 Necrotic damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
       summary: 'Touch: Con save or 2d10 necrotic. Scales with slot.',
@@ -817,11 +860,10 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of dirt' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Touch creature: Speed +10 ft until spell ends. +1 target per slot above 1.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'modifier', target: 'speed', mode: 'add', value: 10 },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "You touch a creature. The target's Speed increases by 10 feet until the spell ends. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Touch: Speed +10 ft per target. Scales with targets.',
@@ -838,10 +880,9 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a piece of cured leather' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature not wearing armor: base AC becomes 13 + Dex. Ends if target dons armor.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'modifier', target: 'armor_class', mode: 'set', value: 13 },
+      { kind: 'note', text: 'Target must not be wearing armor. True AC is 13 + Dex modifier. Ends if target dons armor.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You touch a willing creature who isn't wearing armor. Until the spell ends, the target's base AC becomes 13 plus its Dexterity modifier. The spell ends early if the target dons armor.",
@@ -1080,10 +1121,8 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Creature gains +2 AC for the duration.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 },
     ],
     description: {
       full: "A shimmering field surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
@@ -1163,7 +1202,20 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '15-foot cube: Con save or 2d8 thunder + 10ft push. Half damage on save. Objects pushed. +1d8 per slot above 1.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 15 } },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [
+          { kind: 'damage', damage: '2d8', damageType: 'thunder' },
+          { kind: 'move', distance: 10, forced: true },
+        ],
+        onSuccess: [{ kind: 'damage', damage: '1d8', damageType: 'thunder' }],
+      },
+      { kind: 'note', text: 'Unsecured objects entirely within the Cube are pushed 10 feet away. Thunderous boom audible within 300 feet.', category: 'flavor' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 thunder per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d8' }],
     description: {
       full: "You unleash a wave of thunderous energy. Each creature in a 15-foot Cube originating from you makes a Constitution saving throw. On a failed save, a creature takes 2d8 Thunder damage and is pushed 10 feet away from you. On a successful save, a creature takes half as much damage only. In addition, unsecured objects that are entirely within the Cube are pushed 10 feet away from you, and a thunderous boom is audible within 300 feet. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
       summary: '15-foot cube: Con save or 2d8 thunder + 10ft push. Damage scales with slot.',

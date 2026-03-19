@@ -43,7 +43,16 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a pentacle' } },
-    effects: [{ kind: 'note', text: 'Cha save or banished to demiplane, Incapacitated. Native outsiders (Aberration, Celestial, Elemental, Fey, Fiend): permanent banishment if full duration. +1 target per slot above 4.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'cha' },
+        onFail: [{ kind: 'condition', conditionId: 'incapacitated' }],
+      },
+      { kind: 'note', text: 'Target is transported to a harmless demiplane. Aberrations, Celestials, Elementals, Fey, Fiends: permanent banishment if spell lasts full duration.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5 }],
     description: {
       full: "One creature that you can see within range must succeed on a Charisma saving throw or be transported to a harmless demiplane for the duration. While there, the target has the Incapacitated condition. When the spell ends, the target reappears in the space it left or in the nearest unoccupied space if that space is occupied. If the target is an Aberration, a Celestial, an Elemental, a Fey, or a Fiend, the target doesn't return if the spell lasts for 1 minute. The target is instead transported to a random location on a plane (GM's choice) associated with its creature type. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4.",
       summary: 'Cha save or banished to demiplane. Native outsiders permanently banished at full duration.',
@@ -75,7 +84,17 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Creature: Con save or 8d8 necrotic (Plant auto-fails). Or nonmagical plant: withers and dies. +1d8 per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '8d8', damageType: 'necrotic' }],
+        onSuccess: [{ kind: 'damage', damage: '4d8', damageType: 'necrotic' }],
+      },
+      { kind: 'note', text: 'Plant creatures automatically fail the save. Alternatively, targets a nonmagical plant (not a creature) which withers and dies.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 necrotic per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5, amount: '1d8' }],
     description: {
       full: "A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much on a successful one. A Plant creature automatically fails the save. Alternatively, target a nonmagical plant that isn't a creature, such as a tree or shrub. It doesn't make a save; it simply withers and dies. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       summary: 'Con save or 8d8 necrotic. Plant auto-fails. Or wither nonmagical plant. Scales with slot.',
@@ -123,7 +142,18 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'three nut shells' } },
-    effects: [{ kind: 'note', text: '10ft sphere: Wis save or roll 1d10 each turn for behavior (move random, do nothing, attack random, act normally). +5ft radius per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'state', stateId: 'confused', notes: 'Cannot take Bonus Actions or Reactions. Roll 1d10 each turn: move randomly, do nothing, attack random creature, or act normally.' },
+        ],
+      },
+      { kind: 'note', text: 'Repeat save at end of each turn to end. Behavior determined by 1d10 roll.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'expanded-area', description: '+5ft sphere radius per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5 }],
     description: {
       full: "Each creature in a 10-foot-radius Sphere centered on a point you choose within range must succeed on a Wisdom saving throw, or that target can't take Bonus Actions or Reactions and must roll 1d10 at the start of each of its turns to determine its behavior (move randomly, do nothing, attack random creature, or act normally). At the end of each of its turns, an affected target repeats the save. Using a Higher-Level Spell Slot. The Sphere's radius increases by 5 feet for each spell slot level above 4.",
       summary: '10ft sphere: Wis save or random behavior each turn. Radius scales with slot.',
@@ -349,10 +379,10 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Creature touched has Invisible condition until spell ends. Does not end on attack or spell.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'condition', conditionId: 'invisible' },
+      { kind: 'roll-modifier', appliesTo: 'attack rolls', modifier: 'advantage' },
+      { kind: 'roll-modifier', appliesTo: 'attacks against', modifier: 'disadvantage' },
     ],
     description: {
       full: "A creature you touch has the Invisible condition until the spell ends.",
@@ -412,11 +442,22 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a mitten' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 20 } },
       {
-        kind: 'note',
-        text: '20-foot radius, 40-foot cylinder. Dex save or 2d10 bludgeoning + 4d6 cold. Hail turns ground to Difficult Terrain until end of next turn. +1d10 bludgeoning per slot above 4.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          { kind: 'damage', damage: '2d10', damageType: 'cold' },
+          { kind: 'damage', damage: '4d6', damageType: 'cold' },
+        ],
+        onSuccess: [
+          { kind: 'damage', damage: '1d10', damageType: 'cold' },
+          { kind: 'damage', damage: '2d6', damageType: 'cold' },
+        ],
       },
+      { kind: 'note', text: 'Ground in the area becomes Difficult Terrain until end of your next turn.', category: 'flavor' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 bludgeoning per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5, amount: '1d10' }],
     description: {
       full: "Hail falls in a 20-foot-radius, 40-foot-high Cylinder centered on a point within range. Each creature in the Cylinder makes a Dexterity saving throw. A creature takes 2d10 Bludgeoning damage and 4d6 Cold damage on a failed save or half as much damage on a successful one. Hailstones turn ground in the Cylinder into Difficult Terrain until the end of your next turn. Using a Higher-Level Spell Slot. The Bludgeoning damage increases by 1d10 for each spell slot level above 4.",
       summary: '20ft radius cylinder: Dex save or 2d10 bludgeoning + 4d6 cold. Difficult Terrain. Bludgeoning scales.',
@@ -454,11 +495,19 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Illusion of deepest fears, only target sees. Wis save: fail = 4d10 psychic, Disadvantage on ability checks and attack rolls. Repeat save end of each turn. +1d10 per slot.',
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'damage', damage: '4d10', damageType: 'psychic' },
+          { kind: 'state', stateId: 'terrified', notes: 'Disadvantage on ability checks and attack rolls. Takes 4d10 psychic again on failed save each turn.' },
+        ],
+        onSuccess: [{ kind: 'damage', damage: '2d10', damageType: 'psychic' }],
       },
+      { kind: 'note', text: 'Repeat Wis save at end of each turn; success ends spell, failure deals damage again.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d10 psychic per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5, amount: '1d10' }],
     description: {
       full: "You tap into the nightmares of a creature you can see within range and create an illusion of its deepest fears, visible only to that creature. The target makes a Wisdom saving throw. On a failed save, the target takes 4d10 Psychic damage and has Disadvantage on ability checks and attack rolls for the duration. On a successful save, the target takes half as much damage, and the spell ends. For the duration, the target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes the Psychic damage again. On a successful save, the spell ends. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 4.",
       summary: 'Wis save or 4d10 psychic, Disadvantage. Repeat save each turn. +1d10 per slot.',
@@ -587,10 +636,8 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'diamond dust worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature: Resistance to Bludgeoning, Piercing, Slashing damage.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'note', text: 'Target gains Resistance to Bludgeoning, Piercing, and Slashing damage.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage.",
@@ -629,11 +676,24 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a piece of charcoal' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Wall 60ft long or 20ft ring, 20ft high, 1ft thick. Appear: Dex save or 5d8 fire. One side: 5d8 fire when entering or ending turn within 10ft. +1d8 per slot above 4.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '5d8', damageType: 'fire' }],
+        onSuccess: [{ kind: 'damage', damage: '2d8', damageType: 'fire' }],
       },
+      {
+        kind: 'interval',
+        stateId: 'wall-of-fire-proximity',
+        every: { value: 1, unit: 'turn' },
+        effects: [
+          { kind: 'damage', damage: '5d8', damageType: 'fire' },
+        ],
+      },
+      { kind: 'note', text: 'Wall is 60ft long (or 20ft ring), 20ft high, 1ft thick. One side deals damage to creatures entering or ending turn within 10ft.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 fire per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5, amount: '1d8' }],
     description: {
       full: "You create a wall of fire on a solid surface within range. You can make the wall up to 60 feet long, 20 feet high, and 1 foot thick, or a ringed wall up to 20 feet in diameter, 20 feet high, and 1 foot thick. The wall is opaque and lasts for the duration. When the wall appears, each creature in its area makes a Dexterity saving throw, taking 5d8 Fire damage on a failed save or half as much damage on a successful one. One side of the wall, selected by you when you cast this spell, deals 5d8 Fire damage to each creature that ends its turn within 10 feet of that side or inside the wall. A creature takes the same damage when it enters the wall for the first time on a turn or ends its turn there. The other side of the wall deals no damage. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       summary: 'Wall of fire. Dex save or 5d8. One side deals 5d8 when entering/ending turn. +1d8 per slot.',

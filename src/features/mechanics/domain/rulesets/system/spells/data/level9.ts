@@ -91,10 +91,9 @@ export const SPELLS_LEVEL_9: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Restore up to 700 HP divided among any creatures you see. Also ends Blinded, Deafened, Poisoned.',
-      },
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+      { kind: 'hit-points', mode: 'heal', value: 700 },
+      { kind: 'note', text: 'Up to 700 HP divided among chosen creatures. Also ends Blinded, Deafened, and Poisoned conditions.', category: 'under-modeled' as const },
     ],
     description: {
       full: "A flood of healing energy flows from you into creatures around you. You restore up to 700 Hit Points, divided as you choose among any number of creatures that you can see within range. Creatures healed by this spell also have the Blinded, Deafened, and Poisoned conditions removed from them.",
@@ -112,10 +111,20 @@ export const SPELLS_LEVEL_9: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 40 } },
       {
-        kind: 'note',
-        text: 'Four 40-foot radius spheres at points within 1 mile. Dex save or 20d6 fire + 20d6 bludgeoning. Creature in multiple areas affected once. Flammable objects burn.',
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          { kind: 'damage', damage: '20d6', damageType: 'fire' },
+          { kind: 'damage', damage: '20d6', damageType: 'cold' },
+        ],
+        onSuccess: [
+          { kind: 'damage', damage: '10d6', damageType: 'fire' },
+          { kind: 'damage', damage: '10d6', damageType: 'cold' },
+        ],
       },
+      { kind: 'note', text: 'Four 40-foot-radius spheres centered on points you choose within range. A creature in multiple areas is affected only once. Flammable objects start burning.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Blazing orbs of fire plummet to the ground at four different points you can see within range. Each creature in a 40-foot-radius Sphere centered on each of those points makes a Dexterity saving throw. A creature takes 20d6 Fire damage and 20d6 Bludgeoning damage on a failed save or half as much damage on a successful one. A creature in the area of more than one fiery Sphere is affected only once. A nonmagical object that isn't being worn or carried also takes the damage if it's in the spell's area, and the object starts burning if it's flammable.",
@@ -133,10 +142,8 @@ export const SPELLS_LEVEL_9: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'One creature: regain all HP. Ends Charmed, Frightened, Paralyzed, Poisoned, Stunned. Prone can use Reaction to stand.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'note', text: 'Target regains all HP. Ends Charmed, Frightened, Paralyzed, Poisoned, and Stunned conditions. Prone target can use Reaction to stand.', category: 'under-modeled' as const },
     ],
     description: {
       full: "A wave of healing energy washes over one creature you can see within range. The target regains all its Hit Points. If the creature has the Charmed, Frightened, Paralyzed, Poisoned, or Stunned condition, the condition ends. If the creature has the Prone condition, it can use its Reaction to stand up.",

@@ -23,10 +23,24 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     school: 'evocation',
     level: 6,
     classes: ['sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'a bit of fur, a piece of amber, and a crystal rod' } },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '10d8', damageType: 'lightning' }],
+        onSuccess: [{ kind: 'damage', damage: '5d8', damageType: 'lightning' }],
+      },
+      { kind: 'note', text: 'Lightning arcs from primary target to up to 3 additional targets within 30 feet. Each additional target also makes the save.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 lightning per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '1d8' }],
     description: {
-      full: '',
-      summary: '',
+      full: "You create a bolt of lightning that arcs toward a target of your choice that you can see within range. Three bolts then leap from that target to as many as three other targets, each of which must be within 30 feet of the first target. A target can be a creature or an object and can be targeted by only one of the bolts. A target makes a Dexterity saving throw, taking 10d8 Lightning damage on a failed save or half as much on a successful one. Using a Higher-Level Spell Slot. One additional bolt leaps from the first target to another target for each spell slot level above 6.",
+      summary: 'Lightning bolt arcs to 1 target + up to 3 others within 30ft. Dex save or 10d8 lightning.',
     },
   },
   {
@@ -39,7 +53,16 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'the powder of a crushed black pearl worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: '60ft radius sphere: Con save or 8d8 necrotic. +2d8 per slot above 6.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 60 } },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '8d8', damageType: 'necrotic' }],
+        onSuccess: [{ kind: 'damage', damage: '4d8', damageType: 'necrotic' }],
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+2d8 necrotic per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '2d8' }],
     description: {
       full: "Negative energy ripples out in a 60-foot-radius Sphere from a point you choose within range. Each creature in that area makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much on a successful one. Using a Higher-Level Spell Slot. The damage increases by 2d8 for each spell slot level above 6.",
       summary: '60ft sphere: Con save or 8d8 necrotic. Damage scales with slot.',
@@ -99,10 +122,23 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     school: 'transmutation',
     level: 6,
     classes: ['sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'a lodestone and pinch of dust' } },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '10d6+40', damageType: 'force' }],
+      },
+      { kind: 'note', text: 'Target reduced to 0 HP is disintegrated (turned to fine gray dust). Nonmagical objects and Huge or smaller creations of magical force are automatically destroyed.', category: 'under-modeled' as const },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+3d6 force per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '3d6' }],
     description: {
-      full: '',
-      summary: '',
+      full: "You launch a green ray at a target you can see within range. The target can be a creature, a nonmagical object, or a creation of magical force, such as the wall created by Wall of Force. A creature targeted by this spell makes a Dexterity saving throw. On a failed save, the target takes 10d6 + 40 Force damage. The target is disintegrated if this damage leaves it with 0 Hit Points. A disintegrated creature and everything nonmagical it is wearing and carrying are reduced to fine gray dust. The creature can be restored to life only by means of a True Resurrection or a Wish spell. This spell automatically disintegrates a Large or smaller nonmagical object or a creation of magical force. If the target is a Huge or larger nonmagical object or creation of force, this spell disintegrates a 10-foot-Cube portion of it. Using a Higher-Level Spell Slot. The damage increases by 3d6 for each spell slot level above 6.",
+      summary: 'Green ray: Dex save or 10d6+40 force. Disintegrates target if reduced to 0 HP.',
     },
   },
   {
@@ -115,7 +151,17 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Eyes become inky void. Magic action: one creature within 60ft Wis save or Asleep, Panicked (Frightened+Dash), or Sickened (Poisoned). One target per creature.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'note', text: 'Choose: Asleep (Unconscious), Panicked (Frightened, must Dash away), or Sickened (Poisoned).', category: 'under-modeled' as const },
+        ],
+      },
+      { kind: 'note', text: 'Magic action each turn to target another creature. Cannot re-target a creature that has succeeded on the save.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "For the duration, your eyes become an inky void. One creature of your choice within 60 feet that you can see must succeed on a Wisdom saving throw or be affected by one effect of your choice: Asleep (Unconscious), Panicked (Frightened, must Dash away), or Sickened (Poisoned). On each of your turns, you can take a Magic action to target another creature but can't target a creature again if it has succeeded on a save against this casting.",
       summary: 'Wis save or Asleep, Panicked, or Sickened. New target each turn.',
@@ -148,10 +194,13 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a cockatrice feather' } },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Creature: Con save or Restrained. Success: Speed 0 until next turn. Track 3 successes/failures. 3 failures: Petrified. Constructs auto-succeed.',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'condition', conditionId: 'restrained' }],
       },
+      { kind: 'note', text: 'Constructs auto-succeed. Track 3 successes/failures: 3 failures = Petrified. On success, Speed is 0 until start of next turn. Full-duration concentration = permanent Petrified.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You attempt to turn one creature that you can see within range into stone. The target makes a Constitution saving throw. On a failed save, it has the Restrained condition for the duration. On a successful save, its Speed is 0 until the start of your next turn. Constructs automatically succeed on the save. A Restrained target makes another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration. The successes and failures needn't be consecutive; keep track of both until the target collects three of a kind. If you maintain your Concentration on this spell for the entire possible duration, the target is Petrified until the condition is ended by Greater Restoration or similar magic.",
@@ -274,11 +323,11 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Restore 70 HP. Ends Blinded, Deafened, Poisoned. +10 HP per slot above 6.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'hit-points', mode: 'heal', value: 70 },
+      { kind: 'note', text: 'Also ends Blinded, Deafened, and Poisoned conditions on the target.', category: 'under-modeled' as const },
     ],
+    scaling: [{ category: 'extra-healing', description: '+10 HP per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: 10 }],
     description: {
       full: "Choose a creature that you can see within range. Positive energy washes through the target, restoring 70 Hit Points. This spell also ends the Blinded, Deafened, and Poisoned conditions on the target. Using a Higher-Level Spell Slot. The healing increases by 10 for each spell slot level above 6.",
       summary: 'Restore 70 HP, end Blinded/Deafened/Poisoned. Healing scales with slot.',
@@ -337,10 +386,13 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Wis save: success=dance until end of next turn. Fail=Charmed, dance, Disadvantage Dex saves/attacks, Advantage against. Action to repeat save.',
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'condition', conditionId: 'charmed' }],
       },
+      { kind: 'note', text: 'Charmed target dances, must spend all movement dancing in place, has Disadvantage on Dex saves and attacks, Advantage against it. Action to repeat save. On initial success, dances until end of next turn only.', category: 'under-modeled' as const },
     ],
     description: {
       full: "One creature that you can see within range must make a Wisdom saving throw. On a successful save, the target dances comically until the end of its next turn, during which it must spend all its movement to dance in place. On a failed save, the target has the Charmed condition for the duration. While Charmed, the target dances comically, must use all its movement to dance in place, and has Disadvantage on Dexterity saving throws and attack rolls, and other creatures have Advantage on attack rolls against it. On each of its turns, the target can take an action to collect itself and repeat the save, ending the spell on itself on a success.",
@@ -463,10 +515,17 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a magnifying glass' } },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'line', size: 60 } },
       {
-        kind: 'note',
-        text: '5ft-wide 60ft Line. Con save or 6d8 Radiant + Blinded until start of next turn. Magic action: new Line. Mote sheds Bright 30ft, Dim 30ft (sunlight).',
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [
+          { kind: 'damage', damage: '6d8', damageType: 'radiant' },
+          { kind: 'condition', conditionId: 'blinded', duration: { kind: 'until-turn-boundary', subject: 'source', turn: 'next', boundary: 'start' } },
+        ],
+        onSuccess: [{ kind: 'damage', damage: '3d8', damageType: 'radiant' }],
       },
+      { kind: 'note', text: 'Magic action on subsequent turns to create new Line. Mote sheds Bright Light 30ft and Dim Light 30ft (counts as sunlight).', category: 'under-modeled' as const },
     ],
     description: {
       full: "You launch a sunbeam in a 5-foot-wide, 60-foot-long Line. Each creature in the Line makes a Constitution saving throw. On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn. On a successful save, it takes half as much damage only. Until the spell ends, you can take a Magic action to create a new Line of radiance. For the duration, a mote of brilliant radiance shines above you. It sheds Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. This light is sunlight.",

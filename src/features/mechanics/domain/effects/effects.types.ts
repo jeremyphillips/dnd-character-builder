@@ -172,6 +172,7 @@ export type RepeatSave = {
 
 export type ConditionEffect = EffectBase<'condition'> & {
   conditionId: EffectConditionId;
+  classification?: string[];
   targetSizeMax?: EffectSizeCategory;
   escapeDc?: number;
   escapeCheckDisadvantage?: boolean;
@@ -231,6 +232,7 @@ export type VisibilityRuleEffect = EffectBase<'visibility-rule'> & {
 
 export type StateEffect = EffectBase<'state'> & {
   stateId: string;
+  classification?: string[];
   targetSizeMax?: EffectSizeCategory;
   escape?: {
     dc: number;
@@ -386,6 +388,21 @@ export type NoteEffect = EffectBase<'note'> & {
   category?: 'under-modeled' | 'flavor';
 };
 
+export type RemoveClassificationEffect = EffectBase<'remove-classification'> & {
+  classification: string;
+};
+
+export type RegenerationEffect = EffectBase<'regeneration'> & {
+  amount: number | DiceOrFlat;
+  trigger: {
+    kind: 'turn-start' | 'turn-end';
+    subject: 'self';
+  };
+  suppressedByDamageTypes?: string[];
+  suppressionDuration?: EffectDuration;
+  disabledAtZeroHp?: boolean;
+};
+
 export type Effect =
   | ModifierEffect
   | FormulaEffect
@@ -415,4 +432,6 @@ export type Effect =
   | HitPointsEffect
   | AuraEffect
   | NoteEffect
+  | RemoveClassificationEffect
+  | RegenerationEffect
   | CustomEffect;

@@ -794,7 +794,68 @@ Content authoring should continue aggressively using the full `Effect` vocabular
 - Engine catches up stage by stage, each time unlocking a batch of already-authored spells.
 - This avoids the anti-pattern of authoring content to match current runtime limits (Section 11).
 
-## 13. Extension Policy
+## 13. Monster Effect Status
+
+Status of monster-specific and cross-cutting effect kinds, using the standard maturity labels.
+
+### `regeneration`
+
+- Status: `provisional`
+- A declarative effect kind encapsulating turn-triggered healing, damage-type suppression, and zero-HP disablement.
+- The trait adapter (`monster-runtime.ts`) converts a `regeneration` effect into a `RuntimeTurnHook` with the appropriate suppression, boundary, and requirement configuration.
+- Used by: Troll.
+
+### `tracked-part`
+
+- Status: `provisional`
+- Definition variant (`initialCount`, `loss`, `regrowth`): fully seeded at encounter start. Loss from damage and turn-end regrowth handled by `marker-lifecycle.ts`.
+- Change variant (`change.mode: 'sever' | 'grow'`): now mechanically applied inside `executeTurnHooks` when a hook fires a `tracked-part` effect with a `change` field.
+- Used by: Hydra (definition), Troll Loathsome Limbs (change).
+
+### `remove-classification`
+
+- Status: `provisional`
+- Removes all states on a target whose `classification` array includes the given value.
+- Also cleans up associated turn hooks.
+- Used by: Remove Curse (`classification: 'curse'`).
+
+### `extra-reaction`
+
+- Status: `under-modeled`
+- Authored as structured data but not enforced at runtime. The encounter engine does not yet track per-head reaction pools.
+- Used by: Hydra Reactive Heads.
+
+### `spawn`
+
+- Status: `under-modeled`
+- Authored but does not create a simulated combatant in the encounter. Logged as a note.
+- Used by: Troll Loathsome Limbs.
+
+### `hold-breath`
+
+- Status: `under-modeled`
+- Authored but no breath-tracking runtime exists.
+- Used by: Hydra.
+
+### `interval` (non-turn cadence)
+
+- Status: `under-modeled`
+- When `every.unit` is not `'turn'`, the interval effect is deferred with a log note rather than registered as a per-turn hook.
+- Used by: Mummy Rot (24-hour cadence).
+
+### RuntimeMarker `classification`
+
+The `classification: string[]` field on `RuntimeMarker` is the canonical mechanism for semantic effect categories. Well-known values:
+
+- `curse` — removable by Remove Curse
+- `disease` — future: removable by Lesser/Greater Restoration
+- `poison` — future: removable by Protection from Poison
+- `magical` — future: dispellable, detectable by Detect Magic
+- `regeneration` — future: interactable by healing-prevention effects
+
+Effects that carry a `classification` propagate it through `buildRuntimeMarker` to the resulting condition or state marker.
+
+## 14. Extension Policy
 
 Add a new shared effect kind only when all of the following are true:
 

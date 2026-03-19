@@ -243,15 +243,20 @@ describe('system catalog normalization', () => {
     const regeneration = troll?.mechanics.traits?.find((trait) => trait.name === 'Regeneration')
 
     expect(regeneration?.effects).toEqual([
-      { kind: 'hit-points', mode: 'heal', value: 15 },
+      {
+        kind: 'regeneration',
+        amount: 15,
+        trigger: { kind: 'turn-start', subject: 'self' },
+        suppressedByDamageTypes: ['acid', 'fire'],
+        suppressionDuration: {
+          kind: 'until-turn-boundary',
+          subject: 'self',
+          turn: 'next',
+          boundary: 'end',
+        },
+        disabledAtZeroHp: true,
+      },
     ])
-
-    expect(regeneration?.suppression?.duration).toEqual({
-      kind: 'until-turn-boundary',
-      subject: 'self',
-      turn: 'next',
-      boundary: 'end',
-    })
   })
 
   it('migrates zombie save traits into canonical effect arrays', () => {

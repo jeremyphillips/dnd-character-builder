@@ -8,6 +8,7 @@ import {
   applyHealingToCombatant,
   appendEncounterNote,
   effectDurationToRuntimeDuration,
+  removeStatesByClassification,
   updateEncounterCombatant,
   type CombatantInstance,
 } from '../../state'
@@ -206,6 +207,7 @@ export function applyActionEffects(
       nextState = addConditionToCombatant(nextState, target.instanceId, effect.conditionId, {
         sourceLabel: options.sourceLabel,
         sourceInstanceId: actor.instanceId,
+        classification: effect.classification,
       })
       markerIds.push(effect.conditionId)
       if (effect.repeatSave) {
@@ -238,6 +240,7 @@ export function applyActionEffects(
     if (effect.kind === 'state') {
       nextState = addStateToCombatant(nextState, target.instanceId, effect.stateId, {
         sourceLabel: options.sourceLabel,
+        classification: effect.classification,
       })
       markerIds.push(effect.stateId)
 
@@ -408,7 +411,15 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'interval') {
-      const boundary = effect.every.unit === 'turn' ? 'start' : 'end'
+      if (effect.every.unit !== 'turn') {
+        nextState = appendEncounterNote(
+          nextState,
+          `${options.sourceLabel}: Interval effect ${effect.stateId} deferred — ${effect.every.value} ${effect.every.unit} cadence not tracked in encounter time.`,
+          { actorId: actor.instanceId, targetIds: [target.instanceId] },
+        )
+        return
+      }
+      const boundary = 'start' as const
       const hookId = `interval-${effect.stateId}-${action.id}-${target.instanceId}`
       nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
         ...combatant,
@@ -417,7 +428,7 @@ export function applyActionEffects(
           {
             id: hookId,
             label: `${options.sourceLabel}: ${effect.stateId}`,
-            boundary: boundary as 'start' | 'end',
+            boundary,
             effects: effect.effects,
           },
         ],
@@ -486,7 +497,23 @@ export function applyActionEffects(
       return
     }
 
+    if (effect.kind === 'remove-classification') {
+      nextState = removeStatesByClassification(nextState, target.instanceId, effect.classification, {
+        sourceLabel: options.sourceLabel,
+      })
+      return
+    }
+
     if (effect.kind === 'targeting') {
+      return
+    }
+
+    if (effect.kind === 'regeneration') {
+      nextState = appendEncounterNote(
+        nextState,
+        `${options.sourceLabel}: Regeneration effect noted — runtime adapter handles turn hook seeding.`,
+        { actorId: actor.instanceId, targetIds: [target.instanceId] },
+      )
       return
     }
 

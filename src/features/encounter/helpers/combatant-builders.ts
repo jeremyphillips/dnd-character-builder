@@ -1,8 +1,9 @@
 import type { useCombatStats } from '@/features/character/hooks'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { Monster } from '@/features/content/monsters/domain/types'
+import type { ImmunityType } from '@/features/content/monsters/domain/types/monster-combat.types'
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
-import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import type { Effect, EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import { resolveProficiencyContribution } from '@/features/mechanics/domain/progression'
 import {
@@ -10,9 +11,42 @@ import {
   type CombatantAttackEntry,
   type CombatantInstance,
   type CombatantSide,
+  type DamageResistanceMarker,
   createCombatTurnResources,
   type RuntimeTurnHook,
 } from '@/features/mechanics/domain/encounter'
+
+const CONDITION_IDS: ReadonlySet<string> = new Set<EffectConditionId>([
+  'blinded', 'charmed', 'deafened', 'frightened', 'grappled',
+  'incapacitated', 'invisible', 'paralyzed', 'petrified', 'poisoned',
+  'prone', 'restrained', 'stunned', 'unconscious',
+])
+
+const CONDITION_ADJACENT_IMMUNITIES: ReadonlySet<string> = new Set(['exhaustion'])
+
+function partitionMonsterImmunities(immunities: ImmunityType[]): {
+  damageImmunities: DamageResistanceMarker[]
+  conditionImmunities: string[]
+} {
+  const damageImmunities: DamageResistanceMarker[] = []
+  const conditionImmunities: string[] = []
+
+  for (const entry of immunities) {
+    if (CONDITION_IDS.has(entry) || CONDITION_ADJACENT_IMMUNITIES.has(entry)) {
+      conditionImmunities.push(entry)
+    } else {
+      damageImmunities.push({
+        id: `monster-immunity-${entry}`,
+        damageType: entry,
+        level: 'immunity',
+        sourceId: 'monster-innate',
+        label: `immunity to ${entry}`,
+      })
+    }
+  }
+
+  return { damageImmunities, conditionImmunities }
+}
 
 export function formatSigned(value: number): string {
   return value >= 0 ? `+${value}` : String(value)
@@ -128,6 +162,20 @@ export function buildMonsterCombatantInstance(args: {
 }): CombatantInstance {
   const { runtimeId, monster, attacks, actions = [], initiativeModifier, armorClass, currentHitPoints, activeEffects, turnHooks } = args
 
+  const { damageImmunities, conditionImmunities } = partitionMonsterImmunities(
+    monster.mechanics.immunities ?? [],
+  )
+
+  const vulnerabilityMarkers: DamageResistanceMarker[] = (monster.mechanics.vulnerabilities ?? []).map(
+    (v) => ({
+      id: `monster-vulnerability-${v}`,
+      damageType: v,
+      level: 'vulnerability' as const,
+      sourceId: 'monster-innate',
+      label: `vulnerability to ${v}`,
+    }),
+  )
+
   return {
     instanceId: runtimeId,
     side: 'enemies',
@@ -195,6 +243,8 @@ export function buildMonsterCombatantInstance(args: {
     runtimeEffects: [],
     turnHooks,
     suppressedHooks: [],
+    damageResistanceMarkers: [...damageImmunities, ...vulnerabilityMarkers],
+    conditionImmunities: conditionImmunities.length > 0 ? conditionImmunities : undefined,
     turnContext: {
       totalDamageTaken: 0,
       damageTakenByType: {},

@@ -28,17 +28,20 @@ export function buildRuntimeMarker(
     tickOn?: TurnBoundary
     duration?: RuntimeMarkerDuration
     sourceInstanceId?: string
+    classification?: string[]
   },
 ): RuntimeMarker {
   const duration = options?.duration
   const durationTurns = options?.durationTurns
   const sourceInstanceId = options?.sourceInstanceId
+  const classification = options?.classification && options.classification.length > 0 ? options.classification : undefined
   if (duration) {
     return {
       id: label,
       label,
       duration,
       sourceInstanceId,
+      classification,
     }
   }
 
@@ -47,6 +50,7 @@ export function buildRuntimeMarker(
       id: label,
       label,
       sourceInstanceId,
+      classification,
     }
   }
 
@@ -58,6 +62,7 @@ export function buildRuntimeMarker(
       tickOn: options?.tickOn ?? 'end',
     },
     sourceInstanceId,
+    classification,
   }
 }
 
@@ -254,6 +259,8 @@ export function requirementLabel(requirement: RuntimeTurnHookRequirement): strin
       return 'damage taken this turn'
     case 'hit-points-equals':
       return `hit points equal ${requirement.value}`
+    case 'hit-points-above':
+      return `hit points above ${requirement.value}`
   }
 }
 
@@ -265,6 +272,8 @@ export function requirementMet(combatant: CombatantInstance, requirement: Runtim
         : false
     case 'hit-points-equals':
       return combatant.stats.currentHitPoints === requirement.value
+    case 'hit-points-above':
+      return combatant.stats.currentHitPoints > requirement.value
     case 'damage-taken-this-turn': {
       const turnContext = combatant.turnContext ?? createEmptyTurnContext()
       const damageAmount = requirement.damageType

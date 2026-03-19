@@ -18,6 +18,7 @@ export {
   removeConditionFromCombatant,
   addStateToCombatant,
   removeStateFromCombatant,
+  removeStatesByClassification,
 } from './condition-mutations'
 export {
   addStatModifierToCombatant,

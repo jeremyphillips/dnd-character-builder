@@ -112,6 +112,11 @@ export function executeTurnHooks(
         return
       }
 
+      if (effect.kind === 'tracked-part' && 'change' in effect && effect.change) {
+        nextState = applyTrackedPartChange(nextState, combatantId, effect.part, effect.change, hook.label)
+        return
+      }
+
       const turnHookNote = formatTurnHookNote(effect)
       if (turnHookNote) {
         nextState = appendLog(nextState, {
@@ -135,6 +140,68 @@ export function executeTurnHooks(
       })
     })
   })
+
+  return nextState
+}
+
+function applyTrackedPartChange(
+  state: EncounterState,
+  combatantId: string,
+  part: 'head' | 'limb',
+  change: { mode: 'sever' | 'grow'; count: number },
+  sourceLabel: string,
+): EncounterState {
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant) return state
+
+  const trackedParts = combatant.trackedParts ?? []
+  const partEntry = trackedParts.find((tp) => tp.part === part)
+  if (!partEntry) {
+    return appendLog(state, {
+      type: 'note',
+      actorId: combatantId,
+      targetIds: [combatantId],
+      round: state.roundNumber,
+      turn: state.turnIndex + 1,
+      summary: `${sourceLabel}: No tracked ${part} to modify.`,
+    })
+  }
+
+  const verb = change.mode === 'sever' ? 'loses' : 'grows'
+  const delta = change.mode === 'sever' ? -change.count : change.count
+  const newCount = Math.max(0, partEntry.currentCount + delta)
+
+  let nextState = updateCombatant(state, combatantId, (c) => ({
+    ...c,
+    trackedParts: (c.trackedParts ?? []).map((tp) =>
+      tp.part === part
+        ? {
+            ...tp,
+            currentCount: newCount,
+            lostSinceLastTurn: change.mode === 'sever'
+              ? tp.lostSinceLastTurn + change.count
+              : tp.lostSinceLastTurn,
+          }
+        : tp,
+    ),
+  }))
+
+  nextState = appendLog(nextState, {
+    type: 'note',
+    actorId: combatantId,
+    targetIds: [combatantId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, combatantId)} ${verb} ${change.count} ${part}${change.count === 1 ? '' : 's'} (${newCount} remaining).`,
+    details: `Source: ${sourceLabel}.`,
+  })
+
+  if (partEntry.deathWhenCountReaches != null && newCount <= partEntry.deathWhenCountReaches) {
+    nextState = applyDamageToCombatant(nextState, combatantId, combatant.stats.currentHitPoints, {
+      actorId: combatantId,
+      sourceLabel: `${sourceLabel}: all ${part}s lost`,
+    })
+  }
 
   return nextState
 }

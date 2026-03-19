@@ -17,6 +17,7 @@ export {
   removeDamageResistanceMarker,
   removeConditionFromCombatant,
   removeStateFromCombatant,
+  removeStatesByClassification,
   setConcentration,
   tickConcentrationDuration,
   updateEncounterCombatant,

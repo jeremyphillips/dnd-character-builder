@@ -14,12 +14,25 @@ export function addConditionToCombatant(
     duration?: RuntimeMarkerDuration
     sourceLabel?: string
     sourceInstanceId?: string
+    classification?: string[]
   },
 ): EncounterState {
   const trimmedCondition = condition.trim()
   const target = state.combatantsById[targetId]
   if (!target || trimmedCondition.length === 0 || target.conditions.some((entry) => markerMatches(entry, trimmedCondition))) {
     return state
+  }
+
+  if (target.conditionImmunities?.includes(trimmedCondition)) {
+    return appendLog(state, {
+      type: 'note',
+      actorId: state.activeCombatantId ?? undefined,
+      targetIds: [targetId],
+      round: state.roundNumber,
+      turn: state.turnIndex + 1,
+      summary: `${getCombatantLabel(state, targetId)} is immune to condition: ${trimmedCondition}.`,
+      details: options?.sourceLabel ? `Source: ${options.sourceLabel}.` : undefined,
+    })
   }
 
   const nextState = updateCombatant(state, targetId, (combatant) => ({
@@ -84,6 +97,7 @@ export function addStateToCombatant(
     tickOn?: TurnBoundary
     duration?: RuntimeMarkerDuration
     sourceLabel?: string
+    classification?: string[]
   },
 ): EncounterState {
   const trimmedMarker = marker.trim()
@@ -141,4 +155,44 @@ export function removeStateFromCombatant(
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, targetId)} loses state: ${trimmedMarker}.`,
   })
+}
+
+export function removeStatesByClassification(
+  state: EncounterState,
+  targetId: string,
+  classification: string,
+  options?: { sourceLabel?: string },
+): EncounterState {
+  const target = state.combatantsById[targetId]
+  if (!target) return state
+
+  const matching = target.states.filter(
+    (s) => s.classification?.includes(classification),
+  )
+  if (matching.length === 0) return state
+
+  const matchingIds = new Set(matching.map((s) => s.id))
+
+  const nextState = updateCombatant(state, targetId, (combatant) => ({
+    ...combatant,
+    states: combatant.states.filter((s) => !matchingIds.has(s.id)),
+    turnHooks: combatant.turnHooks.filter(
+      (h) => !matching.some((s) => h.id.includes(s.id)),
+    ),
+  }))
+
+  let result = nextState
+  for (const marker of matching) {
+    result = appendLog(result, {
+      type: 'state-removed',
+      actorId: state.activeCombatantId ?? undefined,
+      targetIds: [targetId],
+      round: state.roundNumber,
+      turn: state.turnIndex + 1,
+      summary: `${getCombatantLabel(state, targetId)} loses state: ${marker.label} (${classification} removed).`,
+      details: options?.sourceLabel ? `Source: ${options.sourceLabel}.` : undefined,
+    })
+  }
+
+  return result
 }

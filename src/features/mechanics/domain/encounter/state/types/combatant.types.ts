@@ -46,6 +46,7 @@ export interface RuntimeMarker {
   label: string
   duration?: RuntimeMarkerDuration
   sourceInstanceId?: string
+  classification?: string[]
 }
 
 export interface RuntimeEffectInstance {
@@ -59,6 +60,7 @@ export type RuntimeTurnHookRequirement =
   | { kind: 'self-state'; state: 'bloodied' }
   | { kind: 'damage-taken-this-turn'; damageType?: string; min?: number }
   | { kind: 'hit-points-equals'; value: number }
+  | { kind: 'hit-points-above'; value: number }
 
 export interface RuntimeTurnHookRepeatSave {
   ability: AbilityRef
@@ -192,6 +194,7 @@ export interface CombatantInstance {
   concentration?: ConcentrationState
   turnContext?: CombatantTurnContext
   turnResources?: CombatantTurnResources
+  conditionImmunities?: string[]
   conditions: RuntimeMarker[]
   states: RuntimeMarker[]
 }

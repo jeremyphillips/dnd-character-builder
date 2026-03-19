@@ -123,7 +123,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
       summary: 'Touch: Resistance to one damage type.',
     },
   },
-{
+  {
     id: 'remove-curse',
     name: 'Remove Curse',
     school: 'abjuration',
@@ -134,9 +134,10 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
+      { kind: 'remove-classification', classification: 'curse' },
       {
         kind: 'note',
-        text: 'Touch: all curses on creature or object end. Cursed magic item: curse remains but breaks Attunement so it can be removed.',
+        text: 'Cursed magic item: curse remains but breaks Attunement so it can be removed.',
       },
     ],
     description: {

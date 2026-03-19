@@ -561,6 +561,16 @@ describe('rollInitiative', () => {
         attacks: [],
         activeEffects: [],
         runtimeEffects: [],
+        trackedParts: [{
+          part: 'limb',
+          currentCount: 4,
+          initialCount: 4,
+          lostSinceLastTurn: 0,
+          lossAppliedThisTurn: 0,
+          damageTakenThisTurn: 0,
+          damageTakenByTypeThisTurn: {},
+          regrowthSuppressedByDamageTypes: [],
+        }],
         turnHooks: [
           {
             id: 'loathsome-limbs',
@@ -620,7 +630,7 @@ describe('rollInitiative', () => {
     const summaries = resolved.log.map((entry) => entry.summary)
 
     expect(summaries).toContain('Troll hook fires: Loathsome Limbs.')
-    expect(summaries).toContain('Loathsome Limbs: Sever 1 limb.')
+    expect(summaries).toContain('Troll loses 1 limb (3 remaining).')
     expect(summaries).toContain('Loathsome Limbs: Spawn 1 Troll Limb at self-space.')
     expect(summaries).toContain('Loathsome Limbs: Custom effect: monster.resource_from_tracked_parts.')
   })

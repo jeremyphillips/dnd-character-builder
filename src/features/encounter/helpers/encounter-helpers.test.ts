@@ -473,6 +473,106 @@ describe('buildSpellCombatActions', () => {
     expect(actions[0]!.resolutionMode).toBe('log-only')
   })
 
+  it('classifies targeting-only spells as log-only', () => {
+    const spell = makeSpell({
+      id: 'target-only',
+      name: 'Target Only',
+      effects: [{ kind: 'targeting', target: 'one-creature', targetType: 'creature' }],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['target-only'],
+      spellsById: { 'target-only': spell },
+    })
+
+    expect(actions[0]!.resolutionMode).toBe('log-only')
+  })
+
+  it('classifies damage-only spells (no save, no deliveryMethod) as effects', () => {
+    const spell = makeSpell({
+      id: 'magic-missile-test',
+      name: 'Magic Missile Test',
+      level: 1,
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'damage', damage: '1d4+1', damageType: 'force' },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['magic-missile-test'],
+      spellsById: { 'magic-missile-test': spell },
+    })
+
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'damage')).toBe(true)
+  })
+
+  it('classifies roll-modifier-only spells as effects', () => {
+    const spell = makeSpell({
+      id: 'pfe-g-test',
+      name: 'Protection Test',
+      level: 1,
+      range: { kind: 'touch' },
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        {
+          kind: 'roll-modifier',
+          appliesTo: 'attack-rolls',
+          modifier: 'disadvantage',
+        },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['pfe-g-test'],
+      spellsById: { 'pfe-g-test': spell },
+    })
+
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'roll-modifier')).toBe(true)
+  })
+
+  it('classifies condition-only spells as effects', () => {
+    const spell = makeSpell({
+      id: 'condition-only',
+      name: 'Condition Only',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'condition', conditionId: 'prone' },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['condition-only'],
+      spellsById: { 'condition-only': spell },
+    })
+
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'condition')).toBe(true)
+  })
+
+  it('classifies state-only spells as effects', () => {
+    const spell = makeSpell({
+      id: 'state-only',
+      name: 'State Only',
+      effects: [{ kind: 'state', stateId: 'banished' }],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['state-only'],
+      spellsById: { 'state-only': spell },
+    })
+
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'state')).toBe(true)
+  })
+
   it('maps bonus-action casting time to bonus action cost', () => {
     const spell = makeSpell({
       id: 'healing-word',

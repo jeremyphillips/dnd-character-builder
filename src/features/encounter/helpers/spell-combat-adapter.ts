@@ -2,6 +2,7 @@ import type { Spell, SpellDuration, SpellRange } from '@/features/content/spells
 import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter'
+import { classifySpellResolutionMode } from './spell-resolution-classifier'
 
 /** Resource key for persisting spell use. Export for onSpellSlotSpent handlers. */
 export const SPELL_USED_PREFIX = 'spell_used_'
@@ -76,24 +77,6 @@ export function buildSpellLogText(spell: Spell): string {
     .join(' ')
 
   return effectText || spell.description.summary?.trim() || `${spell.name} effect resolution not implemented yet.`
-}
-
-function classifySpellResolutionMode(
-  spell: Spell,
-): 'attack-roll' | 'effects' | 'log-only' {
-  if (spell.deliveryMethod) return 'attack-roll'
-
-  const effects = spell.effects ?? []
-  const hasSave = effects.some((e) => e.kind === 'save')
-  if (hasSave) return 'effects'
-
-  const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
-  if (hasHealing) return 'effects'
-
-  const hasResolvable = effects.some((e) => e.kind === 'modifier' || e.kind === 'immunity')
-  if (hasResolvable) return 'effects'
-
-  return 'log-only'
 }
 
 function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: boolean; reaction?: boolean } {

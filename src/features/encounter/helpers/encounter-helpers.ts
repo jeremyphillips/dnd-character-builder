@@ -6,6 +6,16 @@ import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbi
 import { resolveProficiencyBonusAtLevel } from '@/features/mechanics/domain/progression'
 
 export { SPELL_USED_PREFIX, buildSpellCombatActions, buildSpellDisplayMeta, buildSpellLogText, formatSpellRange } from './spell-combat-adapter'
+export { classifySpellResolutionMode, isFullyActionableEffectKind } from './spell-resolution-classifier'
+export {
+  buildSpellAuditRow,
+  collectEffectKinds,
+  computeAmbiguousDelivery,
+  computeMechanicalSupportLevel,
+  computeSpellTargetingAuditFlags,
+  summarizeSpellAudit,
+} from './spell-resolution-audit'
+export type { MechanicalSupportLevel, SpellAuditRow, SpellTargetingAuditFlags } from './spell-resolution-audit'
 export {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,

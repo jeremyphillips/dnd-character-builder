@@ -499,10 +499,187 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     school: 'necromancy',
     level: 5,
     classes: ['bard', 'cleric', 'paladin'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'hour' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'a diamond worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Revive dead (≤10 days, not Undead). 1 HP. Neutralize poisons. Close wounds but not restore missing parts. -4 d20 penalty, -1 per Long Rest. Lacking vital parts = auto fail.',
+      },
+    ],
     description: {
-      full: '',
-      summary: '',
+      full: "With a touch, you revive a dead creature if it has been dead no longer than 10 days and it wasn't Undead when it died. The creature returns to life with 1 Hit Point. This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds, but it doesn't restore missing body parts. If the creature is lacking body parts or organs integral for its survival—its head, for instance—the spell automatically fails. Coming back from the dead is an ordeal. The target takes a −4 penalty to D20 Tests. Every time the target finishes a Long Rest, the penalty is reduced by 1 until it becomes 0.",
+      summary: 'Revive dead (≤10 days). 1 HP. -4 d20 penalty, -1 per Long Rest.',
+    },
+  },
+  {
+    id: 'reincarnate',
+    name: 'Reincarnate',
+    school: 'necromancy',
+    level: 5,
+    classes: ['druid'],
+    castingTime: { normal: { value: 1, unit: 'hour' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'rare oils worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Touch dead Humanoid (≤10 days). New body, roll 1d10 for species (or GM chooses). Retains capabilities, loses old species traits, gains new. 1=Roll again, 2=Dragonborn, 3=Dwarf, 4=Elf, 5=Gnome, 6=Goliath, 7=Halfling, 8=Human, 9=Orc, 10=Tiefling.',
+      },
+    ],
+    description: {
+      full: "You touch a dead Humanoid or a piece of one. If the creature has been dead no longer than 10 days, the spell forms a new body for it and calls the soul to enter that body. Roll 1d10 and consult the table to determine the body's species, or the GM chooses another playable species. 1=Roll again, 2=Dragonborn, 3=Dwarf, 4=Elf, 5=Gnome, 6=Goliath, 7=Halfling, 8=Human, 9=Orc, 10=Tiefling. The reincarnated creature makes any choices that a species' description offers, and the creature recalls its former life. It retains the capabilities it had in its original form, except it loses the traits of its previous species and gains the traits of its new one.",
+      summary: 'Revive as new species (1d10 table). Retains capabilities, new species traits.',
+    },
+  },
+  {
+    id: 'scrying',
+    name: 'Scrying',
+    school: 'divination',
+    level: 5,
+    classes: ['bard', 'cleric', 'druid', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 10, unit: 'minute' } },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a focus worth 1,000+ GP (crystal ball, mirror, etc.)', cost: { value: 1000, unit: 'gp', atLeast: true } } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'See and hear creature on same plane. Target Wis save (modified by knowledge, connection). Fail: invisible sensor 10ft, see/hear through it. Success: cannot use on target 24h. Can target location instead.',
+      },
+    ],
+    description: {
+      full: "You can see and hear a creature you choose that is on the same plane of existence as you. The target makes a Wisdom saving throw, which is modified by how well you know the target and the sort of physical connection you have to it. On a successful save, the target isn't affected, and you can't use this spell on it again for 24 hours. On a failed save, the spell creates an Invisible, intangible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. Instead of targeting a creature, you can target a location you have seen. When you do so, the sensor appears at that location and doesn't move.",
+      summary: 'See and hear creature on same plane. Wis save. Sensor 10ft from target. Or target location.',
+    },
+  },
+  {
+    id: 'seeming',
+    name: 'Seeming',
+    school: 'illusion',
+    level: 5,
+    classes: ['bard', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 8, unit: 'hour' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Illusory appearance to chosen creatures. Unwilling: Cha save. Same or different appearances. ±1ft height, weight. Study + Int (Investigation) vs DC to discern.',
+      },
+    ],
+    description: {
+      full: "You give an illusory appearance to each creature of your choice that you can see within range. An unwilling target can make a Charisma saving throw, and if it succeeds, it is unaffected by this spell. You can give the same appearance or different ones to the targets. The spell can change the appearance of the targets' bodies and equipment. You can make each creature seem 1 foot shorter or taller and appear heavier or lighter. The changes wrought by this spell fail to hold up to physical inspection. A creature that takes the Study action to examine a target can make an Intelligence (Investigation) check against your spell save DC. If it succeeds, it becomes aware that the target is disguised.",
+      summary: 'Illusory appearance to chosen creatures. Cha save. Study to discern.',
+    },
+  },
+  {
+    id: 'summon-dragon',
+    name: 'Summon Dragon',
+    school: 'conjuration',
+    level: 5,
+    classes: ['wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'object with dragon image worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true } } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Draconic Spirit (Large Dragon). AC 14+level, HP 50+10/level. Multiattack (Rend + Breath Weapon). Choose Resistance for shared resistances. Use slot level for stat block.',
+      },
+    ],
+    description: {
+      full: "You call forth a Dragon spirit. It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands. When you summon the spirit, choose one of its Resistances. You have Resistance to the chosen damage type until the spell ends. Using a Higher-Level Spell Slot. Use the spell slot's level for the spell's level in the stat block.",
+      summary: 'Summon Draconic Spirit. Choose shared Resistance. Slot level for stat block.',
+    },
+  },
+  {
+    id: 'telekinesis',
+    name: 'Telekinesis',
+    school: 'transmutation',
+    level: 5,
+    classes: ['sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Magic action: move Huge or smaller creature (Str save or 30ft, Restrained) or object (auto 30ft if unattended). Fine control on objects.',
+      },
+    ],
+    description: {
+      full: "You gain the ability to move or manipulate creatures or objects by thought. When you cast the spell and as a Magic action on your later turns before the spell ends, you can exert your will on one creature or object that you can see within range. Creature: The target must succeed on a Strength saving throw, or you move it up to 30 feet in any direction. Until the end of your next turn, the creature has the Restrained condition, and if you lift it into the air, it is suspended there. Object: If the object isn't being worn or carried, you automatically move it up to 30 feet. If worn or carried, the creature must succeed on a Strength saving throw or you pull the object away. You can exert fine control on objects with your telekinetic grip.",
+      summary: 'Move creature (Str save) or object (30ft). Restrained if lifted. Fine control.',
+    },
+  },
+  {
+    id: 'telepathic-bond',
+    name: 'Telepathic Bond',
+    school: 'divination',
+    level: 5,
+    classes: ['bard', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' }, alternate: [{ value: 1, unit: 'action', ritual: true }] },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'two eggs' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Up to 8 willing creatures: telepathic link among all. Communicate over any distance. Cannot extend to other planes.',
+      },
+    ],
+    description: {
+      full: "You forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the duration. Creatures that can't communicate in any languages aren't affected by this spell. Until the spell ends, the targets can communicate telepathically through the bond whether or not they share a language. The communication is possible over any distance, though it can't extend to other planes of existence.",
+      summary: 'Up to 8: telepathic link. Communicate over any distance. Cannot cross planes.',
+    },
+  },
+  {
+    id: 'teleportation-circle',
+    name: 'Teleportation Circle',
+    school: 'conjuration',
+    level: 5,
+    classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'minute' } },
+    range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
+    duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'end' },
+    components: { verbal: true, material: { description: 'rare inks worth 50+ GP', cost: { value: 50, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Draw 5ft radius circle. Portal opens to known permanent circle sigil. Open until end of next turn. Enter = appear at destination. Learn 2 sigils at first. Cast same spot 365 days = permanent.',
+      },
+    ],
+    description: {
+      full: "As you cast the spell, you draw a 5-foot-radius circle on the ground inscribed with sigils that link your location to a permanent teleportation circle of your choice whose sigil sequence you know and that is on the same plane of existence as you. A shimmering portal opens within the circle you drew and remains open until the end of your next turn. Any creature that enters the portal instantly appears within 5 feet of the destination circle or in the nearest unoccupied space if that space is occupied. Many major temples, guildhalls, and other important places have permanent teleportation circles. Each circle includes a unique sigil sequence. When you first gain the ability to cast this spell, you learn the sigil sequences for two destinations on the Material Plane, determined by the GM. You can create a permanent teleportation circle by casting this spell in the same location every day for 365 days.",
+      summary: 'Portal to known permanent circle. Enter = teleport. 365 days same spot = permanent.',
+    },
+  },
+  {
+    id: 'tree-stride',
+    name: 'Tree Stride',
+    school: 'conjuration',
+    level: 5,
+    classes: ['druid', 'ranger'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Enter tree, move to same-kind tree within 500ft. 5ft movement to enter/exit. Know location of same-kind trees. Once per turn. Must end turn outside tree.',
+      },
+    ],
+    description: {
+      full: "You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you're in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no movement left, you appear within 5 feet of the tree you entered. You can use this transportation ability only once on each of your turns. You must end each turn outside a tree.",
+      summary: 'Enter tree, teleport to same-kind tree within 500ft. Once per turn. End turn outside.',
     },
   },
   {
@@ -515,6 +692,27 @@ export const SPELLS_LEVEL_5: readonly SpellEntry[] = [
     description: {
       full: '',
       summary: '',
+    },
+  },
+  {
+    id: 'wall-of-stone',
+    name: 'Wall of Stone',
+    school: 'evocation',
+    level: 5,
+    classes: ['druid', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a cube of granite' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Stone wall: ten 10×10ft panels, 6in thick (or 10×20ft, 3in). Creature in space: pushed. Surrounded: Dex save, Reaction to move. Must merge with stone. AC 15, 30 HP per inch. Full concentration = permanent.',
+      },
+    ],
+    description: {
+      full: "A nonmagical wall of solid stone springs into existence at a point you choose within range. The wall is 6 inches thick and is composed of ten 10-foot-by-10-foot panels. Each panel must be contiguous with another panel. Alternatively, you can create 10-foot-by-20-foot panels that are only 3 inches thick. If the wall cuts through a creature's space when it appears, the creature is pushed to one side of the wall (you choose which side). If a creature would be surrounded on all sides by the wall (or the wall and another solid surface), that creature can make a Dexterity saving throw. On a success, it can use its Reaction to move up to its Speed so that it is no longer enclosed by the wall. The wall can have any shape you desire, though it can't occupy the same space as a creature or object. The wall doesn't need to be vertical or rest on a firm foundation. It must, however, merge with and be solidly supported by existing stone. Thus, you can use this spell to bridge a chasm or create a ramp. If you create a span greater than 20 feet in length, you must halve the size of each panel to create supports. You can crudely shape the wall to create battlements and the like. The wall is an object made of stone that can be damaged and thus breached. Each panel has AC 15 and 30 Hit Points per inch of thickness, and it has Immunity to Poison and Psychic damage. Reducing a panel to 0 Hit Points destroys it and might cause connected panels to collapse at the GM's discretion. If you maintain your Concentration on this spell for its full duration, the wall becomes permanent and can't be dispelled. Otherwise, the wall disappears when the spell ends.",
+      summary: 'Stone wall. Panels AC 15, 30 HP per inch. Full concentration = permanent.',
     },
   }
 ];

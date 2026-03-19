@@ -451,5 +451,152 @@ export const SPELLS_LEVEL_6: readonly SpellEntry[] = [
       full: "You create an illusion of an object, a creature, or some other visible phenomenon within range that activates when a specific trigger occurs. The illusion is imperceptible until then. It must be no larger than a 30-foot Cube, and you decide when you cast the spell how the illusion behaves and what sounds it makes. This scripted performance can last up to 5 minutes. When the trigger you specify occurs, the illusion springs into existence and performs. Once finished, it disappears and remains dormant for 10 minutes, after which it can be activated again. The trigger must be based on visual or audible phenomena within 30 feet of the area. Physical interaction reveals the illusion. Study + Int (Investigation) vs DC to discern.",
       summary: 'Triggered illusion up to 30ft cube. 5 min performance. Repeats after 10 min dormant.',
     },
+  },
+  {
+    id: 'sunbeam',
+    name: 'Sunbeam',
+    school: 'evocation',
+    level: 6,
+    classes: ['cleric', 'druid', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a magnifying glass' } },
+    effects: [
+      {
+        kind: 'note',
+        text: '5ft-wide 60ft Line. Con save or 6d8 Radiant + Blinded until start of next turn. Magic action: new Line. Mote sheds Bright 30ft, Dim 30ft (sunlight).',
+      },
+    ],
+    description: {
+      full: "You launch a sunbeam in a 5-foot-wide, 60-foot-long Line. Each creature in the Line makes a Constitution saving throw. On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn. On a successful save, it takes half as much damage only. Until the spell ends, you can take a Magic action to create a new Line of radiance. For the duration, a mote of brilliant radiance shines above you. It sheds Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. This light is sunlight.",
+      summary: '60ft Line: Con save or 6d8 Radiant + Blinded. Magic action: new Line. Sunlight mote.',
+    },
+  },
+  {
+    id: 'transport-via-plants',
+    name: 'Transport via Plants',
+    school: 'conjuration',
+    level: 6,
+    classes: ['druid'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Link Large+ plant to another plant (same plane). Step into target plant, exit from destination. 5ft movement each way. Must have seen/touched destination plant.',
+      },
+    ],
+    description: {
+      full: "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence. You must have seen or touched the destination plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.",
+      summary: 'Link two plants. Step into one, exit from other. 5ft movement each way.',
+    },
+  },
+  {
+    id: 'true-seeing',
+    name: 'True Seeing',
+    school: 'divination',
+    level: 6,
+    classes: ['bard', 'cleric', 'sorcerer', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'mushroom powder worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Willing creature gains Truesight 120ft for duration.',
+      },
+    ],
+    description: {
+      full: "For the duration, the willing creature you touch has Truesight with a range of 120 feet.",
+      summary: 'Truesight 120ft for 1 hour.',
+    },
+  },
+  {
+    id: 'wall-of-ice',
+    name: 'Wall of Ice',
+    school: 'evocation',
+    level: 6,
+    classes: ['wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a piece of quartz' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Dome/globe 10ft radius or ten 10ft panels. Appear: Dex save or 10d6 cold, pushed. AC 12, 30 HP per 10ft. Vulnerability Fire. Destroyed leaves frigid air: Con save or 5d6 cold. +2d6/+1d6 per slot above 6.',
+      },
+    ],
+    description: {
+      full: "You create a wall of ice on a solid surface within range. You can form it into a hemispherical dome or a globe with a radius of up to 10 feet, or you can shape a flat surface made up of ten 10-foot-square panels. Each panel must be contiguous with another panel. In any form, the wall is 1 foot thick and lasts for the duration. If the wall cuts through a creature's space when it appears, the creature is pushed to one side of the wall (you choose which side) and makes a Dexterity saving throw, taking 10d6 Cold damage on a failed save or half as much damage on a successful one. The wall is an object that can be damaged and thus breached. It has AC 12 and 30 Hit Points per 10-foot section, and it has Immunity to Cold, Poison, and Psychic damage and Vulnerability to Fire damage. Reducing a 10-foot section of wall to 0 Hit Points destroys it and leaves behind a sheet of frigid air in the space the wall occupied. A creature moving through the sheet of frigid air for the first time on a turn makes a Constitution saving throw, taking 5d6 Cold damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6.",
+      summary: 'Ice wall. Dex save or 10d6 cold. AC 12, 30 HP per 10ft. Frigid air: Con save or 5d6. +2d6/+1d6 per slot.',
+    },
+  },
+  {
+    id: 'wall-of-thorns',
+    name: 'Wall of Thorns',
+    school: 'conjuration',
+    level: 6,
+    classes: ['druid'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a handful of thorns' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Wall 60ft long or 20ft circle, 10ft high, 5ft thick. Blocks line of sight. Appear: Dex save or 7d8 piercing. Move through: 4ft per 1ft. Enter/end turn: Dex save or 7d8 slashing. +1d8 both per slot above 6.',
+      },
+    ],
+    description: {
+      full: "You create a wall of tangled brush bristling with needle-sharp thorns. The wall appears within range on a solid surface and lasts for the duration. You choose to make the wall up to 60 feet long, 10 feet high, and 5 feet thick or a circle that has a 20-foot diameter and is up to 20 feet high and 5 feet thick. The wall blocks line of sight. When the wall appears, each creature in its area makes a Dexterity saving throw, taking 7d8 Piercing damage on a failed save or half as much damage on a successful one. A creature can move through the wall, albeit slowly and painfully. For every 1 foot a creature moves through the wall, it must spend 4 feet of movement. Furthermore, the first time a creature enters a space in the wall on a turn or ends its turn there, the creature makes a Dexterity saving throw, taking 7d8 Slashing damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn. Using a Higher-Level Spell Slot. Both types of damage increase by 1d8 for each spell slot level above 6.",
+      summary: 'Thorn wall. Dex save or 7d8 piercing. 4ft movement per 1ft. Enter/end turn: 7d8 slashing. +1d8 per slot.',
+    },
+  },
+  {
+    id: 'wind-walk',
+    name: 'Wind Walk',
+    school: 'transmutation',
+    level: 6,
+    classes: ['druid'],
+    castingTime: { normal: { value: 1, unit: 'minute' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 8, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'a candle' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Up to 10 willing creatures become gaseous cloud form. Fly 300ft, hover, Immunity Prone, Resistance B/P/S. Only Dash or Magic action to revert (1 min, Stunned). Revert to cloud: Magic action + 1 min.',
+      },
+    ],
+    description: {
+      full: "You and up to ten willing creatures of your choice within range assume gaseous forms for the duration, appearing as wisps of cloud. While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage. The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form. Reverting takes 1 minute, during which the target has the Stunned condition. Until the spell ends, the target can revert to cloud form, which also requires a Magic action followed by a 1-minute transformation. If a target is in cloud form and flying when the effect ends, the target descends 60 feet per round for 1 minute until it lands, which it does safely. If it can't land after 1 minute, it falls the remaining distance.",
+      summary: 'Gaseous form: Fly 300ft, Resistance B/P/S. Magic action to revert (1 min Stunned).',
+    },
+  },
+  {
+    id: 'word-of-recall',
+    name: 'Word of Recall',
+    school: 'conjuration',
+    level: 6,
+    classes: ['cleric'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 5, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'You and up to 5 willing within 5ft teleport to designated sanctuary. Must prepare sanctuary by casting there first. No effect if no sanctuary.',
+      },
+    ],
+    description: {
+      full: "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below). If you cast this spell without first preparing a sanctuary, the spell has no effect. You must designate a location, such as a temple, as a sanctuary by casting this spell there.",
+      summary: 'Teleport self and up to 5 to designated sanctuary. Prepare by casting there first.',
+    },
   }
 ];

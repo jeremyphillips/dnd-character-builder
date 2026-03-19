@@ -826,6 +826,27 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     },
   },
   {
+    id: 'rope-trick',
+    name: 'Rope Trick',
+    school: 'transmutation',
+    level: 2,
+    classes: ['wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'a segment of rope' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Rope hovers perpendicular. 3ft×5ft portal to extradimensional space at top. Holds 8 Medium or smaller. Climb to enter. Attacks/spells cannot pass in or out. Contents drop out when spell ends.',
+      },
+    ],
+    description: {
+      full: "You touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope's upper end, an Invisible 3-foot-by-5-foot portal opens to an extradimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it. The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can't pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends.",
+      summary: 'Rope leads to extradimensional space. Holds 8. No attacks in/out.',
+    },
+  },
+  {
     id: 'scorching-ray',
     name: 'Scorching Ray',
     school: 'evocation',
@@ -866,15 +887,135 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     },
   },
   {
+    id: 'see-invisibility',
+    name: 'See Invisibility',
+    school: 'divination',
+    level: 2,
+    classes: ['bard', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'a pinch of talc' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'See Invisible creatures/objects as if visible. See into Ethereal Plane (ghostly appearance).',
+      },
+    ],
+    description: {
+      full: "For the duration, you see creatures and objects that have the Invisible condition as if they were visible, and you can see into the Ethereal Plane. Creatures and objects there appear ghostly.",
+      summary: 'See Invisible and into Ethereal Plane for 1 hour.',
+    },
+  },
+  {
+    id: 'shatter',
+    name: 'Shatter',
+    school: 'evocation',
+    level: 2,
+    classes: ['bard', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'a chip of mica' } },
+    effects: [
+      {
+        kind: 'note',
+        text: '10-foot sphere: Con save or 3d8 thunder. Construct has Disadvantage. Unattended nonmagical objects also take damage. +1d8 per slot above 2.',
+      },
+    ],
+    description: {
+      full: "A loud noise erupts from a point of your choice within range. Each creature in a 10-foot-radius Sphere centered there makes a Constitution saving throw, taking 3d8 Thunder damage on a failed save or half as much damage on a successful one. A Construct has Disadvantage on the save. A nonmagical object that isn't being worn or carried also takes the damage if it's in the spell's area. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
+      summary: '10ft sphere: Con save or 3d8 thunder. Construct Disadvantage. +1d8 per slot.',
+    },
+  },
+  {
+    id: 'shining-smite',
+    name: 'Shining Smite',
+    school: 'transmutation',
+    level: 2,
+    classes: ['paladin'],
+    castingTime: {
+      normal: {
+        value: 1,
+        unit: 'bonus-action',
+        trigger: 'immediately after hitting a creature with a Melee weapon or an Unarmed Strike',
+      },
+    },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Extra 2d6 radiant on hit. Target sheds Bright Light 5ft, attack rolls against it have Advantage, cannot benefit from Invisible. +1d6 per slot above 2.',
+      },
+    ],
+    description: {
+      full: "The target hit by the strike takes an extra 2d6 Radiant damage from the attack. Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
+      summary: 'Extra 2d6 radiant. Target: Bright Light 5ft, Advantage to hit, no Invisible. +1d6 per slot.',
+    },
+  },
+  {
     id: 'silence',
     name: 'Silence',
     school: 'illusion',
     level: 2,
     classes: ['bard', 'cleric', 'ranger'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' }, alternate: [{ value: 1, unit: 'action', ritual: true }] },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: '20-foot sphere: no sound created or passes through. Immunity to Thunder. Deafened inside. Cannot cast spells with Verbal component.',
+      },
+    ],
     description: {
-      full: '',
-      summary: '',
+      full: "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the Sphere has Immunity to Thunder damage, and creatures have the Deafened condition while entirely inside it. Casting a spell that includes a Verbal component is impossible there.",
+      summary: '20ft sphere: no sound, Immunity to Thunder, Deafened, no Verbal spells.',
+    },
+  },
+  {
+    id: 'spider-climb',
+    name: 'Spider Climb',
+    school: 'transmutation',
+    level: 2,
+    classes: ['sorcerer', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a drop of bitumen and a spider' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Willing creature: move on vertical surfaces and ceilings, hands free. Climb Speed = Speed. +1 target per slot above 2.',
+      },
+    ],
+    description: {
+      full: "Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free. The target also gains a Climb Speed equal to its Speed. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2.",
+      summary: 'Touch: climb walls and ceilings, hands free. +1 target per slot.',
+    },
+  },
+  {
+    id: 'spike-growth',
+    name: 'Spike Growth',
+    school: 'transmutation',
+    level: 2,
+    classes: ['druid', 'ranger'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'seven thorns' } },
+    effects: [
+      {
+        kind: 'note',
+        text: '20-foot sphere: Difficult Terrain. 2d4 piercing per 5 feet moved. Camouflaged. Search + Wis (Perception/Survival) vs DC to recognize before entering.',
+      },
+    ],
+    description: {
+      full: "The ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and thorns. The area becomes Difficult Terrain for the duration. When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels. The transformation of the ground is camouflaged to look natural. Any creature that can't see the area when the spell is cast must take a Search action and succeed on a Wisdom (Perception or Survival) check against your spell save DC to recognize the terrain as hazardous before entering it.",
+      summary: '20ft sphere Difficult Terrain. 2d4 piercing per 5ft moved. Camouflaged.',
     },
   },
   {
@@ -883,12 +1024,43 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     school: 'evocation',
     level: 2,
     classes: ['cleric'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'bonus-action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Floating spectral weapon. Appear and make melee spell attack (1d8+mod Force). Bonus action: move 20ft and repeat attack. +1d8 per slot above 2.',
+      },
+    ],
     description: {
-      full: '',
-      summary: '',
+      full: "You create a floating, spectral force that resembles a weapon of your choice and lasts for the duration. The force appears within range in a space of your choice, and you can immediately make one melee spell attack against one creature within 5 feet of the force. On a hit, the target takes Force damage equal to 1d8 plus your spellcasting ability modifier. As a Bonus Action on your later turns, you can move the force up to 20 feet and repeat the attack against a creature within 5 feet of it. Using a Higher-Level Spell Slot. The damage increases by 1d8 for every slot level above 2.",
+      summary: 'Spectral weapon: Bonus action attack 1d8+mod Force. Move 20ft and repeat. +1d8 per slot.',
     },
   },
+  {
+    id: 'suggestion',
+    name: 'Suggestion',
+    school: 'enchantment',
+    level: 2,
+    classes: ['bard', 'sorcerer', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 8, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, material: { description: 'a drop of honey' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Suggest course of activity (25 words or fewer). Must sound achievable, not obviously harmful. Wis save or Charmed, pursues suggestion. Ends if you or allies damage target.',
+      },
+    ],
+    description: {
+      full: "You suggest a course of activity—described in no more than 25 words—to one creature you can see within range that can hear and understand you. The suggestion must sound achievable and not involve anything that would obviously deal damage to the target or its allies. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target. The Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the suggested activity can be completed in a shorter time, the spell ends for the target upon completing it.",
+      summary: '25-word suggestion. Wis save or Charmed, pursues suggestion. Ends on damage.',
+    },
+  },
+  // OUTLIER: Has structured effects (targeting, save, check) instead of note-only. Pre-existing; revisit if migrating to note-only.
   {
     id: 'web',
     name: 'Web',
@@ -927,6 +1099,48 @@ export const SPELLS_LEVEL_2: readonly SpellEntry[] = [
     description: {
       full: "You conjure a mass of sticky webbing at a point within range. The webs fill a 20-foot Cube there for the duration. The webs are Difficult Terrain, and the area within them is Lightly Obscured. If the webs aren't anchored between two solid masses (such as walls or trees) or layered across a floor, wall, or ceiling, the web collapses on itself, and the spell ends at the start of your next turn. Webs layered over a flat surface have a depth of 5 feet. The first time a creature enters the webs on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained condition while in the webs or until it breaks free. A creature Restrained by the webs can take an action to make a Strength (Athletics) check against your spell save DC. If it succeeds, it is no longer Restrained. The webs are flammable. Any 5-foot Cube of webs exposed to fire burns away in 1 round, dealing 2d4 Fire damage to any creature that starts its turn in the fire.",
       summary: '20-foot cube of webs; creatures entering or starting a turn make a Dex save or are Restrained. Flammable.',
+    },
+  },
+  {
+    id: 'warding-bond',
+    name: 'Warding Bond',
+    school: 'abjuration',
+    level: 2,
+    classes: ['cleric', 'paladin'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'a pair of platinum rings worth 50+ GP each, which you and the target must wear for the duration', cost: { value: 50, unit: 'gp', atLeast: true } } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Willing creature within 60ft: +1 AC and saves, Resistance to all damage. You take same damage when target takes damage. Ends if you drop to 0 HP or >60ft apart.',
+      },
+    ],
+    description: {
+      full: "You touch another creature that is willing and create a mystic connection between you and the target until the spell ends. While the target is within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it has Resistance to all damage. Also, each time it takes damage, you take the same amount of damage. The spell ends if you drop to 0 Hit Points or if you and the target become separated by more than 60 feet. It also ends if the spell is cast again on either of the connected creatures.",
+      summary: 'Target gains +1 AC/saves and Resistance. You take same damage. Ends if 0 HP or >60ft apart.',
+    },
+  },
+  {
+    id: 'zone-of-truth',
+    name: 'Zone of Truth',
+    school: 'enchantment',
+    level: 2,
+    classes: ['bard', 'cleric', 'paladin'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: '15-foot radius sphere. Enter or start turn: Cha save or cannot speak deliberate lie. You know success/fail. Creature aware, can avoid answering.',
+      },
+    ],
+    description: {
+      full: "You create a magical zone that guards against deception in a 15-foot-radius Sphere centered on a point within range. Until the spell ends, a creature that enters the spell's area for the first time on a turn or starts its turn there makes a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether a creature succeeds or fails on this save. An affected creature is aware of the spell and can avoid answering questions to which it would normally respond with a lie. Such a creature can be evasive yet must be truthful.",
+      summary: '15ft sphere: Cha save or cannot lie. You know success/fail. Creature can avoid answering.',
     },
   }
 ];

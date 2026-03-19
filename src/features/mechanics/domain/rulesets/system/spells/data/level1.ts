@@ -947,6 +947,76 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     },
   },
   {
+    id: 'ray-of-sickness',
+    name: 'Ray of Sickness',
+    school: 'necromancy',
+    level: 1,
+    classes: ['sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true },
+    deliveryMethod: 'ranged-spell-attack',
+    effects: [
+      {
+        kind: 'note',
+        text: 'Ranged spell attack: 2d8 poison on hit, Poisoned until end of your next turn. +1d8 per slot above 1.',
+      },
+    ],
+    description: {
+      full: "You shoot a greenish ray at a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 Poison damage and has the Poisoned condition until the end of your next turn. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+      summary: 'Ranged spell attack: 2d8 poison, Poisoned until end of next turn. +1d8 per slot.',
+    },
+  },
+  {
+    id: 'sanctuary',
+    name: 'Sanctuary',
+    school: 'abjuration',
+    level: 1,
+    classes: ['cleric'],
+    castingTime: { normal: { value: 1, unit: 'bonus-action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute' },
+    components: { verbal: true, somatic: true, material: { description: 'a shard of glass from a mirror' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Ward creature. Attackers/targeting with damaging spell must Wis save or choose new target or lose attack/spell. No protection from AoE. Ends if warded creature attacks, casts, or deals damage.',
+      },
+    ],
+    description: {
+      full: "You ward a creature within range. Until the spell ends, any creature who targets the warded creature with an attack roll or a damaging spell must succeed on a Wisdom saving throw or either choose a new target or lose the attack or spell. This spell doesn't protect the warded creature from areas of effect. The spell ends if the warded creature makes an attack roll, casts a spell, or deals damage.",
+      summary: 'Ward creature: Wis save or attackers lose target. Ends if warded creature attacks or deals damage.',
+    },
+  },
+  {
+    id: 'searing-smite',
+    name: 'Searing Smite',
+    school: 'evocation',
+    level: 1,
+    classes: ['paladin'],
+    castingTime: {
+      normal: {
+        value: 1,
+        unit: 'bonus-action',
+        trigger: 'immediately after hitting a target with a Melee weapon or an Unarmed Strike',
+      },
+    },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'minute' },
+    components: { verbal: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Extra 1d6 fire on hit. Start of each of target turns: 1d6 fire then Con save; success ends spell. +1d6 all damage per slot above 1.',
+      },
+    ],
+    description: {
+      full: "As you hit the target, it takes an extra 1d6 Fire damage from the attack. At the start of each of its turns until the spell ends, the target takes 1d6 Fire damage and then makes a Constitution saving throw. On a failed save, the spell continues. On a successful save, the spell ends. Using a Higher-Level Spell Slot. All the damage increases by 1d6 for each spell slot level above 1.",
+      summary: 'Extra 1d6 fire on hit. 1d6 fire each turn, Con save ends. +1d6 per slot.',
+    },
+  },
+  {
     id: 'shield',
     name: 'Shield',
     school: 'abjuration',
@@ -994,15 +1064,87 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     },
   },
   {
+    id: 'shield-of-faith',
+    name: 'Shield of Faith',
+    school: 'abjuration',
+    level: 1,
+    classes: ['cleric', 'paladin'],
+    castingTime: { normal: { value: 1, unit: 'bonus-action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Creature gains +2 AC for the duration.',
+      },
+    ],
+    description: {
+      full: "A shimmering field surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+      summary: '+2 AC for one creature. Concentration.',
+    },
+  },
+  {
+    id: 'silent-image',
+    name: 'Silent Image',
+    school: 'illusion',
+    level: 1,
+    classes: ['bard', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a bit of fleece' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Image of object/creature/phenomenon up to 15ft cube. Purely visual. Magic action to move. Physical interaction reveals illusion. Study + Int (Investigation) vs DC to discern.',
+      },
+    ],
+    description: {
+      full: "You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot Cube. The image appears at a spot within range and lasts for the duration. The image is purely visual; it isn't accompanied by sound, smell, or other sensory effects. As a Magic action, you can cause the image to move to any spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. Physical interaction with the image reveals it to be an illusion, since things can pass through it. A creature that takes a Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the creature can see through the image.",
+      summary: '15ft cube image. Purely visual. Magic action to move. Study to discern.',
+    },
+  },
+  {
     id: 'sleep',
     name: 'Sleep',
     school: 'enchantment',
     level: 1,
     classes: ['bard', 'sorcerer', 'wizard'],
-    effects: [{ kind: 'note', text: '' }],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a pinch of sand or rose petals' } },
+    effects: [
+      {
+        kind: 'note',
+        text: '5-foot sphere: Wis save or Incapacitated until end of next turn, then repeat save. Fail again: Unconscious for duration. Ends on damage or action to shake. Elves and immunity to Exhaustion auto-succeed.',
+      },
+    ],
     description: {
-      full: '',
-      summary: '',
+      full: "Each creature of your choice in a 5-foot-radius Sphere centered on a point within range must succeed on a Wisdom saving throw or have the Incapacitated condition until the end of its next turn, at which point it must repeat the save. If the target fails the second save, the target has the Unconscious condition for the duration. The spell ends on a target if it takes damage or someone within 5 feet of it takes an action to shake it out of the spell's effect. Creatures that don't sleep, such as elves, or that have Immunity to the Exhaustion condition automatically succeed on saves against this spell.",
+      summary: '5ft sphere: Wis save or Incapacitated, repeat save or Unconscious. Ends on damage.',
+    },
+  },
+  {
+    id: 'speak-with-animals',
+    name: 'Speak with Animals',
+    school: 'divination',
+    level: 1,
+    classes: ['bard', 'druid', 'ranger', 'warlock'],
+    castingTime: { normal: { value: 1, unit: 'action' }, alternate: [{ value: 1, unit: 'action', ritual: true }] },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 10, unit: 'minute' },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Comprehend and verbally communicate with Beasts. Use Influence skill options. Beasts can give info about nearby locations and monsters (past day).',
+      },
+    ],
+    description: {
+      full: "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
+      summary: 'Speak with Beasts. Use Influence. Info about nearby locations and monsters.',
     },
   },
   {
@@ -1015,6 +1157,27 @@ export const SPELLS_LEVEL_1: readonly SpellEntry[] = [
     description: {
       full: '',
       summary: '',
+    },
+  },
+  {
+    id: 'unseen-servant',
+    name: 'Unseen Servant',
+    school: 'conjuration',
+    level: 1,
+    classes: ['bard', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' }, alternate: [{ value: 1, unit: 'action', ritual: true }] },
+    range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour' },
+    components: { verbal: true, somatic: true, material: { description: 'a bit of string and of wood' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Invisible mindless force performs simple tasks. AC 10, 1 HP, Str 2. Bonus action: move 15ft and interact. Ends if >60ft from you.',
+      },
+    ],
+    description: {
+      full: "This spell creates an Invisible, mindless, shapeless, Medium force that performs simple tasks at your command until the spell ends. The servant springs into existence in an unoccupied space on the ground within range. It has AC 10, 1 Hit Point, and a Strength of 2, and it can't attack. If it drops to 0 Hit Points, the spell ends. Once on each of your turns as a Bonus Action, you can mentally command the servant to move up to 15 feet and interact with an object. The servant can perform simple tasks that a human could do, such as fetching things, cleaning, mending, folding clothes, lighting fires, serving food, and pouring drinks. Once you give the command, the servant performs the task to the best of its ability until it completes the task, then waits for your next command. If you command the servant to perform a task that would move it more than 60 feet away from you, the spell ends.",
+      summary: 'Invisible servant performs simple tasks. Bonus action to command. Ends if >60ft away.',
     },
   }
 ];

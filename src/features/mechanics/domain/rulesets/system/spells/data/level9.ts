@@ -186,6 +186,132 @@ export const SPELLS_LEVEL_9: readonly SpellEntry[] = [
     },
   },
   {
+    id: 'shapechange',
+    name: 'Shapechange',
+    school: 'transmutation',
+    level: 9,
+    classes: ['druid', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'self' },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a jade circlet worth 1,500+ GP', cost: { value: 1500, unit: 'gp', atLeast: true } } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Shape-shift into creature CR ≤ your level (seen, not Construct/Undead). Magic action: new form. Gain THP = first form HP. Retain type, alignment, Int/Wis/Cha, HP, proficiencies, Spellcasting. Equipment drops or resizes.',
+      },
+    ],
+    description: {
+      full: "You shape-shift into another creature for the duration or until you take a Magic action to shape-shift into a different eligible form. The new form must be of a creature that has a Challenge Rating no higher than your level or Challenge Rating. You must have seen the sort of creature before, and it can't be a Construct or an Undead. When you cast the spell, you gain a number of Temporary Hit Points equal to the Hit Points of the first form into which you shape-shift. These Temporary Hit Points vanish if any remain when the spell ends. Your game statistics are replaced by the stat block of the chosen form, but you retain your creature type; alignment; personality; Intelligence, Wisdom, and Charisma scores; Hit Points; Hit Point Dice; proficiencies; and ability to communicate. If you have the Spellcasting feature, you retain it too. Upon shape-shifting, you determine whether your equipment drops to the ground or changes in size and shape to fit the new form while you're in it.",
+      summary: 'Shape-shift into creature CR ≤ level. Retain Int/Wis/Cha, HP, proficiencies, Spellcasting.',
+    },
+  },
+  {
+    id: 'storm-of-vengeance',
+    name: 'Storm of Vengeance',
+    school: 'conjuration',
+    level: 9,
+    classes: ['druid'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 5280, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: '300ft radius storm cloud. Appear: Con save or 2d6 Thunder + Deafened. Turn 2: 4d6 Acid. Turn 3: 6 lightning bolts, Dex save 10d6. Turn 4: 2d6 Bludgeoning. Turns 5-10: 1d6 Cold, Difficult Terrain, Heavily Obscured, no ranged weapons.',
+      },
+    ],
+    description: {
+      full: "A churning storm cloud forms for the duration, centered on a point within range and spreading to a radius of 300 feet. Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration. At the start of each of your later turns, the storm produces different effects: Turn 2. Acidic rain falls. Each creature and object under the cloud takes 4d6 Acid damage. Turn 3. You call six bolts of lightning from the cloud to strike six different creatures or objects beneath it. Each target makes a Dexterity saving throw, taking 10d6 Lightning damage on a failed save or half as much damage on a successful one. Turn 4. Hailstones rain down. Each creature under the cloud takes 2d6 Bludgeoning damage. Turns 5–10. Gusts and freezing rain assail the area under the cloud. Each creature there takes 1d6 Cold damage. Until the spell ends, the area is Difficult Terrain and Heavily Obscured, ranged attacks with weapons are impossible there, and strong wind blows through the area.",
+      summary: '300ft storm. Turn 2: Acid. Turn 3: Lightning. Turn 4: Hail. Turns 5-10: Cold, Difficult Terrain.',
+    },
+  },
+  {
+    id: 'time-stop',
+    name: 'Time Stop',
+    school: 'transmutation',
+    level: 9,
+    classes: ['sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'self' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Time stops for others. You take 1d4+1 turns. Ends if you affect another creature or object worn/carried by another, or move >1000ft from cast location.',
+      },
+    ],
+    description: {
+      full: "You briefly stop the flow of time for everyone but yourself. No time passes for other creatures, while you take 1d4 + 1 turns in a row, during which you can use actions and move as normal. This spell ends if one of the actions you use during this period, or any effects that you create during it, affects a creature other than you or an object being worn or carried by someone other than you. In addition, the spell ends if you move to a place more than 1,000 feet from the location where you cast it.",
+      summary: 'Time stops. You take 1d4+1 turns. Ends if you affect others or move >1000ft.',
+    },
+  },
+  {
+    id: 'true-polymorph',
+    name: 'True Polymorph',
+    school: 'transmutation',
+    level: 9,
+    classes: ['bard', 'warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a drop of mercury, a dollop of gum arabic, and a wisp of smoke' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Creature or object: creature↔creature (Wis save unwilling), object→creature, creature→object. Full concentration = until dispelled. Complex CR/size rules.',
+      },
+    ],
+    description: {
+      full: "Choose one creature or nonmagical object that you can see within range. The creature shape-shifts into a different creature or a nonmagical object, or the object shape-shifts into a creature (the object must be neither worn nor carried). The transformation lasts for the duration or until the target dies or is destroyed, but if you maintain Concentration on this spell for the full duration, the spell lasts until dispelled. An unwilling creature can make a Wisdom saving throw, and if it succeeds, it isn't affected by this spell. Creature into Creature. If you turn a creature into another kind of creature, the new form can be any kind you choose that has a Challenge Rating equal to or less than the target's Challenge Rating or level. The target's game statistics are replaced by the stat block of the new form, but it retains its Hit Points, Hit Point Dice, alignment, and personality. The target gains a number of Temporary Hit Points equal to the Hit Points of the new form. These Temporary Hit Points vanish if any remain when the spell ends. The target is limited in the actions it can perform by the anatomy of its new form, and it can't speak or cast spells. The target's gear melds into the new form. The creature can't use or otherwise benefit from any of that equipment. Object into Creature. You can turn an object into any kind of creature, as long as the creature's size is no larger than the object's size and the creature has a Challenge Rating of 9 or lower. The creature is Friendly to you and your allies. In combat, it takes its turns immediately after yours, and it obeys your commands. If the spell lasts more than an hour, you no longer control the creature. It might remain Friendly to you, depending on how you have treated it. Creature into Object. If you turn a creature into an object, it transforms along with whatever it is wearing and carrying into that form, as long as the object's size is no larger than the creature's size. The creature's statistics become those of the object, and the creature has no memory of time spent in this form after the spell ends and it returns to normal.",
+      summary: 'Polymorph creature↔creature, object→creature, creature→object. Full concentration = until dispelled.',
+    },
+  },
+  {
+    id: 'true-resurrection',
+    name: 'True Resurrection',
+    school: 'necromancy',
+    level: 9,
+    classes: ['cleric', 'druid'],
+    castingTime: { normal: { value: 1, unit: 'hour' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'diamonds worth 25,000+ GP', cost: { value: 25000, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Touch creature dead ≤200 years (not old age). Revive full HP. Closes wounds, neutralizes poison, cures contagions, lifts curses. Replaces organs/limbs. Undead→non-Undead. Can provide new body if original gone.',
+      },
+    ],
+    description: {
+      full: "You touch a creature that has been dead for no longer than 200 years and that died for any reason except old age. The creature is revived with all its Hit Points. This spell closes all wounds, neutralizes any poison, cures all magical contagions, and lifts any curses affecting the creature when it died. The spell replaces damaged or missing organs and limbs. If the creature was Undead, it is restored to its non-Undead form. The spell can provide a new body if the original no longer exists, in which case you must speak the creature's name. The creature then appears in an unoccupied space you choose within 10 feet of you.",
+      summary: 'Revive creature dead ≤200 years (not old age) with full HP. Can create new body.',
+    },
+  },
+  {
+    id: 'weird',
+    name: 'Weird',
+    school: 'illusion',
+    level: 9,
+    classes: ['warlock', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true },
+    effects: [
+      {
+        kind: 'note',
+        text: '30ft radius sphere: Wis save or 10d10 psychic + Frightened. End of turn: Wis save or 5d10 psychic (ends on success).',
+      },
+    ],
+    description: {
+      full: "You try to create illusory terrors in others' minds. Each creature of your choice in a 30-foot-radius Sphere centered on a point within range makes a Wisdom saving throw. On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration. On a successful save, a target takes half as much damage only. A Frightened target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes 5d10 Psychic damage. On a successful save, the spell ends on that target.",
+      summary: '30ft sphere: Wis save or 10d10 psychic + Frightened. Repeat save each turn.',
+    },
+  },
+  {
     id: 'wish',
     name: 'Wish',
     school: 'conjuration',

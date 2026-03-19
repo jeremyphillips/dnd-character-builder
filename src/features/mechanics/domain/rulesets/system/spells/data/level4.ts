@@ -501,5 +501,138 @@ export const SPELLS_LEVEL_4: readonly SpellEntry[] = [
       full: "You make an area within range magically secure. The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side. When you cast the spell, you decide what sort of security the spell provides: sound can't pass through; barrier appears dark and foggy; Divination sensors can't appear or pass through; creatures can't be targeted by Divination; nothing can teleport in or out; planar travel blocked. Casting this spell on the same spot every day for 365 days makes the spell last until dispelled. Using a Higher-Level Spell Slot. You can increase the size of the Cube by 100 feet for each spell slot level above 4.",
       summary: 'Secure cube with chosen properties. 365 days = until dispelled. +100ft per slot.',
     },
+  },
+  {
+    id: 'resilient-sphere',
+    name: 'Resilient Sphere',
+    school: 'abjuration',
+    level: 4,
+    classes: ['wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a glass sphere' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Shimmering sphere encloses Large or smaller creature/object. Unwilling: Dex save or enclosed. Nothing passes in or out. Immune to damage. Action to push and roll at half Speed. Disintegrate destroys sphere.',
+      },
+    ],
+    description: {
+      full: "A shimmering sphere encloses a Large or smaller creature or object within range. An unwilling creature must succeed on a Dexterity saving throw or be enclosed for the duration. Nothing—not physical objects, energy, or other spell effects—can pass through the barrier, in or out, though a creature in the sphere can breathe there. The sphere is immune to all damage, and a creature or object inside can't be damaged by attacks or effects originating from outside, nor can a creature inside the sphere damage anything outside it. The sphere is weightless and just large enough to contain the creature or object inside. An enclosed creature can take an action to push against the sphere's walls and thus roll the sphere at up to half the creature's Speed. A Disintegrate spell targeting the globe destroys it without harming anything inside.",
+      summary: 'Force sphere. Nothing in/out. Immune to damage. Action to roll. Disintegrate destroys.',
+    },
+  },
+  {
+    id: 'secret-chest',
+    name: 'Secret Chest',
+    school: 'conjuration',
+    level: 4,
+    classes: ['wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'until-dispelled' },
+    components: {
+      verbal: true,
+      somatic: true,
+      material: {
+        description: 'a chest (3ft×2ft×2ft, rare materials 5,000+ GP) and Tiny replica (50+ GP)',
+        cost: { value: 5000, unit: 'gp', atLeast: true },
+      },
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Chest hidden on Ethereal Plane. Magic action + touch replica: recall chest. Magic action: send back. 12 cubic ft capacity. After 60 days, 5% cumulative daily chance to end. Recasting or destroying replica ends spell.',
+      },
+    ],
+    description: {
+      full: "You hide a chest and all its contents on the Ethereal Plane. You must touch the chest and the miniature replica that serve as Material components for the spell. The chest can contain up to 12 cubic feet of nonliving material (3 feet by 2 feet by 2 feet). While the chest remains on the Ethereal Plane, you can take a Magic action and touch the replica to recall the chest. It appears in an unoccupied space on the ground within 5 feet of you. You can send the chest back to the Ethereal Plane by taking a Magic action to touch the chest and the replica. After 60 days, there is a cumulative 5 percent chance at the end of each day that the spell ends. The spell also ends if you cast this spell again or if the Tiny replica chest is destroyed.",
+      summary: 'Chest on Ethereal Plane. Magic action to recall or send back. 5% daily chance after 60 days.',
+    },
+  },
+  {
+    id: 'stone-shape',
+    name: 'Stone Shape',
+    school: 'transmutation',
+    level: 4,
+    classes: ['cleric', 'druid', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'soft clay' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Touch Medium or smaller stone object or 5ft section. Form into any shape. Up to 2 hinges and latch. Can make passage through 5ft wall, seal door.',
+      },
+    ],
+    description: {
+      full: "You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape you like. For example, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and a latch, but finer mechanical detail isn't possible.",
+      summary: 'Reshape stone (Medium or 5ft section) into any form. Up to 2 hinges, latch.',
+    },
+  },
+  {
+    id: 'stoneskin',
+    name: 'Stoneskin',
+    school: 'transmutation',
+    level: 4,
+    classes: ['druid', 'ranger', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'touch' },
+    duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'diamond dust worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true }, consumed: true } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Willing creature: Resistance to Bludgeoning, Piercing, Slashing damage.',
+      },
+    ],
+    description: {
+      full: "Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage.",
+      summary: 'Touch: Resistance to B/P/S damage.',
+    },
+  },
+  {
+    id: 'vitriolic-sphere',
+    name: 'Vitriolic Sphere',
+    school: 'evocation',
+    level: 4,
+    classes: ['sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
+    duration: { kind: 'instantaneous' },
+    components: { verbal: true, somatic: true, material: { description: 'a drop of bile' } },
+    effects: [
+      {
+        kind: 'note',
+        text: '20-foot radius sphere: Dex save or 10d4 acid. 5d4 acid at end of next turn on failed save. +2d4 initial per slot above 4.',
+      },
+    ],
+    description: {
+      full: "You point at a location within range, and a glowing, 1-foot-diameter ball of acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area makes a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and another 5d4 Acid damage at the end of its next turn. On a successful save, a creature takes half the initial damage only. Using a Higher-Level Spell Slot. The initial damage increases by 2d4 for each spell slot level above 4.",
+      summary: '20ft sphere: Dex save or 10d4 acid + 5d4 at end of next turn. +2d4 initial per slot.',
+    },
+  },
+  {
+    id: 'wall-of-fire',
+    name: 'Wall of Fire',
+    school: 'evocation',
+    level: 4,
+    classes: ['druid', 'sorcerer', 'wizard'],
+    castingTime: { normal: { value: 1, unit: 'action' } },
+    range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
+    duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
+    components: { verbal: true, somatic: true, material: { description: 'a piece of charcoal' } },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Wall 60ft long or 20ft ring, 20ft high, 1ft thick. Appear: Dex save or 5d8 fire. One side: 5d8 fire when entering or ending turn within 10ft. +1d8 per slot above 4.',
+      },
+    ],
+    description: {
+      full: "You create a wall of fire on a solid surface within range. You can make the wall up to 60 feet long, 20 feet high, and 1 foot thick, or a ringed wall up to 20 feet in diameter, 20 feet high, and 1 foot thick. The wall is opaque and lasts for the duration. When the wall appears, each creature in its area makes a Dexterity saving throw, taking 5d8 Fire damage on a failed save or half as much damage on a successful one. One side of the wall, selected by you when you cast this spell, deals 5d8 Fire damage to each creature that ends its turn within 10 feet of that side or inside the wall. A creature takes the same damage when it enters the wall for the first time on a turn or ends its turn there. The other side of the wall deals no damage. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
+      summary: 'Wall of fire. Dex save or 5d8. One side deals 5d8 when entering/ending turn. +1d8 per slot.',
+    },
   }
 ];

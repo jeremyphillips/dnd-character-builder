@@ -11,7 +11,9 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of bat fur' } },
-    effects: [{ kind: 'note', text: 'Invisible invulnerable eye; see in all directions, 30ft darkvision. Bonus action to move 30ft.' }],
+    effects: [
+      { kind: 'state', stateId: 'arcane-eye', notes: 'Invisible, invulnerable eye. See in every direction with 30ft Darkvision. Bonus Action to move eye up to 30ft.' },
+    ],
     description: {
       full: "You create an Invisible, invulnerable eye within range that hovers for the duration. You mentally receive visual information from the eye, which can see in every direction. It also has Darkvision with a range of 30 feet. As a Bonus Action, you can move the eye up to 30 feet in any direction. A solid barrier blocks the eye's movement, but the eye can pass through an opening as small as 1 inch in diameter.",
       summary: 'Invisible eye relays vision; 30ft darkvision. Bonus action to move 30ft.',
@@ -27,7 +29,10 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: '30ft aura: Resistance to Necrotic, HP max cannot be reduced. Ally at 0 HP regains 1 HP at start of turn.' }],
+    effects: [
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'necrotic' as const },
+      { kind: 'note', text: '30ft aura: HP max cannot be reduced. Ally at 0 HP regains 1 HP at start of turn.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "An aura radiates from you in a 30-foot Emanation for the duration. While in the aura, you and your allies have Resistance to Necrotic damage, and your Hit Point maximums can't be reduced. If an ally with 0 Hit Points starts its turn in the aura, that ally regains 1 Hit Point.",
       summary: '30ft aura: Necrotic resistance, HP max protection, 0 HP allies regain 1 HP at turn start.',
@@ -126,7 +131,11 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Chosen creatures: Wis save or Charmed. Bonus action: designate direction; Charmed must move that way. Repeat save after moving.' }],
+    effects: [
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+      { kind: 'note', text: 'Bonus Action each turn: designate horizontal direction. Charmed targets must move that way. Target repeats save after moving (not a standard turn-boundary save).', category: 'under-modeled' as const },
+    ],
     description: {
       full: "Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends. For the duration, you can take a Bonus Action to designate a direction that is horizontal to you. Each Charmed target must use as much of its movement as possible to move in that direction on its next turn, taking the safest route. After moving in this way, a target repeats the save, ending the spell on itself on a success.",
       summary: 'Wis save or Charmed. Bonus action: Charmed must move in designated direction.',
@@ -148,11 +157,11 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         kind: 'save',
         save: { ability: 'wis' },
         onFail: [
-          { kind: 'state', stateId: 'confused', notes: 'Cannot take Bonus Actions or Reactions. Roll 1d10 each turn: move randomly, do nothing, attack random creature, or act normally.' },
-        ],
-      },
-      { kind: 'note', text: 'Repeat save at end of each turn to end. Behavior determined by 1d10 roll.', category: 'under-modeled' as const },
+      { kind: 'state', stateId: 'confused', notes: 'Cannot take Bonus Actions or Reactions. Roll 1d10 each turn: move randomly, do nothing, attack random creature, or act normally.', repeatSave: { ability: 'wis', timing: 'turn-end' } },
     ],
+  },
+  { kind: 'note', text: 'Behavior determined by 1d10 roll each turn.', category: 'under-modeled' as const },
+],
     scaling: [{ category: 'expanded-area', description: '+5ft sphere radius per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5 }],
     description: {
       full: "Each creature in a 10-foot-radius Sphere centered on a point you choose within range must succeed on a Wisdom saving throw, or that target can't take Bonus Actions or Reactions and must roll 1d10 at the start of each of its turns to determine its behavior (move randomly, do nothing, attack random creature, or act normally). At the end of each of its turns, an affected target repeats the save. Using a Higher-Level Spell Slot. The Sphere's radius increases by 5 feet for each spell slot level above 4.",
@@ -169,7 +178,10 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '15ft emanation: attacks deal +2d8 Acid/Cold/Fire/Lightning (choice per attack). Difficult Terrain for enemies. +1d8 per slot.' }],
+    effects: [
+      { kind: 'state', stateId: 'conjure-minor-elementals', notes: '15ft Emanation. Attacks deal +2d8 Acid/Cold/Fire/Lightning (choice per attack). Ground is Difficult Terrain for enemies.' },
+      { kind: 'note', text: 'Extra damage type chosen per attack. Difficult Terrain for enemies only.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You conjure spirits from the Elemental Planes that flit around you in a 15-foot Emanation for the duration. Until the spell ends, any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack). In addition, the ground in the Emanation is Difficult Terrain for your enemies. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       summary: '15ft emanation: +2d8 elemental damage on attacks. Difficult Terrain for enemies.',
@@ -185,7 +197,11 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '10ft emanation of nature spirits. Creatures entering/ending turn: save or effect (details in SRD).' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 10 } },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'damage', damage: '5d8', damageType: 'force' }], onSuccess: [{ kind: 'damage', damage: '2d8', damageType: 'force' }] },
+      { kind: 'note', text: '10ft Emanation. Save triggered when entering or ending turn in area. Can take Disengage as Bonus Action.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You conjure nature spirits that flit around you in a 10-foot Emanation for the duration. Whenever the Emanation enters the space of a creature you can see and whenever a creature you can see enters the Emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. The creature takes 5d8 Force damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn. In addition, you can take the Disengage action as a Bonus Action for the spell’s duration. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       summary: '10ft emanation of nature spirits. Creatures in area make save or suffer effect.',
@@ -245,7 +261,9 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'incense worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
-    effects: [{ kind: 'note', text: 'Ask one question about goal/event/activity within 7 days. Truthful reply (phrase or rhyme). 25% no-answer per repeat cast.' }],
+    effects: [
+      { kind: 'note', text: 'Ask one question about a goal, event, or activity within 7 days. Receive a truthful reply. 25% cumulative no-answer chance per repeat cast before Long Rest.', category: 'flavor' as const },
+    ],
     description: {
       full: "This spell puts you in contact with a god or a god's servants. You ask one question about a specific goal, event, or activity to occur within 7 days. The GM offers a truthful reply, which might be a short phrase or cryptic rhyme. If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.",
       summary: 'One question about next 7 days. Truthful reply. 25% no-answer on repeat.',
@@ -277,7 +295,9 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Convert raw materials to products. Large or smaller (10ft cube). Metal/stone: max Medium (5ft cube). Need proficiency for weapons/armor.' }],
+    effects: [
+      { kind: 'note', text: 'Convert raw materials into products of the same material. Large or smaller (10ft cube). Metal/stone: max Medium (5ft cube). Proficiency with tools required for weapons/armor.', category: 'flavor' as const },
+    ],
     description: {
       full: "You convert raw materials into products of the same material. You can fabricate a Large or smaller object (10-foot Cube or eight 5-foot Cubes) given sufficient material. Metal, stone, or mineral: max Medium (5-foot Cube). Can't create creatures or magic items. Need proficiency with Artisan's Tools for weapons and armor.",
       summary: 'Convert raw materials to finished products. Size limits by material.',

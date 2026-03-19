@@ -258,10 +258,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     duration: { kind: 'special', description: '1 round' },
     components: { somatic: true, material: { description: 'a copper wire' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Whisper to creature; only target hears. Target can reply in whisper only you hear. Works through solid objects if familiar. Blocked by silence, 1ft stone/metal/wood, lead.',
-      },
+      { kind: 'note', text: 'Whisper to creature within range; only target hears. Target can reply in a whisper only you hear. Works through solid objects if familiar with target. Blocked by magical silence, 1ft of stone/metal/wood, or lead.', category: 'flavor' as const },
     ],
     description: {
       full: "You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear. You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.",

@@ -53,10 +53,8 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of diamond dust worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Hide creature, place, or object (max 10ft) from Divination. Cannot be targeted by Divination or perceived through scrying.',
-      },
+      { kind: 'state', stateId: 'nondetection', notes: 'Target hidden from Divination spells and magical scrying sensors.' },
+      { kind: 'note', text: 'Target can be a willing creature, or a place or object no larger than 10 feet in any dimension.', category: 'flavor' as const },
     ],
     description: {
       full: "For the duration, you hide a target that you touch from Divination spells. The target can be a willing creature, or it can be a place or an object no larger than 10 feet in any dimension. The target can't be targeted by any Divination spell or perceived through magical scrying sensors.",
@@ -117,7 +115,8 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
-      { kind: 'note', text: 'Target gains Resistance to one chosen damage type: Acid, Cold, Fire, Lightning, or Thunder.', category: 'under-modeled' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'fire' as const },
+      { kind: 'note', text: 'Caster chooses damage type at cast time: Acid, Cold, Fire, Lightning, or Thunder. Modeled as Fire by default.', category: 'under-modeled' as const },
     ],
     description: {
       full: "For the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder.",
@@ -176,10 +175,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a copper wire' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Send 25-word message to creature you have met or described to you. Target hears, recognizes sender, can reply. 5% fail if different plane. Target can block for 8 hours.',
-      },
+      { kind: 'note', text: 'Send 25-word message to a creature you have met or that has been described to you. Target hears, recognizes sender, and can reply. 5% fail chance if on a different plane.', category: 'flavor' as const },
     ],
     description: {
       full: "You send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it. The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn't arrive. You know if the delivery fails. Upon receiving your message, a creature can block your ability to reach it again with this spell for 8 hours.",
@@ -223,11 +219,11 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         kind: 'save',
         save: { ability: 'wis' },
         onFail: [
-          { kind: 'state', stateId: 'slowed', notes: 'Speed halved, -2 AC and Dex saves, no Reactions, one attack only, action or bonus action (not both). 25% spell failure if casting requires Somatic.' },
-        ],
-      },
-      { kind: 'note', text: 'Up to 6 creatures. Repeat Wis save at end of each turn to end the effect.', category: 'under-modeled' as const },
+      { kind: 'state', stateId: 'slowed', notes: 'Speed halved, -2 AC and Dex saves, no Reactions, one attack only, action or bonus action (not both). 25% spell failure if casting requires Somatic.', repeatSave: { ability: 'wis', timing: 'turn-end' } },
     ],
+  },
+  { kind: 'note', text: 'Up to 6 creatures.', category: 'flavor' as const },
+],
     description: {
       full: "You alter time around up to six creatures of your choice in a 40-foot Cube within range. Each target must succeed on a Wisdom saving throw or be affected by this spell for the duration. An affected target's Speed is halved, it takes a −2 penalty to AC and Dexterity saving throws, and it can't take Reactions. On its turns, it can take either an action or a Bonus Action, not both, and it can make only one attack if it takes the Attack action. If it casts a spell with a Somatic component, there is a 25 percent chance the spell fails. An affected target repeats the save at the end of each of its turns, ending the spell on itself on a success.",
       summary: 'Up to 6: Wis save or Speed halved, -2 AC/Dex, no Reactions, action OR bonus. Repeat save.',
@@ -244,10 +240,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'burning incense' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Corpse with mouth answers up to 5 questions. Knows only what it knew in life. Fails if Undead when died or targeted in past 10 days. No compulsion to be truthful.',
-      },
+      { kind: 'note', text: 'Corpse answers up to 5 questions. Knows only what it knew in life. Fails if Undead when died or targeted within past 10 days. No compulsion to be truthful.', category: 'flavor' as const },
     ],
     description: {
       full: "You grant the semblance of life to a corpse of your choice within range, allowing it to answer questions you pose. The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died. The spell also fails if the corpse was the target of this spell within the past 10 days. Until the spell ends, you can ask the corpse up to five questions. The corpse knows only what it knew in life. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are antagonistic toward it or it recognizes you as an enemy. This spell doesn't return the creature's soul to its body, only its animating spirit.",
@@ -364,10 +357,8 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, material: { description: 'a miniature ziggurat' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Target understands any spoken or signed language. When target speaks/signs, any creature knowing a language understands.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'state', stateId: 'tongues', notes: 'Target understands any spoken or signed language. When target speaks/signs, any creature knowing a language understands.' },
     ],
     description: {
       full: "This spell grants the creature you touch the ability to understand any spoken or signed language that it hears or sees. Moreover, when the target communicates by speaking or signing, any creature that knows at least one language can understand it if that creature can hear the speech or see the signing.",

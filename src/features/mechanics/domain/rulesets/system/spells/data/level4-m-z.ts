@@ -12,16 +12,14 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'a bit of phosphorus or a firefly' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Choose warm shield (Resistance to Cold, retaliatory 2d8 Fire) or chill shield (Resistance to Fire, retaliatory 2d8 Cold). Shield variant selection is under-modeled.',
-      },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'cold' as const },
       {
         kind: 'trigger',
         trigger: 'hit',
-        effects: [{ kind: 'damage', damage: '2d8' }],
-        text: 'When a creature within 5 feet hits you with a melee attack roll. Damage type is Fire (warm) or Cold (chill) depending on shield choice.',
+        effects: [{ kind: 'damage', damage: '2d8', damageType: 'fire' }],
+        text: 'When a creature within 5 feet hits you with a melee attack roll.',
       },
+      { kind: 'note', text: 'Caster chooses warm shield (Resistance Cold, retaliatory Fire) or chill shield (Resistance Fire, retaliatory Cold). Modeled as warm shield.', category: 'under-modeled' as const },
     ],
     description: {
       full: 'Wispy flames wreathe your body for the duration, shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet. The flames provide you with a warm shield or a chill shield, as you choose. The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage. In addition, whenever a creature within 5 feet of you hits you with a melee attack roll, the shield erupts with flame. The attacker takes 2d8 Fire damage from a warm shield or 2d8 Cold damage from a chill shield.',
@@ -176,10 +174,8 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'fur from a bloodhound' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Sense direction to familiar creature within 1,000 ft. Specific creature or nearest of kind (seen within 30ft). Does not locate if different form (Polymorph, Flesh to Stone). Blocked by lead.',
-      },
+      { kind: 'state', stateId: 'locate-creature', notes: 'Sense direction to familiar creature within 1,000 ft. Specific creature or nearest of a kind (seen within 30ft).' },
+      { kind: 'note', text: 'Does not locate creature in a different form (Polymorph, Flesh to Stone). Blocked by any thickness of lead.', category: 'flavor' as const },
     ],
     description: {
       full: "Describe or name a creature that is familiar to you. You sense the direction to the creature's location if that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement. The spell can locate a specific creature known to you or the nearest creature of a specific kind (such as a human or a unicorn) if you have seen such a creature up close—within 30 feet—at least once. If the creature you described or named is in a different form, such as under the effects of a Flesh to Stone or Polymorph spell, this spell doesn't locate the creature. This spell can't locate a creature if any thickness of lead blocks a direct path between you and the creature.",
@@ -203,11 +199,11 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         save: { ability: 'wis' },
         onFail: [
           { kind: 'damage', damage: '4d10', damageType: 'psychic' },
-          { kind: 'state', stateId: 'terrified', notes: 'Disadvantage on ability checks and attack rolls. Takes 4d10 psychic again on failed save each turn.' },
+          { kind: 'state', stateId: 'terrified', notes: 'Disadvantage on ability checks and attack rolls.', repeatSave: { ability: 'wis', timing: 'turn-end' } },
         ],
         onSuccess: [{ kind: 'damage', damage: '2d10', damageType: 'psychic' }],
       },
-      { kind: 'note', text: 'Repeat Wis save at end of each turn; success ends spell, failure deals damage again.', category: 'under-modeled' as const },
+      { kind: 'note', text: 'Failed repeat save deals 4d10 psychic damage again.', category: 'under-modeled' as const },
     ],
     scaling: [{ category: 'extra-damage', description: '+1d10 psychic per slot level above 4', mode: 'per-slot-level', startsAtSlotLevel: 5, amount: '1d10' }],
     description: {
@@ -339,7 +335,9 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true, material: { description: 'diamond dust worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
-      { kind: 'note', text: 'Target gains Resistance to Bludgeoning, Piercing, and Slashing damage.', category: 'under-modeled' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as const },
     ],
     description: {
       full: "Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage.",

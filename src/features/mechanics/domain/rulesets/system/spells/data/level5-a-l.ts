@@ -101,7 +101,9 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'incense' } },
-    effects: [{ kind: 'note', text: 'Contact deity: ask up to 3 yes/no questions. 25% no-answer per repeat cast before Long Rest.' }],
+    effects: [
+      { kind: 'note', text: 'Contact a deity or divine proxy. Ask up to 3 yes/no questions. Receive correct answers. 25% cumulative no-answer chance per repeat cast before Long Rest.', category: 'flavor' as const },
+    ],
     description: {
       full: "You contact a deity or a divine proxy and ask up to three questions that can be answered with yes or no. You must ask your questions before the spell ends. You receive a correct answer for each question. Divine beings aren't necessarily omniscient, so you might receive \"unclear\" as an answer. If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.",
       summary: 'Ask deity up to 3 yes/no questions. Cumulative 25% no-answer on repeat casts.',
@@ -117,7 +119,9 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Learn 3 facts about area: 3 miles outdoors, 300ft underground. Settlements, portals, CR10+ creature, etc.' }],
+    effects: [
+      { kind: 'note', text: 'Learn 3 facts about surroundings: 3 miles outdoors, 300ft underground. Choose from settlements, portals, CR 10+ creatures, prevalent flora/fauna, water bodies.', category: 'flavor' as const },
+    ],
     description: {
       full: "You commune with nature spirits and gain knowledge of the surrounding area. In the outdoors, the spell gives you knowledge of the area within 3 miles of you. In caves and other natural underground settings, the radius is limited to 300 feet. The spell doesn't function where nature has been replaced by construction. Choose three of the following facts: locations of settlements, portals to other planes, location of one CR 10+ Celestial/Elemental/Fey/Fiend/Undead, most prevalent plant/mineral/Beast, locations of bodies of water.",
       summary: 'Learn 3 facts about area (3 miles outdoors, 300ft underground).',
@@ -159,7 +163,10 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Large elemental spirit (air/earth/fire/water). Enter/start turn within 5ft: Dex save or 8d8 and Restrained. +1d8 per slot.' }],
+    effects: [
+      { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '8d8' }, { kind: 'condition', conditionId: 'restrained', repeatSave: { ability: 'dex', timing: 'turn-start' } }] },
+      { kind: 'note', text: 'Large elemental spirit. Choose air (Lightning), earth (Thunder), fire (Fire), or water (Cold). Damage type matches element. Save triggered on enter or start turn within 5ft.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You conjure a Large, intangible spirit from the Elemental Planes. Choose the spirit's element: air (Lightning), earth (Thunder), fire (Fire), or water (Cold). Whenever a creature enters the spirit's space or starts its turn within 5 feet of the spirit, you can force a Dexterity saving throw. On failed save, the target takes 8d8 damage of the spirit's type and has the Restrained condition until the spell ends. At the start of each of its turns, the Restrained target repeats the save. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       summary: 'Elemental spirit: Dex save or 8d8 and Restrained. Damage scales with slot.',
@@ -175,7 +182,10 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'Contact entity. DC 15 Int save: success=ask 5 questions (one-word answers); fail=6d6 psychic, Incapacitated until Long Rest.' }],
+    effects: [
+      { kind: 'save', save: { ability: 'int', dc: 15 }, onFail: [{ kind: 'damage', damage: '6d6', damageType: 'psychic' }, { kind: 'condition', conditionId: 'incapacitated' }], onSuccess: [{ kind: 'state', stateId: 'contact-other-plane', notes: 'Ask up to 5 questions. GM answers each with one word.' }] },
+      { kind: 'note', text: 'Incapacitated condition lasts until Long Rest. Greater Restoration ends it. This is a self-targeted save.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You mentally contact a demigod, the spirit of a long-dead sage, or some other knowledgeable entity from another plane. When you cast this spell, make a DC 15 Intelligence saving throw. On a successful save, you can ask the entity up to five questions. You must ask your questions before the spell ends. The GM answers each question with one word. On a failed save, you take 6d6 Psychic damage and have the Incapacitated condition until you finish a Long Rest. A Greater Restoration spell cast on you ends this effect.",
       summary: 'Contact entity. Int save: 5 questions or 6d6 psychic and Incapacitated.',
@@ -218,7 +228,9 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'special', description: 'Vegetable 24h, stone 12h, precious metal 1h, gems 10min, adamantine/mithral 1min' },
     components: { verbal: true, somatic: true, material: { description: 'a paintbrush' } },
-    effects: [{ kind: 'note', text: 'Create object from Shadowfell (vegetable or mineral). Max 5ft cube. Duration by material. +5ft per slot above 5.' }],
+    effects: [
+      { kind: 'note', text: 'Create an object from Shadowfell material (vegetable or mineral, max 5ft cube). Duration varies: vegetable 24h, stone 12h, precious metal 1h, gems 10min, adamantine/mithral 1min. Cannot be used as spell component.', category: 'flavor' as const },
+    ],
     description: {
       full: "You pull wisps of shadow material from the Shadowfell to create an object within range. The object must be vegetable matter (soft goods, rope, wood) or mineral matter (stone, crystal, metal), no larger than a 5-foot Cube, and of a form and material you have seen. Duration: Vegetable 24 hours, Stone/crystal 12 hours, Precious metals 1 hour, Gems 10 minutes, Adamantine/mithral 1 minute. Using any created object as a spell's Material component causes that spell to fail. Using a Higher-Level Spell Slot. The Cube increases by 5 feet for each spell slot level above 5.",
       summary: 'Create object from shadow. Duration by material. +5ft per slot.',
@@ -314,10 +326,9 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 30, unit: 'day' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Verbal command. Wis save or Charmed. 5d10 psychic if acts counter to command (max 1/day). Remove Curse, Greater Restoration, Wish ends. Slot 7-8: 365 days. Slot 9: until ended.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+      { kind: 'note', text: '5d10 Psychic damage (max 1/day) if target acts counter to command. Remove Curse, Greater Restoration, or Wish ends.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You give a verbal command to a creature that you can see within range, ordering it to carry out some service or refrain from an action or a course of activity as you decide. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target automatically succeeds if it can't understand your command. While Charmed, the creature takes 5d10 Psychic damage if it acts in a manner directly counter to your command. It takes this damage no more than once each day. You can issue any command you choose, short of an activity that would result in certain death. Should you issue a suicidal command, the spell ends. A Remove Curse, Greater Restoration, or Wish spell ends this spell. Using a Higher-Level Spell Slot. If you use a level 7 or 8 spell slot, the duration is 365 days. If you use a level 9 spell slot, the spell lasts until it is ended by one of the spells mentioned above.",
@@ -356,10 +367,8 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'incense worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Up to 60ft radius. Ward: chosen creature types cannot willingly enter. Extra effects: Courage, Darkness, Daylight, Peaceful Rest, Extradimensional Interference, Fear, Resistance, Silence, Tongues, Vulnerability.',
-      },
+      { kind: 'state', stateId: 'hallowed', notes: 'Area wards chosen creature types. Bound extra effects.' },
+      { kind: 'note', text: 'Up to 60ft radius. Ward: chosen creature types cannot willingly enter. Extra effects: Courage, Darkness, Daylight, Peaceful Rest, Extradimensional Interference, Fear, Resistance, Silence, Tongues, Vulnerability.', category: 'flavor' as const },
     ],
     description: {
       full: "You touch a point and infuse an area around it with holy or unholy power. The area can have a radius up to 60 feet, and the spell fails if the radius includes an area already under the effect of Hallow. The affected area has the following effects. Hallowed Ward. Choose any of these creature types: Aberration, Celestial, Elemental, Fey, Fiend, or Undead. Creatures of the chosen types can't willingly enter the area, and any creature that is possessed by or that has the Charmed or Frightened condition from such creatures isn't possessed, Charmed, or Frightened by them while in the area. Extra Effect. You bind an extra effect to the area from the list: Courage, Darkness, Daylight, Peaceful Rest, Extradimensional Interference, Fear, Resistance, Silence, Tongues, Vulnerability.",

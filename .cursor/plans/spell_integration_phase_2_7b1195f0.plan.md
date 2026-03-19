@@ -16,13 +16,13 @@ todos:
     status: pending
   - id: phase-2-utility-stubs
     content: Author structured effects for ~40 utility/exploration/social stub spells (detection, creation, social, summoning)
-    status: pending
+    status: done
   - id: phase-3-repeat-saves
     content: Add repeatSave field to condition/state effects; implement repeat-save turn hook; upgrade ~15 partial spells
-    status: pending
+    status: done
   - id: phase-4-resistance
     content: Add DamageResistanceMarker to CombatantInstance; wire resistance/vulnerability into damage application; upgrade ~10 spells
-    status: pending
+    status: done
   - id: phase-5-combat-stubs
     content: Author structured effects for ~60 remaining combat-adjacent stub spells (save+condition, area control, attack-roll, buff)
     status: pending

@@ -1,5 +1,6 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 import type {
+  DamageResistanceMarker,
   RuntimeEffectInstance,
   RuntimeMarker,
 } from './types'
@@ -103,6 +104,34 @@ export function tickStatModifiers(
   return { nextModifiers, expired }
 }
 
+export function tickDamageResistanceMarkers(
+  markers: DamageResistanceMarker[],
+  boundary: TurnBoundary,
+): { nextMarkers: DamageResistanceMarker[]; expired: DamageResistanceMarker[] } {
+  const nextMarkers: DamageResistanceMarker[] = []
+  const expired: DamageResistanceMarker[] = []
+
+  markers.forEach((marker) => {
+    if (!marker.duration || marker.duration.tickOn !== boundary) {
+      nextMarkers.push(marker)
+      return
+    }
+
+    const remainingTurns = marker.duration.remainingTurns - 1
+    if (remainingTurns <= 0) {
+      expired.push(marker)
+      return
+    }
+
+    nextMarkers.push({
+      ...marker,
+      duration: { ...marker.duration, remainingTurns },
+    })
+  })
+
+  return { nextMarkers, expired }
+}
+
 export function processTrackedPartTurnEnd(
   state: EncounterState,
   combatantId: string | null,
@@ -202,11 +231,13 @@ export function processMarkerBoundary(
   const stateTick = tickMarkers(combatant.states, boundary)
   const suppressionTick = tickMarkers(combatant.suppressedHooks ?? [], boundary)
   const statModTick = tickStatModifiers(combatant.statModifiers ?? [], boundary)
+  const resistanceTick = tickDamageResistanceMarkers(combatant.damageResistanceMarkers ?? [], boundary)
   const hasChanges =
     conditionTick.expired.length > 0 ||
     stateTick.expired.length > 0 ||
     suppressionTick.expired.length > 0 ||
-    statModTick.expired.length > 0
+    statModTick.expired.length > 0 ||
+    resistanceTick.expired.length > 0
 
   const withTicks = hasChanges
     ? updateCombatant(state, combatantId, (current) => ({
@@ -215,6 +246,7 @@ export function processMarkerBoundary(
         states: stateTick.nextMarkers,
         suppressedHooks: suppressionTick.nextMarkers,
         statModifiers: statModTick.nextModifiers,
+        damageResistanceMarkers: resistanceTick.nextMarkers,
       }))
     : state
 
@@ -265,6 +297,18 @@ export function processMarkerBoundary(
       round: nextState.roundNumber,
       turn: nextState.turnIndex + 1,
       summary: `${getCombatantLabel(nextState, combatantId)} hook suppression ends: ${marker.label}.`,
+      details: `Expired at turn ${boundary}.`,
+    })
+  })
+
+  resistanceTick.expired.forEach((marker) => {
+    nextState = appendLog(nextState, {
+      type: 'note',
+      actorId: combatantId,
+      targetIds: [combatantId],
+      round: nextState.roundNumber,
+      turn: nextState.turnIndex + 1,
+      summary: `${getCombatantLabel(nextState, combatantId)} loses ${marker.level} to ${marker.damageType} damage.`,
       details: `Expired at turn ${boundary}.`,
     })
   })

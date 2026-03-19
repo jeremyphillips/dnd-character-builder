@@ -1,11 +1,14 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import { rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
-import type { EncounterState } from './types'
+import { rollDie, rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
+import { abilityIdToKey } from '@/features/mechanics/domain/character'
+import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
+import type { EncounterState, RuntimeTurnHook, RuntimeTurnHookRepeatSave } from './types'
 import {
   effectDurationToRuntimeDuration,
   formatTurnHookNote,
   requirementLabel,
   unmetHookRequirements,
+  updateCombatant,
 } from './shared'
 import { appendLog, getCombatantLabel } from './logging'
 import {
@@ -13,6 +16,8 @@ import {
   addStateToCombatant,
   applyDamageToCombatant,
   applyHealingToCombatant,
+  removeConditionFromCombatant,
+  removeStateFromCombatant,
 } from './mutations'
 
 export function executeTurnHooks(
@@ -55,6 +60,11 @@ export function executeTurnHooks(
         summary: `${getCombatantLabel(nextState, combatantId)} hook requirements not met: ${hook.label}.`,
         details: unmetRequirements.map(requirementLabel).join(', '),
       })
+      return
+    }
+
+    if (hook.repeatSave) {
+      nextState = resolveRepeatSave(nextState, combatantId, hook, hook.repeatSave)
       return
     }
 
@@ -125,6 +135,57 @@ export function executeTurnHooks(
       })
     })
   })
+
+  return nextState
+}
+
+function getSaveModifierForCombatant(
+  state: EncounterState,
+  combatantId: string,
+  repeatSave: RuntimeTurnHookRepeatSave,
+): number {
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant) return 0
+  const abilityKey = abilityIdToKey(repeatSave.ability)
+  return (
+    combatant.stats.savingThrowModifiers?.[abilityKey] ??
+    getAbilityModifier(combatant.stats.abilityScores?.[abilityKey] ?? 10)
+  )
+}
+
+function resolveRepeatSave(
+  state: EncounterState,
+  combatantId: string,
+  hook: RuntimeTurnHook,
+  repeatSave: RuntimeTurnHookRepeatSave,
+): EncounterState {
+  const saveModifier = getSaveModifierForCombatant(state, combatantId, repeatSave)
+  const rawRoll = rollDie(20, Math.random)
+  const total = rawRoll + saveModifier
+  const succeeded = total >= repeatSave.dc
+
+  let nextState = appendLog(state, {
+    type: 'note',
+    actorId: combatantId,
+    targetIds: [combatantId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, combatantId)} ${succeeded ? 'succeeds' : 'fails'} repeat ${repeatSave.ability.toUpperCase()} save for ${hook.label}.`,
+    details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${total} vs DC ${repeatSave.dc}.`,
+  })
+
+  if (succeeded) {
+    if (repeatSave.removeCondition) {
+      nextState = removeConditionFromCombatant(nextState, combatantId, repeatSave.removeCondition)
+    }
+    if (repeatSave.removeState) {
+      nextState = removeStateFromCombatant(nextState, combatantId, repeatSave.removeState)
+    }
+    nextState = updateCombatant(nextState, combatantId, (combatant) => ({
+      ...combatant,
+      turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),
+    }))
+  }
 
   return nextState
 }

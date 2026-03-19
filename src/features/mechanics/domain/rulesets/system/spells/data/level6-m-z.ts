@@ -120,10 +120,9 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, material: { description: "a snake's tongue" } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Suggest course (≤25 words) to 12 or fewer. Wis save or Charmed, pursue suggestion. Ends if you/allies damage target. Slot 7-9: longer duration.',
-      },
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', requiresSight: true, count: 12 },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+      { kind: 'note', text: 'Charmed targets pursue suggested course (25 words or fewer). Must sound achievable, not obviously harmful. Ends if caster or allies damage target.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You suggest a course of activity—described in no more than 25 words—to twelve or fewer creatures you can see within range that can hear and understand you. The suggestion must sound achievable and not involve obvious damage to targets or allies. Each target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target. Each Charmed target pursues the suggestion to the best of its ability. Using a Higher-Level Spell Slot. The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).",
@@ -162,10 +161,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Beseech deity/demon prince. Celestial/Elemental/Fiend appears. No compulsion; bargain for service. Payment: 100 GP/min, 1000 GP/hr, 10000 GP/day.',
-      },
+      { kind: 'note', text: 'Beseech an otherworldly entity. A Celestial, Elemental, or Fiend appears. No compulsion; bargain for service. Payment: 100 GP/min, 1,000 GP/hr, 10,000 GP/day.', category: 'flavor' as const },
     ],
     description: {
       full: "You beseech an otherworldly entity for aid. The being must be known to you: a god, a demon prince, or some other being of cosmic power. That entity sends a Celestial, an Elemental, or a Fiend loyal to it to aid you, making the creature appear in an unoccupied space within range. When the creature appears, it is under no compulsion to behave a particular way. You can ask it to perform a service in exchange for payment, but it isn't obliged to do so. Payment: 100 GP per minute, 1,000 GP per hour, 10,000 GP per day (up to 10 days). The GM can adjust. The creature returns to its home plane after the task or when the agreed duration expires.",
@@ -232,10 +228,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Link Large+ plant to another plant (same plane). Step into target plant, exit from destination. 5ft movement each way. Must have seen/touched destination plant.',
-      },
+      { kind: 'note', text: 'Link a Large or larger plant to another plant on the same plane. Any creature can step in (5ft movement) and exit from destination (5ft movement). Must have seen or touched destination plant.', category: 'flavor' as const },
     ],
     description: {
       full: "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence. You must have seen or touched the destination plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.",
@@ -253,10 +246,8 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'mushroom powder worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature gains Truesight 120ft for duration.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'state', stateId: 'true-seeing', notes: 'Truesight with a range of 120 feet.' },
     ],
     description: {
       full: "For the duration, the willing creature you touch has Truesight with a range of 120 feet.",
@@ -316,10 +307,12 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a candle' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Up to 10 willing creatures become gaseous cloud form. Fly 300ft, hover, Immunity Prone, Resistance B/P/S. Only Dash or Magic action to revert (1 min, Stunned). Revert to cloud: Magic action + 1 min.',
-      },
+      { kind: 'state', stateId: 'wind-walk', notes: 'Cloud form. Fly Speed 300ft, hover. Only Dash or Magic action to revert (1 min transformation, Stunned while reverting).' },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as const },
+      { kind: 'grant', grantType: 'condition-immunity', value: 'prone' },
+      { kind: 'note', text: 'Up to 10 willing creatures. Reverting takes 1 min (Stunned). Can revert to cloud again with Magic action + 1 min.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You and up to ten willing creatures of your choice within range assume gaseous forms for the duration, appearing as wisps of cloud. While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage. The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form. Reverting takes 1 minute, during which the target has the Stunned condition. Until the spell ends, the target can revert to cloud form, which also requires a Magic action followed by a 1-minute transformation. If a target is in cloud form and flying when the effect ends, the target descends 60 feet per round for 1 minute until it lands, which it does safely. If it can't land after 1 minute, it falls the remaining distance.",
@@ -337,10 +330,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'You and up to 5 willing within 5ft teleport to designated sanctuary. Must prepare sanctuary by casting there first. No effect if no sanctuary.',
-      },
+      { kind: 'note', text: 'You and up to 5 willing creatures within 5ft teleport to a previously designated sanctuary. Must prepare by casting this spell at the location first.', category: 'flavor' as const },
     ],
     description: {
       full: "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below). If you cast this spell without first preparing a sanctuary, the spell has no effect. You must designate a location, such as a temple, as a sanctuary by casting this spell there.",

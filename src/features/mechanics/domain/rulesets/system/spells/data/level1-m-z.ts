@@ -450,10 +450,8 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Remove poison and rot from nonmagical food and drink in 5-foot radius sphere.',
-      },
+      { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 5 } },
+      { kind: 'note', text: 'Remove poison and rot from nonmagical food and drink in the area.', category: 'flavor' as const },
     ],
     description: {
       full: "You remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range.",
@@ -649,10 +647,8 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Comprehend and verbally communicate with Beasts. Use Influence skill options. Beasts can give info about nearby locations and monsters (past day).',
-      },
+      { kind: 'state', stateId: 'speak-with-animals', notes: 'Comprehend and verbally communicate with Beasts. Use Influence skill options.' },
+      { kind: 'note', text: 'Beasts can give info about nearby locations and monsters (past day).', category: 'flavor' as const },
     ],
     description: {
       full: "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",

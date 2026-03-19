@@ -165,11 +165,17 @@ export type CheckEffect = EffectBase<'check'> & {
   onFail?: Effect[];
 };
 
+export type RepeatSave = {
+  ability: AbilityRef;
+  timing: 'turn-start' | 'turn-end';
+};
+
 export type ConditionEffect = EffectBase<'condition'> & {
   conditionId: EffectConditionId;
   targetSizeMax?: EffectSizeCategory;
   escapeDc?: number;
   escapeCheckDisadvantage?: boolean;
+  repeatSave?: RepeatSave;
 };
 
 export type ActivationEffect = EffectBase<'activation'> & {
@@ -234,6 +240,7 @@ export type StateEffect = EffectBase<'state'> & {
   };
   ongoingEffects?: Effect[];
   notes?: string;
+  repeatSave?: RepeatSave;
 };
 
 export type TargetingEffect = EffectBase<'targeting'> & {

@@ -59,7 +59,9 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a morsel of food' } },
-    effects: [{ kind: 'note', text: 'Tiny beast delivers 25-word message to location/recipient. +48 hours per slot above 2.' }],
+    effects: [
+      { kind: 'note', text: 'Tiny Beast delivers a 25-word message to a described location/recipient. Travels ~25 mi/day (50 mi if flying).', category: 'flavor' as const },
+    ],
     description: {
       full: "A Tiny Beast of your choice that you can see within range must succeed on a Charisma saving throw, or it attempts to deliver a message for you (if the target's Challenge Rating isn't 0, it automatically succeeds). You specify a location you have visited and a recipient who matches a general description, such as \"a person dressed in the uniform of the town guard\" or \"a red-haired dwarf wearing a pointed hat.\" You also communicate a message of up to twenty-five words. The Beast travels for the duration toward the specified location, covering about 25 miles per 24 hours or 50 miles if the Beast can fly. When the Beast arrives, it delivers your message to the creature that you described, mimicking your communication. If the Beast doesn't reach its destination before the spell ends, the message is lost, and the Beast returns to where you cast the spell. Using a Higher-Level Spell Slot. The spell's duration increases by 48 hours for each spell slot level above 2.",
       summary: 'Tiny beast delivers 25-word message to described recipient. Duration scales with slot level.',
@@ -107,7 +109,9 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'specially marked sticks, bones, cards, or other divinatory tokens worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Omen about results of planned action within 30 minutes. Weal, woe, both, or indifference.' }],
+    effects: [
+      { kind: 'note', text: 'Receive an omen about results of a planned action within 30 minutes: weal, woe, both, or indifference. 25% cumulative no-answer chance per repeat cast before Long Rest.', category: 'flavor' as const },
+    ],
     description: {
       full: "You receive an omen from an otherworldly entity about the results of a course of action that you plan to take within the next 30 minutes. The GM chooses the omen from the Omens table. The spell doesn't account for circumstances, such as other spells, that might change the results. If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.",
       summary: 'Receive omen about planned action within 30 minutes. Cumulative 25% no-answer on repeat casts.',
@@ -142,7 +146,21 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'One creature: Con save or Blinded or Deafened (your choice). Repeat save at end of each turn. +1 target per slot above 2.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'condition', conditionId: 'blinded', repeatSave: { ability: 'con', timing: 'turn-end' } }],
+      },
+      { kind: 'note', text: 'Caster chooses Blinded or Deafened at cast time.', category: 'under-modeled' as const },
+    ],
+    scaling: [{
+      category: 'extra-targets',
+      description: 'You can target one additional creature for each spell slot level above 2.',
+      mode: 'per-slot-level',
+      startsAtSlotLevel: 2,
+    }],
     description: {
       full: "One creature that you can see within range must succeed on a Constitution saving throw, or it has the Blinded or Deafened condition (your choice) for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2.",
       summary: 'Con save or Blinded/Deafened. Repeat save each turn. Scales with extra targets.',
@@ -177,7 +195,11 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '20ft sphere: Humanoids Cha save. Suppress Charmed/Frightened, or become Indifferent toward chosen Hostile creatures.' }],
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 }, creatureTypeFilter: ['humanoid'] },
+      { kind: 'save', save: { ability: 'cha' }, onFail: [{ kind: 'state', stateId: 'calmed', notes: 'Suppress Charmed/Frightened conditions, or become Indifferent toward chosen Hostile creatures.' }] },
+      { kind: 'note', text: 'Indifference ends if target takes damage or witnesses allies taking damage.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): The creature has Immunity to the Charmed and Frightened conditions until the spell ends (suppressing existing ones). Or the creature becomes Indifferent about creatures of your choice that it's Hostile toward; this ends if the target takes damage or witnesses allies taking damage.",
       summary: '20ft sphere: Cha save or suppress Charmed/Frightened, or become Indifferent toward Hostile creatures.',
@@ -193,7 +215,9 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'ruby dust worth 50+ GP', cost: { value: 50, unit: 'gp', atLeast: true }, consumed: true } },
-    effects: [{ kind: 'note', text: 'Object sheds bright light 20ft, dim 20ft. No heat, no fuel. Cannot be smothered.' }],
+    effects: [
+      { kind: 'note', text: 'Object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. No heat, no fuel. Cannot be smothered or quenched.', category: 'flavor' as const },
+    ],
     description: {
       full: "A flame springs from an object that you touch. The effect casts Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. It looks like a regular flame, but it creates no heat and consumes no fuel. The flame can be covered or hidden but not smothered or quenched.",
       summary: 'Permanent flame on object. No heat or fuel. Until dispelled.',
@@ -241,7 +265,10 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: '1 Copper Piece' } },
-    effects: [{ kind: 'note', text: 'Magic action: Sense Thoughts (presence within 30ft) or Read Thoughts (surface mind). Probe deeper: Wis save.' }],
+    effects: [
+      { kind: 'state', stateId: 'detect-thoughts', notes: 'Sense Thoughts (presence within 30ft) or Read Thoughts (surface mind).' },
+      { kind: 'note', text: 'Probe deeper: target makes Wis save. On fail, discern reasoning, emotions, and concerns. Target knows you are probing.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You activate one of the effects. Sense Thoughts: You sense the presence of thoughts within 30 feet (creatures that know languages or are telepathic). Read Thoughts: Target one creature; learn what is most on its mind. Magic action to probe deeper; target makes Wis save. On fail, discern reasoning, emotions, something looming large. Target knows you are probing. Blocked by 1 foot stone, 1 inch metal, lead.",
       summary: 'Sense or read thoughts within 30ft. Probe deeper with Wis save.',
@@ -305,7 +332,11 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Chosen creatures: Wis save or -10 to Perception and Passive Perception. Fighting creatures auto-succeed.' }],
+    effects: [
+      { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'enthralled', notes: '-10 to Wisdom (Perception) checks and Passive Perception.' }] },
+      { kind: 'note', text: 'Creatures you or companions are fighting automatically succeed.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You weave a distracting string of words, causing creatures of your choice that you can see within range to make a Wisdom saving throw. Any creature you or your companions are fighting automatically succeeds. On a failed save, a target has a -10 penalty to Wisdom (Perception) checks and Passive Perception until the spell ends.",
       summary: 'Wis save or -10 Perception. Fighting creatures immune.',
@@ -321,7 +352,10 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Summon Otherworldly Steed (Celestial/Fey/Fiend). Rideable, shares Initiative. Disappears at 0 HP or your death. +1 level per slot.' }],
+    effects: [
+      { kind: 'spawn', creature: 'otherworldly-steed', count: 1, location: 'self-space', actsWhen: 'immediately-after-source-turn' },
+      { kind: 'note', text: 'Steed uses Otherworldly Steed stat block. Choose Celestial, Fey, or Fiend. Shares initiative, controlled mount. Disappears at 0 HP or caster death.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You summon an otherworldly being that appears as a loyal steed in an unoccupied space within range. The steed uses the Otherworldly Steed stat block. Choose creature type: Celestial, Fey, or Fiend. The steed is an ally, shares your Initiative, functions as controlled mount. Disappears if it drops to 0 HP or you die. Using a Higher-Level Spell Slot. Use the spell slot's level for the steed's stats (level 4+ gains Fly 60 ft).",
       summary: 'Summon loyal steed. Celestial/Fey/Fiend. Scales with slot level.',
@@ -337,7 +371,9 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Sense traps within range and line of sight. Learn general nature of danger, not location.' }],
+    effects: [
+      { kind: 'note', text: 'Sense traps within range and line of sight. Learn general nature of danger, not exact location.', category: 'flavor' as const },
+    ],
     description: {
       full: "You sense any trap within range that is within line of sight. A trap includes any object or mechanism created to cause damage or danger (Alarm, Glyph of Warding, pit trap). Does not reveal natural weaknesses. This spell reveals that a trap is present but not its location. You do learn the general nature of the danger posed by a trap you sense.",
       summary: 'Sense traps in range. Learn danger type, not location.',
@@ -460,11 +496,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       {
         kind: 'save',
         save: { ability: 'wis' },
-        onFail: [{ kind: 'condition', conditionId: 'paralyzed' }],
-      },
-      {
-        kind: 'note',
-        text: 'At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.',
+        onFail: [{ kind: 'condition', conditionId: 'paralyzed', repeatSave: { ability: 'wis', timing: 'turn-end' } }],
       },
     ],
     scaling: [{

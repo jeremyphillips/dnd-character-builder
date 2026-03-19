@@ -78,7 +78,12 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Medium Fey spirit. Melee spell attack 3d12+mod Psychic, Frightened until start of next turn. Bonus: teleport 30ft and attack. +1d12 per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '3d12', damageType: 'psychic' },
+      { kind: 'condition', conditionId: 'frightened', duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } },
+      { kind: 'note', text: 'Medium Fey spirit. Melee spell attack on appearance. Bonus Action on later turns: teleport 30ft and attack again.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You conjure a Medium spirit from the Feywild in an unoccupied space you can see within range. The spirit looks like a Fey creature of your choice. When the spirit appears, you can make one melee spell attack against a creature within 5 feet of it. On a hit, the target takes Psychic damage equal to 3d12 plus your spellcasting ability modifier, and the target has the Frightened condition until the start of your next turn. As a Bonus Action on your later turns, you can teleport the spirit to an unoccupied space within 30 feet and make the attack. Using a Higher-Level Spell Slot. The damage increases by 1d12 for each spell slot level above 6.",
       summary: 'Fey spirit: melee spell attack 3d12+mod Psychic, Frightened. Bonus teleport and attack. Scales with slot.',
@@ -177,7 +182,9 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'day', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a set of divination tools worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Sense most direct physical route to named location (must be familiar). Know distance and direction. Know which path at choices.' }],
+    effects: [
+      { kind: 'state', stateId: 'find-the-path', notes: 'Know most direct physical route to a named familiar location. Know distance, direction, and which path at choices.' },
+    ],
     description: {
       full: "You magically sense the most direct physical route to a location you name. You must be familiar with the location. The spell fails if you name a destination on another plane, a moving destination, or an unspecific destination. For the duration, you know how far it is and in what direction it lies. Whenever you face a choice of paths along the way, you know which path is the most direct.",
       summary: 'Know direct route to familiar location. Distance, direction, path choices.',

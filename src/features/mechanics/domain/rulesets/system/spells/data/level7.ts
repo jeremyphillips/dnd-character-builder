@@ -85,7 +85,10 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 8, unit: 'hour', upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Step into Border Ethereal. Can only affect/be affected by Ethereal. Return to corresponding space. +3 creatures per slot above 7.' }],
+    effects: [
+      { kind: 'state', stateId: 'etherealness', notes: 'Step into Border Ethereal. Can only affect and be affected by creatures on Ethereal Plane. Return at spell end.' },
+      { kind: 'note', text: 'If you appear in an occupied space, shunted to nearest unoccupied space and take Force damage equal to twice the feet moved.', category: 'flavor' as const },
+    ],
     description: {
       full: "You step into the border regions of the Ethereal Plane, where it overlaps with your current plane. You remain in the Border Ethereal for the duration. You can perceive the plane you left (gray, can't see more than 60 feet away). While on the Ethereal Plane, you can affect and be affected only by creatures, objects, and effects on that plane. When the spell ends, you return to the plane you left. If you appear in an occupied space, you are shunted to the nearest unoccupied space and take Force damage equal to twice the feet moved. Using a Higher-Level Spell Slot. You can target up to three willing creatures (including yourself) for each spell slot level above 7. Creatures must be within 10 feet when you cast.",
       summary: 'Enter Border Ethereal. Immune to material plane. +3 targets per slot.',
@@ -215,10 +218,7 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a forked, metal rod worth 250+ GP attuned to a plane of existence', cost: { value: 250, unit: 'gp', atLeast: true } } },
     effects: [
-      {
-        kind: 'note',
-        text: 'You and up to 8 willing creatures (linking hands) transport to different plane. Specify destination generally. Or use teleportation circle sigil.',
-      },
+      { kind: 'note', text: 'You and up to 8 willing creatures (linking hands) transport to a different plane of existence. Specify destination generally or use a teleportation circle sigil sequence.', category: 'flavor' as const },
     ],
     description: {
       full: "You and up to eight willing creatures who link hands in a circle are transported to a different plane of existence. You can specify a target destination in general terms, such as a specific city on the Elemental Plane of Fire or palace on the second level of the Nine Hells, and you appear in or near that destination, as determined by the GM. Alternatively, if you know the sigil sequence of a teleportation circle on another plane of existence, this spell can take you to that circle. If the teleportation circle is too small to hold all the creatures you transported, they appear in the closest unoccupied spaces next to the circle.",
@@ -406,10 +406,7 @@ export const SPELLS_LEVEL_7: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Transport self + up to 8 willing creatures or one object. GM rolls d100 on Teleportation Outcome table based on destination familiarity (permanent circle, linked object, very familiar, seen casually, viewed once/described, false destination) to determine On Target, Off Target, Similar Area, or Mishap.',
-      },
+      { kind: 'note', text: 'Transport self and up to 8 willing creatures or one object to a destination. Outcome determined by d100 roll based on familiarity: On Target, Off Target, Similar Area, or Mishap.', category: 'flavor' as const },
     ],
     description: {
       full: `This spell instantly transports you and up to eight willing creatures that you can see within range, or a single object that you can see within range, to a destination you select. If you target an object, it must be Large or smaller, and it can't be held or carried by an unwilling creature.

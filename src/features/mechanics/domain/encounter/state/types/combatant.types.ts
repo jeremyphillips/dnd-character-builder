@@ -1,6 +1,6 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import type { AbilityKey } from '@/features/mechanics/domain/character'
+import type { AbilityKey, AbilityRef } from '@/features/mechanics/domain/character'
 import type { BreakdownToken } from '../../../resolution/resolvers/stat-resolver'
 import type { CombatActionDefinition } from '../../resolution/combat-action.types'
 
@@ -60,6 +60,13 @@ export type RuntimeTurnHookRequirement =
   | { kind: 'damage-taken-this-turn'; damageType?: string; min?: number }
   | { kind: 'hit-points-equals'; value: number }
 
+export interface RuntimeTurnHookRepeatSave {
+  ability: AbilityRef
+  dc: number
+  removeCondition?: string
+  removeState?: string
+}
+
 export interface RuntimeTurnHook {
   id: string
   label: string
@@ -70,6 +77,7 @@ export interface RuntimeTurnHook {
     damageTypes?: string[]
     duration?: RuntimeMarkerDuration
   }
+  repeatSave?: RuntimeTurnHookRepeatSave
 }
 
 export interface CombatantTurnContext {
@@ -143,6 +151,17 @@ export interface StatModifierMarker {
   duration?: RuntimeMarkerDuration
 }
 
+export type DamageResistanceLevel = 'resistance' | 'vulnerability' | 'immunity'
+
+export interface DamageResistanceMarker {
+  id: string
+  damageType: string
+  level: DamageResistanceLevel
+  sourceId: string
+  label: string
+  duration?: RuntimeMarkerDuration
+}
+
 export interface ConcentrationState {
   spellId: string
   spellLabel: string
@@ -164,6 +183,7 @@ export interface CombatantInstance {
   suppressedHooks?: RuntimeMarker[]
   statModifiers?: StatModifierMarker[]
   rollModifiers?: RollModifierMarker[]
+  damageResistanceMarkers?: DamageResistanceMarker[]
   concentration?: ConcentrationState
   turnContext?: CombatantTurnContext
   turnResources?: CombatantTurnResources

@@ -7,12 +7,14 @@ export {
 export * from './types'
 export {
   addConditionToCombatant,
+  addDamageResistanceMarker,
   addRollModifierToCombatant,
   addStateToCombatant,
   addStatModifierToCombatant,
   applyDamageToCombatant,
   applyHealingToCombatant,
   dropConcentration,
+  removeDamageResistanceMarker,
   removeConditionFromCombatant,
   removeStateFromCombatant,
   setConcentration,

@@ -16,9 +16,8 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
       {
         kind: 'save',
         save: { ability: 'wis' },
-        onFail: [{ kind: 'condition', conditionId: 'paralyzed' }],
+        onFail: [{ kind: 'condition', conditionId: 'paralyzed', repeatSave: { ability: 'wis', timing: 'turn-end' } }],
       },
-      { kind: 'note', text: 'Repeat save at end of each turn to end the effect.', category: 'under-modeled' as const },
     ],
     scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 5', mode: 'per-slot-level', startsAtSlotLevel: 6 }],
     description: {
@@ -167,10 +166,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'incense worth 250+ GP, four ivory strips worth 50+ GP each', cost: { value: 250, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Name famous person, place, or object. Receive brief summary of significant lore. Sad trombone if not famous.',
-      },
+      { kind: 'note', text: 'Name or describe a famous person, place, or object. Receive a brief summary of significant lore. If not actually famous, the spell fails with sad trombone.', category: 'flavor' as const },
     ],
     description: {
       full: "Name or describe a famous person, place, or object. The spell brings to your mind a brief summary of the significant lore about that famous thing, as described by the GM. The lore might consist of important details, amusing revelations, or even secret lore that has never been widely known. The more information you already know about the thing, the more precise and detailed the information you receive is. That information is accurate but might be couched in figurative language or poetry, as determined by the GM. If the famous thing you chose isn't actually famous, you hear sad musical notes played on a trombone, and the spell fails.",
@@ -234,10 +230,9 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a focus worth 1,000+ GP (crystal ball, mirror, etc.)', cost: { value: 1000, unit: 'gp', atLeast: true } } },
     effects: [
-      {
-        kind: 'note',
-        text: 'See and hear creature on same plane. Target Wis save (modified by knowledge, connection). Fail: invisible sensor 10ft, see/hear through it. Success: cannot use on target 24h. Can target location instead.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'scried', notes: 'Invisible sensor within 10ft. Caster sees and hears through sensor.' }] },
+      { kind: 'note', text: 'Save DC modified by familiarity and physical connection. On success, cannot target again for 24h. Can target a location instead (no save, sensor stays in place).', category: 'under-modeled' as const },
     ],
     description: {
       full: "You can see and hear a creature you choose that is on the same plane of existence as you. The target makes a Wisdom saving throw, which is modified by how well you know the target and the sort of physical connection you have to it. On a successful save, the target isn't affected, and you can't use this spell on it again for 24 hours. On a failed save, the spell creates an Invisible, intangible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. Instead of targeting a creature, you can target a location you have seen. When you do so, the sensor appears at that location and doesn't move.",
@@ -339,10 +334,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'end' },
     components: { verbal: true, material: { description: 'rare inks worth 50+ GP', cost: { value: 50, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Draw 5ft radius circle. Portal opens to known permanent circle sigil. Open until end of next turn. Enter = appear at destination. Learn 2 sigils at first. Cast same spot 365 days = permanent.',
-      },
+      { kind: 'note', text: 'Draw 5ft radius circle. Portal opens to known permanent circle sigil sequence. Open until end of next turn. Enter to appear at destination. Learn 2 sigils at first. Cast same spot 365 days = permanent.', category: 'flavor' as const },
     ],
     description: {
       full: "As you cast the spell, you draw a 5-foot-radius circle on the ground inscribed with sigils that link your location to a permanent teleportation circle of your choice whose sigil sequence you know and that is on the same plane of existence as you. A shimmering portal opens within the circle you drew and remains open until the end of your next turn. Any creature that enters the portal instantly appears within 5 feet of the destination circle or in the nearest unoccupied space if that space is occupied. Many major temples, guildhalls, and other important places have permanent teleportation circles. Each circle includes a unique sigil sequence. When you first gain the ability to cast this spell, you learn the sigil sequences for two destinations on the Material Plane, determined by the GM. You can create a permanent teleportation circle by casting this spell in the same location every day for 365 days.",
@@ -360,10 +352,8 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Enter tree, move to same-kind tree within 500ft. 5ft movement to enter/exit. Know location of same-kind trees. Once per turn. Must end turn outside tree.',
-      },
+      { kind: 'state', stateId: 'tree-stride', notes: 'Enter a tree and move to same-kind tree within 500ft. 5ft movement to enter/exit. Know location of same-kind trees. Once per turn.' },
+      { kind: 'note', text: 'Must end each turn outside a tree.', category: 'flavor' as const },
     ],
     description: {
       full: "You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you're in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no movement left, you appear within 5 feet of the tree you entered. You can use this transportation ability only once on each of your turns. You must end each turn outside a tree.",

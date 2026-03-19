@@ -1,5 +1,6 @@
 import {
   addConditionToCombatant,
+  addDamageResistanceMarker,
   addRollModifierToCombatant,
   addStateToCombatant,
   addStatModifierToCombatant,
@@ -23,6 +24,15 @@ export function getSaveModifier(combatant: CombatantInstance, ability: AbilityRe
     combatant.stats.savingThrowModifiers?.[abilityKey] ??
     getAbilityModifier(combatant.stats.abilityScores?.[abilityKey] ?? 10)
   )
+}
+
+function resolveRepeatSaveDc(action: CombatActionDefinition, _ability: AbilityRef): number | null {
+  if (action.saveProfile?.dc != null) return action.saveProfile.dc
+  const saveEffect = action.effects?.find((e) => e.kind === 'save' && typeof e.save.dc === 'number')
+  if (saveEffect && saveEffect.kind === 'save' && typeof saveEffect.save.dc === 'number') {
+    return saveEffect.save.dc
+  }
+  return null
 }
 
 export function getImmunityStateLabel(actionLabel: string): string {
@@ -189,6 +199,28 @@ export function applyActionEffects(
         sourceLabel: options.sourceLabel,
         sourceInstanceId: actor.instanceId,
       })
+      if (effect.repeatSave) {
+        const dc = resolveRepeatSaveDc(action, effect.repeatSave.ability)
+        if (dc != null) {
+          nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+            ...combatant,
+            turnHooks: [
+              ...combatant.turnHooks,
+              {
+                id: `repeat-save-${effect.conditionId}-${action.id}-${target.instanceId}`,
+                label: `${options.sourceLabel}: repeat save (${effect.conditionId})`,
+                boundary: effect.repeatSave!.timing === 'turn-start' ? 'start' as const : 'end' as const,
+                effects: [],
+                repeatSave: {
+                  ability: effect.repeatSave!.ability,
+                  dc,
+                  removeCondition: effect.conditionId,
+                },
+              },
+            ],
+          }))
+        }
+      }
       return
     }
 
@@ -196,6 +228,29 @@ export function applyActionEffects(
       nextState = addStateToCombatant(nextState, target.instanceId, effect.stateId, {
         sourceLabel: options.sourceLabel,
       })
+
+      if (effect.repeatSave) {
+        const dc = resolveRepeatSaveDc(action, effect.repeatSave.ability)
+        if (dc != null) {
+          nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+            ...combatant,
+            turnHooks: [
+              ...combatant.turnHooks,
+              {
+                id: `repeat-save-${effect.stateId}-${action.id}-${target.instanceId}`,
+                label: `${options.sourceLabel}: repeat save (${effect.stateId})`,
+                boundary: effect.repeatSave!.timing === 'turn-start' ? 'start' as const : 'end' as const,
+                effects: [],
+                repeatSave: {
+                  ability: effect.repeatSave!.ability,
+                  dc,
+                  removeState: effect.stateId,
+                },
+              },
+            ],
+          }))
+        }
+      }
 
       if (effect.escape) {
         nextState = appendEncounterNote(
@@ -241,6 +296,24 @@ export function applyActionEffects(
           })
         }
       }
+      return
+    }
+
+    if (effect.kind === 'modifier' && effect.target === 'resistance' && typeof effect.value === 'string') {
+      const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      nextState = addDamageResistanceMarker(
+        nextState,
+        target.instanceId,
+        {
+          id: `dmg-res-${effect.value}-${action.id}-${target.instanceId}`,
+          damageType: effect.value,
+          level: effect.mode === 'add' ? 'resistance' : 'resistance',
+          sourceId: action.id,
+          label: `resistance to ${effect.value}`,
+          duration: runtimeDuration,
+        },
+        { sourceLabel: options.sourceLabel },
+      )
       return
     }
 

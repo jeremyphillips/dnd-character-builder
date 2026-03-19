@@ -10,6 +10,7 @@ import {
 import { appendLog, getCombatantLabel } from './logging'
 import type { RuntimeMarker } from './types'
 import { dropConcentration } from './concentration-mutations'
+import { getDamageAfterResistance } from './resistance-mutations'
 
 export function applyDamageToCombatant(
   state: EncounterState,
@@ -20,9 +21,30 @@ export function applyDamageToCombatant(
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
 
-  const turnKey = getTurnKey(state)
+  const { adjusted, applied } = getDamageAfterResistance(
+    amount,
+    options?.damageType,
+    target.damageResistanceMarkers ?? [],
+  )
 
-  const nextState = updateCombatant(state, targetId, (combatant) => {
+  let resistanceLogState = state
+  if (applied) {
+    resistanceLogState = appendLog(state, {
+      type: 'note',
+      actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
+      targetIds: [targetId],
+      round: state.roundNumber,
+      turn: state.turnIndex + 1,
+      summary: `${getCombatantLabel(state, targetId)} has ${applied.level} to ${applied.damageType} damage (${amount} → ${adjusted}).`,
+    })
+  }
+
+  if (adjusted <= 0) return resistanceLogState
+
+  const effectiveAmount = adjusted
+  const turnKey = getTurnKey(resistanceLogState)
+
+  const nextState = updateCombatant(resistanceLogState, targetId, (combatant) => {
     const normalizedDamageType = normalizeDamageType(options?.damageType)
     const currentTurnContext = combatant.turnContext ?? createEmptyTurnContext()
     const existingSuppressedHooks = combatant.suppressedHooks ?? []
@@ -52,14 +74,14 @@ export function applyDamageToCombatant(
       const baseDamageTakenThisTurn = resetsForNewTurn ? 0 : trackedPart.damageTakenThisTurn
       const baseDamageTakenByTypeThisTurn = resetsForNewTurn ? {} : trackedPart.damageTakenByTypeThisTurn
       const baseLossAppliedThisTurn = resetsForNewTurn ? 0 : trackedPart.lossAppliedThisTurn
-      const damageTakenThisTurn = baseDamageTakenThisTurn + amount
+      const damageTakenThisTurn = baseDamageTakenThisTurn + effectiveAmount
       const damageTakenByTypeThisTurn =
         normalizedDamageType == null
           ? baseDamageTakenByTypeThisTurn
           : {
               ...baseDamageTakenByTypeThisTurn,
               [normalizedDamageType]:
-                (baseDamageTakenByTypeThisTurn[normalizedDamageType] ?? 0) + amount,
+                (baseDamageTakenByTypeThisTurn[normalizedDamageType] ?? 0) + effectiveAmount,
             }
       const thresholdCrossings =
         trackedPart.loss?.trigger === 'damage-taken-in-single-turn'
@@ -98,7 +120,7 @@ export function applyDamageToCombatant(
         ...combatant.stats,
         currentHitPoints: fatalTrackedPart
           ? 0
-          : Math.max(0, combatant.stats.currentHitPoints - amount),
+          : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount),
       },
       trackedParts,
       turnResources: syncCombatantTurnResources({
@@ -107,14 +129,14 @@ export function applyDamageToCombatant(
       }),
       suppressedHooks,
       turnContext: {
-        totalDamageTaken: currentTurnContext.totalDamageTaken + amount,
+        totalDamageTaken: currentTurnContext.totalDamageTaken + effectiveAmount,
         damageTakenByType:
           normalizedDamageType == null
             ? currentTurnContext.damageTakenByType
             : {
                 ...currentTurnContext.damageTakenByType,
                 [normalizedDamageType]:
-                  (currentTurnContext.damageTakenByType[normalizedDamageType] ?? 0) + amount,
+                  (currentTurnContext.damageTakenByType[normalizedDamageType] ?? 0) + effectiveAmount,
               },
       },
     }
@@ -126,7 +148,7 @@ export function applyDamageToCombatant(
     targetIds: [targetId],
     round: state.roundNumber,
     turn: state.turnIndex + 1,
-    summary: `${getCombatantLabel(state, targetId)} takes ${amount} damage.`,
+    summary: `${getCombatantLabel(resistanceLogState, targetId)} takes ${effectiveAmount} damage.`,
     details: [
       options?.sourceLabel ? `Source: ${options.sourceLabel}.` : null,
       options?.damageType ? `Damage type: ${options.damageType}.` : null,
@@ -171,7 +193,7 @@ export function applyDamageToCombatant(
     }
   })
 
-  loggedState = checkConcentrationOnDamage(loggedState, targetId, amount)
+  loggedState = checkConcentrationOnDamage(loggedState, targetId, effectiveAmount)
 
   return loggedState
 }

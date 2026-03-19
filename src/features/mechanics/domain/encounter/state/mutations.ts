@@ -28,3 +28,7 @@ export {
   setConcentration,
   dropConcentration,
 } from './concentration-mutations'
+export {
+  addDamageResistanceMarker,
+  removeDamageResistanceMarker,
+} from './resistance-mutations'

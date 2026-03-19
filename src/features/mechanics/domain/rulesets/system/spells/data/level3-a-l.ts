@@ -59,7 +59,9 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Roll 1d6 at end of turn: 4-6 you go to Ethereal Plane, return at start of next turn. Choose space within 10ft.' }],
+    effects: [
+     { kind: 'state', stateId: 'blink', notes: 'Roll 1d6 at end of each turn. On 4-6, vanish to Ethereal Plane until start of next turn. Return to space within 10ft.' },
+   ],
     description: {
       full: "Roll 1d6 at the end of each of your turns for the duration. On a roll of 4–6, you vanish from your current plane of existence and appear in the Ethereal Plane. While there, you can perceive the plane you left in shades of gray but can't see more than 60 feet away. You return to an unoccupied space of your choice within 10 feet of the space you left at the start of your next turn.",
       summary: '50% chance each turn to blink to Ethereal Plane. Return at start of next turn.',
@@ -101,7 +103,9 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 5280, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a focus worth 100+ GP (jeweled horn for hearing or glass eye for seeing)', cost: { value: 100, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Invisible sensor at familiar or obvious location. Choose seeing or hearing; Bonus action to switch.' }],
+    effects: [
+     { kind: 'state', stateId: 'clairvoyance', notes: 'Invisible sensor at familiar or obvious location. Choose seeing or hearing. Bonus Action to switch.' },
+   ],
     description: {
       full: "You create an Invisible sensor within range in a location familiar to you or in an obvious location that is unfamiliar. The intangible, invulnerable sensor remains in place for the duration. When you cast the spell, choose seeing or hearing. You can use the chosen sense through the sensor as if you were in its space. As a Bonus Action, you can switch between seeing and hearing.",
       summary: 'Invisible sensor at location. See or hear through it; Bonus action to switch.',
@@ -117,7 +121,12 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Large pack of spectral animals. Advantage on Str saves within 5ft. Move pack 30ft. Creatures within 10ft: Dex save or 3d10 slashing. +1d10 per slot.' }],
+    effects: [
+     { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 10 } },
+     { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '3d10', damageType: 'slashing' }] },
+     { kind: 'roll-modifier', appliesTo: 'saving-throws', modifier: 'advantage', text: 'Advantage on Str saves while within 5ft of pack.' },
+     { kind: 'note', text: 'Large spectral pack. Move pack up to 30ft when you move. Save triggered when pack moves within 10ft of a creature or creature enters/ends turn there.', category: 'under-modeled' as const },
+   ],
     description: {
       full: "You conjure nature spirits that appear as a Large pack of spectral, intangible animals. You have Advantage on Strength saving throws within 5 feet of the pack. When you move, you can move the pack up to 30 feet. Whenever the pack moves within 10 feet of a creature or a creature enters/ends turn there, you can force a Dexterity saving throw: 3d10 Slashing on fail. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
       summary: 'Spectral animal pack. Dex save 3d10 slashing when near. Damage scales with slot.',
@@ -149,7 +158,9 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Create 45 pounds food and 30 gallons water. Bland but nourishing. Food spoils after 24h.' }],
+    effects: [
+     { kind: 'note', text: 'Create 45 pounds of food and 30 gallons of fresh water. Bland but nourishing. Food spoils after 24 hours.', category: 'flavor' as const },
+   ],
     description: {
       full: "You create 45 pounds of food and 30 gallons of fresh water on the ground or in containers within range—both useful in fending off malnutrition and dehydration. The food is bland but nourishing and looks like a food of your choice, and the water is clean. The food spoils after 24 hours if uneaten.",
       summary: 'Create 45 lb food and 30 gal water. Spoils after 24h.',
@@ -202,10 +213,10 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
       {
         kind: 'save',
         save: { ability: 'wis' },
-        onFail: [{ kind: 'condition', conditionId: 'frightened' }],
-      },
-      { kind: 'note', text: 'Frightened creature drops held items, must Dash away each turn. Repeats save at end of turn if no line of sight to caster.', category: 'under-modeled' as const },
-    ],
+    onFail: [{ kind: 'condition', conditionId: 'frightened', repeatSave: { ability: 'wis', timing: 'turn-end' } }],
+  },
+  { kind: 'note', text: 'Frightened creature drops held items, must Dash away each turn. Repeat save only available when no line of sight to caster.', category: 'under-modeled' as const },
+],
     description: {
       full: "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration. A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn't have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.",
       summary: '30ft cone: Wis save or Frightened, must flee. Save if no line of sight.',
@@ -281,10 +292,12 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of gauze' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Willing creature becomes misty cloud. Fly 10ft, hover. Resistance to B/P/S. Advantage on Str/Dex/Con saves. Can pass through narrow openings. +1 target per slot above 3.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'state', stateId: 'gaseous-form', notes: 'Misty cloud. Fly 10ft, hover. Can pass through openings as small as 1 inch.' },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as const },
+      { kind: 'roll-modifier', appliesTo: 'saving-throws', modifier: 'advantage', text: 'Advantage on Str, Dex, and Con saves.' },
     ],
     description: {
       full: "A willing creature you touch shape-shifts, along with everything it's wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself. While in this form, the target's only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow openings, but it treats liquids as though they were solid surfaces. The target can't talk or manipulate objects, and any objects it was carrying or holding can't be dropped, used, or otherwise interacted with. Finally, the target can't attack or cast spells. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 3.",

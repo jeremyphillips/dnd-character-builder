@@ -54,10 +54,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'fur from a bloodhound' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Describe or name Beast, Plant creature, or nonmagical plant. Learn direction and distance to closest within 5 miles.',
-      },
+      { kind: 'note', text: 'Learn direction and distance to the closest Beast, Plant creature, or nonmagical plant of a named kind within 5 miles.', category: 'flavor' as const },
     ],
     description: {
       full: "Describe or name a specific kind of Beast, Plant creature, or nonmagical plant. You learn the direction and distance to the closest creature or plant of that kind within 5 miles, if any are present.",
@@ -75,10 +72,8 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a forked twig' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Sense direction to familiar object within 1,000 ft. Specific object (seen within 30ft) or nearest of kind. Blocked by lead.',
-      },
+      { kind: 'state', stateId: 'locate-object', notes: 'Sense direction to familiar object within 1,000 ft. Specific object (seen within 30ft) or nearest of a kind.' },
+      { kind: 'note', text: 'Blocked by any thickness of lead.', category: 'flavor' as const },
     ],
     description: {
       full: "Describe or name an object that is familiar to you. You sense the direction to the object's location if that object is within 1,000 feet of you. If the object is in motion, you know the direction of its movement. The spell can locate a specific object known to you if you have seen it up close—within 30 feet—at least once. Alternatively, the spell can locate the nearest object of a particular kind, such as a certain kind of apparel, jewelry, furniture, tool, or weapon. This spell can't locate an object if any thickness of lead blocks a direct path between you and the object.",
@@ -180,10 +175,8 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
     effects: [
-      {
-        kind: 'note',
-        text: 'Teleport up to 30 feet to unoccupied space you can see.',
-      },
+      { kind: 'move', distance: 30 },
+      { kind: 'note', text: 'Teleport to an unoccupied space you can see. No opportunity attacks.', category: 'flavor' as const },
     ],
     description: {
       full: "Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see.",
@@ -400,10 +393,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of talc' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'See Invisible creatures/objects as if visible. See into Ethereal Plane (ghostly appearance).',
-      },
+      { kind: 'state', stateId: 'see-invisibility', notes: 'See Invisible creatures and objects as if visible. See into the Ethereal Plane.' },
     ],
     description: {
       full: "For the duration, you see creatures and objects that have the Invisible condition as if they were visible, and you can see into the Ethereal Plane. Creatures and objects there appear ghostly.",
@@ -558,10 +548,9 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 8, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, material: { description: 'a drop of honey' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Suggest course of activity (25 words or fewer). Must sound achievable, not obviously harmful. Wis save or Charmed, pursues suggestion. Ends if you or allies damage target.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+      { kind: 'note', text: 'Charmed target pursues a suggested course of activity (25 words or fewer). Must sound achievable, not obviously harmful. Ends if caster or allies damage target.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You suggest a course of activity—described in no more than 25 words—to one creature you can see within range that can hear and understand you. The suggestion must sound achievable and not involve anything that would obviously deal damage to the target or its allies. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target. The Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the suggested activity can be completed in a shorter time, the spell ends for the target upon completing it.",
@@ -640,10 +629,9 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true },
     effects: [
-      {
-        kind: 'note',
-        text: '15-foot radius sphere. Enter or start turn: Cha save or cannot speak deliberate lie. You know success/fail. Creature aware, can avoid answering.',
-      },
+      { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 15 } },
+      { kind: 'save', save: { ability: 'cha' }, onFail: [{ kind: 'state', stateId: 'zone-of-truth', notes: 'Cannot speak a deliberate lie while in the radius.' }] },
+      { kind: 'note', text: 'Caster knows whether each creature succeeds or fails. Affected creatures are aware and can avoid answering.', category: 'under-modeled' as const },
     ],
     description: {
       full: "You create a magical zone that guards against deception in a 15-foot-radius Sphere centered on a point within range. Until the spell ends, a creature that enters the spell's area for the first time on a turn or starts its turn there makes a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether a creature succeeds or fails on this save. An affected creature is aware of the spell and can avoid answering questions to which it would normally respond with a lie. Such a creature can be evasive yet must be truthful.",

@@ -33,10 +33,9 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a morsel of food' } },
     effects: [
-      {
-        kind: 'note',
-        text: 'Beast makes Wis save or is Charmed for 24 hours. Ends if you or allies damage it.',
-      },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true, creatureTypeFilter: ['beast'] },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+      { kind: 'note', text: 'Ends if you or allies deal damage to the target.', category: 'under-modeled' as const },
     ],
     description: {
       full: "Target a Beast that you can see within range. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. If you or one of your allies deals damage to the target, the spells ends. Using a Higher-Level Spell Slot. You can target one additional Beast for each spell slot level above 1.",
@@ -193,7 +192,11 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'One-word command: Approach, Drop, Flee, Grovel, or Halt. Wis save or follow on next turn. +1 target per slot.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'commanded', notes: 'Target follows one-word command on its next turn: Approach, Drop, Flee, Grovel, or Halt.' }] },
+      { kind: 'note', text: 'Specific command behavior (Approach, Drop, Flee, Grovel, Halt) is under-modeled.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. Choose: Approach, Drop, Flee, Grovel, or Halt. Using a Higher-Level Spell Slot. You can affect one additional creature for each spell slot level above 1.",
       summary: 'One-word command (Approach, Drop, Flee, Grovel, Halt). Wis save or obey. Scales with targets.',
@@ -209,7 +212,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of soot and salt' } },
-    effects: [{ kind: 'note', text: 'Understand literal meaning of any spoken/written language. Touch to read. Does not decode symbols.' }],
+    effects: [
+      { kind: 'state', stateId: 'comprehend-languages', notes: 'Understand literal meaning of any spoken/written language. Touch to read.' },
+      { kind: 'note', text: 'Does not decode symbols or secret messages.', category: 'flavor' as const },
+    ],
     description: {
       full: "For the duration, you understand the literal meaning of any language that you hear or see signed. You also understand any written language that you see, but you must be touching the surface on which the words are written. It takes about 1 minute to read one page of text. This spell doesn't decode symbols or secret messages.",
       summary: 'Understand any spoken or written language. Touch to read. Does not decode symbols.',
@@ -225,7 +231,9 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a mix of water and sand' } },
-    effects: [{ kind: 'note', text: 'Create: 10 gallons water or 30ft cube rain. Destroy: 10 gallons or 30ft cube fog. +10 gal or +5ft per slot.' }],
+    effects: [
+      { kind: 'note', text: 'Create: 10 gallons water or 30ft cube rain. Destroy: 10 gallons or 30ft cube fog.', category: 'flavor' as const },
+    ],
     description: {
       full: "Create Water: You create up to 10 gallons of clean water within range in an open container, or the water falls as rain in a 30-foot Cube, extinguishing exposed flames. Destroy Water: You destroy up to 10 gallons of water in an open container, or destroy fog in a 30-foot Cube. Using a Higher-Level Spell Slot. You create or destroy 10 additional gallons, or the Cube size increases by 5 feet, for each spell slot level above 1.",
       summary: 'Create or destroy water. Amount/area scales with slot level.',
@@ -267,7 +275,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Sense Aberration, Celestial, Elemental, Fey, Fiend, Undead within 30ft. Sense Hallow. Blocked by stone/lead.' }],
+    effects: [
+      { kind: 'state', stateId: 'detect-evil-and-good', notes: 'Sense Aberration, Celestial, Elemental, Fey, Fiend, Undead within 30ft. Sense Hallow.' },
+      { kind: 'note', text: 'Blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.', category: 'flavor' as const },
+    ],
     description: {
       full: "For the duration, you sense the location of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of yourself. You also sense whether the Hallow spell is active there. The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.",
       summary: 'Sense extraplanar creature types within 30ft. Blocked by stone/lead.',
@@ -283,7 +294,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Sense magic within 30ft. Magic action to see aura and learn spell school. Blocked by stone, metal, lead.' }],
+    effects: [
+      { kind: 'state', stateId: 'detect-magic', notes: 'Sense magic within 30ft. Magic action to see aura and learn spell school.' },
+      { kind: 'note', text: 'Blocked by 1 foot of stone, metal, or wood, or a thin sheet of lead.', category: 'flavor' as const },
+    ],
     description: {
       full: "For the duration, you sense the presence of magical effects within 30 feet of yourself. If you sense such effects, you can take the Magic action to see a faint aura around any visible creature or object in the area that bears the magic, and if an effect was created by a spell, you learn the spell's school of magic. The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.",
       summary: 'Sense magic within 30ft. Magic action to identify school. Blocked by stone/lead.',
@@ -299,7 +313,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a yew leaf' } },
-    effects: [{ kind: 'note', text: 'Sense poisons, poisonous creatures, magical contagions within 30ft. Learn kind. Blocked by stone/lead.' }],
+    effects: [
+      { kind: 'state', stateId: 'detect-poison-and-disease', notes: 'Sense poisons, poisonous creatures, and magical contagions within 30ft. Learn kind.' },
+      { kind: 'note', text: 'Blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.', category: 'flavor' as const },
+    ],
     description: {
       full: "For the duration, you sense the location of poisons, poisonous or venomous creatures, and magical contagions within 30 feet of yourself. You sense the kind of poison, creature, or contagion in each case. The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.",
       summary: 'Sense poisons and diseases within 30ft. Blocked by stone/lead.',
@@ -411,7 +428,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Take Dash action; can Dash as Bonus Action for duration.' }],
+    effects: [
+      { kind: 'action', action: 'dash' },
+      { kind: 'state', stateId: 'expeditious-retreat', notes: 'Can take Dash as a Bonus Action for the duration.' },
+    ],
     description: {
       full: "You take the Dash action, and until the spell ends, you can take that action again as a Bonus Action.",
       summary: 'Dash as action and Bonus Action for duration.',
@@ -469,7 +489,9 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, material: { description: 'a small feather or piece of down' } },
-    effects: [{ kind: 'note', text: 'Up to 5 falling creatures descend 60ft/round. No fall damage if they land before spell ends.' }],
+    effects: [
+      { kind: 'note', text: 'Up to 5 falling creatures descend 60ft/round. No fall damage if they land before spell ends.', category: 'flavor' as const },
+    ],
     description: {
       full: "Choose up to five falling creatures within range. A falling creature's rate of descent slows to 60 feet per round until the spell ends. If a creature lands before the spell ends, the creature takes no damage from the fall, and the spell ends for that creature.",
       summary: 'Up to 5 creatures fall 60ft/round, no fall damage.',
@@ -485,7 +507,10 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'burning incense worth 10+ GP', cost: { value: 10, unit: 'gp', atLeast: true }, consumed: true } },
-    effects: [{ kind: 'note', text: 'Gain familiar (CR 0 Beast form). Telepathy 100ft. Bonus: see/hear through it. Can deliver touch spells.' }],
+    effects: [
+      { kind: 'spawn', creature: 'familiar', count: 1, location: 'self-space', actsWhen: 'immediately-after-source-turn' },
+      { kind: 'note', text: 'Familiar is CR 0 Beast form (Celestial/Fey/Fiend). Telepathy 100ft. Bonus Action: see/hear through it. Can deliver touch spells.', category: 'under-modeled' as const },
+    ],
     description: {
       full: "You gain the service of a familiar, a spirit that takes an animal form you choose (Bat, Cat, Frog, Hawk, Lizard, Octopus, Owl, Rat, Raven, Spider, Weasel, or CR 0 Beast). The familiar has the statistics of the chosen form but is Celestial, Fey, or Fiend. Telepathic connection within 100 feet. Bonus Action: see through familiar's eyes. Familiar can deliver touch spells. Dismiss to pocket dimension as Magic action.",
       summary: 'Gain familiar. Telepathy, see through eyes, deliver touch spells.',

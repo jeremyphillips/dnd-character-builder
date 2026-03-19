@@ -54,6 +54,7 @@ export function toCombatLogEntry(event: CombatLogEvent): CombatLogEntry {
     importance: getImportance(event.type),
     message: event.summary,
     details: event.details ? [event.details] : undefined,
+    debugDetails: event.debugDetails,
   }
 }
 

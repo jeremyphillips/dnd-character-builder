@@ -22,7 +22,6 @@ export default function CharacterRoute() {
   const viewerCharacterIds = campaign?.members?.viewerCharacterIds ?? [];
   const ctx = toViewerContext(campaign?.viewer, viewerCharacterIds);
   const canManage = canManageContent(ctx);
-  const userOwnsCharacter = viewerCharacterIds.includes(id ?? '');
 
 
   const breadcrumbs = useBreadcrumbs()
@@ -84,7 +83,7 @@ export default function CharacterRoute() {
       character={state.character}
       campaigns={state.campaigns}
       pendingMemberships={state.pendingMemberships}
-      isOwner={userOwnsCharacter}
+      isOwner={state.isOwner}
       isAdmin={canManage}
       ownerName={state.ownerName}
       error={state.error}

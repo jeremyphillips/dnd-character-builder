@@ -1,10 +1,15 @@
 import {
   addConditionToCombatant,
+  addDamageResistanceMarker,
+  addRollModifierToCombatant,
   addStateToCombatant,
   addStatModifierToCombatant,
   applyDamageToCombatant,
+  applyHealingToCombatant,
   appendEncounterNote,
   effectDurationToRuntimeDuration,
+  removeStatesByClassification,
+  updateEncounterCombatant,
   type CombatantInstance,
 } from '../../state'
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
@@ -12,7 +17,7 @@ import { abilityIdToKey, type AbilityRef } from '../../../character'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
-import { rollDie, rollDamage } from '../../../resolution/engines/dice.engine'
+import { rollDie, rollDamage, rollHealing } from '../../../resolution/engines/dice.engine'
 
 export function getSaveModifier(combatant: CombatantInstance, ability: AbilityRef): number {
   const abilityKey = abilityIdToKey(ability)
@@ -20,6 +25,15 @@ export function getSaveModifier(combatant: CombatantInstance, ability: AbilityRe
     combatant.stats.savingThrowModifiers?.[abilityKey] ??
     getAbilityModifier(combatant.stats.abilityScores?.[abilityKey] ?? 10)
   )
+}
+
+function resolveRepeatSaveDc(action: CombatActionDefinition, _ability: AbilityRef): number | null {
+  if (action.saveProfile?.dc != null) return action.saveProfile.dc
+  const saveEffect = action.effects?.find((e) => e.kind === 'save' && typeof e.save.dc === 'number')
+  if (saveEffect && saveEffect.kind === 'save' && typeof saveEffect.save.dc === 'number') {
+    return saveEffect.save.dc
+  }
+  return null
 }
 
 export function getImmunityStateLabel(actionLabel: string): string {
@@ -103,6 +117,11 @@ function formatNestedEffectSummary(effect: Effect): string | null {
   return null
 }
 
+export type ApplyEffectsResult = {
+  state: EncounterState
+  createdMarkerIds: string[]
+}
+
 export function applyActionEffects(
   state: EncounterState,
   actor: CombatantInstance,
@@ -110,10 +129,11 @@ export function applyActionEffects(
   action: CombatActionDefinition,
   effects: Effect[] | undefined,
   options: { rng: () => number; sourceLabel: string },
-): EncounterState {
-  if (!effects || effects.length === 0) return state
+): ApplyEffectsResult {
+  if (!effects || effects.length === 0) return { state, createdMarkerIds: [] }
 
   let nextState = state
+  const markerIds: string[] = []
 
   effects.forEach((effect) => {
     if (effect.kind === 'save') {
@@ -140,7 +160,7 @@ export function applyActionEffects(
         },
       )
 
-      nextState = applyActionEffects(
+      const nested = applyActionEffects(
         nextState,
         actor,
         target,
@@ -148,6 +168,8 @@ export function applyActionEffects(
         succeeded ? effect.onSuccess : effect.onFail,
         options,
       )
+      nextState = nested.state
+      markerIds.push(...nested.createdMarkerIds)
       return
     }
 
@@ -163,17 +185,89 @@ export function applyActionEffects(
       return
     }
 
+    if (effect.kind === 'hit-points') {
+      const resolved = rollHealing(String(effect.value), options.rng)
+      if (resolved && resolved.total > 0) {
+        if (effect.mode === 'heal') {
+          nextState = applyHealingToCombatant(nextState, target.instanceId, resolved.total, {
+            actorId: actor.instanceId,
+            sourceLabel: options.sourceLabel,
+          })
+        } else {
+          nextState = applyDamageToCombatant(nextState, target.instanceId, resolved.total, {
+            actorId: actor.instanceId,
+            sourceLabel: options.sourceLabel,
+          })
+        }
+      }
+      return
+    }
+
     if (effect.kind === 'condition') {
       nextState = addConditionToCombatant(nextState, target.instanceId, effect.conditionId, {
         sourceLabel: options.sourceLabel,
+        sourceInstanceId: actor.instanceId,
+        classification: effect.classification,
       })
+      markerIds.push(effect.conditionId)
+      if (effect.repeatSave) {
+        const dc = resolveRepeatSaveDc(action, effect.repeatSave.ability)
+        if (dc != null) {
+          const hookId = `repeat-save-${effect.conditionId}-${action.id}-${target.instanceId}`
+          nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+            ...combatant,
+            turnHooks: [
+              ...combatant.turnHooks,
+              {
+                id: hookId,
+                label: `${options.sourceLabel}: repeat save (${effect.conditionId})`,
+                boundary: effect.repeatSave!.timing === 'turn-start' ? 'start' as const : 'end' as const,
+                effects: [],
+                repeatSave: {
+                  ability: effect.repeatSave!.ability,
+                  dc,
+                  removeCondition: effect.conditionId,
+                },
+              },
+            ],
+          }))
+          markerIds.push(hookId)
+        }
+      }
       return
     }
 
     if (effect.kind === 'state') {
       nextState = addStateToCombatant(nextState, target.instanceId, effect.stateId, {
         sourceLabel: options.sourceLabel,
+        classification: effect.classification,
       })
+      markerIds.push(effect.stateId)
+
+      if (effect.repeatSave) {
+        const dc = resolveRepeatSaveDc(action, effect.repeatSave.ability)
+        if (dc != null) {
+          const hookId = `repeat-save-${effect.stateId}-${action.id}-${target.instanceId}`
+          nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+            ...combatant,
+            turnHooks: [
+              ...combatant.turnHooks,
+              {
+                id: hookId,
+                label: `${options.sourceLabel}: repeat save (${effect.stateId})`,
+                boundary: effect.repeatSave!.timing === 'turn-start' ? 'start' as const : 'end' as const,
+                effects: [],
+                repeatSave: {
+                  ability: effect.repeatSave!.ability,
+                  dc,
+                  removeState: effect.stateId,
+                },
+              },
+            ],
+          }))
+          markerIds.push(hookId)
+        }
+      }
 
       if (effect.escape) {
         nextState = appendEncounterNote(
@@ -195,35 +289,94 @@ export function applyActionEffects(
         })
       }
 
-      const ongoingSummary = (effect.ongoingEffects ?? [])
-        .map((nestedEffect) => formatNestedEffectSummary(nestedEffect))
-        .filter((summary): summary is string => Boolean(summary))
-        .join(' ')
-
-      if (ongoingSummary) {
-        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${ongoingSummary}`, {
-          actorId: actor.instanceId,
-          targetIds: [target.instanceId],
-        })
+      if (effect.ongoingEffects && effect.ongoingEffects.length > 0) {
+        const hookId = `ongoing-${effect.stateId}-${action.id}-${target.instanceId}`
+        nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+          ...combatant,
+          turnHooks: [
+            ...combatant.turnHooks,
+            {
+              id: hookId,
+              label: `${options.sourceLabel}: ${effect.stateId} (ongoing)`,
+              boundary: 'start' as const,
+              effects: effect.ongoingEffects!,
+            },
+          ],
+        }))
+        markerIds.push(hookId)
+        const ongoingSummary = effect.ongoingEffects
+          .map((nestedEffect) => formatNestedEffectSummary(nestedEffect))
+          .filter((summary): summary is string => Boolean(summary))
+          .join(' ')
+        if (ongoingSummary) {
+          nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Ongoing — ${ongoingSummary}`, {
+            actorId: actor.instanceId,
+            targetIds: [target.instanceId],
+          })
+        }
       }
       return
     }
 
-    if (effect.kind === 'modifier' && effect.target === 'armor_class' && effect.mode === 'add' && typeof effect.value === 'number') {
+    if (effect.kind === 'modifier' && effect.target === 'resistance' && typeof effect.value === 'string') {
       const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      const markerId = `dmg-res-${effect.value}-${action.id}-${target.instanceId}`
+      nextState = addDamageResistanceMarker(
+        nextState,
+        target.instanceId,
+        {
+          id: markerId,
+          damageType: effect.value,
+          level: effect.mode === 'add' ? 'resistance' : 'resistance',
+          sourceId: action.id,
+          label: `resistance to ${effect.value}`,
+          duration: runtimeDuration,
+        },
+        { sourceLabel: options.sourceLabel },
+      )
+      markerIds.push(markerId)
+      return
+    }
+
+    if (effect.kind === 'modifier' && typeof effect.value === 'number' && (effect.mode === 'add' || effect.mode === 'set')) {
+      const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      const sign = effect.mode === 'add' && effect.value > 0 ? '+' : ''
+      const modeLabel = effect.mode === 'set' ? `set ${effect.target} ${effect.value}` : `${sign}${effect.value} ${effect.target}`
+      const markerId = `stat-mod-${effect.target}-${action.id}-${target.instanceId}`
       nextState = addStatModifierToCombatant(
         nextState,
         target.instanceId,
         {
-          id: `stat-mod-ac-${action.id}-${target.instanceId}`,
-          label: `+${effect.value} AC`,
-          target: 'armor_class',
-          mode: 'add',
+          id: markerId,
+          label: modeLabel,
+          target: effect.target,
+          mode: effect.mode,
           value: effect.value,
           duration: runtimeDuration,
         },
         { sourceLabel: options.sourceLabel },
       )
+      markerIds.push(markerId)
+      return
+    }
+
+    if (effect.kind === 'roll-modifier') {
+      const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
+      const markerId = `roll-mod-${action.id}-${target.instanceId}`
+      nextState = addRollModifierToCombatant(
+        nextState,
+        target.instanceId,
+        {
+          id: markerId,
+          label: `${effect.modifier} on ${Array.isArray(effect.appliesTo) ? effect.appliesTo.join(', ') : effect.appliesTo}`,
+          appliesTo: effect.appliesTo,
+          modifier: effect.modifier,
+          duration: runtimeDuration,
+          sourceInstanceId: actor.instanceId,
+        },
+        { sourceLabel: options.sourceLabel },
+      )
+      markerIds.push(markerId)
       return
     }
 
@@ -234,13 +387,16 @@ export function applyActionEffects(
         duration: runtimeDuration,
         sourceLabel: options.sourceLabel,
       })
+      markerIds.push(stateLabel)
       return
     }
 
     if (effect.kind === 'immunity' && effect.scope === 'source-action') {
-      nextState = addStateToCombatant(nextState, target.instanceId, getImmunityStateLabel(action.label), {
+      const stateLabel = getImmunityStateLabel(action.label)
+      nextState = addStateToCombatant(nextState, target.instanceId, stateLabel, {
         sourceLabel: options.sourceLabel,
       })
+      markerIds.push(stateLabel)
       return
     }
 
@@ -255,7 +411,30 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'interval') {
-      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Interval effect ${effect.stateId} is noted for later runtime support.`, {
+      if (effect.every.unit !== 'turn') {
+        nextState = appendEncounterNote(
+          nextState,
+          `${options.sourceLabel}: Interval effect ${effect.stateId} deferred — ${effect.every.value} ${effect.every.unit} cadence not tracked in encounter time.`,
+          { actorId: actor.instanceId, targetIds: [target.instanceId] },
+        )
+        return
+      }
+      const boundary = 'start' as const
+      const hookId = `interval-${effect.stateId}-${action.id}-${target.instanceId}`
+      nextState = updateEncounterCombatant(nextState, target.instanceId, (combatant) => ({
+        ...combatant,
+        turnHooks: [
+          ...combatant.turnHooks,
+          {
+            id: hookId,
+            label: `${options.sourceLabel}: ${effect.stateId}`,
+            boundary,
+            effects: effect.effects,
+          },
+        ],
+      }))
+      markerIds.push(hookId)
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Interval effect ${effect.stateId} registered (${boundary} of turn).`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],
       })
@@ -278,11 +457,71 @@ export function applyActionEffects(
       return
     }
 
+    if (effect.kind === 'trigger') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Trigger effect (${effect.trigger}) noted. Reactive effects require manual adjudication.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'activation') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Activation effect (${effect.activation}) noted for future use.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'check') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Check DC ${effect.check.dc} ${effect.check.ability.toUpperCase()}${effect.check.skill ? ` (${effect.check.skill})` : ''} required.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'grant') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Grants ${effect.grantType}.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'form') {
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Form change to ${effect.form}${effect.notes ? ` — ${effect.notes}` : ''}.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'remove-classification') {
+      nextState = removeStatesByClassification(nextState, target.instanceId, effect.classification, {
+        sourceLabel: options.sourceLabel,
+      })
+      return
+    }
+
+    if (effect.kind === 'targeting') {
+      return
+    }
+
+    if (effect.kind === 'regeneration') {
+      nextState = appendEncounterNote(
+        nextState,
+        `${options.sourceLabel}: Regeneration effect noted — runtime adapter handles turn hook seeding.`,
+        { actorId: actor.instanceId, targetIds: [target.instanceId] },
+      )
+      return
+    }
+
     nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Unsupported effect ${effect.kind}.`, {
       actorId: actor.instanceId,
       targetIds: [target.instanceId],
     })
   })
 
-  return nextState
+  return { state: nextState, createdMarkerIds: markerIds }
 }

@@ -103,13 +103,24 @@ Status meanings:
 
 - Status: `canonical`
 - Purpose: selection and affected-entity shape
-- Use when: modeling targets, areas, sight requirements, target count, repeat-target rules
+- Use when: modeling targets, areas, sight requirements, target count, repeat-target rules, creature type restrictions
 - Do not use when: storing spell placement range or save/damage outcomes
-- Key fields: `target`, `targetType`, `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
+- Key fields: `target`, `targetType`, `creatureTypeFilter`, `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
 
 ```ts
 { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } }
 ```
+
+```ts
+{ kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' }
+```
+
+```ts
+{ kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] }
+```
+
+- `one-dead-creature`: targets a single creature at 0 HP. The spell combat adapter maps this to `dead-creature` action targeting, which restricts selection to 0 HP combatants regardless of side.
+- `creatureTypeFilter`: restricts valid targets to creatures whose `creatureType` matches one of the listed types. The spell combat adapter propagates this to `CombatActionTargetingProfile.creatureTypeFilter`, and both the resolution engine and the encounter UI filter targets accordingly. Uses `MonsterType` values from the shared monster vocabulary.
 
 ### `damage`
 
@@ -175,7 +186,8 @@ Status meanings:
 - Purpose: apply a standard condition
 - Use when: the mechanic applies a shared condition
 - Do not use when: the mechanic is a broader ongoing state
-- Key fields: `conditionId`, `targetSizeMax`, `escapeDc`
+- Key fields: `conditionId`, `targetSizeMax`, `escapeDc`, `repeatSave`
+- `repeatSave`: optional. When present, the engine registers a turn hook that rolls a save at the specified timing. On success, the condition is removed. Shape: `{ ability: AbilityRef; timing: 'turn-start' | 'turn-end' }`.
 
 ```ts
 { kind: 'condition', conditionId: 'prone' }
@@ -199,10 +211,20 @@ Status meanings:
 - Purpose: preserve meaningful unsupported or partially supported rules text
 - Use when: the mechanic cannot yet be modeled honestly
 - Do not use when: a supported shared shape already fits
-- Key fields: `text`
+- Key fields: `text`, `category`
+
+`category` distinguishes mechanical gaps from flavor text:
+
+- `'under-modeled'`: the note stands in for a mechanic that cannot yet be structurally modeled (e.g. "Charmed creature can still attack allies of caster"). Drives `partial` resolution status.
+- `'flavor'`: descriptive text that is not a mechanical gap (e.g. "Flammable objects start burning"). Does not affect resolution status.
+- Omitted: treated as ambiguous. Existing note-only stubs do not need retroactive categorization.
 
 ```ts
-{ kind: 'note', text: "Flammable objects in the area that aren't being worn or carried start burning." }
+{ kind: 'note', text: "Flammable objects in the area that aren't being worn or carried start burning.", category: 'flavor' }
+```
+
+```ts
+{ kind: 'note', text: 'Constructs have Disadvantage on the save.', category: 'under-modeled' }
 ```
 
 ### `state`
@@ -301,6 +323,25 @@ Status meanings:
 { kind: 'roll-modifier', appliesTo: 'attack-rolls', modifier: 'advantage' }
 ```
 
+### `hit-points`
+
+- Status: `canonical`
+- Purpose: direct hit point change (healing or damage)
+- Use when: the mechanic directly heals or damages without a save, attack roll, or branching outcome
+- Do not use when: healing or damage depends on a save result (use `save` with nested effects)
+- Key fields: `mode`, `value`, `abilityModifier`
+- `mode`: `'heal'` or `'damage'`
+- `value`: flat number or dice expression (`DiceOrFlat`). Flat values are used directly; dice expressions are rolled at resolution time.
+- `abilityModifier`: optional boolean. When `true`, the spell combat adapter injects the caster's spellcasting ability modifier into the dice expression at build time (e.g. `'2d8'` becomes `'2d8+3'`).
+
+```ts
+{ kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true }
+```
+
+```ts
+{ kind: 'hit-points', mode: 'heal', value: 15 }
+```
+
 ### Other Current Shared Kinds
 
 - `formula`: `canonical`
@@ -313,7 +354,6 @@ Status meanings:
 - `tracked-part`: `provisional`
 - `extra-reaction`: `provisional`
 - `spawn`: `provisional`
-- `hit-points`: `canonical`
 - `aura`: `canonical`
 - `custom`: escape hatch only
 - Use these only when their current shared meaning fits.
@@ -454,6 +494,35 @@ Scopes an effect to interactions involving specific creature types. The `target`
 ]
 ```
 
+### Healing Spell
+
+- `targeting` defines the affected creature
+- `hit-points` with `mode: 'heal'` defines the healing payload
+- `abilityModifier: true` signals the adapter to inject the caster's spellcasting ability modifier
+- the adapter classifies healing spells as `effects` resolution mode with `single-creature` targeting
+
+```ts
+[
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true },
+]
+```
+
+### Resurrection Spell
+
+- `targeting` with `one-dead-creature` restricts to 0 HP creatures
+- `hit-points` with `mode: 'heal'` restores HP (flat value, no dice)
+- unsupported nuance (time limit, creature type restrictions, penalties) goes in `note`
+- the adapter classifies as `effects` mode with `dead-creature` action targeting
+
+```ts
+[
+  { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
+  { kind: 'hit-points', mode: 'heal', value: 1 },
+  { kind: 'note', text: 'Target must have been dead no longer than 10 days and not Undead. -4 d20 penalty, reduced by 1 per Long Rest.' },
+]
+```
+
 ### Area Effect
 
 - owner range chooses placement
@@ -467,10 +536,66 @@ Scopes an effect to interactions involving specific creature types. The `target`
 
 ```ts
 [
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
+  { kind: 'note', text: 'Charmed target pursues a suggested course of activity. Ends if caster or allies damage target.', category: 'flavor' },
+]
+```
+
+### Auto-Hit Spell
+
+- `damage` defines the hit payload (no `deliveryMethod`, no top-level `save`)
+- the adapter classifies as `auto-hit` resolution mode — skips attack roll, applies damage directly
+- multi-instance auto-hit spells (e.g. Magic Missile) use `damage.instances` and generate sequence steps
+
+```ts
+[
   { kind: 'targeting', target: 'chosen-creatures', count: 3, canSelectSameTargetMultipleTimes: true, requiresSight: true },
   { kind: 'damage', damage: '1d4+1', damageType: 'force', instances: { count: 3, simultaneous: true, canSplitTargets: true, canStackOnSingleTarget: true } },
-  { kind: 'note', text: 'Auto-hit and exact simultaneous dart resolution remain intentionally under-modeled.' },
 ]
+```
+
+### HP-Threshold Spell
+
+- `resolution.hpThreshold` gates effect application on the target's current HP
+- below-threshold effects come from the spell's `effects` array
+- above-threshold effects come from `resolution.hpThreshold.aboveEffects`
+- the adapter maps these to `CombatActionDefinition.hpThreshold` and `aboveThresholdEffects`
+
+```ts
+// spell-level fields
+resolution: {
+  hpThreshold: {
+    maxHp: 100,
+    aboveEffects: [{ kind: 'damage', damage: '12d12', damageType: 'psychic' }],
+  },
+}
+
+// effects array (applied when target HP <= threshold)
+[
+  { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+  { kind: 'hit-points', mode: 'damage', value: 9999 },
+]
+```
+
+### Repeat-Save Condition
+
+- `condition.repeatSave` triggers a save at turn start or end
+- on success, the condition is automatically removed
+- used for Hold Person, Hold Monster, Flesh to Stone, Fear, etc.
+
+```ts
+{ kind: 'condition', conditionId: 'paralyzed', repeatSave: { ability: 'wis', timing: 'turn-end' } }
+```
+
+### Damage Resistance Spell
+
+- `modifier` with `target: 'resistance'` and `mode: 'add'` registers a `DamageResistanceMarker`
+- damage application automatically halves matching damage types
+- used for Protection from Energy, Stoneskin, etc.
+
+```ts
+{ kind: 'modifier', target: 'resistance', mode: 'add', value: 'fire' }
 ```
 
 ### Object-Targeting Spell
@@ -495,11 +620,18 @@ Some spells and mechanics are intentionally only partially modeled when the shar
 Rules:
 
 - Use the supported shared primitives for the parts that are real and repeatable.
-- Put the unsupported remainder in `note` or owned description text.
+- Put the unsupported remainder in `note` with `category: 'under-modeled'`.
+- Use `category: 'flavor'` for descriptive notes that are not mechanical gaps.
 - Treat partial modeling as an explicit temporary state, not as complete modeling.
 - Document what is under-modeled so future work knows what remains.
 
-Example — Magic Missile currently models targeting, damage, and notes, but does not yet fully model auto-hit semantics, simultaneous resolution, or split/stack nuances.
+The `category: 'under-modeled'` pattern is the canonical way to mark partial modeling. As the engine catches up to support new mechanics:
+
+1. Replace the `under-modeled` note with the structured effect.
+2. Change remaining notes to `category: 'flavor'` if they are purely descriptive.
+3. Remove notes entirely if the structured effects fully capture the mechanic.
+
+Example — Suggestion models the save and charmed condition, but the behavioral aspects of the suggested course of action remain under-modeled as flavor notes.
 
 Do not solve under-modeling gaps with domain-specific hacks. If a gap proves recurring, promote it to a shared primitive per the extension policy.
 
@@ -518,6 +650,28 @@ type SpellScalingRule = {
 
 This is a reserved extension point for future upcasting work. Do not defer scaling information into ad hoc `higherLevelText` or scattered notes.
 
+### Resolution Status Tracking
+
+Spells carry an optional `resolution` field for per-spell qualitative metadata:
+
+```ts
+resolution?: {
+  caveats?: string[];
+};
+```
+
+`caveats` captures per-spell quirks that categorized notes cannot express (e.g. "target prevention behavior requires engine work"). Most spells will not need this.
+
+The derived `SpellResolutionStatus` is computed at runtime by `getSpellResolutionStatus`:
+
+| Status | Condition |
+|--------|-----------|
+| `stub` | No structured effects (only `note` effects) |
+| `partial` | Has structured effects but also has `under-modeled` notes or `resolution.caveats` |
+| `full` | All effects are structured; notes are `flavor`-only or absent |
+
+Status transitions automatically as effects are authored. The SpellListRoute exposes this as a filterable column.
+
 ## 10. Adapter Philosophy
 
 Runtime systems should consume spells through adapters.
@@ -532,27 +686,62 @@ Rules:
 
 ### Spell Combat Adapter
 
-The spell combat adapter (`buildSpellCombatActions`) converts canonical spell content into executable `CombatActionDefinition` objects for the combat simulation. It classifies spells into three resolution modes:
+The spell combat adapter (`buildSpellCombatActions`) converts canonical spell content into executable `CombatActionDefinition` objects for the combat simulation. It classifies spells into four resolution modes:
 
 - `attack-roll`: spells with `deliveryMethod`. The adapter builds an attack profile from the caster's spell attack bonus and the spell's `damage` effect. Multi-instance spells (beams, rays) generate sequence steps for independent attack rolls.
-- `effects`: spells with a top-level `save` effect. The adapter injects the caster's spell save DC into save effects where `dc` is unset, strips targeting effects, and passes the enriched effects array to the resolution engine. The engine's `applyActionEffects` handles save branching, damage, conditions, states, and notes recursively.
+- `auto-hit`: spells with a top-level `damage` effect but no `deliveryMethod` and no top-level `save`. Damage is applied directly without an attack roll. Multi-instance auto-hit spells (e.g. Magic Missile) generate sequence steps for independent resolution. HP-threshold gating is applied when `resolution.hpThreshold` is present.
+- `effects`: spells with a top-level `save` effect or a `hit-points` heal effect. The adapter injects the caster's spell save DC into save effects and the spellcasting ability modifier into `hit-points` effects where `abilityModifier` is `true`. Healing spells use `single-creature` targeting (any living combatant including self and allies). The engine's `applyActionEffects` handles save branching, damage, healing, conditions, states, and notes recursively.
 - `log-only`: all other spells (utility, buff, stubs). The adapter generates a log-text summary from effect text or the spell description.
 
 Adapter inputs derived from the caster:
 
 - `spellSaveDc`: 8 + proficiency bonus + spellcasting ability modifier
 - `spellAttackBonus`: proficiency bonus + spellcasting ability modifier
+- `spellcastingAbilityModifier`: spellcasting ability modifier (injected into healing dice expressions)
 - `casterLevel`: used to resolve cantrip level scaling (damage dice and instance count thresholds)
+
+### Creature Type Targeting
+
+`CombatantInstance.creatureType` carries the creature's type at runtime. PCs currently default to `'humanoid'` (shim — will be derived from race/species once modeled). Monsters derive their type from `Monster.type`.
+
+`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type. Both the resolution engine (`getActionTargets`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
+
+### Charmed Hostile-Action Restriction
+
+When a combatant has the `charmed` condition, the `sourceInstanceId` on the condition marker identifies the charmer. The targeting system prevents the charmed combatant from selecting the charmer as a target for hostile actions (attacks, offensive spells, area effects).
+
+`isHostileAction` classifies an action as hostile when its targeting kind is `single-target`, `all-enemies`, `entered-during-move`, or absent (default enemy targeting). Actions with `self`, `single-creature`, or `dead-creature` targeting are not hostile.
 
 ### Known Unsupported Spell Mechanics
 
-The following spell mechanics are not yet resolved by the combat adapter and remain log-only or under-modeled:
+The following spell mechanics are not yet fully resolved by the combat adapter:
 
-- Healing spells (dice + ability modifier formula not yet in the resolution engine)
-- Self-buff spells (effects target the caster, not an enemy)
-- Auto-hit spells (Magic Missile — no attack roll, no save)
-- Concentration tracking
+- ~~Self-buff spells~~ — **resolved**: modifier/immunity spells with any range now classify as `effects` mode
+- ~~Auto-hit spells~~ — **resolved**: `auto-hit` resolution mode skips attack roll, applies damage directly; multi-instance spells generate sequence steps
+- ~~Concentration tracking~~ — **resolved**: `ConcentrationState` on `CombatantInstance` with damage-triggered CON saves and linked effect cleanup
+- ~~Repeat saves~~ — **resolved**: `condition.repeatSave` registers turn hooks for automatic save-or-remove at turn boundaries
+- ~~Damage type resistance~~ — **resolved**: `DamageResistanceMarker` on `CombatantInstance`; damage application halves/doubles matching damage
+- ~~HP-threshold gating~~ — **resolved**: `resolution.hpThreshold` gates effect application; used by Power Word Kill/Stun/Heal
 - Spell slot resource management
+- Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
+- Charmed save advantage when allies are fighting the target (authored as `save.text`, not yet resolved)
+- Form changes (Polymorph, Shapechange — stat block replacement)
+- Caster-choice mechanics (element selection, condition selection at cast time)
+- Multi-area targeting and deduplication (e.g. Meteor Swarm)
+- Moving areas and trigger-timing resolution (e.g. Flaming Sphere, Cloudkill)
+- Success/failure tracking (e.g. Flesh to Stone, Contagion)
+
+Mechanics resolved since initial authoring:
+
+- **Modifier effects**: `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) are fully resolved. Other stat targets log gracefully.
+- **Roll-modifier effects**: advantage/disadvantage tracked on `CombatantInstance.rollModifiers` and applied to attack rolls and saving throws.
+- **Interval/ongoing effects**: interval effects register as turn hooks; `state.ongoingEffects` also register as turn hooks for per-turn resolution.
+- **Concentration**: automatic CON saves on damage, linked effect cleanup on failure or new concentration spell.
+- **Repeat saves**: `condition.repeatSave` and `state.repeatSave` register turn hooks that roll saves at turn boundaries; on success, the condition/state is removed.
+- **Damage resistance**: `DamageResistanceMarker` tracks active resistances/vulnerabilities; `applyDamageToCombatant` halves or doubles matching damage types.
+- **Auto-hit resolution**: `auto-hit` action mode skips attack rolls; multi-instance spells generate sequence steps for independent resolution.
+- **HP-threshold gating**: `CombatActionDefinition.hpThreshold` gates effect application on target current HP vs threshold.
+- **Advanced effect logging**: `trigger`, `activation`, `check`, `grant`, `form`, and `targeting` effects log meaningful summaries instead of "unsupported".
 
 ## 11. Anti-Patterns
 
@@ -565,7 +754,108 @@ The following spell mechanics are not yet resolved by the combat adapter and rem
 - letting runtime adapter needs dictate content schema
 - repeating full rules text inside effects when an owning description field already exists
 
-## 12. Extension Policy
+## 12. Effect Type Scaling Tiers
+
+How effect kinds evolve as more spells are authored:
+
+### Tier 1 — Canonical, Fully Resolved
+
+Already stable. No scaling concerns.
+
+- `save`, `damage`, `hit-points`, `condition` (including `repeatSave`), `state` (including `repeatSave`), `note`, `targeting`
+
+### Tier 2 — Extended Partial Support
+
+Small, bounded engine changes with high payoff.
+
+- `modifier`: `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) are fully resolved. Other stat targets (`attack`, `damage_bonus`, saving throw modifiers) log gracefully until resolved.
+- `immunity`: `spell` and `source-action` scopes resolved. Condition immunity scopes remain under-modeled.
+
+### Tier 3 — New Runtime Resolution
+
+Medium engine work, now landed.
+
+- `roll-modifier`: advantage/disadvantage tracked as runtime state on `CombatantInstance.rollModifiers`; wired into attack-roll and saving throw resolution.
+- `interval`: per-turn effect application via turn hooks. Registered by `applyActionEffects` when an interval effect is applied.
+- `move`: forced movement logged with structured summary. Actual position tracking deferred.
+
+### Tier 4 — Deferred / Under-Model
+
+Follow the extension policy: under-model first, promote only when the pattern proves repeatable.
+
+- `trigger`, `activation`, `form`, `spawn`, `aura`, `check`, `grant` (runtime), `containment`, `visibility-rule`, `hold-breath`, `tracked-part`, `extra-reaction`, `resource`, `formula`
+- These remain authored as structured content but resolve to log-text at runtime until demand justifies engine investment.
+
+### Key Scaling Principle
+
+Content authoring should continue aggressively using the full `Effect` vocabulary regardless of runtime support. The adapter degrades unsupported kinds to log-text gracefully. This means:
+
+- Author all spells fully even if the engine can't resolve them yet.
+- Engine catches up stage by stage, each time unlocking a batch of already-authored spells.
+- This avoids the anti-pattern of authoring content to match current runtime limits (Section 11).
+
+## 13. Monster Effect Status
+
+Status of monster-specific and cross-cutting effect kinds, using the standard maturity labels.
+
+### `regeneration`
+
+- Status: `provisional`
+- A declarative effect kind encapsulating turn-triggered healing, damage-type suppression, and zero-HP disablement.
+- The trait adapter (`monster-runtime.ts`) converts a `regeneration` effect into a `RuntimeTurnHook` with the appropriate suppression, boundary, and requirement configuration.
+- Used by: Troll.
+
+### `tracked-part`
+
+- Status: `provisional`
+- Definition variant (`initialCount`, `loss`, `regrowth`): fully seeded at encounter start. Loss from damage and turn-end regrowth handled by `marker-lifecycle.ts`.
+- Change variant (`change.mode: 'sever' | 'grow'`): now mechanically applied inside `executeTurnHooks` when a hook fires a `tracked-part` effect with a `change` field.
+- Used by: Hydra (definition), Troll Loathsome Limbs (change).
+
+### `remove-classification`
+
+- Status: `provisional`
+- Removes all states on a target whose `classification` array includes the given value.
+- Also cleans up associated turn hooks.
+- Used by: Remove Curse (`classification: 'curse'`).
+
+### `extra-reaction`
+
+- Status: `under-modeled`
+- Authored as structured data but not enforced at runtime. The encounter engine does not yet track per-head reaction pools.
+- Used by: Hydra Reactive Heads.
+
+### `spawn`
+
+- Status: `under-modeled`
+- Authored but does not create a simulated combatant in the encounter. Logged as a note.
+- Used by: Troll Loathsome Limbs.
+
+### `hold-breath`
+
+- Status: `under-modeled`
+- Authored but no breath-tracking runtime exists.
+- Used by: Hydra.
+
+### `interval` (non-turn cadence)
+
+- Status: `under-modeled`
+- When `every.unit` is not `'turn'`, the interval effect is deferred with a log note rather than registered as a per-turn hook.
+- Used by: Mummy Rot (24-hour cadence).
+
+### RuntimeMarker `classification`
+
+The `classification: string[]` field on `RuntimeMarker` is the canonical mechanism for semantic effect categories. Well-known values:
+
+- `curse` — removable by Remove Curse
+- `disease` — future: removable by Lesser/Greater Restoration
+- `poison` — future: removable by Protection from Poison
+- `magical` — future: dispellable, detectable by Detect Magic
+- `regeneration` — future: interactable by healing-prevention effects
+
+Effects that carry a `classification` propagate it through `buildRuntimeMarker` to the resulting condition or state marker.
+
+## 14. Extension Policy
 
 Add a new shared effect kind only when all of the following are true:
 

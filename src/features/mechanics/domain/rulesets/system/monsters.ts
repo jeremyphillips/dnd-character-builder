@@ -514,6 +514,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
             {
               kind: "state",
               stateId: "mummy-rot",
+              classification: ["curse"],
               ongoingEffects: [
                 {
                   kind: "note",
@@ -850,21 +851,21 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
           name: 'Regeneration',
           description:
             'The troll regains 15 Hit Points at the start of each of its turns. Acid or Fire damage suppresses this trait on its next turn.',
-          trigger: {
-            kind: 'turn-start',
-          },
           effects: [
-            { kind: 'hit-points', mode: 'heal', value: 15 },
-          ],
-          suppression: {
-            ifTookDamageTypes: ['acid', 'fire'],
-            duration: {
-              kind: 'until-turn-boundary',
-              subject: 'self',
-              turn: 'next',
-              boundary: 'end',
+            {
+              kind: 'regeneration',
+              amount: 15,
+              trigger: { kind: 'turn-start', subject: 'self' },
+              suppressedByDamageTypes: ['acid', 'fire'],
+              suppressionDuration: {
+                kind: 'until-turn-boundary',
+                subject: 'self',
+                turn: 'next',
+                boundary: 'end',
+              },
+              disabledAtZeroHp: true,
             },
-          },
+          ],
           notes:
             'The troll dies only if it starts its turn with 0 Hit Points and does not regenerate.',
         }

@@ -6,3 +6,14 @@ export {
   type SpellLimits,
 } from './getClassSpellLimitsAtLevel'
 export { getAvailableSubclassesByLevel } from './getAvailableSubclassesByLevel'
+export {
+  CANTRIP_PROGRESSION_PROFILES,
+  getCantripsFromProfile,
+  type CantripProgressionProfileId,
+} from './cantripProgressionProfiles' 
+export {
+  FULL_CASTER_SLOTS,
+  HALF_CASTER_SLOTS,
+  WARLOCK_CASTER_SLOTS,
+  PACT_CASTER_SLOTS,
+} from './spellSlotTables'

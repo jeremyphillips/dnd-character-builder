@@ -113,7 +113,6 @@ export type Character = {
 
   abilityScores?: AbilityScoreMapResolved
   hitPoints?: HitPoints
-  armorClass?: ArmorClass
   combat?: {
     loadout?: EquipmentLoadout
   }

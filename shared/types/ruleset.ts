@@ -143,10 +143,9 @@ export type MechanicsRules = {
 export type SpellSlotTable = readonly number[][];
 
 export type SpellcastingProgression = {
-  slotTables: {
-    fullCaster?: SpellSlotTable;
-    halfCaster?: SpellSlotTable;
-  };
+  full?: { slotTable: SpellSlotTable; maxSpellLevel: number };
+  half?: { slotTable: SpellSlotTable; maxSpellLevel: number };
+  pact?: { slotTable: SpellSlotTable; maxSpellLevel: number };
 };
 
 export interface MagicItemBudgetTier {

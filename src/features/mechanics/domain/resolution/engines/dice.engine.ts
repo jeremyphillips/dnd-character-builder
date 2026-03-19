@@ -29,9 +29,10 @@ export function parseDamageExpression(input?: string): ParsedDamageExpression | 
   }
 }
 
-export function rollDamage(
+function rollExpression(
   input: string | undefined,
   rng: () => number,
+  label: string,
 ): { total: number; details: string } | null {
   const parsed = parseDamageExpression(input)
   if (!parsed) return null
@@ -39,7 +40,7 @@ export function rollDamage(
   if (parsed.kind === 'flat') {
     return {
       total: parsed.value,
-      details: `Damage: ${parsed.value}.`,
+      details: `${label}: ${parsed.value}.`,
     }
   }
 
@@ -51,6 +52,40 @@ export function rollDamage(
 
   return {
     total,
-    details: `Damage: ${parsed.expression} -> [${rolls.join(', ')}]${modifierText} = ${total}.`,
+    details: `${label}: ${parsed.expression} -> [${rolls.join(', ')}]${modifierText} = ${total}.`,
   }
+}
+
+export function rollDamage(
+  input: string | undefined,
+  rng: () => number,
+  options?: { critical?: boolean },
+): { total: number; details: string } | null {
+  if (!options?.critical) return rollExpression(input, rng, 'Damage')
+
+  const parsed = parseDamageExpression(input)
+  if (!parsed) return null
+
+  if (parsed.kind === 'flat') {
+    return { total: parsed.value, details: `Critical damage: ${parsed.value}.` }
+  }
+
+  const doubledCount = parsed.count * 2
+  const rolls = Array.from({ length: doubledCount }, () => rollDie(parsed.die, rng))
+  const diceTotal = rolls.reduce((sum, value) => sum + value, 0)
+  const total = Math.max(0, diceTotal + parsed.modifier)
+  const modifierText =
+    parsed.modifier === 0 ? '' : parsed.modifier > 0 ? ` + ${parsed.modifier}` : ` - ${Math.abs(parsed.modifier)}`
+
+  return {
+    total,
+    details: `Critical damage: ${doubledCount}d${parsed.die}${modifierText === '' ? '' : modifierText} -> [${rolls.join(', ')}]${modifierText} = ${total}.`,
+  }
+}
+
+export function rollHealing(
+  input: string | undefined,
+  rng: () => number,
+): { total: number; details: string } | null {
+  return rollExpression(input, rng, 'Healing')
 }

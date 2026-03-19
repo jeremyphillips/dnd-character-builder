@@ -101,6 +101,12 @@ export type SpellScalingRule = {
   amount?: DiceOrFlat;
 };
 
+export type SpellResolutionMeta = {
+  caveats?: string[];
+};
+
+export type SpellResolutionStatus = 'stub' | 'partial' | 'full';
+
 export interface SpellBase {
   id: string;
   name: string;
@@ -114,6 +120,7 @@ export interface SpellBase {
   deliveryMethod?: SpellDeliveryMethod;
   effects: SpellEffects;
   scaling?: SpellScalingRule[];
+  resolution?: SpellResolutionMeta;
   description: {
     full: string;
     summary: string;

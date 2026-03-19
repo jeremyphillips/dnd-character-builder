@@ -28,4 +28,5 @@ export interface CombatLogEvent {
   turn: number
   summary: string
   details?: string
+  debugDetails?: string[]
 }

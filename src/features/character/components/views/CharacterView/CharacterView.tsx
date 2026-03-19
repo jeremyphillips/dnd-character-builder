@@ -113,7 +113,7 @@ export default function CharacterView({
   } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editWealthOpen, setEditWealthOpen] = useState(false)
-
+  
   // ── Single-step edit via builder ────────────────────────────────────
   const [editingStep, setEditingStep] = useState<StepId | null>(null)
   const { state: builderState, loadCharacterIntoBuilder, resetState: resetBuilder } = useCharacterBuilder()
@@ -123,6 +123,7 @@ export default function CharacterView({
     equipment: (s) => ({ equipment: s.equipment, wealth: s.wealth }),
     magicItems: (s) => ({ equipment: s.equipment }),
     proficiencies: (s) => ({ proficiencies: s.proficiencies }),
+    spells: (s) => ({ spells: s.spells }),
   }
 
   const profSlots = useMemo(
@@ -211,7 +212,6 @@ export default function CharacterView({
       wealth: { ...character.wealth, gp: wealth.gp, sp: wealth.sp, cp: wealth.cp, baseBudget },
     })
   }
-console.log('isOwner', isOwner)
   return (
     <Box sx={{ maxWidth: 920, mx: 'auto' }}>
       {error && <AppAlert tone="danger" sx={{ mb: 2 }}>{error}</AppAlert>}
@@ -311,7 +311,10 @@ console.log('isOwner', isOwner)
       />
 
       {/* Spells */}
-      <SpellsCard spells={character.spells ?? []} />
+      <SpellsCard
+        spells={character.spells ?? []}
+        onEdit={isOwner || isAdmin ? () => openStepEditor('spells') : undefined}
+      />
 
       {/* Narrative */}
       {narrative && (

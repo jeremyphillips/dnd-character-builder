@@ -1,6 +1,7 @@
 import type { AppDataGridFilter } from '@/ui/patterns';
 import type { SpellListRow } from './spellList.types';
 import type { SpellSummary } from '../repo/spellRepo';
+import { getSpellResolutionStatus } from '@/features/content/spells/domain/types';
 import {
   buildSchoolOptions,
   buildLevelOptions,
@@ -36,6 +37,18 @@ export function buildSpellCustomFilters(
       type: 'multiSelect' as const,
       options: classOptions,
       accessor: (r) => r.classes ?? [],
+    },
+    {
+      id: 'resolutionStatus',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { label: 'All', value: '' },
+        { label: 'Stub', value: 'stub' },
+        { label: 'Partial', value: 'partial' },
+        { label: 'Full', value: 'full' },
+      ],
+      accessor: (r) => getSpellResolutionStatus(r),
     },
   ];
 }

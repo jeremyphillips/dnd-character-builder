@@ -1,6 +1,6 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import type { AbilityKey } from '@/features/mechanics/domain/character'
+import type { AbilityKey, AbilityRef } from '@/features/mechanics/domain/character'
 import type { BreakdownToken } from '../../../resolution/resolvers/stat-resolver'
 import type { CombatActionDefinition } from '../../resolution/combat-action.types'
 
@@ -45,6 +45,8 @@ export interface RuntimeMarker {
   id: string
   label: string
   duration?: RuntimeMarkerDuration
+  sourceInstanceId?: string
+  classification?: string[]
 }
 
 export interface RuntimeEffectInstance {
@@ -58,6 +60,14 @@ export type RuntimeTurnHookRequirement =
   | { kind: 'self-state'; state: 'bloodied' }
   | { kind: 'damage-taken-this-turn'; damageType?: string; min?: number }
   | { kind: 'hit-points-equals'; value: number }
+  | { kind: 'hit-points-above'; value: number }
+
+export interface RuntimeTurnHookRepeatSave {
+  ability: AbilityRef
+  dc: number
+  removeCondition?: string
+  removeState?: string
+}
 
 export interface RuntimeTurnHook {
   id: string
@@ -69,6 +79,7 @@ export interface RuntimeTurnHook {
     damageTypes?: string[]
     duration?: RuntimeMarkerDuration
   }
+  repeatSave?: RuntimeTurnHookRepeatSave
 }
 
 export interface CombatantTurnContext {
@@ -124,19 +135,51 @@ export function createCombatTurnResources(
   }
 }
 
+export interface RollModifierMarker {
+  id: string
+  label: string
+  appliesTo: string | string[]
+  modifier: 'advantage' | 'disadvantage'
+  duration?: RuntimeMarkerDuration
+  sourceInstanceId?: string
+}
+
 export interface StatModifierMarker {
   id: string
   label: string
   target: string
-  mode: 'add'
+  mode: 'add' | 'set'
   value: number
   duration?: RuntimeMarkerDuration
+}
+
+export type DamageResistanceLevel = 'resistance' | 'vulnerability' | 'immunity'
+
+export interface DamageResistanceMarker {
+  id: string
+  damageType: string
+  level: DamageResistanceLevel
+  sourceId: string
+  label: string
+  duration?: RuntimeMarkerDuration
+}
+
+export interface ConcentrationState {
+  spellId: string
+  spellLabel: string
+  linkedMarkerIds: string[]
+  // Encounter-scoped turn counters. When a non-encounter consumer needs duration
+  // tracking (exploration, world clock), refactor to a canonical { value, unit }
+  // duration with a shared durationToRounds() utility.
+  remainingTurns?: number
+  totalTurns?: number
 }
 
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
+  creatureType?: string
   stats: CombatantStatBlock
   attacks: CombatantAttackEntry[]
   actions?: CombatActionDefinition[]
@@ -146,8 +189,12 @@ export interface CombatantInstance {
   trackedParts?: RuntimeTrackedPart[]
   suppressedHooks?: RuntimeMarker[]
   statModifiers?: StatModifierMarker[]
+  rollModifiers?: RollModifierMarker[]
+  damageResistanceMarkers?: DamageResistanceMarker[]
+  concentration?: ConcentrationState
   turnContext?: CombatantTurnContext
   turnResources?: CombatantTurnResources
+  conditionImmunities?: string[]
   conditions: RuntimeMarker[]
   states: RuntimeMarker[]
 }

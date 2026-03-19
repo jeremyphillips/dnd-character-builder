@@ -150,6 +150,7 @@ function mergeCharacterData(
     xp: builderState.xp ?? 0,
     equipment: builderState.equipment ?? { armor: [], weapons: [], gear: [], weight: 0 },
     proficiencies: proficiencies,
+    spells: builderState.spells ?? [],
     // Wealth: merge AI overrides onto builder state
     wealth: {
       ...builderState.wealth,
@@ -161,7 +162,6 @@ function mergeCharacterData(
 
     // Ability scores: use generated scores when available, otherwise fall back to AI
     abilityScores: generatedScores ?? ai.stats ?? {},
-    armorClass: ai.armorClass ?? {},
     narrative: ai.narrative ?? {},
 
     // Full AI response stored for reference
@@ -247,11 +247,6 @@ const ChatContainer = ({ isModalOpen, onCloseModal }: ChatContainerProps) => {
         hitPoints: {
           total: null,
           generationMethod: DEFAULT_ABILITY_SCORE_METHOD,
-        },
-        armorClass: {
-          base: 10,
-          current: null,
-          calculation: '',
         },
         requirements: {
           minStats: { strength: 9 },

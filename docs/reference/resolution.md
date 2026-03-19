@@ -110,15 +110,145 @@ The encounter action system resolves combat actions against encounter state:
 |--------|----------------|
 | `action-resolver` | Orchestrates action resolution: validates, targets, resolves, updates state |
 | `action-cost` | Turn resource management: spend/check action, bonus action, reaction, movement |
-| `action-targeting` | Target selection: self, all-enemies, single-target; sequence step counts |
-| `action-effects` | Applies effects to encounter state: damage, conditions, saves, immunities, movement |
+| `action-targeting` | Shared targeting query layer: `isValidActionTarget` (predicate), `getActionTargetCandidates` (candidate list for UI), `getActionTargets` (resolved targets for action resolution); sequence step counts |
+| `action-effects` | Applies effects to encounter state: damage, healing, conditions (with repeat-save hooks), states, saves, modifiers (AC add/set, speed add/set/multiply, resistance add), roll-modifiers (advantage/disadvantage), immunities, intervals (registered as turn hooks), damage resistance markers, movement, and advanced effect logging (trigger, activation, check, grant, form) |
 
 **Action resolution modes:**
 
 - `attack-roll` — roll d20 + attack bonus vs AC, apply damage and on-hit effects
+- `auto-hit` — apply damage directly without attack roll or save. Supports HP-threshold gating and multi-instance sequences (e.g. Magic Missile darts)
 - `saving-throw` — targets roll saves vs DC, apply damage (with half on save) and on-fail/on-success effects
-- `effects` — apply effects directly to targets (no roll)
+- `effects` — apply effects directly to targets (no roll). Used for save-based spells, healing spells, and self-buff spells
 - `log-only` — log the action with no mechanical resolution
+
+**Action targeting kinds:**
+
+- `single-target` — one enemy combatant (opposite side, HP > 0)
+- `all-enemies` — all living enemy combatants
+- `self` — the acting combatant
+- `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
+- `dead-creature` — any combatant at 0 HP regardless of side (used by resurrection spells)
+- `entered-during-move` — creatures entered during movement
+
+**Targeting query layer** (`action-targeting.ts`):
+
+Targeting validation is centralized so the resolver and UI share a single source of truth:
+
+- `isValidActionTarget(combatant, actor, action)` — pure predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, and side filtering for a single combatant.
+- `getActionTargetCandidates(state, actor, action)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
+- `getActionTargets(state, actor, selection, action)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
+
+### 4.5 Condition Consequence Framework
+
+Condition consequences model the mechanical rules of each `EffectConditionId` as composable data primitives. Rather than scattering condition-specific `if` checks through action resolution code, each condition declares its consequences as a typed array, and derived query helpers combine active conditions into answers the resolution layer can consume.
+
+**Directory:** `encounter/state/condition-rules/`
+
+| Module | Responsibility |
+|--------|----------------|
+| `condition-consequences.types` | `ConditionConsequence` discriminated union and `ConditionRule` type |
+| `condition-consequence-helpers` | Primitive consequence builders (`cannotAct`, `immobile`, `autoFailStrDexSaves`, etc.) for DRY composition |
+| `condition-definitions` | `CONDITION_RULES` record mapping all 14 `EffectConditionId` values to their consequence arrays |
+| `condition-queries` | Derived query helpers consumed by the resolution layer |
+
+**Consequence kinds:**
+
+- `action_limit` — cannot take actions and/or reactions (incapacitated, paralyzed, stunned, unconscious, petrified)
+- `movement` — speed becomes zero or stand-up costs half movement (grappled, restrained, prone, paralyzed, stunned, unconscious, petrified)
+- `attack_mod` — advantage or disadvantage on incoming or outgoing attacks, optionally scoped to melee/ranged (blinded, invisible, prone, restrained, poisoned, frightened, paralyzed, stunned, unconscious, petrified)
+- `save_mod` — auto-fail, advantage, or disadvantage on specific ability saves (paralyzed, stunned, unconscious, petrified: auto-fail Str/Dex; restrained: disadvantage Dex)
+- `check_mod` — advantage or disadvantage on ability checks (poisoned, frightened)
+- `visibility` — cannot see or unseen by default (blinded, invisible)
+- `speech` — cannot speak (paralyzed, stunned, unconscious, petrified)
+- `awareness` — unaware of surroundings (unconscious, petrified)
+- `crit_window` — incoming melee hits within distance become critical (paralyzed, unconscious)
+- `source_relative` — cannot attack source, cannot move closer to source, while source in sight (charmed, frightened)
+- `damage_interaction` — resistance or vulnerability to damage types (petrified: resistance to all)
+
+**Derived queries:**
+
+- `canTakeActions(combatant)` / `canTakeReactions(combatant)` — used by `createCombatantTurnResources` in `shared.ts`
+- `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — used by `resolveRollModifier` in `action-resolver.ts`
+- `autoFailsSave(combatant, ability)` / `getSaveModifiersFromConditions(combatant, ability)` — used by saving-throw resolution in `action-resolver.ts`
+- `getSpeedConsequences(combatant)` — used by `createCombatantTurnResources` to zero movement for grappled, restrained, etc.
+- `getDamageResistanceFromConditions(combatant, damageType?)` — used by `applyDamageToCombatant` to apply petrified resistance-to-all
+- `incomingHitBecomesCrit(combatant, distanceFt?)` — available for future crit-window wiring when distance tracking exists
+- `getConditionSourceIds(combatant, conditionLabel)` — returns all `sourceInstanceId` values for markers matching the given condition label
+- `hasConditionFromSource(combatant, conditionLabel, sourceId)` — checks whether a specific source applied a specific condition
+- `getSourceRelativeRestrictions(actor)` — returns `{ sourceId, cannotAttackSource, cannotMoveCloserToSource }[]` by combining `source_relative` consequences with marker source data
+- `cannotTargetWithHostileAction(actor, targetId)` — returns `true` if any source-relative restriction prevents the actor from targeting `targetId` with a hostile action (e.g., charmed)
+- `canSpeak(combatant)` — seam query; returns `false` when any active condition has a `speech.cannotSpeak` consequence
+- `isAwareOfSurroundings(combatant)` — seam query; returns `false` when any active condition has an `awareness.unawareOfSurroundings` consequence
+- `canSee(combatant)` — seam query; returns `false` when any active condition has a `visibility.cannotSee` consequence
+- `getActiveConsequences(combatant)` — foundation helper that flattens all active conditions' consequences
+
+**Integration points:**
+
+- `shared.ts` `createCombatantTurnResources` — uses `canTakeActions`/`canTakeReactions` to disable actions for incapacitated, paralyzed, stunned, unconscious, and petrified. Uses `getSpeedConsequences` to zero movement for grappled, restrained, paralyzed, stunned, unconscious, and petrified.
+- `action-resolver.ts` `resolveRollModifier` — combines spell/effect `RollModifierMarker` entries with condition-derived attack modifiers. Blinded, poisoned, prone, restrained, invisible, frightened, paralyzed, stunned, unconscious, and petrified now affect attack rolls.
+- `action-resolver.ts` saving-throw resolution — checks `autoFailsSave` before rolling. Paralyzed, stunned, unconscious, and petrified combatants auto-fail Str/Dex saves. Restrained combatants roll Dex saves at disadvantage.
+- `action-resolver.ts` attack-roll resolution — natural 20 = auto-hit + critical hit (doubled damage dice). Natural 1 = auto-miss.
+- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types.
+- `action-targeting.ts` `isValidActionTarget` — uses `cannotTargetWithHostileAction` (backed by `getSourceRelativeRestrictions`) to enforce the charmed targeting exclusion via the consequence framework instead of the ad-hoc `getCharmedSourceIds` helper.
+
+**Consequence wiring status:**
+
+*Supported now* — consequences with live integration points in the resolution layer:
+
+- `action_limit` — `canTakeActions` / `canTakeReactions` consumed by `createCombatantTurnResources`
+- `movement.speedBecomesZero` — `getSpeedConsequences` consumed by `createCombatantTurnResources`
+- `attack_mod` — `getIncomingAttackModifiers` / `getOutgoingAttackModifiers` consumed by `resolveRollModifier`
+- `save_mod` — `autoFailsSave` / `getSaveModifiersFromConditions` consumed by saving-throw resolution
+- `damage_interaction` — `getDamageResistanceFromConditions` consumed by `applyDamageToCombatant`
+- `source_relative` by source identity — `cannotTargetWithHostileAction` consumed by `isValidActionTarget` (charmed targeting exclusion)
+- `speech` / `awareness` derived queries — `canSpeak`, `isAwareOfSurroundings` defined and exported; ready for consumption when verbal components, surprise, or perception are added
+
+*Modeled but not enforced* — consequences and queries exist in the data layer but nothing in resolution reads them yet:
+
+- `crit_window` (paralyzed, unconscious) — `incomingHitBecomesCrit` query exists but requires distance input. Currently only natural 20 triggers critical hits.
+- `movement.standUpCostsHalfMovement` (prone) — consequence defined but movement spending is not granular enough to deduct half movement for standing.
+- `check_mod` (poisoned, frightened) — consequences defined but ability checks are not part of encounter resolution. Relevant if contested checks (grapple escape, shove) are added.
+- `visibility` — `canSee` seam query exists but has no mechanical consumer. Relevant when stealth, hiding, or heavily-obscured mechanics are added.
+
+*Requires future subsystem* — consequences that depend on infrastructure not yet built:
+
+- Line of sight / full visibility — frightened's `whileSourceInSight` gating and blinded sight-dependent check auto-fail need a `canSeeSource(combatant, sourceId)` predicate, which depends on position/LOS tracking.
+- Distance / proximity — `crit_window` evaluation and frightened's `cannotMoveCloserToSource` both need distance between combatants (even a simple adjacency flag would unblock crit_window).
+- Granular movement economy — prone stand-up cost and frightened movement restriction require movement spending to distinguish "standing up" and "approaching source" from general movement.
+
+### 4.6 Debug Logging
+
+The combat log supports three presentation modes: compact (headlines only), normal (headlines + supporting), and debug (all entries). Debug mode surfaces diagnostic information about how resolution decisions were derived.
+
+**Pipeline:**
+
+`CombatLogEvent` carries an optional `debugDetails?: string[]` field. The bridge (`toCombatLogEntry` in `combat-log-bridge.ts`) passes it through to `CombatLogEntry.debugDetails`. The UI renders debug details in monospace below the entry when debug mode is active.
+
+**Formatting helpers** (`resolution-debug.ts`):
+
+Pure formatting functions that take raw resolution data and return `string[]` for `debugDetails`. They use `getActiveConsequencesWithOrigin` to trace each modifier back to the originating condition ID.
+
+| Helper | Emitted from | Shows |
+|--------|-------------|-------|
+| `formatAttackRollDebug` | attack-hit / attack-missed events | Roll mode, contributing roll-modifier markers, condition-derived attack modifiers with range |
+| `formatAutoFailDebug` | save auto-fail events | Which conditions caused auto-fail and which abilities they cover |
+| `formatSaveDebug` | save-roll events | Save roll mode and contributing condition modifiers |
+| `formatDamageResistanceDebug` | damage-resistance notes | Which conditions provide resistance/vulnerability |
+| `formatTurnResourceDebug` | noOp resource-blocked notes | Which conditions disabled the required turn resource |
+| `formatConditionConsequencesDebug` | condition-applied events | Full consequence breakdown for the applied condition (action limits, movement, attack mods, save mods, speech, visibility, etc.) |
+| `formatCombatantStatusSnapshot` | turn-started events | HP, conditions, states, concentration timer, disabled resources with originating conditions |
+| `formatConcentrationTimer` | turn-ended events | Concentration spell name with elapsed/total time (e.g., `Banishment (12s/60s)`) |
+
+**Integration points:**
+
+- `action-resolver.ts` — attack-roll, save auto-fail, save-roll, and resource-blocked noOp events include `debugDetails`.
+- `damage-mutations.ts` — condition-based resistance notes include `debugDetails`.
+- `condition-mutations.ts` — condition-applied events include a consequence breakdown when the condition is a known `EffectConditionId`.
+- `logging.ts` `createTurnStartedLog` — includes a combatant status snapshot (HP, conditions, states, concentration, disabled resources).
+- `logging.ts` `createTurnEndedLog` — includes the concentration timer when the active combatant is concentrating.
+- `appendEncounterNote` — accepts `debugDetails` in its options, allowing any call site to attach debug lines.
+
+To add debug details to a new log event, format the relevant diagnostic data into `string[]` and pass it as `debugDetails` on the `CombatLogEvent`. The bridge and UI handle it automatically.
 
 ## 5. Extension Points
 
@@ -127,6 +257,13 @@ The encounter action system resolves combat actions against encounter state:
 1. Add the target string to `StatTarget` in `types.ts`
 2. Add base value logic to `getBaseStat` in `base-stat-resolver.ts`
 3. Optionally add custom breakdown tokens in `stat-resolver.ts`
+
+### Adding a new condition consequence
+
+1. If the consequence kind already exists in `ConditionConsequence`, add it to the condition's entry in `CONDITION_RULES` in `condition-definitions.ts`. Use existing primitive builders from `condition-consequence-helpers.ts` where possible.
+2. If a new consequence kind is needed, add a new interface to `condition-consequences.types.ts` and add it to the `ConditionConsequence` union.
+3. Add a derived query helper in `condition-queries.ts` if the resolution layer needs to consume it (e.g., `canConcentrate(combatant)`).
+4. Wire the query into the appropriate resolution code (action-resolver, shared, or action-effects).
 
 ### Adding a new effect kind
 
@@ -144,6 +281,94 @@ The encounter action system resolves combat actions against encounter state:
 1. Create a builder (e.g., `buildSummonResolutionInput`) that calls `buildCreatureResolutionInput`
 2. Layer entity-specific effects on top
 3. All existing resolvers work unchanged
+
+### Adding concentration tracking
+
+Concentration is tracked on `CombatantInstance` via a `ConcentrationState`:
+
+```typescript
+type ConcentrationState = {
+  spellId: string;
+  spellLabel: string;
+  linkedMarkerIds: string[];
+  remainingTurns?: number; // encounter-scoped, see note below
+};
+```
+
+**Wiring:**
+
+- When a concentration spell is cast, `resolveCombatAction` (in `action-resolver.ts`) calls `setConcentration` after effects resolve, passing the IDs of all markers created by `applyActionEffects`.
+- `applyActionEffects` returns `{ state, createdMarkerIds }` — the IDs of conditions, states, statModifiers, rollModifiers, damageResistanceMarkers, and turnHooks created during effect application.
+- `setConcentration` establishes concentration, automatically dropping any previous concentration (and cleaning up linked markers).
+- `dropConcentration` removes concentration state and cleans up all linked markers (conditions, states, statModifiers, rollModifiers, turnHooks, damageResistanceMarkers) on both the caster and all other combatants.
+- When a concentrating combatant takes damage, `applyDamageToCombatant` triggers a CON save (DC = max(10, damage/2)). On failure, concentration drops.
+
+**Duration tracking:**
+
+- `remainingTurns` is decremented at the caster's turn-end via `tickConcentrationDuration` (called from `advanceEncounterTurn`). When it reaches 0, concentration drops automatically.
+- The spell combat adapter pre-computes `concentrationDurationTurns` from the spell's `TimedDuration` (1 minute = 10 turns, 1 hour = 600 turns at 6 seconds per turn). Indefinite durations (`until-dispelled`, `until-triggered`, `special`) omit `remainingTurns`.
+- `remainingTurns` is encounter-scoped. When a non-encounter consumer needs spell duration tracking (exploration timers, world clock), refactor to store a canonical `{ value, unit }` duration alongside or instead of `remainingTurns`, with a shared `durationToRounds()` utility.
+
+**UI:**
+
+- `collectPresentableEffects` derives a "Concentrating" presentable effect from `combatant.concentration`, mapped to the `concentrating` entry in `COMBAT_STATE_UI_MAP` (`critical-now` section, `info` tone, `showAsChip`).
+- Preview cards (`AllyCombatantActivePreviewCard`, `OpponentCombatantActivePreviewCard`, `CombatTargetPreviewCard`) show a "Concentrating" chip when `combatant.concentration` is set.
+
+To add new linked effects to concentration cleanup, include their identifiers in `linkedMarkerIds` when calling `setConcentration`.
+
+### Adding ongoing/interval effects
+
+Ongoing effects are resolved via `RuntimeTurnHook`s on `CombatantInstance`:
+
+- **Interval effects** (e.g., Moonbeam, Spirit Guardians) are registered as turn hooks by `applyActionEffects` when the `interval` effect is applied.
+- **State ongoing effects** (e.g., Flaming Sphere) are also registered as turn hooks from `state.ongoingEffects`.
+
+Turn hooks fire at `turn-start` or `turn-end` and apply their nested effects (damage, saves, conditions) to the combatant. The hook includes `sourceId` to trace back to the originating spell or action.
+
+To add a new ongoing effect pattern:
+
+1. Author it as an `interval` or `state` effect with `ongoingEffects`.
+2. The existing turn hook infrastructure will register and fire it automatically.
+3. For custom timing or logic, add a new hook type to `RuntimeTurnHook`.
+
+### Adding repeat saves
+
+Conditions and states can include a `repeatSave` field:
+
+```typescript
+repeatSave?: {
+  ability: AbilityRef;
+  timing: 'turn-start' | 'turn-end';
+};
+```
+
+When `applyActionEffects` applies a condition or state with `repeatSave`, it registers a `RuntimeTurnHook` of type `repeat-save` on the target combatant. At the specified turn boundary, `executeTurnHooks` rolls the save vs the source's DC. On success, the linked condition/state is automatically removed.
+
+### Adding damage resistance
+
+`DamageResistanceMarker` on `CombatantInstance` tracks active damage resistances and vulnerabilities:
+
+```typescript
+type DamageResistanceMarker = {
+  damageType: string;
+  level: 'resistance' | 'vulnerability' | 'immunity';
+  sourceId: string;
+  label: string;
+};
+```
+
+Modifier effects with `target: 'resistance'` register markers via `applyActionEffects`. The `applyDamageToCombatant` function checks for active resistance/vulnerability markers and halves or doubles matching damage before applying.
+
+### Adding HP-threshold gating
+
+`CombatActionDefinition` supports `hpThreshold` for conditional effect application:
+
+```typescript
+hpThreshold?: { maxHp: number };
+aboveThresholdEffects?: Effect[];
+```
+
+During `auto-hit` resolution, the engine checks the target's current HP against `hpThreshold.maxHp`. If below or equal, the main `effects` are applied. If above, `aboveThresholdEffects` are applied instead. The spell adapter reads `spell.resolution.hpThreshold` and maps it to the action definition.
 
 ### Edition-specific rules
 
@@ -211,3 +436,107 @@ const base = buildCharacterResolutionInput(character, { armorById: catalog.armor
 const allEffects = [...base.effects, ...enchantmentEffects, ...magicItemEffects]
 const result = resolveStatDetailed('armor_class', base.context, allEffects)
 ```
+
+### Healing spell resolution
+
+Healing spells are authored with `hit-points` effects and resolved through the `effects` action resolution mode. The spell adapter injects the caster's spellcasting ability modifier when `abilityModifier` is `true`, and the action effects engine rolls the dice and applies healing via `applyHealingToCombatant`.
+
+```typescript
+import { buildSpellCombatActions, getCharacterSpellcastingStats } from '@/features/encounter/helpers'
+
+const stats = getCharacterSpellcastingStats(character, ruleset)
+const actions = buildSpellCombatActions({
+  runtimeId,
+  spellIds: character.spells,
+  spellsById: catalog.spellsById,
+  spellSaveDc: stats.spellSaveDc,
+  spellAttackBonus: stats.spellAttackBonus,
+  spellcastingAbilityModifier: stats.spellcastingAbilityModifier,
+  casterLevel: character.level,
+})
+```
+
+Healing actions use `targeting: { kind: 'single-creature' }`, which allows any living combatant (ally, enemy, or self) as a target. The encounter UI shows all living combatants as valid targets when a `single-creature` action is selected.
+
+## 8. Supported Effect Matrix
+
+How each effect kind is resolved at runtime by `action-effects.ts`:
+
+| Effect Kind | Resolution | Notes |
+|-------------|-----------|-------|
+| `damage` | **Full** | Rolls dice expression, applies to target HP; respects active damage resistance markers |
+| `save` | **Full** | Target rolls ability save vs DC; gates subsequent effects |
+| `condition` | **Full** | Applies/removes conditions on target; `repeatSave` registers turn hooks for automatic save-or-remove |
+| `hit-points` | **Full** | Rolls healing dice, applies via `applyHealingToCombatant`; supports `abilityModifier` injection |
+| `state` | **Full** | Sets state flags; registers `ongoingEffects` as turn hooks; supports `repeatSave` |
+| `note` | **Full** | Logs text; `category` distinguishes `under-modeled` from `flavor` |
+| `targeting` | **Handled** | Consumed by the action resolver for target selection, not by `applyActionEffects` |
+| `modifier` | **Partial** | `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) fully resolved; other targets log gracefully |
+| `roll-modifier` | **Full** | Registers `RollModifierMarker` on target; applied during attack-roll and saving throw resolution |
+| `interval` | **Full** | Registers `RuntimeTurnHook` for per-turn effect application |
+| `immunity` | **Partial** | `spell` and `source-action` scopes resolved; other scopes log |
+| `move` | **Log** | Logs structured summary (direction, distance); no position tracking |
+| `death-outcome` | **Log** | Logs outcome description |
+| `trigger` | **Log** | Logs trigger condition and linked effects |
+| `activation` | **Log** | Logs activation cost and linked effects |
+| `check` | **Log** | Logs ability check requirement |
+| `grant` | **Log** | Logs granted capability |
+| `form` | **Log** | Logs form change description |
+| `spawn` | **Log** | Logs summoned creature description |
+
+**Resolution levels:**
+
+- **Full**: Mechanically resolved with state changes.
+- **Partial**: Some sub-cases resolved, others degrade to log.
+- **Handled**: Consumed elsewhere in the pipeline (not in `applyActionEffects`).
+- **Log**: Structured summary logged to encounter log; no mechanical state changes.
+
+## 9. Known Pressure Points
+
+### Conditions vs states
+
+`conditions` holds canonical status effects that participate broadly in mechanics (the SRD set: blinded, charmed, frightened, etc.). `states` holds encounter/runtime markers and custom flags that are not part of that canonical set (banished, concentrating, immune-to-X, etc.). New markers should follow this boundary so that code which iterates conditions for mechanical purposes does not accidentally pick up custom markers, and vice versa.
+
+### Targeting families
+
+Current targeting covers creature-selectable cases only. Future work will likely require separate handling for at least three targeting families:
+
+- **Creature-selectable** — the current model. Actor picks one or more creatures from a candidate pool (single-target, all-enemies, single-creature, dead-creature, self).
+- **Event-driven** — targeting determined by a game event rather than player choice. `entered-during-move` is the current example. This should not be treated as a template for general creature-targeting abstraction.
+- **Spatial/area** — point-and-shape selection (cone, sphere, line, cube) with inclusion/exclusion, friend/foe filtering, line-of-effect, and range. This is a qualitatively different problem from creature selection and should be designed as its own subsystem.
+
+If the creature-selectable kind union (`single-target`, `all-enemies`, etc.) grows beyond its current six members — especially if new kinds overlap with existing ones (e.g., `single-ally` vs `single-creature`) — consider decomposing into dimensional fields (allegiance, lifeState, cardinality) rather than continuing to extend the flat union.
+
+### "Condition" is overloaded
+
+Three distinct concepts share the term "condition" in this codebase:
+
+- **Status condition** — a canonical mechanical status on a combatant (blinded, charmed, etc.). Typed as `EffectConditionId`.
+- **Effect condition / predicate** — a boolean expression that gates whether an effect applies. Typed as `Condition` in `conditions/condition.types.ts`.
+- **Form/display condition** — a UI visibility rule for form fields. Typed as `Condition` in `ui/patterns/form/conditions.ts`.
+
+Any future naming cleanup should address all three usages together rather than renaming one in isolation.
+
+### Stable ids over labels
+
+Targeting checks, condition/state queries, and authored rule matching should rely on stable machine ids rather than display labels. Where existing code matches on `label` strings (e.g., `s.label === 'banished'`), treat those as interim shortcuts and prefer typed ids when the relevant type surface is extended.
+
+## 10. Recommended Next Steps
+
+### Low-cost wiring (no new subsystem needed)
+
+These items can be connected to existing resolution code with minimal new surface.
+
+- **Wire `canSpeak` / `isAwareOfSurroundings` into action availability or spell component validation** — the queries exist and are exported. Once verbal spell components or surprise mechanics are added, they become immediate consumers.
+- **Wire `canSee` into targeting or action-availability guards** — e.g., blinded creatures auto-fail ability checks requiring sight, once ability check resolution exists.
+- **Unconscious on-apply state transitions** — when the unconscious condition is applied, 5e rules dictate the creature drops prone and drops whatever it is holding. These are one-time transitions, not ongoing consequences, and should be handled in `addConditionToCombatant` in `condition-mutations.ts`.
+- **Wire `check_mod` if contested checks are added** — poisoned and frightened already declare disadvantage on ability checks. Adding grapple escape or shove resolution would be the natural trigger.
+
+### Subsystem-gated wiring
+
+These items are modeled and queryable but blocked on infrastructure that does not exist yet.
+
+- **Condition-based critical hits** — `incomingHitBecomesCrit` is ready to call. Needs a distance or adjacency input. Even a simple `isWithinMeleeRange(attackerId, targetId, state): boolean` seam with a temporary `return true` default for the current simplified encounter model would unblock it.
+- **Prone stand-up cost** — `standUpCostsHalfMovement` is defined. Needs movement spending to distinguish "standing up" from general movement.
+- **Frightened source-relative effects** — `cannotMoveCloserToSource` needs movement/proximity tracking. `whileSourceInSight` gating needs a `canSeeSource(combatant, sourceId)` predicate. Until then, frightened disadvantage is applied unconditionally (more restrictive than 5e).
+- **Full visibility mechanics** — blinded/invisible integration into stealth, hiding, and heavily-obscured rules depends on line-of-sight and position tracking.

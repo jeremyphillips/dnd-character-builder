@@ -31,7 +31,7 @@ function levelHeading(level: number): string {
 
 const SpellStep = () => {
   const { state, setSpells, stepNotices, dismissNotice } = useCharacterBuilder()
-  const { catalog } = useCampaignRules()
+  const { catalog, ruleset } = useCampaignRules()
   const { classes: selectedClasses, spells: selectedSpells = [], step } = state
 
   const notices = stepNotices.get('spells') ?? []
@@ -41,8 +41,9 @@ const SpellStep = () => {
       { classes: selectedClasses, spells: selectedSpells },
       catalog.classesById,
       catalog.spellsById,
+      ruleset.mechanics.progression.spellcasting,
     ),
-    [selectedClasses, selectedSpells, catalog.classesById, catalog.spellsById]
+    [selectedClasses, selectedSpells, catalog.classesById, catalog.spellsById, ruleset.mechanics.progression.spellcasting]
   )
 
   const { availableByLevel, limits, selectedPerLevel, totalSelectedLeveled } = model

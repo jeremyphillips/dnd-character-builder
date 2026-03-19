@@ -24,7 +24,7 @@ export interface CombatActionAttackProfile {
   damageType?: string
   damageBreakdown?: BreakdownToken[]
 }
-
+ 
 export interface CombatActionSequenceStep {
   actionLabel: string
   count: number
@@ -38,7 +38,8 @@ export interface CombatActionSaveProfile {
 }
 
 export interface CombatActionTargetingProfile {
-  kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self'
+  kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self' | 'single-creature' | 'dead-creature'
+  creatureTypeFilter?: string[]
 }
 
 export interface CombatActionMovementProfile {
@@ -56,6 +57,13 @@ export interface CombatActionUsage {
     max: number
     ready: boolean
   }
+  /**
+   * Limited-use actions (e.g. spell slots). period 'day' = long-rest reset.
+   *
+   * KNOWN EDGE CASES:
+   * - Warlock pact: Would need period 'short-rest' and separate resource keys.
+   * - Cantrips: Omit usage (unlimited).
+   */
   uses?: {
     max: number
     remaining: number
@@ -65,7 +73,7 @@ export interface CombatActionUsage {
 
 export type CombatActionDisplayMeta =
   | { source: 'weapon'; range?: string }
-  | { source: 'spell'; level: number; concentration: boolean; range: string; summary?: string }
+  | { source: 'spell'; spellId: string; level: number; concentration: boolean; concentrationDurationTurns?: number; range: string; summary?: string }
   | { source: 'natural'; attackType: string; reach?: number; description?: string }
 
 export interface CombatActionDefinition {

@@ -1,4 +1,5 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import { rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
 
 import type { EncounterState } from './types'
 import { formatEffectLabel } from './shared'
@@ -56,11 +57,13 @@ function applyManualEffectToCombatant(
   }
 
   if (effect.kind === 'hit-points') {
+    const resolved = rollHealing(String(effect.value), Math.random)
+    if (!resolved || resolved.total <= 0) return state
     return effect.mode === 'heal'
-      ? applyHealingToCombatant(state, targetId, effect.value, {
+      ? applyHealingToCombatant(state, targetId, resolved.total, {
           sourceLabel,
         })
-      : applyDamageToCombatant(state, targetId, effect.value, {
+      : applyDamageToCombatant(state, targetId, resolved.total, {
           sourceLabel,
         })
   }

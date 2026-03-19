@@ -6,7 +6,7 @@ import type { DiceOrFlat } from '../dice/dice.types';
 import type { AbilityKey, AbilityRef } from '../character';
 import type { EffectDuration } from './timing.types';
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab';
-import type { MonsterSizeCategory } from '@/features/content/monsters/domain/vocab/monster.vocab';
+import type { MonsterSizeCategory, MonsterType } from '@/features/content/monsters/domain/vocab/monster.vocab';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/engines/formula.engine';
 
@@ -165,11 +165,18 @@ export type CheckEffect = EffectBase<'check'> & {
   onFail?: Effect[];
 };
 
+export type RepeatSave = {
+  ability: AbilityRef;
+  timing: 'turn-start' | 'turn-end';
+};
+
 export type ConditionEffect = EffectBase<'condition'> & {
   conditionId: EffectConditionId;
+  classification?: string[];
   targetSizeMax?: EffectSizeCategory;
   escapeDc?: number;
   escapeCheckDisadvantage?: boolean;
+  repeatSave?: RepeatSave;
 };
 
 export type ActivationEffect = EffectBase<'activation'> & {
@@ -225,6 +232,7 @@ export type VisibilityRuleEffect = EffectBase<'visibility-rule'> & {
 
 export type StateEffect = EffectBase<'state'> & {
   stateId: string;
+  classification?: string[];
   targetSizeMax?: EffectSizeCategory;
   escape?: {
     dc: number;
@@ -234,15 +242,18 @@ export type StateEffect = EffectBase<'state'> & {
   };
   ongoingEffects?: Effect[];
   notes?: string;
+  repeatSave?: RepeatSave;
 };
 
 export type TargetingEffect = EffectBase<'targeting'> & {
   target:
     | 'one-creature'
+    | 'one-dead-creature'
     | 'chosen-creatures'
     | 'creatures-in-area'
     | 'creatures-entered-during-move';
   targetType?: 'creature';
+  creatureTypeFilter?: MonsterType[];
   rangeFeet?: number;
   requiresSight?: boolean;
   count?: number;
@@ -362,7 +373,8 @@ export type SpawnEffect = EffectBase<'spawn'> & {
 
 export type HitPointsEffect = EffectBase<'hit-points'> & {
   mode: 'heal' | 'damage';
-  value: number;
+  value: DiceOrFlat;
+  abilityModifier?: boolean;
 };
 
 export type AuraEffect = EffectBase<'aura'> & {
@@ -372,8 +384,23 @@ export type AuraEffect = EffectBase<'aura'> & {
 };
 
 export type NoteEffect = EffectBase<'note'> & {
-  // For notes, text is the payload, so require it.
   text: string;
+  category?: 'under-modeled' | 'flavor';
+};
+
+export type RemoveClassificationEffect = EffectBase<'remove-classification'> & {
+  classification: string;
+};
+
+export type RegenerationEffect = EffectBase<'regeneration'> & {
+  amount: number | DiceOrFlat;
+  trigger: {
+    kind: 'turn-start' | 'turn-end';
+    subject: 'self';
+  };
+  suppressedByDamageTypes?: string[];
+  suppressionDuration?: EffectDuration;
+  disabledAtZeroHp?: boolean;
 };
 
 export type Effect =
@@ -405,4 +432,6 @@ export type Effect =
   | HitPointsEffect
   | AuraEffect
   | NoteEffect
+  | RemoveClassificationEffect
+  | RegenerationEffect
   | CustomEffect;

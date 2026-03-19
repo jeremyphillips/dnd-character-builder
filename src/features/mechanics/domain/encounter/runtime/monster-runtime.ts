@@ -3,10 +3,10 @@ import type {
   MonsterTraitRequirement,
   MonsterTraitTrigger,
 } from '@/features/content/monsters/domain/types/monster-traits.types'
-import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
+import type { Effect, RegenerationEffect } from '@/features/mechanics/domain/effects/effects.types'
 import type { EffectDuration, TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 
-import type { RuntimeTurnHook } from '../state'
+import type { RuntimeTurnHook, RuntimeTurnHookRequirement } from '../state'
 import type {
   ManualMonsterTriggerContext,
   MonsterContextTriggerStatus,
@@ -84,30 +84,69 @@ function toRuntimeTurnHookRequirements(
   })
 }
 
+function buildRegenerationHook(
+  monsterId: string,
+  traitName: string,
+  effect: RegenerationEffect,
+  hookIndex: string,
+): RuntimeTurnHook {
+  const requirements: RuntimeTurnHookRequirement[] = []
+  if (effect.disabledAtZeroHp) {
+    requirements.push({ kind: 'hit-points-above', value: 0 })
+  }
+
+  return {
+    id: `${monsterId}-regen-${hookIndex}`,
+    label: traitName,
+    boundary: effect.trigger.kind === 'turn-start' ? 'start' : 'end',
+    effects: [{ kind: 'hit-points', mode: 'heal', value: effect.amount }],
+    requirements: requirements.length > 0 ? requirements : undefined,
+    suppression: effect.suppressedByDamageTypes
+      ? {
+          damageTypes: effect.suppressedByDamageTypes,
+          duration: effect.suppressionDuration
+            ? toRuntimeTurnDuration(effect.suppressionDuration)
+            : undefined,
+        }
+      : undefined,
+  }
+}
+
 export function buildMonsterTurnHooks(monster: Monster): RuntimeTurnHook[] {
   return (monster.mechanics.traits ?? []).flatMap((trait, traitIndex) => {
+    const hooks: RuntimeTurnHook[] = []
+
+    const regenEffects = (trait.effects ?? []).filter(
+      (e): e is RegenerationEffect => e.kind === 'regeneration',
+    )
+    for (let i = 0; i < regenEffects.length; i++) {
+      hooks.push(buildRegenerationHook(monster.id, trait.name, regenEffects[i], `${traitIndex}-${i}`))
+    }
+
     const triggers = monsterTriggersArray(trait.trigger)
+    for (let triggerIndex = 0; triggerIndex < triggers.length; triggerIndex++) {
+      const trigger = triggers[triggerIndex]
+      if (trigger.kind !== 'turn-start' && trigger.kind !== 'turn-end') continue
 
-    return triggers.flatMap((trigger, triggerIndex) => {
-      if (trigger.kind !== 'turn-start' && trigger.kind !== 'turn-end') return []
-      if (!trait.effects || trait.effects.length === 0) return []
+      const nonRegenEffects = (trait.effects ?? []).filter((e) => e.kind !== 'regeneration')
+      if (nonRegenEffects.length === 0) continue
 
-      return [
-        {
-          id: `${monster.id}-trait-${traitIndex}-${triggerIndex}`,
-          label: trait.name,
-          boundary: trigger.kind === 'turn-start' ? 'start' : 'end',
-          effects: trait.effects,
-          requirements: toRuntimeTurnHookRequirements(trait.requirements),
-          suppression: trait.suppression?.ifTookDamageTypes
-            ? {
-                damageTypes: trait.suppression.ifTookDamageTypes,
-                duration: toRuntimeTurnDuration(trait.suppression.duration),
-              }
-            : undefined,
-        },
-      ]
-    })
+      hooks.push({
+        id: `${monster.id}-trait-${traitIndex}-${triggerIndex}`,
+        label: trait.name,
+        boundary: trigger.kind === 'turn-start' ? 'start' : 'end',
+        effects: nonRegenEffects,
+        requirements: toRuntimeTurnHookRequirements(trait.requirements),
+        suppression: trait.suppression?.ifTookDamageTypes
+          ? {
+              damageTypes: trait.suppression.ifTookDamageTypes,
+              duration: toRuntimeTurnDuration(trait.suppression.duration),
+            }
+          : undefined,
+      })
+    }
+
+    return hooks
   })
 }
 

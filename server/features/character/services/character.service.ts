@@ -329,11 +329,11 @@ export async function updateCharacterWithPolicy(
     if (imageKey !== undefined) updateData.imageKey = imageKey
     if (narrative !== undefined) updateData.narrative = narrative
     if (combat !== undefined) updateData.combat = combat
+    if (spells !== undefined) updateData.spells = spells
     if ((character as { levelUpPending?: boolean }).levelUpPending) {
       if (totalLevel !== undefined) updateData.totalLevel = totalLevel
       if (classes !== undefined) updateData.classes = classes
       if (hitPoints !== undefined) updateData.hitPoints = hitPoints
-      if (spells !== undefined) updateData.spells = spells
       if (levelUpPending !== undefined) updateData.levelUpPending = levelUpPending
       if (pendingLevel !== undefined) updateData.pendingLevel = pendingLevel
       if (subclassId !== undefined) updateData.subclassId = subclassId

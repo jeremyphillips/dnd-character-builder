@@ -1,12 +1,3 @@
-import type { CharacterDetailDto } from '@/features/character/read-model'
-import type { CampaignSummary } from '@/shared/types/campaign.types'
-import { getXpForLevel } from '@/features/mechanics/domain/progression'
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import { CampaignHorizontalCard }from '@/features/campaign/components'
-import { EditableTextField } from '@/ui/patterns'
-import { ImageUploadField } from '@/ui/patterns'
-import { resolveXpTable } from '@/features/mechanics/domain/progression'
-
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
@@ -17,6 +8,16 @@ import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 import EditIcon from '@mui/icons-material/Edit'
+
+import type { CharacterDetailDto } from '@/features/character/read-model'
+import type { CampaignSummary } from '@/shared/types/campaign.types'
+import { getXpForLevel } from '@/features/mechanics/domain/progression'
+import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
+import { CampaignHorizontalCard }from '@/features/campaign/components'
+import { EditableTextField } from '@/ui/patterns'
+import { ImageUploadField } from '@/ui/patterns'
+import { resolveXpTable } from '@/features/mechanics/domain/progression'
+import { formatCharacterClassLine } from '@/features/character/helpers'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,14 +73,7 @@ export default function IdentityBanner({
   const alignmentName = alignmentOptions.find(a => a.id === character.alignment)?.label ?? character.alignment ?? '—'
   const currentLevel = character.totalLevel ?? character.level ?? 1
   const maxLevel = xpTable?.length ? Math.max(...xpTable.map(e => e.level)) : 20
-
-  const classSummary = filledClasses.length > 0
-    ? filledClasses.map(cls => {
-        const base = cls.className || cls.classId || 'Unknown'
-        const sub = cls.subclassName ? ` (${cls.subclassName})` : ''
-        return `${base}${sub} ${cls.level}`
-      }).join(' / ')
-    : '—'
+  const classSummary = formatCharacterClassLine(filledClasses)
 
   const isPendingLevelUp = character.levelUpPending && character.pendingLevel
   let xpDescription: string | undefined
@@ -129,11 +123,6 @@ export default function IdentityBanner({
             <Typography variant="body1" sx={{ mt: 0.5 }}>
               {classSummary}
             </Typography>
-
-            {/* <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-              <Chip label={raceName} size="small" variant="outlined" />
-              <Chip label={alignmentName} size="small" variant="outlined" />
-            </Stack> */}
 
             <Divider sx={{ my: 1.5 }} />
             <Grid container columns={12} spacing={2}>

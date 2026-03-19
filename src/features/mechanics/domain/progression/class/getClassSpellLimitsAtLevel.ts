@@ -1,10 +1,11 @@
 /**
  * Compute spell limits from a class progression at a given class level.
  *
- * Pure domain function — no side effects, no data lookups.
- * Callers provide the ClassProgression; this function interprets it.
+ * Resolves spell slots and max spell level from the ruleset spellcasting config.
  */
 import type { ClassProgression } from '@/features/content/classes/domain/types'
+import type { SpellcastingProgression } from '@/shared/types/ruleset'
+import { getCantripsFromProfile } from './cantripProgressionProfiles'
 
 // ---------------------------------------------------------------------------
 // Casting mode
@@ -49,23 +50,28 @@ function deriveCastingMode(prog: ClassProgression): CastingMode {
 export function getClassSpellLimitsAtLevel(
   prog: ClassProgression,
   classLevel: number,
+  spellcastingConfig: SpellcastingProgression,
 ): SpellLimits {
   const castingMode = deriveCastingMode(prog)
   const sp = prog.spellProgression
   if (!sp) return { castingMode: 'none', cantrips: 0, totalKnown: 0, maxSpellLevel: 0, slotsByLevel: [] }
 
-  const idx = Math.min(classLevel, sp.spellSlots.length) - 1
-  const cantrips = sp.cantripsKnown?.[idx] ?? 0
-  const totalKnown = sp.spellsKnown?.[idx] ?? 0
-  const slots = idx >= 0 ? sp.spellSlots[idx] : []
-
-  let maxSpellLevel = 0
-  for (let i = slots.length - 1; i >= 0; i--) {
-    if (slots[i] > 0) {
-      maxSpellLevel = i + 1
-      break
-    }
+  const spellcastingType = prog.spellcasting
+  if (
+    !spellcastingType ||
+    spellcastingType === 'none' ||
+    !spellcastingConfig[spellcastingType]
+  ) {
+    return { castingMode: 'none', cantrips: 0, totalKnown: 0, maxSpellLevel: 0, slotsByLevel: [] }
   }
+
+  const { slotTable, maxSpellLevel } = spellcastingConfig[spellcastingType]!
+  const idx = Math.min(classLevel, slotTable.length) - 1
+  const cantrips = sp.cantripsKnown
+    ? getCantripsFromProfile(sp.cantripsKnown, classLevel)
+    : 0
+  const totalKnown = sp.spellsKnown?.[idx] ?? 0
+  const slots = idx >= 0 ? [...slotTable[idx]] : []
 
   return { castingMode, cantrips, totalKnown, maxSpellLevel, slotsByLevel: slots }
 }

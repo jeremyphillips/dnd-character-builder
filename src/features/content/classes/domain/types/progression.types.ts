@@ -5,12 +5,7 @@ import type { Effect } from '@/features/mechanics/domain/effects/effects.types';
 export type AttackProgression = 'good' | 'average' | 'poor'
 export type SaveProgression = 'good' | 'poor'
 
-export type SpellcastingAbility =
-  | 'full'
-  | 'half'
-  | 'third'
-  | 'pact'
-  | 'none';
+export type SpellcastingAbility = 'full' | 'half' | 'pact' | 'none';
 
 export type ClassFeatureEffects = Effect[];
 
@@ -33,23 +28,14 @@ export interface SpellProgression {
    *  - 'prepared' — choose daily from class list or spellbook (Wizard, Cleric, Druid, Paladin) */
   type: 'known' | 'prepared'
 
-  /** Cantrips / 0-level spells available at each class level. Index 0 = level 1.
-   *  5e: number of cantrips known.
-   *  3.5e: number of 0-level spell slots per day. */
-  cantripsKnown?: number[]
+  /** Cantrips / 0-level spells: profile key from CANTRIP_PROGRESSION_PROFILES.
+   *  Omit for classes with no cantrips (e.g. Paladin, Ranger). */
+  cantripsKnown?: 'standard2' | 'standard3' | 'standard4'
 
   /** Total spells known at each class level. Index 0 = level 1.
    *  5e 'known' casters only (Sorcerer, Bard, Warlock, Ranger).
    *  Use 0 for levels with no spells (e.g. Ranger level 1). */
   spellsKnown?: number[]
-
-  /** Spell slot table: spellSlots[classLevel-1][spellLevel-1] = number of slots.
-   *  e.g. spellSlots[4] = [4, 3, 2] → at level 5: four 1st, three 2nd, two 3rd.
-   *  Empty inner array [] means no spells at that class level. */
-  spellSlots: number[][]
-
-  /** Highest spell level this class ever reaches */
-  maxSpellLevel: number
 
   /** 5e Warlock only: Mystic Arcanum spells (one known of each level, once per long rest) */
   mysticArcanum?: { spellLevel: number; grantedAtClassLevel: number }[]

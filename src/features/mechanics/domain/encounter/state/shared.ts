@@ -1,6 +1,7 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 import { rollDie } from '@/features/mechanics/domain/resolution/engines/dice.engine'
+import { canTakeActions, canTakeReactions, getSpeedConsequences } from './condition-rules'
 
 import type {
   CombatantInstance,
@@ -26,15 +27,21 @@ export function buildRuntimeMarker(
     durationTurns?: number
     tickOn?: TurnBoundary
     duration?: RuntimeMarkerDuration
+    sourceInstanceId?: string
+    classification?: string[]
   },
 ): RuntimeMarker {
   const duration = options?.duration
   const durationTurns = options?.durationTurns
+  const sourceInstanceId = options?.sourceInstanceId
+  const classification = options?.classification && options.classification.length > 0 ? options.classification : undefined
   if (duration) {
     return {
       id: label,
       label,
       duration,
+      sourceInstanceId,
+      classification,
     }
   }
 
@@ -42,6 +49,8 @@ export function buildRuntimeMarker(
     return {
       id: label,
       label,
+      sourceInstanceId,
+      classification,
     }
   }
 
@@ -52,6 +61,8 @@ export function buildRuntimeMarker(
       remainingTurns: durationTurns,
       tickOn: options?.tickOn ?? 'end',
     },
+    sourceInstanceId,
+    classification,
   }
 }
 
@@ -172,11 +183,34 @@ export function getCombatantExtraOpportunityAttackReactions(combatant: Combatant
   }, 0)
 }
 
+export function hasCondition(combatant: CombatantInstance, label: string): boolean {
+  return combatant.conditions.some((m) => markerMatches(m, label))
+}
+
+export function hasState(combatant: CombatantInstance, label: string): boolean {
+  return combatant.states.some((m) => markerMatches(m, label))
+}
+
 export function createCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {
-  return createCombatTurnResources(
+  const resources = createCombatTurnResources(
     getCombatantBaseMovement(combatant),
     getCombatantExtraOpportunityAttackReactions(combatant),
   )
+
+  if (!canTakeActions(combatant)) {
+    resources.actionAvailable = false
+    resources.bonusActionAvailable = false
+  }
+
+  if (!canTakeReactions(combatant)) {
+    resources.reactionAvailable = false
+  }
+
+  if (getSpeedConsequences(combatant).speedBecomesZero) {
+    resources.movementRemaining = 0
+  }
+
+  return resources
 }
 
 export function syncCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {
@@ -225,6 +259,8 @@ export function requirementLabel(requirement: RuntimeTurnHookRequirement): strin
       return 'damage taken this turn'
     case 'hit-points-equals':
       return `hit points equal ${requirement.value}`
+    case 'hit-points-above':
+      return `hit points above ${requirement.value}`
   }
 }
 
@@ -236,6 +272,8 @@ export function requirementMet(combatant: CombatantInstance, requirement: Runtim
         : false
     case 'hit-points-equals':
       return combatant.stats.currentHitPoints === requirement.value
+    case 'hit-points-above':
+      return combatant.stats.currentHitPoints > requirement.value
     case 'damage-taken-this-turn': {
       const turnContext = combatant.turnContext ?? createEmptyTurnContext()
       const damageAmount = requirement.damageType

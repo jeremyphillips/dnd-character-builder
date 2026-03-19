@@ -24,11 +24,28 @@ type CustomSubclassFeature = SubclassFeatureBase & {
   [key: string]: unknown
 }
 
+type SpellGrantProgressionEntry = {
+  level: number
+  spellIds: string[]
+}
+
+type SubclassSpellcastingFeature = SubclassFeatureBase & {
+  kind: 'spellcasting'
+  mode:
+    | 'always_prepared'
+    | 'always_known'
+    | 'expanded_list'
+    | 'bonus_cantrip'
+  spellcastingClassId?: string
+  grants: SpellGrantProgressionEntry[]
+}
+
 export type SubclassFeature =
   | NestedSubclassFeature
   | SubclassResourceFeature
   | SubclassEffectFeature
   | CustomSubclassFeature
+  | SubclassSpellcastingFeature
 
 export interface Subclass {
   id: string

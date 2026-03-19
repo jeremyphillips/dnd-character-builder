@@ -77,6 +77,15 @@ export const COMBAT_STATE_UI_MAP: Record<string, CombatStatePresentation> = {
     showInHeader: true,
     userFacing: true,
   },
+  banished: {
+    label: 'Banished',
+    tone: 'danger',
+    priority: 'critical',
+    defaultSection: 'critical-now',
+    showAsChip: true,
+    showInHeader: true,
+    userFacing: true,
+  },
   invisible: {
     label: 'Invisible',
     tone: 'info',

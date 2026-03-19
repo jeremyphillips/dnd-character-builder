@@ -99,7 +99,8 @@ export function useEncounterState({
             : combatant.stats.currentHitPoints > 0) &&
           (isCreatureTargeting || isDeadCreatureTargeting || combatant.side !== activeCombatant.side) &&
           (!creatureTypeFilter?.length || (!!combatant.creatureType && creatureTypeFilter.includes(combatant.creatureType))) &&
-          !charmedSourceIds.includes(combatant.instanceId),
+          !charmedSourceIds.includes(combatant.instanceId) &&
+          !combatant.states.some((s) => s.label === 'banished'),
       )
       .map((combatant) => ({
         id: combatant.instanceId,

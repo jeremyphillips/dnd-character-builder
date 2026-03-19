@@ -54,6 +54,7 @@ export function getActionTargets(
   const charmedSourceIds = isHostileAction(action) ? getCharmedSourceIds(actor) : []
 
   function isValidTarget(combatant: CombatantInstance): boolean {
+    if (combatant.states.some((s) => s.label === 'banished')) return false
     if (!passesCreatureTypeFilter(combatant, creatureTypeFilter)) return false
     if (charmedSourceIds.includes(combatant.instanceId)) return false
     return true

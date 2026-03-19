@@ -177,11 +177,27 @@ export function getCombatantExtraOpportunityAttackReactions(combatant: Combatant
   }, 0)
 }
 
+export function hasCondition(combatant: CombatantInstance, label: string): boolean {
+  return combatant.conditions.some((m) => markerMatches(m, label))
+}
+
+export function hasState(combatant: CombatantInstance, label: string): boolean {
+  return combatant.states.some((m) => markerMatches(m, label))
+}
+
 export function createCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {
-  return createCombatTurnResources(
+  const resources = createCombatTurnResources(
     getCombatantBaseMovement(combatant),
     getCombatantExtraOpportunityAttackReactions(combatant),
   )
+
+  if (hasCondition(combatant, 'incapacitated')) {
+    resources.actionAvailable = false
+    resources.bonusActionAvailable = false
+    resources.reactionAvailable = false
+  }
+
+  return resources
 }
 
 export function syncCombatantTurnResources(combatant: CombatantInstance): CombatantTurnResources {

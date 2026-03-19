@@ -54,7 +54,10 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
       {
         kind: 'save',
         save: { ability: 'cha' },
-        onFail: [{ kind: 'condition', conditionId: 'incapacitated' }],
+        onFail: [
+          { kind: 'condition', conditionId: 'incapacitated' },
+          { kind: 'state', stateId: 'banished' },
+        ],
       },
       { kind: 'note', text: 'Target is transported to a harmless demiplane for the duration.', category: 'flavor' as const },
       { kind: 'note', text: 'Aberrations, Celestials, Elementals, Fey, Fiends: permanent banishment if spell lasts full duration.', category: 'flavor' as const },

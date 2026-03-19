@@ -614,7 +614,7 @@ function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: b
   return { action: true }
 }
 
-function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' | 'dead-creature' } {
+function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' | 'dead-creature'; creatureTypeFilter?: string[] } {
   if (spell.range?.kind === 'self') return { kind: 'self' }
   const effects = spell.effects ?? []
   const hasDeadCreatureTargeting = effects.some(
@@ -624,9 +624,12 @@ function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemi
   const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
   if (hasHealing) return { kind: 'single-creature' }
   const targeting = effects.find((e) => e.kind === 'targeting')
-  if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies' }
-  if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies' }
-  return { kind: 'single-target' }
+  const creatureTypeFilter = targeting?.kind === 'targeting' && targeting.creatureTypeFilter?.length
+    ? [...targeting.creatureTypeFilter]
+    : undefined
+  if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies', creatureTypeFilter }
+  if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies', creatureTypeFilter }
+  return { kind: 'single-target', creatureTypeFilter }
 }
 
 function injectSpellSaveDc(effects: Effect[], spellSaveDc: number): Effect[] {
@@ -867,6 +870,8 @@ export function buildCharacterCombatantInstance(args: {
       sourceId: character.id,
       label: formatRuntimeLabel(character.name, runtimeId, character.id),
     },
+    // TODO: derive from character race/species once that data is modeled
+    creatureType: 'humanoid',
     stats: {
       armorClass: combatStats.armorClass,
       maxHitPoints: character.hitPoints.total,
@@ -912,6 +917,7 @@ export function buildMonsterCombatantInstance(args: {
       sourceId: monster.id,
       label: formatRuntimeLabel(monster.name, runtimeId, monster.id),
     },
+    creatureType: monster.type,
     stats: {
       armorClass,
       maxHitPoints: currentHitPoints,

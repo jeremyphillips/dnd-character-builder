@@ -11,6 +11,8 @@ import {
   createEncounterState,
   DEFAULT_MANUAL_MONSTER_TRIGGER_CONTEXT,
   getCombatantAvailableActions,
+  getCharmedSourceIds,
+  isHostileAction,
   removeConditionFromCombatant,
   resolveCombatAction,
   removeStateFromCombatant,
@@ -82,6 +84,10 @@ export function useEncounterState({
 
     const isCreatureTargeting = selectedAction?.targeting?.kind === 'single-creature'
     const isDeadCreatureTargeting = selectedAction?.targeting?.kind === 'dead-creature'
+    const creatureTypeFilter = selectedAction?.targeting?.creatureTypeFilter
+    const charmedSourceIds = selectedAction && isHostileAction(selectedAction)
+      ? getCharmedSourceIds(activeCombatant)
+      : []
 
     return encounterState.initiativeOrder
       .map((combatantId) => encounterState.combatantsById[combatantId])
@@ -91,7 +97,9 @@ export function useEncounterState({
           (isDeadCreatureTargeting
             ? combatant.stats.currentHitPoints === 0
             : combatant.stats.currentHitPoints > 0) &&
-          (isCreatureTargeting || isDeadCreatureTargeting || combatant.side !== activeCombatant.side),
+          (isCreatureTargeting || isDeadCreatureTargeting || combatant.side !== activeCombatant.side) &&
+          (!creatureTypeFilter?.length || (!!combatant.creatureType && creatureTypeFilter.includes(combatant.creatureType))) &&
+          !charmedSourceIds.includes(combatant.instanceId),
       )
       .map((combatant) => ({
         id: combatant.instanceId,

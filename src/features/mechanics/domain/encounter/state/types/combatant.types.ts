@@ -45,6 +45,7 @@ export interface RuntimeMarker {
   id: string
   label: string
   duration?: RuntimeMarkerDuration
+  sourceInstanceId?: string
 }
 
 export interface RuntimeEffectInstance {
@@ -137,6 +138,7 @@ export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
+  creatureType?: string
   stats: CombatantStatBlock
   attacks: CombatantAttackEntry[]
   actions?: CombatActionDefinition[]

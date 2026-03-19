@@ -26,15 +26,18 @@ export function buildRuntimeMarker(
     durationTurns?: number
     tickOn?: TurnBoundary
     duration?: RuntimeMarkerDuration
+    sourceInstanceId?: string
   },
 ): RuntimeMarker {
   const duration = options?.duration
   const durationTurns = options?.durationTurns
+  const sourceInstanceId = options?.sourceInstanceId
   if (duration) {
     return {
       id: label,
       label,
       duration,
+      sourceInstanceId,
     }
   }
 
@@ -42,6 +45,7 @@ export function buildRuntimeMarker(
     return {
       id: label,
       label,
+      sourceInstanceId,
     }
   }
 
@@ -52,6 +56,7 @@ export function buildRuntimeMarker(
       remainingTurns: durationTurns,
       tickOn: options?.tickOn ?? 'end',
     },
+    sourceInstanceId,
   }
 }
 

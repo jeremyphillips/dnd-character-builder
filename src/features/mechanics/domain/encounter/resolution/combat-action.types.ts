@@ -39,6 +39,7 @@ export interface CombatActionSaveProfile {
 
 export interface CombatActionTargetingProfile {
   kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self' | 'single-creature' | 'dead-creature'
+  creatureTypeFilter?: string[]
 }
 
 export interface CombatActionMovementProfile {

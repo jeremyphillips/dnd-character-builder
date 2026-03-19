@@ -103,9 +103,9 @@ Status meanings:
 
 - Status: `canonical`
 - Purpose: selection and affected-entity shape
-- Use when: modeling targets, areas, sight requirements, target count, repeat-target rules
+- Use when: modeling targets, areas, sight requirements, target count, repeat-target rules, creature type restrictions
 - Do not use when: storing spell placement range or save/damage outcomes
-- Key fields: `target`, `targetType`, `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
+- Key fields: `target`, `targetType`, `creatureTypeFilter`, `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
 
 ```ts
 { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } }
@@ -115,7 +115,12 @@ Status meanings:
 { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' }
 ```
 
+```ts
+{ kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] }
+```
+
 - `one-dead-creature`: targets a single creature at 0 HP. The spell combat adapter maps this to `dead-creature` action targeting, which restricts selection to 0 HP combatants regardless of side.
+- `creatureTypeFilter`: restricts valid targets to creatures whose `creatureType` matches one of the listed types. The spell combat adapter propagates this to `CombatActionTargetingProfile.creatureTypeFilter`, and both the resolution engine and the encounter UI filter targets accordingly. Uses `MonsterType` values from the shared monster vocabulary.
 
 ### `damage`
 
@@ -598,6 +603,18 @@ Adapter inputs derived from the caster:
 - `spellcastingAbilityModifier`: spellcasting ability modifier (injected into healing dice expressions)
 - `casterLevel`: used to resolve cantrip level scaling (damage dice and instance count thresholds)
 
+### Creature Type Targeting
+
+`CombatantInstance.creatureType` carries the creature's type at runtime. PCs currently default to `'humanoid'` (shim — will be derived from race/species once modeled). Monsters derive their type from `Monster.type`.
+
+`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type. Both the resolution engine (`getActionTargets`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
+
+### Charmed Hostile-Action Restriction
+
+When a combatant has the `charmed` condition, the `sourceInstanceId` on the condition marker identifies the charmer. The targeting system prevents the charmed combatant from selecting the charmer as a target for hostile actions (attacks, offensive spells, area effects).
+
+`isHostileAction` classifies an action as hostile when its targeting kind is `single-target`, `all-enemies`, `entered-during-move`, or absent (default enemy targeting). Actions with `self`, `single-creature`, or `dead-creature` targeting are not hostile.
+
 ### Known Unsupported Spell Mechanics
 
 The following spell mechanics are not yet resolved by the combat adapter and remain log-only or under-modeled:
@@ -607,6 +624,7 @@ The following spell mechanics are not yet resolved by the combat adapter and rem
 - Concentration tracking
 - Spell slot resource management
 - Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
+- Charmed save advantage when allies are fighting the target (authored as `save.text`, not yet resolved)
 
 ## 11. Anti-Patterns
 

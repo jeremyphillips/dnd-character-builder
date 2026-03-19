@@ -222,6 +222,7 @@ export function addConditionToCombatant(
     tickOn?: TurnBoundary
     duration?: RuntimeMarkerDuration
     sourceLabel?: string
+    sourceInstanceId?: string
   },
 ): EncounterState {
   const trimmedCondition = condition.trim()

@@ -25,19 +25,50 @@ export function getSequenceStepCount(
   return step.count
 }
 
+function passesCreatureTypeFilter(
+  combatant: CombatantInstance,
+  filter: string[] | undefined,
+): boolean {
+  if (!filter || filter.length === 0) return true
+  return !!combatant.creatureType && filter.includes(combatant.creatureType)
+}
+
+export function isHostileAction(action: CombatActionDefinition): boolean {
+  const kind = action.targeting?.kind
+  return !kind || kind === 'single-target' || kind === 'all-enemies' || kind === 'entered-during-move'
+}
+
+export function getCharmedSourceIds(combatant: CombatantInstance): string[] {
+  return combatant.conditions
+    .filter((m) => m.label === 'charmed' && m.sourceInstanceId)
+    .map((m) => m.sourceInstanceId!)
+}
+
 export function getActionTargets(
   state: EncounterState,
   actor: CombatantInstance,
   selection: ResolveCombatActionSelection,
   action: CombatActionDefinition,
 ): CombatantInstance[] {
+  const creatureTypeFilter = action.targeting?.creatureTypeFilter
+  const charmedSourceIds = isHostileAction(action) ? getCharmedSourceIds(actor) : []
+
+  function isValidTarget(combatant: CombatantInstance): boolean {
+    if (!passesCreatureTypeFilter(combatant, creatureTypeFilter)) return false
+    if (charmedSourceIds.includes(combatant.instanceId)) return false
+    return true
+  }
+
   if (action.targeting?.kind === 'self') {
     return [actor]
   }
 
   if (action.targeting?.kind === 'all-enemies') {
     return Object.values(state.combatantsById).filter(
-      (combatant) => combatant.side !== actor.side && combatant.stats.currentHitPoints > 0,
+      (combatant) =>
+        combatant.side !== actor.side &&
+        combatant.stats.currentHitPoints > 0 &&
+        isValidTarget(combatant),
     )
   }
 
@@ -45,6 +76,7 @@ export function getActionTargets(
     if (!selection.targetId) return [actor]
     const target = state.combatantsById[selection.targetId]
     if (!target || target.stats.currentHitPoints <= 0) return []
+    if (!isValidTarget(target)) return []
     return [target]
   }
 
@@ -58,5 +90,6 @@ export function getActionTargets(
   if (!selection.targetId) return []
   const target = state.combatantsById[selection.targetId]
   if (!target || target.side === actor.side || target.stats.currentHitPoints <= 0) return []
+  if (!isValidTarget(target)) return []
   return [target]
 }

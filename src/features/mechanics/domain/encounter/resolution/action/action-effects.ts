@@ -185,6 +185,7 @@ export function applyActionEffects(
     if (effect.kind === 'condition') {
       nextState = addConditionToCombatant(nextState, target.instanceId, effect.conditionId, {
         sourceLabel: options.sourceLabel,
+        sourceInstanceId: actor.instanceId,
       })
       return
     }

@@ -40,6 +40,9 @@ function passesCreatureTypeFilter(
 }
 
 export function isHostileAction(action: CombatActionDefinition): boolean {
+  if (action.hostileApplication !== undefined) {
+    return action.hostileApplication
+  }
   const kind = action.targeting?.kind
   if (action.targeting?.requiresWilling) return false
   return !kind || kind === 'single-target' || kind === 'all-enemies' || kind === 'entered-during-move'

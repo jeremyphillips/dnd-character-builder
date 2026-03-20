@@ -3,9 +3,17 @@ import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter'
 import { classifySpellResolutionMode } from './spell-resolution-classifier'
+import { deriveSpellHostility, spellHostilityToHostileApplication } from './spell-hostility'
 
 /** Resource key for persisting spell use. Export for onSpellSlotSpent handlers. */
 export const SPELL_USED_PREFIX = 'spell_used_'
+
+function applySpellHostileBridge(spell: Spell, action: CombatActionDefinition): CombatActionDefinition {
+  if (action.kind !== 'spell') return action
+  const ha = spellHostilityToHostileApplication(deriveSpellHostility(spell))
+  if (ha === undefined) return action
+  return { ...action, hostileApplication: ha }
+}
 
 export function formatSpellRange(range: SpellRange): string {
   switch (range.kind) {
@@ -406,26 +414,30 @@ export function buildSpellCombatActions(args: {
 
     const mode = classifySpellResolutionMode(spell)
 
+    let actions: CombatActionDefinition[]
     if (mode === 'attack-roll') {
-      return buildSpellAttackAction(spell, runtimeId, spellAttackBonus, casterLevel, effectiveUsage)
-    }
-
-    if (mode === 'effects') {
+      actions = buildSpellAttackAction(spell, runtimeId, spellAttackBonus, casterLevel, effectiveUsage)
+    } else if (mode === 'effects') {
       if (spellShouldUseEffectsSequence(spell, casterLevel)) {
-        return buildSpellEffectsSequenceActions(spell, runtimeId, effectiveUsage, casterLevel)
+        actions = buildSpellEffectsSequenceActions(spell, runtimeId, effectiveUsage, casterLevel)
+      } else {
+        actions = [buildSpellEffectsAction(spell, runtimeId, spellSaveDc, effectiveUsage, spellcastingAbilityModifier)]
       }
-      return [buildSpellEffectsAction(spell, runtimeId, spellSaveDc, effectiveUsage, spellcastingAbilityModifier)]
+    } else {
+      actions = [
+        {
+          id: `${runtimeId}-spell-${spell.id}`,
+          label: spell.name,
+          kind: 'spell',
+          cost: buildSpellActionCost(spell),
+          resolutionMode: 'log-only',
+          logText: buildSpellLogText(spell),
+          displayMeta: buildSpellDisplayMeta(spell),
+          usage: effectiveUsage,
+        },
+      ]
     }
 
-    return [{
-      id: `${runtimeId}-spell-${spell.id}`,
-      label: spell.name,
-      kind: 'spell',
-      cost: buildSpellActionCost(spell),
-      resolutionMode: 'log-only',
-      logText: buildSpellLogText(spell),
-      displayMeta: buildSpellDisplayMeta(spell),
-      usage: effectiveUsage,
-    }]
+    return actions.map((a) => applySpellHostileBridge(spell, a))
   })
 }

@@ -4,22 +4,22 @@ overview: Hostile vs non-hostile is not inferred from spell text or effect kinds
 todos:
   - id: audit-touch-buffs
     content: Audit spell catalog for touch + one-creature buffs missing requiresWilling (start with mage-armor in level1-m-z.ts)
-    status: pending
+    status: completed
   - id: docs-hostility
     content: "Add authoring note: hostility = combat targeting + Phase 2 signals; when to set requiresWilling"
-    status: pending
+    status: completed
   - id: optional-lint
     content: "Optional: spell audit script for suspicious touch+one-creature without requiresWilling/damage/save"
     status: pending
   - id: phase2-classifier
-    content: "Implement deriveSpellHostility (precedence below); walk effects for damage/save; wire spell-combat-adapter + isHostileAction or action targeting"
-    status: pending
+    content: "Phase 2a bridge: deriveSpellHostility + set hostileApplication (or resolution flag) on spell CombatActions; isHostileAction uses it when set, else legacy kind/requiresWilling. Then expand heuristics."
+    status: completed
   - id: state-hostility-map
     content: "Add stateId → hostile | non-hostile map (e.g. hallowed non-hostile); unknown falls through"
-    status: pending
+    status: completed
   - id: escape-hatch-meta
     content: "Add spell.resolution.hostileIntent optional boolean override in types + adapter"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -102,7 +102,24 @@ Goal: infer **hostile vs non-hostile** from authored `effects` (and overrides) s
 2. **Documentation** — Clarify: today hostility = targeting profile; Phase 2 adds derived hostility from effects + map + override.
 3. **Optional lint** — Flag `touch` + `one-creature` + no `requiresWilling` + no damage/save → suggest `requiresWilling` or escape hatch.
 
+## In scope (recommended): Adapter bridge, not a big-bang rewrite
+
+**What “replacing all of `isHostileAction` in one shot without adapter bridge” meant**
+
+- **One shot**: Rewriting `isHostileAction` so it *only* uses effect-walking / spell-derived rules, in a single change, with no intermediate shape on `CombatActionDefinition`.
+- **Without adapter bridge**: Spell data flows through [`buildSpellCombatActions`](src/features/encounter/helpers/spell-combat-adapter.ts) into [`CombatActionDefinition`](src/features/mechanics/domain/encounter/resolution/combat-action.types.ts). If hostility is computed only *inside* `isHostileAction` by re-reading spell data, you either duplicate spell access or break non-spell actions (weapons, monsters) that **never** had spell-shaped effects.
+
+**Why that’s risky**
+
+- **Weapon attacks** and many **monster actions** have `targeting: { kind: 'single-target' }` but no spell `effects[]`. A pure “derive from effects” implementation must **fall back** to today’s kind-based rules for those, or you add parallel authoring on every action.
+- **Single choke point** is good, but the implementation should be: **optional explicit field** (e.g. `hostileApplication?: boolean`) set by the spell adapter when building spell actions, then `isHostileAction` = **if `hostileApplication` is defined, use it; else existing `kind` / `requiresWilling` logic**. That is the **bridge**: spells gradually gain derived hostility; everything else unchanged.
+
+**Worth adding to scope (keeps the design clean)**
+
+- Yes — treat **“Phase 2a: bridge”** as explicit in-scope work: extend `CombatActionDefinition` + spell adapter + `isHostileAction` fallback chain in **one small vertical slice** before expanding heuristics.
+- Treat **“delete legacy kind-based hostility”** as a **later** cleanup only after spells and audits agree.
+
 ## Out of scope (for this plan)
 
-- Replacing all of `isHostileAction` in one shot without adapter bridge.
+- **Big-bang**: Deleting or fully replacing `isHostileAction`’s kind-based behavior in one PR with no fallback for non-spell actions.
 - Full simulation of “willing” vs “ally only” beyond same-side.

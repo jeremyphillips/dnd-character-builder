@@ -149,6 +149,8 @@ Status meanings:
 - **Equivalent:** `condition: { kind: 'creature-type', target: 'target', creatureTypes: [...] }` on the same targeting effect is also mapped to combat `creatureTypeFilter` when `target` is `'target'` (the selected creature). Prefer one style per spell; `creatureTypeFilter` is slightly shorter for pure type gates.
 - **`creatures-in-area` in encounter combat:** the adapter treats area spells as **`all-enemies`** only — see §3 **Area targeting and encounter combat (limitations)** above.
 
+**Hostile application (encounter / charm rules):** `deriveSpellHostility` (see `spell-hostility.ts`) walks spell `effects` and sets `CombatActionDefinition.hostileApplication` when definitive: `resolution.hostileIntent` override → `requiresWilling` → `SPELL_STATE_HOSTILITY` for `state` ids (e.g. `hallowed` non-hostile) → any `damage` or `save` → hostile; healing (`hit-points` heal) → non-hostile; otherwise unknown (legacy `targeting` kind rules). Prefer explicit `requiresWilling` for willing touch buffs when the tree has no damage/save/state map hit.
+
 ### `damage`
 
 - Status: `canonical`; `instances` is `provisional`; `levelScaling` is `provisional`

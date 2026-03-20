@@ -347,7 +347,12 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a piece of cured leather' } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       { kind: 'modifier', target: 'armor_class', mode: 'set', value: 13 },
       { kind: 'note', text: 'Target must not be wearing armor. True AC is 13 + Dex modifier. Ends if target dons armor.', category: 'flavor' as const },
     ],

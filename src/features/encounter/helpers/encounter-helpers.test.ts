@@ -5,7 +5,14 @@ import type { Weapon } from '@/features/content/equipment/weapons/domain/types/w
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { Ruleset } from '@/shared/types/ruleset'
 import { CHARACTER_PROFICIENCY_BONUS_TABLE } from '@/features/mechanics/domain/progression'
-import { buildMonsterAttackEntries, buildMonsterExecutableActions, buildSpellCombatActions, getCharacterSpellcastingStats } from './encounter-helpers'
+import { isHostileAction } from '@/features/mechanics/domain/encounter'
+import {
+  buildMonsterAttackEntries,
+  buildMonsterExecutableActions,
+  buildSpellCombatActions,
+  deriveSpellHostility,
+  getCharacterSpellcastingStats,
+} from './encounter-helpers'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 
 const TEST_RULESET = {
@@ -813,6 +820,63 @@ describe('buildSpellCombatActions', () => {
       turn: 'next',
       boundary: 'start',
     })
+  })
+
+  it('deriveSpellHostility: damage and save imply hostile; heal and hallowed state imply non-hostile', () => {
+    const fireball = makeSpell({
+      id: 'fireball',
+      name: 'Fireball',
+      effects: [{ kind: 'damage', damage: '8d6', damageType: 'fire' }],
+    })
+    expect(deriveSpellHostility(fireball)).toBe('hostile')
+
+    const cure = makeSpell({
+      id: 'cure',
+      name: 'Cure',
+      effects: [{ kind: 'hit-points', mode: 'heal', value: '1d8' }],
+    })
+    expect(deriveSpellHostility(cure)).toBe('non-hostile')
+
+    const hallow = makeSpell({
+      id: 'hallow',
+      name: 'Hallow',
+      effects: [{ kind: 'state', stateId: 'hallowed', notes: 'ward' }],
+    })
+    expect(deriveSpellHostility(hallow)).toBe('non-hostile')
+
+    const willing = makeSpell({
+      id: 'inv',
+      name: 'Invisibility',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+        { kind: 'condition', conditionId: 'invisible' },
+      ],
+    })
+    expect(deriveSpellHostility(willing)).toBe('non-hostile')
+  })
+
+  it('sets hostileApplication on spell actions for isHostileAction', () => {
+    const spell = makeSpell({
+      id: 'sacred-flame',
+      name: 'Sacred Flame',
+      effects: [
+        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        {
+          kind: 'save',
+          save: { ability: 'dex' },
+          onFail: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }],
+        },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['sacred-flame'],
+      spellsById: { 'sacred-flame': spell },
+    })
+
+    expect(actions[0]!.hostileApplication).toBe(true)
+    expect(isHostileAction(actions[0]!)).toBe(true)
   })
 })
 

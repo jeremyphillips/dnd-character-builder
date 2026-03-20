@@ -112,6 +112,11 @@ export type SpellResolutionMeta = {
   caveats?: string[];
   /** HP-gated delivery (e.g. Power Word Kill: at-or-below vs above threshold). */
   hpThreshold?: SpellHpThresholdResolution
+  /**
+   * Override derived spell hostility for encounter/charm rules.
+   * `true` = hostile application; `false` = non-hostile. Omit to use adapter-derived hostility from effects.
+   */
+  hostileIntent?: boolean
 }
 
 export type SpellResolutionStatus = 'stub' | 'partial' | 'full';

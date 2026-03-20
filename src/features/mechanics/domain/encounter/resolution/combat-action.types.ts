@@ -104,4 +104,9 @@ export interface CombatActionDefinition {
   aboveThresholdEffects?: Effect[]
   logText?: string
   displayMeta?: CombatActionDisplayMeta
+  /**
+   * Spell-derived: whether the action is a hostile application for charm / same-side targeting rules.
+   * When set (spell actions from `buildSpellCombatActions`), `isHostileAction` uses this; otherwise legacy `targeting` kind rules apply.
+   */
+  hostileApplication?: boolean
 }

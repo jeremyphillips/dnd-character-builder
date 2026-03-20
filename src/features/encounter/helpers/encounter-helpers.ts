@@ -6,6 +6,12 @@ import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbi
 import { resolveProficiencyBonusAtLevel } from '@/features/mechanics/domain/progression'
 
 export { SPELL_USED_PREFIX, buildSpellCombatActions, buildSpellDisplayMeta, buildSpellLogText, formatSpellRange } from './spell-combat-adapter'
+export {
+  deriveSpellHostility,
+  spellHostilityToHostileApplication,
+  SPELL_STATE_HOSTILITY,
+} from './spell-hostility'
+export type { SpellHostilityDerivation } from './spell-hostility'
 export { classifySpellResolutionMode, isFullyActionableEffectKind } from './spell-resolution-classifier'
 export {
   buildSpellAuditRow,

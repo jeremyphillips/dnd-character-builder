@@ -36,7 +36,8 @@ export type SpellTargetingAuditFlags = {
   rangeFeet?: number
 }
 
-function walkNestedEffects(effects: Effect[] | undefined, visit: (e: Effect) => void): void {
+/** Exported for spell hostility derivation and other effect-tree consumers. */
+export function walkNestedEffects(effects: Effect[] | undefined, visit: (e: Effect) => void): void {
   if (!effects) return
   for (const e of effects) {
     visit(e)

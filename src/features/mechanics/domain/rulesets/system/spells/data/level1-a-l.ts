@@ -1,5 +1,11 @@
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 1 spells A–L — authoring status:
+ * - **Attack/save/AoE modeled:** Burning Hands, Bane, Bless, Charm Person, Command, Cure Wounds, Faerie Fire, Chromatic Orb (base hit), Color Spray, Dissonant Whispers, Entangle, Ensnaring Strike (save + Restrained), Divine Smite (rider damage).
+ * - **Utility / sense / state:** Comprehend Languages, Detect Evil and Good, Detect Magic, Detect Poison, Expeditious Retreat, Find Familiar (spawn + notes).
+ * - **Note-first / heavy caveats:** Alarm (ward), False Life (temp HP), Floating Disk; Create or Destroy Water uses caveats + under-modeled note.
+ */
 export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
 {
     id: 'alarm',
@@ -11,10 +17,16 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a bell and silver wire' } },
+    resolution: {
+      caveats: [
+        'Ward triggers, exclusions, and audible vs mental alarm are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Wards door, window, or 20-foot cube. Alerts when touched. Audible or mental alarm.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -32,6 +44,11 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a morsel of food' } },
+    resolution: {
+      caveats: [
+        'Spell ends if the caster or any ally damages the target; not enforced in encounter resolution.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true, creatureTypeFilter: ['beast'] },
       { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
@@ -167,7 +184,27 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 50+ GP', cost: { value: 50, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Choose Acid/Cold/Fire/Lightning/Poison/Thunder. Ranged spell attack 3d8. Orb can leap on duplicate d8s. +1d8 per slot.' }],
+    deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'Damage type is chosen when you cast; encounter logging may use a single type.',
+        'Duplicate d8 leap to another target and slot-level leap cap are not resolved.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '3d8',
+        damageType: 'acid',
+      },
+      {
+        kind: 'note',
+        text: 'Choose Acid, Cold, Fire, Lightning, Poison, or Thunder. If two or more d8s show the same number, the orb can leap to another target within 30 feet (up to a number of leaps equal to the spell slot level).',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 per spell slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d8' }],
     description: {
       full: "You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type. If you roll the same number on two or more of the d8s, the orb leaps to a different target within 30 feet. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1. The orb can leap a maximum number of times equal to the slot level.",
       summary: 'Ranged spell attack 3d8 (choose damage type). Orb can leap on duplicate rolls. Scales with slot.',
@@ -183,7 +220,24 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of colorful sand' } },
-    effects: [{ kind: 'note', text: '15-foot cone: Con save or Blinded until end of your next turn.' }],
+    resolution: {
+      caveats: [
+        'Encounter maps cone AoE to all-enemies; no cone geometry or selective creatures.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'condition', conditionId: 'blinded' }],
+      },
+      {
+        kind: 'note',
+        text: 'Blinded until the end of your next turn. Duration not tracked as effect-level timing in encounter.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You launch a dazzling array of flashing, colorful light. Each creature in a 15-foot Cone originating from you must succeed on a Constitution saving throw or have the Blinded condition until the end of your next turn.",
       summary: '15-foot cone: Con save or Blinded until end of your next turn.',
@@ -238,8 +292,17 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a mix of water and sand' } },
+    resolution: {
+      caveats: [
+        'Create/destroy modes, volume, and slot scaling are not enforced in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Create: 10 gallons water or 30ft cube rain. Destroy: 10 gallons or 30ft cube fog.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Create: 10 gallons water or 30ft cube rain. Destroy: 10 gallons or 30ft cube fog.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "Create Water: You create up to 10 gallons of clean water within range in an open container, or the water falls as rain in a 30-foot Cube, extinguishing exposed flames. Destroy Water: You destroy up to 10 gallons of water in an open container, or destroy fog in a 30-foot Cube. Using a Higher-Level Spell Slot. You create or destroy 10 additional gallons, or the Cube size increases by 5 feet, for each spell slot level above 1.",
@@ -339,7 +402,23 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Change appearance including clothing. Same limb arrangement. Study action + Int (Investigation) vs DC to discern.' }],
+    resolution: {
+      caveats: [
+        'Investigation contest to discern disguise is not resolved in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'state',
+        stateId: 'disguise-self',
+        notes: 'Illusory change to appearance, clothing, and gear; same limb layout. Fails physical inspection.',
+      },
+      {
+        kind: 'note',
+        text: 'A creature can take the Study action and succeed on Intelligence (Investigation) vs your spell save DC to discern the disguise.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You make yourself—including your clothing, armor, weapons, and other belongings—look different until the spell ends. You can seem 1 foot shorter or taller and can appear heavier or lighter. You must adopt a form that has the same basic arrangement of limbs. The changes fail to hold up to physical inspection. To discern that you are disguised, a creature must take the Study action and succeed on an Intelligence (Investigation) check against your spell save DC.",
       summary: 'Illusory disguise. Study + Investigation check to discern.',
@@ -355,7 +434,38 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'Creature hears discordant melody. Wis save or 3d6 psychic and must use Reaction to move away. +1d6 per slot.' }],
+    resolution: {
+      caveats: [
+        'Half damage on success uses a fixed dice expression in data; forced reaction movement is not enforced.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          {
+            kind: 'damage',
+            damage: '3d6',
+            damageType: 'psychic',
+          },
+        ],
+        onSuccess: [
+          {
+            kind: 'damage',
+            damage: '2d6',
+            damageType: 'psychic',
+          },
+        ],
+      },
+      {
+        kind: 'note',
+        text: 'On a failed save, the target must immediately use its Reaction, if available, to move as far from you as its speed allows. On a successful save, half damage only (2d6 approximates half of 3d6 for automated resolution).',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 per spell slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "One creature of your choice that you can see within range hears a discordant melody in its mind. The target makes a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far away from you as it can. On a successful save, the target takes half as much damage only. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       summary: 'Wis save or 3d6 psychic and must flee. Damage scales with slot.',
@@ -371,7 +481,18 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Weapon attacks deal +1d4 radiant on hit.' }],
+    resolution: {
+      caveats: [
+        'Extra weapon damage on hit is not applied as a separate damage roll in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'state',
+        stateId: 'divine-favor',
+        notes: 'Your weapon attacks deal an extra 1d4 Radiant damage on a hit.',
+      },
+    ],
     description: {
       full: "Until the spell ends, your attacks with weapons deal an extra 1d4 Radiant damage on a hit.",
       summary: 'Weapon attacks deal +1d4 radiant.',
@@ -387,7 +508,25 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'Extra 2d8 radiant from attack. +1d8 if target is Fiend or Undead. +1d8 per slot above 1.' }],
+    resolution: {
+      caveats: [
+        'Cast as a rider after a weapon hit; Fiend/Undead bonus damage and slot scaling are noted only.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '2d8',
+        damageType: 'radiant',
+      },
+      {
+        kind: 'note',
+        text: '+1d8 if the target is a Fiend or Undead. +1d8 per spell slot level above 1.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 per spell slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d8' }],
     description: {
       full: "The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
       summary: 'Extra 2d8 radiant on hit. +1d8 vs Fiend/Undead. Scales with slot.',
@@ -403,7 +542,25 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
-    effects: [{ kind: 'note', text: 'Vines on hit target. Str save or Restrained. 1d6 piercing/turn. Str (Athletics) to escape. +1d6 per slot.' }],
+    resolution: {
+      caveats: [
+        'Bonus-action rider after a weapon hit; Large+ advantage on save and ongoing turn damage not fully enforced.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'str' },
+        onFail: [{ kind: 'condition', conditionId: 'restrained' }],
+      },
+      {
+        kind: 'note',
+        text: 'Large or larger targets have Advantage on the save. Restrained target takes 1d6 Piercing at the start of each of its turns; escape with Athletics vs your spell save DC. +1d6 per slot to that damage.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 Piercing per turn per spell slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "As you hit the target, grasping vines appear on it, and it makes a Strength saving throw. A Large or larger creature has Advantage. On a failed save, the target has the Restrained condition until the spell ends. While Restrained, the target takes 1d6 Piercing damage at the start of each of its turns. The target or a creature within reach can take an action to make a Strength (Athletics) check against your spell save DC to end the spell. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       summary: 'Str save or Restrained, 1d6 piercing/turn. Scales with slot.',
@@ -419,7 +576,24 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '20-foot square: Difficult Terrain. Str save or Restrained. Str (Athletics) to escape.' }],
+    resolution: {
+      caveats: [
+        'Encounter maps area spells to all-enemies; difficult terrain and selective creatures in the square are not modeled.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
+      {
+        kind: 'save',
+        save: { ability: 'str' },
+        onFail: [{ kind: 'condition', conditionId: 'restrained' }],
+      },
+      {
+        kind: 'note',
+        text: 'Ground in the area is Difficult Terrain. Restrained creature can use an action to make Strength (Athletics) vs your spell save DC to escape.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Grasping plants sprout from the ground in a 20-foot square within range. For the duration, these plants turn the ground in the area into Difficult Terrain. Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends. A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC to free itself.",
       summary: '20-foot square: Str save or Restrained. Difficult Terrain.',
@@ -480,7 +654,18 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a drop of alcohol' } },
-    effects: [{ kind: 'note', text: 'Gain 2d4+4 temp HP. +5 temp HP per slot above 1.' }],
+    resolution: {
+      caveats: [
+        'Temporary Hit Points are not a first-class hit-points effect in encounter resolution.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'You gain 2d4 + 4 Temporary Hit Points. +5 temp HP per spell slot level above 1.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You gain 2d4 + 4 Temporary Hit Points. Using a Higher-Level Spell Slot. You gain 5 additional Temporary Hit Points for each spell slot level above 1.",
       summary: 'Gain 2d4+4 temp HP. Scales with slot.',
@@ -496,8 +681,23 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, material: { description: 'a small feather or piece of down' } },
+    resolution: {
+      caveats: [
+        'Fall rate, multi-target selection, and per-creature spell end are not enforced in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Up to 5 falling creatures descend 60ft/round. No fall damage if they land before spell ends.', category: 'flavor' as const },
+      {
+        kind: 'targeting',
+        target: 'chosen-creatures',
+        targetType: 'creature',
+        count: 5,
+      },
+      {
+        kind: 'note',
+        text: 'Chosen creatures fall 60 feet per round; if a creature lands before the spell ends, it takes no damage from the fall and the spell ends for that creature.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "Choose up to five falling creatures within range. A falling creature's rate of descent slows to 60 feet per round until the spell ends. If a creature lands before the spell ends, the creature takes no damage from the fall, and the spell ends for that creature.",
@@ -514,9 +714,18 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'burning incense worth 10+ GP', cost: { value: 10, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Spawn effect does not create a combatant; familiar abilities are not enforced in encounter.',
+      ],
+    },
     effects: [
       { kind: 'spawn', creature: 'familiar', count: 1, location: 'self-space', actsWhen: 'immediately-after-source-turn' },
-      { kind: 'note', text: 'Familiar is CR 0 Beast form (Celestial/Fey/Fiend). Telepathy 100ft. Bonus Action: see/hear through it. Can deliver touch spells.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Familiar is CR 0 Beast form (Celestial/Fey/Fiend). Telepathy 100ft. Bonus Action: see/hear through it. Can deliver touch spells.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You gain the service of a familiar, a spirit that takes an animal form you choose (Bat, Cat, Frog, Hawk, Lizard, Octopus, Owl, Rat, Raven, Spider, Weasel, or CR 0 Beast). The familiar has the statistics of the chosen form but is Celestial, Fey, or Fiend. Telepathic connection within 100 feet. Bonus Action: see through familiar's eyes. Familiar can deliver touch spells. Dismiss to pocket dimension as Magic action.",
@@ -533,10 +742,16 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a drop of mercury' } },
+    resolution: {
+      caveats: [
+        'Disk movement, weight limit, and distance termination are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: '3-foot diameter force disk floats 3ft above ground. Holds 500 lb. Follows you within 20ft. Spell ends if moved 100ft away.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -554,12 +769,21 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Encounter maps area spells to all-enemies; fog placement and wind dispersal are not modeled.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+      { kind: 'state', stateId: 'heavily-obscured', notes: 'The sphere is Heavily Obscured.' },
       {
         kind: 'note',
-        text: '20-foot radius sphere of fog. Heavily Obscured. Dispersed by strong wind. +20ft radius per slot above 1.',
+        text: 'Dispersed by strong wind. Radius increases by 20 feet for each spell slot level above 1.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'expanded-area', description: '+20 ft radius per spell slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "You create a 20-foot-radius Sphere of fog centered on a point within range. The Sphere is Heavily Obscured. It lasts for the duration or until a strong wind (such as one created by Gust of Wind) disperses it. Using a Higher-Level Spell Slot. The fog's radius increases by 20 feet for each spell slot level above 1.",
       summary: '20-foot sphere Heavily Obscured fog. Radius scales with slot.',

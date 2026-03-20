@@ -1,6 +1,12 @@
 import type { SpellEntry } from '../types';
 import { EXTRAPLANAR_CREATURE_TYPES } from '../shared';
 
+/**
+ * Level 1 spells M–Z — authoring status:
+ * - **Attack/save/AoE modeled:** Grease (initial prone save), Guiding Bolt, Healing Word, Hellish Rebuke, Hideous Laughter (Wis + prone/incap), Ice Knife (ranged hit), Inflict Wounds, Longstrider, Magic Missile, Protection from Evil, Ray of Sickness (hit + poisoned), Searing Smite (rider fire), Shield, Shield of Faith, Thunderwave.
+ * - **Utility / sense / state:** Heroism (frightened immunity + state), Hex, Hunter's Mark, Jump, Speak with Animals; Identify / Illusory Script / Silent Image (notes + caveats).
+ * - **Note-first / heavy caveats:** Goodberry, Purify Food and Drink, Sanctuary, Unseen Servant; Sleep uses caveats + under-modeled two-stage unconscious rules.
+ */
 export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
 {
     id: 'goodberry',
@@ -12,10 +18,16 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a sprig of mistletoe' } },
+    resolution: {
+      caveats: [
+        'Berry consumption, healing, and nourishment are not tracked in encounter resolution.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Ten berries appear. Bonus action to eat one: restore 1 HP, nourishment for one day. Uneaten berries disappear when spell ends.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -33,10 +45,27 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'a bit of pork rind or butter' } },
+    resolution: {
+      caveats: [
+        'Saves when entering the area or ending a turn there are not modeled; only the initial appearance save is represented.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'cube', size: 10 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'condition', conditionId: 'prone' }],
+      },
+      {
         kind: 'note',
-        text: '10-foot square grease. Difficult Terrain. Dex save or Prone when grease appears, when entering, or when ending turn there.',
+        text: 'Ground in the area is Difficult Terrain for the duration. Creatures that enter the area or end their turn there also risk falling Prone (not automated).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -133,13 +162,25 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Temporary Hit Points at the start of each turn are not granted automatically in encounter.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
-        kind: 'note',
-        text: 'Willing creature: immune to Frightened, gains temp HP equal to spellcasting mod at start of each turn. +1 target per slot above 1.',
+        kind: 'grant',
+        grantType: 'condition-immunity',
+        value: 'frightened',
+      },
+      {
+        kind: 'state',
+        stateId: 'heroism',
+        notes: 'Immune to Frightened; gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns.',
       },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "A willing creature you touch is imbued with bravery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Touch: immune to Frightened, temp HP each turn. Scales with targets.',
@@ -155,10 +196,22 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'the petrified eye of a newt' } },
+    resolution: {
+      caveats: [
+        'Bonus damage on hit, chosen-ability check Disadvantage, and moving the curse after a kill are not enforced in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'state',
+        stateId: 'hex',
+        notes: '+1d6 Necrotic when you hit the cursed target; Disadvantage on ability checks with one ability you choose; Bonus Action to move curse if target drops to 0 HP.',
+      },
       {
         kind: 'note',
-        text: 'Curse: +1d6 necrotic when you hit target with attack. Choose ability: Disadvantage on checks with it. Bonus action to move curse if target drops to 0 HP. Duration scales with slot.',
+        text: 'Concentration duration extends with higher-level slots (2: up to 4 hours; 3–4: up to 8 hours; 5+: 24 hours).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -176,12 +229,28 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a tart and a feather' } },
+    resolution: {
+      caveats: [
+        'Repeat saves at end of turn and when taking damage (Advantage if damaged) are not enforced.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          { kind: 'condition', conditionId: 'prone' },
+          { kind: 'condition', conditionId: 'incapacitated' },
+        ],
+      },
       {
         kind: 'note',
-        text: 'One creature: Wis save or Prone and Incapacitated, laughing. Repeat save at end of turn and when taking damage (Advantage if damage). +1 target per slot above 1.',
+        text: 'Target laughs and cannot stand from Prone while the spell lasts. Repeat save each turn and when damaged. Scales with extra targets at higher slots.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "One creature of your choice that you can see within range makes a Wisdom saving throw. On a failed save, it has the Prone and Incapacitated conditions for the duration. During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself. At the end of each of its turns and each time it takes damage, it makes another Wisdom saving throw. The target has Advantage on the save if the save is triggered by damage. On a successful save, the spell ends. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Wis save or Prone and Incapacitated. Repeat save at end of turn and when damaged.',
@@ -197,10 +266,22 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Bonus damage on hit, Perception/Survival Advantage, and moving the mark after a kill are not enforced in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'state',
+        stateId: 'hunters-mark',
+        notes: '+1d6 Force on hit; Advantage on Wisdom (Perception or Survival) to find the quarry; Bonus Action to move mark if target drops to 0 HP.',
+      },
       {
         kind: 'note',
-        text: 'Mark creature as quarry. +1d6 force on hit with attack. Advantage on Wisdom (Perception/Survival) to find. Bonus action to move mark if target drops to 0 HP. Duration scales with slot.',
+        text: 'Concentration duration extends with higher-level slots (3–4: up to 8 hours; 5+: up to 24 hours).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -218,12 +299,22 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { somatic: true, material: { description: 'a drop of water or a piece of ice' } },
+    deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'Explosion occurs on hit or miss; secondary Dex save and cold damage to creatures within 5 feet are not fully modeled.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'damage', damage: '1d10', damageType: 'piercing' },
       {
         kind: 'note',
-        text: 'Ranged spell attack: 1d10 piercing on hit. Hit or miss, shard explodes: target and creatures within 5ft Dex save or 2d6 cold. +1d6 cold per slot above 1.',
+        text: 'Hit or miss, the shard explodes: the target and each creature within 5 feet of it Dex save or 2d6 Cold damage. +1d6 cold per slot level above 1.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 cold per slot level above 1 (explosion)', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "You create a shard of ice and fling it at one creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Piercing damage. Hit or miss, the shard then explodes. The target and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 2d6 Cold damage. Using a Higher-Level Spell Slot. The Cold damage increases by 1d6 for each spell slot level above 1.",
       summary: 'Ranged spell attack 1d10 piercing; explosion 2d6 cold in 5ft. Cold scales with slot.',
@@ -239,10 +330,16 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a pearl worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Item/creature analysis and lore reveal are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Touch object: learn magic item properties, attunement, charges, ongoing spells. Touch creature: learn spells affecting it.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -260,10 +357,16 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 10, unit: 'day' },
     components: { somatic: true, material: { description: 'ink worth 10+ GP', cost: { value: 10, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Designated readers, altered meaning, and dispel interactions are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Writing appears normal to designated creatures, unintelligible to others. Can alter meaning, handwriting, language. Truesight reveals hidden message.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -306,13 +409,20 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: "a grasshopper's hind leg" } },
+    resolution: {
+      caveats: [
+        'Jump distance and movement trade are not applied automatically to movement in encounter.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
-        kind: 'note',
-        text: 'Willing creature can jump up to 30 feet by spending 10 feet of movement, once per turn. +1 target per slot above 1.',
+        kind: 'state',
+        stateId: 'jump',
+        notes: 'Once on each of its turns, can jump up to 30 feet by spending 10 feet of movement.',
       },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2 }],
     description: {
       full: "You touch a willing creature. Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       summary: 'Touch: jump 30ft for 10ft movement, once per turn. Scales with targets.',
@@ -476,9 +586,17 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Purification of supplies is narrative only; not tracked in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 5 } },
-      { kind: 'note', text: 'Remove poison and rot from nonmagical food and drink in the area.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: '5-foot-radius Sphere centered on a point in range: remove poison and rot from nonmagical food and drink in that area.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range.",
@@ -496,12 +614,21 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'If Poisoned duration is not honored at the table, clear it at the end of your next turn.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'damage', damage: '2d8', damageType: 'poison' },
       {
-        kind: 'note',
-        text: 'Ranged spell attack: 2d8 poison on hit, Poisoned until end of your next turn. +1d8 per slot above 1.',
+        kind: 'condition',
+        conditionId: 'poisoned',
+        duration: { kind: 'until-turn-boundary', subject: 'source', turn: 'next', boundary: 'end' },
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 poison per slot level above 1', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d8' }],
     description: {
       full: "You shoot a greenish ray at a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 Poison damage and has the Poisoned condition until the end of your next turn. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
       summary: 'Ranged spell attack: 2d8 poison, Poisoned until end of next turn. +1d8 per slot.',
@@ -517,10 +644,17 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'a shard of glass from a mirror' } },
+    resolution: {
+      caveats: [
+        'Ward save for attackers and “choose new target or lose the attack” are not enforced in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
       {
         kind: 'note',
-        text: 'Ward creature. Attackers/targeting with damaging spell must Wis save or choose new target or lose attack/spell. No protection from AoE. Ends if warded creature attacks, casts, or deals damage.',
+        text: 'Creatures that target the ward with an attack or damaging spell must succeed on a Wis save or choose a new target or lose the attack/spell. No protection from areas of effect. Ends if the warded creature attacks, casts a spell, or deals damage.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -544,12 +678,21 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Bonus-action rider after a melee hit; ongoing fire at turn start and Con save to end are not enforced in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '1d6', damageType: 'fire' },
       {
         kind: 'note',
-        text: 'Extra 1d6 fire on hit. Start of each of target turns: 1d6 fire then Con save; success ends spell. +1d6 all damage per slot above 1.',
+        text: "At the start of each of the target's turns: 1d6 Fire damage, then Con save; success ends the spell.",
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire per spell slot level above 1 (initial and ongoing damage)', mode: 'per-slot-level', startsAtSlotLevel: 2, amount: '1d6' }],
     description: {
       full: "As you hit the target, it takes an extra 1d6 Fire damage from the attack. At the start of each of its turns until the spell ends, the target takes 1d6 Fire damage and then makes a Constitution saving throw. On a failed save, the spell continues. On a successful save, the spell ends. Using a Higher-Level Spell Slot. All the damage increases by 1d6 for each spell slot level above 1.",
       summary: 'Extra 1d6 fire on hit. 1d6 fire each turn, Con save ends. +1d6 per slot.',
@@ -631,10 +774,16 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of fleece' } },
+    resolution: {
+      caveats: [
+        'Illusion movement, interaction, and Investigation checks are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Image of object/creature/phenomenon up to 15ft cube. Purely visual. Magic action to move. Physical interaction reveals illusion. Study + Int (Investigation) vs DC to discern.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -739,10 +888,16 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a bit of string and of wood' } },
+    resolution: {
+      caveats: [
+        'No combatant or object-interaction simulation; servant tasks and range limit are narrative only.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Invisible mindless force performs simple tasks. AC 10, 1 HP, Str 2. Bonus action: move 15ft and interact. Ends if >60ft from you.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

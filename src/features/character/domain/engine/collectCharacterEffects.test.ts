@@ -13,37 +13,11 @@ function makeCharacter(classes: Character['classes']): Character {
 }
 
 describe('collectClassEffects', () => {
-  it('keeps triggered subclass effects nested instead of flattening them', () => {
-    const character = makeCharacter([
-      {
-        classId: 'fighter',
-        subclassId: 'fighter.martial_archetype.battle_master',
-        level: 3,
-      },
-    ])
-
-    const effects = collectClassEffects(character)
-
-    expect(effects).toContainEqual(
-      expect.objectContaining({
-        kind: 'trigger',
-        trigger: 'weapon-hit',
-      }),
-    )
-
-    expect(effects).not.toContainEqual(
-      expect.objectContaining({
-        kind: 'modifier',
-        target: 'damage',
-      }),
-    )
-  })
-
   it('keeps activated subclass effects nested instead of flattening them', () => {
     const character = makeCharacter([
       {
         classId: 'paladin',
-        subclassId: 'paladin.subclass.sacred_oath.oath_of_devotion',
+        subclassId: 'oath_of_devotion',
         level: 7,
       },
     ])

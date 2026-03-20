@@ -28,9 +28,6 @@ export type MonsterEquipment = {
 };
 
 export type MonsterArmorClassBase = {
-  dexApplies?: boolean;
-  /* @deprecated: derive or set natural armor base to work with dex bonus */
-  maxDexBonus?: number | null;
   notes?: string;
   override?: number;
 };

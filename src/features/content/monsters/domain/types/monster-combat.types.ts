@@ -1,5 +1,5 @@
 import type { AbilityId } from '@/features/mechanics/domain/character';
-import type { WeaponDamageType } from "@/features/content/equipment/weapons/domain/vocab";
+export type { DamageType } from '@/features/mechanics/domain/damage/damage.types';
 
 export type AttackAbility = AbilityId;
 
@@ -17,13 +17,6 @@ export type MonsterAttackType =
   | 'slam'
   | 'constrict'
   | 'touch';
-
-export type DamageType =
-  | WeaponDamageType
-  | 'fire'
-  | 'acid'
-  | 'radiant'
-  | 'necrotic';
 
 export type TraitRollTarget =
   | 'attack-rolls'

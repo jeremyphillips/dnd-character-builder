@@ -684,9 +684,12 @@ This is a reserved extension point for future upcasting work. Do not defer scali
 
 Spells carry an optional `resolution` field for per-spell qualitative metadata:
 
+Shared spell/monster resolution shape: [`ContentResolutionMeta`](../../src/features/mechanics/domain/resolution/content-resolution.types.ts) (`caveats`, optional `subtype`). Spells intersect it with spell-only fields (`hpThreshold`, `hostileIntent`) in `SpellResolutionMeta`.
+
 ```ts
 resolution?: {
   caveats?: string[];
+  subtype?: string;
 };
 ```
 

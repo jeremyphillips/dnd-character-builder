@@ -4,22 +4,22 @@ overview: Add the requested SRD-style monsters to the system catalog with AC/ski
 todos:
   - id: shared-resolution-types
     content: Add src/features/mechanics/domain/resolution/content-resolution.types.ts with EffectNoteCategory, ContentResolutionMeta (caveats + optional subtype); document escape-hatch-only fields; refactor SpellResolutionMeta and NoteEffect; add resolution to monster action/trait types; optional getMonster*ResolutionStatus helpers
-    status: pending
+    status: completed
   - id: extend-types
     content: Add mechanics.resistances; extend ImmunityType/VulnerabilityType for elementals; update combatant-builders to emit resistance markers
-    status: pending
+    status: completed
   - id: initiative-dex
     content: Fix monster DEX read for initiative (dex | dexterity) via shared helper and update preview card
-    status: pending
+    status: completed
   - id: author-monsters
     content: Add Ghoul, Giant Centipede/Spider/Wasp, Goblin Minion, four Elementals to MONSTERS_RAW; use note category under-modeled + resolution.caveats where encounter math is incomplete; AC via natural base + equipment—no maxDexBonus; no fixed/override unless unavoidable
-    status: pending
+    status: completed
   - id: tests
     content: Add/adjust tests for AC, resistances wiring, and shared resolution types if needed
-    status: pending
+    status: completed
   - id: doc-reference
     content: Write docs/reference/monster-authoring.md; cross-link docs/reference/effects.md; document resolution subtype + escape hatches; deprecate maxDexBonus in authoring guidance
-    status: pending
+    status: completed
 isProject: true
 ---
 

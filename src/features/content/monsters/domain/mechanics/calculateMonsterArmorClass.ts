@@ -46,8 +46,6 @@ export function calculateMonsterArmorClass(
   }
 
   const dexterityScore = getAbilityScoreValue(monster.mechanics.abilities, 'dex')
-  const dexApplies = armorClass.dexApplies ?? true
-  const maxDexBonus = armorClass.maxDexBonus
 
   if (armorClass.kind === 'equipment') {
     const armors = (armorClass.armorRefs ?? [])
@@ -58,8 +56,6 @@ export function calculateMonsterArmorClass(
       dexterityScore,
       defaultBaseAC: 10,
       baseLabel: 'Base',
-      dexApplies,
-      maxDexBonus,
       overrideAC: armorClass.override,
       armors,
     })
@@ -69,8 +65,6 @@ export function calculateMonsterArmorClass(
     dexterityScore,
     defaultBaseAC: armorClass.base ?? 10,
     baseLabel: 'Natural Armor',
-    dexApplies,
-    maxDexBonus,
     overrideAC: armorClass.override,
   })
 }

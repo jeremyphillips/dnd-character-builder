@@ -7,6 +7,7 @@
 import type { Monster, MonsterFields } from '@/features/content/monsters/domain/types';
 import type { SystemRulesetId } from '../types/ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from '../ids/systemIds';
+import { MONSTERS_SYSTEM_APPEND_20260320 } from './monsters-catalog-append';
 
 /** Build a Monster from the system catalog data (no DB fields). */
 function toSystemMonster(systemId: SystemRulesetId, raw: MonsterFields): Monster {
@@ -264,7 +265,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         die: 6,
         modifier: -3
       },
-      armorClass: { kind: 'natural', base: 12, dexApplies: true },
+      armorClass: { kind: 'natural', base: 12 },
       movement: { ground: 30 },
       actions: [
         { kind: 'weapon', weaponRef: "dagger" },
@@ -350,7 +351,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: 'natural',
         base: 11,
-        dexApplies: true,
       },
       movement: { ground: 40 },
       actions: [
@@ -480,7 +480,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: "natural",
         base: 12,
-        dexApplies: true,
       },
       movement: { ground: 20 },
       abilities: { str: 16, dex: 8, con: 15, int: 6, wis: 12, cha: 12 },
@@ -763,7 +762,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: 'natural',
         base: 14,
-        dexApplies: true,
       },
       movement: { ground: 30 },
       actions: [
@@ -901,8 +899,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 13,
-        dexApplies: false,
+        base: 12,
       },
       movement: { ground: 40, climb: 40 },
       actions: [
@@ -1131,7 +1128,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: 'natural',
         base: 11,
-        dexApplies: true,
       },
       movement: { ground: 20 },
       actions: [
@@ -1246,7 +1242,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: 'natural',
         base: 18,
-        dexApplies: true,
       },
       movement: { ground: 40, climb: 40, fly: 80 },
       actions: [
@@ -1338,7 +1333,6 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       armorClass: {
         kind: "natural",
         base: 14,
-        dexApplies: true,
       },
       movement: { ground: 40, swim: 40 },
       abilities: { str: 20, dex: 12, con: 20, int: 2, wis: 10, cha: 7 },
@@ -1442,6 +1436,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       xpValue: 3900,
     },
   },
+  ...MONSTERS_SYSTEM_APPEND_20260320,
 ];
 
 const SYSTEM_MONSTERS_SRD_CC_V5_2_1: readonly Monster[] = MONSTERS_RAW.map((m) =>

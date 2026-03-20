@@ -1,5 +1,12 @@
+import type { ModifierValue } from '@/features/mechanics/domain/effects/effects.types';
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 6 spells M–Z — authoring status:
+ * - **Attack/save/AoE modeled:** Heal, Irresistible Dance, Mass Suggestion, Sunbeam.
+ * - **Utility / divination:** Programmed Illusion, Transport via Plants, True Seeing, Word of Recall.
+ * - **Note-first / terrain / heavy caveats:** Heroes' Feast, Magic Jar, Move Earth, Planar Ally, Wall of Ice, Wall of Thorns, Wind Walk, etc.
+ */
 export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
 {
     id: 'heal',
@@ -11,6 +18,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Condition removal is bundled with healing; targets must be valid (see spell text).',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
       { kind: 'hit-points', mode: 'heal', value: 70 },
@@ -32,10 +44,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a gem-encrusted bowl worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        '1-hour meal time and twelve participants are narrative; benefits apply after the hour.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Feast for 12. 1 hour to consume. 24h: Resistance poison, Immunity Frightened/Poisoned, +2d10 HP max and current.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -53,10 +71,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'a sapphire worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Planar retrieval and “who holds it” divination are not automated as inventory moves.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Mark object (10 lb, 6 ft). Magic action + crush sapphire: object appears in hand. If held by another: learn who and where.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -74,6 +98,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'On a successful initial save, the target still dances until the end of its next turn (not modeled as Charmed).',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
@@ -101,10 +130,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'a gem, crystal, or reliquary worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Possession, host stats, and death/return branches are heavily table-adjudicated.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Soul enters container, body catatonic. Project soul 100ft: return to body or possess Humanoid (Cha save). Protection from Evil/Magic Circle blocks. Host dies = you Cha save or die. Container destroyed = return or die.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -122,10 +157,22 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, material: { description: "a snake's tongue" } },
+    resolution: {
+      caveats: [
+        'Suggestion wording (25 words) and “obviously harmful” gate are not validated mechanically.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', requiresSight: true, count: 12 },
       { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
       { kind: 'note', text: 'Charmed targets pursue suggested course (25 words or fewer). Must sound achievable, not obviously harmful. Ends if caster or allies damage target.', category: 'flavor' as const },
+    ],
+    scaling: [
+      {
+        category: 'longer-duration',
+        description: '7th slot: 10 days; 8th: 30 days; 9th: 366 days',
+        mode: 'threshold',
+      },
     ],
     description: {
       full: "You suggest a course of activity—described in no more than 25 words—to twelve or fewer creatures you can see within range that can hear and understand you. The suggestion must sound achievable and not involve obvious damage to targets or allies. Each target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target. Each Charmed target pursues the suggestion to the best of its ability. Using a Higher-Level Spell Slot. The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).",
@@ -142,10 +189,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 2, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a miniature shovel' } },
+    resolution: {
+      caveats: [
+        'Cannot manipulate stone or stone construction; repeated 10-minute reshapes are manual.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: '40ft area dirt/sand/clay. Reshape: raise/lower, trench, wall, pillar. Changes up to half largest dimension. 10 min to complete. New area every 10 min.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -163,6 +216,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Service terms, payment, and creature behavior are GM/table negotiation, not enforced.',
+      ],
+    },
     effects: [
       { kind: 'note', text: 'Beseech an otherworldly entity. A Celestial, Elemental, or Fiend appears. No compulsion; bargain for service. Payment: 100 GP/min, 1,000 GP/hr, 10,000 GP/day.', category: 'flavor' as const },
     ],
@@ -181,10 +239,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'jade dust worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Trigger conditions and scripted performance are narrative; Investigation DC is GM-set.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Illusion up to 30ft cube. Imperceptible until trigger (visual/audible within 30ft). Scripted performance up to 5 min. Dormant 10 min after. Study + Int (Investigation) to discern.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -202,6 +266,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a magnifying glass' } },
+    resolution: {
+      caveats: [
+        'New Line on later turns uses a Magic action; Blinded duration is until the start of your next turn.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'line', size: 60 } },
       {
@@ -231,6 +300,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Destination plant must be known; portal usage is voluntary movement, not forced teleport.',
+      ],
+    },
     effects: [
       { kind: 'note', text: 'Link a Large or larger plant to another plant on the same plane. Any creature can step in (5ft movement) and exit from destination (5ft movement). Must have seen or touched destination plant.', category: 'flavor' as const },
     ],
@@ -249,6 +323,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'mushroom powder worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Truesight reveals illusions, shapechangers, and Ethereal as per PHB; range is 120 feet.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       { kind: 'state', stateId: 'true-seeing', notes: 'Truesight with a range of 120 feet.' },
@@ -268,10 +347,24 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a piece of quartz' } },
+    resolution: {
+      caveats: [
+        'Wall sections, breach HP, and post-destruction frigid air use separate saves from the appearance burst.',
+      ],
+    },
+    scaling: [
+      {
+        category: 'extra-damage',
+        description: '+2d6 cold when the wall appears and +1d6 cold from passing through frigid air per slot level above 6',
+        mode: 'per-slot-level',
+        startsAtSlotLevel: 7,
+      },
+    ],
     effects: [
       {
         kind: 'note',
         text: 'Dome/globe 10ft radius or ten 10ft panels. Appear: Dex save or 10d6 cold, pushed. AC 12, 30 HP per 10ft. Vulnerability Fire. Destroyed leaves frigid air: Con save or 5d6 cold. +2d6/+1d6 per slot above 6.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -289,10 +382,17 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a handful of thorns' } },
+    resolution: {
+      caveats: [
+        'Piercing on appearance vs slashing when moving through/ending turn in the wall are separate damage instances.',
+      ],
+    },
+    scaling: [{ category: 'extra-damage', description: '+1d8 piercing and +1d8 slashing per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '1d8' }],
     effects: [
       {
         kind: 'note',
         text: 'Wall 60ft long or 20ft circle, 10ft high, 5ft thick. Blocks line of sight. Appear: Dex save or 7d8 piercing. Move through: 4ft per 1ft. Enter/end turn: Dex save or 7d8 slashing. +1d8 both per slot above 6.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -310,11 +410,16 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a candle' } },
+    resolution: {
+      caveats: [
+        'Up to ten willing targets; cloud form action economy (Dash vs Magic action revert) is summarized in notes.',
+      ],
+    },
     effects: [
       { kind: 'state', stateId: 'wind-walk', notes: 'Cloud form. Fly Speed 300ft, hover. Only Dash or Magic action to revert (1 min transformation, Stunned while reverting).' },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as const },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as const },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as ModifierValue },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as ModifierValue },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as ModifierValue },
       { kind: 'grant', grantType: 'condition-immunity', value: 'prone' },
       { kind: 'note', text: 'Up to 10 willing creatures. Reverting takes 1 min (Stunned). Can revert to cloud again with Magic action + 1 min.', category: 'flavor' as const },
     ],
@@ -333,6 +438,11 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 5, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Sanctuary must be designated beforehand by casting there; arrival space is nearest unoccupied to the prepared spot.',
+      ],
+    },
     effects: [
       { kind: 'note', text: 'You and up to 5 willing creatures within 5ft teleport to a previously designated sanctuary. Must prepare by casting this spell at the location first.', category: 'flavor' as const },
     ],

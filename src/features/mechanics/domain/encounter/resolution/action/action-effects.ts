@@ -39,7 +39,9 @@ function combatantToCreatureSnapshot(c: CombatantInstance): CreatureSnapshot {
     level: 1,
     hp: c.stats.currentHitPoints,
     hpMax: c.stats.maxHitPoints,
-    abilities: scores ? { ...DEFAULT_ABILITIES, ...scores } : DEFAULT_ABILITIES,
+    abilities: scores
+      ? ({ ...DEFAULT_ABILITIES, ...scores } as AbilityScoreMapResolved)
+      : DEFAULT_ABILITIES,
     conditions: c.conditions.map((m) => m.label),
     resources: {},
     equipment: {

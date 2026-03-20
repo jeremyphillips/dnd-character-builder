@@ -31,22 +31,21 @@ export function deriveSpellHostility(spell: Spell): SpellHostilityDerivation {
 
   let hasDamage = false
   let hasSave = false
-  let mappedState: SpellHostilityDerivation = 'unknown'
+  /** True when a `state` effect maps to non-hostile in `SPELL_STATE_HOSTILITY` (closure-safe for TS). */
+  let stateRegistryNonHostile = false
 
   walkNestedEffects(root, (e: Effect) => {
     if (e.kind === 'damage') hasDamage = true
     if (e.kind === 'save') hasSave = true
     if (e.kind === 'state' && e.stateId) {
       const mapped = SPELL_STATE_HOSTILITY[e.stateId]
-      if (mapped === 'hostile') mappedState = 'hostile'
-      if (mapped === 'non-hostile' && mappedState !== 'hostile') mappedState = 'non-hostile'
+      if (mapped === 'non-hostile') stateRegistryNonHostile = true
     }
   })
 
   if (hasDamage) return 'hostile'
   if (hasSave) return 'hostile'
-  if (mappedState === 'hostile') return 'hostile'
-  if (mappedState === 'non-hostile') return 'non-hostile'
+  if (stateRegistryNonHostile) return 'non-hostile'
 
   return 'unknown'
 }

@@ -44,7 +44,7 @@ function markerToPresentable(
 
 function runtimeEffectToPresentable(
   effect: RuntimeEffectInstance,
-  combatantId: string,
+  _combatantId: string,
 ): PresentableCombatEffect {
   const key = normalizeKey(effect.effectKind || effect.label)
   return {
@@ -56,7 +56,7 @@ function runtimeEffectToPresentable(
   }
 }
 
-function turnHookToPresentable(hook: RuntimeTurnHook, combatantId: string): PresentableTurnHook {
+function turnHookToPresentable(hook: RuntimeTurnHook, _combatantId: string): PresentableTurnHook {
   const key = hook.id ? normalizeKey(hook.id) : normalizeKey(`${hook.boundary}-${hook.label}`)
   const requirements = hook.requirements?.map((r) => {
     if (r.kind === 'self-state') return `Requires: ${r.state}`
@@ -83,7 +83,7 @@ function turnHookToPresentable(hook: RuntimeTurnHook, combatantId: string): Pres
 
 function statModifierToPresentable(
   modifier: StatModifierMarker,
-  combatantId: string,
+  _combatantId: string,
 ): PresentableCombatEffect {
   const key = normalizeKey(modifier.label || modifier.target)
   return {

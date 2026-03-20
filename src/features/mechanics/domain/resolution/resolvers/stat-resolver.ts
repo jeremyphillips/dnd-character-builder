@@ -6,6 +6,7 @@ import type { FormulaEffect, FormulaDefinition } from '../engines/formula.engine
 import { resolveModifierValue, buildModifierToken, sourceToLabel } from '../engines/modifier.engine'
 import { getBaseStat } from './base-stat-resolver'
 import { getAbilityModifier } from '../../abilities/getAbilityModifier'
+import { abilityIdToKey } from '../../character/abilities/abilities.utils'
 import type { StatTarget, BreakdownToken, StatResult } from '../types'
 
 // Re-export types for consumers
@@ -94,8 +95,9 @@ function buildFormulaTokens(
   }
 
   if (formula.ability) {
-    let mod = getAbilityModifier(context.self, formula.ability)
-    const abilityLabel = formula.ability.slice(0, 3).toUpperCase()
+    const abilityKey = abilityIdToKey(formula.ability)
+    let mod = getAbilityModifier(context.self, abilityKey)
+    const abilityLabel = abilityKey.slice(0, 3).toUpperCase()
     if (formula.maxAbilityContribution !== undefined) {
       mod = Math.min(mod, formula.maxAbilityContribution)
       tokens.push({ label: `${abilityLabel} (max ${formula.maxAbilityContribution})`, value: sign(mod), type: 'ability' })
@@ -106,9 +108,10 @@ function buildFormulaTokens(
 
   if (formula.abilities) {
     for (const ability of formula.abilities) {
-      const mod = getAbilityModifier(context.self, ability)
+      const abilityKey = abilityIdToKey(ability)
+      const mod = getAbilityModifier(context.self, abilityKey)
       if (mod !== 0) {
-        tokens.push({ label: ability.slice(0, 3).toUpperCase(), value: sign(mod), type: 'ability' })
+        tokens.push({ label: abilityKey.slice(0, 3).toUpperCase(), value: sign(mod), type: 'ability' })
       }
     }
   }

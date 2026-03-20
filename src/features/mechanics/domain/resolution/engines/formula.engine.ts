@@ -4,6 +4,7 @@ import type { EvaluationContext } from '../../conditions/evaluation-context.type
 import { getAbilityModifier } from '../../abilities/getAbilityModifier'
 import { resolveProficiencyContribution } from '@/features/mechanics/domain/progression'
 import type { AbilityKey, AbilityId } from '../../character'
+import { abilityIdToKey } from '../../character/abilities/abilities.utils'
 
 export type FormulaDefinition = {
   base?: number
@@ -62,7 +63,7 @@ export function resolveFormulaValue(
   }
 
   if (formula.ability) {
-    let mod = getAbilityModifier(context.self, formula.ability)
+    let mod = getAbilityModifier(context.self, abilityIdToKey(formula.ability))
     if (formula.maxAbilityContribution !== undefined) {
       mod = Math.min(mod, formula.maxAbilityContribution)
     }
@@ -72,7 +73,7 @@ export function resolveFormulaValue(
   if (formula.abilities) {
     value += formula.abilities.reduce(
       (sum, ability) =>
-        sum + getAbilityModifier(context.self, ability),
+        sum + getAbilityModifier(context.self, abilityIdToKey(ability)),
       0
     )
   }

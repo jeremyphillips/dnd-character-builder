@@ -106,7 +106,7 @@ function combatantHasStateLabel(combatant: CombatantInstance, stateLabel: string
 export function shouldCountAttackModForAttackRoll(
   conditionId: EffectConditionId,
   consequence: AttackModConsequence,
-  bearer: CombatantInstance,
+  _bearer: CombatantInstance,
   counterpart: CombatantInstance,
   attackRange: 'melee' | 'ranged',
 ): boolean {

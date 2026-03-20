@@ -19,6 +19,15 @@ export function cantripDamageScaling(die: dY) {
   };
 }
 
+/**
+ * Authored spell level uses **0** for cantrips. For formulas that need a positive
+ * spell tier (e.g. dice-per-spell-level when slots are not modeled), treat **0 as 1**.
+ * Does not replace character level for cantrip damage scaling (`levelScaling` / `cantripDamageScaling`).
+ */
+export function effectiveSpellLevelForScaling(spellLevel: number): number {
+  return spellLevel <= 0 ? 1 : spellLevel;
+}
+
 // ---------------------------------------------------------------------------
 // Legacy ID → canonical kebab-case ID mapping (for migration scripts)
 // ---------------------------------------------------------------------------

@@ -761,6 +761,8 @@ The following spell mechanics are not yet fully resolved by the combat adapter:
 - Moving areas and trigger-timing resolution (e.g. Flaming Sphere, Cloudkill)
 - Success/failure tracking (e.g. Flesh to Stone, Contagion)
 
+**Spell level for scaling (until slots are modeled):** Authored spell `level` is **0** for cantrips. When a runtime formula needs a **positive** spell tier (e.g. per-level dice) and slots are not tracked, use `effectiveSpellLevelForScaling` in `src/features/mechanics/domain/rulesets/system/spells/shared.ts`, which maps **0 → 1**; levels 1–9 pass through unchanged. Do **not** use this for cantrip damage scaling by **character** level — that remains `levelScaling` thresholds / `cantripDamageScaling`.
+
 Mechanics resolved since initial authoring:
 
 - **Modifier effects**: `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) are fully resolved. Other stat targets log gracefully.

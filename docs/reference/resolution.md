@@ -478,6 +478,8 @@ Multi-instance **auto-hit** spells authored with a single root `damage` effect a
 
 **Timed spell duration on effects:** `until-turn-boundary` spell durations map to the same-shaped effect duration; `timed` spell durations (minute/hour/day) map to `fixed` effect duration in **combat turns** via the same 6-second-per-turn heuristic used for concentration display, so modifiers and similar markers can tick down in encounter time.
 
+**Spell level vs cantrips:** Authored `spell.level` is **0** for cantrips. For formulas that need a positive spell tier when slot level is not modeled, use `effectiveSpellLevelForScaling` in `spells/shared.ts` (**0 → 1**). Cantrip damage scaling by **character** level uses effect `levelScaling` / `cantripDamageScaling`, not that helper.
+
 Behavioral tests in `encounter-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
 
 ## 8. Supported Effect Matrix

@@ -218,7 +218,6 @@ export function toCharacterForEngine(dto: CharacterDetailDto): import('@/feature
     pendingLevel: dto.pendingLevel,
     abilityScores: dto.abilityScores as import('@/features/mechanics/domain/character').AbilityScoreMapResolved,
     hitPoints: dto.hitPoints,
-    armorClass: dto.armorClass,
     combat: dto.combat,
     proficiencies: {
       skills: Object.fromEntries(

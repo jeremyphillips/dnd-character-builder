@@ -291,7 +291,7 @@ Small, bounded engine changes with high payoff.
 
 Medium engine work.
 
-- `**roll-modifier**`: Track advantage/disadvantage as runtime state; wire into attack/save resolution.
+- `**roll-modifier`**: Track advantage/disadvantage as runtime state; wire into attack/save resolution.
 - `**interval**`: Per-turn effect application via turn hooks.
 - `**move**`: Forced movement application (bounded -- no grid tracking needed, just distance + direction for log fidelity).
 

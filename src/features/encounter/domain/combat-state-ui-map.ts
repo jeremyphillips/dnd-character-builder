@@ -1,7 +1,6 @@
 import type {
   CombatStatePresentation,
   CombatStateSection,
-  CombatStateTone,
   PresentableCombatEffect,
 } from './presentable-effects.types'
 

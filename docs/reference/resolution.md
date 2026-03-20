@@ -345,10 +345,17 @@ Conditions and states can include a `repeatSave` field:
 repeatSave?: {
   ability: AbilityRef;
   timing: 'turn-start' | 'turn-end';
+  singleAttempt?: boolean;
+  onFail?: { addCondition?: EffectConditionId; markerClassification?: string[] };
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
 };
 ```
 
-When `applyActionEffects` applies a condition or state with `repeatSave`, it registers a `RuntimeTurnHook` of type `repeat-save` on the target combatant. At the specified turn boundary, `executeTurnHooks` rolls the save vs the source's DC. On success, the linked condition/state is automatically removed.
+When `applyActionEffects` applies a condition or state with `repeatSave`, it registers a `RuntimeTurnHook` of type `repeat-save` on the target combatant. At the specified turn boundary, `executeTurnHooks` rolls the save vs the source's DC. On success, the linked condition/state is automatically removed and the hook is cleared.
+
+**Default:** failed saves keep the condition and the hook fires again on later boundaries (save each turn until success). **`singleAttempt: true`:** one resolution at the next boundary; on success the interim condition is removed; on failure `onFail.addCondition` is applied (e.g. Sleep: `unconscious` with `markerClassification: ['sleep']`) and the hook is removed. **`autoSuccessIfImmuneTo`:** if the target has that condition immunity, the repeat save succeeds without rolling (mirrors `SaveEffect.autoSuccessIfImmuneTo` on the initial save).
+
+Sleep unconscious created this way ends when the target takes damage (`applyDamageToCombatant` clears `unconscious` markers tagged with `sleep`). Shaking a creature awake within 5 feet is not automated.
 
 ### Adding damage resistance
 
@@ -481,6 +488,8 @@ Multi-instance **auto-hit** spells authored with a single root `damage` effect a
 **Spell level vs cantrips:** Authored `spell.level` is **0** for cantrips. For formulas that need a positive spell tier when slot level is not modeled, use `effectiveSpellLevelForScaling` in `spells/shared.ts` (**0 → 1**). Cantrip damage scaling by **character** level uses effect `levelScaling` / `cantripDamageScaling`, not that helper.
 
 Behavioral tests in `encounter-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
+
+**Equipment snapshot:** `CombatantInstance.equipment` mirrors character loadout (armor, weapons, shield) when built from PCs. **`patchCombatantEquipmentSnapshot`** merges a partial snapshot and removes `statModifiers` whose `eligibility.requiresUnarmored` no longer holds (e.g. Mage Armor after donning armor). Set `armor_class` modifiers with that eligibility store `armorClassBeforeApply` so AC can be restored. Encounter UI must invoke this (or rebuild combatants) when loadout changes—there is no automatic sync from the character sheet yet.
 
 ## 8. Supported Effect Matrix
 

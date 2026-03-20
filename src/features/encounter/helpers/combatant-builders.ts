@@ -128,6 +128,9 @@ export function buildCharacterCombatantInstance(args: {
     creatureType: 'humanoid',
     equipment: {
       armorEquipped: character.combat?.loadout?.armorId ?? null,
+      mainHandWeaponId: character.combat?.loadout?.mainHandWeaponId ?? null,
+      offHandWeaponId: character.combat?.loadout?.offHandWeaponId ?? null,
+      shieldId: character.combat?.loadout?.shieldId ?? null,
     },
     stats: {
       armorClass: combatStats.armorClass,

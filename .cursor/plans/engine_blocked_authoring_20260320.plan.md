@@ -54,38 +54,17 @@ Each row: *what content does today* → *what must exist in the engine* → *pri
 
 ### 2.2 Scripted saves, wake triggers, and turn-boundary semantics
 
-**Today:** Sleep uses structured save + condition + `under-modeled` note for second save → unconscious, wake rules, immunities. Repeat-save exists for simple save-or-end at turn boundary ([resolution.md §5 repeat saves](../docs/reference/resolution.md#adding-repeat-saves)).
+**Status (Sleep landed):** `RepeatSave` supports `singleAttempt`, `onFail.addCondition` + `markerClassification` (Sleep tags `sleep` on unconscious), and `autoSuccessIfImmuneTo` (exhaustion on initial and repeat save). `resolveRepeatSave` in [`turn-hooks.ts`](../src/features/mechanics/domain/encounter/state/turn-hooks.ts) applies fail → unconscious and clears the hook. [`damage-mutations.ts`](../src/features/mechanics/domain/encounter/state/damage-mutations.ts) strips sleep-tagged unconscious on any damage. **Not automated:** shake awake within 5 ft; creatures that don’t sleep except via exhaustion immunity (e.g. elves) — caveats on the spell. Tests: [`sleep-spell.test.ts`](../src/features/mechanics/domain/encounter/tests/sleep-spell.test.ts).
 
-**Engine needs:**
-
-- **Multi-step condition scripts** (e.g. first failed save → interim state; second failed save at turn boundary → unconscious) or composed markers + hooks.
-- **Wake triggers:** damage to sleeping target, shake action, etc.
-- Optional **save immunity predicates** (race/features/exhaustion) evaluated in save resolution.
-
-**Unblocks:** Tightening Sleep notes; other layered save sequences (Flesh to Stone-style success/failure tracking per [effects.md Known Unsupported](../docs/reference/effects.md#known-unsupported-spell-mechanics)). **Spatial “who is in the patch” remains out of scope** — encounter still uses adapter targeting; notes/caveats stay honest where the grid differs.
+**Further work:** Flesh to Stone–style counters; generic wake actions; richer auto-success predicates.
 
 ---
 
 ### 2.3 Equipment snapshot (characters + monsters), live updates, and buff invalidation
 
-**Today:** Mage Armor gates on `equipment.armorEquipped` at apply time; “ends if target dons armor” during the spell is not enforced; encounter loadout is snapshotted at combatant build. Spells plan backlog.
+**Status (landed):** `CombatantEquipmentSnapshot` includes `armorEquipped`, `mainHandWeaponId`, `offHandWeaponId`, `shieldId` (characters populate from loadout in [`combatant-builders.ts`](../src/features/encounter/helpers/combatant-builders.ts)). `inferStatModifierEligibilityFromEffect` tags `StatModifierMarker` with `eligibility.requiresUnarmored` when the authored modifier matches `equipment.armorEquipped === null` (self). `armorClassBeforeApply` is stored for `set` `armor_class` so `expireStatModifier` can restore AC. **`patchCombatantEquipmentSnapshot`** merges a patch and drops ineligible modifiers (Mage Armor–style). Tests: [`equipment-snapshot.test.ts`](../src/features/mechanics/domain/encounter/tests/equipment-snapshot.test.ts). **UI** still must call `patchCombatantEquipmentSnapshot` (or rebuild combatants) when loadout changes; Mage Armor caveat documents that.
 
-**Direction — one shared equipment shape for PCs and monsters**
-
-- Prefer a **single robust snapshot** on `CombatantInstance` (and the same facts in `EvaluationContext` for condition gates) so effect `condition` predicates do not fork by creature kind.
-- `**armorEquipped`:** keep as today (id or null) — eligibility for “not wearing armor,” Mage Armor, Draconic-style gates.
-- `**weaponsEquipped` (or equivalent slots):** model explicitly (e.g. main hand / off hand item ids or structured “has weapon in hand” flags), not only armor. Many future effects will care (Somatic with hands full, future weapon-based conditions, narrative “holding a shield”).
-- **Characters:** populate from loadout/builders (same source as stat resolution eventually uses).
-- **Monsters:** populate from stat block metadata when present; otherwise safe defaults (often unarmored, natural weapons) — same fields, possibly sparser data.
-
-**Effort (thoughts):** Defining the **shape once** (`equipment: { armorEquipped?, mainHand?, offHand?, … }` or a small normalized struct) is a modest refactor relative to bolting on armor-only now and splitting later. The larger recurring cost is **content**: tagging monsters and items consistently, not duplicate resolver logic. Wiring `evaluateCondition` for `equipment.`* already exists for PCs; extending snapshot fields and monster population is incremental if the type is stable early.
-
-**Engine needs (behavior):**
-
-- **Equipment change events** in encounter (or sync from character loadout) updating the snapshot.
-- **Invalidation** of linked `statModifiers` / states when eligibility fails (same pattern as concentration-linked markers).
-
-**Unblocks:** Mage Armor caveat; any buff keyed off equipment state over time; future weapon/armor gates without a second model.
+**Further work:** monster stat-block–derived armor; weapon conditions in `evaluateCondition`; UI wiring to patch on loadout save.
 
 ---
 
@@ -189,7 +168,8 @@ Optional hardening: a **machine-readable** registry (e.g. caveat id → engine i
 | Combat actions / adapter | `src/features/encounter/helpers/spell-combat-adapter.ts`, `spell-resolution-classifier.ts`   |
 | Action resolution        | `encounter/resolution/action/action-resolver.ts`, `action-effects.ts`, `action-targeting.ts` |
 | Damage                   | `encounter/state/damage-mutations.ts`                                                        |
-| Conditions               | `encounter/state/condition-mutations.ts`, `condition-rules/`*                                |
+| Equipment / stat mods    | `encounter/state/equipment-mutations.ts`, `equipment-eligibility.ts`, `modifier-mutations.ts`   |
+| Conditions / turn hooks  | `encounter/state/condition-mutations.ts`, `condition-rules/`, `turn-hooks.ts`                 |
 | Reference docs           | `docs/reference/effects.md`, `docs/reference/resolution.md`                                  |
 
 
@@ -200,9 +180,9 @@ Optional hardening: a **machine-readable** registry (e.g. caveat id → engine i
 Copy status here or delete from the spells plan once tracked:
 
 - [x] Charm Person — damage + same-side charmer check + charm removal (see §2.1)
-- Sleep — layered saves, wake, immunities (spatial parts stay under-modeled; adapter unchanged)
+- [x] Sleep — layered repeat save + sleep unconscious + damage wake; exhaustion auto-success (see §2.2); spatial/elf/shake caveats remain
 - Acid Splash — remains honest notes/caveats for adapter vs area wording; **no spatial engine work**
-- Mage Armor — equipment change + linked modifier cleanup; unified armor + weapon snapshot for PCs/monsters
+- [x] Mage Armor — `patchCombatantEquipmentSnapshot` + eligibility + set-AC snapshot; weapon fields on snapshot (see §2.3)
 - See Invisibility — LOS seam + future real implementation; **full LOS/position still deferred**
 - Area spells generally — **out of scope** for this plan; document in effects/resolution only
 

@@ -148,6 +148,8 @@ export type SaveEffect = EffectBase<'save'> & {
   };
   onFail: Effect[];
   onSuccess?: Effect[];
+  /** When set, targets with this condition immunity pass the save without rolling (e.g. Sleep vs exhaustion). */
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
 };
 
 export type CheckEffect = EffectBase<'check'> & {
@@ -168,6 +170,18 @@ export type CheckEffect = EffectBase<'check'> & {
 export type RepeatSave = {
   ability: AbilityRef;
   timing: 'turn-start' | 'turn-end';
+  /**
+   * When true, the hook is removed after the first save attempt (success or fail).
+   * Use for Sleep-style “one repeat at end of next turn” vs default repeat-until-success.
+   */
+  singleAttempt?: boolean;
+  /** After a failed repeat save when `singleAttempt` is true: remove `removeCondition` and apply this. */
+  onFail?: {
+    addCondition?: EffectConditionId;
+    markerClassification?: string[];
+  };
+  /** Same as SaveEffect.autoSuccessIfImmuneTo — auto-pass repeat save without rolling. */
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
 };
 
 export type ConditionEffect = EffectBase<'condition'> & {

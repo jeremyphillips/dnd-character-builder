@@ -28,6 +28,7 @@ import {
   rollDamage,
   rollHealing,
 } from '../../../resolution/engines/dice.engine'
+import { inferStatModifierEligibilityFromEffect } from '../../state/equipment-eligibility'
 import type { AbilityScoreMapResolved } from '../../../character/abilities/abilities.types'
 
 const DEFAULT_ABILITIES: AbilityScoreMapResolved = {
@@ -53,6 +54,7 @@ function combatantToCreatureSnapshot(c: CombatantInstance): CreatureSnapshot {
     resources: {},
     equipment: {
       armorEquipped: c.equipment?.armorEquipped ?? null,
+      shieldEquipped: c.equipment?.shieldId != null && c.equipment.shieldId.length > 0,
     },
     flags: {},
   }
@@ -204,6 +206,12 @@ export function applyActionEffects(
       if (autoFailsSave(target, ability)) {
         succeeded = false
         saveDetail = `Auto-fail ${ability.toUpperCase()} save (condition).`
+      } else if (
+        effect.autoSuccessIfImmuneTo &&
+        target.conditionImmunities?.includes(effect.autoSuccessIfImmuneTo)
+      ) {
+        succeeded = true
+        saveDetail = `Auto-success (immune to ${effect.autoSuccessIfImmuneTo}).`
       } else {
         const saveRollMod = resolveD20RollMode(getSaveModifiersFromConditions(target, ability))
         const { rawRoll, detail } = rollD20WithRollMode(saveRollMod, options.rng)
@@ -290,6 +298,10 @@ export function applyActionEffects(
                   ability: effect.repeatSave!.ability,
                   dc,
                   removeCondition: effect.conditionId,
+                  singleAttempt: effect.repeatSave!.singleAttempt,
+                  onFail: effect.repeatSave!.onFail,
+                  autoSuccessIfImmuneTo: effect.repeatSave!.autoSuccessIfImmuneTo,
+                  casterInstanceId: actor.instanceId,
                 },
               },
             ],
@@ -417,6 +429,13 @@ export function applyActionEffects(
       const sign = effect.mode === 'add' && effect.value > 0 ? '+' : ''
       const modeLabel = effect.mode === 'set' ? `set ${effect.target} ${effect.value}` : `${sign}${effect.value} ${effect.target}`
       const markerId = `stat-mod-${effect.target}-${action.id}-${target.instanceId}`
+      const eligibility = inferStatModifierEligibilityFromEffect(effect)
+      const armorClassBeforeApply =
+        effect.target === 'armor_class' &&
+        effect.mode === 'set' &&
+        eligibility?.requiresUnarmored === true
+          ? target.stats.armorClass
+          : undefined
       nextState = addStatModifierToCombatant(
         nextState,
         target.instanceId,
@@ -427,6 +446,8 @@ export function applyActionEffects(
           mode: effect.mode,
           value: effect.value,
           duration: runtimeDuration,
+          ...(eligibility ? { eligibility } : {}),
+          ...(armorClassBeforeApply != null ? { armorClassBeforeApply } : {}),
         },
         { sourceLabel: options.sourceLabel },
       )

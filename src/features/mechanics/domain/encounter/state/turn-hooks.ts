@@ -240,6 +240,13 @@ function resolveRepeatSave(
   if (combatant && autoFailsSave(combatant, repeatSave.ability)) {
     succeeded = false
     details = `Auto-fail ${repeatSave.ability.toUpperCase()} save (condition).`
+  } else if (
+    combatant &&
+    repeatSave.autoSuccessIfImmuneTo &&
+    combatant.conditionImmunities?.includes(repeatSave.autoSuccessIfImmuneTo)
+  ) {
+    succeeded = true
+    details = `Auto-success (immune to ${repeatSave.autoSuccessIfImmuneTo}).`
   } else {
     const saveRollMod = combatant
       ? resolveD20RollMode(getSaveModifiersFromConditions(combatant, repeatSave.ability))
@@ -267,6 +274,27 @@ function resolveRepeatSave(
     if (repeatSave.removeState) {
       nextState = removeStateFromCombatant(nextState, combatantId, repeatSave.removeState)
     }
+    nextState = updateCombatant(nextState, combatantId, (combatant) => ({
+      ...combatant,
+      turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),
+    }))
+  } else if (repeatSave.singleAttempt && repeatSave.onFail?.addCondition) {
+    if (repeatSave.removeCondition) {
+      nextState = removeConditionFromCombatant(nextState, combatantId, repeatSave.removeCondition)
+    }
+    nextState = addConditionToCombatant(nextState, combatantId, repeatSave.onFail.addCondition, {
+      sourceLabel: hook.label,
+      sourceInstanceId: repeatSave.casterInstanceId,
+      classification:
+        repeatSave.onFail.markerClassification && repeatSave.onFail.markerClassification.length > 0
+          ? repeatSave.onFail.markerClassification
+          : undefined,
+    })
+    nextState = updateCombatant(nextState, combatantId, (combatant) => ({
+      ...combatant,
+      turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),
+    }))
+  } else if (repeatSave.singleAttempt) {
     nextState = updateCombatant(nextState, combatantId, (combatant) => ({
       ...combatant,
       turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),

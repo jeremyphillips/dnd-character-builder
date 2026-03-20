@@ -5,7 +5,7 @@ import { EXTRAPLANAR_CREATURE_TYPES } from '../shared';
  * Level 1 spells M–Z — authoring status:
  * - **Attack/save/AoE modeled:** Grease (initial prone save), Guiding Bolt, Healing Word, Hellish Rebuke, Hideous Laughter (Wis + prone/incap), Ice Knife (ranged hit), Inflict Wounds, Longstrider, Magic Missile, Protection from Evil, Ray of Sickness (hit + poisoned), Searing Smite (rider fire), Shield, Shield of Faith, Thunderwave.
  * - **Utility / sense / state:** Heroism (frightened immunity + state), Hex, Hunter's Mark, Jump, Speak with Animals; Identify / Illusory Script / Silent Image (notes + caveats).
- * - **Note-first / heavy caveats:** Goodberry, Purify Food and Drink, Sanctuary, Unseen Servant; Sleep uses caveats + under-modeled two-stage unconscious rules.
+ * - **Note-first / heavy caveats:** Goodberry, Purify Food and Drink, Sanctuary, Unseen Servant; Sleep uses caveats for area mapping; engine handles two-stage save + wake on damage (not elves / “doesn’t sleep” — caveat).
  */
 export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
 {
@@ -460,7 +460,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true, material: { description: 'a piece of cured leather' } },
     resolution: {
       caveats: [
-        'Spell ends if the target dons armor; mid-combat equipment changes are not tracked in encounter.',
+        'Encounter UI does not auto-sync character loadout; call encounter equipment patch or refresh combatant when armor changes.',
       ],
     },
     effects: [
@@ -804,6 +804,8 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     resolution: {
       caveats: [
         'Encounter maps area spells to all living enemies only; no creature choice or geometry inside the sphere.',
+        'Creatures that do not sleep (e.g. elves) are not auto-succeed modeled; only Immunity to Exhaustion grants auto-success on saves.',
+        'Waking a creature within 5 feet using an action is not automated.',
       ],
     },
     effects: [
@@ -816,13 +818,23 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       {
         kind: 'save',
         save: { ability: 'wis' },
-        onFail: [{ kind: 'condition', conditionId: 'incapacitated' }],
-      },
-      {
-        kind: 'note',
-        text:
-          'Repeat save at end of next turn: fail → Unconscious for duration. Ends on damage or if a creature within 5 feet uses an action to wake. Elves and creatures with Immunity to Exhaustion auto-succeed. Not resolved in encounter.',
-        category: 'under-modeled' as const,
+        autoSuccessIfImmuneTo: 'exhaustion',
+        onFail: [
+          {
+            kind: 'condition',
+            conditionId: 'incapacitated',
+            repeatSave: {
+              ability: 'wis',
+              timing: 'turn-end',
+              singleAttempt: true,
+              onFail: {
+                addCondition: 'unconscious',
+                markerClassification: ['sleep'],
+              },
+              autoSuccessIfImmuneTo: 'exhaustion',
+            },
+          },
+        ],
       },
     ],
     description: {

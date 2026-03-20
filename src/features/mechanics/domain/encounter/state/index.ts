@@ -21,7 +21,9 @@ export {
   setConcentration,
   tickConcentrationDuration,
   updateEncounterCombatant,
+  patchCombatantEquipmentSnapshot,
 } from './mutations'
+export { inferStatModifierEligibilityFromEffect } from './equipment-eligibility'
 export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel } from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'

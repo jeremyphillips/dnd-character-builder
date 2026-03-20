@@ -67,6 +67,14 @@ export interface RuntimeTurnHookRepeatSave {
   dc: number
   removeCondition?: string
   removeState?: string
+  singleAttempt?: boolean
+  onFail?: {
+    addCondition?: string
+    markerClassification?: string[]
+  }
+  autoSuccessIfImmuneTo?: string
+  /** Caster combatant id — stored on conditions applied from this hook (e.g. unconscious). */
+  casterInstanceId?: string
 }
 
 export interface RuntimeTurnHook {
@@ -151,6 +159,15 @@ export interface StatModifierMarker {
   mode: 'add' | 'set'
   value: number
   duration?: RuntimeMarkerDuration
+  /**
+   * When set, {@link patchCombatantEquipmentSnapshot} may remove this modifier if equipment
+   * no longer matches (e.g. unarmored-only buffs). Set from authored `effect.condition` in apply flow.
+   */
+  eligibility?: {
+    requiresUnarmored?: boolean
+  }
+  /** Combat AC before applying a set `armor_class` modifier; used to restore when the modifier expires. */
+  armorClassBeforeApply?: number
 }
 
 export type DamageResistanceLevel = 'resistance' | 'vulnerability' | 'immunity'
@@ -179,6 +196,10 @@ export interface ConcentrationState {
 export type CombatantEquipmentSnapshot = {
   /** Equipped armor item id, or null/undefined when not wearing armor. */
   armorEquipped?: string | null
+  /** Optional wield/shield ids (character loadout); monsters may omit. */
+  mainHandWeaponId?: string | null
+  offHandWeaponId?: string | null
+  shieldId?: string | null
 }
 
 export interface CombatantInstance {

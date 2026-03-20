@@ -1,7 +1,7 @@
 import type { Spell, SpellDuration, SpellRange } from '@/features/content/spells/domain/types/spell.types'
 import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter'
+import type { CombatActionDefinition, CombatActionTargetingProfile } from '@/features/mechanics/domain/encounter'
 import { classifySpellResolutionMode } from './spell-resolution-classifier'
 import { deriveSpellHostility, spellHostilityToHostileApplication } from './spell-hostility'
 
@@ -94,8 +94,16 @@ function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: b
   return { action: true }
 }
 
+function getSpellTargetingEffect(spell: Spell): Extract<Effect, { kind: 'targeting' }> | undefined {
+  return spell.effects?.find((e): e is Extract<Effect, { kind: 'targeting' }> => e.kind === 'targeting')
+}
+
+function getSpellRequiresSight(spell: Spell): boolean {
+  return getSpellTargetingEffect(spell)?.requiresSight === true
+}
+
 function getSpellCreatureTypeFilter(spell: Spell): string[] | undefined {
-  const targeting = spell.effects?.find((e) => e.kind === 'targeting')
+  const targeting = getSpellTargetingEffect(spell)
   if (targeting?.kind !== 'targeting') return undefined
   if (targeting.creatureTypeFilter?.length) {
     return [...targeting.creatureTypeFilter]
@@ -107,27 +115,24 @@ function getSpellCreatureTypeFilter(spell: Spell): string[] | undefined {
   return undefined
 }
 
-function buildSpellTargeting(spell: Spell): {
-  kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' | 'dead-creature'
-  creatureTypeFilter?: string[]
-  requiresWilling?: boolean
-} {
+function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
+  const sight = getSpellRequiresSight(spell) ? { requiresSight: true as const } : {}
   if (spell.range?.kind === 'self') return { kind: 'self' }
   const effects = spell.effects ?? []
   const hasDeadCreatureTargeting = effects.some(
     (e) => e.kind === 'targeting' && e.target === 'one-dead-creature',
   )
-  if (hasDeadCreatureTargeting) return { kind: 'dead-creature' }
+  if (hasDeadCreatureTargeting) return { kind: 'dead-creature', ...sight }
   const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
-  if (hasHealing) return { kind: 'single-creature' }
+  if (hasHealing) return { kind: 'single-creature', ...sight }
   const targeting = effects.find((e) => e.kind === 'targeting')
   const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
   if (targeting?.kind === 'targeting' && targeting.requiresWilling) {
-    return { kind: 'single-target', creatureTypeFilter, requiresWilling: true }
+    return { kind: 'single-target', creatureTypeFilter, requiresWilling: true, ...sight }
   }
   if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies', creatureTypeFilter }
   if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies', creatureTypeFilter }
-  return { kind: 'single-target', creatureTypeFilter }
+  return { kind: 'single-target', creatureTypeFilter, ...sight }
 }
 
 /**
@@ -241,6 +246,7 @@ function buildSpellAttackAction(
   )
 
   const displayMeta = buildSpellDisplayMeta(spell)
+  const sight = getSpellRequiresSight(spell) ? { requiresSight: true as const } : {}
 
   if (instanceCount <= 1) {
     return [{
@@ -254,7 +260,7 @@ function buildSpellAttackAction(
         damage,
         damageType,
       },
-      targeting: { kind: 'single-target' },
+      targeting: { kind: 'single-target', ...sight },
       onHitEffects: onHitEffects.length > 0 ? onHitEffects : undefined,
       logText: buildSpellLogText(spell),
       displayMeta,
@@ -276,7 +282,7 @@ function buildSpellAttackAction(
       damage,
       damageType,
     },
-    targeting: { kind: 'single-target' },
+    targeting: { kind: 'single-target', ...sight },
     onHitEffects: onHitEffects.length > 0 ? onHitEffects : undefined,
     displayMeta,
   }
@@ -292,7 +298,7 @@ function buildSpellAttackAction(
       damage,
       damageType,
     },
-    targeting: { kind: 'single-target' },
+    targeting: { kind: 'single-target', ...sight },
     sequence: [{ actionLabel: beamLabel, count: instanceCount }],
     logText: buildSpellLogText(spell),
     displayMeta,
@@ -353,6 +359,7 @@ function buildSpellEffectsSequenceActions(
   childEffects = injectSpellEffectDuration(childEffects, spell.duration)
 
   const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
+  const sight = getSpellRequiresSight(spell) ? { requiresSight: true as const } : {}
   const hitLabel = `${spell.name} hit`
   const displayMeta = buildSpellDisplayMeta(spell)
 
@@ -363,7 +370,7 @@ function buildSpellEffectsSequenceActions(
     cost: {},
     resolutionMode: 'effects',
     effects: childEffects,
-    targeting: { kind: 'single-target', creatureTypeFilter },
+    targeting: { kind: 'single-target', creatureTypeFilter, ...sight },
     displayMeta,
   }
 
@@ -374,7 +381,7 @@ function buildSpellEffectsSequenceActions(
     cost: buildSpellActionCost(spell),
     resolutionMode: 'effects',
     sequence: [{ actionLabel: hitLabel, count: instanceCount }],
-    targeting: { kind: 'single-target', creatureTypeFilter },
+    targeting: { kind: 'single-target', creatureTypeFilter, ...sight },
     logText: buildSpellLogText(spell),
     displayMeta,
     usage,

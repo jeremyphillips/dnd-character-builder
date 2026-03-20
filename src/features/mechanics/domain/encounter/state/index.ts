@@ -24,6 +24,11 @@ export {
   patchCombatantEquipmentSnapshot,
 } from './mutations'
 export { inferStatModifierEligibilityFromEffect } from './equipment-eligibility'
+export {
+  lineOfSightClear,
+  lineOfEffectClear,
+  canSeeForTargeting,
+} from './visibility-seams'
 export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel } from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'

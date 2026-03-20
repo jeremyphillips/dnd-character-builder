@@ -70,17 +70,9 @@ Each row: *what content does today* → *what must exist in the engine* → *pri
 
 ### 2.4 Visibility / line of sight — seam only (full LOS/position not in scope)
 
-**Today:** See Invisibility paired attack mods are handled; full spell text still references broader sight rules. `canSee` exists; [resolution.md §4.5](../docs/reference/resolution.md#46-debug-logging) lists visibility as seam without full consumer.
+**Status (landed):** [`visibility-seams.ts`](../src/features/mechanics/domain/encounter/state/visibility-seams.ts) exports `lineOfSightClear`, `lineOfEffectClear` (always `true` — geometry stub), and `canSeeForTargeting(state, observerId, targetId)` combining `canSee`, invisible vs See Invisibility, and those stubs. Spell `targeting.requiresSight` flows through [`spell-combat-adapter.ts`](../src/features/encounter/helpers/spell-combat-adapter.ts) as `CombatActionTargetingProfile.requiresSight`; [`action-targeting.ts`](../src/features/mechanics/domain/encounter/resolution/action/action-targeting.ts) `isValidActionTarget` enforces it (not for `self` / `all-enemies`). Tests: [`visibility-seams.test.ts`](../src/features/mechanics/domain/encounter/tests/visibility-seams.test.ts). **Still deferred:** real LOS, positions, heavily obscured tiles, frightened “while you can see” automation.
 
-**Not ready to model** real line of sight, positions, or stealth grids.
-
-**Near-term approach:**
-
-- Introduce a **narrow seam** used by resolution when we need a hook point, e.g. `canSeeForTargeting(attacker, defender, state): boolean` or `lineOfEffectClear(...)`, implemented to `**return true` everywhere** (or “true unless blinded/invisible rules already handled elsewhere”).
-- **Document** in code + [resolution.md](../docs/reference/resolution.md) that this is a **compatibility stub**; real LOS consumes the same function later without rewiring every call site.
-- Optional: pass through **blinded** / **heavily obscured** when those are represented as flags before full geometry exists.
-
-**Unblocks:** Clean insertion points for frightened “while in sight” and future stealth without committing to simulation now.
+**Unblocks:** Frightened / stealth can call the same seams later; grid replaces stub bodies only.
 
 ---
 
@@ -129,7 +121,7 @@ Phases 4–5 have no hard dependency on the chain above: Phase 4 is a parallel s
 | **1** | Damage pipeline metadata + charm removal hook                              | Unit/integration test: ally damages charmed target → charm removed per spell id                                |
 | **2** | Unified equipment snapshot updates + invalidate Mage Armor–style modifiers | Test: don armor → AC modifier from spell drops; weapons fields present for PCs/monsters (monsters may default) |
 | **3** | Sleep-class scripts + wake; extend repeat-save if needed                   | Sleep `under-modeled` note reduced where engine covers it; spatial honesty still via notes                     |
-| **4** | LOS / visibility **seam** functions default `true`, documented             | Call sites exist for future frightened/sight rules; no grid                                                    |
+| **4** | LOS / visibility **seam** functions default `true`, documented             | [x] `visibility-seams.ts` + `requiresSight` targeting; docs; tests                                              |
 | **5** | Itemised §2.5 backlog (form, caster choice, counters, contextual saves)    | Per-feature specs; `partial` → `full` as each lands                                                            |
 
 
@@ -170,6 +162,7 @@ Optional hardening: a **machine-readable** registry (e.g. caveat id → engine i
 | Damage                   | `encounter/state/damage-mutations.ts`                                                        |
 | Equipment / stat mods    | `encounter/state/equipment-mutations.ts`, `equipment-eligibility.ts`, `modifier-mutations.ts`   |
 | Conditions / turn hooks  | `encounter/state/condition-mutations.ts`, `condition-rules/`, `turn-hooks.ts`                 |
+| LOS / visibility seams   | `encounter/state/visibility-seams.ts`; `action-targeting.ts`; `spell-combat-adapter.ts`          |
 | Reference docs           | `docs/reference/effects.md`, `docs/reference/resolution.md`                                  |
 
 
@@ -183,7 +176,7 @@ Copy status here or delete from the spells plan once tracked:
 - [x] Sleep — layered repeat save + sleep unconscious + damage wake; exhaustion auto-success (see §2.2); spatial/elf/shake caveats remain
 - Acid Splash — remains honest notes/caveats for adapter vs area wording; **no spatial engine work**
 - [x] Mage Armor — `patchCombatantEquipmentSnapshot` + eligibility + set-AC snapshot; weapon fields on snapshot (see §2.3)
-- See Invisibility — LOS seam + future real implementation; **full LOS/position still deferred**
+- [x] See Invisibility / sight targeting — `canSeeForTargeting` + `requiresSight` on combat actions; **full LOS/position/grid still deferred** (see §2.4)
 - Area spells generally — **out of scope** for this plan; document in effects/resolution only
 
 When a box checks, update spell data and docs per §4.

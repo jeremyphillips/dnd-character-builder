@@ -45,6 +45,11 @@ export interface CombatActionTargetingProfile {
    * Non-hostile for charm/hostile-action rules.
    */
   requiresWilling?: boolean
+  /**
+   * From spell targeting metadata: “creature you can see.” Validated via {@link canSeeForTargeting}
+   * (blinded, invisible vs See Invisibility, LOS/LoE stubs). Ignored for `self` and `all-enemies` in the resolver.
+   */
+  requiresSight?: boolean
 }
 
 export interface CombatActionMovementProfile {

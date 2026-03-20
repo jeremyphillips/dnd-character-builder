@@ -3,6 +3,7 @@ import type { CombatantInstance } from '../../state'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
 import { cannotTargetWithHostileAction } from '../../state/condition-rules'
+import { canSeeForTargeting } from '../../state/visibility-seams'
 
 /** Options for who counts as a valid target; mirrors {@link import('../action-resolution.types').ResolveCombatActionOptions} targeting fields. */
 export type ActionTargetingResolveOptions = {
@@ -59,6 +60,7 @@ function shouldSuppressSameSideHostile(options?: ActionTargetingResolveOptions):
 }
 
 export function isValidActionTarget(
+  state: EncounterState,
   combatant: CombatantInstance,
   actor: CombatantInstance,
   action: CombatActionDefinition,
@@ -71,6 +73,15 @@ export function isValidActionTarget(
   if (!passesCreatureTypeFilter(combatant, action.targeting?.creatureTypeFilter)) return false
 
   if (isHostileAction(action) && cannotTargetWithHostileAction(actor, combatant.instanceId)) {
+    return false
+  }
+
+  if (
+    action.targeting?.requiresSight &&
+    kind !== 'self' &&
+    kind !== 'all-enemies' &&
+    !canSeeForTargeting(state, actor.instanceId, combatant.instanceId)
+  ) {
     return false
   }
 
@@ -100,7 +111,7 @@ export function getActionTargetCandidates(
   return state.initiativeOrder
     .map((id) => state.combatantsById[id])
     .filter(
-      (c): c is CombatantInstance => Boolean(c) && isValidActionTarget(c, actor, action, options),
+      (c): c is CombatantInstance => Boolean(c) && isValidActionTarget(state, c, actor, action, options),
     )
 }
 
@@ -120,19 +131,19 @@ export function getActionTargets(
   if (action.targeting?.kind === 'single-creature') {
     if (!selection.targetId) return [actor]
     const target = state.combatantsById[selection.targetId]
-    if (!target || !isValidActionTarget(target, actor, action, options)) return []
+    if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
     return [target]
   }
 
   if (action.targeting?.kind === 'dead-creature') {
     if (!selection.targetId) return []
     const target = state.combatantsById[selection.targetId]
-    if (!target || !isValidActionTarget(target, actor, action, options)) return []
+    if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
     return [target]
   }
 
   if (!selection.targetId) return []
   const target = state.combatantsById[selection.targetId]
-  if (!target || !isValidActionTarget(target, actor, action, options)) return []
+  if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
   return [target]
 }

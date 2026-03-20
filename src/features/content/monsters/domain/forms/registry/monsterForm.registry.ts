@@ -82,7 +82,7 @@ export const MONSTER_FORM_FIELDS = [
   jsonField('description', 'Description', JSON.stringify({ short: '', long: '' }, null, 2), 3, 6),
   jsonField('languages', 'Languages', '[]', 2, 4),
   jsonField('hitPoints', 'Hit Points', JSON.stringify({ count: 1, die: 8, modifier: 0 }, null, 2), 2, 4),
-  jsonField('armorClass', 'Armor Class', JSON.stringify({ kind: 'natural', base: 10 }, null, 2), 2, 4),
+  jsonField('armorClass', 'Armor Class', JSON.stringify({ kind: 'natural' }, null, 2), 2, 4),
   jsonField('movement', 'Movement', JSON.stringify({ ground: 30 }, null, 2), 2, 4),
   jsonField('actions', 'Actions', '[]', 3, 12),
   jsonField('bonusActions', 'Bonus Actions', '[]', 2, 8),

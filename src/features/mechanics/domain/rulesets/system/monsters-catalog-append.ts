@@ -96,7 +96,7 @@ export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
     },
     mechanics: {
       hitPoints: { count: 2, die: 6, modifier: 2 },
-      armorClass: { kind: 'natural', base: 12 },
+      armorClass: { kind: 'natural', offset: 2 },
       movement: { ground: 30, climb: 30 },
       abilities: { str: 5, dex: 14, con: 12, int: 1, wis: 7, cha: 3 },
       senses: {
@@ -154,7 +154,7 @@ export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
     },
     mechanics: {
       hitPoints: { count: 4, die: 10, modifier: 4 },
-      armorClass: { kind: 'natural', base: 11 },
+      armorClass: { kind: 'natural', offset: 1 },
       movement: { ground: 30, climb: 30 },
       abilities: { str: 14, dex: 16, con: 12, int: 2, wis: 11, cha: 4 },
       senses: {
@@ -222,7 +222,7 @@ export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
     },
     mechanics: {
       hitPoints: { count: 5, die: 8 },
-      armorClass: { kind: 'natural', base: 11 },
+      armorClass: { kind: 'natural', offset: 1 },
       movement: { ground: 10, fly: 50 },
       abilities: { str: 10, dex: 14, con: 10, int: 1, wis: 10, cha: 3 },
       senses: { passivePerception: 10 },
@@ -403,7 +403,7 @@ export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
     },
     mechanics: {
       hitPoints: { count: 14, die: 10, modifier: 70 },
-      armorClass: { kind: 'natural', base: 18 },
+      armorClass: { kind: 'natural', offset: 8 },
       movement: { ground: 30, burrow: 30 },
       abilities: { str: 20, dex: 8, con: 20, int: 5, wis: 10, cha: 5 },
       senses: {
@@ -575,7 +575,7 @@ export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
     },
     mechanics: {
       hitPoints: { count: 12, die: 10, modifier: 48 },
-      armorClass: { kind: 'natural', base: 12 },
+      armorClass: { kind: 'natural', offset: 2 },
       movement: { ground: 30, swim: 90 },
       abilities: { str: 18, dex: 14, con: 18, int: 5, wis: 10, cha: 8 },
       senses: { special: [{ type: 'darkvision', range: 60 }], passivePerception: 10 },

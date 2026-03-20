@@ -39,7 +39,8 @@ export type MonsterArmorClass =
     } & MonsterArmorClassBase
   | {
       kind: 'natural';
-      base?: number;
+      /** Points above unarmored AC baseline (`MONSTER_UNARMORED_AC_BASELINE`); omit when 0. */
+      offset?: number;
     } & MonsterArmorClassBase
   | {
       kind: 'fixed';

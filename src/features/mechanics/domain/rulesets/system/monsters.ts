@@ -265,7 +265,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
         die: 6,
         modifier: -3
       },
-      armorClass: { kind: 'natural', base: 12 },
+      armorClass: { kind: 'natural', offset: 2 },
       movement: { ground: 30 },
       actions: [
         { kind: 'weapon', weaponRef: "dagger" },
@@ -350,7 +350,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 11,
+        offset: 1,
       },
       movement: { ground: 40 },
       actions: [
@@ -479,7 +479,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: "natural",
-        base: 12,
+        offset: 2,
       },
       movement: { ground: 20 },
       abilities: { str: 16, dex: 8, con: 15, int: 6, wis: 12, cha: 12 },
@@ -761,7 +761,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 14,
+        offset: 4,
       },
       movement: { ground: 30 },
       actions: [
@@ -899,7 +899,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 12,
+        offset: 2,
       },
       movement: { ground: 40, climb: 40 },
       actions: [
@@ -1127,7 +1127,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 11,
+        offset: 1,
       },
       movement: { ground: 20 },
       actions: [
@@ -1241,7 +1241,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: 'natural',
-        base: 18,
+        offset: 8,
       },
       movement: { ground: 40, climb: 40, fly: 80 },
       actions: [
@@ -1332,7 +1332,7 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
       },
       armorClass: {
         kind: "natural",
-        base: 14,
+        offset: 4,
       },
       movement: { ground: 40, swim: 40 },
       abilities: { str: 20, dex: 12, con: 20, int: 2, wis: 10, cha: 7 },

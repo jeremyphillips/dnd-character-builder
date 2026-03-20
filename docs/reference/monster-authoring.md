@@ -11,7 +11,7 @@ System and campaign monsters share `MonsterFields` ([`monster.types.ts`](../../s
 
 Author AC so it recomputes from ability scores and equipment via [`calculateMonsterArmorClass`](../../src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts) (delegates to [`calculateCreatureArmorClass`](../../src/features/mechanics/domain/equipment/armorClass.ts)).
 
-- **`kind: 'natural'`** — optional `base`; when omitted, the natural-armor base is **10** (same as omitting `base: 10`). Prefer **omitting** `base` when it would be 10. DEX is folded in by the shared creature AC path; monster armor metadata does **not** carry `dexApplies` (that flag applied only to older monster data—model odd cases by choosing the right **`base`** and catalog armor).
+- **`kind: 'natural'`** — optional **`offset`**: points **above** the unarmored AC baseline ([`MONSTER_UNARMORED_AC_BASELINE`](../../src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts), 10 until rulesets expose a single source of truth). Omit **`offset`** when it would be **0** (equivalent to baseline + DEX only). DEX is folded in by the shared creature AC path; model edge cases via **`offset`** and catalog armor, not deprecated per-monster DEX flags.
 - **`kind: 'equipment'`** — `armorRefs` plus `equipment.armor` entries tied to the armor catalog; DEX caps follow real armor rules in [`armorClass.ts`](../../src/features/mechanics/domain/equipment/armorClass.ts).
 - **`kind: 'fixed'`** and **`override`** — **escape hatches only** when natural + equipment cannot match the printed AC honestly.
 

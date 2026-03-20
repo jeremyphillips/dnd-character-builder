@@ -10,6 +10,9 @@ import {
 type ArmorCatalog = Record<string, CreatureArmorCatalogEntry>
 type MonsterArmorSource = Pick<Monster, 'mechanics'>
 
+/** Unarmored AC baseline before natural offset and DEX; single source of truth until ruleset config exposes it. */
+export const MONSTER_UNARMORED_AC_BASELINE = 10
+
 function resolveMonsterArmorReference(
   monster: MonsterArmorSource,
   armorRef: string,
@@ -63,7 +66,8 @@ export function calculateMonsterArmorClass(
 
   return calculateCreatureArmorClass({
     dexterityScore,
-    defaultBaseAC: armorClass.base ?? 10,
+    defaultBaseAC:
+      MONSTER_UNARMORED_AC_BASELINE + (armorClass.offset ?? 0),
     baseLabel: 'Natural Armor',
     overrideAC: armorClass.override,
   })

@@ -1,6 +1,6 @@
 ---
 name: Monster catalog authoring
-overview: Add the requested SRD-style monsters to the system catalog with AC/skill/initiative expressed so they recompute from abilities and proficiency (not duplicated totals), extend monster mechanics types where elementals need resistances and missing damage/condition ids, add a reference doc under docs/reference, align initiative with how DEX is stored (`dex` vs `dexterity`), and unify spell/monster resolution metadata via shared types (under-modeled notes + resolution.caveats) per docs/reference/effects.md. Shared types live in mechanics/domain/resolution; ContentResolutionMeta includes optional subtype; AC authoring avoids deprecated maxDexBonus and reserves overrides/fixed AC for last-resort escape hatches.
+overview: Add the requested SRD-style monsters to the system catalog with AC/skill/initiative expressed so they recompute from abilities and proficiency (not duplicated totals), extend monster mechanics types where elementals need resistances and missing damage/condition ids, add a reference doc under docs/reference, align initiative with how DEX is stored (`dex` vs `dexterity`), and unify spell/monster resolution metadata via shared types (under-modeled notes + resolution.caveats) per docs/reference/effects.md. Shared types live in mechanics/domain/resolution; ContentResolutionMeta includes optional subtype; AC authoring reserves overrides/fixed AC for last-resort escape hatches. Planned follow-up — refactor natural monster armor from absolute `base` to **`offset`** (points above the global unarmored AC baseline) so changing the baseline (e.g. from 10) does not require re-authoring every monster.
 todos:
   - id: shared-resolution-types
     content: Add src/features/mechanics/domain/resolution/content-resolution.types.ts with EffectNoteCategory, ContentResolutionMeta (caveats + optional subtype); document escape-hatch-only fields; refactor SpellResolutionMeta and NoteEffect; add resolution to monster action/trait types; optional getMonster*ResolutionStatus helpers
@@ -19,6 +19,9 @@ todos:
     status: completed
   - id: doc-reference
     content: Write docs/reference/monster-authoring.md; cross-link docs/reference/effects.md; document resolution subtype + escape hatches; deprecate maxDexBonus in authoring guidance
+    status: completed
+  - id: natural-armor-offset
+    content: "Refactor `kind: 'natural'` monster armor: replace `base` (absolute AC contribution) with `offset` (points above global unarmored AC baseline). Wire `calculateMonsterArmorClass` to baseline + offset; migrate `monsters.ts` + `monsters-catalog-append.ts`; update `monster-equipment.types.ts`, tests, and monster-authoring.md. Omit `offset` when 0 (same as today omitting `base` when 10)."
     status: completed
 isProject: true
 ---
@@ -71,8 +74,8 @@ Export at least:
 Reserve these for cases where **no** combination of structured effects, correct armor/natural base, equipment rows, and `note` + `caveats` can represent the stat block honestly:
 
 - **Spells**: `resolution.hpThreshold`, `resolution.hostileIntent`, and any future spell-only resolution fields — only when the shared effect tree cannot carry the rule.
-- **Monsters — AC**: [`MonsterArmorClass`](src/features/content/monsters/domain/types/monster-equipment.types.ts) `kind: 'fixed'`, and `override` on natural/equipment — **only** when matching printed AC without lying is otherwise impossible. Prefer adjusting **`kind: 'natural'` `base`** and catalog **equipment** so DEX + armor math matches the book.
-- **Monsters — DEX cap**: **`maxDexBonus` on `MonsterArmorClassBase` is deprecated** (see inline comment in [`monster-equipment.types.ts`](src/features/content/monsters/domain/types/monster-equipment.types.ts)). Do not author new monsters with `maxDexBonus`; prefer a natural armor **`base`** (and real armor pieces) so the computed AC matches. Leave legacy entries for migration; remove usage from new catalog entries.
+- **Monsters — AC**: [`MonsterArmorClass`](src/features/content/monsters/domain/types/monster-equipment.types.ts) `kind: 'fixed'`, and `override` on natural/equipment — **only** when matching printed AC without lying is otherwise impossible. Prefer adjusting **`kind: 'natural'`** (see **`offset`** refactor below) and catalog **equipment** so DEX + armor math matches the book.
+- **Monsters — monster armor metadata**: Do not use removed fields like **`dexApplies`** on natural armor; PC-style DEX caps live in [`armorClass.ts`](src/features/mechanics/domain/equipment/armorClass.ts) for real armor, not on `MonsterArmorClass`.
 
 Document escape-hatch policy in [`docs/reference/monster-authoring.md`](docs/reference/monster-authoring.md) and tie resolution metadata to [effects.md](docs/reference/effects.md) §8.
 
@@ -88,15 +91,28 @@ Extend `MonsterFields.mechanics` with `resistances`, extend `ImmunityType` / `Vu
 
 ## AC authoring rule
 
-Match printed AC via `kind: 'natural'` with appropriate **`base` + DEX**, or **`kind: 'equipment'`** with catalog armor. **Do not use deprecated `maxDexBonus`.** Do not store initiative separately; parenthetical DEX scores are ability scores, not stored rolls.
+Match printed AC via `kind: 'natural'` with appropriate **natural contribution + DEX**, or **`kind: 'equipment'`** with catalog armor. Do not store initiative separately; parenthetical DEX scores are ability scores, not stored rolls.
+
+## Natural armor: `offset` (planned refactor)
+
+**Goal:** One configurable **unarmored AC baseline** (today effectively 10 everywhere; later a single source of truth). Monster natural armor should not store an **absolute** partial base like `12`; it should store **`offset`**: points **above** that baseline from hide, plates, etc.
+
+| Today (absolute) | After refactor (relative) |
+|------------------|---------------------------|
+| `{ kind: 'natural', base: 12 }` | `{ kind: 'natural', offset: 2 }` |
+| `{ kind: 'natural' }` (implicit 10) | `{ kind: 'natural' }` or `{ kind: 'natural', offset: 0 }` — **omit `offset` when 0** |
+
+**Computation:** `defaultBaseAC = globalUnarmoredAcBaseline + (armorClass.offset ?? 0)` passed into [`calculateCreatureArmorClass`](src/features/mechanics/domain/equipment/armorClass.ts) (same hook as today’s `defaultBaseAC: armorClass.base ?? 10`).
+
+**Work:** Types in [`monster-equipment.types.ts`](src/features/content/monsters/domain/types/monster-equipment.types.ts); [`calculateMonsterArmorClass.ts`](src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts); migrate all `base` in [`monsters.ts`](src/features/mechanics/domain/rulesets/system/monsters.ts) and [`monsters-catalog-append.ts`](src/features/mechanics/domain/rulesets/system/monsters-catalog-append.ts) to `offset = base - 10` (or relative to chosen baseline constant); tests + [`docs/reference/monster-authoring.md`](docs/reference/monster-authoring.md).
 
 ## Creatures to add
 
-Ghoul, Giant Centipede, Giant Spider, Giant Wasp, Goblin Minion, Air/Earth/Fire/Water Elementals — with `under-modeled` notes and `resolution.caveats` where the engine does not fully enforce riders; AC without `maxDexBonus` or fixed AC unless unavoidable.
+Ghoul, Giant Centipede, Giant Spider, Giant Wasp, Goblin Minion, Air/Earth/Fire/Water Elementals — with `under-modeled` notes and `resolution.caveats` where the engine does not fully enforce riders; AC via natural **`base`** (migrate to **`offset`** when refactor lands) or fixed AC only when unavoidable.
 
 ## Reference documentation
 
-- Add [`docs/reference/monster-authoring.md`](docs/reference/monster-authoring.md): cross-link [docs/reference/effects.md](docs/reference/effects.md); **`ContentResolutionMeta`**, optional **`subtype`**, escape hatches, **`maxDexBonus` deprecated**.
+- [`docs/reference/monster-authoring.md`](docs/reference/monster-authoring.md): cross-link [docs/reference/effects.md](docs/reference/effects.md); **`ContentResolutionMeta`**, optional **`subtype`**, escape hatches; after **`offset`** refactor, document natural **`offset`** vs global baseline.
 - Optionally add a bullet in [docs/reference/effects.md](docs/reference/effects.md) pointing to [`content-resolution.types.ts`](src/features/mechanics/domain/resolution/content-resolution.types.ts).
 
 ## Dependency / file touch list

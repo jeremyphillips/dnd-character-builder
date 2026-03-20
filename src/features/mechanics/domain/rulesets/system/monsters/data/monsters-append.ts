@@ -1,7 +1,7 @@
-import type { MonsterFields } from '@/features/content/monsters/domain/types'
+import type { MonsterCatalogEntry } from '../types'
 
-/** Additional system monsters (appended to MONSTERS_RAW in monsters.ts). */
-export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterFields[] = [
+/** Additional system monsters (appended after `MONSTERS_CORE_DATA` in `monsters/index.ts`). */
+export const MONSTERS_SYSTEM_APPEND_20260320: readonly MonsterCatalogEntry[] = [
   {
     id: 'ghoul',
     name: 'Ghoul',

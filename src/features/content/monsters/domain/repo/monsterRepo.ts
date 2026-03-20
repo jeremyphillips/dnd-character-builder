@@ -1,7 +1,7 @@
 /**
  * Monster repository — merges system monsters + campaign custom monsters.
  *
- * System monsters come from systemCatalog.monsters.ts.
+ * System monsters come from `rulesets/system/monsters/` (see `monsters/index.ts`).
  * Campaign monsters come from the DB via API.
  *
  * All returned objects carry `source: 'system' | 'campaign'`.

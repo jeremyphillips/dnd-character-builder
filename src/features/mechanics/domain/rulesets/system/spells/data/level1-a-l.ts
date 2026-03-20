@@ -143,7 +143,6 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     resolution: {
       caveats: [
-        'Spell ends early if the caster or any ally damages the target; not enforced in encounter resolution.',
         'Advantage on the save when you or allies are fighting the target is not applied by the engine.',
       ],
     },

@@ -1,5 +1,9 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import { rollDie, rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
+import {
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  rollHealing,
+} from '@/features/mechanics/domain/resolution/engines/dice.engine'
 import { abilityIdToKey } from '@/features/mechanics/domain/character'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import type { EncounterState, RuntimeTurnHook, RuntimeTurnHookRepeatSave } from './types'
@@ -19,6 +23,7 @@ import {
   removeConditionFromCombatant,
   removeStateFromCombatant,
 } from './mutations'
+import { autoFailsSave, getSaveModifiersFromConditions } from './condition-rules/condition-queries'
 
 export function executeTurnHooks(
   state: EncounterState,
@@ -226,10 +231,24 @@ function resolveRepeatSave(
   hook: RuntimeTurnHook,
   repeatSave: RuntimeTurnHookRepeatSave,
 ): EncounterState {
+  const combatant = state.combatantsById[combatantId]
   const saveModifier = getSaveModifierForCombatant(state, combatantId, repeatSave)
-  const rawRoll = rollDie(20, Math.random)
-  const total = rawRoll + saveModifier
-  const succeeded = total >= repeatSave.dc
+
+  let succeeded: boolean
+  let details: string
+
+  if (combatant && autoFailsSave(combatant, repeatSave.ability)) {
+    succeeded = false
+    details = `Auto-fail ${repeatSave.ability.toUpperCase()} save (condition).`
+  } else {
+    const saveRollMod = combatant
+      ? resolveD20RollMode(getSaveModifiersFromConditions(combatant, repeatSave.ability))
+      : 'normal'
+    const { rawRoll, detail } = rollD20WithRollMode(saveRollMod, Math.random)
+    const total = rawRoll + saveModifier
+    succeeded = total >= repeatSave.dc
+    details = `Saving throw: ${detail} + ${saveModifier} = ${total} vs DC ${repeatSave.dc}.`
+  }
 
   let nextState = appendLog(state, {
     type: 'note',
@@ -238,7 +257,7 @@ function resolveRepeatSave(
     round: state.roundNumber,
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, combatantId)} ${succeeded ? 'succeeds' : 'fails'} repeat ${repeatSave.ability.toUpperCase()} save for ${hook.label}.`,
-    details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${total} vs DC ${repeatSave.dc}.`,
+    details,
   })
 
   if (succeeded) {

@@ -21,7 +21,12 @@ import {
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
-import { rollDie, rollDamage } from '../../../resolution/engines/dice.engine'
+import {
+  rollDamage,
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  type D20RollMode,
+} from '../../../resolution/engines/dice.engine'
 import {
   spendActionCost,
   getCombatantTurnResources,
@@ -35,7 +40,7 @@ import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSa
 export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
 
 type RollModifierResult = {
-  rollMod: 'advantage' | 'disadvantage' | 'normal'
+  rollMod: D20RollMode
   attackerMarkers: RollModifierMarker[]
   defenderMarkers: RollModifierMarker[]
 }
@@ -59,13 +64,7 @@ function resolveRollModifier(
     ...getIncomingAttackModifiersForAttack(attacker, defender, attackRange),
   ]
 
-  const all = [...markerModifiers, ...conditionModifiers]
-  const hasAdv = all.includes('advantage')
-  const hasDisadv = all.includes('disadvantage')
-  const rollMod = hasAdv && hasDisadv ? 'normal'
-    : hasAdv ? 'advantage'
-    : hasDisadv ? 'disadvantage'
-    : 'normal'
+  const rollMod = resolveD20RollMode([...markerModifiers, ...conditionModifiers])
 
   return { rollMod, attackerMarkers, defenderMarkers }
 }
@@ -73,23 +72,6 @@ function resolveRollModifier(
 function matchesRollContext(marker: RollModifierMarker, context: string): boolean {
   const targets = Array.isArray(marker.appliesTo) ? marker.appliesTo : [marker.appliesTo]
   return targets.some((t) => t === context || t === 'all' || context.includes(t))
-}
-
-function rollD20WithModifier(
-  rollMod: 'advantage' | 'disadvantage' | 'normal',
-  rng: () => number,
-): { rawRoll: number; detail: string } {
-  if (rollMod === 'normal') {
-    const rawRoll = rollDie(20, rng)
-    return { rawRoll, detail: `d20 ${rawRoll}` }
-  }
-  const roll1 = rollDie(20, rng)
-  const roll2 = rollDie(20, rng)
-  const rawRoll = rollMod === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2)
-  return {
-    rawRoll,
-    detail: `d20 ${roll1}, ${roll2} (${rollMod}: ${rawRoll})`,
-  }
 }
 
 function deriveAttackRange(action: CombatActionDefinition): 'melee' | 'ranged' {
@@ -289,7 +271,7 @@ function resolveCombatActionInternal(
 
     const attackRange = deriveAttackRange(action)
     const { rollMod, attackerMarkers, defenderMarkers } = resolveRollModifier(actor, target, 'attack rolls', attackRange)
-    const { rawRoll, detail: rollDetail } = rollD20WithModifier(rollMod, rng)
+    const { rawRoll, detail: rollDetail } = rollD20WithRollMode(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
     const isNaturalTwenty = rawRoll === 20
     const isNaturalOne = rawRoll === 1
@@ -416,16 +398,9 @@ function resolveCombatActionInternal(
         continue
       }
 
-      const condSaveMods = getSaveModifiersFromConditions(saveTarget, saveAbility)
-      const saveHasAdv = condSaveMods.includes('advantage')
-      const saveHasDisadv = condSaveMods.includes('disadvantage')
-      const saveRollMod: 'advantage' | 'disadvantage' | 'normal' =
-        saveHasAdv && saveHasDisadv ? 'normal'
-          : saveHasAdv ? 'advantage'
-          : saveHasDisadv ? 'disadvantage'
-          : 'normal'
+      const saveRollMod = resolveD20RollMode(getSaveModifiersFromConditions(saveTarget, saveAbility))
 
-      const { rawRoll, detail: saveRollDetail } = rollD20WithModifier(saveRollMod, rng)
+      const { rawRoll, detail: saveRollDetail } = rollD20WithRollMode(saveRollMod, rng)
       const saveModifier = getSaveModifier(saveTarget, saveAbility)
       const totalRoll = rawRoll + saveModifier
       const succeeded = totalRoll >= action.saveProfile.dc

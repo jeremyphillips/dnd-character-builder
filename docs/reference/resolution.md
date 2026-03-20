@@ -194,7 +194,7 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 - `action-resolver.ts` `resolveRollModifier` — combines spell/effect `RollModifierMarker` entries with condition-derived attack modifiers. Blinded, poisoned, prone, restrained, invisible, frightened, paralyzed, stunned, unconscious, and petrified now affect attack rolls.
 - `action-resolver.ts` saving-throw resolution — checks `autoFailsSave` before rolling. Paralyzed, stunned, unconscious, and petrified combatants auto-fail Str/Dex saves. Restrained combatants roll Dex saves at disadvantage.
 - `action-resolver.ts` attack-roll resolution — natural 20 = auto-hit + critical hit (doubled damage dice). Natural 1 = auto-miss.
-- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types.
+- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types. **Charm Person (early end):** if the target has `charmed` with `sourceInstanceId` set to the charmer’s combatant id, and the damage source (`options.actorId` or `activeCombatantId`) is on the **same** `CombatantSide` as that charmer, the `charmed` marker(s) matching that rule are stripped and a `condition-removed` log line is emitted.
 - `action-targeting.ts` `isValidActionTarget` — uses `cannotTargetWithHostileAction` (backed by `getSourceRelativeRestrictions`) to enforce the charmed targeting exclusion via the consequence framework instead of the ad-hoc `getCharmedSourceIds` helper.
 
 **Consequence wiring status:**

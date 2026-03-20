@@ -46,16 +46,9 @@ Each row: *what content does today* → *what must exist in the engine* → *pri
 
 ### 2.1 Damage pipeline: provenance, allies, and conditional cleanup
 
-**Today:** Charm Person documents early end when caster/allies damage the target via `resolution.caveats`; no hook removes `charmed` from damage context. See spells plan backlog.
+**Status (landed):** `applyDamageToCombatant` strips `charmed` when the damage attacker (`options.actorId` or `activeCombatantId`) shares the charmer’s `CombatantSide` (`party` / `enemies`), using `sourceInstanceId` on the condition marker as the charmer’s instance id. Logs `condition-removed`. See [damage-mutations.ts](../src/features/mechanics/domain/encounter/state/damage-mutations.ts) (`removeCharmedFromCasterSideDamage`). Tests: `encounter/tests/damage-charm.test.ts`. Charm Person `resolution.caveats` trimmed accordingly; save advantage when allies fight remains a caveat.
 
-**Engine needs:**
-
-- **Damage events** that carry: source combatant, ability/spell linkage, and **ally side** relative to victim (instance graph or party/side on `CombatantInstance`).
-- A **post-damage** (or inline) hook: if victim has `charmed` with `sourceInstanceId` matching charmer, and attacker is charmer or ally of charmer, **remove** the charm marker (and log).
-
-**Primary seams:** `applyDamageToCombatant` in [damage-mutations.ts](../src/features/mechanics/domain/encounter/state/damage-mutations.ts), condition removal APIs in condition-mutations.
-
-**Unblocks:** Caveat removal for Charm Person; pattern reuse for other “damage from X ends effect” rules.
+**Further work (optional):** spell-level damage attribution, reactions without `actorId`, or per-marker removal APIs if multiple independent charms need finer control.
 
 ---
 
@@ -206,7 +199,7 @@ Optional hardening: a **machine-readable** registry (e.g. caveat id → engine i
 
 Copy status here or delete from the spells plan once tracked:
 
-- Charm Person — damage pipeline + ally graph + charm removal
+- [x] Charm Person — damage + same-side charmer check + charm removal (see §2.1)
 - Sleep — layered saves, wake, immunities (spatial parts stay under-modeled; adapter unchanged)
 - Acid Splash — remains honest notes/caveats for adapter vs area wording; **no spatial engine work**
 - Mage Armor — equipment change + linked modifier cleanup; unified armor + weapon snapshot for PCs/monsters

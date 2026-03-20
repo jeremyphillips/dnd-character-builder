@@ -7,7 +7,9 @@ import {
   applyDamageToCombatant,
   applyHealingToCombatant,
   appendEncounterNote,
+  autoFailsSave,
   effectDurationToRuntimeDuration,
+  getSaveModifiersFromConditions,
   removeStatesByClassification,
   updateEncounterCombatant,
   type CombatantInstance,
@@ -20,7 +22,12 @@ import { evaluateCondition } from '../../../conditions/evaluateCondition'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
-import { rollDie, rollDamage, rollHealing } from '../../../resolution/engines/dice.engine'
+import {
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  rollDamage,
+  rollHealing,
+} from '../../../resolution/engines/dice.engine'
 import type { AbilityScoreMapResolved } from '../../../character/abilities/abilities.types'
 
 const DEFAULT_ABILITIES: AbilityScoreMapResolved = {
@@ -190,18 +197,29 @@ export function applyActionEffects(
         return
       }
 
-      const rawRoll = rollDie(20, options.rng)
-      const saveModifier = getSaveModifier(target, effect.save.ability)
-      const totalRoll = rawRoll + saveModifier
-      const succeeded = totalRoll >= effect.save.dc
+      const ability = effect.save.ability
+      let succeeded: boolean
+      let saveDetail: string
+
+      if (autoFailsSave(target, ability)) {
+        succeeded = false
+        saveDetail = `Auto-fail ${ability.toUpperCase()} save (condition).`
+      } else {
+        const saveRollMod = resolveD20RollMode(getSaveModifiersFromConditions(target, ability))
+        const { rawRoll, detail } = rollD20WithRollMode(saveRollMod, options.rng)
+        const saveModifier = getSaveModifier(target, ability)
+        const totalRoll = rawRoll + saveModifier
+        succeeded = totalRoll >= effect.save.dc
+        saveDetail = `Saving throw: ${detail} + ${saveModifier} = ${totalRoll} vs DC ${effect.save.dc}.`
+      }
 
       nextState = appendEncounterNote(
         nextState,
-        `${options.sourceLabel}: ${target.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${effect.save.ability.toUpperCase()} save.`,
+        `${options.sourceLabel}: ${target.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${ability.toUpperCase()} save.`,
         {
           actorId: actor.instanceId,
           targetIds: [target.instanceId],
-          details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${totalRoll} vs DC ${effect.save.dc}.`,
+          details: saveDetail,
         },
       )
 

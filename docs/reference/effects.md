@@ -752,6 +752,7 @@ The following spell mechanics are not yet fully resolved by the combat adapter:
 - ~~Repeat saves~~ — **resolved**: `condition.repeatSave` registers turn hooks for automatic save-or-remove at turn boundaries
 - ~~Damage type resistance~~ — **resolved**: `DamageResistanceMarker` on `CombatantInstance`; damage application halves/doubles matching damage
 - ~~HP-threshold gating~~ — **resolved**: `resolution.hpThreshold` gates effect application; used by Power Word Kill/Stun/Heal
+- ~~Charm Person early end on damage from caster or allies~~ — **resolved (encounter)**: `applyDamageToCombatant` removes `charmed` when the attacker shares the charmer’s side (`CombatantSide`), using `sourceInstanceId` on the condition marker
 - Spell slot resource management
 - Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
 - Charmed save advantage when allies are fighting the target (authored as `save.text`, not yet resolved)
@@ -773,6 +774,7 @@ Mechanics resolved since initial authoring:
 - **Damage resistance**: `DamageResistanceMarker` tracks active resistances/vulnerabilities; `applyDamageToCombatant` halves or doubles matching damage types.
 - **Auto-hit resolution**: `auto-hit` action mode skips attack rolls; multi-instance spells generate sequence steps for independent resolution.
 - **HP-threshold gating**: `CombatActionDefinition.hpThreshold` gates effect application on target current HP vs threshold.
+- **Charm ends on ally/caster damage**: condition markers with `sourceInstanceId` (charmer) are cleared when the damage source is on the same side as the charmer (`damage-mutations.ts`).
 - **Advanced effect logging**: `trigger`, `activation`, `check`, `grant`, `form`, and `targeting` effects log meaningful summaries instead of "unsupported".
 
 ## 11. Anti-Patterns

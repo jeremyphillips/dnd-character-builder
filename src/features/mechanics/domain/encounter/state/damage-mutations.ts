@@ -159,7 +159,14 @@ export function applyDamageToCombatant(
     }
   })
 
-  let loggedState = appendLog(nextState, {
+  const attackerIdForCharm = options?.actorId ?? resistanceLogState.activeCombatantId ?? null
+  const stateAfterCharm = removeCharmedFromCasterSideDamage(
+    nextState,
+    targetId,
+    attackerIdForCharm,
+  )
+
+  let loggedState = appendLog(stateAfterCharm, {
     type: 'damage-applied',
     actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
     targetIds: [targetId],
@@ -175,7 +182,7 @@ export function applyDamageToCombatant(
   })
 
   const previousTrackedParts = target.trackedParts ?? []
-  const nextTrackedParts = nextState.combatantsById[targetId]?.trackedParts ?? []
+  const nextTrackedParts = stateAfterCharm.combatantsById[targetId]?.trackedParts ?? []
 
   nextTrackedParts.forEach((trackedPart, index) => {
     const previousTrackedPart = previousTrackedParts[index]
@@ -213,6 +220,43 @@ export function applyDamageToCombatant(
   loggedState = checkConcentrationOnDamage(loggedState, targetId, effectiveAmount)
 
   return loggedState
+}
+
+/**
+ * Charm Person / similar: charmed ends when the charmer or any ally on the charmer's side
+ * damages the target. Uses `sourceInstanceId` on the charmed marker as the charmer's combatant id.
+ */
+function removeCharmedFromCasterSideDamage(
+  state: EncounterState,
+  targetId: string,
+  attackerId: string | null,
+): EncounterState {
+  if (attackerId == null) return state
+  const attacker = state.combatantsById[attackerId]
+  const target = state.combatantsById[targetId]
+  if (!attacker || !target) return state
+
+  const remaining = target.conditions.filter((m) => {
+    if (m.label !== 'charmed' || !m.sourceInstanceId) return true
+    const charmer = state.combatantsById[m.sourceInstanceId]
+    if (!charmer) return true
+    return attacker.side !== charmer.side
+  })
+  if (remaining.length === target.conditions.length) return state
+
+  let nextState = updateCombatant(state, targetId, (c) => ({
+    ...c,
+    conditions: remaining,
+  }))
+  nextState = appendLog(nextState, {
+    type: 'condition-removed',
+    actorId: attackerId,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} loses condition: charmed (damaged by caster or ally).`,
+  })
+  return nextState
 }
 
 function checkConcentrationOnDamage(

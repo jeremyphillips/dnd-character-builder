@@ -723,6 +723,35 @@ describe('buildSpellCombatActions', () => {
     expect(actions[0]!.targeting?.creatureTypeFilter).toEqual(['humanoid'])
   })
 
+  it('maps direct creatureTypeFilter on targeting to combat action (Charm Person style)', () => {
+    const spell = makeSpell({
+      id: 'charm-person',
+      name: 'Charm Person',
+      level: 1,
+      effects: [
+        {
+          kind: 'targeting',
+          target: 'one-creature',
+          targetType: 'creature',
+          creatureTypeFilter: ['humanoid'],
+        },
+        {
+          kind: 'save',
+          save: { ability: 'wis' },
+          onFail: [{ kind: 'condition', conditionId: 'charmed' }],
+        },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['charm-person'],
+      spellsById: { 'charm-person': spell },
+    })
+
+    expect(actions[0]!.targeting?.creatureTypeFilter).toEqual(['humanoid'])
+  })
+
   it('maps area targeting to all-enemies', () => {
     const spell = makeSpell({
       id: 'fireball',

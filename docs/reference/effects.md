@@ -734,7 +734,7 @@ Adapter inputs derived from the caster:
 
 `CombatantInstance.creatureType` carries the creature's type at runtime. PCs currently default to `'humanoid'` (shim — will be derived from race/species once modeled). Monsters derive their type from `Monster.type`.
 
-`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type. Both the resolution engine (`getActionTargets`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
+`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type (compared case-insensitively to `CombatantInstance.creatureType` in `isValidActionTarget`). The spell combat adapter sets it from `targeting.creatureTypeFilter` or from `condition: { kind: 'creature-type', ... }` via `getSpellCreatureTypeFilter`. Both the resolution engine (`getActionTargets` / `getActionTargetCandidates`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
 
 ### Charmed Hostile-Action Restriction
 

@@ -37,7 +37,9 @@ function passesCreatureTypeFilter(
   filter: string[] | undefined,
 ): boolean {
   if (!filter || filter.length === 0) return true
-  return !!combatant.creatureType && filter.includes(combatant.creatureType)
+  const t = combatant.creatureType?.toLowerCase()
+  if (!t) return false
+  return filter.some((f) => f.toLowerCase() === t)
 }
 
 export function isHostileAction(action: CombatActionDefinition): boolean {

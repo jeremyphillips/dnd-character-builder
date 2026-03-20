@@ -1,4 +1,5 @@
 import type { Effect, EffectConditionId } from "@/features/mechanics/domain/effects/effects.types";
+import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
 import type { DamageType } from "./monster-combat.types";
 import type { EffectDuration, EffectUses } from "@/features/mechanics/domain/effects/timing.types";
 
@@ -45,4 +46,5 @@ export type MonsterTrait = {
     duration: EffectDuration;
   }
   notes?: string;
+  resolution?: ContentResolutionMeta;
 };

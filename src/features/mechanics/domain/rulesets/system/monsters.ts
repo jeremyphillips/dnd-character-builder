@@ -24,11 +24,12 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
   {
     id: "goblin-warrior",
     name: "Goblin Warrior",
-    type: "humanoid",
+    type: "fey",
+    subtype: "goblinoid",
     languages: [{ id: "common" }, { id: "goblin" }],
     sizeCategory: "small",
     description: {
-      short: "Small, malicious humanoids that dwell in dark underground lairs.",
+      short: "Small, malicious feys that dwell in dark underground lairs.",
       long: "Goblins are small, black-hearted creatures that lair in despoiled dungeons and other dismal settings. Individually weak, they gather in large numbers to torment other creatures.",
     },
     mechanics: {
@@ -143,12 +144,12 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
   {
     id: "gnoll-warrior",
     name: "Gnoll Warrior",
-    type: "humanoid",
+    type: "fiend",
     languages: [{ id: "gnoll" }],
     sizeCategory: "medium",
     description: {
-      short: "Hulking hyena-headed humanoids driven by an insatiable hunger.",
-      long: "Gnolls are tall, lanky humanoids with hyena-like heads. They are savage raiders who worship the demon lord Yeenoghu and leave destruction in their wake.",
+      short: "Hulking hyena-headed fiends driven by an insatiable hunger.",
+      long: "Gnolls are tall, lanky fiends with hyena-like heads. They are savage raiders who worship the demon lord Yeenoghu and leave destruction in their wake.",
     },
     mechanics: {
       hitPoints: { count: 6, die: 8 },
@@ -250,12 +251,12 @@ const MONSTERS_RAW: readonly MonsterFields[] = [
   {
     id: "kobold-warrior",
     name: "Kobold Warrior",
-    type: "humanoid",
+    type: "dragon",
     languages: [{ id: "common" }, { id: "draconic" }],
     sizeCategory: "small",
     description: {
-      short: "Diminutive, reptilian humanoids with a knack for traps and ambushes.",
-      long: "Kobolds are craven reptilian humanoids that commonly infest dungeons. They are physically weak but make up for it with cunning traps, overwhelming numbers, and a fanatical devotion to dragons.",
+      short: "Small diminutive, reptilian dragons with a knack for traps and ambushes.",
+      long: "Kobolds are craven reptilian dragons that commonly infest dungeons. They are physically weak but make up for it with cunning traps, overwhelming numbers, and a fanatical devotion to dragons.",
     },
     mechanics: {
       hitPoints: {

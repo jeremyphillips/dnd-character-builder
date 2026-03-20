@@ -7,6 +7,7 @@ import type { AbilityKey, AbilityRef } from '../character';
 import type { EffectDuration } from './timing.types';
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab';
 import type { MonsterSizeCategory, MonsterType } from '@/features/content/monsters/domain/vocab/monster.vocab';
+import type { EffectNoteCategory } from '@/features/mechanics/domain/resolution/content-resolution.types';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/engines/formula.engine';
 
@@ -414,7 +415,7 @@ export type AuraEffect = EffectBase<'aura'> & {
 
 export type NoteEffect = EffectBase<'note'> & {
   text: string;
-  category?: 'under-modeled' | 'flavor';
+  category?: EffectNoteCategory;
 };
 
 export type RemoveClassificationEffect = EffectBase<'remove-classification'> & {

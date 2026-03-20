@@ -7,7 +7,8 @@ import type { ContentItem } from '@/features/content/shared/domain/types/content
 import type { Distance } from '@/shared/distance';
 import type { Coin } from '@/shared/money/types';
 import type { TimeUnit } from '@/shared/time';
-import type { DiceOrFlat } from '@/features/mechanics/domain/dice';
+import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
+import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
 
 // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
@@ -108,8 +109,7 @@ export type SpellHpThresholdResolution = {
   aboveMaxHpEffects: SpellEffects
 }
 
-export type SpellResolutionMeta = {
-  caveats?: string[];
+export type SpellResolutionMeta = ContentResolutionMeta & {
   /** HP-gated delivery (e.g. Power Word Kill: at-or-below vs above threshold). */
   hpThreshold?: SpellHpThresholdResolution
   /**

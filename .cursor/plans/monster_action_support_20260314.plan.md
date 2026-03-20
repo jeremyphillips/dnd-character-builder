@@ -177,33 +177,33 @@ These are currently the most likely places where the canonical engine will still
 ### Phase 2: Save and branch execution
 
 1. Implement a shared special-action resolver for:
-   - `save`
-   - `onFail`
-   - `onSuccess`
-   - `halfDamageOnSave`
+  - `save`
+  - `onFail`
+  - `onSuccess`
+  - `halfDamageOnSave`
 2. Decide first-pass target model for:
-   - one target
-   - all creatures in area
-   - creatures entered during move
+  - one target
+  - all creatures in area
+  - creatures entered during move
 3. Log save DC, save branch taken, and resulting HP or state changes.
 
 ### Phase 3: On-hit effect execution
 
 1. Extend attack-roll resolution so natural and special actions can apply `onHitEffects`.
 2. Support at least:
-   - extra `damage`
-   - `condition`
-   - `state`
-   - `note`
-   - `death_outcome`
+  - extra `damage`
+  - `condition`
+  - `state`
+  - `note`
+  - `death_outcome`
 3. Keep interval and long-duration effect modeling shallow at first if they only need logging.
 
 ### Phase 4: Composite actions
 
 1. Generalize `sequence` support for:
-   - repeated child attacks
-   - mixed child action types
-   - state-derived counts
+  - repeated child attacks
+  - mixed child action types
+  - state-derived counts
 2. Make sequence logs readable enough to distinguish parent action declaration from child action resolution.
 
 ### Phase 5: Movement and targeting
@@ -211,16 +211,16 @@ These are currently the most likely places where the canonical engine will still
 1. Add first-pass action-side movement execution.
 2. Support forced movement and relocation payloads where already authored.
 3. Decide how far to go on boardless targeting:
-   - likely log intent plus mutate only what the engine can currently prove
+  - likely log intent plus mutate only what the engine can currently prove
 
 ### Phase 6: Persistent monster state
 
 1. Expand tracked-part support beyond hydra basics.
 2. Add first-pass support for:
-   - `tracked_part` change payloads
-   - `spawn`
-   - `form`
-   - containment-linked state
+  - `tracked_part` change payloads
+  - `spawn`
+  - `form`
+  - containment-linked state
 3. Keep unsupported payloads explicit in logs instead of silently dropping them.
 
 ### Phase 7: Resource and gate enforcement
@@ -308,3 +308,4 @@ This plan is complete when:
   - tracked-part monster
   - form-changing monster
 - the remaining unsupported monster effects are documented as explicit custom follow-up work
+

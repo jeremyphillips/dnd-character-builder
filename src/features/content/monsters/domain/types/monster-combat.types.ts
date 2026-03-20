@@ -33,17 +33,25 @@ export type TraitRollTarget =
 export type ImmunityType =
   | 'fire'
   | 'acid'
+  | 'cold'
+  | 'lightning'
+  | 'thunder'
   | 'poison'
   | 'necrotic'
   | 'radiant'
   | 'psychic'
   | 'force'
+  | 'bludgeoning'
+  | 'piercing'
+  | 'slashing'
   | 'charmed'
   | 'exhaustion'
   | 'blinded'
   | 'deafened'
   | 'frightened'
+  | 'grappled'
   | 'paralyzed'
+  | 'petrified'
   | 'poisoned'
   | 'prone'
   | 'restrained'
@@ -52,4 +60,21 @@ export type ImmunityType =
 
 export type VulnerabilityType =
   | 'bludgeoning'
-  | 'fire';
+  | 'fire'
+  | 'thunder';
+
+/** Damage types used for `mechanics.resistances` (half damage). */
+export type MonsterResistanceType =
+  | 'bludgeoning'
+  | 'piercing'
+  | 'slashing'
+  | 'fire'
+  | 'cold'
+  | 'acid'
+  | 'lightning'
+  | 'thunder'
+  | 'poison'
+  | 'necrotic'
+  | 'radiant'
+  | 'psychic'
+  | 'force';

@@ -1,7 +1,7 @@
 import type { useCombatStats } from '@/features/character/hooks'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { ImmunityType } from '@/features/content/monsters/domain/types/monster-combat.types'
+import type { ImmunityType, MonsterResistanceType } from '@/features/content/monsters/domain/types/monster-combat.types'
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { Effect, EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
@@ -46,6 +46,16 @@ function partitionMonsterImmunities(immunities: ImmunityType[]): {
   }
 
   return { damageImmunities, conditionImmunities }
+}
+
+function mapMonsterResistances(resistances: MonsterResistanceType[]): DamageResistanceMarker[] {
+  return resistances.map((r) => ({
+    id: `monster-resistance-${r}`,
+    damageType: r,
+    level: 'resistance' as const,
+    sourceId: 'monster-innate',
+    label: `resistance to ${r}`,
+  }))
 }
 
 export function formatSigned(value: number): string {
@@ -173,6 +183,10 @@ export function buildMonsterCombatantInstance(args: {
     monster.mechanics.immunities ?? [],
   )
 
+  const resistanceMarkers: DamageResistanceMarker[] = mapMonsterResistances(
+    monster.mechanics.resistances ?? [],
+  )
+
   const vulnerabilityMarkers: DamageResistanceMarker[] = (monster.mechanics.vulnerabilities ?? []).map(
     (v) => ({
       id: `monster-vulnerability-${v}`,
@@ -253,7 +267,7 @@ export function buildMonsterCombatantInstance(args: {
     runtimeEffects: [],
     turnHooks,
     suppressedHooks: [],
-    damageResistanceMarkers: [...damageImmunities, ...vulnerabilityMarkers],
+    damageResistanceMarkers: [...damageImmunities, ...resistanceMarkers, ...vulnerabilityMarkers],
     conditionImmunities: conditionImmunities.length > 0 ? conditionImmunities : undefined,
     turnContext: {
       totalDamageTaken: 0,

@@ -400,7 +400,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
       ],
     },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
       {
         kind: 'save',
         save: { ability: 'wis' },

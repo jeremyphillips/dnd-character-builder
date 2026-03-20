@@ -1,4 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
+import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import {
   calculateCreatureArmorClass,
   type CreatureArmorCatalogEntry,
@@ -8,14 +9,6 @@ import {
 
 type ArmorCatalog = Record<string, CreatureArmorCatalogEntry>
 type MonsterArmorSource = Pick<Monster, 'mechanics'>
-
-function getMonsterDexterityScore(monster: MonsterArmorSource): number {
-  const abilities = monster.mechanics.abilities as
-    | { dexterity?: number; dex?: number }
-    | undefined
-
-  return abilities?.dexterity ?? abilities?.dex ?? 10
-}
 
 function resolveMonsterArmorReference(
   monster: MonsterArmorSource,
@@ -52,7 +45,7 @@ export function calculateMonsterArmorClass(
     }
   }
 
-  const dexterityScore = getMonsterDexterityScore(monster)
+  const dexterityScore = getAbilityScoreValue(monster.mechanics.abilities, 'dex')
   const dexApplies = armorClass.dexApplies ?? true
   const maxDexBonus = armorClass.maxDexBonus
 

@@ -88,6 +88,7 @@ function buildAttackActions(
     label: attack.name,
     kind,
     cost: { action: true },
+    targeting: { kind: 'single-target' as const },
     resolutionMode: attack.attackBonus != null ? 'attack-roll' : 'log-only',
     attackProfile:
       attack.attackBonus != null

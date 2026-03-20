@@ -253,6 +253,11 @@ export type TargetingEffect = EffectBase<'targeting'> & {
     | 'creatures-in-area'
     | 'creatures-entered-during-move';
   targetType?: 'creature';
+  /**
+   * Touch-style buffs ("willing creature"): combat maps to same-side targets only (caster + allies).
+   * Willing is approximated as allies until explicit consent is modeled.
+   */
+  requiresWilling?: boolean;
   creatureTypeFilter?: MonsterType[];
   rangeFeet?: number;
   requiresSight?: boolean;

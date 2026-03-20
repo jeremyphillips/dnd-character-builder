@@ -117,7 +117,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'Receive omen about planned action within 30 minutes. Cumulative 25% no-answer on repeat casts.',
     },
   },
-{
+  {
     id: 'barkskin',
     name: 'Barkskin',
     school: 'transmutation',
@@ -128,7 +128,12 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a handful of bark' } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       { kind: 'modifier', target: 'armor_class', mode: 'set', value: 17 },
     ],
     description: {
@@ -136,7 +141,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'Touch grants AC 17 (if lower) for 1 hour. Bark-like appearance.',
     },
   },
-{
+  {
     id: 'blindness-deafness',
     name: 'Blindness/Deafness',
     school: 'transmutation',
@@ -521,7 +526,12 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'an eyelash in gum arabic' } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       { kind: 'condition', conditionId: 'invisible' },
       {
         kind: 'note',
@@ -539,7 +549,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'A creature you touch becomes Invisible for up to 1 hour; ends if the target attacks, deals damage, or casts a spell.',
     },
   },
-{
+  {
     id: 'knock',
     name: 'Knock',
     school: 'transmutation',

@@ -99,7 +99,11 @@ function getSpellCreatureTypeFilter(spell: Spell): string[] | undefined {
   return undefined
 }
 
-function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' | 'dead-creature'; creatureTypeFilter?: string[] } {
+function buildSpellTargeting(spell: Spell): {
+  kind: 'single-target' | 'all-enemies' | 'self' | 'single-creature' | 'dead-creature'
+  creatureTypeFilter?: string[]
+  requiresWilling?: boolean
+} {
   if (spell.range?.kind === 'self') return { kind: 'self' }
   const effects = spell.effects ?? []
   const hasDeadCreatureTargeting = effects.some(
@@ -110,6 +114,9 @@ function buildSpellTargeting(spell: Spell): { kind: 'single-target' | 'all-enemi
   if (hasHealing) return { kind: 'single-creature' }
   const targeting = effects.find((e) => e.kind === 'targeting')
   const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
+  if (targeting?.kind === 'targeting' && targeting.requiresWilling) {
+    return { kind: 'single-target', creatureTypeFilter, requiresWilling: true }
+  }
   if (targeting?.kind === 'targeting' && targeting.area) return { kind: 'all-enemies', creatureTypeFilter }
   if (targeting?.kind === 'targeting' && targeting.target === 'creatures-in-area') return { kind: 'all-enemies', creatureTypeFilter }
   return { kind: 'single-target', creatureTypeFilter }

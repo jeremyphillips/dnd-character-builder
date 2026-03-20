@@ -14,4 +14,9 @@ export interface ResolveCombatActionOptions {
    * - Warlock pact: Different period (short-rest); would need separate callback or payload.
    */
   onSpellSlotSpent?: (sourceId: string, spellId: string) => void
+  /**
+   * When true (default), hostile `single-target` actions cannot target same-side combatants (legacy "enemies only").
+   * Set false for pure core (friendly fire / PC vs PC on same side allowed). Prefer driving from ruleset `mechanics.combat.encounter.suppressSameSideHostile` in app code.
+   */
+  suppressSameSideHostileActions?: boolean
 }

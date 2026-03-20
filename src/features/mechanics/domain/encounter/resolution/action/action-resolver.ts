@@ -29,7 +29,7 @@ import {
   canUseCombatAction,
   spendCombatActionUsage,
 } from './action-cost'
-import { getActionTargets, getSequenceStepCount } from './action-targeting'
+import { getActionTargets, getSequenceStepCount, type ActionTargetingResolveOptions } from './action-targeting'
 import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSaveModifier } from './action-effects'
 
 export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
@@ -162,6 +162,10 @@ type InternalResolutionResult = {
   createdMarkerIds: string[]
 }
 
+function resolveTargetingOptions(options: ResolveCombatActionOptions): ActionTargetingResolveOptions {
+  return { suppressSameSideHostileActions: options.suppressSameSideHostileActions !== false }
+}
+
 function resolveCombatActionInternal(
   state: EncounterState,
   selection: ResolveCombatActionSelection,
@@ -174,6 +178,8 @@ function resolveCombatActionInternal(
 
   const action = getCombatantActions(actor).find((candidate) => candidate.id === selection.actionId)
   if (!action) return noOp
+
+  const targetingOptions = resolveTargetingOptions(options)
 
   const resources = getCombatantTurnResources(actor)
   if (!behavior.skipCost && !canSpendActionCost(resources, action.cost)) {
@@ -191,7 +197,7 @@ function resolveCombatActionInternal(
   }
   if (!behavior.skipCost && !canUseCombatAction(action)) return noOp
 
-  const targets = getActionTargets(state, actor, selection, action)
+  const targets = getActionTargets(state, actor, selection, action, targetingOptions)
   const target = targets[0]
   if (action.resolutionMode === 'attack-roll') {
     if (!target) {

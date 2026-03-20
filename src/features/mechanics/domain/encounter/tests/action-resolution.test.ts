@@ -1387,10 +1387,11 @@ describe('resolveCombatAction', () => {
 
     expect(withShield.combatantsById['caster']?.stats.armorClass).toBe(17)
 
-    const afterEnemyTurn = advanceEncounterTurn(withShield)
+    const initiativeRng = () => 0.1
+    const afterEnemyTurn = advanceEncounterTurn(withShield, { rng: initiativeRng })
     expect(afterEnemyTurn.combatantsById['caster']?.stats.armorClass).toBe(17)
 
-    const afterCasterTurnStart = advanceEncounterTurn(afterEnemyTurn)
+    const afterCasterTurnStart = advanceEncounterTurn(afterEnemyTurn, { rng: initiativeRng })
     expect(afterCasterTurnStart.combatantsById['caster']?.stats.armorClass).toBe(12)
     expect(afterCasterTurnStart.combatantsById['caster']?.statModifiers).toHaveLength(0)
     expect(afterCasterTurnStart.log.some((entry) => entry.summary.includes('stat modifier expires'))).toBe(true)
@@ -1677,5 +1678,105 @@ describe('resolveCombatAction', () => {
       { rng: () => 0.5 },
     )
     expect(rHigh.combatantsById['high']?.stats.currentHitPoints).toBe(147)
+  })
+
+  it('allows same-side hostile single-target when suppressSameSideHostileActions is false', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'a',
+          label: 'Fighter A',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 16,
+          armorClass: 16,
+          actions: [
+            {
+              id: 'slash',
+              label: 'Slash',
+              kind: 'weapon-attack',
+              cost: { action: true },
+              resolutionMode: 'attack-roll',
+              targeting: { kind: 'single-target' },
+              attackProfile: {
+                attackBonus: 5,
+                damage: '1d6 + 2',
+                damageType: 'slashing',
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'b',
+          label: 'Fighter B',
+          side: 'party',
+          initiativeModifier: 4,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'a', targetId: 'b', actionId: 'slash' },
+      {
+        rng: () => 0.7,
+        suppressSameSideHostileActions: false,
+      },
+    )
+
+    expect(resolved.combatantsById['b']?.stats.currentHitPoints).toBeLessThan(12)
+  })
+
+  it('blocks same-side hostile single-target when suppressSameSideHostileActions is true', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'a',
+          label: 'Fighter A',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 16,
+          armorClass: 16,
+          actions: [
+            {
+              id: 'slash',
+              label: 'Slash',
+              kind: 'weapon-attack',
+              cost: { action: true },
+              resolutionMode: 'attack-roll',
+              targeting: { kind: 'single-target' },
+              attackProfile: {
+                attackBonus: 5,
+                damage: '1d6 + 2',
+                damageType: 'slashing',
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'b',
+          label: 'Fighter B',
+          side: 'party',
+          initiativeModifier: 4,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'a', targetId: 'b', actionId: 'slash' },
+      {
+        rng: () => 0.7,
+        suppressSameSideHostileActions: true,
+      },
+    )
+
+    expect(resolved.combatantsById['b']?.stats.currentHitPoints).toBe(12)
   })
 })

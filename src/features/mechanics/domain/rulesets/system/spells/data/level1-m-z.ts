@@ -336,7 +336,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: 'Touch: Speed +10 ft per target. Scales with targets.',
     },
   },
-{
+  {
     id: 'mage-armor',
     name: 'Mage Armor',
     school: 'abjuration',
@@ -356,7 +356,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: 'Touch unarmored willing creature: AC 13 + Dex for 8 hours.',
     },
   },
-{
+  {
     id: 'magic-missile',
     name: 'Magic Missile',
     school: 'evocation',
@@ -398,7 +398,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: 'Three automatic-hit darts deal 1d4 + 1 force damage each and can be split among visible creatures in range.',
     },
   },
- {
+  {
     id: 'protection-from-evil',
     name: 'Protection from Evil and Good',
     school: 'abjuration',
@@ -409,7 +409,12 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true },
     components: { verbal: true, somatic: true, material: { description: 'a flask of Holy Water', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       {
         kind: 'roll-modifier',
         appliesTo: 'attack-rolls',
@@ -439,7 +444,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: 'Touch a willing creature to protect it against Aberrations, Celestials, Elementals, Fey, Fiends, and Undead for up to 10 minutes.',
     },
   },
- {
+  {
     id: 'purify-food-and-drink',
     name: 'Purify Food and Drink',
     school: 'transmutation',

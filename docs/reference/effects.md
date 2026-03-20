@@ -130,7 +130,7 @@ Status meanings:
 - Purpose: selection and affected-entity shape
 - Use when: modeling targets, areas, sight requirements, target count, repeat-target rules, creature type restrictions
 - Do not use when: storing spell placement range or save/damage outcomes
-- Key fields: `target`, `targetType`, `creatureTypeFilter`, `condition` (effect meta), `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
+- Key fields: `target`, `targetType`, `requiresWilling` (touch buffs: willing creature ≈ same-side allies in encounter), `creatureTypeFilter`, `condition` (effect meta), `requiresSight`, `count`, `canSelectSameTargetMultipleTimes`, `area`
 
 ```ts
 { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } }

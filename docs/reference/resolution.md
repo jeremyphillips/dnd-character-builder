@@ -123,20 +123,25 @@ The encounter action system resolves combat actions against encounter state:
 
 **Action targeting kinds:**
 
-- `single-target` — one enemy combatant (opposite side, HP > 0)
+- `single-target` — one living combatant (HP > 0) subject to policy below; weapon attacks and most offensive spells use this kind
 - `all-enemies` — all living enemy combatants
 - `self` — the acting combatant
 - `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
 - `dead-creature` — any combatant at 0 HP regardless of side (used by resurrection spells)
 - `entered-during-move` — creatures entered during movement
 
+**Targeting profile fields:**
+
+- `requiresWilling` — when `true` on `single-target`, valid targets are same-side only (caster + allies); “willing” is approximated as allies until explicit consent exists. Such actions are **non-hostile** for charm / hostile-action rules. Authored on spells via `targeting.requiresWilling` in spell effects.
+- `suppressSameSideHostileActions` — passed through `ResolveCombatActionOptions` (default **true** when omitted: legacy “no friendly fire”). When **true**, hostile `single-target` actions cannot target same-side combatants. When **false**, core resolution allows same-side targets (e.g. PC vs PC). Campaign/app code can drive this from `mechanics.combat.encounter.suppressSameSideHostile` on the ruleset.
+
 **Targeting query layer** (`action-targeting.ts`):
 
 Targeting validation is centralized so the resolver and UI share a single source of truth:
 
-- `isValidActionTarget(combatant, actor, action)` — pure predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, and side filtering for a single combatant.
-- `getActionTargetCandidates(state, actor, action)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
-- `getActionTargets(state, actor, selection, action)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
+- `isValidActionTarget(combatant, actor, action, options?)` — predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, `requiresWilling` (same-side), and optional same-side suppression for hostile `single-target` actions.
+- `getActionTargetCandidates(state, actor, action, options?)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
+- `getActionTargets(state, actor, selection, action, options?)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
 
 ### 4.5 Condition Consequence Framework
 

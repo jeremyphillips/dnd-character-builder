@@ -40,6 +40,11 @@ export interface CombatActionSaveProfile {
 export interface CombatActionTargetingProfile {
   kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self' | 'single-creature' | 'dead-creature'
   creatureTypeFilter?: string[]
+  /**
+   * "Willing creature" touch buffs: valid targets are same-side only (caster + allies). For now this is the ally approximation.
+   * Non-hostile for charm/hostile-action rules.
+   */
+  requiresWilling?: boolean
 }
 
 export interface CombatActionMovementProfile {

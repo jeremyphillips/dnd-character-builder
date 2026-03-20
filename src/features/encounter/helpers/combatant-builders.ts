@@ -88,6 +88,7 @@ function buildAttackActions(
     label: attack.name,
     kind,
     cost: { action: true },
+    targeting: { kind: 'single-target' as const },
     resolutionMode: attack.attackBonus != null ? 'attack-roll' : 'log-only',
     attackProfile:
       attack.attackBonus != null
@@ -125,6 +126,9 @@ export function buildCharacterCombatantInstance(args: {
       label: formatRuntimeLabel(character.name, runtimeId, character.id),
     },
     creatureType: 'humanoid',
+    equipment: {
+      armorEquipped: character.combat?.loadout?.armorId ?? null,
+    },
     stats: {
       armorClass: combatStats.armorClass,
       maxHitPoints: character.hitPoints.total,
@@ -185,6 +189,9 @@ export function buildMonsterCombatantInstance(args: {
       label: formatRuntimeLabel(monster.name, runtimeId, monster.id),
     },
     creatureType: monster.type,
+    equipment: {
+      armorEquipped: null,
+    },
     stats: {
       armorClass,
       maxHitPoints: currentHitPoints,

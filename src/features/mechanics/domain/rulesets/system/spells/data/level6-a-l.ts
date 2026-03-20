@@ -1,5 +1,11 @@
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 6 spells A–L — authoring status:
+ * - **Attack/save/AoE modeled:** Blade Barrier, Chain Lightning, Circle of Death, Disintegrate, Flesh to Stone, Freezing Sphere, Harm, Irresistible Dance (in m–z), Sunbeam (in m–z).
+ * - **Utility / divination / ritual:** Contingency, Find the Path, Instant Summons (in m–z), True Seeing (in m–z).
+ * - **Note-first / wards / heavy caveats:** Blade Barrier, Conjure Fey, Create Undead, Forbiddance, Freezing Sphere, Globe of Invulnerability, Guards and Wards, Harm, etc.
+ */
 export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
 {
     id: 'blade-barrier',
@@ -11,7 +17,24 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Wall 100ft long or 60ft ring, 20ft high, 5ft thick. Three-Quarters Cover, Difficult Terrain. Dex save 6d10 Force.' }],
+    resolution: {
+      caveats: [
+        'Damage applies only to creatures in the wall’s space; geometry (straight wall vs ring) is narrative-only.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Wall 100ft long or 60ft ring, 20ft high, 5ft thick. Three-Quarters Cover; the wall’s space is Difficult Terrain.',
+        category: 'under-modeled' as const,
+      },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [{ kind: 'damage', damage: '6d10', damageType: 'force' }],
+        onSuccess: [{ kind: 'damage', damage: '3d10', damageType: 'force' }],
+      },
+    ],
     description: {
       full: "You create a wall of whirling blades made of magical energy. The wall appears within range and lasts for the duration. You make a straight wall up to 100 feet long, 20 feet high, and 5 feet thick, or a ringed wall up to 60 feet in diameter, 20 feet high, and 5 feet thick. The wall provides Three-Quarters Cover, and its space is Difficult Terrain. Any creature in the wall's space makes a Dexterity saving throw, taking 6d10 Force damage on a failed save or half as much on a successful one.",
       summary: 'Wall of blades: 6d10 Force, Dex save for half. Three-Quarters Cover, Difficult Terrain.',
@@ -27,6 +50,11 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a bit of fur, a piece of amber, and a crystal rod' } },
+    resolution: {
+      caveats: [
+        'Primary bolt modeled; additional bolts (each with its own save) are summarized in notes.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
@@ -53,6 +81,11 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'the powder of a crushed black pearl worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Large spherical AoE may affect many targets; adjudicate cover and position separately.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 60 } },
       {
@@ -78,12 +111,19 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Summon stat block and command economy (Bonus Action teleport + attack) are not represented as a full combatant.',
+      ],
+    },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
-      { kind: 'damage', damage: '3d12', damageType: 'psychic' },
-      { kind: 'condition', conditionId: 'frightened', duration: { kind: 'until-turn-boundary', subject: 'self', turn: 'next', boundary: 'start' } },
-      { kind: 'note', text: 'Medium Fey spirit. Melee spell attack on appearance. Bonus Action on later turns: teleport 30ft and attack again.', category: 'under-modeled' as const },
+      {
+        kind: 'note',
+        text: 'Medium Fey spirit in an unoccupied space. When it appears, you may make one melee spell attack vs a creature within 5 feet of the spirit. On a hit: 3d12 + spellcasting modifier Psychic, and Frightened until the start of your next turn. Bonus Action on later turns: teleport the spirit up to 30 feet to an unoccupied space and repeat the attack.',
+        category: 'under-modeled' as const,
+      },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d12 psychic per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '1d12' }],
     description: {
       full: "You conjure a Medium spirit from the Feywild in an unoccupied space you can see within range. The spirit looks like a Fey creature of your choice. When the spirit appears, you can make one melee spell attack against a creature within 5 feet of it. On a hit, the target takes Psychic damage equal to 3d12 plus your spellcasting ability modifier, and the target has the Frightened condition until the start of your next turn. As a Bonus Action on your later turns, you can teleport the spirit to an unoccupied space within 30 feet and make the attack. Using a Higher-Level Spell Slot. The damage increases by 1d12 for each spell slot level above 6.",
       summary: 'Fey spirit: melee spell attack 3d12+mod Psychic, Frightened. Bonus teleport and attack. Scales with slot.',
@@ -99,7 +139,18 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'day' },
     components: { verbal: true, somatic: true, material: { description: 'a gem-encrusted statuette of yourself worth 1,500+ GP', cost: { value: 1500, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Cast spell 5th or lower (action, can target you) as contingent. Describe trigger. Takes effect when trigger occurs. One Contingency at a time.' }],
+    resolution: {
+      caveats: [
+        'Contingent spell choice, trigger wording, and interaction timing are table/GM adjudicated.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Cast a spell of 5th level or lower (casting time 1 action, can target you) as part of this casting; describe a trigger. The contingent spell takes effect on you when the trigger first occurs. Only one Contingency at a time; ends if the material component leaves your person.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Choose a spell of level 5 or lower that you can cast, that has a casting time of an action, and that can target you. You cast that spell—called the contingent spell—as part of casting Contingency, expending spell slots for both, but the contingent spell doesn't come into effect. Instead, it takes effect when a certain trigger occurs. You describe that trigger when you cast the two spells. The contingent spell takes effect immediately after the trigger occurs for the first time. The contingent spell takes effect only on you. You can use only one Contingency spell at a time. Contingency ends if its material component is ever not on your person.",
       summary: 'Store spell (5th or lower) to trigger on condition. One at a time.',
@@ -115,7 +166,18 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'one 150+ GP black onyx stone per corpse', cost: { value: 150, unit: 'gp', atLeast: true } } },
-    effects: [{ kind: 'note', text: 'Night only. Up to 3 corpses become Ghouls. Control 24h; re-cast to maintain. Slot 7: 4 Ghouls. Slot 8: 5 Ghouls or 2 Ghasts/Wights. Slot 9: 6 Ghouls, 3 Ghasts/Wights, or 2 Mummies.' }],
+    resolution: {
+      caveats: [
+        'Created undead use stat blocks and are not spawned as full encounter actors here.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Night only. Up to 3 corpses become Ghouls. Control 24h; re-cast to maintain. Slot 7: 4 Ghouls. Slot 8: 5 Ghouls or 2 Ghasts/Wights. Slot 9: 6 Ghouls, 3 Ghasts/Wights, or 2 Mummies.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You can cast this spell only at night. Choose up to three corpses of Medium or Small Humanoids within range. Each one becomes a Ghoul under your control. Bonus Action to command within 120 feet. Control 24 hours; re-cast to maintain. Using a Higher-Level Spell Slot. Level 7: 4 Ghouls. Level 8: 5 Ghouls or 2 Ghasts/Wights. Level 9: 6 Ghouls, 3 Ghasts/Wights, or 2 Mummies.",
       summary: 'Create Ghouls from corpses. Control 24h. Scales with slot (Ghasts, Wights, Mummies).',
@@ -131,12 +193,18 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a lodestone and pinch of dust' } },
+    resolution: {
+      caveats: [
+        'Objects, magical-force creations, and Huge+ partial destruction use different rules than the creature save modeled here.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
         kind: 'save',
         save: { ability: 'dex' },
         onFail: [{ kind: 'damage', damage: '10d6+40', damageType: 'force' }],
+        onSuccess: [{ kind: 'damage', damage: '5d6+20', damageType: 'force' }],
       },
       { kind: 'note', text: 'Target reduced to 0 HP is disintegrated (turned to fine gray dust). Nonmagical objects and Huge or smaller creations of magical force are automatically destroyed.', category: 'flavor' as const },
     ],
@@ -156,6 +224,11 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Chosen effect (asleep / panicked / sickened) and per-turn retargeting are not split into separate effect payloads.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
       {
@@ -182,6 +255,11 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'day', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a set of divination tools worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Fails for other planes, moving destinations, or vague destinations; route is informational only.',
+      ],
+    },
     effects: [
       { kind: 'state', stateId: 'find-the-path', notes: 'Know most direct physical route to a named familiar location. Know distance, direction, and which path at choices.' },
     ],
@@ -200,6 +278,11 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a cockatrice feather' } },
+    resolution: {
+      caveats: [
+        'Restrained vs repeated saves toward Petrified, and “full concentration” permanency, require manual tracking.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
@@ -224,10 +307,16 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'day' },
     components: { verbal: true, somatic: true, material: { description: 'ruby dust worth 1,000+ GP', cost: { value: 1000, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Areas cannot overlap another Forbiddance; 30-day renewal for permanent ward is narrative.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Ward 40,000 sq ft, 30ft high. No teleport/portals. Choose creature types: 5d10 radiant or necrotic when entering/ending turn. Password exempts. 30 days casting: until dispelled.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -245,10 +334,29 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 300, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a miniature crystal sphere' } },
+    resolution: {
+      caveats: [
+        'Optional held globe (delayed detonation) and water-freezing rider are not separate automated branches.',
+      ],
+    },
+    scaling: [{ category: 'extra-damage', description: '+1d6 cold per slot level above 6', mode: 'per-slot-level', startsAtSlotLevel: 7, amount: '1d6' }],
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'sphere', size: 60 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '10d6', damageType: 'cold' }],
+        onSuccess: [{ kind: 'damage', damage: '5d6', damageType: 'cold' }],
+      },
+      {
         kind: 'note',
-        text: '60-foot sphere: Con save or 10d6 cold. Water: 6in ice 30ft square. Can hold globe, throw/sling later. +1d6 per slot above 6.',
+        text: 'Frigid globe to a point in range; explosion is a 60-foot-radius sphere. Water: freeze 6 inches deep over a 30-foot square (1 minute). You may complete the spell with a held globe (throw 40ft or sling) that shatters on impact or explodes after 1 minute.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -266,10 +374,16 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a glass bead' } },
+    resolution: {
+      caveats: [
+        'Spell-level cutoff (5th at base, +1 per slot above 6th) must be compared to incoming spell slot.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '10-foot emanation. Spells 5th or lower from outside cannot affect inside. +1 level blocked per slot above 6.',
+        text: '10-foot emanation. Spells of 5th level or lower cast from outside the barrier cannot affect creatures or objects inside (+1 blocked level per slot level above 6).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -287,10 +401,16 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a silver rod worth 10+ GP', cost: { value: 10, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Corridor/door/stair bundles and 365-day permanency are summarized, not each sub-effect.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Ward up to 2,500 sq ft. Fog, locked doors, illusions, Dancing Lights, Magic Mouth, Stinking Cloud, Gust of Wind, Suggestion. 365 days: until dispelled.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -308,10 +428,23 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Hit Point maximum reduction applies only on a failed save and cannot reduce max HP below 1.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'con' },
+        onFail: [{ kind: 'damage', damage: '14d6', damageType: 'necrotic' }],
+        onSuccess: [{ kind: 'damage', damage: '7d6', damageType: 'necrotic' }],
+      },
       {
         kind: 'note',
-        text: 'Creature: Con save or 14d6 necrotic, HP max reduced by damage. Half on success. Cannot reduce HP max below 1.',
+        text: 'On a failed save, the target’s Hit Point maximum is reduced by the necrotic damage it took (not on a successful save).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

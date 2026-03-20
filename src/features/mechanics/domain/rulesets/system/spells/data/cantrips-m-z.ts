@@ -1,6 +1,12 @@
 import type { SpellEntry } from '../types';
 import { cantripDamageScaling } from '../shared';
 
+/**
+ * Cantrips M–Z — authoring status:
+ * - **Structured damage/save:** Poison Spray, Ray of Frost, Shocking Grasp, Starry Wisp (attack); Vicious Mockery (save + damage); Sorcerous Burst (base 1d8 hit + under-modeled rider).
+ * - **Targeting + caveats/notes:** Spare the Dying (`one-dead-creature` + stable/range under-modeled); Resistance (touch + caveats).
+ * - **Note-first (utility / multi-mode):** Prestidigitation, Produce Flame, Shillelagh, Thaumaturgy, True Strike — not worth faking as full `effects` until weapon/light/submode engines exist.
+ */
 export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
 {
     id: 'poison-spray',
@@ -14,9 +20,12 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
-        kind: 'note',
-        text: 'Ranged spell attack: 1d12 poison. Scales at 5/11/17.',
+        kind: 'damage',
+        damage: '1d12',
+        damageType: 'poison',
+        levelScaling: cantripDamageScaling('d12'),
       },
     ],
     description: {
@@ -78,9 +87,17 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d8',
+        damageType: 'cold',
+        levelScaling: cantripDamageScaling('d8'),
+      },
       {
         kind: 'note',
-        text: 'Ranged spell attack: 1d8 cold, Speed reduced by 10ft until start of your next turn. Scales at 5/11/17.',
+        text: "On a hit, the target's Speed is reduced by 10 feet until the start of your next turn. Not tracked in encounter.",
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -98,10 +115,17 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Damage-type choice, 1d4 reduction trigger, and once-per-turn limit are not enforced in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
         kind: 'note',
         text: 'Touch willing creature, choose damage type. When creature takes that damage type before spell ends, reduce damage by 1d4. Once per turn.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -174,9 +198,17 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     deliveryMethod: 'melee-spell-attack',
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d8',
+        damageType: 'lightning',
+        levelScaling: cantripDamageScaling('d8'),
+      },
       {
         kind: 'note',
-        text: 'Melee spell attack: 1d8 lightning. Target cannot make Opportunity Attacks until start of your next turn. Scales at 5/11/17.',
+        text: "On a hit, the target can't make Opportunity Attacks until the start of its next turn. Not tracked in encounter.",
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -195,10 +227,24 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'Damage type is chosen at cast time; encounter uses a single type for logging.',
+        'Exploding 8s and extra d8 dice cap are not resolved.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d8',
+        damageType: 'fire',
+        levelScaling: cantripDamageScaling('d8'),
+      },
       {
         kind: 'note',
-        text: 'Ranged spell attack: 1d8 damage (choose Acid, Cold, Fire, Lightning, Poison, Psychic, Thunder). Roll 8 on d8: add another d8, up to spellcasting mod extra d8s. Scales at 5/11/17.',
+        text: 'Choose Acid, Cold, Fire, Lightning, Poison, Psychic, or Thunder when you cast. On any d8 damage roll of 8, roll another d8 (repeat), up to a maximum number of extra d8s equal to your spellcasting ability modifier.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -216,10 +262,17 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 15, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Stable condition and cantrip range scaling are not applied in encounter.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
       {
         kind: 'note',
-        text: 'Creature with 0 HP and not dead becomes Stable. Range doubles at 5 (30ft), 11 (60ft), 17 (120ft).',
+        text: 'A non-dead creature that has 0 Hit Points becomes Stable. Cantrip Upgrade doubles range at levels 5 (30 ft), 11 (60 ft), and 17 (120 ft).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -239,9 +292,17 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d8',
+        damageType: 'radiant',
+        levelScaling: cantripDamageScaling('d8'),
+      },
       {
         kind: 'note',
-        text: 'Ranged spell attack: 1d8 radiant. Until end of your next turn target emits Dim Light 10ft, cannot benefit from Invisible. Scales at 5/11/17.',
+        text: "Until the end of your next turn, the target emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition. Not tracked in encounter.",
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -301,10 +362,30 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Rules allow targeting by sight or hearing; encounter targeting uses sight only.',
+        'Disadvantage applies only to the next attack roll before the end of the target’s next turn; not modeled as a single-roll marker.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [
+          {
+            kind: 'damage',
+            damage: '1d6',
+            damageType: 'psychic',
+            levelScaling: cantripDamageScaling('d6'),
+          },
+        ],
+      },
       {
         kind: 'note',
-        text: 'One creature Wis save or 1d6 psychic and Disadvantage on next attack before end of its next turn. Scales at 5/11/17.',
+        text: 'On a failed save, the target has Disadvantage on the next attack roll it makes before the end of its next turn.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

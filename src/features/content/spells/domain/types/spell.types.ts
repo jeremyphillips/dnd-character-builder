@@ -101,9 +101,23 @@ export type SpellScalingRule = {
   amount?: DiceOrFlat;
 };
 
+/** Encounter/combat adapter extras; keep spell effects as the primary payload. */
+export type SpellHpThresholdResolution = {
+  maxHp: number
+  /** When target current HP is **greater** than `maxHp`, these effects apply instead of the spell’s main `effects` (after targeting is stripped). */
+  aboveMaxHpEffects: SpellEffects
+}
+
 export type SpellResolutionMeta = {
   caveats?: string[];
-};
+  /** HP-gated delivery (e.g. Power Word Kill: at-or-below vs above threshold). */
+  hpThreshold?: SpellHpThresholdResolution
+  /**
+   * Override derived spell hostility for encounter/charm rules.
+   * `true` = hostile application; `false` = non-hostile. Omit to use adapter-derived hostility from effects.
+   */
+  hostileIntent?: boolean
+}
 
 export type SpellResolutionStatus = 'stub' | 'partial' | 'full';
 

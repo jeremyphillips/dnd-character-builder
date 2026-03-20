@@ -200,6 +200,7 @@ function buildMonsterActionDefinition(
       label: equippedWeapon?.aliasName ?? weapon?.name ?? action.weaponRef,
       kind: 'monster-action',
       cost,
+      targeting: { kind: 'single-target' },
       resolutionMode:
         equippedWeapon?.attackBonus != null || resolvedWeaponAttack?.attackBonus != null
           ? 'attack-roll'
@@ -228,6 +229,7 @@ function buildMonsterActionDefinition(
       label: action.name ?? action.attackType,
       kind: 'monster-action',
       cost,
+      targeting: { kind: 'single-target' },
       resolutionMode: action.attackBonus != null ? 'attack-roll' : 'log-only',
       attackProfile:
         action.attackBonus != null

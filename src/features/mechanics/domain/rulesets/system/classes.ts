@@ -21,9 +21,7 @@ const CLASSES_RAW: readonly CharacterClass[] = [
       id: 'fighter_subclasses',
       name: 'Fighter Subclasses',
       selectionLevel: 3,
-      options: [
-        { id: 'champion', name: 'Champion' },
-      ],
+      options: [{ id: 'champion', name: 'Champion' }],
     },
     generation: { primaryAbilities: ['str', 'dex'] },
     progression: {

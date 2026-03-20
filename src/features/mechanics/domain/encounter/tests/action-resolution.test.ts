@@ -12,6 +12,8 @@ function createCombatant(args: {
   initiativeModifier: number
   dexterityScore: number
   armorClass: number
+  maxHitPoints?: number
+  currentHitPoints?: number
   abilityScores?: {
     strength?: number
     dexterity?: number
@@ -29,6 +31,9 @@ function createCombatant(args: {
     charisma?: number
   }
   actions?: CombatActionDefinition[]
+  conditions?: Array<{ label: string }>
+  states?: Array<{ label: string }>
+  equipment?: { armorEquipped?: string | null }
 }): CombatantInstance {
   return {
     instanceId: args.instanceId,
@@ -38,10 +43,11 @@ function createCombatant(args: {
       sourceId: args.instanceId,
       label: args.label,
     },
+    ...(args.equipment !== undefined ? { equipment: args.equipment } : {}),
     stats: {
       armorClass: args.armorClass,
-      maxHitPoints: 12,
-      currentHitPoints: 12,
+      maxHitPoints: args.maxHitPoints ?? 12,
+      currentHitPoints: args.currentHitPoints ?? args.maxHitPoints ?? 12,
       initiativeModifier: args.initiativeModifier,
       dexterityScore: args.dexterityScore,
       abilityScores: {
@@ -61,8 +67,14 @@ function createCombatant(args: {
     activeEffects: [],
     runtimeEffects: [],
     turnHooks: [],
-    conditions: [],
-    states: [],
+    conditions: (args.conditions ?? []).map((c, i) => ({
+      id: `test-c-${args.instanceId}-${i}`,
+      label: c.label,
+    })),
+    states: (args.states ?? []).map((s, i) => ({
+      id: `test-s-${args.instanceId}-${i}`,
+      label: s.label,
+    })),
   }
 }
 
@@ -1274,6 +1286,110 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['caster']?.turnResources?.reactionAvailable).toBe(false)
   })
 
+  it('effects mode skips AC modifier when spell condition is not met (unarmored gate)', () => {
+    const mageArmorEffects = [
+      {
+        kind: 'modifier' as const,
+        target: 'armor_class' as const,
+        mode: 'set' as const,
+        value: 13,
+        condition: {
+          kind: 'state' as const,
+          target: 'self' as const,
+          property: 'equipment.armorEquipped',
+          equals: null,
+        },
+      },
+    ]
+
+    const stateArmored = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'mage-armor',
+              label: 'Mage Armor',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [...mageArmorEffects],
+              targeting: { kind: 'single-creature' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'ally',
+          label: 'Ally',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 12,
+          equipment: { armorEquipped: 'leather' },
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolvedArmored = resolveCombatAction(
+      stateArmored,
+      { actorId: 'caster', targetId: 'ally', actionId: 'mage-armor' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolvedArmored.combatantsById['ally']?.stats.armorClass).toBe(12)
+    expect(resolvedArmored.combatantsById['ally']?.statModifiers ?? []).toHaveLength(0)
+    expect(resolvedArmored.log.some((e) => e.summary.includes('Modifier not applied'))).toBe(true)
+
+    const stateUnarmored = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'mage-armor',
+              label: 'Mage Armor',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [...mageArmorEffects],
+              targeting: { kind: 'single-creature' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'ally',
+          label: 'Ally',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 12,
+          equipment: { armorEquipped: null },
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolvedUnarmored = resolveCombatAction(
+      stateUnarmored,
+      { actorId: 'caster', targetId: 'ally', actionId: 'mage-armor' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolvedUnarmored.combatantsById['ally']?.stats.armorClass).toBe(13)
+    expect(resolvedUnarmored.combatantsById['ally']?.statModifiers).toHaveLength(1)
+  })
+
   it('self-targeting effects mode applies spell immunity as state marker', () => {
     const state = createEncounterState(
       [
@@ -1385,10 +1501,11 @@ describe('resolveCombatAction', () => {
 
     expect(withShield.combatantsById['caster']?.stats.armorClass).toBe(17)
 
-    const afterEnemyTurn = advanceEncounterTurn(withShield)
+    const initiativeRng = () => 0.1
+    const afterEnemyTurn = advanceEncounterTurn(withShield, { rng: initiativeRng })
     expect(afterEnemyTurn.combatantsById['caster']?.stats.armorClass).toBe(17)
 
-    const afterCasterTurnStart = advanceEncounterTurn(afterEnemyTurn)
+    const afterCasterTurnStart = advanceEncounterTurn(afterEnemyTurn, { rng: initiativeRng })
     expect(afterCasterTurnStart.combatantsById['caster']?.stats.armorClass).toBe(12)
     expect(afterCasterTurnStart.combatantsById['caster']?.statModifiers).toHaveLength(0)
     expect(afterCasterTurnStart.log.some((entry) => entry.summary.includes('stat modifier expires'))).toBe(true)
@@ -1598,5 +1715,182 @@ describe('resolveCombatAction', () => {
 
     expect(resolved.combatantsById['fallen-ally']!.stats.currentHitPoints).toBe(0)
     expect(resolved.log.some((entry) => entry.summary.includes('no valid targets'))).toBe(true)
+  })
+
+  it('effects mode branches by hpThreshold when defined on the action', () => {
+    const hpThresholdAction = (id: string): CombatActionDefinition => ({
+      id,
+      label: 'Power Word Test',
+      kind: 'spell',
+      cost: { action: true },
+      resolutionMode: 'effects',
+      hpThreshold: { maxHp: 100 },
+      effects: [{ kind: 'damage', damage: '99', damageType: 'psychic' }],
+      aboveThresholdEffects: [{ kind: 'damage', damage: '3', damageType: 'psychic' }],
+      targeting: { kind: 'single-target' },
+      displayMeta: { source: 'spell', spellId: id, level: 9, concentration: false, range: '60 ft' },
+    })
+
+    const low = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'wiz',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [hpThresholdAction('pwk-low')],
+        }),
+        createCombatant({
+          instanceId: 'low',
+          label: 'Weakened',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 13,
+          maxHitPoints: 80,
+          currentHitPoints: 80,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+    const rLow = resolveCombatAction(
+      low,
+      { actorId: 'wiz', targetId: 'low', actionId: 'pwk-low' },
+      { rng: () => 0.5 },
+    )
+    expect(rLow.combatantsById['low']?.stats.currentHitPoints).toBe(0)
+
+    const high = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'wiz',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [hpThresholdAction('pwk-high')],
+        }),
+        createCombatant({
+          instanceId: 'high',
+          label: 'Healthy',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 13,
+          maxHitPoints: 200,
+          currentHitPoints: 150,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+    const rHigh = resolveCombatAction(
+      high,
+      { actorId: 'wiz', targetId: 'high', actionId: 'pwk-high' },
+      { rng: () => 0.5 },
+    )
+    expect(rHigh.combatantsById['high']?.stats.currentHitPoints).toBe(147)
+  })
+
+  it('allows same-side hostile single-target when suppressSameSideHostileActions is false', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'a',
+          label: 'Fighter A',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 16,
+          armorClass: 16,
+          actions: [
+            {
+              id: 'slash',
+              label: 'Slash',
+              kind: 'weapon-attack',
+              cost: { action: true },
+              resolutionMode: 'attack-roll',
+              targeting: { kind: 'single-target' },
+              attackProfile: {
+                attackBonus: 5,
+                damage: '1d6 + 2',
+                damageType: 'slashing',
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'b',
+          label: 'Fighter B',
+          side: 'party',
+          initiativeModifier: 4,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'a', targetId: 'b', actionId: 'slash' },
+      {
+        rng: () => 0.7,
+        suppressSameSideHostileActions: false,
+      },
+    )
+
+    expect(resolved.combatantsById['b']?.stats.currentHitPoints).toBeLessThan(12)
+  })
+
+  it('blocks same-side hostile single-target when suppressSameSideHostileActions is true', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'a',
+          label: 'Fighter A',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 16,
+          armorClass: 16,
+          actions: [
+            {
+              id: 'slash',
+              label: 'Slash',
+              kind: 'weapon-attack',
+              cost: { action: true },
+              resolutionMode: 'attack-roll',
+              targeting: { kind: 'single-target' },
+              attackProfile: {
+                attackBonus: 5,
+                damage: '1d6 + 2',
+                damageType: 'slashing',
+              },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'b',
+          label: 'Fighter B',
+          side: 'party',
+          initiativeModifier: 4,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'a', targetId: 'b', actionId: 'slash' },
+      {
+        rng: () => 0.7,
+        suppressSameSideHostileActions: true,
+      },
+    )
+
+    expect(resolved.combatantsById['b']?.stats.currentHitPoints).toBe(12)
   })
 })

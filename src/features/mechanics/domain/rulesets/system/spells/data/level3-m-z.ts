@@ -1,5 +1,11 @@
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 3 spells M–Z — authoring status:
+ * - **Attack/save/AoE modeled:** Mass Healing Word, Protection from Energy, Revivify, Slow, Spirit Guardians, Stinking Cloud.
+ * - **Utility / sense / state:** Nondetection, Tongues, Water Breathing, Water Walk.
+ * - **Note-first / heavy caveats:** Meld into Stone, Phantom Steed, Plant Growth, Sending, Sleet Storm, Speak with Dead/Plants, Tiny Hut, Wind Wall, etc.
+ */
 export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
 {
     id: 'mass-healing-word',
@@ -11,6 +17,11 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Healing split across multiple targets is not tracked automatically.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature', count: 6, requiresSight: true },
       { kind: 'hit-points', mode: 'heal', value: '2d4', abilityModifier: true },
@@ -31,10 +42,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Merged state, destruction expulsion, and damage are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Merge with stone large enough to contain you. Undetectable. Cannot see outside; Disadvantage to hear. 5ft movement to leave. Partial destruction: 6d6 force. Complete destruction: 50 force, Prone.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -52,6 +69,11 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of diamond dust worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Divination blocking is informational only in encounter.',
+      ],
+    },
     effects: [
       { kind: 'state', stateId: 'nondetection', notes: 'Target hidden from Divination spells and magical scrying sensors.' },
       { kind: 'note', text: 'Target can be a willing creature, or a place or object no larger than 10 feet in any dimension.', category: 'flavor' as const },
@@ -71,10 +93,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Mount stats, travel pace, and damage ending the steed are not modeled as a combatant.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Large quasi-real horse. Riding Horse stat block, Speed 100ft, 13 miles/hour. Fades gradually when spell ends (1 min to dismount). Ends if steed takes damage.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -92,10 +120,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Overgrowth vs enrichment casting time and yearly enrichment limit are not enforced.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Overgrowth (Action): 100ft radius, 4 ft movement per 1 ft. Enrichment (8h): half-mile radius, double food yield for 365 days.',
+        text: 'Overgrowth (Action): 100-foot-radius Sphere, 4 ft movement per 1 ft. Enrichment (8 hours): half-mile radius, double food yield for 365 days (one enrichment per year per area).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -113,8 +147,13 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Only one damage type is modeled; choose the matching resistance in play when not Fire.',
+      ],
+    },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       { kind: 'modifier', target: 'resistance', mode: 'add', value: 'fire' as const },
       { kind: 'note', text: 'Caster chooses damage type at cast time: Acid, Cold, Fire, Lightning, or Thunder. Modeled as Fire by default.', category: 'flavor' as const },
     ],
@@ -133,11 +172,17 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Which specific curses end and magic item attunement are not fully automated.',
+      ],
+    },
     effects: [
       { kind: 'remove-classification', classification: 'curse' },
       {
         kind: 'note',
         text: 'Cursed magic item: curse remains but breaks Attunement so it can be removed.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -155,6 +200,11 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 300+ GP', cost: { value: 300, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Death timing, corpse integrity, and return-to-life are not validated automatically.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
       { kind: 'hit-points', mode: 'heal', value: 1 },
@@ -175,8 +225,17 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'unlimited' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a copper wire' } },
+    resolution: {
+      caveats: [
+        'Cross-plane failure and blocking future Sendings are not simulated.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Send 25-word message to a creature you have met or that has been described to you. Target hears, recognizes sender, and can reply. 5% fail chance if on a different plane.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Send 25-word message to a creature you have met or that has been described to you. Target hears, recognizes sender, and can reply. 5% fail chance if on a different plane. Recipient can block further Sendings for 8 hours.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it. The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn't arrive. You know if the delivery fails. Upon receiving your message, a creature can block your ability to reach it again with this spell for 8 hours.",
@@ -193,10 +252,23 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a miniature umbrella' } },
+    resolution: {
+      caveats: [
+        'Cylinder overlap, difficult terrain, save timing, and concentration loss are not fully automated.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'cylinder', size: 20 },
+      },
+      { kind: 'state', stateId: 'heavily-obscured', notes: '40-foot-tall, 20-foot-radius Cylinder: Heavily Obscured; ground is Difficult Terrain; exposed flames doused.' },
+      {
         kind: 'note',
-        text: '40ft tall, 20ft radius cylinder. Heavily Obscured. Difficult Terrain. Dex save or Prone and lose Concentration when entering or starting turn there.',
+        text: 'When a creature enters the cylinder for the first time on a turn or starts its turn there: Dexterity save or Prone and lose Concentration.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -240,8 +312,17 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true, material: { description: 'burning incense' } },
+    resolution: {
+      caveats: [
+        'Q&A flow and truthfulness are not enforced in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Corpse answers up to 5 questions. Knows only what it knew in life. Fails if Undead when died or targeted within past 10 days. No compulsion to be truthful.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Corpse answers up to 5 questions. Knows only what it knew in life. Fails if Undead when died or targeted within past 10 days. No compulsion to be truthful.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You grant the semblance of life to a corpse of your choice within range, allowing it to answer questions you pose. The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died. The spell also fails if the corpse was the target of this spell within the past 10 days. Until the spell ends, you can ask the corpse up to five questions. The corpse knows only what it knew in life. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are antagonistic toward it or it recognizes you as an enemy. This spell doesn't return the creature's soul to its body, only its animating spirit.",
@@ -258,10 +339,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Terrain toggling and plant knowledge are not simulated mechanically.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '30ft emanation: plants gain limited sentience, communicate, follow simple commands. Question about past day. Turn plant Difficult Terrain to normal or vice versa.',
+        text: '30-foot Emanation: plants gain limited sentience, communicate, follow simple commands. Question about events in the past day. Toggle plant-based Difficult Terrain. Plant creatures: communicate as if shared language.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -338,10 +425,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a crystal bead' } },
+    resolution: {
+      caveats: [
+        'Interior occupancy, spell blocking, and early end conditions are not fully enforced.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '10-foot emanation dome. Creatures inside when cast can pass freely; others barred. Blocks spells 3rd or lower. Comfortable, dim light or darkness. Opaque outside, transparent inside. Ends if you leave or recast.',
+        text: '10-foot Emanation dome. Creatures inside when cast can pass freely; others barred. Spells of level 3 or lower cannot pass through or extend in. Comfortable atmosphere; Dim Light or Darkness inside. Opaque outside, transparent inside. Ends if you leave or recast.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -359,6 +452,11 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, material: { description: 'a miniature ziggurat' } },
+    resolution: {
+      caveats: [
+        'Language comprehension in dialogue is not enforced mechanically.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       { kind: 'state', stateId: 'tongues', notes: 'Target understands any spoken or signed language. When target speaks/signs, any creature knowing a language understands.' },
@@ -379,13 +477,21 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'melee-spell-attack',
+    resolution: {
+      caveats: [
+        'Magic-action repeat attacks and healing half of necrotic dealt are not fully automated.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '3d6', damageType: 'necrotic' },
       {
         kind: 'note',
-        text: 'Melee spell attack: 3d6 necrotic on hit, regain HP equal to half damage. Magic action to repeat each turn. +1d6 per slot above 3.',
+        text: 'On hit, regains Hit Points equal to half the Necrotic damage dealt. Until the spell ends, repeat as a Magic action each turn (same or new target).',
+        category: 'under-modeled' as const,
       },
     ],
-    scaling: [{ category: 'extra-damage', description: 'The damage increases by 1d6 for each spell slot level above 3.', mode: 'per-slot-level', startsAtSlotLevel: 3 }],
+    scaling: [{ category: 'extra-damage', description: '+1d6 necrotic per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4, amount: '1d6' }],
     description: {
       full: "The touch of your shadow-wreathed hand can siphon life force from others to heal your wounds. Make a melee spell attack against one creature within reach. On a hit, the target takes 3d6 Necrotic damage, and you regain Hit Points equal to half the amount of Necrotic damage dealt. Until the spell ends, you can make the attack again on each of your turns as a Magic action, targeting the same creature or a different one. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
       summary: 'Melee spell attack: 3d6 necrotic, regain half as HP. Repeat as Magic action. +1d6 per slot.',
@@ -401,10 +507,24 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a short reed' } },
+    resolution: {
+      caveats: [
+        'Underwater breathing and movement are not applied automatically.',
+      ],
+    },
     effects: [
       {
-        kind: 'note',
-        text: 'Up to 10 willing creatures breathe underwater. Retain normal respiration.',
+        kind: 'targeting',
+        target: 'chosen-creatures',
+        targetType: 'creature',
+        count: 10,
+        requiresSight: true,
+        requiresWilling: true,
+      },
+      {
+        kind: 'state',
+        stateId: 'water-breathing',
+        notes: 'Can breathe underwater; retains normal respiration.',
       },
     ],
     description: {
@@ -422,10 +542,24 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a piece of cork' } },
+    resolution: {
+      caveats: [
+        'Liquid surfaces, Bonus Action entry, and falling through are not fully modeled.',
+      ],
+    },
     effects: [
       {
-        kind: 'note',
-        text: 'Up to 10 willing creatures walk on liquid surfaces as solid ground. Bonus action to pass into/out of liquid. Fall into liquid passes through surface.',
+        kind: 'targeting',
+        target: 'chosen-creatures',
+        targetType: 'creature',
+        count: 10,
+        requiresSight: true,
+        requiresWilling: true,
+      },
+      {
+        kind: 'state',
+        stateId: 'water-walk',
+        notes: 'Treat liquid surfaces as solid ground; Bonus Action to enter/exit liquid; fall passes through surface.',
       },
     ],
     description: {
@@ -443,10 +577,16 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a fan and a feather' } },
+    resolution: {
+      caveats: [
+        'Wall shape, appearance damage, projectile deflection, and creature gating are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Wall up to 50ft long, 15ft high, 1ft thick. Appear: Str save or 4d8 bludgeoning. Blocks fog/smoke/gases. Small flying creatures cannot pass. Arrows/bolts miss. Gaseous form cannot pass.',
+        text: 'When the wall appears, each creature in its area: Strength save or 4d8 Bludgeoning (half on success). Up to 50 ft long, 15 ft high, 1 ft thick, one continuous path. Blocks fog/smoke/gases; Small or smaller flying creatures/objects; deflects ordinary projectiles; blocks Gaseous Form.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

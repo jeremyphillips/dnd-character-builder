@@ -123,20 +123,25 @@ The encounter action system resolves combat actions against encounter state:
 
 **Action targeting kinds:**
 
-- `single-target` — one enemy combatant (opposite side, HP > 0)
+- `single-target` — one living combatant (HP > 0) subject to policy below; weapon attacks and most offensive spells use this kind
 - `all-enemies` — all living enemy combatants
 - `self` — the acting combatant
 - `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
 - `dead-creature` — any combatant at 0 HP regardless of side (used by resurrection spells)
 - `entered-during-move` — creatures entered during movement
 
+**Targeting profile fields:**
+
+- `requiresWilling` — when `true` on `single-target`, valid targets are same-side only (caster + allies); “willing” is approximated as allies until explicit consent exists. Such actions are **non-hostile** for charm / hostile-action rules. Authored on spells via `targeting.requiresWilling` in spell effects.
+- `suppressSameSideHostileActions` — passed through `ResolveCombatActionOptions` (default **true** when omitted: legacy “no friendly fire”). When **true**, hostile `single-target` actions cannot target same-side combatants. When **false**, core resolution allows same-side targets (e.g. PC vs PC). Campaign/app code can drive this from `mechanics.combat.encounter.suppressSameSideHostile` on the ruleset.
+
 **Targeting query layer** (`action-targeting.ts`):
 
 Targeting validation is centralized so the resolver and UI share a single source of truth:
 
-- `isValidActionTarget(combatant, actor, action)` — pure predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, and side filtering for a single combatant.
-- `getActionTargetCandidates(state, actor, action)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
-- `getActionTargets(state, actor, selection, action)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
+- `isValidActionTarget(combatant, actor, action, options?)` — predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, `requiresWilling` (same-side), and optional same-side suppression for hostile `single-target` actions.
+- `getActionTargetCandidates(state, actor, action, options?)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
+- `getActionTargets(state, actor, selection, action, options?)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
 
 ### 4.5 Condition Consequence Framework
 
@@ -168,7 +173,8 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 **Derived queries:**
 
 - `canTakeActions(combatant)` / `canTakeReactions(combatant)` — used by `createCombatantTurnResources` in `shared.ts`
-- `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — used by `resolveRollModifier` in `action-resolver.ts`
+- `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — flat condition-derived attack mods (no attacker/defender pairing).
+- `getIncomingAttackModifiersForAttack(attacker, defender, range)` / `getOutgoingAttackModifiersForAttack(attacker, defender, range)` — used by `resolveRollModifier` in `action-resolver.ts`; suppresses invisible-related adv/disadv when the other combatant has the `see-invisibility` state.
 - `autoFailsSave(combatant, ability)` / `getSaveModifiersFromConditions(combatant, ability)` — used by saving-throw resolution in `action-resolver.ts`
 - `getSpeedConsequences(combatant)` — used by `createCombatantTurnResources` to zero movement for grappled, restrained, etc.
 - `getDamageResistanceFromConditions(combatant, damageType?)` — used by `applyDamageToCombatant` to apply petrified resistance-to-all
@@ -197,7 +203,7 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 
 - `action_limit` — `canTakeActions` / `canTakeReactions` consumed by `createCombatantTurnResources`
 - `movement.speedBecomesZero` — `getSpeedConsequences` consumed by `createCombatantTurnResources`
-- `attack_mod` — `getIncomingAttackModifiers` / `getOutgoingAttackModifiers` consumed by `resolveRollModifier`
+- `attack_mod` — pair-aware helpers in `condition-queries.ts` consumed by `resolveRollModifier` (See Invisibility vs invisible)
 - `save_mod` — `autoFailsSave` / `getSaveModifiersFromConditions` consumed by saving-throw resolution
 - `damage_interaction` — `getDamageResistanceFromConditions` consumed by `applyDamageToCombatant`
 - `source_relative` by source identity — `cannotTargetWithHostileAction` consumed by `isValidActionTarget` (charmed targeting exclusion)
@@ -458,6 +464,22 @@ const actions = buildSpellCombatActions({
 
 Healing actions use `targeting: { kind: 'single-creature' }`, which allows any living combatant (ally, enemy, or self) as a target. The encounter UI shows all living combatants as valid targets when a `single-creature` action is selected.
 
+### Spell combat adapter — resolution mode classification
+
+`classifySpellResolutionMode` (in `src/features/encounter/helpers/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
+
+- **`attack-roll`** — spell has `deliveryMethod` (`melee-spell-attack` or `ranged-spell-attack`); damage and on-hit riders come from the spell’s effects, but the primary hit uses the attack pipeline.
+- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`), and effects are not **only** `note` and/or `targeting`.
+- **`log-only`** — empty effects, only `note` / `targeting`, or only kinds such as `grant` / `move` that the encounter layer currently resolves as structured log output without the same mechanical path.
+
+Multi-instance **auto-hit** spells authored with a single root `damage` effect and `instances.count` above 1 (no top-level `save`) are built as a **parent `effects` action with `sequence`** plus a child `effects` action per hit (same pattern as multi-beam spell attacks). Each child applies one damage resolution against the selected target until proper multi-target selection exists.
+
+**HP threshold:** `CombatActionDefinition` may set `hpThreshold: { maxHp }` with `aboveThresholdEffects`. In `effects` resolution, if the target’s current HP is at or below `maxHp`, `action.effects` apply; otherwise `aboveThresholdEffects` apply (or none if omitted). Spells author this via `spell.resolution.hpThreshold` in [spell.types.ts](../../src/features/content/spells/domain/types/spell.types.ts) (e.g. Power Word Kill).
+
+**Timed spell duration on effects:** `until-turn-boundary` spell durations map to the same-shaped effect duration; `timed` spell durations (minute/hour/day) map to `fixed` effect duration in **combat turns** via the same 6-second-per-turn heuristic used for concentration display, so modifiers and similar markers can tick down in encounter time.
+
+Behavioral tests in `encounter-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
+
 ## 8. Supported Effect Matrix
 
 How each effect kind is resolved at runtime by `action-effects.ts`:
@@ -504,6 +526,18 @@ Current targeting covers creature-selectable cases only. Future work will likely
 - **Creature-selectable** — the current model. Actor picks one or more creatures from a candidate pool (single-target, all-enemies, single-creature, dead-creature, self).
 - **Event-driven** — targeting determined by a game event rather than player choice. `entered-during-move` is the current example. This should not be treated as a template for general creature-targeting abstraction.
 - **Spatial/area** — point-and-shape selection (cone, sphere, line, cube) with inclusion/exclusion, friend/foe filtering, line-of-effect, and range. This is a qualitatively different problem from creature selection and should be designed as its own subsystem.
+
+### Area spells vs `all-enemies` (friendly-fire gap)
+
+Spells authored with **`creatures-in-area`** (and `targeting.area`) are **not** resolved with spatial inclusion. The spell combat adapter maps them to **`all-enemies`**: `getActionTargetCandidates` returns **all living enemy** combatants that satisfy `isValidActionTarget` (including charmed / hostile-action rules via `cannotTargetWithHostileAction`), and those targets receive the effect bundle.
+
+**Limitations (by design today)**
+
+- **No geometry** — no origin point, template, or per-creature “inside the AoE” test.
+- **No friendly fire** — **allies are never** selected on this path, even when the spell’s rules allow or require hitting allies in the area. Mixed allegiance, “creatures you choose” inside a zone, and similar cases are **not** modeled.
+- **No cover, line of effect, or selective exclusion** beyond what targeting predicates already express (e.g. `creatureTypeFilter`).
+
+Authoring and content expectations: [effects.md — Area targeting and encounter combat (limitations)](./effects.md#area-targeting-and-encounter-combat-limitations).
 
 If the creature-selectable kind union (`single-target`, `all-enemies`, etc.) grows beyond its current six members — especially if new kinds overlap with existing ones (e.g., `single-ally` vs `single-creature`) — consider decomposing into dimensional fields (allegiance, lifeState, cardinality) rather than continuing to extend the flat union.
 

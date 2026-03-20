@@ -1,6 +1,12 @@
 import type { SpellEntry } from '../types';
 import { cantripDamageScaling } from '../shared';
 
+/**
+ * Cantrips A–L — authoring status:
+ * - **Attack/save modeled:** Acid Splash, Chill Touch, Eldritch Blast, Fire Bolt.
+ * - **Utility / light / illusion:** Dancing Lights, Druidcraft, Guidance, Light, Mage Hand, Message, Minor Illusion.
+ * - **Ritual-like / crafting:** Elementalism, Mending.
+ */
 export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
 {
     id: 'acid-splash',
@@ -12,10 +18,34 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Encounter maps area spells to all living enemies only; no geometry or ally targeting.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'sphere', size: 5 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          {
+            kind: 'damage',
+            damage: '1d6',
+            damageType: 'acid',
+            levelScaling: cantripDamageScaling('d6'),
+          },
+        ],
+      },
+      {
         kind: 'note',
-        text: '5-foot sphere; creatures make Dex save or take 1d6 acid damage. Scales at 5/11/17.',
+        text: 'Edition-specific targeting (e.g. two creatures within 5 feet, objects) may differ; not fully modeled.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -34,7 +64,25 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'melee-spell-attack',
-    effects: [{ kind: 'note', text: 'Melee spell attack: 1d10 necrotic. Target cannot regain HP until end of your next turn. Scales at 5/11/17.' }],
+    resolution: {
+      caveats: [
+        'HP-regain block until end of your next turn is not applied as a combat marker.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d10',
+        damageType: 'necrotic',
+        levelScaling: cantripDamageScaling('d10'),
+      },
+      {
+        kind: 'note',
+        text: "On a hit, the target can't regain Hit Points until the end of your next turn. Not tracked in encounter.",
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Channeling the chill of the grave, make a melee spell attack against a target within reach. On a hit, the target takes 1d10 Necrotic damage, and it can't regain Hit Points until the end of your next turn. Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
       summary: 'Melee spell attack: 1d10 necrotic, blocks HP regain until end of next turn. Scales at 5/11/17.',
@@ -50,7 +98,18 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of phosphorus' } },
-    effects: [{ kind: 'note', text: 'Up to 4 torch-size lights or 1 Medium humanoid form. Dim light 10ft. Bonus action: move up to 60ft.' }],
+    resolution: {
+      caveats: [
+        'Light positions, 20ft spacing between lights, and humanoid “form” are not enforced as tokens.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Up to 4 torch-size lights or 1 Medium humanoid form. Dim light 10ft. Bonus action: move up to 60ft.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration. Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike. Each light sheds Dim Light in a 10-foot radius. As a Bonus Action, you can move the lights up to 60 feet to a space within range. A light must be within 20 feet of another light created by this spell, and a light vanishes if it exceeds the spell's range.",
       summary: 'Up to 4 lights or 1 humanoid form. Dim light 10ft. Bonus action to move.',
@@ -66,7 +125,18 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Weather sensor, bloom, sensory effect, or fire play. Minor nature effects.' }],
+    resolution: {
+      caveats: [
+        'Chosen druidcraft mode is narrative; no mechanical payload per option.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Weather sensor, bloom, sensory effect, or fire play. Minor nature effects.',
+        category: 'flavor' as const,
+      },
+    ],
     description: {
       full: "Whispering to the spirits of nature, you create one of the following effects within range: Weather Sensor (predict weather 24h, 1 round), Bloom (flower blossom, seed open, leaf bud), Sensory Effect (harmless effect in 5ft cube), Fire Play (light or snuff candle, torch, campfire).",
       summary: 'Minor nature effects: weather prediction, bloom, sensory effect, or fire control.',
@@ -106,8 +176,14 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
       {
         kind: 'note',
         text: 'Each beam requires a separate ranged spell attack roll.',
+        category: 'under-modeled' as const,
       },
     ],
+    resolution: {
+      caveats: [
+        'Beam count scales with caster level (5/11/17); confirm `instances` when resolving attacks.',
+      ],
+    },
     description: {
       full: 'You hurl a beam of crackling energy. Make a ranged spell attack against one creature or object in range. On a hit, the target takes 1d10 Force damage. Cantrip Upgrade. The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.',
       summary: 'Ranged spell attack dealing 1d10 force damage per beam; beam count increases at levels 5, 11, and 17.',
@@ -123,7 +199,18 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Beckon Air/Earth/Fire/Water or Sculpt Element. Minor elemental control.' }],
+    resolution: {
+      caveats: [
+        'Mode choice (beckon vs sculpt) and volume limits are narrative-only.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Beckon Air/Earth/Fire/Water or Sculpt Element. Minor elemental control.',
+        category: 'flavor' as const,
+      },
+    ],
     description: {
       full: "You exert control over the elements, creating one of the following effects within range: Beckon Air (breeze in 5ft cube), Beckon Earth (dust/sand or word in dirt), Beckon Fire (embers and scented smoke, can light candles), Beckon Water (mist or 1 cup water), Sculpt Element (1ft cube of element assumes crude shape for 1 hour).",
       summary: 'Minor elemental control: beckon air/earth/fire/water or sculpt element.',
@@ -140,6 +227,11 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'Can target a creature or object; encounter may assume creature targeting for attacks.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
       {
@@ -151,6 +243,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
       {
         kind: 'note',
         text: "A flammable object hit by this spell starts burning if it isn't being worn or carried.",
+        category: 'flavor' as const,
       },
     ],
     description: {
@@ -168,10 +261,17 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Chosen skill and 1d4 application to checks are not auto-tracked as a buff marker.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
         kind: 'note',
         text: 'Touch willing creature, choose skill. Add 1d4 to ability checks using chosen skill until spell ends.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -189,6 +289,11 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, material: { description: 'a firefly or phosphorescent moss' } },
+    resolution: {
+      caveats: [
+        'Spell targets an object (or creature carrying an object); `one-creature` targeting is a loose stand-in.',
+      ],
+    },
     effects: [
       {
         kind: 'targeting',
@@ -198,6 +303,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
       {
         kind: 'note',
         text: 'You touch one object that is no larger than 10 feet in any dimension. The object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -215,10 +321,16 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Fine manipulation and weight limit are not simulated as inventory interaction.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Spectral hand: manipulate objects, open doors, stow/retrieve items. Magic action to move 30ft. Cannot attack, activate magic items, or carry more than 10 lb.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -236,10 +348,16 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'two lodestones' } },
+    resolution: {
+      caveats: [
+        'Repair outcome is narrative; magic-item limitation is not enforced by data.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Repairs single break or tear up to 1 foot in any dimension. Cannot restore magic to magic items.',
+        category: 'flavor' as const,
       },
     ],
     description: {
@@ -257,6 +375,11 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'special', description: '1 round' },
     components: { somatic: true, material: { description: 'a copper wire' } },
+    resolution: {
+      caveats: [
+        'Barrier thickness and silence rules for message delivery are table-adjudicated.',
+      ],
+    },
     effects: [
       { kind: 'note', text: 'Whisper to creature within range; only target hears. Target can reply in a whisper only you hear. Works through solid objects if familiar with target. Blocked by magical silence, 1ft of stone/metal/wood, or lead.', category: 'flavor' as const },
     ],
@@ -275,10 +398,16 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { somatic: true, material: { description: 'a bit of fleece' } },
+    resolution: {
+      caveats: [
+        'Sound vs image mode and Investigation check are not enforced as separate branches.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Create sound (whisper to scream) or image of object (5ft cube max). Image has no sound, light, smell. Study action + Int (Investigation) vs DC to discern.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

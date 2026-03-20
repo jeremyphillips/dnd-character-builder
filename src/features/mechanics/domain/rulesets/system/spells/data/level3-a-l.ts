@@ -1,5 +1,12 @@
+import type { ModifierValue } from '@/features/mechanics/domain/effects/effects.types';
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 3 spells A–L — authoring status:
+ * - **Attack/save/AoE modeled:** Call Lightning, Conjure Animals (spectral pack), Fear, Fireball, Fly (notes), Haste, Hypnotic Pattern, Lightning Bolt, Slow, Spirit Guardians (in m–z).
+ * - **Utility / sense / state:** Blink, Clairvoyance, Gaseous Form (extra targets), Nondetection, Tongues, Water Breathing / Water Walk (in m–z).
+ * - **Note-first / heavy caveats:** Animate Dead, Beacon of Hope, Bestow Curse, Counterspell, Daylight, Dispel Magic, Glyph of Warding, Magic Circle, Major Image, etc.
+ */
 export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
   {
     id: 'animate-dead',
@@ -11,7 +18,19 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a drop of blood, a piece of flesh, and a pinch of bone dust' } },
-    effects: [{ kind: 'note', text: 'Bones/corpse become Skeleton/Zombie. Control 24h; re-cast to maintain. +2 undead per slot above 3.' }],
+    resolution: {
+      caveats: [
+        'Undead minions and command range are not represented as full combatants in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Creates a Skeleton from bones or a Zombie from a corpse; Bonus Action to command within 60 ft. Reassert control for up to four creatures with a repeat cast. +2 undead per slot level above 3.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'other', description: '+2 undead creatures per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4 }],
     description: {
       full: "Choose a pile of bones or a corpse of a Medium or Small Humanoid within range. The target becomes an Undead creature: a Skeleton if you chose bones or a Zombie if you chose a corpse. On each of your turns, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 60 feet of you. The creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature again before the current 24-hour period ends. This use of the spell reasserts your control over up to four creatures you have animated with this spell rather than animating a new creature. Using a Higher-Level Spell Slot. You animate or reassert control over two additional Undead creatures for each spell slot level above 3.",
       summary: 'Create Skeleton or Zombie from bones/corpse. Control 24h; re-cast to maintain. Scales with extra undead.',
@@ -27,7 +46,18 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Creatures in range: Advantage on Wis saves and Death saves; healing restores maximum HP.' }],
+    resolution: {
+      caveats: [
+        'Advantage on saves and max healing from dice are not enforced automatically.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Any number of creatures in range: Advantage on Wisdom saving throws and Death Saving Throws; regain maximum HP from healing.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Choose any number of creatures within range. For the duration, each target has Advantage on Wisdom saving throws and Death Saving Throws and regains the maximum number of Hit Points possible from any healing.",
       summary: 'Advantage on Wis and Death saves; healing restores max HP.',
@@ -43,7 +73,24 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Touch: Wis save or cursed. Choose: Disadvantage on ability, Disadvantage vs you, Dodge or save, or +1d8 necrotic when you hit. Higher slots extend duration.' }],
+    resolution: {
+      caveats: [
+        'Curse option, duration by slot, and concentration at high levels are not fully enforced.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'state', stateId: 'bestow-curse', notes: 'Curse: choose one listed effect in spell text.' }],
+      },
+      {
+        kind: 'note',
+        text: 'Choose one curse effect (ability Disadvantage, attacks vs you, Dodge-only, or +1d8 necrotic on your hits). Duration extends with higher-level slots per spell text.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You touch a creature, which must succeed on a Wisdom saving throw or become cursed for the duration. Choose one effect: Disadvantage on ability checks and saves with one ability; Disadvantage on attack rolls against you; must save at turn start or take Dodge only; or +1d8 Necrotic when you hit with attack/spell. Using a Higher-Level Spell Slot. Level 4: 10 min. Level 5+: no Concentration, 8h (5-6) or 24h (7-8). Level 9: until dispelled.",
       summary: 'Touch: Wis save or cursed with one of four effects. Duration scales with slot level.',
@@ -142,7 +189,18 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { somatic: true },
-    effects: [{ kind: 'note', text: 'Reaction: interrupt spell casting. Target makes Con save or spell fails (slot not expended).' }],
+    resolution: {
+      caveats: [
+        'Countering a specific casting and slot refund are not simulated in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Reaction: target makes a Con save or the spell fails with no effect; if a spell slot was used, it is not expended.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You attempt to interrupt a creature in the process of casting a spell. The creature makes a Constitution saving throw. On a failed save, the spell dissipates with no effect, and the action, Bonus Action, or Reaction used to cast it is wasted. If that spell was cast with a spell slot, the slot isn't expended.",
       summary: 'Reaction: interrupt spell. Con save or spell fails.',
@@ -176,7 +234,18 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: '60ft sphere sunlight. Bright light, dim 60ft beyond. Or emanation from object. Dispels Darkness level 3 or lower.' }],
+    resolution: {
+      caveats: [
+        'Light vs. Darkness overlap and object emanation are not fully modeled.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: '60-foot-radius Sphere of sunlight (Bright Light; Dim Light 60 ft beyond) or 60-foot Emanation from an object. Dispels Darkness of level 3 or lower in overlap.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "For the duration, sunlight spreads from a point within range and fills a 60-foot-radius Sphere. The sunlight's area is Bright Light and sheds Dim Light for an additional 60 feet. Alternatively, cast on object for 60-foot Emanation. If area overlaps Darkness from spell level 3 or lower, that spell is dispelled.",
       summary: '60ft sphere sunlight. Dispels lower-level Darkness.',
@@ -192,7 +261,18 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'End spells level 3 or lower on target. Spellcasting check (DC 10 + spell level) for higher. Higher slot = auto-end if spell level ≤ slot.' }],
+    resolution: {
+      caveats: [
+        'Which ongoing spells end and ability checks vs. higher-level effects are not automated.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'End ongoing spells of level 3 or lower on the target; ability check vs. DC 10 + spell level for higher spells; higher slot can auto-end if spell level ≤ slot level.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Choose one creature, object, or magical effect within range. Any ongoing spell of level 3 or lower on the target ends. For each ongoing spell of level 4 or higher on the target, make an ability check using your spellcasting ability (DC 10 plus that spell's level). On a successful check, the spell ends. Using a Higher-Level Spell Slot. You automatically end a spell on the target if the spell's level is equal to or less than the level of the spell slot you use.",
       summary: 'End level 3 or lower spells. Check for higher. Higher slot auto-ends lower spells.',
@@ -271,12 +351,25 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a feather' } },
+    resolution: {
+      caveats: [
+        'Fly Speed and falling when the spell ends are not applied automatically.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+      {
+        kind: 'state',
+        stateId: 'fly',
+        notes: 'Fly Speed 60 feet and can hover.',
+      },
       {
         kind: 'note',
-        text: 'Touch willing creature: Fly 60ft, hover. Target falls when spell ends if still aloft. +1 target per slot above 3.',
+        text: 'When the spell ends, the target falls if still aloft unless it can stop the fall.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4 }],
     description: {
       full: "You touch a willing creature. For the duration, the target gains a Fly Speed of 60 feet and can hover. When the spell ends, the target falls if it is still aloft unless it can stop the fall. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 3.",
       summary: 'Grant Fly 60ft and hover. Target falls when spell ends. Scales with targets.',
@@ -292,14 +385,20 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of gauze' } },
+    resolution: {
+      caveats: [
+        'Gaseous movement limits, liquid-as-solid, and no attacks/spells are not fully enforced.',
+      ],
+    },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       { kind: 'state', stateId: 'gaseous-form', notes: 'Misty cloud. Fly 10ft, hover. Can pass through openings as small as 1 inch.' },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as const },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as const },
-      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as const },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as ModifierValue },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as ModifierValue },
+      { kind: 'modifier', target: 'resistance', mode: 'add', value: 'slashing' as ModifierValue },
       { kind: 'roll-modifier', appliesTo: 'saving-throws', modifier: 'advantage', text: 'Advantage on Str, Dex, and Con saves.' },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4 }],
     description: {
       full: "A willing creature you touch shape-shifts, along with everything it's wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself. While in this form, the target's only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow openings, but it treats liquids as though they were solid surfaces. The target can't talk or manipulate objects, and any objects it was carrying or holding can't be dropped, used, or otherwise interacted with. Finally, the target can't attack or cast spells. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 3.",
       summary: 'Misty form: Fly 10ft, Resistance B/P/S, pass through openings. Scales with targets.',
@@ -315,12 +414,19 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'until-dispelled', concentration: false },
     components: { verbal: true, somatic: true, material: { description: 'powdered diamond worth 200+ GP', cost: { value: 200, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Triggers, explosive runes, and stored spells are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Inscribe glyph on surface or in object. Set trigger. Explosive rune: 20ft sphere Dex save 5d8 (choice of damage type). Spell glyph: store spell 3rd or lower. +1d8 or higher stored spell per slot above 3.',
+        text: 'Inscribe glyph on a surface or in a closed object; set trigger. Explosive rune: 20-foot Sphere, Dex save, 5d8 damage (type chosen). Spell glyph: store a spell of 3rd level or lower. Scales with slot.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'other', description: 'Explosive damage +1d8 per slot above 3; spell glyph can store higher-level spells', mode: 'per-slot-level', startsAtSlotLevel: 4 }],
     description: {
       full: "You inscribe a glyph that later unleashes a magical effect. You inscribe it either on a surface (such as a table or a section of floor) or within an object that can be closed (such as a book or chest) to conceal the glyph. The glyph can cover an area no larger than 10 feet in diameter. If the surface or object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends without being triggered. The glyph is nearly imperceptible and requires a successful Wisdom (Perception) check against your spell save DC to notice. When you inscribe the glyph, you set its trigger and choose whether it's an explosive rune or a spell glyph. Explosive Rune: When triggered, 20-foot-radius Sphere, Dex save 5d8 Acid/Cold/Fire/Lightning/Thunder (your choice). Spell Glyph: Store spell 3rd or lower. When triggered, stored spell takes effect. Using a Higher-Level Spell Slot. Explosive rune damage +1d8 per slot above 3. Spell glyph can store spell up to slot level.",
       summary: 'Inscribe glyph with trigger. Explosive rune or spell storage. Damage/stored level scale with slot.',
@@ -337,7 +443,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a shaving of licorice root' } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       { kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 },
       { kind: 'roll-modifier', appliesTo: 'dexterity-saves', modifier: 'advantage' },
       { kind: 'modifier', target: 'speed' as const, mode: 'multiply' as const, value: 2 },
@@ -412,12 +518,19 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'salt and powdered silver worth 100+ GP', cost: { value: 100, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Circle orientation, teleport saves, and warded creature types are not fully enforced.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '10ft radius, 20ft cylinder. Choose Celestial/Elemental/Fey/Fiend/Undead. Cannot willingly enter; Disadvantage to hit inside; no possession/Charmed/Frightened from them. Reverse: keep inside, protect outside. +1h per slot.',
+        text: '10-foot-radius, 20-foot-tall Cylinder; ward against chosen types (Celestial, Elemental, Fey, Fiend, Undead). Can invert to trap inside or protect outside. +1 hour duration per slot level above 3.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'longer-duration', description: '+1 hour duration per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4 }],
     description: {
       full: "You create a 10-foot-radius, 20-foot-tall Cylinder of magical energy centered on a point on the ground that you can see within range. Choose one or more: Celestials, Elementals, Fey, Fiends, or Undead. The creature can't willingly enter by nonmagical means; Cha save to teleport in. Disadvantage on attack rolls against targets inside. Targets inside can't be possessed or gain Charmed/Frightened from the creature. You can reverse the circle to keep the creature inside and protect targets outside. Using a Higher-Level Spell Slot. The duration increases by 1 hour for each spell slot level above 3.",
       summary: '10ft cylinder wards chosen types. Can reverse to trap inside. +1h per slot.',
@@ -433,10 +546,16 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of fleece' } },
+    resolution: {
+      caveats: [
+        'Illusion movement, interaction, and slot-based duration are not fully enforced.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Image of object/creature/phenomenon up to 20ft cube. Sounds, smells, temperature. Magic action to move. Study + Int (Investigation) vs DC to discern. Slot 4+: until dispelled, no Concentration.',
+        text: 'Image up to 20-foot Cube; sound, smell, temperature; Magic action to move; Study + Investigation to discern. Level 4+ slot: lasts until dispelled without Concentration.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

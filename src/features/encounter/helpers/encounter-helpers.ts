@@ -7,6 +7,30 @@ import { resolveProficiencyBonusAtLevel } from '@/features/mechanics/domain/prog
 
 export { SPELL_USED_PREFIX, buildSpellCombatActions, buildSpellDisplayMeta, buildSpellLogText, formatSpellRange } from './spell-combat-adapter'
 export {
+  deriveSpellHostility,
+  spellHostilityToHostileApplication,
+  SPELL_STATE_HOSTILITY,
+} from './spell-hostility'
+export type { SpellHostilityDerivation } from './spell-hostility'
+export { classifySpellResolutionMode, isFullyActionableEffectKind } from './spell-resolution-classifier'
+export {
+  buildSpellAuditRow,
+  collectEffectKinds,
+  computeAmbiguousDelivery,
+  computeMechanicalSupportLevel,
+  computeSpellTargetingAuditFlags,
+  spellHasExplicitSaveDc,
+  spellHasTopLevelDamageAndSave,
+  spellMissingDeliveryMethodAttackCandidate,
+  summarizeSpellAudit,
+} from './spell-resolution-audit'
+export type {
+  MechanicalSupportLevel,
+  SpellAuditRow,
+  SpellAuditSummary,
+  SpellTargetingAuditFlags,
+} from './spell-resolution-audit'
+export {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,
   buildMonsterEffectLabels,

@@ -1,5 +1,11 @@
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 2 spells A–F — authoring status:
+ * - **Attack/save/AoE modeled:** Acid Arrow (ranged hit), Blindness/Deafness, Blur, Calm Emotions, Detect Thoughts, Flaming Sphere, Hold Person, Invisibility, Flame Blade (melee hit), Moonbeam (interval); Mind Spike / Scorching Ray / Shatter in `level2-g-z`.
+ * - **Utility / sense / state:** Barkskin, Darkvision, Find Steed (spawn), Locate Object, See Invisibility (g–z).
+ * - **Note-first / heavy caveats:** Aid, Alter Self, Augury, Arcane Lock, Animal Messenger, Continual Flame, Darkness, Enhance Ability, Enlarge/Reduce, Gust of Wind, Knock, Gentle Repose, Find Traps, Dragon’s Breath, Flame Blade, Magic Mouth (g–z), etc.
+ */
 export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
 {
     id: 'acid-arrow',
@@ -11,7 +17,22 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 90, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'powdered rhubarb leaf' } },
-    effects: [{ kind: 'note', text: 'Ranged spell attack: 4d4 acid on hit + 2d4 at end of target next turn. Miss: half initial only.' }],
+    deliveryMethod: 'ranged-spell-attack',
+    resolution: {
+      caveats: [
+        'End-of-next-turn acid damage and miss (half initial only) are not enforced in encounter.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      { kind: 'damage', damage: '4d4', damageType: 'acid' },
+      {
+        kind: 'note',
+        text: 'On a hit, the target also takes 2d4 Acid damage at the end of its next turn. On a miss, it takes half as much of the initial damage only.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d4 to initial and delayed damage per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d4' }],
     description: {
       full: "A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Make a ranged spell attack against the target. On a hit, the target takes 4d4 Acid damage and 2d4 Acid damage at the end of its next turn. On a miss, the arrow splashes the target with acid for half as much of the initial damage only. Using a Higher-Level Spell Slot. The damage (both initial and later) increases by 1d4 for each spell slot level above 2.",
       summary: 'Ranged spell attack dealing 4d4 acid plus 2d4 at end of target turn. Scales with slot level.',
@@ -27,7 +48,25 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a strip of white cloth' } },
-    effects: [{ kind: 'note', text: 'Up to 3 creatures: HP max and current increase by 5. +5 per slot level above 2.' }],
+    resolution: {
+      caveats: [
+        'Hit Point maximum and current HP increases are not applied in encounter resolution.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'targeting',
+        target: 'chosen-creatures',
+        targetType: 'creature',
+        count: 3,
+      },
+      {
+        kind: 'note',
+        text: "Each target's Hit Point maximum and current Hit Points increase by 5 for the duration.",
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-healing', description: '+5 HP max and current per target per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: 5 }],
     description: {
       full: "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration. Using a Higher-Level Spell Slot. Each target's Hit Points increase by 5 for each spell slot level above 2.",
       summary: 'Up to three creatures gain +5 HP max and current for 8 hours. Scales with slot level.',
@@ -43,7 +82,23 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
-    effects: [{ kind: 'note', text: 'Aquatic Adaptation, Change Appearance, or Natural Weapons. Magic action to switch option.' }],
+    resolution: {
+      caveats: [
+        'Option switching, swim speed, and natural weapon attacks are not fully modeled in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'state',
+        stateId: 'alter-self',
+        notes: 'Choose Aquatic Adaptation, Change Appearance, or Natural Weapons; Magic action to switch.',
+      },
+      {
+        kind: 'note',
+        text: 'Natural Weapons: unarmed strikes use 1d6 of a chosen damage type and your spellcasting ability for attack and damage.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You alter your physical form. Choose one of the following options. Its effects last for the duration, during which you can take a Magic action to replace the option you chose with a different one. Aquatic Adaptation. You sprout gills and grow webs between your fingers. You can breathe underwater and gain a Swim Speed equal to your Speed. Change Appearance. You alter your appearance. You decide what you look like, including your height, weight, facial features, sound of your voice, hair length, coloration, and other distinguishing characteristics. You can make yourself appear as a member of another species, though none of your statistics change. You can't appear as a creature of a different size, and your basic shape stays the same; if you're bipedal, you can't use this spell to become quadrupedal, for instance. For the duration, you can take a Magic action to change your appearance in this way again. Natural Weapons. You grow claws (Slashing), fangs (Piercing), horns (Piercing), or hooves (Bludgeoning). When you use your Unarmed Strike to deal damage with that new growth, it deals 1d6 damage of the type in parentheses instead of dealing the normal damage for your Unarmed Strike, and you use your spellcasting ability modifier for the attack and damage rolls rather than using Strength.",
       summary: 'Transform with Aquatic Adaptation, Change Appearance, or Natural Weapons. Switch with Magic action.',
@@ -59,9 +114,19 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a morsel of food' } },
+    resolution: {
+      caveats: [
+        'Tiny Beast messenger, travel, and delivery are not simulated in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Tiny Beast delivers a 25-word message to a described location/recipient. Travels ~25 mi/day (50 mi if flying).', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Tiny Beast delivers a 25-word message to a described location/recipient. Travels ~25 mi/day (50 mi if flying). Cha save vs compulsion; non–CR 0 beasts automatically succeed the attempt to serve as messenger.',
+        category: 'under-modeled' as const,
+      },
     ],
+    scaling: [{ category: 'longer-duration', description: '+48 hours duration per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3 }],
     description: {
       full: "A Tiny Beast of your choice that you can see within range must succeed on a Charisma saving throw, or it attempts to deliver a message for you (if the target's Challenge Rating isn't 0, it automatically succeeds). You specify a location you have visited and a recipient who matches a general description, such as \"a person dressed in the uniform of the town guard\" or \"a red-haired dwarf wearing a pointed hat.\" You also communicate a message of up to twenty-five words. The Beast travels for the duration toward the specified location, covering about 25 miles per 24 hours or 50 miles if the Beast can fly. When the Beast arrives, it delivers your message to the creature that you described, mimicking your communication. If the Beast doesn't reach its destination before the spell ends, the message is lost, and the Beast returns to where you cast the spell. Using a Higher-Level Spell Slot. The spell's duration increases by 48 hours for each spell slot level above 2.",
       summary: 'Tiny beast delivers 25-word message to described recipient. Duration scales with slot level.',
@@ -77,7 +142,18 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'gold dust worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true }, consumed: true } },
-    effects: [{ kind: 'note', text: 'Magically lock door/window/gate/container. Designate who can open; optional password.' }],
+    resolution: {
+      caveats: [
+        'Locks, passwords, and suppression of Arcane Lock are not enforced in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Magically lock door/window/gate/container. Designate who can open; optional password.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "You touch a closed door, window, gate, container, or hatch and magically lock it for the duration. This lock can't be unlocked by any nonmagical means. You and any creatures you designate when you cast the spell can open and close the object despite the lock. You can also set a password that, when spoken within 5 feet of the object, unlocks it for 1 minute.",
       summary: 'Magically lock object until dispelled. Designate who can open; optional password.',
@@ -93,7 +169,18 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 24, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a small square of silk' } },
-    effects: [{ kind: 'note', text: 'Creature: Mask (appear as different creature type). Object: False Aura for detection spells.' }],
+    resolution: {
+      caveats: [
+        'Mask/False Aura interactions with divination are not enforced in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Creature: Mask (appear as different creature type). Object: False Aura for detection spells.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "With a touch, you place an illusion on a willing creature or an object that isn't being worn or carried. A creature gains the Mask effect below, and an object gains the False Aura effect below. The effect lasts for the duration. If you cast the spell on the same target every day for 30 days, the illusion lasts until dispelled. Mask (Creature). Choose a creature type other than the target's actual type. Spells and other magical effects treat the target as if it were a creature of the chosen type. False Aura (Object). You change the way the target appears to spells and magical effects that detect magical auras, such as Detect Magic. You can make a nonmagical object appear magical, make a magic item appear nonmagical, or change the object's aura so that it appears to belong to a school of magic you choose.",
       summary: 'Creature: Mask as different type. Object: alter or falsify magical aura for detection.',
@@ -109,15 +196,24 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'specially marked sticks, bones, cards, or other divinatory tokens worth 25+ GP', cost: { value: 25, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Omens and repeat-cast failure chance are narrative; not resolved by engine.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Receive an omen about results of a planned action within 30 minutes: weal, woe, both, or indifference. 25% cumulative no-answer chance per repeat cast before Long Rest.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Receive an omen about results of a planned action within 30 minutes: weal, woe, both, or indifference. 25% cumulative no-answer chance per repeat cast before Long Rest.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You receive an omen from an otherworldly entity about the results of a course of action that you plan to take within the next 30 minutes. The GM chooses the omen from the Omens table. The spell doesn't account for circumstances, such as other spells, that might change the results. If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.",
       summary: 'Receive omen about planned action within 30 minutes. Cumulative 25% no-answer on repeat casts.',
     },
   },
-{
+  {
     id: 'barkskin',
     name: 'Barkskin',
     school: 'transmutation',
@@ -128,7 +224,12 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a handful of bark' } },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       { kind: 'modifier', target: 'armor_class', mode: 'set', value: 17 },
     ],
     description: {
@@ -136,7 +237,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'Touch grants AC 17 (if lower) for 1 hour. Bark-like appearance.',
     },
   },
-{
+  {
     id: 'blindness-deafness',
     name: 'Blindness/Deafness',
     school: 'transmutation',
@@ -153,7 +254,11 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         save: { ability: 'con' },
         onFail: [{ kind: 'condition', conditionId: 'blinded', repeatSave: { ability: 'con', timing: 'turn-end' } }],
       },
-      { kind: 'note', text: 'Caster chooses Blinded or Deafened at cast time.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Caster chooses Blinded or Deafened at cast time; data models Blinded only.',
+        category: 'under-modeled' as const,
+      },
     ],
     scaling: [{
       category: 'extra-targets',
@@ -215,8 +320,17 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'ruby dust worth 50+ GP', cost: { value: 50, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Light radius and interaction with environmental darkness are not simulated in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. No heat, no fuel. Cannot be smothered or quenched.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. No heat, no fuel. Cannot be smothered or quenched.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "A flame springs from an object that you touch. The effect casts Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. It looks like a regular flame, but it creates no heat and consumes no fuel. The flame can be covered or hidden but not smothered or quenched.",
@@ -233,7 +347,21 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, material: { description: 'bat fur and a piece of coal' } },
-    effects: [{ kind: 'note', text: '15ft sphere magical Darkness. Darkvision cannot penetrate. Dispels light spells level 2 or lower.' }],
+    resolution: {
+      caveats: [
+        'Magical Darkness vs. light/darkvision and object-centered emanations are not fully modeled.',
+        'Encounter may map area effects to creatures only; geometry and allies differ at the table.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
+      { kind: 'state', stateId: 'heavily-obscured', notes: 'The sphere is Heavily Obscured magical Darkness.' },
+      {
+        kind: 'note',
+        text: 'Darkvision cannot see through it. Nonmagical light cannot illuminate it. Overlaps with level 2 or lower light spells dispels them.',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "For the duration, magical Darkness spreads from a point within range and fills a 15-foot-radius Sphere. Darkvision can't see through it, and nonmagical light can't illuminate it. Alternatively, cast on object for 15-foot Emanation. If area overlaps Bright/Dim Light from spell level 2 or lower, that spell is dispelled.",
       summary: '15ft magical Darkness. Darkvision cannot penetrate.',
@@ -249,7 +377,19 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a dried carrot' } },
-    effects: [{ kind: 'note', text: 'Willing creature gains Darkvision 150ft for 8 hours.' }],
+    resolution: {
+      caveats: [
+        'Darkvision range and vision rules are not applied automatically in encounter.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+      {
+        kind: 'state',
+        stateId: 'darkvision',
+        notes: 'Darkvision with a range of 150 feet for the duration.',
+      },
+    ],
     description: {
       full: "For the duration, a willing creature you touch has Darkvision with a range of 150 feet.",
       summary: 'Grant Darkvision 150ft for 8 hours.',
@@ -284,7 +424,25 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a hot pepper' } },
-    effects: [{ kind: 'note', text: 'Touch willing creature. Choose Acid/Cold/Fire/Lightning/Poison. Magic action: 15ft cone, Dex save 3d6. +1d6 per slot.' }],
+    resolution: {
+      caveats: [
+        'Damage type choice and Magic action cone breath are not enforced in encounter.',
+      ],
+    },
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+      {
+        kind: 'state',
+        stateId: 'dragons-breath',
+        notes: 'Target can use a Magic action to exhale a 15-foot Cone; Dex save 3d6 of chosen damage type.',
+      },
+      {
+        kind: 'note',
+        text: 'Choose Acid, Cold, Fire, Lightning, or Poison when you cast.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d6' }],
     description: {
       full: "You touch one willing creature, and choose Acid, Cold, Fire, Lightning, or Poison. Until the spell ends, the target can take a Magic action to exhale a 15-foot Cone. Each creature in that area makes a Dexterity saving throw, taking 3d6 damage of the chosen type on a failed save or half as much on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       summary: 'Grant 15ft cone breath weapon. Dex save 3d6. Scales with slot.',
@@ -300,7 +458,19 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'fur or a feather' } },
-    effects: [{ kind: 'note', text: 'Choose Str/Dex/Int/Wis/Cha. Advantage on ability checks with chosen ability. +1 target per slot above 2.' }],
+    resolution: {
+      caveats: [
+        'Chosen ability, Advantage on those checks, and per-target ability choice are not enforced in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Touch a creature; choose an ability. The target has Advantage on ability checks using that ability. You can choose a different ability for each target when you cast with a higher-level slot.',
+        category: 'under-modeled' as const,
+      },
+    ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3 }],
     description: {
       full: "You touch a creature and choose Strength, Dexterity, Intelligence, Wisdom, or Charisma. For the duration, the target has Advantage on ability checks using the chosen ability. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2. You can choose a different ability for each target.",
       summary: 'Advantage on ability checks with chosen ability. Scales with targets.',
@@ -316,7 +486,18 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of powdered iron' } },
-    effects: [{ kind: 'note', text: 'Enlarge: +1 size, Advantage Str, +1d4 damage. Reduce: -1 size, Disadvantage Str, -1d4 damage. Con save if unwilling.' }],
+    resolution: {
+      caveats: [
+        'Unwilling Con save, size change, and weapon damage modifiers are not fully modeled in encounter.',
+      ],
+    },
+    effects: [
+      {
+        kind: 'note',
+        text: 'Enlarge or reduce a creature or object you can see. Unwilling creature: Con save negates. Enlarge: larger size, Advantage on Str checks/saves, +1d4 weapon damage. Reduce: smaller size, Disadvantage on Str checks/saves, −1d4 damage (minimum 1).',
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "For the duration, the spell enlarges or reduces a creature or object you can see within range. Unwilling creature can make Constitution saving throw; on success, no effect. Enlarge: Size +1 category, Advantage on Str checks/saves, +1d4 damage on attacks. Reduce: Size -1 category, Disadvantage on Str checks/saves, -1d4 damage (min 1).",
       summary: 'Enlarge or reduce creature/object. Con save if unwilling.',
@@ -352,9 +533,18 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Spawn effect does not create a combatant; mount rules and slot-scaled stats are not enforced in encounter.',
+      ],
+    },
     effects: [
       { kind: 'spawn', creature: 'otherworldly-steed', count: 1, location: 'self-space', actsWhen: 'immediately-after-source-turn' },
-      { kind: 'note', text: 'Steed uses Otherworldly Steed stat block. Choose Celestial, Fey, or Fiend. Shares initiative, controlled mount. Disappears at 0 HP or caster death.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Steed uses Otherworldly Steed stat block. Choose Celestial, Fey, or Fiend. Shares initiative; controlled mount. Disappears at 0 HP or if you die.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You summon an otherworldly being that appears as a loyal steed in an unoccupied space within range. The steed uses the Otherworldly Steed stat block. Choose creature type: Celestial, Fey, or Fiend. The steed is an ally, shares your Initiative, functions as controlled mount. Disappears if it drops to 0 HP or you die. Using a Higher-Level Spell Slot. Use the spell slot's level for the steed's stats (level 4+ gains Fly 60 ft).",
@@ -371,8 +561,17 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Trap detection and hazard hints are narrative only; not enforced in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Sense traps within range and line of sight. Learn general nature of danger, not exact location.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Sense traps within range and line of sight. Learn general nature of danger, not exact location.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "You sense any trap within range that is within line of sight. A trap includes any object or mechanism created to cause damage or danger (Alarm, Glyph of Warding, pit trap). Does not reveal natural weaknesses. This spell reveals that a trap is present but not its location. You do learn the general nature of the danger posed by a trap you sense.",
@@ -389,12 +588,22 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a sumac leaf' } },
+    deliveryMethod: 'melee-spell-attack',
+    resolution: {
+      caveats: [
+        'Magic action attacks and light radius are not fully modeled.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '3d6', damageType: 'fire' },
       {
         kind: 'note',
-        text: 'Fiery blade in free hand. Magic action: melee spell attack, 3d6 fire + spellcasting mod. Bright light 10ft, dim 10ft. +1d6 per slot above 2.',
+        text: 'Add your spellcasting ability modifier to damage. Bright Light 10 ft, Dim Light 10 ft beyond.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 fire per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d6' }],
     description: {
       full: "You evoke a fiery blade in your free hand. The blade is similar in size and shape to a scimitar, and it lasts for the duration. If you let go of the blade, it disappears, but you can evoke it again as a Bonus Action. As a Magic action, you can make a melee spell attack with the fiery blade. On a hit, the target takes Fire damage equal to 3d6 plus your spellcasting ability modifier. The flaming blade sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       summary: 'Fiery blade: melee spell attack 3d6+mod fire. Damage scales with slot.',
@@ -443,10 +652,16 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 10, unit: 'day' },
     components: { verbal: true, somatic: true, material: { description: '2 Copper Pieces', consumed: true } },
+    resolution: {
+      caveats: [
+        'Corpse preservation and raise-dead timers are narrative only in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Touch corpse. Protected from decay, cannot become Undead. Extends time limit for Raise Dead.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -464,10 +679,16 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a legume seed' } },
+    resolution: {
+      caveats: [
+        'Line geometry, wind pushes, and flame extinguishing are not fully modeled.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '60ft line, 10ft wide. Str save or pushed 15ft. Creatures in line spend 2ft movement per 1ft when moving closer. Disperses gas, extinguishes flames. Bonus action: change direction.',
+        text: '60ft line, 10ft wide. Str save or pushed 15ft. Creatures in line spend 2 ft of movement per 1 ft moved toward you. Disperses gas; extinguishes small flames. Bonus Action to change direction.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -475,7 +696,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: '60ft line of wind. Str save or pushed 15ft. Difficult to approach. Bonus to change direction.',
     },
   },
-{
+  {
     id: 'hold-person',
     name: 'Hold Person',
     school: 'enchantment',
@@ -510,7 +731,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'A humanoid you can see makes a Wisdom save or is Paralyzed; repeats save at end of each turn.',
     },
   },
-{
+  {
     id: 'invisibility',
     name: 'Invisibility',
     school: 'illusion',
@@ -520,12 +741,23 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'an eyelash in gum arabic' } },
+    resolution: {
+      caveats: [
+        'Spell ends early after the target attacks, deals damage, or casts a spell; not tracked automatically.',
+      ],
+    },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'targeting',
+        target: 'one-creature',
+        targetType: 'creature',
+        requiresWilling: true,
+      },
       { kind: 'condition', conditionId: 'invisible' },
       {
         kind: 'note',
         text: 'The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell.',
+        category: 'under-modeled' as const,
       },
     ],
     scaling: [{
@@ -539,7 +771,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'A creature you touch becomes Invisible for up to 1 hour; ends if the target attacks, deals damage, or casts a spell.',
     },
   },
-{
+  {
     id: 'knock',
     name: 'Knock',
     school: 'transmutation',
@@ -549,10 +781,16 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Lock suppression and audible knock are not modeled in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Mundane lock: unlock, unstick, unbar. Arcane Lock: suppressed 10 min. Loud knock audible 300ft.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

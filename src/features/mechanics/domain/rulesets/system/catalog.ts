@@ -180,6 +180,9 @@ const SYSTEM_RULESET_SRD_CC_V5_2_1: SystemRuleset = {
     combat: {
       armorClass: 10,
       attackResolution: 'to_hit',
+      encounter: {
+        suppressSameSideHostile: true,
+      },
     },
   },
 };

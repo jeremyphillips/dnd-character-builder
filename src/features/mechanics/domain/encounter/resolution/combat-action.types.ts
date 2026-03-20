@@ -40,6 +40,11 @@ export interface CombatActionSaveProfile {
 export interface CombatActionTargetingProfile {
   kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self' | 'single-creature' | 'dead-creature'
   creatureTypeFilter?: string[]
+  /**
+   * "Willing creature" touch buffs: valid targets are same-side only (caster + allies). For now this is the ally approximation.
+   * Non-hostile for charm/hostile-action rules.
+   */
+  requiresWilling?: boolean
 }
 
 export interface CombatActionMovementProfile {
@@ -94,6 +99,14 @@ export interface CombatActionDefinition {
   onFailEffects?: Effect[]
   onSuccessEffects?: Effect[]
   sequence?: CombatActionSequenceStep[]
+  /** When set with `aboveThresholdEffects`, `effects` apply if target current HP ≤ maxHp; otherwise `aboveThresholdEffects` apply. */
+  hpThreshold?: { maxHp: number }
+  aboveThresholdEffects?: Effect[]
   logText?: string
   displayMeta?: CombatActionDisplayMeta
+  /**
+   * Spell-derived: whether the action is a hostile application for charm / same-side targeting rules.
+   * When set (spell actions from `buildSpellCombatActions`), `isHostileAction` uses this; otherwise legacy `targeting` kind rules apply.
+   */
+  hostileApplication?: boolean
 }

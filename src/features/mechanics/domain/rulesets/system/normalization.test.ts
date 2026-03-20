@@ -14,12 +14,6 @@ function getSubclassFeature(
   return subclass?.features?.find((feature) => feature.id === featureId)
 }
 
-function hasNestedFeatures(
-  feature: SubclassFeature | undefined,
-): feature is SubclassFeature & { features: SubclassFeature[] } {
-  return Array.isArray((feature as { features?: unknown } | undefined)?.features)
-}
-
 function visitUnknown(
   value: unknown,
   visitor: (node: unknown) => void,
@@ -39,26 +33,11 @@ function visitUnknown(
 }
 
 describe('system catalog normalization', () => {
-  it('uses canonical trigger ids for class features', () => {
-    const feature = getSubclassFeature(
-      'fighter',
-      'fighter.martial_archetype.battle_master',
-      'fighter.martial_archetype.battle_master.combat_superiority',
-    )
-
-    const nestedTrigger = (hasNestedFeatures(feature) ? feature.features[1] : undefined) as
-      | { kind: 'trigger'; trigger: string }
-      | undefined
-
-    expect(nestedTrigger?.kind).toBe('trigger')
-    expect(nestedTrigger?.trigger).toBe('weapon-hit')
-  })
-
   it('uses canonical activation wrappers for active class buffs', () => {
     const feature = getSubclassFeature(
       'paladin',
-      'paladin.subclass.sacred_oath.oath_of_devotion',
-      'paladin.subclass.sacred_oath.oath_of_devotion.sacred_weapon',
+      'oath_of_devotion',
+      'oath_of_devotion.feature.sacred_weapon',
     ) as { kind?: unknown; activation?: unknown; cost?: unknown; effects?: unknown[] } | undefined
 
     expect(feature).toMatchObject({
@@ -72,7 +51,7 @@ describe('system catalog normalization', () => {
         kind: 'modifier',
         target: 'attack_roll',
         mode: 'add',
-        value: { ability: 'charisma' },
+        value: { ability: 'cha' },
         duration: {
           kind: 'fixed',
           value: 1,
@@ -85,8 +64,8 @@ describe('system catalog normalization', () => {
   it('uses canonical state conditions for unarmored formulas', () => {
     const feature = getSubclassFeature(
       'sorcerer',
-      'sorcerer.sorcerer_origin.draconic_bloodline',
-      'sorcerer.sorcerer_origin.draconic_bloodline.draconic_ancestry',
+      'draconic_bloodline',
+      'draconic_bloodline.draconic_ancestry',
     ) as { condition?: unknown } | undefined
 
     expect(feature?.condition).toEqual({
@@ -94,25 +73,6 @@ describe('system catalog normalization', () => {
       target: 'self',
       property: 'equipment.armorEquipped',
       equals: null,
-    })
-  })
-
-  it('uses canonical save effects for class riders', () => {
-    const feature = getSubclassFeature(
-      'fighter',
-      'fighter.martial_archetype.battle_master',
-      'fighter.martial_archetype.battle_master.combat_superiority',
-    )
-
-    const nestedTrigger = hasNestedFeatures(feature) ? feature.features[1] : undefined
-    const nestedSave = (nestedTrigger as { effects?: unknown[] } | undefined)?.effects?.[1] as
-      | { kind?: unknown; save?: unknown; onFail?: unknown[] }
-      | undefined
-
-    expect(nestedSave).toEqual({
-      kind: 'save',
-      save: { ability: 'strength' },
-      onFail: [{ kind: 'condition', conditionId: 'prone' }],
     })
   })
 

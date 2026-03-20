@@ -175,11 +175,19 @@ export interface ConcentrationState {
   totalTurns?: number
 }
 
+/** Minimal equipment snapshot for effect `condition` evaluation in encounter (e.g. unarmored gates). */
+export type CombatantEquipmentSnapshot = {
+  /** Equipped armor item id, or null/undefined when not wearing armor. */
+  armorEquipped?: string | null
+}
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
   creatureType?: string
+  /** When set (e.g. from character loadout), enables authored `effect.condition` gates that read `equipment.armorEquipped`. */
+  equipment?: CombatantEquipmentSnapshot
   stats: CombatantStatBlock
   attacks: CombatantAttackEntry[]
   actions?: CombatActionDefinition[]

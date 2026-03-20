@@ -1,6 +1,7 @@
 import type { DiceOrFlat, dY } from '@/features/mechanics/domain/dice';
 import type { CreatureTypeCondition } from '@/features/mechanics/domain/conditions/condition.types';
 
+/** Use on effect `condition` where the **source** (e.g. attacker) must be one of these types — not for spell target selection. */
 export const EXTRAPLANAR_CREATURE_TYPES: CreatureTypeCondition = {
   kind: 'creature-type',
   target: 'source',

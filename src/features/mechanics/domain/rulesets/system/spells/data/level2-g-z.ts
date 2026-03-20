@@ -1,5 +1,11 @@
 import type { SpellEntry } from '../types';
 
+/**
+ * Level 2 spells G–Z — authoring status:
+ * - **Attack/save/AoE modeled:** Mind Spike (save+damage), Scorching Ray, Shatter, Moonbeam, Spiritual Weapon (notes), Suggestion, Web, Zone of Truth.
+ * - **Utility / sense / state:** Lesser Restoration, Levitate, Locate Object, Misty Step, Pass without Trace, See Invisibility, Silence.
+ * - **Note-first / heavy caveats:** Magic Mouth, Magic Weapon, Mirror Image, Phantasmal Force, Prayer of Healing, Rope Trick, Spike Growth, Warding Bond, etc.
+ */
 export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
 {
     id: 'lesser-restoration',
@@ -11,10 +17,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Choosing which condition ends is manual; not gated by engine lists.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Touch creature: end one condition (Blinded, Deafened, Paralyzed, or Poisoned).',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -32,10 +44,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a metal spring' } },
+    resolution: {
+      caveats: [
+        'Levitation movement, altitude changes, and weight limit are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Creature or object rises 20ft, suspended. Con save if unwilling. Move by pushing/pulling. Magic action to change altitude.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -53,8 +71,17 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'fur from a bloodhound' } },
+    resolution: {
+      caveats: [
+        'Divination result is narrative only; not enforced in encounter.',
+      ],
+    },
     effects: [
-      { kind: 'note', text: 'Learn direction and distance to the closest Beast, Plant creature, or nonmagical plant of a named kind within 5 miles.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Learn direction and distance to the closest Beast, Plant creature, or nonmagical plant of a named kind within 5 miles.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "Describe or name a specific kind of Beast, Plant creature, or nonmagical plant. You learn the direction and distance to the closest creature or plant of that kind within 5 miles, if any are present.",
@@ -90,10 +117,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'until-dispelled' },
     components: { verbal: true, somatic: true, material: { description: 'jade dust worth 10+ GP', cost: { value: 10, unit: 'gp', atLeast: true }, consumed: true } },
+    resolution: {
+      caveats: [
+        'Triggered messages and object targeting are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Implant message (25 words max) in object. Trigger condition (visual/audible within 30ft) delivers message. Can end after delivery or repeat.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -111,10 +144,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Weapon bonus tier by slot and recast rules are not applied automatically.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Nonmagical weapon becomes +1 magic weapon. Ends if you cast again. Slot 3-5: +2. Slot 6+: +3.',
+        text: 'Nonmagical weapon becomes a +1 magic weapon. Ends if you cast again. Level 3–5 slot: +2. Level 6+ slot: +3.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -132,12 +171,26 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { somatic: true },
+    resolution: {
+      caveats: [
+        'Location tracking and Invisible interaction on failed save are not fully enforced.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresSight: true },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'damage', damage: '3d8', damageType: 'psychic' }],
+        onSuccess: [{ kind: 'damage', damage: '2d8', damageType: 'psychic' }],
+      },
       {
         kind: 'note',
-        text: 'Wis save or 3d8 psychic. On fail: you know target location (same plane), target cannot be hidden from you, Invisible has no benefit vs you. +1d8 per slot.',
+        text: "On a failed save, you know the target's location while on the same plane; the target cannot hide from you and gains no benefit from Invisible against you.",
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 psychic per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d8' }],
     description: {
       full: "You drive a spike of psionic energy into the mind of one creature you can see within range. The target makes a Wisdom saving throw, taking 3d8 Psychic damage on a failed save or half as much damage on a successful one. On a failed save, you also always know the target's location until the spell ends, but only while the two of you are on the same plane of existence. While you have this knowledge, the target can't become hidden from you, and if it has the Invisible condition, it gains no benefit from that condition against you. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
       summary: 'Wis save or 3d8 psychic; on fail you know location, target cannot hide. +1d8 per slot.',
@@ -153,10 +206,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Duplicate decoy rolls and Blindsight/Truesight exceptions are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Three illusory duplicates. When hit, roll d6 per duplicate: 3+ means duplicate hit instead and destroyed. No effect vs Blinded, Blindsight, Truesight.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -174,9 +233,18 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Teleport destination and opportunity-attack rules are not fully simulated.',
+      ],
+    },
     effects: [
       { kind: 'move', distance: 30 },
-      { kind: 'note', text: 'Teleport to an unoccupied space you can see. No opportunity attacks.', category: 'flavor' as const },
+      {
+        kind: 'note',
+        text: 'Teleport to an unoccupied space you can see within range. No opportunity attacks from this movement.',
+        category: 'under-modeled' as const,
+      },
     ],
     description: {
       full: "Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see.",
@@ -227,10 +295,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'ashes from burned mistletoe' } },
+    resolution: {
+      caveats: [
+        'Chosen allies in the aura and Stealth bonus are not enforced automatically.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '30-foot emanation: +10 to Dex (Stealth), no tracks. Choose creatures in aura.',
+        text: '30-foot Emanation: you and chosen creatures have +10 to Dexterity (Stealth) and leave no tracks.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -248,10 +322,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a bit of fleece' } },
+    resolution: {
+      caveats: [
+        'Illusory phantasm, Investigation contest, and ongoing psychic damage are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Int save or phantasmal object/creature (10ft cube) only target perceives. Study + Int (Investigation) vs DC to end. Phantasm can deal 2d8 psychic/turn if dangerous.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -269,12 +349,19 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Short Rest benefits and per-creature once-per-long-rest limit are not tracked in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Up to 5 creatures within range for entire casting: benefits of Short Rest + 2d8 HP. Cannot affect again until Long Rest. +1d8 per slot.',
+        text: '10-minute casting: up to 5 creatures who stay in range gain Short Rest benefits and regain 2d8 HP. A creature cannot be affected again until it finishes a Long Rest.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-healing', description: '+1d8 healing per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d8' }],
     description: {
       full: "Up to five creatures of your choice who remain within range for the spell's entire casting gain the benefits of a Short Rest and also regain 2d8 Hit Points. A creature can't be affected by this spell again until that creature finishes a Long Rest. Using a Higher-Level Spell Slot. The healing increases by 1d8 for each spell slot level above 2.",
       summary: '10 min cast: up to 5 creatures get Short Rest + 2d8 HP. +1d8 per slot.',
@@ -290,10 +377,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Poisoned cleanup, Advantage on poison saves, and Poison resistance are not fully automated.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Touch: end Poisoned condition. Advantage on saves vs Poisoned, Resistance to Poison damage for duration.',
+        text: 'Touch: end Poisoned condition. For the duration, Advantage on saves to avoid/end Poisoned and Resistance to Poison damage.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -311,10 +404,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Ray rider effects and repeat saves are not fully enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Con save: success = Disadvantage on next attack until start of your next turn. Fail = Disadvantage on Str-based d20 tests, -1d8 damage rolls. Repeat save end of each turn.',
+        text: "Con save: on success, Disadvantage on the target's next attack until the start of your next turn. On failure, Disadvantage on Strength-based D20 Tests and -1d8 from damage rolls; repeat save at end of each of the target's turns.",
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -332,10 +431,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a segment of rope' } },
+    resolution: {
+      caveats: [
+        'Extradimensional space and ingress/egress are not simulated in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
         text: 'Rope hovers perpendicular. 3ft×5ft portal to extradimensional space at top. Holds 8 Medium or smaller. Climb to enter. Attacks/spells cannot pass in or out. Contents drop out when spell ends.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -443,12 +548,21 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'self' },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true },
+    resolution: {
+      caveats: [
+        'Bonus-action rider after a melee hit; light radius and Invisible negation are not fully enforced.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'damage', damage: '2d6', damageType: 'radiant' },
       {
         kind: 'note',
-        text: 'Extra 2d6 radiant on hit. Target sheds Bright Light 5ft, attack rolls against it have Advantage, cannot benefit from Invisible. +1d6 per slot above 2.',
+        text: 'Target sheds Bright Light in 5 ft; attack rolls against it have Advantage; it cannot benefit from Invisible.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d6 radiant per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d6' }],
     description: {
       full: "The target hit by the strike takes an extra 2d6 Radiant damage from the attack. Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       summary: 'Extra 2d6 radiant. Target: Bright Light 5ft, Advantage to hit, no Invisible. +1d6 per slot.',
@@ -464,10 +578,22 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 120, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Sound suppression and Verbal spell blocking are not fully modeled in encounter.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'sphere', size: 20 },
+      },
+      {
         kind: 'note',
-        text: '20-foot sphere: no sound created or passes through. Immunity to Thunder. Deafened inside. Cannot cast spells with Verbal component.',
+        text: 'No sound passes through or is created in the sphere; Thunder Immunity; Deafened while inside; cannot cast spells with a Verbal component there.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -485,12 +611,20 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a drop of bitumen and a spider' } },
+    resolution: {
+      caveats: [
+        'Climb Speed and vertical movement are not applied automatically.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
-        kind: 'note',
-        text: 'Willing creature: move on vertical surfaces and ceilings, hands free. Climb Speed = Speed. +1 target per slot above 2.',
+        kind: 'state',
+        stateId: 'spider-climb',
+        notes: 'Climb Speed equal to Speed; can move on vertical surfaces and ceilings with hands free.',
       },
     ],
+    scaling: [{ category: 'extra-targets', description: '+1 target per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3 }],
     description: {
       full: "Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free. The target also gains a Climb Speed equal to its Speed. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2.",
       summary: 'Touch: climb walls and ceilings, hands free. +1 target per slot.',
@@ -506,10 +640,16 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 150, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'seven thorns' } },
+    resolution: {
+      caveats: [
+        'Movement-based piercing, camouflage, and Search DC are not enforced in encounter.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: '20-foot sphere: Difficult Terrain. 2d4 piercing per 5 feet moved. Camouflaged. Search + Wis (Perception/Survival) vs DC to recognize before entering.',
+        text: '20-foot sphere: Difficult Terrain. 2d4 piercing per 5 feet moved within the area. Camouflaged; Search + Wis (Perception or Survival) vs your spell save DC to spot hazards before entering.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -527,12 +667,19 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Bonus Action movement and repeated attacks are not automated; damage uses spellcasting modifier.',
+      ],
+    },
     effects: [
       {
         kind: 'note',
-        text: 'Floating spectral weapon. Appear and make melee spell attack (1d8+mod Force). Bonus action: move 20ft and repeat attack. +1d8 per slot above 2.',
+        text: 'Floating spectral weapon: melee spell attack 1d8 + spellcasting modifier Force; Bonus Action to move 20 ft and attack again.',
+        category: 'under-modeled' as const,
       },
     ],
+    scaling: [{ category: 'extra-damage', description: '+1d8 force per spell slot level above 2', mode: 'per-slot-level', startsAtSlotLevel: 3, amount: '1d8' }],
     description: {
       full: "You create a floating, spectral force that resembles a weapon of your choice and lasts for the duration. The force appears within range in a space of your choice, and you can immediately make one melee spell attack against one creature within 5 feet of the force. On a hit, the target takes Force damage equal to 1d8 plus your spellcasting ability modifier. As a Bonus Action on your later turns, you can move the force up to 20 feet and repeat the attack against a creature within 5 feet of it. Using a Higher-Level Spell Slot. The damage increases by 1d8 for every slot level above 2.",
       summary: 'Spectral weapon: Bonus action attack 1d8+mod Force. Move 20ft and repeat. +1d8 per slot.',
@@ -608,10 +755,17 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a pair of platinum rings worth 50+ GP each, which you and the target must wear for the duration', cost: { value: 50, unit: 'gp', atLeast: true } } },
+    resolution: {
+      caveats: [
+        'Shared damage, AC/save bonuses, and Resistance are not enforced automatically.',
+      ],
+    },
     effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
       {
         kind: 'note',
-        text: 'Willing creature within 60ft: +1 AC and saves, Resistance to all damage. You take same damage when target takes damage. Ends if you drop to 0 HP or >60ft apart.',
+        text: 'While within 60 ft: target +1 AC and saving throws, Resistance to all damage; you take the same damage when the target takes damage. Ends at 0 HP or if separated by more than 60 ft.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {

@@ -1,7 +1,13 @@
 import type { AbilityRef } from '@/features/mechanics/domain/character'
 import type { EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
 import type { CombatantInstance } from '../types'
-import type { ConditionConsequence, AttackModConsequence, SaveModConsequence, DamageInteractionConsequence, SourceRelativeConsequence } from './condition-consequences.types'
+import type {
+  ConditionConsequence,
+  AttackModConsequence,
+  SaveModConsequence,
+  DamageInteractionConsequence,
+  SourceRelativeConsequence,
+} from './condition-consequences.types'
 import { CONDITION_RULES } from './condition-definitions'
 
 function getActiveConditionIds(combatant: CombatantInstance): EffectConditionId[] {
@@ -84,6 +90,71 @@ export function getOutgoingAttackModifiers(
   range: 'melee' | 'ranged',
 ): ('advantage' | 'disadvantage')[] {
   return collectAttackMods(getActiveConsequences(combatant), 'outgoing', range)
+}
+
+/** State marker label from the See Invisibility spell (`stateId: 'see-invisibility'`). */
+const SEE_INVISIBILITY_STATE_LABEL = 'see-invisibility'
+
+function combatantHasStateLabel(combatant: CombatantInstance, stateLabel: string): boolean {
+  return combatant.states.some((m) => m.label === stateLabel)
+}
+
+/**
+ * Whether an attack_mod from a condition counts toward this attack roll.
+ * Suppresses invisible-related adv/disadv when the other combatant has See Invisibility.
+ */
+export function shouldCountAttackModForAttackRoll(
+  conditionId: EffectConditionId,
+  consequence: AttackModConsequence,
+  bearer: CombatantInstance,
+  counterpart: CombatantInstance,
+  attackRange: 'melee' | 'ranged',
+): boolean {
+  if (consequence.kind !== 'attack_mod') return false
+  if (consequence.appliesTo !== 'incoming' && consequence.appliesTo !== 'outgoing') return false
+  if (consequence.range && consequence.range !== 'any' && consequence.range !== attackRange) return false
+  if (conditionId === 'invisible') {
+    if (consequence.appliesTo === 'incoming' && combatantHasStateLabel(counterpart, SEE_INVISIBILITY_STATE_LABEL)) {
+      return false
+    }
+    if (consequence.appliesTo === 'outgoing' && combatantHasStateLabel(counterpart, SEE_INVISIBILITY_STATE_LABEL)) {
+      return false
+    }
+  }
+  return true
+}
+
+function collectAttackModsWithPairContext(
+  bearer: CombatantInstance,
+  counterpart: CombatantInstance,
+  appliesTo: 'incoming' | 'outgoing',
+  range: 'melee' | 'ranged',
+): ('advantage' | 'disadvantage')[] {
+  const mods: ('advantage' | 'disadvantage')[] = []
+  for (const { conditionId, consequence } of getActiveConsequencesWithOrigin(bearer)) {
+    if (consequence.kind !== 'attack_mod' || consequence.appliesTo !== appliesTo) continue
+    if (!shouldCountAttackModForAttackRoll(conditionId, consequence, bearer, counterpart, range)) continue
+    mods.push(consequence.modifier)
+  }
+  return mods
+}
+
+/** Incoming attack modifiers on `defender` for an attack from `attacker` (pair-aware: See Invisibility vs invisible). */
+export function getIncomingAttackModifiersForAttack(
+  attacker: CombatantInstance,
+  defender: CombatantInstance,
+  range: 'melee' | 'ranged',
+): ('advantage' | 'disadvantage')[] {
+  return collectAttackModsWithPairContext(defender, attacker, 'incoming', range)
+}
+
+/** Outgoing attack modifiers on `attacker` against `defender` (pair-aware: See Invisibility vs invisible). */
+export function getOutgoingAttackModifiersForAttack(
+  attacker: CombatantInstance,
+  defender: CombatantInstance,
+  range: 'melee' | 'ranged',
+): ('advantage' | 'disadvantage')[] {
+  return collectAttackModsWithPairContext(attacker, defender, 'outgoing', range)
 }
 
 function collectSaveMods(

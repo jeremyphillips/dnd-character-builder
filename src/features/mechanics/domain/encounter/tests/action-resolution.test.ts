@@ -31,6 +31,9 @@ function createCombatant(args: {
     charisma?: number
   }
   actions?: CombatActionDefinition[]
+  conditions?: Array<{ label: string }>
+  states?: Array<{ label: string }>
+  equipment?: { armorEquipped?: string | null }
 }): CombatantInstance {
   return {
     instanceId: args.instanceId,
@@ -40,6 +43,7 @@ function createCombatant(args: {
       sourceId: args.instanceId,
       label: args.label,
     },
+    ...(args.equipment !== undefined ? { equipment: args.equipment } : {}),
     stats: {
       armorClass: args.armorClass,
       maxHitPoints: args.maxHitPoints ?? 12,
@@ -63,8 +67,14 @@ function createCombatant(args: {
     activeEffects: [],
     runtimeEffects: [],
     turnHooks: [],
-    conditions: [],
-    states: [],
+    conditions: (args.conditions ?? []).map((c, i) => ({
+      id: `test-c-${args.instanceId}-${i}`,
+      label: c.label,
+    })),
+    states: (args.states ?? []).map((s, i) => ({
+      id: `test-s-${args.instanceId}-${i}`,
+      label: s.label,
+    })),
   }
 }
 
@@ -1274,6 +1284,110 @@ describe('resolveCombatAction', () => {
     expect(resolved.combatantsById['caster']?.statModifiers).toHaveLength(1)
     expect(resolved.combatantsById['caster']?.statModifiers?.[0]?.value).toBe(5)
     expect(resolved.combatantsById['caster']?.turnResources?.reactionAvailable).toBe(false)
+  })
+
+  it('effects mode skips AC modifier when spell condition is not met (unarmored gate)', () => {
+    const mageArmorEffects = [
+      {
+        kind: 'modifier' as const,
+        target: 'armor_class' as const,
+        mode: 'set' as const,
+        value: 13,
+        condition: {
+          kind: 'state' as const,
+          target: 'self' as const,
+          property: 'equipment.armorEquipped',
+          equals: null,
+        },
+      },
+    ]
+
+    const stateArmored = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'mage-armor',
+              label: 'Mage Armor',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [...mageArmorEffects],
+              targeting: { kind: 'single-creature' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'ally',
+          label: 'Ally',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 12,
+          equipment: { armorEquipped: 'leather' },
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolvedArmored = resolveCombatAction(
+      stateArmored,
+      { actorId: 'caster', targetId: 'ally', actionId: 'mage-armor' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolvedArmored.combatantsById['ally']?.stats.armorClass).toBe(12)
+    expect(resolvedArmored.combatantsById['ally']?.statModifiers ?? []).toHaveLength(0)
+    expect(resolvedArmored.log.some((e) => e.summary.includes('Modifier not applied'))).toBe(true)
+
+    const stateUnarmored = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'caster',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 10,
+          armorClass: 12,
+          actions: [
+            {
+              id: 'mage-armor',
+              label: 'Mage Armor',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [...mageArmorEffects],
+              targeting: { kind: 'single-creature' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'ally',
+          label: 'Ally',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 12,
+          equipment: { armorEquipped: null },
+        }),
+      ],
+      { rng: () => 0.1 },
+    )
+
+    const resolvedUnarmored = resolveCombatAction(
+      stateUnarmored,
+      { actorId: 'caster', targetId: 'ally', actionId: 'mage-armor' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolvedUnarmored.combatantsById['ally']?.stats.armorClass).toBe(13)
+    expect(resolvedUnarmored.combatantsById['ally']?.statModifiers).toHaveLength(1)
   })
 
   it('self-targeting effects mode applies spell immunity as state marker', () => {

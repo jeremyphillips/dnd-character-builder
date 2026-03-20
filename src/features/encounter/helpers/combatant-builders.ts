@@ -126,6 +126,9 @@ export function buildCharacterCombatantInstance(args: {
       label: formatRuntimeLabel(character.name, runtimeId, character.id),
     },
     creatureType: 'humanoid',
+    equipment: {
+      armorEquipped: character.combat?.loadout?.armorId ?? null,
+    },
     stats: {
       armorClass: combatStats.armorClass,
       maxHitPoints: character.hitPoints.total,
@@ -186,6 +189,9 @@ export function buildMonsterCombatantInstance(args: {
       label: formatRuntimeLabel(monster.name, runtimeId, monster.id),
     },
     creatureType: monster.type,
+    equipment: {
+      armorEquipped: null,
+    },
     stats: {
       armorClass,
       maxHitPoints: currentHitPoints,

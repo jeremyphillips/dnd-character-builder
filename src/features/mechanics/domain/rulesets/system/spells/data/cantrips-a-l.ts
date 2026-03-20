@@ -12,10 +12,34 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Encounter maps area spells to all living enemies only; no geometry or ally targeting.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'sphere', size: 5 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'dex' },
+        onFail: [
+          {
+            kind: 'damage',
+            damage: '1d6',
+            damageType: 'acid',
+            levelScaling: cantripDamageScaling('d6'),
+          },
+        ],
+      },
+      {
         kind: 'note',
-        text: '5-foot sphere; creatures make Dex save or take 1d6 acid damage. Scales at 5/11/17.',
+        text: 'Edition-specific targeting (e.g. two creatures within 5 feet, objects) may differ; not fully modeled.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -34,7 +58,20 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true },
     deliveryMethod: 'melee-spell-attack',
-    effects: [{ kind: 'note', text: 'Melee spell attack: 1d10 necrotic. Target cannot regain HP until end of your next turn. Scales at 5/11/17.' }],
+    effects: [
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      {
+        kind: 'damage',
+        damage: '1d10',
+        damageType: 'necrotic',
+        levelScaling: cantripDamageScaling('d10'),
+      },
+      {
+        kind: 'note',
+        text: "On a hit, the target can't regain Hit Points until the end of your next turn. Not tracked in encounter.",
+        category: 'under-modeled' as const,
+      },
+    ],
     description: {
       full: "Channeling the chill of the grave, make a melee spell attack against a target within reach. On a hit, the target takes 1d10 Necrotic damage, and it can't regain Hit Points until the end of your next turn. Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
       summary: 'Melee spell attack: 1d10 necrotic, blocks HP regain until end of next turn. Scales at 5/11/17.',

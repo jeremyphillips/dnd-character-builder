@@ -14,10 +14,53 @@ import {
 } from '../../state'
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
 import { abilityIdToKey, type AbilityRef } from '../../../character'
+import type { Condition } from '../../../conditions/condition.types'
+import type { CreatureSnapshot } from '../../../conditions/evaluation-context.types'
+import { evaluateCondition } from '../../../conditions/evaluateCondition'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import { rollDie, rollDamage, rollHealing } from '../../../resolution/engines/dice.engine'
+import type { AbilityScoreMapResolved } from '../../../character/abilities/abilities.types'
+
+const DEFAULT_ABILITIES: AbilityScoreMapResolved = {
+  strength: 10,
+  dexterity: 10,
+  constitution: 10,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 10,
+}
+
+function combatantToCreatureSnapshot(c: CombatantInstance): CreatureSnapshot {
+  const scores = c.stats.abilityScores
+  return {
+    id: c.instanceId,
+    level: 1,
+    hp: c.stats.currentHitPoints,
+    hpMax: c.stats.maxHitPoints,
+    abilities: scores ? { ...DEFAULT_ABILITIES, ...scores } : DEFAULT_ABILITIES,
+    conditions: c.conditions.map((m) => m.label),
+    resources: {},
+    equipment: {
+      armorEquipped: c.equipment?.armorEquipped ?? null,
+    },
+    flags: {},
+  }
+}
+
+function modifierEffectAppliesToTarget(
+  effect: Effect,
+  actor: CombatantInstance,
+  target: CombatantInstance,
+): boolean {
+  const cond = 'condition' in effect ? (effect as { condition?: Condition }).condition : undefined
+  if (!cond) return true
+  return evaluateCondition(cond, {
+    self: combatantToCreatureSnapshot(target),
+    source: combatantToCreatureSnapshot(actor),
+  })
+}
 
 export function getSaveModifier(combatant: CombatantInstance, ability: AbilityRef): number {
   const abilityKey = abilityIdToKey(ability)
@@ -339,6 +382,17 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'modifier' && typeof effect.value === 'number' && (effect.mode === 'add' || effect.mode === 'set')) {
+      if (!modifierEffectAppliesToTarget(effect, actor, target)) {
+        nextState = appendEncounterNote(
+          nextState,
+          `${options.sourceLabel}: Modifier not applied (spell conditions not met for ${target.source.label}).`,
+          {
+            actorId: actor.instanceId,
+            targetIds: [target.instanceId],
+          },
+        )
+        return
+      }
       const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
       const sign = effect.mode === 'add' && effect.value > 0 ? '+' : ''
       const modeLabel = effect.mode === 'set' ? `set ${effect.target} ${effect.value}` : `${sign}${effect.value} ${effect.target}`

@@ -124,6 +124,12 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 30, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'hour' },
     components: { verbal: true, somatic: true },
+    resolution: {
+      caveats: [
+        'Spell ends early if the caster or any ally damages the target; not enforced in encounter resolution.',
+        'Advantage on the save when you or allies are fighting the target is not applied by the engine.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
       {
@@ -136,7 +142,8 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
       },
       {
         kind: 'note',
-        text: 'The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you. The spell ends early if you or your allies damage the target.',
+        text: 'The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you.',
+        category: 'flavor' as const,
       },
     ],
     scaling: [{

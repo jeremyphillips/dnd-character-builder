@@ -5,8 +5,8 @@ import {
   getEncounterCombatantLabel,
   setConcentration,
   updateEncounterCombatant,
-  getIncomingAttackModifiers,
-  getOutgoingAttackModifiers,
+  getIncomingAttackModifiersForAttack,
+  getOutgoingAttackModifiersForAttack,
   autoFailsSave,
   getSaveModifiersFromConditions,
   type CombatantInstance,
@@ -55,8 +55,8 @@ function resolveRollModifier(
   const markerModifiers = [...attackerMarkers, ...defenderMarkers].map((m) => m.modifier)
 
   const conditionModifiers = [
-    ...getOutgoingAttackModifiers(attacker, attackRange),
-    ...getIncomingAttackModifiers(defender, attackRange),
+    ...getOutgoingAttackModifiersForAttack(attacker, defender, attackRange),
+    ...getIncomingAttackModifiersForAttack(attacker, defender, attackRange),
   ]
 
   const all = [...markerModifiers, ...conditionModifiers]

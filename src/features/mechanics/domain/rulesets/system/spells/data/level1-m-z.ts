@@ -348,10 +348,30 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'timed', value: 8, unit: 'hour' },
     components: { verbal: true, somatic: true, material: { description: 'a piece of cured leather' } },
+    resolution: {
+      caveats: [
+        'Spell ends if the target dons armor; mid-combat equipment changes are not tracked in encounter.',
+      ],
+    },
     effects: [
       { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
-      { kind: 'modifier', target: 'armor_class', mode: 'set', value: 13 },
-      { kind: 'note', text: 'Target must not be wearing armor. True AC is 13 + Dex modifier. Ends if target dons armor.', category: 'flavor' as const },
+      {
+        kind: 'modifier',
+        target: 'armor_class',
+        mode: 'set',
+        value: 13,
+        condition: {
+          kind: 'state',
+          target: 'self',
+          property: 'equipment.armorEquipped',
+          equals: null,
+        },
+      },
+      {
+        kind: 'note',
+        text: 'True AC is 13 + Dexterity modifier while the spell applies.',
+        category: 'flavor' as const,
+      },
     ],
     description: {
       full: "You touch a willing creature who isn't wearing armor. Until the spell ends, the target's base AC becomes 13 plus its Dexterity modifier. The spell ends early if the target dons armor.",
@@ -622,7 +642,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: '15ft cube image. Purely visual. Magic action to move. Study to discern.',
     },
   },
-{
+  {
     id: 'sleep',
     name: 'Sleep',
     school: 'enchantment',
@@ -632,10 +652,28 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 1, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a pinch of sand or rose petals' } },
+    resolution: {
+      caveats: [
+        'Encounter maps area spells to all living enemies only; no creature choice or geometry inside the sphere.',
+      ],
+    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'creatures-in-area',
+        targetType: 'creature',
+        area: { kind: 'sphere', size: 5 },
+      },
+      {
+        kind: 'save',
+        save: { ability: 'wis' },
+        onFail: [{ kind: 'condition', conditionId: 'incapacitated' }],
+      },
+      {
         kind: 'note',
-        text: '5-foot sphere: Wis save or Incapacitated until end of next turn, then repeat save. Fail again: Unconscious for duration. Ends on damage or action to shake. Elves and immunity to Exhaustion auto-succeed.',
+        text:
+          'Repeat save at end of next turn: fail → Unconscious for duration. Ends on damage or if a creature within 5 feet uses an action to wake. Elves and creatures with Immunity to Exhaustion auto-succeed. Not resolved in encounter.',
+        category: 'under-modeled' as const,
       },
     ],
     description: {
@@ -643,7 +681,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
       summary: '5ft sphere: Wis save or Incapacitated, repeat save or Unconscious. Ends on damage.',
     },
   },
-{
+  {
     id: 'speak-with-animals',
     name: 'Speak with Animals',
     school: 'divination',

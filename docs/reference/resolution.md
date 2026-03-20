@@ -173,7 +173,8 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 **Derived queries:**
 
 - `canTakeActions(combatant)` / `canTakeReactions(combatant)` — used by `createCombatantTurnResources` in `shared.ts`
-- `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — used by `resolveRollModifier` in `action-resolver.ts`
+- `getIncomingAttackModifiers(combatant, range)` / `getOutgoingAttackModifiers(combatant, range)` — flat condition-derived attack mods (no attacker/defender pairing).
+- `getIncomingAttackModifiersForAttack(attacker, defender, range)` / `getOutgoingAttackModifiersForAttack(attacker, defender, range)` — used by `resolveRollModifier` in `action-resolver.ts`; suppresses invisible-related adv/disadv when the other combatant has the `see-invisibility` state.
 - `autoFailsSave(combatant, ability)` / `getSaveModifiersFromConditions(combatant, ability)` — used by saving-throw resolution in `action-resolver.ts`
 - `getSpeedConsequences(combatant)` — used by `createCombatantTurnResources` to zero movement for grappled, restrained, etc.
 - `getDamageResistanceFromConditions(combatant, damageType?)` — used by `applyDamageToCombatant` to apply petrified resistance-to-all
@@ -202,7 +203,7 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 
 - `action_limit` — `canTakeActions` / `canTakeReactions` consumed by `createCombatantTurnResources`
 - `movement.speedBecomesZero` — `getSpeedConsequences` consumed by `createCombatantTurnResources`
-- `attack_mod` — `getIncomingAttackModifiers` / `getOutgoingAttackModifiers` consumed by `resolveRollModifier`
+- `attack_mod` — pair-aware helpers in `condition-queries.ts` consumed by `resolveRollModifier` (See Invisibility vs invisible)
 - `save_mod` — `autoFailsSave` / `getSaveModifiersFromConditions` consumed by saving-throw resolution
 - `damage_interaction` — `getDamageResistanceFromConditions` consumed by `applyDamageToCombatant`
 - `source_relative` by source identity — `cannotTargetWithHostileAction` consumed by `isValidActionTarget` (charmed targeting exclusion)

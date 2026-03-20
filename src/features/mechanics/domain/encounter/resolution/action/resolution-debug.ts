@@ -3,7 +3,14 @@ import type { EffectConditionId } from '../../../effects/effects.types'
 import type { CombatantInstance, RollModifierMarker } from '../../state/types'
 import type { CombatActionCost } from '../combat-action.types'
 import type { ConditionConsequence, AttackModConsequence, SaveModConsequence, DamageInteractionConsequence } from '../../state/condition-rules'
-import { CONDITION_RULES, getActiveConsequencesWithOrigin, canTakeActions, canTakeReactions, getSpeedConsequences } from '../../state/condition-rules'
+import {
+  CONDITION_RULES,
+  getActiveConsequencesWithOrigin,
+  canTakeActions,
+  canTakeReactions,
+  getSpeedConsequences,
+  shouldCountAttackModForAttackRoll,
+} from '../../state/condition-rules'
 
 type RollMode = 'advantage' | 'disadvantage' | 'normal'
 
@@ -26,14 +33,14 @@ export function formatAttackRollDebug(
 
   for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(attacker)) {
     if (c.kind !== 'attack_mod' || c.appliesTo !== 'outgoing') continue
-    if (c.range && c.range !== 'any' && c.range !== attackRange) continue
+    if (!shouldCountAttackModForAttackRoll(conditionId, c, attacker, defender, attackRange)) continue
     const rangeSuffix = c.range && c.range !== 'any' ? ` (${c.range})` : ''
     lines.push(`  ${conditionId} -> outgoing attack ${c.modifier}${rangeSuffix}`)
   }
 
   for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(defender)) {
     if (c.kind !== 'attack_mod' || c.appliesTo !== 'incoming') continue
-    if (c.range && c.range !== 'any' && c.range !== attackRange) continue
+    if (!shouldCountAttackModForAttackRoll(conditionId, c, defender, attacker, attackRange)) continue
     const rangeSuffix = c.range && c.range !== 'any' ? ` (${c.range})` : ''
     lines.push(`  ${conditionId} -> incoming attack ${c.modifier}${rangeSuffix}`)
   }

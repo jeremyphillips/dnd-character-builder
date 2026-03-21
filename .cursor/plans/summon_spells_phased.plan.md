@@ -7,7 +7,7 @@ isProject: false
 
 # Summon spells — phased build plan
 
-Ally summon spells should add **party-side** `CombatantInstance`s from catalog `**Monster.id`**, use `**resolution.casterOptions**` for form/CR tiers, and filter random pools with `**Monster.type**` and `**lore.challengeRating**`. Docs: [resolution.md §8 — Summon spells and spawn](../../docs/reference/resolution.md#summon-spells-and-spawn), [effects.md §13 spawn](../../docs/reference/effects.md#spawn).
+Ally summon spells should add **party-side** `CombatantInstance`s from catalog `**Monster.id`**, use `**resolution.casterOptions`** for form/CR tiers, and filter random pools with `**Monster.type**` and `**lore.challengeRating**`. Docs: [resolution.md §8 — Summon spells and spawn](../../docs/reference/resolution.md#summon-spells-and-spawn), [effects.md §13 spawn](../../docs/reference/effects.md#spawn).
 
 **Prerequisite (done):** `Monster.lore.challengeRating` is **required** in `[monster.types.ts](../../src/features/content/monsters/domain/types/monster.types.ts)` so CR caps for conjuration pools are always defined.
 
@@ -17,27 +17,30 @@ Ally summon spells should add **party-side** `CombatantInstance`s from catalog `
 
 ## Phase 1 — Targeting and classifier (foundation)
 
-
-| Deliverable                                 | Notes                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CombatActionTargetingProfile.kind: 'none'` | Implemented: `[combat-action.types.ts](../../src/features/mechanics/domain/encounter/resolution/combat-action.types.ts)`, `[action-targeting.ts](../../src/features/mechanics/domain/encounter/resolution/action/action-targeting.ts)`, `[action-resolver.ts](../../src/features/mechanics/domain/encounter/resolution/action/action-resolver.ts)`. |
-| Encounter UI                                | When an action has `none`, target list is empty — no target picker required.                                                                                                                                                                                                                                                                        |
-| `classifySpellResolutionMode`               | Add `**spawn`** (and any structured summon payload) to actionable kinds so summon spells become `**effects**` actions instead of `**log-only**`.                                                                                                                                                                                                    |
-| `buildSpellCombatActions`                   | For summon spells, emit `**targeting: { kind: 'none' }**` (and `casterOptions` as today).                                                                                                                                                                                                                                                           |
+**Status: done** (2026-03-20)
 
 
-**Exit criteria:** A test-only or feature-flagged spell action with `resolutionMode: 'effects'`, `targeting.kind: 'none'`, and only `note`/`spawn` effects resolves without “no valid targets” and without selecting a creature.
+| Deliverable                                 | Notes                                                                                                                        |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `CombatActionTargetingProfile.kind: 'none'` | Implemented: `combat-action.types.ts`, `action-targeting.ts`, `action-resolver.ts`.                                          |
+| Encounter UI                                | When an action has `none`, target list is empty — no target picker required.                                                 |
+| `classifySpellResolutionMode`               | `**spawn**` added to actionable kinds (`spell-resolution-classifier.ts`).                                                    |
+| `buildSpellCombatActions`                   | Spells with a `**spawn**` effect use `**targeting: { kind: 'none' }**` (`buildSpellTargeting` in `spell-combat-adapter.ts`). |
+| `applyActionEffects`                        | `**spawn**` logs a structured note (full catalog combatants = Phase 2–3).                                                    |
+
+
+**Exit criteria:** Met — tests: `encounter-helpers.test.ts` (spawn → effects + none), `action-resolution.test.ts` (resolve spawn without `targetId`).
 
 ---
 
 ## Phase 2 — `SpawnEffect` + catalog wiring
 
 
-| Deliverable                  | Notes                                                                                                                                                                                                                                               |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Extend `**SpawnEffect`**     | `**monsterId**` / `**monsterIds**`, optional **pool**: `{ creatureType: MonsterType, maxChallengeRating: number }`, **count**, **initiativeMode** (`'group' | 'share-caster' | 'individual'`). Deprecate opaque `creature: string` for new content. |
-| `applyActionEffects`         | Branch for `**spawn`**: resolve ids or **random** pick from `monstersById` with `type` + `lore.challengeRating <= maxChallengeRating`, using `**rng`** from options.                                                                                |
-| `ResolveCombatActionOptions` | Pass `**monstersById**` (merged catalog) into the resolution path.                                                                                                                                                                                  |
+| Deliverable                  | Notes                                                                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extend `**SpawnEffect`**     | `**monsterId**` / `**monsterIds**`, optional **pool**: `{ creatureType: MonsterType, maxChallengeRating: number }`, **count**, **initiativeMode** (`'group'      |
+| `applyActionEffects`         | Branch for `**spawn`**: resolve ids or random pick from `monstersById` with `type` + `lore.challengeRating <= maxChallengeRating`, using `**rng`** from options. |
+| `ResolveCombatActionOptions` | Pass `**monstersById**` (merged catalog) into the resolution path.                                                                                               |
 
 
 **Exit criteria:** Unit tests: fixed id spawn; random pool with seeded `rng`; CR filter respects required `challengeRating`.
@@ -49,7 +52,7 @@ Ally summon spells should add **party-side** `CombatantInstance`s from catalog `
 
 | Deliverable                               | Notes                                                                                                                                                   |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `addCombatantToEncounter` (or equivalent) | Insert into `combatantsById`, `**partyCombatantIds`**, `**initiative**`, `**initiativeOrder**`; handle **turn index** when the active combatant shifts. |
+| `addCombatantToEncounter` (or equivalent) | Insert into `combatantsById`, `**partyCombatantIds`**, `**initiative`**, `**initiativeOrder**`; handle **turn index** when the active combatant shifts. |
 | Build instances                           | Reuse `**buildMonsterCombatantInstance`**; labels for summoned allies (caster + monster name).                                                          |
 | Initiative modes                          | **Group** (one roll for many), **share-caster** (Giant Insect), **individual** — per spell metadata.                                                    |
 
@@ -63,7 +66,7 @@ Ally summon spells should add **party-side** `CombatantInstance`s from catalog `
 
 | Spell                                      | Work                                                                        |
 | ------------------------------------------ | --------------------------------------------------------------------------- |
-| Animate Dead                               | `casterOptions`: skeleton | zombie → ids; optional count scaling later.     |
+| Animate Dead                               | `casterOptions`: skeleton                                                   |
 | Giant Insect                               | Enum → `giant-centipede` / `giant-spider` / `giant-wasp`; share initiative. |
 | Conjure Woodland Beings / Minor Elementals | Keep CR-tier enums; random fey / elemental under cap.                       |
 | Caveats                                    | Trim `**resolution.caveats`** as behavior lands.                            |

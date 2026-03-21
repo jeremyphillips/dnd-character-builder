@@ -598,6 +598,15 @@ export function applyActionEffects(
       return
     }
 
+    if (effect.kind === 'spawn') {
+      nextState = appendEncounterNote(
+        nextState,
+        `${options.sourceLabel}: Spawn ${effect.count}× ${effect.creature} (ally combatant not yet added automatically).`,
+        { actorId: actor.instanceId, targetIds: [target.instanceId] },
+      )
+      return
+    }
+
     if (effect.kind === 'remove-classification') {
       nextState = removeStatesByClassification(nextState, target.instanceId, effect.classification, {
         sourceLabel: options.sourceLabel,

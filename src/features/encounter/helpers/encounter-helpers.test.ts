@@ -350,6 +350,35 @@ describe('buildSpellCombatActions', () => {
     expect(actions[0]!.effects!.some((e) => e.kind === 'save')).toBe(true)
   })
 
+  it('classifies spawn spells as effects with targeting none', () => {
+    const spell = makeSpell({
+      id: 'find-familiar',
+      name: 'Find Familiar',
+      range: { kind: 'self' },
+      effects: [
+        {
+          kind: 'spawn',
+          creature: 'familiar',
+          count: 1,
+          location: 'self-space',
+          actsWhen: 'immediately-after-source-turn',
+        },
+        { kind: 'note', text: 'Familiar is CR 0 Beast form.', category: 'under-modeled' },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['find-familiar'],
+      spellsById: { 'find-familiar': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.targeting?.kind).toBe('none')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'spawn')).toBe(true)
+  })
+
   it('injects spell save DC into save effects that lack a DC', () => {
     const spell = makeSpell({
       id: 'charm-person',

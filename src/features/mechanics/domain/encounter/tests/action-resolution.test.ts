@@ -1794,6 +1794,61 @@ describe('resolveCombatAction', () => {
     expect(rHigh.combatantsById['high']?.stats.currentHitPoints).toBe(147)
   })
 
+  it('effects mode with targeting none resolves spawn without a selected target', () => {
+    const spawnAction: CombatActionDefinition = {
+      id: 'summon-test',
+      label: 'Find Familiar',
+      kind: 'spell',
+      cost: { action: true },
+      resolutionMode: 'effects',
+      effects: [
+        {
+          kind: 'spawn',
+          creature: 'familiar',
+          count: 1,
+          location: 'self-space',
+          actsWhen: 'immediately-after-source-turn',
+        },
+      ],
+      targeting: { kind: 'none' },
+      displayMeta: {
+        source: 'spell',
+        spellId: 'find-familiar',
+        level: 1,
+        concentration: false,
+        range: 'Self',
+      },
+    }
+
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'wiz',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 5,
+          dexterityScore: 16,
+          armorClass: 12,
+          actions: [spawnAction],
+        }),
+        createCombatant({
+          instanceId: 'gob',
+          label: 'Goblin',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 15,
+        }),
+      ],
+      { rng: () => 0.5 },
+    )
+
+    const resolved = resolveCombatAction(state, { actorId: 'wiz', actionId: 'summon-test' }, { rng: () => 0.5 })
+
+    expect(resolved.log.some((entry) => entry.summary.includes('resolves its effects'))).toBe(true)
+    expect(resolved.log.some((entry) => entry.summary.includes('Spawn 1× familiar'))).toBe(true)
+  })
+
   it('allows same-side hostile single-target when suppressSameSideHostileActions is false', () => {
     const state = createEncounterState(
       [

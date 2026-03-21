@@ -123,7 +123,6 @@ function getSpellCreatureTypeFilter(spell: Spell): string[] | undefined {
 
 function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   const sight = getSpellRequiresSight(spell) ? { requiresSight: true as const } : {}
-  if (spell.range?.kind === 'self') return { kind: 'self' }
   const effects = spell.effects ?? []
   const hasDeadCreatureTargeting = effects.some(
     (e) => e.kind === 'targeting' && e.target === 'one-dead-creature',
@@ -131,6 +130,9 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   if (hasDeadCreatureTargeting) return { kind: 'dead-creature', ...sight }
   const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
   if (hasHealing) return { kind: 'single-creature', ...sight }
+  const hasSpawn = effects.some((e) => e.kind === 'spawn')
+  if (hasSpawn) return { kind: 'none', ...sight }
+  if (spell.range?.kind === 'self') return { kind: 'self' }
   const targeting = effects.find((e) => e.kind === 'targeting')
   const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
   if (targeting?.kind === 'targeting' && targeting.requiresWilling) {

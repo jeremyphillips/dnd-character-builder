@@ -487,7 +487,7 @@ Healing actions use `targeting: { kind: 'single-creature' }`, which allows any l
 `classifySpellResolutionMode` (in `src/features/encounter/helpers/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
 
 - **`attack-roll`** — spell has `deliveryMethod` (`melee-spell-attack` or `ranged-spell-attack`); damage and on-hit riders come from the spell’s effects, but the primary hit uses the attack pipeline.
-- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`), and effects are not **only** `note` and/or `targeting`. **`spawn` is not yet in this actionable set**; summon spells therefore often classify as **`log-only`** until `spawn` / summon resolution is wired (see [§8 — Summon spells and spawn](#summon-spells-and-spawn)).
+- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`, **`spawn`**), and effects are not **only** `note` and/or `targeting`. Spells with **`spawn`** use **`targeting: { kind: 'none' }`** (see [§8 — Summon spells and spawn](#summon-spells-and-spawn)).
 - **`log-only`** — empty effects, only `note` / `targeting`, or only kinds such as `grant` / `move` that the encounter layer currently resolves as structured log output without the same mechanical path.
 
 Multi-instance **auto-hit** spells authored with a single root `damage` effect and `instances.count` above 1 (no top-level `save`) are built as a **parent `effects` action with `sequence`** plus a child `effects` action per hit (same pattern as multi-beam spell attacks). Each child applies one damage resolution against the selected target until proper multi-target selection exists.
@@ -526,7 +526,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 | `check` | **Log** | Logs ability check requirement |
 | `grant` | **Log** | Logs granted capability |
 | `form` | **Log** | Logs form change description |
-| `spawn` | **Log** | Today: logs summoned creature description only. **Planned:** instantiate **`Monster`**-backed allies on the **party** side, roll or group initiative, optional random pick from catalog by `Monster.type` + CR cap (see below). |
+| `spawn` | **Partial** | Logs structured spawn line (`creature` × `count`); ally combatant injection **not** automatic yet. Classifier + adapter: **`effects`** + **`targeting: none`**. **Planned:** instantiate **`Monster`**-backed allies on the **party** side, initiative, random pool by `type` + CR (see [Summon spells and spawn](#summon-spells-and-spawn)). |
 
 **Resolution levels:**
 
@@ -543,7 +543,7 @@ This subsection documents **intent and architecture** for ally summon spells. Im
 
 - Encounter state is built from a **fixed roster** at encounter start (`createEncounterState`); there is no reducer path that **appends** party combatants mid-fight.
 - `applyActionEffects` has **no `spawn` branch**; the supported-effect matrix lists `spawn` as **Log** only.
-- `classifySpellResolutionMode` does not count `spawn` as a mechanically actionable kind, so spells whose main payload is `spawn` + `note` tend to become **`log-only`** spell actions.
+- `classifySpellResolutionMode` counts **`spawn`** as actionable: those spells become **`effects`** actions with **`targeting: none`**. Full combatant creation is still TODO.
 
 **Target behavior (ally creatures)**
 

@@ -127,7 +127,10 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   const hasDeadCreatureTargeting = effects.some(
     (e) => e.kind === 'targeting' && e.target === 'one-dead-creature',
   )
-  if (hasDeadCreatureTargeting) return { kind: 'dead-creature', ...sight }
+  if (hasDeadCreatureTargeting) {
+    const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
+    return { kind: 'dead-creature', creatureTypeFilter, ...sight }
+  }
   const hasHealing = effects.some((e) => e.kind === 'hit-points' && e.mode === 'heal')
   if (hasHealing) return { kind: 'single-creature', ...sight }
   const hasSpawn = effects.some((e) => e.kind === 'spawn')

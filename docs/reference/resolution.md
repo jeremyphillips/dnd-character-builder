@@ -130,7 +130,7 @@ The encounter action system resolves combat actions against encounter state:
 - `self` — the acting combatant
 - `none` — no creature target; used when the action does not select another combatant (e.g. **ally summon**). The resolver still runs the `effects` pipeline once, passing the **actor** into `applyActionEffects` for API compatibility; **`spawn`** should treat the actor as source only. Target picker has **no** candidates. Prefer over **`self`** for summons (caster is not the subject of the effect bundle like a self-buff).
 - `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
-- `dead-creature` — any combatant at 0 HP regardless of side (used by resurrection spells)
+- `dead-creature` — combatant at 0 HP with a **valid body** (`remains` not `dust` or `disintegrated`; see `CombatantInstance` in encounter state). Used by resurrection and **Animate Dead** (often with `creatureTypeFilter`, e.g. humanoid). `creatureTypeFilter` is applied the same as for living targets.
 - `entered-during-move` — creatures entered during movement
 
 **Targeting profile fields:**

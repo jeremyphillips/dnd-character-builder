@@ -184,7 +184,7 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
       summary: 'Create Ghouls from corpses. Control 24h. Scales with slot (Ghasts, Wights, Mummies).',
     },
   },
-{
+  {
     id: 'disintegrate',
     name: 'Disintegrate',
     school: 'transmutation',
@@ -215,7 +215,7 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
       summary: 'Green ray: Dex save or 10d6+40 force. Disintegrates target if reduced to 0 HP.',
     },
   },
-{
+  {
     id: 'eyebite',
     name: 'Eyebite',
     school: 'necromancy',

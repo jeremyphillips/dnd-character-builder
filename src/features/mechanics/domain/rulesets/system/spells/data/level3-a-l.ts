@@ -5,7 +5,7 @@ import type { SpellEntry } from '../types';
  * Level 3 spells A–L — authoring status:
  * - **Attack/save/AoE modeled:** Call Lightning, Conjure Animals (spectral pack), Fear, Fireball, Fly (notes), Haste, Hypnotic Pattern, Lightning Bolt, Slow, Spirit Guardians (in m–z).
  * - **Utility / sense / state:** Blink, Clairvoyance, Gaseous Form (extra targets), Nondetection, Tongues, Water Breathing / Water Walk (in m–z).
- * - **Note-first / heavy caveats:** Beacon of Hope, Bestow Curse, Counterspell, Daylight, Dispel Magic, Glyph of Warding, Magic Circle, Major Image, etc.
+ * - **Note-first / heavy caveats:** Beacon of Hope, Bestow Curse, Counterspell, Daylight, Dispel Magic, Glyph of Warding, Magic Circle, Major Image, etc. (Animate Dead: dead humanoid + remains → spawn.)
  */
 export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
   {
@@ -18,27 +18,17 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a drop of blood, a piece of flesh, and a pinch of bone dust' } },
-    resolution: {
-      casterOptions: [
-        {
-          kind: 'enum',
-          id: 'animate-dead-form',
-          label: 'Creature',
-          options: [
-            { value: 'skeleton', label: 'Skeleton (from bones)' },
-            { value: 'zombie', label: 'Zombie (from corpse)' },
-          ],
-        },
-      ],
-    },
     effects: [
+      {
+        kind: 'targeting',
+        target: 'one-dead-creature',
+        targetType: 'creature',
+        creatureTypeFilter: ['humanoid'],
+      },
       {
         kind: 'spawn',
         count: 1,
-        mapMonsterIdFromCasterOption: {
-          fieldId: 'animate-dead-form',
-          valueToMonsterId: { skeleton: 'skeleton', zombie: 'zombie' },
-        },
+        mapMonsterIdFromTargetRemains: { corpse: 'zombie', bones: 'skeleton' },
         initiativeMode: 'individual',
       },
       {

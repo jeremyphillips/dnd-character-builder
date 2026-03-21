@@ -209,11 +209,21 @@ export type CombatantEquipmentSnapshot = {
   shieldId?: string | null
 }
 
+/** Physical remains after death — drives resurrection / animate targeting. */
+export type CombatantRemainsKind = 'corpse' | 'bones' | 'dust' | 'disintegrated'
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
   creatureType?: string
+  /**
+   * Set when the combatant is dead (0 HP): what is left to target for spells.
+   * Defaults to `corpse` on first death unless overridden (e.g. disintegrate, death-outcome).
+   */
+  remains?: CombatantRemainsKind
+  /** Encounter `roundNumber` when the creature first reached 0 HP (for Revivify window). */
+  diedAtRound?: number
   /** When set (e.g. from character loadout), enables authored `effect.condition` gates that read `equipment.armorEquipped`. */
   equipment?: CombatantEquipmentSnapshot
   stats: CombatantStatBlock

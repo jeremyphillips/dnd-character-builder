@@ -1,4 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
+import type { CombatantInstance } from '../../state/types/combatant.types'
 import type { SpawnEffect } from '../../../effects/effects.types'
 
 const NOT_YET = '(ally combatant not yet added automatically)'
@@ -29,7 +30,18 @@ export function resolveSpawnMonsterIds(
   monstersById: Record<string, Monster> | undefined,
   rng: () => number,
   casterOptions?: Record<string, string>,
+  spawnTarget?: CombatantInstance,
 ): string[] {
+  if (effect.mapMonsterIdFromTargetRemains && spawnTarget) {
+    const r = spawnTarget.remains ?? 'corpse'
+    if (r === 'dust' || r === 'disintegrated') return []
+    const mid = r === 'bones' ? effect.mapMonsterIdFromTargetRemains.bones : effect.mapMonsterIdFromTargetRemains.corpse
+    return Array.from({ length: effect.count }, () => mid)
+  }
+  if (effect.mapMonsterIdFromTargetRemains && !spawnTarget) {
+    return []
+  }
+
   if (effect.mapMonsterIdFromCasterOption && casterOptions) {
     const raw = casterOptions[effect.mapMonsterIdFromCasterOption.fieldId]
     const mid = raw ? effect.mapMonsterIdFromCasterOption.valueToMonsterId[raw] : undefined
@@ -84,11 +96,22 @@ export function describeResolvedSpawn(
   monstersById: Record<string, Monster> | undefined,
   rng: () => number,
   casterOptions?: Record<string, string>,
+  spawnTarget?: CombatantInstance,
 ): string {
-  const resolvedIds = resolveSpawnMonsterIds(effect, monstersById, rng, casterOptions)
+  const resolvedIds = resolveSpawnMonsterIds(effect, monstersById, rng, casterOptions, spawnTarget)
   if (resolvedIds.length > 0) {
     const labels = resolvedIds.map((id) => labelForMonsterId(id, monstersById))
     return `Spawn: ${labels.join(', ')}. ${NOT_YET}`
+  }
+
+  if (effect.mapMonsterIdFromTargetRemains) {
+    if (!spawnTarget) {
+      return `Spawn: dead creature target required for remains (corpse vs bones). ${NOT_YET}`
+    }
+    const r = spawnTarget.remains ?? 'corpse'
+    if (r === 'dust' || r === 'disintegrated') {
+      return `Spawn: no remains to animate (dust or disintegrated). ${NOT_YET}`
+    }
   }
 
   if (effect.mapMonsterIdFromCasterOption) {

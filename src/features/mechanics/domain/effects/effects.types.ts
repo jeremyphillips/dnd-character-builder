@@ -422,7 +422,15 @@ export type SpawnEffect = EffectBase<'spawn'> & {
   /** Random picks from catalog: `type` match and CR ≤ cap. */
   pool?: SpawnPoolFilter;
   /**
-   * Resolve `monsterId` from `casterOptions[fieldId]` (e.g. Animate Dead skeleton vs zombie).
+   * Resolve catalog id from the **spawn target’s** `remains` (`corpse` / `bones`; unset treated as `corpse`).
+   * Used e.g. Animate Dead (zombie vs skeleton). Invalid if target is `dust` / `disintegrated`.
+   */
+  mapMonsterIdFromTargetRemains?: {
+    corpse: string;
+    bones: string;
+  };
+  /**
+   * Resolve `monsterId` from `casterOptions[fieldId]` (e.g. conjure forms).
    * When present, resolution requires that caster option; ignores static `monsterId` / `pool`.
    */
   mapMonsterIdFromCasterOption?: {

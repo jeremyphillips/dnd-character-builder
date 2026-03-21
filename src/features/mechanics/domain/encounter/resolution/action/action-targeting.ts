@@ -90,7 +90,12 @@ export function isValidActionTarget(
   }
 
   if (kind === 'none') return false
-  if (kind === 'dead-creature') return combatant.stats.currentHitPoints === 0
+  if (kind === 'dead-creature') {
+    if (combatant.stats.currentHitPoints !== 0) return false
+    const r = combatant.remains
+    if (r === 'dust' || r === 'disintegrated') return false
+    return true
+  }
   if (combatant.stats.currentHitPoints <= 0) return false
   if (kind === 'single-creature') return true
 

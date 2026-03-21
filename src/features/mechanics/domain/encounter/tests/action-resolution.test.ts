@@ -4,6 +4,7 @@ import type { CombatActionDefinition } from '../resolution'
 import { getCombatantAvailableActions, resolveCombatAction } from '../resolution'
 import { advanceEncounterTurn, createEncounterState } from '../state'
 import type { CombatantInstance } from '../state'
+import type { CombatantRemainsKind } from '../state/types/combatant.types'
 
 function createCombatant(args: {
   instanceId: string
@@ -14,6 +15,9 @@ function createCombatant(args: {
   armorClass: number
   maxHitPoints?: number
   currentHitPoints?: number
+  creatureType?: string
+  remains?: CombatantRemainsKind
+  diedAtRound?: number
   abilityScores?: {
     strength?: number
     dexterity?: number
@@ -43,6 +47,9 @@ function createCombatant(args: {
       sourceId: args.instanceId,
       label: args.label,
     },
+    ...(args.creatureType !== undefined ? { creatureType: args.creatureType } : {}),
+    ...(args.remains !== undefined ? { remains: args.remains } : {}),
+    ...(args.diedAtRound !== undefined ? { diedAtRound: args.diedAtRound } : {}),
     ...(args.equipment !== undefined ? { equipment: args.equipment } : {}),
     stats: {
       armorClass: args.armorClass,
@@ -1715,6 +1722,103 @@ describe('resolveCombatAction', () => {
 
     expect(resolved.combatantsById['fallen-ally']!.stats.currentHitPoints).toBe(0)
     expect(resolved.log.some((entry) => entry.summary.includes('no valid targets'))).toBe(true)
+  })
+
+  it('dead-creature target with disintegrated remains is not valid', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'cleric',
+          label: 'Cleric',
+          side: 'party',
+          initiativeModifier: 3,
+          dexterityScore: 10,
+          armorClass: 14,
+          actions: [
+            {
+              id: 'raise-dead',
+              label: 'Raise Dead',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [{ kind: 'hit-points', mode: 'heal', value: 1 }],
+              targeting: { kind: 'dead-creature' },
+              displayMeta: { source: 'spell', spellId: 'raise-dead', level: 5, concentration: false, range: 'Touch' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'dusty',
+          label: 'Dust',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 16,
+          currentHitPoints: 0,
+          remains: 'disintegrated',
+        }),
+      ],
+      { rng: () => 0.99 },
+    )
+
+    const resolved = resolveCombatAction(
+      state,
+      { actorId: 'cleric', actionId: 'raise-dead', targetId: 'dusty' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolved.combatantsById['dusty']!.stats.currentHitPoints).toBe(0)
+    expect(resolved.log.some((entry) => entry.summary.includes('no valid targets'))).toBe(true)
+  })
+
+  it('Revivify fails when target has been dead more than 1 minute (10 rounds)', () => {
+    const state = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'cleric',
+          label: 'Cleric',
+          side: 'party',
+          initiativeModifier: 3,
+          dexterityScore: 10,
+          armorClass: 14,
+          actions: [
+            {
+              id: 'revivify',
+              label: 'Revivify',
+              kind: 'spell',
+              cost: { action: true },
+              resolutionMode: 'effects',
+              effects: [{ kind: 'hit-points', mode: 'heal', value: 1 }],
+              targeting: { kind: 'dead-creature' },
+              displayMeta: { source: 'spell', spellId: 'revivify', level: 3, concentration: false, range: 'Touch' },
+            },
+          ],
+        }),
+        createCombatant({
+          instanceId: 'fallen',
+          label: 'Late',
+          side: 'party',
+          initiativeModifier: 1,
+          dexterityScore: 14,
+          armorClass: 16,
+          currentHitPoints: 0,
+          remains: 'corpse',
+          diedAtRound: 1,
+        }),
+      ],
+      { rng: () => 0.99 },
+    )
+
+    const lateRound = { ...state, roundNumber: 20 }
+
+    const resolved = resolveCombatAction(
+      lateRound,
+      { actorId: 'cleric', actionId: 'revivify', targetId: 'fallen' },
+      { rng: () => 0.5 },
+    )
+
+    expect(resolved.combatantsById['fallen']!.stats.currentHitPoints).toBe(0)
+    expect(resolved.log.some((e) => e.summary.includes('dead too long'))).toBe(true)
   })
 
   it('effects mode branches by hpThreshold when defined on the action', () => {

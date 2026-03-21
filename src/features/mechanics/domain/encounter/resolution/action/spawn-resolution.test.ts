@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { SpawnEffect } from '../../../effects/effects.types'
 
+import type { CombatantInstance } from '../../state/types/combatant.types'
+
 import { describeResolvedSpawn, resolveSpawnMonsterIds } from './spawn-resolution'
 
 function m(
@@ -75,6 +77,20 @@ describe('describeResolvedSpawn', () => {
     }
     const s = describeResolvedSpawn(effect, monstersById, () => 0.5)
     expect(s).toContain('no fey in catalog at CR ≤ 0')
+  })
+
+  it('maps monster id from target remains (corpse vs bones)', () => {
+    const effect: SpawnEffect = {
+      kind: 'spawn',
+      count: 1,
+      mapMonsterIdFromTargetRemains: { corpse: 'zombie', bones: 'skeleton' },
+    }
+    const monstersById = {
+      zombie: m('zombie', 'Zombie', 'undead', 0.25),
+    }
+    const bonesTarget = { remains: 'bones' } as CombatantInstance
+    const ids = resolveSpawnMonsterIds(effect, monstersById, () => 0.5, undefined, bonesTarget)
+    expect(ids).toEqual(['skeleton'])
   })
 
   it('maps monster id from caster enum', () => {

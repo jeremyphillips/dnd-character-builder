@@ -231,7 +231,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
       summary: 'Learn lore about famous person, place, or object. Fails if not famous.',
     },
   },
-{
+  {
     id: 'raise-dead',
     name: 'Raise Dead',
     school: 'necromancy',
@@ -243,7 +243,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 500+ GP', cost: { value: 500, unit: 'gp', atLeast: true }, consumed: true } },
     resolution: {
       caveats: [
-        'Death timing, corpse integrity, and resurrection penalty are not enforced automatically.',
+        '10-day window and resurrection penalty are not enforced automatically.',
       ],
     },
     effects: [
@@ -260,7 +260,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
       summary: 'Revive dead (≤10 days). 1 HP. -4 d20 penalty, -1 per Long Rest.',
     },
   },
-{
+  {
     id: 'reincarnate',
     name: 'Reincarnate',
     school: 'necromancy',

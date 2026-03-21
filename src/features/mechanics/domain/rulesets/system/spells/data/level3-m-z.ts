@@ -200,11 +200,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     range: { kind: 'touch' },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a diamond worth 300+ GP', cost: { value: 300, unit: 'gp', atLeast: true }, consumed: true } },
-    resolution: {
-      caveats: [
-        'Death timing, corpse integrity, and return-to-life are not validated automatically.',
-      ],
-    },
+    resolution: {},
     effects: [
       { kind: 'targeting', target: 'one-dead-creature', targetType: 'creature' },
       { kind: 'hit-points', mode: 'heal', value: 1 },

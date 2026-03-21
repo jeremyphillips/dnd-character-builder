@@ -1,3 +1,4 @@
+import type { CombatantRemainsKind } from './types/combatant.types'
 import type { EncounterState } from './types'
 import {
   buildRuntimeMarker,
@@ -18,7 +19,13 @@ export function applyDamageToCombatant(
   state: EncounterState,
   targetId: string,
   amount: number,
-  options?: { actorId?: string | null; sourceLabel?: string; damageType?: string },
+  options?: {
+    actorId?: string | null
+    sourceLabel?: string
+    damageType?: string
+    /** When this damage reduces the creature to 0 HP, set remains (e.g. disintegrate). */
+    remainsOnKill?: CombatantRemainsKind
+  },
 ): EncounterState {
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
@@ -131,13 +138,25 @@ export function applyDamageToCombatant(
         trackedPart.currentCount <= trackedPart.deathWhenCountReaches,
     )
 
+    const prevHp = combatant.stats.currentHitPoints
+    const newHp = fatalTrackedPart
+      ? 0
+      : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount)
+    const justDied = prevHp > 0 && newHp === 0
+    const deathFields =
+      justDied
+        ? {
+            remains: (options?.remainsOnKill ?? combatant.remains ?? 'corpse') as CombatantRemainsKind,
+            diedAtRound: combatant.diedAtRound ?? resistanceLogState.roundNumber,
+          }
+        : undefined
+
     return {
       ...combatant,
+      ...deathFields,
       stats: {
         ...combatant.stats,
-        currentHitPoints: fatalTrackedPart
-          ? 0
-          : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount),
+        currentHitPoints: newHp,
       },
       trackedParts,
       turnResources: syncCombatantTurnResources({
@@ -340,16 +359,19 @@ export function applyHealingToCombatant(
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
 
-  const nextState = updateCombatant(state, targetId, (combatant) => ({
-    ...combatant,
-    stats: {
-      ...combatant.stats,
-      currentHitPoints: Math.min(
-        combatant.stats.maxHitPoints,
-        combatant.stats.currentHitPoints + amount,
-      ),
-    },
-  }))
+  const nextState = updateCombatant(state, targetId, (combatant) => {
+    const prevHp = combatant.stats.currentHitPoints
+    const newHp = Math.min(combatant.stats.maxHitPoints, combatant.stats.currentHitPoints + amount)
+    const revivedFromDead = prevHp <= 0 && newHp > 0
+    return {
+      ...combatant,
+      ...(revivedFromDead ? { remains: undefined, diedAtRound: undefined } : {}),
+      stats: {
+        ...combatant.stats,
+        currentHitPoints: newHp,
+      },
+    }
+  })
 
   return appendLog(nextState, {
     type: 'healing-applied',

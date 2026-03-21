@@ -13,6 +13,7 @@ export {
   getFallbackPresentation,
   getPriorityOrder,
   getSectionOrder,
+  shouldShowPresentationInHeader,
 } from './combat-state-ui-map'
 export type {
   CombatStatePresentation,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ReactElement } from 'react'
 
 import Box from '@mui/material/Box'
 import ButtonBase from '@mui/material/ButtonBase'
@@ -10,18 +10,47 @@ import Typography from '@mui/material/Typography'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
-import { AppBadge } from '@/ui/primitives'
+import { AppBadge, AppTooltip } from '@/ui/primitives'
 import type { CombatActionDefinition, CombatActionKind } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import type { EnrichedPresentableEffect, CombatStateSection } from '../domain'
 import { ActionRow } from './ActionRow'
 import { CasterOptionsFields } from './CasterOptionsFields'
 
-type StatEntry = { label: string; value: string }
+export type CombatantStatBadge = {
+  label: string
+  value: string
+  /** Optional glossary / rules blurb (hover). */
+  tooltip?: string
+}
+
+export type CombatantTrackedPartBadge = {
+  label: string
+  current: number
+  initial: number
+  tooltip?: string
+}
+
+function BadgeWithOptionalTooltip({
+  tooltip,
+  children,
+}: {
+  tooltip?: string
+  children: ReactElement
+}) {
+  if (!tooltip?.trim()) return children
+  return (
+    <AppTooltip title={tooltip} placement="top">
+      <Box component="span" sx={{ display: 'inline-flex' }}>
+        {children}
+      </Box>
+    </AppTooltip>
+  )
+}
 
 type CombatantActiveCardProps = {
   title: string
   subtitle?: string
-  stats: StatEntry[]
+  stats: CombatantStatBadge[]
   actions: CombatActionDefinition[]
   bonusActions: CombatActionDefinition[]
   availableActionIds?: Set<string>
@@ -31,7 +60,7 @@ type CombatantActiveCardProps = {
   selectedCasterOptions?: Record<string, string>
   onCasterOptionsChange?: (values: Record<string, string>) => void
   combatEffects: Record<CombatStateSection, EnrichedPresentableEffect[]>
-  trackedParts?: Array<{ label: string; current: number; initial: number }>
+  trackedParts?: CombatantTrackedPartBadge[]
 }
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {
@@ -188,16 +217,24 @@ export function CombatantActiveCard({
 
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {stats.map((s) => (
-            <AppBadge key={s.label} label={`${s.label}: ${s.value}`} tone="default" variant="outlined" size="medium" />
+            <BadgeWithOptionalTooltip key={s.label} tooltip={s.tooltip}>
+              <AppBadge
+                label={`${s.label}: ${s.value}`}
+                tone="default"
+                variant="outlined"
+                size="medium"
+              />
+            </BadgeWithOptionalTooltip>
           ))}
           {trackedParts?.map((tp) => (
-            <AppBadge
-              key={tp.label}
-              label={`${tp.label}: ${tp.current}/${tp.initial}`}
-              tone={tp.current < tp.initial ? 'warning' : 'default'}
-              variant="outlined"
-              size="medium"
-            />
+            <BadgeWithOptionalTooltip key={tp.label} tooltip={tp.tooltip}>
+              <AppBadge
+                label={`${tp.label}: ${tp.current}/${tp.initial}`}
+                tone={tp.current < tp.initial ? 'warning' : 'default'}
+                variant="outlined"
+                size="medium"
+              />
+            </BadgeWithOptionalTooltip>
           ))}
         </Stack>
 
@@ -247,11 +284,13 @@ export function CombatantActiveCard({
                   <Stack spacing={0.5}>
                     {effects.map((effect) => (
                       <Stack key={effect.id} direction="row" spacing={1} alignItems="center">
-                        <AppBadge
-                          label={effect.label}
-                          tone={effect.presentation.tone === 'neutral' ? 'default' : effect.presentation.tone}
-                          size="small"
-                        />
+                        <BadgeWithOptionalTooltip tooltip={effect.presentation.rulesText}>
+                          <AppBadge
+                            label={effect.label}
+                            tone={effect.presentation.tone === 'neutral' ? 'default' : effect.presentation.tone}
+                            size="small"
+                          />
+                        </BadgeWithOptionalTooltip>
                         {effect.duration && (
                           <Typography variant="caption" color="text.secondary">{effect.duration}</Typography>
                         )}

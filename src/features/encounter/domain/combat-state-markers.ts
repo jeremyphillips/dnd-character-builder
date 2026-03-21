@@ -10,8 +10,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'danger',
     priority: 'critical',
     defaultSection: 'critical-now',
-    showAsChip: true,
-    showInHeader: true,
     userFacing: true,
   },
   bloodied: {
@@ -19,8 +17,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'danger',
     priority: 'critical',
     defaultSection: 'critical-now',
-    showAsChip: true,
-    showInHeader: true,
     userFacing: true,
   },
   concentrating: {
@@ -28,8 +24,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'info',
     priority: 'high',
     defaultSection: 'critical-now',
-    showAsChip: true,
-    showInHeader: true,
     userFacing: true,
   },
   'mummy-rot': {
@@ -37,7 +31,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'danger',
     priority: 'high',
     defaultSection: 'turn-triggers',
-    showAsChip: true,
     userFacing: true,
   },
   engulfed: {
@@ -45,8 +38,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'danger',
     priority: 'high',
     defaultSection: 'critical-now',
-    showAsChip: true,
-    showInHeader: true,
     userFacing: true,
   },
   'limb-severed': {
@@ -54,7 +45,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'danger',
     priority: 'high',
     defaultSection: 'restrictions',
-    showAsChip: true,
     userFacing: true,
   },
   'battle-focus': {
@@ -62,7 +52,6 @@ export const COMBAT_STATE_MARKER_UI_MAP: Record<string, CombatStatePresentation>
     tone: 'info',
     priority: 'normal',
     defaultSection: 'ongoing-effects',
-    showAsChip: true,
     userFacing: true,
   },
   speed_halved: {

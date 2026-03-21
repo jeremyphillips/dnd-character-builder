@@ -26,6 +26,8 @@ export {
   CONDITION_IMMUNITY_ONLY_DEFINITIONS,
   EFFECT_CONDITION_IDS,
   CONDITION_IMMUNITY_ONLY_IDS,
+  getEffectConditionRulesText,
+  getEffectConditionRulesTextForKey,
 } from '../conditions/effect-condition-definitions';
 
 export type ScalingRule = {};

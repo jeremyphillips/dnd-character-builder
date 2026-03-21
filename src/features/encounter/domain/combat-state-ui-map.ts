@@ -39,9 +39,8 @@ function effectConditionDefinitionRowToPresentation(
     tone: row.tone,
     priority: row.priority,
     defaultSection: row.defaultSection,
-    showAsChip: true,
-    ...('showInHeader' in row ? { showInHeader: row.showInHeader } : {}),
     userFacing: row.userFacing ?? true,
+    ...(row.rulesText ? { rulesText: row.rulesText } : {}),
   }
 }
 
@@ -51,6 +50,13 @@ export const EFFECT_CONDITION_PRESENTATION_MAP = Object.fromEntries(
     effectConditionDefinitionRowToPresentation(row),
   ]),
 ) as Record<EffectConditionId, CombatStatePresentation>
+
+/**
+ * Header chips: effects in the critical band that are user-facing (matches prior `showInHeader` behavior).
+ */
+export function shouldShowPresentationInHeader(p: CombatStatePresentation): boolean {
+  return p.defaultSection === 'critical-now' && p.userFacing !== false
+}
 
 /**
  * Merged lookup: PHB conditions from definitions + bespoke engine markers (see `combat-state-markers.ts`).
@@ -73,7 +79,6 @@ export function getFallbackPresentation(effect: PresentableCombatEffect): Combat
     tone: effect.isNegative ? 'warning' : 'neutral',
     priority: 'normal',
     defaultSection: 'restrictions',
-    showAsChip: true,
     userFacing: true,
   }
 }

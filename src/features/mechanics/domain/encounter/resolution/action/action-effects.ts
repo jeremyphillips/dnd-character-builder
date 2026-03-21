@@ -186,6 +186,8 @@ export type ApplyActionEffectsOptions = {
   monstersById?: Record<string, Monster>
   /** When set with resolvable spawn ids, creates party combatants and merges initiative. */
   buildSummonAllyCombatant?: (args: { monster: Monster; runtimeId: string }) => CombatantInstance
+  /** Enum selections from the encounter UI (e.g. conjure tier, animate form). */
+  casterOptions?: Record<string, string>
 }
 
 export function applyActionEffects(
@@ -611,7 +613,12 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'spawn') {
-      const ids = resolveSpawnMonsterIds(effect, options.monstersById, options.rng)
+      const ids = resolveSpawnMonsterIds(
+        effect,
+        options.monstersById,
+        options.rng,
+        options.casterOptions,
+      )
       const factory = options.buildSummonAllyCombatant
       if (ids.length > 0 && factory && options.monstersById) {
         const built: CombatantInstance[] = []
@@ -637,7 +644,12 @@ export function applyActionEffects(
         }
       }
 
-      const detail = describeResolvedSpawn(effect, options.monstersById, options.rng)
+      const detail = describeResolvedSpawn(
+        effect,
+        options.monstersById,
+        options.rng,
+        options.casterOptions,
+      )
       nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${detail}`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],

@@ -400,6 +400,13 @@ export type SpawnPoolFilter = {
   maxChallengeRating: number;
 };
 
+/** Per-option pool + count from a spell `resolution.casterOptions` enum (CR-tier conjures). */
+export type SpawnPoolFromCasterOptionSpec = {
+  count: number;
+  maxChallengeRating: number;
+  creatureType: MonsterType;
+};
+
 export type SpawnSummonInitiativeMode = 'group' | 'share-caster' | 'individual';
 
 export type SpawnEffect = EffectBase<'spawn'> & {
@@ -414,6 +421,22 @@ export type SpawnEffect = EffectBase<'spawn'> & {
   monsterIds?: string[];
   /** Random picks from catalog: `type` match and CR ≤ cap. */
   pool?: SpawnPoolFilter;
+  /**
+   * Resolve `monsterId` from `casterOptions[fieldId]` (e.g. Animate Dead skeleton vs zombie).
+   * When present, resolution requires that caster option; ignores static `monsterId` / `pool`.
+   */
+  mapMonsterIdFromCasterOption?: {
+    fieldId: string;
+    valueToMonsterId: Record<string, string>;
+  };
+  /**
+   * Resolve pool + count from `casterOptions[fieldId]` (e.g. conjure CR tiers).
+   * When present, resolution requires that caster option; ignores static `pool` / `count` for picks.
+   */
+  poolFromCasterOption?: {
+    fieldId: string;
+    mapping: Record<string, SpawnPoolFromCasterOptionSpec>;
+  };
   initiativeMode?: SpawnSummonInitiativeMode;
 };
 

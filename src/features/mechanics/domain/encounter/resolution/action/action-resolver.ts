@@ -195,6 +195,7 @@ function resolveCombatActionInternal(
     sourceLabel: actionLabel,
     monstersById: options.monstersById,
     buildSummonAllyCombatant: options.buildSummonAllyCombatant,
+    casterOptions: selection.casterOptions,
   }
   const targetLabel = target ? getEncounterCombatantLabel(state, target.instanceId) : 'no target'
   const casterSummary = formatCasterOptionSummary(action.casterOptions, selection.casterOptions)

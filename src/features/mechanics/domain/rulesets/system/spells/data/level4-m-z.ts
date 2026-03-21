@@ -78,9 +78,6 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     resolution: {
-      caveats: [
-        'Summoned insect is not represented as a full combatant in encounter.',
-      ],
       casterOptions: [
         {
           kind: 'enum',
@@ -96,9 +93,22 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     },
     effects: [
       {
+        kind: 'spawn',
+        count: 1,
+        mapMonsterIdFromCasterOption: {
+          fieldId: 'giant-insect-form',
+          valueToMonsterId: {
+            centipede: 'giant-centipede',
+            spider: 'giant-spider',
+            wasp: 'giant-wasp',
+          },
+        },
+        initiativeMode: 'share-caster',
+      },
+      {
         kind: 'note',
-        text: 'Summon giant centipede, spider, or wasp. Uses Giant Insect stat block. Ally, shares Initiative. Use slot level for spell level in stat block.',
-        category: 'under-modeled' as const,
+        text: 'Use the spell slot’s level for the spell’s level in the Giant Insect stat block.',
+        category: 'flavor' as const,
       },
     ],
     description: {

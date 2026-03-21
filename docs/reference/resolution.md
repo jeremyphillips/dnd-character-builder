@@ -526,7 +526,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 | `check` | **Log** | Logs ability check requirement |
 | `grant` | **Log** | Logs granted capability |
 | `form` | **Log** | Logs form change description |
-| `spawn` | **Partial** | Logs structured spawn line (`creature` × `count`); ally combatant injection **not** automatic yet. Classifier + adapter: **`effects`** + **`targeting: none`**. **Planned:** instantiate **`Monster`**-backed allies on the **party** side, initiative, random pool by `type` + CR (see [Summon spells and spawn](#summon-spells-and-spawn)). |
+| `spawn` | **Partial** | When **`monstersById`**, **`buildSummonAllyCombatant`**, and resolved ids are available, **`applyActionEffects`** merges **`Monster`**-backed allies into the encounter (party side) with **`initiativeMode`**. Otherwise logs via **`describeResolvedSpawn`**. Classifier + adapter: **`effects`** + **`targeting: none`**. **`casterOptions`** are passed into spawn resolution for **`mapMonsterIdFromCasterOption`** / **`poolFromCasterOption`** (see [Summon spells and spawn](#summon-spells-and-spawn)). |
 
 **Resolution levels:**
 
@@ -539,26 +539,28 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 
 This subsection documents **intent and architecture** for ally summon spells. Implementation may lag; the [effects.md §13 `spawn`](./effects.md#spawn) entry stays aligned with runtime truth. Phased delivery: [`summon_spells_phased.plan.md`](../../.cursor/plans/summon_spells_phased.plan.md).
 
-**Problem today**
+**Implemented path**
 
-- Encounter state is built from a **fixed roster** at encounter start (`createEncounterState`); there is no reducer path that **appends** party combatants mid-fight.
-- `applyActionEffects` has **no `spawn` branch**; the supported-effect matrix lists `spawn` as **Log** only.
-- `classifySpellResolutionMode` counts **`spawn`** as actionable: those spells become **`effects`** actions with **`targeting: none`**. Full combatant creation is still TODO.
+- **`mergeCombatantsIntoEncounter`** appends party combatants and sorts initiative; **`applyActionEffects`** runs **`spawn`** when effects resolve.
+- **`ResolveCombatActionOptions`**: **`monstersById`**, **`buildSummonAllyCombatant`**, **`rng`**. **`ApplyActionEffectsOptions.casterOptions`** mirrors **`selection.casterOptions`** so enum choices feed **`resolveSpawnMonsterIds`**.
+- **`SpawnEffect`**: **`monsterId`** / **`monsterIds`**, **`pool`**, **`mapMonsterIdFromCasterOption`**, **`poolFromCasterOption`**, **`initiativeMode`**.
 
-**Target behavior (ally creatures)**
+**Remaining gaps**
 
-- **Source of truth:** authored references to **`Monster.id`** values from the merged catalog (`monstersById`), not opaque strings like `familiar` long term.
-- **Side:** creatures that fight **with** the party should be added to the same allegiance as PCs (**`party`** / ally combatants), not the enemy pool.
-- **`casterOptions`:** drive skeleton vs zombie, giant insect morph, or “one vs two vs four vs eight” CR ceilings for conjuration spells; resolver maps option values to **max CR**, **count**, and/or **explicit monster ids**.
-- **Random pools:** for “a fey creature of CR 2 or lower” style text, filter `Object.values(monstersById)` by `type === 'fey'` (or `elemental`) and `lore.challengeRating <= cap`. **`lore.challengeRating`** is **required** on [`Monster`](../../src/features/content/monsters/domain/types/monster.types.ts) so pool filters never omit CR. Choose with the encounter **`rng`** from `ResolveCombatActionOptions` so tests can be deterministic.
-- **Initiative:** spell text varies (group initiative, share caster’s initiative, or separate rolls). This should be an explicit field on the spawn/summon payload or spell resolution meta when implemented—not a one-off in each spell.
+- Higher-slot **count multipliers** for conjures (6th / 8th) and Animate Dead **+2 undead** are not yet applied to **`spawn.count`** / pool resolution.
+- **Concentration** / dismissal at 0 HP (Phase 5 in the plan).
 
-**Engine pieces to add**
+**Ally summon behavior**
 
-- Extend **`SpawnEffect`** (or spell `resolution`) to carry **monster id(s)**, **pool filters**, **count**, and **initiative mode**.
-- **`addCombatantToEncounter`** (or equivalent): mutate `combatantsById`, `partyCombatantIds`, **`initiative`** / **`initiativeOrder`**, and turn index rules safely.
-- Thread **`monstersById`** (and build helpers such as `buildMonsterCombatantInstance`) into **`ResolveCombatActionOptions`** or the summon resolution path.
-- Register **`spawn`** in **`classifySpellResolutionMode`** when the effect is resolvable so **`buildSpellCombatActions`** emits an **`effects`** action with **`targeting: { kind: 'none' }`** — not **`self`**, since the caster is not the subject of the spell’s effect bundle in the same way as a self-buff.
+- **Source of truth:** **`Monster.id`** from the merged catalog (`monstersById`), except legacy **`creature`** strings where needed.
+- **Side:** allies use the party-side summon builder; they are merged as **party** combatants.
+- **`casterOptions`:** map to explicit ids via **`mapMonsterIdFromCasterOption`**, or to **count + type + CR cap** via **`poolFromCasterOption`** (conjure tiers).
+- **Random pools:** filter by `type` and `lore.challengeRating <= cap`; pick with encounter **`rng`**.
+- **Initiative:** **`initiativeMode`** on **`SpawnEffect`** (`'group' | 'share-caster' | 'individual'`).
+
+**Classifier / adapter**
+
+- **`classifySpellResolutionMode`** treats **`spawn`** as actionable: **`effects`** actions with **`targeting: { kind: 'none' }`** — not **`self`**.
 
 **Authoring examples (directional)**
 

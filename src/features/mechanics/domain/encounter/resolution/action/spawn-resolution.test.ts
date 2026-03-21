@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { SpawnEffect } from '../../../effects/effects.types'
 
-import { describeResolvedSpawn } from './spawn-resolution'
+import { describeResolvedSpawn, resolveSpawnMonsterIds } from './spawn-resolution'
 
 function m(
   id: string,
@@ -75,6 +75,46 @@ describe('describeResolvedSpawn', () => {
     }
     const s = describeResolvedSpawn(effect, monstersById, () => 0.5)
     expect(s).toContain('no fey in catalog at CR ≤ 0')
+  })
+
+  it('maps monster id from caster enum', () => {
+    const effect: SpawnEffect = {
+      kind: 'spawn',
+      count: 1,
+      mapMonsterIdFromCasterOption: {
+        fieldId: 'animate-dead-form',
+        valueToMonsterId: { skeleton: 'skeleton', zombie: 'zombie' },
+      },
+    }
+    const monstersById = {
+      skeleton: m('skeleton', 'Skeleton', 'undead', 0.25),
+    }
+    const ids = resolveSpawnMonsterIds(effect, monstersById, () => 0.5, {
+      'animate-dead-form': 'skeleton',
+    })
+    expect(ids).toEqual(['skeleton'])
+  })
+
+  it('resolves pool + count from caster option', () => {
+    const effect: SpawnEffect = {
+      kind: 'spawn',
+      count: 1,
+      poolFromCasterOption: {
+        fieldId: 'conjure-minor-elementals-option',
+        mapping: {
+          'cr-half-four': { count: 2, maxChallengeRating: 0.5, creatureType: 'elemental' },
+        },
+      },
+    }
+    const monstersById = {
+      a: m('a', 'E1', 'elemental', 0.25),
+      b: m('b', 'E2', 'elemental', 0.5),
+    }
+    const ids = resolveSpawnMonsterIds(effect, monstersById, () => 0, {
+      'conjure-minor-elementals-option': 'cr-half-four',
+    })
+    expect(ids).toHaveLength(2)
+    expect(ids.every((id) => id === 'a' || id === 'b')).toBe(true)
   })
 
   it('falls back to legacy creature token', () => {

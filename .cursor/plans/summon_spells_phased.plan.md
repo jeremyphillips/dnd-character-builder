@@ -68,6 +68,7 @@ Ally summon spells should add **party-side** `CombatantInstance`s from catalog `
 
 ## Phase 4 — Authoring + UX polish
 
+**Status: done** (2026-03-20)
 
 | Spell                                      | Work                                                                        |
 | ------------------------------------------ | --------------------------------------------------------------------------- |

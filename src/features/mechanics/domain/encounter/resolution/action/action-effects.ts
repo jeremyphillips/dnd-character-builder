@@ -15,6 +15,8 @@ import {
   mergeCombatantsIntoEncounter,
   type CombatantInstance,
 } from '../../state'
+import type { EffectDuration } from '../../../effects/timing.types'
+import type { ConditionImmunityGrantEffect } from '../../../effects/effects.types'
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
 import { abilityIdToKey, type AbilityRef } from '../../../character'
 import type { Condition } from '../../../conditions/condition.types'
@@ -214,6 +216,15 @@ export type ApplyActionEffectsOptions = {
   buildSummonAllyCombatant?: (args: { monster: Monster; runtimeId: string }) => CombatantInstance
   /** Enum selections from the encounter UI (e.g. conjure tier, animate form). */
   casterOptions?: Record<string, string>
+}
+
+/** Spell duration as turn-count fixed duration for `activeEffects` (from `concentrationDurationTurns`). */
+function spellTurnDurationFromAction(action: CombatActionDefinition): EffectDuration | undefined {
+  const meta = action.displayMeta
+  if (meta?.source !== 'spell') return undefined
+  const turns = meta.concentrationDurationTurns
+  if (turns == null || turns <= 0) return undefined
+  return { kind: 'fixed', value: turns, unit: 'turn' }
 }
 
 export function applyActionEffects(
@@ -643,6 +654,32 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'grant') {
+      if (effect.grantType === 'proficiency') {
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Grants ${effect.grantType}.`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+        return
+      }
+
+      if (effect.grantType === 'condition-immunity') {
+        const duration = effect.duration ?? spellTurnDurationFromAction(action)
+        const grantPayload: ConditionImmunityGrantEffect = {
+          ...effect,
+          ...(duration ? { duration } : {}),
+          source: effect.source ?? options.sourceLabel,
+        }
+        nextState = updateEncounterCombatant(nextState, target.instanceId, (c) => ({
+          ...c,
+          activeEffects: [...c.activeEffects, grantPayload],
+        }))
+        nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Grants immunity (${effect.value}) on target — tracked for encounter UI.`, {
+          actorId: actor.instanceId,
+          targetIds: [target.instanceId],
+        })
+        return
+      }
+
       nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Grants ${effect.grantType}.`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],

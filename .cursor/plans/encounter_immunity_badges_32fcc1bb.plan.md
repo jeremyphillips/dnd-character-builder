@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: phase2-persist-grants
     content: Persist structured EffectConditionImmunityGrant on activeEffects; never merge into conditionImmunities
-    status: pending
+    status: completed
   - id: phase3-resolution-scope
     content: Rules evaluation of scoped immunity vs incoming effect metadata (addConditionToCombatant, save shortcuts)
     status: pending

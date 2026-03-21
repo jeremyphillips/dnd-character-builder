@@ -1,5 +1,6 @@
 import type { Condition } from '../conditions/condition.types';
 import type { TriggerType } from '../triggers/trigger.types';
+import type { TurnHookKind, TurnHookSelfTrigger } from '../triggers/turn-hooks.types';
 import type { StatTarget } from '../resolution/resolvers/stat-resolver';
 import type { FormulaEffect } from '../resolution/engines/formula.engine';
 import type { DiceOrFlat } from '../dice/dice.types';
@@ -170,7 +171,7 @@ export type CheckEffect = EffectBase<'check'> & {
 
 export type RepeatSave = {
   ability: AbilityRef;
-  timing: 'turn-start' | 'turn-end';
+  timing: TurnHookKind;
   /**
    * When true, the hook is removed after the first save attempt (success or fail).
    * Use for Sleep-style “one repeat at end of next turn” vs default repeat-until-success.
@@ -471,10 +472,7 @@ export type RemoveClassificationEffect = EffectBase<'remove-classification'> & {
 
 export type RegenerationEffect = EffectBase<'regeneration'> & {
   amount: number | DiceOrFlat;
-  trigger: {
-    kind: 'turn-start' | 'turn-end';
-    subject: 'self';
-  };
+  trigger: TurnHookSelfTrigger;
   suppressedByDamageTypes?: string[];
   suppressionDuration?: EffectDuration;
   disabledAtZeroHp?: boolean;

@@ -8,8 +8,15 @@ import type { MonsterAttackType, AttackAbility } from "./monster-combat.types";
 import type { EffectUses, RechargeSpec } from "@/features/mechanics/domain/effects/timing.types";
 import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
 
+/** One step of Multiattack; use `actionId` for stable references. */
+export type MonsterMultiattackSequenceStep =
+  | { actionId: string; count: number }
+  | { actionName: string; count: number };
+
 export type MonsterNaturalAttackAction = {
   kind: 'natural';
+  /** Stable id for Multiattack / legendary references (kebab-case). */
+  id?: string;
   name?: string;
   attackType: MonsterAttackType;
   damageBonus?: number;
@@ -25,6 +32,8 @@ export type MonsterNaturalAttackAction = {
 
 export type MonsterSpecialAction = {
   kind: 'special';
+  /** Stable id for Multiattack / legendary references (kebab-case). */
+  id?: string;
   name: string;
   description: string;
   attackBonus?: number;
@@ -55,10 +64,7 @@ export type MonsterSpecialAction = {
   onFail?: Effect[];
   onSuccess?: Effect[];
   effects?: Effect[];
-  sequence?: {
-    actionName: string,
-    count: number
-  }[]
+  sequence?: MonsterMultiattackSequenceStep[]
   notes?: string;
   resolution?: ContentResolutionMeta;
 };

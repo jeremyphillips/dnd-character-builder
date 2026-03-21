@@ -3,7 +3,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import FormSelectField from '@/ui/patterns/form/FormSelectField'
+import { FormSelectField } from '@/ui/patterns'
 import {
   buildDefaultCasterOptions,
   type CasterOptionField,

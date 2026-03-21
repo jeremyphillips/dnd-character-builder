@@ -148,12 +148,20 @@ export default function EncounterRoute() {
   const { monsterModalOptions, npcModalOptions } = useMemo(() => {
     const monsters = opponentOptions
       .filter((o) => o.kind === 'monster')
-      .map((o) => ({ id: o.sourceId, name: o.label }))
+      .map((o) => {
+        const block = monstersById[o.sourceId]
+        return {
+          id: o.sourceId,
+          name: o.label,
+          challengeRating: block?.lore?.challengeRating != null ? String(block.lore.challengeRating) : '—',
+          creatureType: block?.type ?? '—',
+        }
+      })
     const npcList = opponentOptions
       .filter((o) => o.kind === 'npc')
       .map((o) => ({ id: o.sourceId, name: o.label }))
     return { monsterModalOptions: monsters, npcModalOptions: npcList }
-  }, [opponentOptions])
+  }, [opponentOptions, monstersById])
 
   const selectedOpponentKeys = useMemo(
     () => selectedOpponentOptions.map((o) => o.key),

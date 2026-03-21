@@ -53,6 +53,7 @@ Boundaries:
 - **Catalog audit:** run `npm run test:run -- src/features/encounter/helpers/spell-catalog-audit.test.ts` for merged-system-spell metrics (stranded counts, ambiguous delivery, explicit `save.dc`, etc.). Counts are for reporting, not CI gates; see `spell-resolution-audit.ts` and [resolution.md](./resolution.md) §7 “Spell combat adapter”.
 - **`resolution.hpThreshold`** — optional HP-gated branches: main `effects` when target current HP ≤ `maxHp`, `aboveMaxHpEffects` when above (combat adapter maps to `CombatActionDefinition`). Use for spells like Power Word Kill; keep rules text in `description.full`.
 - **`resolution.casterOptions`** — optional encounter choices (e.g. Hex disadvantage ability, Symbol glyph effect, Antipathy vs Sympathy). Shape: `CasterOptionField` in [`caster-options.ts`](../../src/features/mechanics/domain/spells/caster-options.ts) (`kind: 'ability'` with `id`/`label`, or `kind: 'enum'` with `options: { value, label }[]`). The spell combat adapter copies these to `CombatActionDefinition.casterOptions`; encounter UI renders selects and passes values into `ResolveCombatActionSelection.casterOptions` (keyed by field `id`). Resolution appends them to combat log summaries (`formatCasterOptionSummary`). Antipathy/Sympathy keeps authored values `antipathy` / `sympathy`; map to `frightened` / `charmed` via `ANTIPATHY_SYMPATHY_MODE_TO_CONDITION` / `getConditionFromAntipathySympathyMode` when applying conditions.
+- **Summon spells (ally creatures)** — spells that create or call creatures to fight alongside the party should eventually reference **catalog `Monster` ids** (same ids as `monstersById` in the ruleset) rather than opaque string tokens. Use **`resolution.casterOptions`** for caster-facing choices that affect which stat block applies: e.g. skeleton vs zombie, giant insect form, or “CR band” options for Conjure Minor Elementals / Conjure Woodland Beings. Pair structured choices with a **`spawn`** effect (see §13 `spawn`) and keep **`description.full`** authoritative for full 5e rules. Runtime behavior (adding combatants to the encounter’s **party** side, initiative placement, random pick from `type: 'fey'` / `type: 'elemental'` pools) is specified in [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn) and the [`spawn` row in the supported-effect matrix](./resolution.md#supported-effect-matrix).
 
 ### Delivery Method
 
@@ -384,7 +385,7 @@ Status meanings:
 - `hold-breath`: `canonical`
 - `tracked-part`: `provisional`
 - `extra-reaction`: `provisional`
-- `spawn`: `provisional`
+- `spawn`: `provisional` (summon spells: prefer **monster id**-backed shapes once the encounter engine supports ally combatants; see §13 `spawn`)
 - `aura`: `canonical`
 - `custom`: escape hatch only
 - Use these only when their current shared meaning fits.
@@ -831,6 +832,7 @@ Follow the extension policy: under-model first, promote only when the pattern pr
 
 - `trigger`, `activation`, `form`, `spawn`, `aura`, `check`, `grant` (runtime), `containment`, `visibility-rule`, `hold-breath`, `tracked-part`, `extra-reaction`, `resource`, `formula`
 - These remain authored as structured content but resolve to log-text at runtime until demand justifies engine investment.
+- **`spawn` (summon spells):** targeted for promotion: ally-side **`Monster`** instances in encounter state, optional **random pool** selection filtered by `Monster.type` and CR (with `casterOptions` driving caps), wired through `classifySpellResolutionMode` / `applyActionEffects`. See [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn).
 
 ### Key Scaling Principle
 
@@ -873,9 +875,10 @@ Status of monster-specific and cross-cutting effect kinds, using the standard ma
 
 ### `spawn`
 
-- Status: `under-modeled`
-- Authored but does not create a simulated combatant in the encounter. Logged as a note.
-- Used by: Troll Loathsome Limbs.
+- Status: `under-modeled` (summon-spell support **planned** — see [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn))
+- **Today:** authored on spells and traits but does **not** add a `CombatantInstance` to encounter state; encounter resolution does not treat `spawn` as a fully actionable spell kind in `classifySpellResolutionMode`, so many summon-heavy spells remain **`log-only`** at the spell-adapter layer until that changes.
+- **Authoring direction:** model ally summons with **`Monster.id`** references (e.g. `skeleton`, `zombie`, `giant-spider`) and **`resolution.casterOptions`** where the rules offer a choice (form, CR tier). For spells that allow “any fey/elemental of CR ≤ X”, prefer resolver-time selection from the catalog filtered by **`type`** (`Monster.type` in [`monster.vocab.ts`](../../src/features/content/monsters/domain/vocab/monster.vocab.ts)) and **`lore.challengeRating`**, with values chosen by the encounter RNG for reproducibility when `ResolveCombatActionOptions.rng` is threaded through.
+- **Used by:** Find Familiar (legacy `creature` token), Troll Loathsome Limbs, and (with notes/caveats) spells such as Animate Dead, Conjure Minor Elementals, Conjure Woodland Beings, Giant Insect.
 
 ### `hold-breath`
 

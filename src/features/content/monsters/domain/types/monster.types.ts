@@ -95,8 +95,8 @@ export interface MonsterFields {
 
   lore: {
     alignment?: AlignmentId;
-    xpValue?: number;
-    challengeRating?: MonsterChallengeRating;
+    xpValue: number;
+    challengeRating: MonsterChallengeRating;
     intelligence?: IntelligenceCategory;
   }
 }

@@ -54,7 +54,7 @@ export type MonsterCombatant = {
   id: string
   name: string
   creatureType?: string
-  challengeRating?: string
+  challengeRating: string
   armorClass?: number
   hitPoints?: { current: number; max: number }
   initiativeModifier?: number

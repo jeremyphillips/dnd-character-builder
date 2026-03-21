@@ -93,8 +93,8 @@ export function buildMonsterCustomColumns(
       field: 'challengeRating',
       headerName: 'Challenge Rating',
       width: 100,
-      accessor: (row) => row.lore?.challengeRating ? 
-        `${row.lore.challengeRating?.toString()}` : '—',
+      accessor: (row) => row.lore.challengeRating ? 
+        `${row.lore.challengeRating.toString()}` : '—',
         // (XP: ${row.lore.xpValue?.toLocaleString()})
     },
     {

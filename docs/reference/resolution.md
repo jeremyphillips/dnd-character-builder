@@ -113,7 +113,7 @@ The encounter action system resolves combat actions against encounter state:
 | `action-targeting` | Shared targeting query layer: `isValidActionTarget` (predicate), `getActionTargetCandidates` (candidate list for UI), `getActionTargets` (resolved targets for action resolution); sequence step counts |
 | `action-effects` | Applies effects to encounter state: damage, healing, conditions (with repeat-save hooks), states, saves, modifiers (AC add/set, speed add/set/multiply, resistance add), roll-modifiers (advantage/disadvantage), immunities, intervals (registered as turn hooks), damage resistance markers, movement, and advanced effect logging (trigger, activation, check, grant, form) |
 
-**Caster options:** `ResolveCombatActionSelection` may include `casterOptions` (`Record<string, string>` keyed by authored field ids). Spell `resolution.casterOptions` is copied onto `CombatActionDefinition` by `buildSpellCombatActions`; encounter UI collects values before `resolveCombatAction` runs. `action-resolver` includes a formatted fragment in `action-declared` and spell `log-only` summaries (`formatCasterOptionSummary` in `mechanics/domain/spells/caster-options.ts`).
+**Caster options:** `ResolveCombatActionSelection` may include `casterOptions` (`Record<string, string>` keyed by authored field ids). Spell `resolution.casterOptions` is copied onto `CombatActionDefinition` by `buildSpellCombatActions`; encounter UI collects values before `resolveCombatAction` runs. `action-resolver` includes a formatted fragment in `action-declared` and spell `log-only` summaries (`formatCasterOptionSummary` in `mechanics/domain/spells/caster-options.ts`). For **summon spells**, enum options typically encode **form** (e.g. giant centipede vs spider) or **CR tier** (Conjure Minor Elementals / Woodland Beings); resolution will combine these with the monster catalog to pick stat blocks or random eligible creatures—see [§8 — Summon spells and spawn](#summon-spells-and-spawn) below.
 
 **Action resolution modes:**
 
@@ -486,7 +486,7 @@ Healing actions use `targeting: { kind: 'single-creature' }`, which allows any l
 `classifySpellResolutionMode` (in `src/features/encounter/helpers/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
 
 - **`attack-roll`** — spell has `deliveryMethod` (`melee-spell-attack` or `ranged-spell-attack`); damage and on-hit riders come from the spell’s effects, but the primary hit uses the attack pipeline.
-- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`), and effects are not **only** `note` and/or `targeting`.
+- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`), and effects are not **only** `note` and/or `targeting`. **`spawn` is not yet in this actionable set**; summon spells therefore often classify as **`log-only`** until `spawn` / summon resolution is wired (see [§8 — Summon spells and spawn](#summon-spells-and-spawn)).
 - **`log-only`** — empty effects, only `note` / `targeting`, or only kinds such as `grant` / `move` that the encounter layer currently resolves as structured log output without the same mechanical path.
 
 Multi-instance **auto-hit** spells authored with a single root `damage` effect and `instances.count` above 1 (no top-level `save`) are built as a **parent `effects` action with `sequence`** plus a child `effects` action per hit (same pattern as multi-beam spell attacks). Each child applies one damage resolution against the selected target until proper multi-target selection exists.
@@ -525,7 +525,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 | `check` | **Log** | Logs ability check requirement |
 | `grant` | **Log** | Logs granted capability |
 | `form` | **Log** | Logs form change description |
-| `spawn` | **Log** | Logs summoned creature description |
+| `spawn` | **Log** | Today: logs summoned creature description only. **Planned:** instantiate **`Monster`**-backed allies on the **party** side, roll or group initiative, optional random pick from catalog by `Monster.type` + CR cap (see below). |
 
 **Resolution levels:**
 
@@ -533,6 +533,37 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 - **Partial**: Some sub-cases resolved, others degrade to log.
 - **Handled**: Consumed elsewhere in the pipeline (not in `applyActionEffects`).
 - **Log**: Structured summary logged to encounter log; no mechanical state changes.
+
+### Summon spells and spawn
+
+This subsection documents **intent and architecture** for ally summon spells. Implementation may lag; the [effects.md §13 `spawn`](./effects.md#spawn) entry stays aligned with runtime truth.
+
+**Problem today**
+
+- Encounter state is built from a **fixed roster** at encounter start (`createEncounterState`); there is no reducer path that **appends** party combatants mid-fight.
+- `applyActionEffects` has **no `spawn` branch**; the supported-effect matrix lists `spawn` as **Log** only.
+- `classifySpellResolutionMode` does not count `spawn` as a mechanically actionable kind, so spells whose main payload is `spawn` + `note` tend to become **`log-only`** spell actions.
+
+**Target behavior (ally creatures)**
+
+- **Source of truth:** authored references to **`Monster.id`** values from the merged catalog (`monstersById`), not opaque strings like `familiar` long term.
+- **Side:** creatures that fight **with** the party should be added to the same allegiance as PCs (**`party`** / ally combatants), not the enemy pool.
+- **`casterOptions`:** drive skeleton vs zombie, giant insect morph, or “one vs two vs four vs eight” CR ceilings for conjuration spells; resolver maps option values to **max CR**, **count**, and/or **explicit monster ids**.
+- **Random pools:** for “a fey creature of CR 2 or lower” style text, filter `Object.values(monstersById)` by `type === 'fey'` (or `elemental`) and `lore.challengeRating <= cap`, then choose with the encounter **`rng`** from `ResolveCombatActionOptions` so tests can be deterministic.
+- **Initiative:** spell text varies (group initiative, share caster’s initiative, or separate rolls). This should be an explicit field on the spawn/summon payload or spell resolution meta when implemented—not a one-off in each spell.
+
+**Engine pieces to add**
+
+- Extend **`SpawnEffect`** (or spell `resolution`) to carry **monster id(s)**, **pool filters**, **count**, and **initiative mode**.
+- **`addCombatantToEncounter`** (or equivalent): mutate `combatantsById`, `partyCombatantIds`, **`initiative`** / **`initiativeOrder`**, and turn index rules safely.
+- Thread **`monstersById`** (and build helpers such as `buildMonsterCombatantInstance`) into **`ResolveCombatActionOptions`** or the summon resolution path.
+- Register **`spawn`** in **`classifySpellResolutionMode`** when the effect is resolvable so **`buildSpellCombatActions`** emits an **`effects`** action (often with **`self`** targeting for “no enemy target” summons).
+
+**Authoring examples (directional)**
+
+- Animate Dead: enum → `skeleton` / `zombie` ids; scaling for extra creatures can follow later.
+- Giant Insect: enum → `giant-centipede` / `giant-spider` / `giant-wasp`; initiative: **after caster** on same count.
+- Conjure Woodland Beings / Minor Elementals: keep existing CR-tier enums; resolver picks random fey/elemental from the catalog under the tier cap.
 
 ## 9. Known Pressure Points
 

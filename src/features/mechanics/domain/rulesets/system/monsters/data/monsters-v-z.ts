@@ -97,6 +97,121 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
       intelligence: 'low',
     },
   },
+  {
+    id: 'wight',
+    name: 'Wight',
+    type: 'undead',
+    sizeCategory: 'medium',
+    languages: [{ id: 'common' }, { id: 'goblin' }],
+    description: {
+      short: 'Malevolent undead knights that drain life force and raise slain foes as zombies.',
+      long: 'Wights retain martial skill and a cruel intelligence. Their weapons carry necrotic rot, and those they slay may rise again as shambling servants—up to a dozen at a time.',
+    },
+    mechanics: {
+      hitPoints: { count: 11, die: 8, modifier: 33 },
+      armorClass: { kind: 'equipment', armorRefs: ['studded-leather'] },
+      movement: { ground: 30 },
+      abilities: { str: 15, dex: 14, con: 16, int: 10, wis: 13, cha: 15 },
+      senses: {
+        special: [{ type: 'darkvision', range: 60 }],
+        passivePerception: 13,
+      },
+      proficiencies: {
+        skills: {
+          perception: { proficiencyLevel: 1 },
+          stealth: { proficiencyLevel: 1 },
+        },
+        weapons: {
+          longsword: { proficiencyLevel: 1 },
+          longbow: { proficiencyLevel: 1 },
+        },
+      },
+      proficiencyBonus: 2,
+      resistances: ['necrotic'],
+      immunities: ['poison', 'exhaustion', 'poisoned'],
+      traits: [
+        {
+          name: 'Sunlight Sensitivity',
+          description:
+            'While in sunlight, the wight has Disadvantage on ability checks and attack rolls.',
+          trigger: {
+            kind: 'in-environment',
+            environment: 'sunlight',
+          },
+          effects: [
+            {
+              kind: 'roll-modifier',
+              appliesTo: ['ability-checks', 'attack-rolls'],
+              modifier: 'disadvantage',
+            },
+          ],
+        },
+      ],
+      actions: [
+        {
+          kind: 'special',
+          name: 'Multiattack',
+          description:
+            'The wight makes two attacks, using Necrotic Sword or Necrotic Bow in any combination. It can replace one attack with a use of Life Drain.',
+          sequence: [{ actionName: 'Necrotic Sword', count: 2 }],
+          notes: 'Each attack may use Necrotic Bow instead; one attack may be replaced with Life Drain.',
+        },
+        { kind: 'weapon', weaponRef: 'necrotic-sword' },
+        { kind: 'weapon', weaponRef: 'necrotic-bow' },
+        {
+          kind: 'special',
+          name: 'Life Drain',
+          description:
+            'Constitution Saving Throw: DC 13, one creature within 5 feet. Failure: 6 (1d8 + 2) Necrotic damage, and the target’s Hit Point maximum decreases by an amount equal to the damage taken.',
+          save: { ability: 'con', dc: 13 },
+          damage: '1d8',
+          damageBonus: 2,
+          damageType: 'necrotic',
+          halfDamageOnSave: false,
+          onFail: [
+            {
+              kind: 'note',
+              text: "Target's Hit Point maximum decreases by an amount equal to the necrotic damage taken (typically until finishing a Long Rest).",
+            },
+          ],
+          notes:
+            'A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight’s control, unless the Humanoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time.',
+          resolution: {
+            caveats: [
+              'HP maximum reduction, zombie spawn timing, and a cap of twelve controlled zombies are not enforced in encounter resolution.',
+            ],
+          },
+        },
+      ],
+      equipment: {
+        weapons: {
+          'necrotic-sword': {
+            weaponId: 'longsword',
+            aliasName: 'Necrotic Sword',
+            attackBonus: 4,
+            damageBonus: 2,
+            notes: '+ 4 (1d8) Necrotic damage on hit.',
+          },
+          'necrotic-bow': {
+            weaponId: 'longbow',
+            aliasName: 'Necrotic Bow',
+            attackBonus: 4,
+            damageBonus: 2,
+            notes: '+ 4 (1d8) Necrotic damage on hit.',
+          },
+        },
+        armor: {
+          'studded-leather': { armorId: 'studded-leather' },
+        },
+      },
+    },
+    lore: {
+      alignment: 'ne',
+      challengeRating: 3,
+      xpValue: 700,
+      intelligence: 'average',
+    },
+  },
 {
     id: "wolf",
     name: "Wolf",

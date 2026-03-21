@@ -165,13 +165,8 @@ function buildMonsterActionSequence(
     action.description.toLowerCase().includes('as many')
 
   return action.sequence.map((step) => {
-    let actionLabel: string
-    if ('actionId' in step && step.actionId) {
-      const found = findMonsterCatalogActionById(monster, step.actionId)
-      actionLabel = found ? resolveMonsterActionDisplayLabel(monster, found) : step.actionId
-    } else {
-      actionLabel = 'actionName' in step ? step.actionName : ''
-    }
+    const found = findMonsterCatalogActionById(monster, step.actionId)
+    const actionLabel = found ? resolveMonsterActionDisplayLabel(monster, found) : step.actionId
     return {
       actionLabel,
       count: step.count,

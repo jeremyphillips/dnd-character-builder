@@ -75,7 +75,7 @@ Shared elemental/weapon damage labels include **`DamageType`** in [`damage.types
 ### Action ids and Multiattack
 
 - Add optional **`id`** (kebab-case, stable) on **`MonsterNaturalAttackAction`** and **`MonsterSpecialAction`** for any action referenced by **Multiattack** or **legendary** entries.
-- **`sequence`** steps use **`{ actionId, count }`** (preferred) or legacy **`{ actionName, count }`**. The encounter adapter resolves **`actionId`** to a display label from the matching action (`id` on natural/special, or **`weaponRef`** for `kind: 'weapon'`).
+- **`sequence`** steps use **`{ actionId, count }`**. The encounter adapter resolves **`actionId`** to a display label from the matching action (`id` on natural/special, or **`weaponRef`** for `kind: 'weapon'`).
 
 ### Legendary actions
 

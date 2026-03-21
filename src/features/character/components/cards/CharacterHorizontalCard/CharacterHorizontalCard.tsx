@@ -30,7 +30,7 @@ const CharacterHorizontalCard = ({
   onEdit,
   actions,
 }: CharacterHorizontalCardProps) => {
-  const classLine = formatCharacterClassLine(classes)
+  const classLine = formatCharacterClassLine(classes ?? [])
   const raceName = race?.name ?? undefined
   const subheadline = [raceName, classLine]
     .filter(Boolean)

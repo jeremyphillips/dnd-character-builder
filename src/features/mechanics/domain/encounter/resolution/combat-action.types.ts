@@ -1,6 +1,7 @@
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { AbilityId } from '@/features/mechanics/domain/character'
 import type { BreakdownToken } from '../../resolution/resolvers/stat-resolver'
+import type { CasterOptionField } from '../../spells/caster-options'
 
 export type CombatActionKind =
   | 'weapon-attack'
@@ -38,13 +39,26 @@ export interface CombatActionSaveProfile {
 }
 
 export interface CombatActionTargetingProfile {
-  kind: 'single-target' | 'all-enemies' | 'entered-during-move' | 'self' | 'single-creature' | 'dead-creature'
+  kind:
+    | 'single-target'
+    | 'all-enemies'
+    | 'entered-during-move'
+    | 'self'
+    | 'single-creature'
+    | 'dead-creature'
+    /** No creature target (e.g. ally summon); resolver applies effects without a selected target. */
+    | 'none'
   creatureTypeFilter?: string[]
   /**
    * "Willing creature" touch buffs: valid targets are same-side only (caster + allies). For now this is the ally approximation.
    * Non-hostile for charm/hostile-action rules.
    */
   requiresWilling?: boolean
+  /**
+   * From spell targeting metadata: “creature you can see.” Validated via {@link canSeeForTargeting}
+   * (blinded, invisible vs See Invisibility, LOS/LoE stubs). Ignored for `self` and `all-enemies` in the resolver.
+   */
+  requiresSight?: boolean
 }
 
 export interface CombatActionMovementProfile {
@@ -109,4 +123,6 @@ export interface CombatActionDefinition {
    * When set (spell actions from `buildSpellCombatActions`), `isHostileAction` uses this; otherwise legacy `targeting` kind rules apply.
    */
   hostileApplication?: boolean
+  /** From spell `resolution.casterOptions`; encounter UI collects values before resolve. */
+  casterOptions?: CasterOptionField[]
 }

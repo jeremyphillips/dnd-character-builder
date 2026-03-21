@@ -2,10 +2,8 @@ import { useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
 
 import { AppModal } from '@/ui/patterns'
-import { AppBadge } from '@/ui/primitives'
 import type { EnvironmentSetupValues } from '../EncounterEnvironmentSetup'
 import { EncounterEnvironmentSetup } from '../EncounterEnvironmentSetup'
 

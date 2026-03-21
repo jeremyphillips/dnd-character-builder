@@ -5,7 +5,7 @@ import type {
   ContentItem,
   ContentInput,
 } from '@/features/content/shared/domain/types/content.types';
-import type { AbilityScoreMap, AbilityId } from '@/features/mechanics/domain/character';
+import type { MonsterAbilityScoreMap, AbilityId } from '@/features/mechanics/domain/character';
 import type { AlignmentId } from "@/features/content/shared/domain/types";
 import type { MonsterType, MonsterSizeCategory } from "@/features/content/monsters/domain/vocab/monster.vocab";
 import type {
@@ -17,7 +17,8 @@ import type { MonsterEquipment, MonsterArmorClass } from "./monster-equipment.ty
 import type { MonsterSenses } from "./monster-senses.types";
 import type { MonsterTrait } from "./monster-traits.types";
 import type { MonsterAction } from "./monster-actions.types";
-import type { ImmunityType, VulnerabilityType } from "./monster-combat.types";
+import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
+import type { ImmunityType, MonsterResistanceType, VulnerabilityType } from "./monster-combat.types";
 import type { Movement } from "@/features/mechanics/domain/movement";
 
 // TODO: create dynamic type
@@ -42,6 +43,7 @@ type MonsterLanguage = {
 };
 
 export type MonsterSubtype =
+  | 'goblinoid'
   | 'aquatic'
   | 'gnome';
 
@@ -75,7 +77,7 @@ export interface MonsterFields {
     };
     armorClass: MonsterArmorClass;
     movement: Movement;
-    abilities?: AbilityScoreMap;
+    abilities?: MonsterAbilityScoreMap;
     savingThrows?: Partial<Record<AbilityId, ProficiencySkillAdjustment>>;
     traits?: MonsterTrait[];
     actions?: MonsterAction[];
@@ -85,13 +87,16 @@ export interface MonsterFields {
     proficiencyBonus: number;
     equipment?: MonsterEquipment;
     immunities?: ImmunityType[];
+    resistances?: MonsterResistanceType[];
     vulnerabilities?: VulnerabilityType[];
+    /** Optional whole-stat-block resolution metadata; prefer per-trait/action `resolution` when possible. */
+    resolution?: ContentResolutionMeta;
   };
 
   lore: {
     alignment?: AlignmentId;
-    xpValue?: number;
-    challengeRating?: MonsterChallengeRating;
+    xpValue: number;
+    challengeRating: MonsterChallengeRating;
     intelligence?: IntelligenceCategory;
   }
 }

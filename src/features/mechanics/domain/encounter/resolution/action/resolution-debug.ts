@@ -1,8 +1,9 @@
 import type { AbilityRef } from '../../../character'
+import type { D20RollMode } from '../../../resolution/engines/dice.engine'
 import type { EffectConditionId } from '../../../effects/effects.types'
 import type { CombatantInstance, RollModifierMarker } from '../../state/types'
 import type { CombatActionCost } from '../combat-action.types'
-import type { ConditionConsequence, AttackModConsequence, SaveModConsequence, DamageInteractionConsequence } from '../../state/condition-rules'
+import type { ConditionConsequence, SaveModConsequence, DamageInteractionConsequence } from '../../state/condition-rules'
 import {
   CONDITION_RULES,
   getActiveConsequencesWithOrigin,
@@ -12,15 +13,13 @@ import {
   shouldCountAttackModForAttackRoll,
 } from '../../state/condition-rules'
 
-type RollMode = 'advantage' | 'disadvantage' | 'normal'
-
 export function formatAttackRollDebug(
   attacker: CombatantInstance,
   defender: CombatantInstance,
   attackerMarkers: RollModifierMarker[],
   defenderMarkers: RollModifierMarker[],
   attackRange: 'melee' | 'ranged',
-  rollMod: RollMode,
+  rollMod: D20RollMode,
 ): string[] {
   const lines: string[] = [`roll mode: ${rollMod}`]
 
@@ -69,7 +68,7 @@ export function formatAutoFailDebug(
 export function formatSaveDebug(
   combatant: CombatantInstance,
   ability: AbilityRef,
-  saveRollMod: RollMode,
+  saveRollMod: D20RollMode,
 ): string[] {
   if (saveRollMod === 'normal') return []
 

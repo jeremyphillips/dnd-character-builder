@@ -7,7 +7,9 @@ import type { ContentItem } from '@/features/content/shared/domain/types/content
 import type { Distance } from '@/shared/distance';
 import type { Coin } from '@/shared/money/types';
 import type { TimeUnit } from '@/shared/time';
-import type { DiceOrFlat } from '@/features/mechanics/domain/dice';
+import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
+import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
+import type { CasterOptionField } from '@/features/mechanics/domain/spells/caster-options';
 
 // later: Extract<Effect, ...>[]
 export type SpellEffects = Effect[];
@@ -108,8 +110,7 @@ export type SpellHpThresholdResolution = {
   aboveMaxHpEffects: SpellEffects
 }
 
-export type SpellResolutionMeta = {
-  caveats?: string[];
+export type SpellResolutionMeta = ContentResolutionMeta & {
   /** HP-gated delivery (e.g. Power Word Kill: at-or-below vs above threshold). */
   hpThreshold?: SpellHpThresholdResolution
   /**
@@ -117,6 +118,11 @@ export type SpellResolutionMeta = {
    * `true` = hostile application; `false` = non-hostile. Omit to use adapter-derived hostility from effects.
    */
   hostileIntent?: boolean
+  /**
+   * Choices the caster must specify when using this spell in encounter (ability for Hex, glyph effect for Symbol, etc.).
+   * Copied onto spell combat actions by the spell combat adapter.
+   */
+  casterOptions?: CasterOptionField[]
 }
 
 export type SpellResolutionStatus = 'stub' | 'partial' | 'full';

@@ -1,4 +1,5 @@
 export * from './abilities'
 export * from './abilities.types'
 export * from './abilities.utils'
+export * from './abilityScoreMap'
 export * from './skillProficiencies.utils'

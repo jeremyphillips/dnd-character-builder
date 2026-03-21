@@ -1,8 +1,16 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
-import { rollDie, rollHealing } from '@/features/mechanics/domain/resolution/engines/dice.engine'
+import {
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  rollHealing,
+} from '@/features/mechanics/domain/resolution/engines/dice.engine'
 import { abilityIdToKey } from '@/features/mechanics/domain/character'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
-import type { EncounterState, RuntimeTurnHook, RuntimeTurnHookRepeatSave } from './types'
+import type {
+  EncounterState,
+  RuntimeTurnHook,
+  RuntimeTurnHookRepeatSave,
+} from './types'
 import {
   effectDurationToRuntimeDuration,
   formatTurnHookNote,
@@ -19,6 +27,7 @@ import {
   removeConditionFromCombatant,
   removeStateFromCombatant,
 } from './mutations'
+import { autoFailsSave, getSaveModifiersFromConditions } from './condition-rules/condition-queries'
 
 export function executeTurnHooks(
   state: EncounterState,
@@ -220,16 +229,57 @@ function getSaveModifierForCombatant(
   )
 }
 
+function buildOutcomeTrackDetailSuffix(
+  track: NonNullable<RuntimeTurnHookRepeatSave['outcomeTrack']>,
+  prev: { successes: number; fails: number },
+  succeeded: boolean,
+): string {
+  if (succeeded) {
+    const ns = prev.successes + 1
+    return ` Outcome track: ${ns}/${track.successCountToEnd ?? '—'} successes, ${prev.fails} failures.`
+  }
+  const nf = prev.fails + 1
+  return ` Outcome track: ${prev.successes} successes, ${nf}/${track.failCountToLock ?? '—'} failures.`
+}
+
 function resolveRepeatSave(
   state: EncounterState,
   combatantId: string,
   hook: RuntimeTurnHook,
   repeatSave: RuntimeTurnHookRepeatSave,
 ): EncounterState {
+  const combatant = state.combatantsById[combatantId]
   const saveModifier = getSaveModifierForCombatant(state, combatantId, repeatSave)
-  const rawRoll = rollDie(20, Math.random)
-  const total = rawRoll + saveModifier
-  const succeeded = total >= repeatSave.dc
+
+  let succeeded: boolean
+  let details: string
+
+  if (combatant && autoFailsSave(combatant, repeatSave.ability)) {
+    succeeded = false
+    details = `Auto-fail ${repeatSave.ability.toUpperCase()} save (condition).`
+  } else if (
+    combatant &&
+    repeatSave.autoSuccessIfImmuneTo &&
+    combatant.conditionImmunities?.includes(repeatSave.autoSuccessIfImmuneTo)
+  ) {
+    succeeded = true
+    details = `Auto-success (immune to ${repeatSave.autoSuccessIfImmuneTo}).`
+  } else {
+    const saveRollMod = combatant
+      ? resolveD20RollMode(getSaveModifiersFromConditions(combatant, repeatSave.ability))
+      : 'normal'
+    const { rawRoll, detail } = rollD20WithRollMode(saveRollMod, Math.random)
+    const total = rawRoll + saveModifier
+    succeeded = total >= repeatSave.dc
+    details = `Saving throw: ${detail} + ${saveModifier} = ${total} vs DC ${repeatSave.dc}.`
+  }
+
+  const track = repeatSave.outcomeTrack
+  const prevProgress = hook.repeatSaveProgress ?? { successes: 0, fails: 0 }
+  const detailsWithTrack =
+    track != null
+      ? `${details}${buildOutcomeTrackDetailSuffix(track, prevProgress, succeeded)}`
+      : details
 
   let nextState = appendLog(state, {
     type: 'note',
@@ -238,8 +288,53 @@ function resolveRepeatSave(
     round: state.roundNumber,
     turn: state.turnIndex + 1,
     summary: `${getCombatantLabel(state, combatantId)} ${succeeded ? 'succeeds' : 'fails'} repeat ${repeatSave.ability.toUpperCase()} save for ${hook.label}.`,
-    details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${total} vs DC ${repeatSave.dc}.`,
+    details: detailsWithTrack,
   })
+
+  if (track) {
+    if (succeeded) {
+      const successes = prevProgress.successes + 1
+      const fails = prevProgress.fails
+      if (track.successCountToEnd != null && successes >= track.successCountToEnd) {
+        if (repeatSave.removeCondition) {
+          nextState = removeConditionFromCombatant(nextState, combatantId, repeatSave.removeCondition)
+        }
+        if (repeatSave.removeState) {
+          nextState = removeStateFromCombatant(nextState, combatantId, repeatSave.removeState)
+        }
+        return updateCombatant(nextState, combatantId, (c) => ({
+          ...c,
+          turnHooks: c.turnHooks.filter((h) => h.id !== hook.id),
+        }))
+      }
+      return updateCombatant(nextState, combatantId, (c) => ({
+        ...c,
+        turnHooks: c.turnHooks.map((h) =>
+          h.id === hook.id ? { ...h, repeatSaveProgress: { successes, fails } } : h,
+        ),
+      }))
+    }
+
+    const fails = prevProgress.fails + 1
+    const successes = prevProgress.successes
+    if (track.failCountToLock != null && fails >= track.failCountToLock) {
+      if (track.failLockStateId) {
+        nextState = addStateToCombatant(nextState, combatantId, track.failLockStateId, {
+          sourceLabel: hook.label,
+        })
+      }
+      return updateCombatant(nextState, combatantId, (c) => ({
+        ...c,
+        turnHooks: c.turnHooks.filter((h) => h.id !== hook.id),
+      }))
+    }
+    return updateCombatant(nextState, combatantId, (c) => ({
+      ...c,
+      turnHooks: c.turnHooks.map((h) =>
+        h.id === hook.id ? { ...h, repeatSaveProgress: { successes, fails } } : h,
+      ),
+    }))
+  }
 
   if (succeeded) {
     if (repeatSave.removeCondition) {
@@ -248,6 +343,27 @@ function resolveRepeatSave(
     if (repeatSave.removeState) {
       nextState = removeStateFromCombatant(nextState, combatantId, repeatSave.removeState)
     }
+    nextState = updateCombatant(nextState, combatantId, (combatant) => ({
+      ...combatant,
+      turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),
+    }))
+  } else if (repeatSave.singleAttempt && repeatSave.onFail?.addCondition) {
+    if (repeatSave.removeCondition) {
+      nextState = removeConditionFromCombatant(nextState, combatantId, repeatSave.removeCondition)
+    }
+    nextState = addConditionToCombatant(nextState, combatantId, repeatSave.onFail.addCondition, {
+      sourceLabel: hook.label,
+      sourceInstanceId: repeatSave.casterInstanceId,
+      classification:
+        repeatSave.onFail.markerClassification && repeatSave.onFail.markerClassification.length > 0
+          ? repeatSave.onFail.markerClassification
+          : undefined,
+    })
+    nextState = updateCombatant(nextState, combatantId, (combatant) => ({
+      ...combatant,
+      turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),
+    }))
+  } else if (repeatSave.singleAttempt) {
     nextState = updateCombatant(nextState, combatantId, (combatant) => ({
       ...combatant,
       turnHooks: combatant.turnHooks.filter((h) => h.id !== hook.id),

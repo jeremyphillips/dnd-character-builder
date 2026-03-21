@@ -21,8 +21,15 @@ export {
   setConcentration,
   tickConcentrationDuration,
   updateEncounterCombatant,
+  patchCombatantEquipmentSnapshot,
 } from './mutations'
-export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel } from './runtime'
+export { inferStatModifierEligibilityFromEffect } from './equipment-eligibility'
+export {
+  lineOfSightClear,
+  lineOfEffectClear,
+  canSeeForTargeting,
+} from './visibility-seams'
+export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel, mergeCombatantsIntoEncounter } from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'
 export {

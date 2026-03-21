@@ -1,5 +1,5 @@
 import type { DieFace } from "@/features/mechanics/domain/dice/dice.types";
-import type { AbilityScoreMapResolved } from '@/features/mechanics/domain/character';
+import type { CreatureAbilityScores } from '@/features/mechanics/domain/character';
 import type { TriggerType } from "../triggers/trigger.types";
 
 export interface EvaluationContext {
@@ -22,7 +22,7 @@ export interface CreatureSnapshot {
 
   hitDie?: DieFace
 
-  abilities: AbilityScoreMapResolved
+  abilities: CreatureAbilityScores
 
   creatureType?: string
   conditions: string[] // prone, charmed, frightened, etc.

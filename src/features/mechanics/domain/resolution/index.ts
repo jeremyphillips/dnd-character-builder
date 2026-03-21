@@ -1,4 +1,5 @@
 export * from './types'
+export * from './content-resolution.types'
 export { evaluateCondition } from '../conditions/evaluateCondition'
 export * from './engines/formula.engine'
 export * from './engines/modifier.engine'

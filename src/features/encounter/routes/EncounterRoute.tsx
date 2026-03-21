@@ -42,10 +42,10 @@ const DEFAULT_ENVIRONMENT: EnvironmentSetupValues = {
 }
 
 export default function EncounterRoute() {
-  const { campaignId, campaignName } = useActiveCampaign()
+  useActiveCampaign()
   const { catalog } = useCampaignRules()
-  const { party, loading: loadingParty } = useCampaignParty('approved')
-  const { characters: npcs, loading: loadingNpcs } = useCharacters({ type: 'npc' })
+  const { party } = useCampaignParty('approved')
+  const { characters: npcs } = useCharacters({ type: 'npc' })
 
   const runtimeIdCounter = useRef(0)
   const nextRuntimeId = (prefix: string) => {
@@ -64,7 +64,6 @@ export default function EncounterRoute() {
     selectedAllyIds,
     setSelectedAllyIds,
     opponentRoster,
-    selectedAllyOptions,
     selectedOpponentOptions,
     opponentSourceCounts,
     selectedCombatantIds,
@@ -85,52 +84,56 @@ export default function EncounterRoute() {
     availableActionTargets,
     selectedActionId,
     setSelectedActionId,
+    selectedCasterOptions,
+    setSelectedCasterOptions,
     selectedActionTargetId,
     setSelectedActionTargetId,
     unresolvedCombatantCount,
     selectedCombatants,
-    controlTargetId,
-    setControlTargetId,
-    damageAmount,
-    setDamageAmount,
-    damageTypeInput,
-    setDamageTypeInput,
-    healingAmount,
-    setHealingAmount,
-    conditionInput,
-    setConditionInput,
-    stateInput,
-    setStateInput,
-    markerDurationTurns,
-    setMarkerDurationTurns,
-    markerDurationBoundary,
-    setMarkerDurationBoundary,
+    controlTargetId: _controlTargetId,
+    setControlTargetId: _setControlTargetId,
+    damageAmount: _damageAmount,
+    setDamageAmount: _setDamageAmount,
+    damageTypeInput: _damageTypeInput,
+    setDamageTypeInput: _setDamageTypeInput,
+    healingAmount: _healingAmount,
+    setHealingAmount: _setHealingAmount,
+    conditionInput: _conditionInput,
+    setConditionInput: _setConditionInput,
+    stateInput: _stateInput,
+    setStateInput: _setStateInput,
+    markerDurationTurns: _markerDurationTurns,
+    setMarkerDurationTurns: _setMarkerDurationTurns,
+    markerDurationBoundary: _markerDurationBoundary,
+    setMarkerDurationBoundary: _setMarkerDurationBoundary,
     environmentContext,
-    setEnvironmentContext,
+    setEnvironmentContext: _setEnvironmentContext,
     monsterFormsById,
     monsterManualTriggersById,
-    reducedToZeroSaveOutcome,
-    setReducedToZeroSaveOutcome,
-    controlTargetHasReducedToZeroSave,
-    canTriggerReducedToZeroHook,
+    reducedToZeroSaveOutcome: _reducedToZeroSaveOutcome,
+    setReducedToZeroSaveOutcome: _setReducedToZeroSaveOutcome,
+    controlTargetHasReducedToZeroSave: _controlTargetHasReducedToZeroSave,
+    canTriggerReducedToZeroHook: _canTriggerReducedToZeroHook,
     handleResolvedCombatant,
     handleStartEncounter,
     handleNextTurn,
     handleResolveAction,
     handleResetEncounter,
-    handleApplyDamage,
-    handleApplyHealing,
-    handleAddCondition,
-    handleRemoveCondition,
-    handleAddState,
-    handleRemoveState,
-    handleTriggerReducedToZeroHook,
-    handleMonsterFormChange,
-    handleMonsterManualTriggerChange,
+    handleApplyDamage: _handleApplyDamage,
+    handleApplyHealing: _handleApplyHealing,
+    handleAddCondition: _handleAddCondition,
+    handleRemoveCondition: _handleRemoveCondition,
+    handleAddState: _handleAddState,
+    handleRemoveState: _handleRemoveState,
+    handleTriggerReducedToZeroHook: _handleTriggerReducedToZeroHook,
+    handleMonsterFormChange: _handleMonsterFormChange,
+    handleMonsterManualTriggerChange: _handleMonsterManualTriggerChange,
   } = useEncounterState({
     selectedCombatantIds,
     opponentRoster,
     monstersById,
+    weaponsById: catalog.weaponsById,
+    armorById: catalog.armorById,
   })
 
   const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(DEFAULT_ENVIRONMENT)
@@ -147,12 +150,20 @@ export default function EncounterRoute() {
   const { monsterModalOptions, npcModalOptions } = useMemo(() => {
     const monsters = opponentOptions
       .filter((o) => o.kind === 'monster')
-      .map((o) => ({ id: o.sourceId, name: o.label }))
+      .map((o) => {
+        const block = monstersById[o.sourceId]
+        return {
+          id: o.sourceId,
+          name: o.label,
+          challengeRating: block?.lore?.challengeRating != null ? String(block.lore.challengeRating) : '—',
+          creatureType: block?.type ?? '—',
+        }
+      })
     const npcList = opponentOptions
       .filter((o) => o.kind === 'npc')
       .map((o) => ({ id: o.sourceId, name: o.label }))
     return { monsterModalOptions: monsters, npcModalOptions: npcList }
-  }, [opponentOptions])
+  }, [opponentOptions, monstersById])
 
   const selectedOpponentKeys = useMemo(
     () => selectedOpponentOptions.map((o) => o.key),
@@ -304,6 +315,8 @@ export default function EncounterRoute() {
                   availableActions={availableActions}
                   selectedActionId={selectedActionId}
                   onSelectAction={setSelectedActionId}
+                  selectedCasterOptions={selectedCasterOptions}
+                  onCasterOptionsChange={setSelectedCasterOptions}
                 />
               ) : (
                 <OpponentCombatantActiveCard
@@ -311,6 +324,8 @@ export default function EncounterRoute() {
                   availableActions={availableActions}
                   selectedActionId={selectedActionId}
                   onSelectAction={setSelectedActionId}
+                  selectedCasterOptions={selectedCasterOptions}
+                  onCasterOptionsChange={setSelectedCasterOptions}
                 />
               )
             ) : null

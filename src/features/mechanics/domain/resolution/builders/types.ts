@@ -1,6 +1,6 @@
 import type { EvaluationContext } from '../../conditions/evaluation-context.types'
 import type { Effect } from '../../effects/effects.types'
-import type { AbilityScoreMapResolved } from '../../character'
+import type { CreatureAbilityScores } from '../../character'
 import type { DieFace } from '../../dice/dice.types'
 
 /**
@@ -22,7 +22,7 @@ export type CreatureResolutionShape = {
   hp: number
   hpMax: number
   hitDie?: DieFace
-  abilities: AbilityScoreMapResolved
+  abilities: CreatureAbilityScores
   conditions?: string[]
   creatureType?: string
   resources?: Record<string, number>

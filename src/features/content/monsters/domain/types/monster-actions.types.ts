@@ -3,8 +3,10 @@ import type { AbilityId } from '@/features/mechanics/domain/character';
 import type { Effect } from "@/features/mechanics/domain/effects/effects.types";
 import type { MonsterSizeCategory } from "@/features/content/monsters/domain/vocab/monster.vocab";
 import type { MonsterWeaponAction } from "./monster-equipment.types";
-import type { MonsterAttackType, AttackAbility, DamageType } from "./monster-combat.types";
+import type { DamageType } from '@/features/mechanics/domain/damage/damage.types';
+import type { MonsterAttackType, AttackAbility } from "./monster-combat.types";
 import type { EffectUses, RechargeSpec } from "@/features/mechanics/domain/effects/timing.types";
+import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
 
 export type MonsterNaturalAttackAction = {
   kind: 'natural';
@@ -58,6 +60,7 @@ export type MonsterSpecialAction = {
     count: number
   }[]
   notes?: string;
+  resolution?: ContentResolutionMeta;
 };
 
 export type MonsterAction =

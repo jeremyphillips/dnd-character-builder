@@ -22,7 +22,11 @@ import {
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
 } from '@/features/mechanics/domain/encounter'
+import { buildDefaultCasterOptions } from '@/features/mechanics/domain/spells/caster-options'
+import type { Armor } from '@/features/content/equipment/armor/domain/types/armor.types'
+import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
 import type { Monster } from '@/features/content/monsters/domain/types'
+import { buildSummonAllyMonsterCombatant } from '../helpers/encounter-helpers'
 
 import type { OpponentRosterEntry } from '../types'
 
@@ -30,12 +34,16 @@ type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
   opponentRoster: OpponentRosterEntry[]
   monstersById: Record<string, Monster>
+  weaponsById?: Record<string, Weapon>
+  armorById?: Record<string, Armor>
 }
 
 export function useEncounterState({
   selectedCombatantIds,
   opponentRoster,
   monstersById,
+  weaponsById,
+  armorById,
 }: UseEncounterStateArgs) {
   const [resolvedCombatantsById, setResolvedCombatantsById] = useState<Record<string, CombatantInstance>>({})
   const [encounterState, setEncounterState] = useState<EncounterState | null>(null)
@@ -55,6 +63,7 @@ export function useEncounterState({
   const [reducedToZeroSaveOutcome, setReducedToZeroSaveOutcome] = useState<'success' | 'fail'>('success')
   const [selectedActionId, setSelectedActionId] = useState('')
   const [selectedActionTargetId, setSelectedActionTargetId] = useState('')
+  const [selectedCasterOptions, setSelectedCasterOptions] = useState<Record<string, string>>({})
 
   const selectedCombatants = useMemo(
     () =>
@@ -171,6 +180,23 @@ export function useEncounterState({
     }
   }, [availableActionTargets, selectedActionTargetId])
 
+  useEffect(() => {
+    const action = availableActions.find((a) => a.id === selectedActionId) ?? null
+    setSelectedCasterOptions(buildDefaultCasterOptions(action?.casterOptions))
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when selectedActionId changes; availableActions is read fresh
+  }, [selectedActionId])
+
+  const buildSummonAllyCombatant = useCallback(
+    ({ monster, runtimeId }: { monster: Monster; runtimeId: string }) =>
+      buildSummonAllyMonsterCombatant({
+        monster,
+        runtimeId,
+        weaponsById: weaponsById ?? {},
+        armorById: armorById ?? {},
+      }),
+    [weaponsById, armorById],
+  )
+
   const handleResolvedCombatant = useCallback((runtimeId: string, combatant: CombatantInstance | null) => {
     setResolvedCombatantsById((prev) => {
       if (combatant == null) {
@@ -204,7 +230,8 @@ export function useEncounterState({
         actorId: activeCombatantId,
         targetId: selectedActionTargetId || undefined,
         actionId: selectedActionId,
-      }),
+        casterOptions: selectedCasterOptions,
+      }, { monstersById, buildSummonAllyCombatant }),
     )
   }
 
@@ -318,6 +345,8 @@ export function useEncounterState({
     availableActionTargets,
     selectedActionId,
     setSelectedActionId,
+    selectedCasterOptions,
+    setSelectedCasterOptions,
     selectedActionTargetId,
     setSelectedActionTargetId,
     unresolvedCombatantCount,

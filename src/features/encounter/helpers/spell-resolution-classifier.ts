@@ -18,13 +18,14 @@ const FULLY_ACTIONABLE_KINDS = new Set<string>([
   'immunity',
   'interval',
   'remove-classification',
+  'spawn',
 ])
 
 /**
  * Maps a spell to how its combat action should be resolved.
  *
  * - `attack-roll` — spell container has `deliveryMethod` (primary delivery is a spell attack).
- * - `effects` — at least one fully actionable effect kind besides note/targeting alone.
+ * - `effects` — at least one fully actionable effect kind besides note/targeting alone (includes **`spawn`**; adapter uses `targeting: none`).
  * - `log-only` — empty effects, note/targeting only, or only kinds the adapter does not treat as mechanically actionable here (e.g. `grant`, `move`).
  */
 export function classifySpellResolutionMode(spell: Spell): 'attack-roll' | 'effects' | 'log-only' {

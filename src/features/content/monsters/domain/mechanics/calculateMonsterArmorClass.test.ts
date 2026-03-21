@@ -56,7 +56,7 @@ function buildMonsterMechanics(
   return {
     mechanics: {
       hitPoints: { count: 2, die: 8 },
-      armorClass: { kind: 'natural', base: 10 },
+      armorClass: { kind: 'natural' },
       movement: { ground: 30 },
       abilities: {
         strength: 10,
@@ -145,12 +145,20 @@ describe('calculateMonsterArmorClass', () => {
     expect(result.breakdown.shieldArmor?.id).toBe('shield-steel')
   })
 
-  it('defaults natural armor without a base to 10 plus dexterity modifier', () => {
+  it('defaults natural armor without offset to baseline plus dexterity modifier', () => {
     const monster = buildMonsterMechanics({
       armorClass: { kind: 'natural' },
     })
 
     expect(calculateMonsterArmorClass(monster, armorById).value).toBe(12)
+  })
+
+  it('adds natural offset on top of the unarmored baseline before dexterity', () => {
+    const monster = buildMonsterMechanics({
+      armorClass: { kind: 'natural', offset: 2 },
+    })
+
+    expect(calculateMonsterArmorClass(monster, armorById).value).toBe(14)
   })
 
   it('lets override armor class win over equipment and dexterity', () => {

@@ -1,3 +1,4 @@
+import type { CombatantRemainsKind } from './types/combatant.types'
 import type { EncounterState } from './types'
 import {
   buildRuntimeMarker,
@@ -18,7 +19,13 @@ export function applyDamageToCombatant(
   state: EncounterState,
   targetId: string,
   amount: number,
-  options?: { actorId?: string | null; sourceLabel?: string; damageType?: string },
+  options?: {
+    actorId?: string | null
+    sourceLabel?: string
+    damageType?: string
+    /** When this damage reduces the creature to 0 HP, set remains (e.g. disintegrate). */
+    remainsOnKill?: CombatantRemainsKind
+  },
 ): EncounterState {
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
@@ -131,13 +138,25 @@ export function applyDamageToCombatant(
         trackedPart.currentCount <= trackedPart.deathWhenCountReaches,
     )
 
+    const prevHp = combatant.stats.currentHitPoints
+    const newHp = fatalTrackedPart
+      ? 0
+      : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount)
+    const justDied = prevHp > 0 && newHp === 0
+    const deathFields =
+      justDied
+        ? {
+            remains: (options?.remainsOnKill ?? combatant.remains ?? 'corpse') as CombatantRemainsKind,
+            diedAtRound: combatant.diedAtRound ?? resistanceLogState.roundNumber,
+          }
+        : undefined
+
     return {
       ...combatant,
+      ...deathFields,
       stats: {
         ...combatant.stats,
-        currentHitPoints: fatalTrackedPart
-          ? 0
-          : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount),
+        currentHitPoints: newHp,
       },
       trackedParts,
       turnResources: syncCombatantTurnResources({
@@ -159,7 +178,21 @@ export function applyDamageToCombatant(
     }
   })
 
-  let loggedState = appendLog(nextState, {
+  const stateAfterSleepWake = removeSleepUnconsciousOnDamage(
+    nextState,
+    targetId,
+    effectiveAmount,
+    options?.actorId ?? resistanceLogState.activeCombatantId ?? null,
+  )
+
+  const attackerIdForCharm = options?.actorId ?? resistanceLogState.activeCombatantId ?? null
+  const stateAfterCharm = removeCharmedFromCasterSideDamage(
+    stateAfterSleepWake,
+    targetId,
+    attackerIdForCharm,
+  )
+
+  let loggedState = appendLog(stateAfterCharm, {
     type: 'damage-applied',
     actorId: options?.actorId ?? state.activeCombatantId ?? undefined,
     targetIds: [targetId],
@@ -175,7 +208,7 @@ export function applyDamageToCombatant(
   })
 
   const previousTrackedParts = target.trackedParts ?? []
-  const nextTrackedParts = nextState.combatantsById[targetId]?.trackedParts ?? []
+  const nextTrackedParts = stateAfterCharm.combatantsById[targetId]?.trackedParts ?? []
 
   nextTrackedParts.forEach((trackedPart, index) => {
     const previousTrackedPart = previousTrackedParts[index]
@@ -213,6 +246,75 @@ export function applyDamageToCombatant(
   loggedState = checkConcentrationOnDamage(loggedState, targetId, effectiveAmount)
 
   return loggedState
+}
+
+/** Sleep: unconscious from failed second save is tagged `classification: ['sleep']`; any damage ends it. */
+function removeSleepUnconsciousOnDamage(
+  state: EncounterState,
+  targetId: string,
+  damageAmount: number,
+  actorId?: string | null,
+): EncounterState {
+  if (damageAmount <= 0) return state
+  const target = state.combatantsById[targetId]
+  if (!target) return state
+  const hadSleepUnconscious = target.conditions.some(
+    (m) => m.label === 'unconscious' && m.classification?.includes('sleep'),
+  )
+  if (!hadSleepUnconscious) return state
+
+  const remaining = target.conditions.filter(
+    (m) => !(m.label === 'unconscious' && m.classification?.includes('sleep')),
+  )
+  if (remaining.length === target.conditions.length) return state
+
+  let nextState = updateCombatant(state, targetId, (c) => ({ ...c, conditions: remaining }))
+  nextState = appendLog(nextState, {
+    type: 'condition-removed',
+    actorId: actorId ?? state.activeCombatantId ?? undefined,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} loses unconscious (Sleep ends on damage).`,
+  })
+  return nextState
+}
+
+/**
+ * Charm Person / similar: charmed ends when the charmer or any ally on the charmer's side
+ * damages the target. Uses `sourceInstanceId` on the charmed marker as the charmer's combatant id.
+ */
+function removeCharmedFromCasterSideDamage(
+  state: EncounterState,
+  targetId: string,
+  attackerId: string | null,
+): EncounterState {
+  if (attackerId == null) return state
+  const attacker = state.combatantsById[attackerId]
+  const target = state.combatantsById[targetId]
+  if (!attacker || !target) return state
+
+  const remaining = target.conditions.filter((m) => {
+    if (m.label !== 'charmed' || !m.sourceInstanceId) return true
+    const charmer = state.combatantsById[m.sourceInstanceId]
+    if (!charmer) return true
+    return attacker.side !== charmer.side
+  })
+  if (remaining.length === target.conditions.length) return state
+
+  let nextState = updateCombatant(state, targetId, (c) => ({
+    ...c,
+    conditions: remaining,
+  }))
+  nextState = appendLog(nextState, {
+    type: 'condition-removed',
+    actorId: attackerId,
+    targetIds: [targetId],
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary: `${getCombatantLabel(state, targetId)} loses condition: charmed (damaged by caster or ally).`,
+  })
+  return nextState
 }
 
 function checkConcentrationOnDamage(
@@ -257,16 +359,19 @@ export function applyHealingToCombatant(
   const target = state.combatantsById[targetId]
   if (!target || amount <= 0) return state
 
-  const nextState = updateCombatant(state, targetId, (combatant) => ({
-    ...combatant,
-    stats: {
-      ...combatant.stats,
-      currentHitPoints: Math.min(
-        combatant.stats.maxHitPoints,
-        combatant.stats.currentHitPoints + amount,
-      ),
-    },
-  }))
+  const nextState = updateCombatant(state, targetId, (combatant) => {
+    const prevHp = combatant.stats.currentHitPoints
+    const newHp = Math.min(combatant.stats.maxHitPoints, combatant.stats.currentHitPoints + amount)
+    const revivedFromDead = prevHp <= 0 && newHp > 0
+    return {
+      ...combatant,
+      ...(revivedFromDead ? { remains: undefined, diedAtRound: undefined } : {}),
+      stats: {
+        ...combatant.stats,
+        currentHitPoints: newHp,
+      },
+    }
+  })
 
   return appendLog(nextState, {
     type: 'healing-applied',

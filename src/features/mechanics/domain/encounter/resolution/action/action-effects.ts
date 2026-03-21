@@ -7,9 +7,12 @@ import {
   applyDamageToCombatant,
   applyHealingToCombatant,
   appendEncounterNote,
+  autoFailsSave,
   effectDurationToRuntimeDuration,
+  getSaveModifiersFromConditions,
   removeStatesByClassification,
   updateEncounterCombatant,
+  mergeCombatantsIntoEncounter,
   type CombatantInstance,
 } from '../../state'
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
@@ -19,9 +22,43 @@ import type { CreatureSnapshot } from '../../../conditions/evaluation-context.ty
 import { evaluateCondition } from '../../../conditions/evaluateCondition'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
+import type { Monster } from '@/features/content/monsters/domain/types'
+import { describeResolvedSpawn, resolveSpawnMonsterIds } from './spawn-resolution'
+import type { CombatantRemainsKind } from '../../state/types/combatant.types'
 import type { EncounterState } from '../../state/types'
-import { rollDie, rollDamage, rollHealing } from '../../../resolution/engines/dice.engine'
+import {
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  rollDamage,
+  rollHealing,
+} from '../../../resolution/engines/dice.engine'
+import { inferStatModifierEligibilityFromEffect } from '../../state/equipment-eligibility'
 import type { AbilityScoreMapResolved } from '../../../character/abilities/abilities.types'
+
+function reviveBlockedReason(
+  target: CombatantInstance,
+  state: EncounterState,
+  action: CombatActionDefinition,
+): string | null {
+  const r = target.remains
+  if (r === 'dust' || r === 'disintegrated') {
+    return 'No intact body remains.'
+  }
+  const meta = action.displayMeta
+  if (meta?.source === 'spell' && meta.spellId === 'revivify' && target.diedAtRound != null) {
+    if (state.roundNumber > target.diedAtRound + 10) {
+      return 'Target has been dead too long for Revivify (more than 1 minute).'
+    }
+  }
+  return null
+}
+
+function damageRemainsOnKill(action: CombatActionDefinition): CombatantRemainsKind | undefined {
+  if (action.displayMeta?.source === 'spell' && action.displayMeta.spellId === 'disintegrate') {
+    return 'disintegrated'
+  }
+  return undefined
+}
 
 const DEFAULT_ABILITIES: AbilityScoreMapResolved = {
   strength: 10,
@@ -39,11 +76,14 @@ function combatantToCreatureSnapshot(c: CombatantInstance): CreatureSnapshot {
     level: 1,
     hp: c.stats.currentHitPoints,
     hpMax: c.stats.maxHitPoints,
-    abilities: scores ? { ...DEFAULT_ABILITIES, ...scores } : DEFAULT_ABILITIES,
+    abilities: scores
+      ? ({ ...DEFAULT_ABILITIES, ...scores } as AbilityScoreMapResolved)
+      : DEFAULT_ABILITIES,
     conditions: c.conditions.map((m) => m.label),
     resources: {},
     equipment: {
       armorEquipped: c.equipment?.armorEquipped ?? null,
+      shieldEquipped: c.equipment?.shieldId != null && c.equipment.shieldId.length > 0,
     },
     flags: {},
   }
@@ -165,13 +205,24 @@ export type ApplyEffectsResult = {
   createdMarkerIds: string[]
 }
 
+export type ApplyActionEffectsOptions = {
+  rng: () => number
+  sourceLabel: string
+  /** When set, `spawn` effects can resolve monster names and random pools. */
+  monstersById?: Record<string, Monster>
+  /** When set with resolvable spawn ids, creates party combatants and merges initiative. */
+  buildSummonAllyCombatant?: (args: { monster: Monster; runtimeId: string }) => CombatantInstance
+  /** Enum selections from the encounter UI (e.g. conjure tier, animate form). */
+  casterOptions?: Record<string, string>
+}
+
 export function applyActionEffects(
   state: EncounterState,
   actor: CombatantInstance,
   target: CombatantInstance,
   action: CombatActionDefinition,
   effects: Effect[] | undefined,
-  options: { rng: () => number; sourceLabel: string },
+  options: ApplyActionEffectsOptions,
 ): ApplyEffectsResult {
   if (!effects || effects.length === 0) return { state, createdMarkerIds: [] }
 
@@ -188,18 +239,35 @@ export function applyActionEffects(
         return
       }
 
-      const rawRoll = rollDie(20, options.rng)
-      const saveModifier = getSaveModifier(target, effect.save.ability)
-      const totalRoll = rawRoll + saveModifier
-      const succeeded = totalRoll >= effect.save.dc
+      const ability = effect.save.ability
+      let succeeded: boolean
+      let saveDetail: string
+
+      if (autoFailsSave(target, ability)) {
+        succeeded = false
+        saveDetail = `Auto-fail ${ability.toUpperCase()} save (condition).`
+      } else if (
+        effect.autoSuccessIfImmuneTo &&
+        target.conditionImmunities?.includes(effect.autoSuccessIfImmuneTo)
+      ) {
+        succeeded = true
+        saveDetail = `Auto-success (immune to ${effect.autoSuccessIfImmuneTo}).`
+      } else {
+        const saveRollMod = resolveD20RollMode(getSaveModifiersFromConditions(target, ability))
+        const { rawRoll, detail } = rollD20WithRollMode(saveRollMod, options.rng)
+        const saveModifier = getSaveModifier(target, ability)
+        const totalRoll = rawRoll + saveModifier
+        succeeded = totalRoll >= effect.save.dc
+        saveDetail = `Saving throw: ${detail} + ${saveModifier} = ${totalRoll} vs DC ${effect.save.dc}.`
+      }
 
       nextState = appendEncounterNote(
         nextState,
-        `${options.sourceLabel}: ${target.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${effect.save.ability.toUpperCase()} save.`,
+        `${options.sourceLabel}: ${target.source.label} ${succeeded ? 'succeeds' : 'fails'} the ${ability.toUpperCase()} save.`,
         {
           actorId: actor.instanceId,
           targetIds: [target.instanceId],
-          details: `Saving throw: d20 ${rawRoll} + ${saveModifier} = ${totalRoll} vs DC ${effect.save.dc}.`,
+          details: saveDetail,
         },
       )
 
@@ -223,6 +291,7 @@ export function applyActionEffects(
           actorId: actor.instanceId,
           sourceLabel: options.sourceLabel,
           damageType: effect.damageType,
+          remainsOnKill: damageRemainsOnKill(action),
         })
       }
       return
@@ -232,6 +301,17 @@ export function applyActionEffects(
       const resolved = rollHealing(String(effect.value), options.rng)
       if (resolved && resolved.total > 0) {
         if (effect.mode === 'heal') {
+          const healTarget = nextState.combatantsById[target.instanceId] ?? target
+          if (healTarget.stats.currentHitPoints <= 0) {
+            const block = reviveBlockedReason(healTarget, nextState, action)
+            if (block) {
+              nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${block}`, {
+                actorId: actor.instanceId,
+                targetIds: [target.instanceId],
+              })
+              return
+            }
+          }
           nextState = applyHealingToCombatant(nextState, target.instanceId, resolved.total, {
             actorId: actor.instanceId,
             sourceLabel: options.sourceLabel,
@@ -240,6 +320,7 @@ export function applyActionEffects(
           nextState = applyDamageToCombatant(nextState, target.instanceId, resolved.total, {
             actorId: actor.instanceId,
             sourceLabel: options.sourceLabel,
+            remainsOnKill: damageRemainsOnKill(action),
           })
         }
       }
@@ -270,6 +351,11 @@ export function applyActionEffects(
                   ability: effect.repeatSave!.ability,
                   dc,
                   removeCondition: effect.conditionId,
+                  singleAttempt: effect.repeatSave!.singleAttempt,
+                  onFail: effect.repeatSave!.onFail,
+                  autoSuccessIfImmuneTo: effect.repeatSave!.autoSuccessIfImmuneTo,
+                  casterInstanceId: actor.instanceId,
+                  outcomeTrack: effect.repeatSave!.outcomeTrack,
                 },
               },
             ],
@@ -304,6 +390,11 @@ export function applyActionEffects(
                   ability: effect.repeatSave!.ability,
                   dc,
                   removeState: effect.stateId,
+                  singleAttempt: effect.repeatSave!.singleAttempt,
+                  onFail: effect.repeatSave!.onFail,
+                  autoSuccessIfImmuneTo: effect.repeatSave!.autoSuccessIfImmuneTo,
+                  casterInstanceId: actor.instanceId,
+                  outcomeTrack: effect.repeatSave!.outcomeTrack,
                 },
               },
             ],
@@ -397,6 +488,13 @@ export function applyActionEffects(
       const sign = effect.mode === 'add' && effect.value > 0 ? '+' : ''
       const modeLabel = effect.mode === 'set' ? `set ${effect.target} ${effect.value}` : `${sign}${effect.value} ${effect.target}`
       const markerId = `stat-mod-${effect.target}-${action.id}-${target.instanceId}`
+      const eligibility = inferStatModifierEligibilityFromEffect(effect)
+      const armorClassBeforeApply =
+        effect.target === 'armor_class' &&
+        effect.mode === 'set' &&
+        eligibility?.requiresUnarmored === true
+          ? target.stats.armorClass
+          : undefined
       nextState = addStatModifierToCombatant(
         nextState,
         target.instanceId,
@@ -407,6 +505,8 @@ export function applyActionEffects(
           mode: effect.mode,
           value: effect.value,
           duration: runtimeDuration,
+          ...(eligibility ? { eligibility } : {}),
+          ...(armorClassBeforeApply != null ? { armorClassBeforeApply } : {}),
         },
         { sourceLabel: options.sourceLabel },
       )
@@ -456,6 +556,13 @@ export function applyActionEffects(
 
     if (effect.kind === 'death-outcome') {
       if (target.stats.currentHitPoints <= 0) {
+        if (effect.outcome === 'turns-to-dust') {
+          nextState = updateEncounterCombatant(nextState, target.instanceId, (c) => ({
+            ...c,
+            remains: 'dust',
+            diedAtRound: c.diedAtRound ?? nextState.roundNumber,
+          }))
+        }
         nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${target.source.label} ${effect.outcome.replaceAll('-', ' ')}.`, {
           actorId: actor.instanceId,
           targetIds: [target.instanceId],
@@ -545,6 +652,54 @@ export function applyActionEffects(
 
     if (effect.kind === 'form') {
       nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Form change to ${effect.form}${effect.notes ? ` — ${effect.notes}` : ''}.`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
+      return
+    }
+
+    if (effect.kind === 'spawn') {
+      const spawnTarget = nextState.combatantsById[target.instanceId] ?? target
+      const ids = resolveSpawnMonsterIds(
+        effect,
+        options.monstersById,
+        options.rng,
+        options.casterOptions,
+        spawnTarget,
+      )
+      const factory = options.buildSummonAllyCombatant
+      if (ids.length > 0 && factory && options.monstersById) {
+        const built: CombatantInstance[] = []
+        for (let i = 0; i < ids.length; i++) {
+          const mid = ids[i]!
+          const monster = options.monstersById[mid]
+          if (!monster) continue
+          const runtimeId = `${actor.instanceId}-spawn-${mid}-${i}-${Math.floor(options.rng() * 1e9)}`
+          built.push(factory({ monster, runtimeId }))
+        }
+        if (built.length > 0) {
+          nextState = mergeCombatantsIntoEncounter(nextState, built, {
+            rng: options.rng,
+            initiativeMode: effect.initiativeMode,
+            casterInstanceId: actor.instanceId,
+          })
+          const names = built.map((c) => c.source.label).join(', ')
+          nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Summoned ${names} — joined initiative (party).`, {
+            actorId: actor.instanceId,
+            targetIds: [target.instanceId],
+          })
+          return
+        }
+      }
+
+      const detail = describeResolvedSpawn(
+        effect,
+        options.monstersById,
+        options.rng,
+        options.casterOptions,
+        spawnTarget,
+      )
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: ${detail}`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],
       })

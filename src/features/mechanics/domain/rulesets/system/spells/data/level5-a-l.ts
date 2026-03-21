@@ -1,4 +1,5 @@
 import type { SpellEntry } from '../types';
+import { SPELL_CASTER_ABILITY_OPTIONS_NO_CON } from '../shared';
 
 /**
  * Level 5 spells A–L — authoring status:
@@ -224,7 +225,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
       summary: '60-foot cone: Con save or 8d8 cold. Killed become frozen. Damage scales with slot.',
     },
   },
-{
+  {
     id: 'conjure-elemental',
     name: 'Conjure Elemental',
     school: 'conjuration',
@@ -237,6 +238,20 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     resolution: {
       caveats: [
         'Spirit position, element damage type, and repeat saves are not fully automated.',
+        'Structured damage uses fire as placeholder; match element to Lightning, Thunder, Fire, or Cold in play.',
+      ],
+      casterOptions: [
+        {
+          kind: 'enum',
+          id: 'conjure-elemental-spirit',
+          label: 'Spirit element',
+          options: [
+            { value: 'air', label: 'Air (Lightning damage)' },
+            { value: 'earth', label: 'Earth (Thunder damage)' },
+            { value: 'fire', label: 'Fire (Fire damage)' },
+            { value: 'water', label: 'Water (Cold damage)' },
+          ],
+        },
       ],
     },
     effects: [
@@ -260,7 +275,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
       summary: 'Elemental spirit: Dex save or 8d8 and Restrained. Damage scales with slot.',
     },
   },
-{
+  {
     id: 'contact-other-plane',
     name: 'Contact Other Plane',
     school: 'divination',
@@ -284,7 +299,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
       summary: 'Contact entity. Int save: 5 questions or 6d6 psychic and Incapacitated.',
     },
   },
-{
+  {
     id: 'contagion',
     name: 'Contagion',
     school: 'necromancy',
@@ -296,7 +311,16 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true },
     resolution: {
       caveats: [
-        'Three-strike save track and healing Con save to end Poisoned are not automated.',
+        'Disadvantage on your chosen ability’s saves while Poisoned is not automated.',
+        'Healing-triggered Con save to end Poisoned is not simulated.',
+      ],
+      casterOptions: [
+        {
+          kind: 'enum',
+          id: 'contagion-disadvantage-ability',
+          label: 'Disadvantage on saves (chosen ability)',
+          options: SPELL_CASTER_ABILITY_OPTIONS_NO_CON,
+        },
       ],
     },
     effects: [
@@ -306,17 +330,33 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         save: { ability: 'con' },
         onFail: [
           { kind: 'damage', damage: '11d8', damageType: 'necrotic' },
-          { kind: 'condition', conditionId: 'poisoned' },
+          {
+            kind: 'condition',
+            conditionId: 'poisoned',
+            repeatSave: {
+              ability: 'con',
+              timing: 'turn-end',
+              outcomeTrack: {
+                successCountToEnd: 3,
+                failCountToLock: 3,
+                failLockStateId: 'contagion-prolonged',
+              },
+            },
+          },
         ],
       },
-      { kind: 'note', text: 'Choose one ability: target has Disadvantage on saves with it while Poisoned. Track 3 successes/failures to end or lock in 7-day duration. Healing effects require Con save to end Poisoned.', category: 'under-modeled' as const },
+      {
+        kind: 'note',
+        text: 'Choose one ability when you cast: while Poisoned, target has Disadvantage on saves with that ability. Three repeat-save successes end the spell; three failures lock the 7-day duration (see encounter state).',
+        category: 'flavor' as const,
+      },
     ],
     description: {
       full: "Your touch inflicts a magical contagion. The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition. Also, choose one ability when you cast the spell. While Poisoned, the target has Disadvantage on saving throws made with the chosen ability. The target must repeat the saving throw at the end of each of its turns until it gets three successes or failures. Three successes: spell ends. Three failures: spell lasts 7 days. Whenever the Poisoned target receives an effect that would end the Poisoned condition, the target must succeed on a Constitution saving throw, or the Poisoned condition doesn't end.",
       summary: 'Touch: Con save or 11d8 necrotic and Poisoned. Best of 3 saves/fails.',
     },
   },
-{
+  {
     id: 'creation',
     name: 'Creation',
     school: 'illusion',
@@ -383,7 +423,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
       ],
     },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
       {
         kind: 'save',
         save: { ability: 'wis' },

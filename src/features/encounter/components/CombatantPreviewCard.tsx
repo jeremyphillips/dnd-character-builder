@@ -15,9 +15,9 @@ function previewToneToAppBadgeTone(tone: PreviewTone | undefined): AppBadgeTone 
 }
 
 export function CombatantPreviewCard({
-  id,
-  kind,
-  mode,
+  id: _id,
+  kind: _kind,
+  mode: _mode,
   title,
   subtitle,
   stats,

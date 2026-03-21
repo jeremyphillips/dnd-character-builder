@@ -256,7 +256,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
       summary: '10ft sphere: Wis save or random behavior each turn. Radius scales with slot.',
     },
   },
-{
+  {
     id: 'conjure-minor-elementals',
     name: 'Conjure Minor Elementals',
     school: 'conjuration',
@@ -267,15 +267,39 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     resolution: {
-      caveats: [
-        'Summoned elementals are not represented as full combatants in encounter.',
+      casterOptions: [
+        {
+          kind: 'enum',
+          id: 'conjure-minor-elementals-option',
+          label: 'Summoning option',
+          options: [
+            { value: 'cr2-one', label: 'One elemental (CR 2 or lower)' },
+            { value: 'cr1-two', label: 'Two elementals (CR 1 or lower)' },
+            { value: 'cr-half-four', label: 'Four elementals (CR 1/2 or lower)' },
+            { value: 'cr-quarter-eight', label: 'Eight elementals (CR 1/4 or lower)' },
+          ],
+        },
       ],
     },
     effects: [
       {
+        kind: 'spawn',
+        count: 1,
+        poolFromCasterOption: {
+          fieldId: 'conjure-minor-elementals-option',
+          mapping: {
+            'cr2-one': { count: 1, maxChallengeRating: 2, creatureType: 'elemental' },
+            'cr1-two': { count: 2, maxChallengeRating: 1, creatureType: 'elemental' },
+            'cr-half-four': { count: 4, maxChallengeRating: 0.5, creatureType: 'elemental' },
+            'cr-quarter-eight': { count: 8, maxChallengeRating: 0.25, creatureType: 'elemental' },
+          },
+        },
+        initiativeMode: 'group',
+      },
+      {
         kind: 'note',
-        text: 'Summon elementals in unoccupied spaces you can see within range. Choose one: one elemental of CR 2 or lower; two of CR 1 or lower; four of CR 1/2 or lower; or eight of CR 1/4 or lower. They are friendly; roll initiative as a group; obey verbal commands (no action). Disappear at 0 HP or when the spell ends.',
-        category: 'under-modeled' as const,
+        text: '6th-level slot: twice as many creatures. 8th-level slot: three times as many.',
+        category: 'flavor' as const,
       },
     ],
     scaling: [
@@ -290,7 +314,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
       summary: 'Summon elementals (CR options). Group initiative; verbal commands. 6th/8th slot multiplies count.',
     },
   },
-{
+  {
     id: 'conjure-woodland-beings',
     name: 'Conjure Woodland Beings',
     school: 'conjuration',
@@ -301,15 +325,39 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true },
     resolution: {
-      caveats: [
-        'Summoned fey are not represented as full combatants in encounter.',
+      casterOptions: [
+        {
+          kind: 'enum',
+          id: 'conjure-woodland-beings-option',
+          label: 'Summoning option',
+          options: [
+            { value: 'cr2-one', label: 'One fey (CR 2 or lower)' },
+            { value: 'cr1-two', label: 'Two fey (CR 1 or lower)' },
+            { value: 'cr-half-four', label: 'Four fey (CR 1/2 or lower)' },
+            { value: 'cr-quarter-eight', label: 'Eight fey (CR 1/4 or lower)' },
+          ],
+        },
       ],
     },
     effects: [
       {
+        kind: 'spawn',
+        count: 1,
+        poolFromCasterOption: {
+          fieldId: 'conjure-woodland-beings-option',
+          mapping: {
+            'cr2-one': { count: 1, maxChallengeRating: 2, creatureType: 'fey' },
+            'cr1-two': { count: 2, maxChallengeRating: 1, creatureType: 'fey' },
+            'cr-half-four': { count: 4, maxChallengeRating: 0.5, creatureType: 'fey' },
+            'cr-quarter-eight': { count: 8, maxChallengeRating: 0.25, creatureType: 'fey' },
+          },
+        },
+        initiativeMode: 'group',
+      },
+      {
         kind: 'note',
-        text: 'Summon fey in unoccupied spaces you can see within range. Choose one: one fey of CR 2 or lower; two of CR 1 or lower; four of CR 1/2 or lower; or eight of CR 1/4 or lower. They are friendly; roll initiative as a group; obey verbal commands (no action). Disappear at 0 HP or when the spell ends.',
-        category: 'under-modeled' as const,
+        text: '6th-level slot: twice as many creatures. 8th-level slot: three times as many.',
+        category: 'flavor' as const,
       },
     ],
     scaling: [
@@ -324,7 +372,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
       summary: 'Summon fey (CR options). Group initiative; verbal commands. 6th/8th slot multiplies count.',
     },
   },
-{
+  {
     id: 'control-water',
     name: 'Control Water',
     school: 'transmutation',

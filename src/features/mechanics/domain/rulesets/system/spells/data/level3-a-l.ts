@@ -5,7 +5,7 @@ import type { SpellEntry } from '../types';
  * Level 3 spells A–L — authoring status:
  * - **Attack/save/AoE modeled:** Call Lightning, Conjure Animals (spectral pack), Fear, Fireball, Fly (notes), Haste, Hypnotic Pattern, Lightning Bolt, Slow, Spirit Guardians (in m–z).
  * - **Utility / sense / state:** Blink, Clairvoyance, Gaseous Form (extra targets), Nondetection, Tongues, Water Breathing / Water Walk (in m–z).
- * - **Note-first / heavy caveats:** Animate Dead, Beacon of Hope, Bestow Curse, Counterspell, Daylight, Dispel Magic, Glyph of Warding, Magic Circle, Major Image, etc.
+ * - **Note-first / heavy caveats:** Beacon of Hope, Bestow Curse, Counterspell, Daylight, Dispel Magic, Glyph of Warding, Magic Circle, Major Image, etc. (Animate Dead: dead humanoid + remains → spawn.)
  */
 export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
   {
@@ -18,16 +18,23 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
     range: { kind: 'distance', value: { value: 10, unit: 'ft' } },
     duration: { kind: 'instantaneous' },
     components: { verbal: true, somatic: true, material: { description: 'a drop of blood, a piece of flesh, and a pinch of bone dust' } },
-    resolution: {
-      caveats: [
-        'Undead minions and command range are not represented as full combatants in encounter.',
-      ],
-    },
     effects: [
       {
+        kind: 'targeting',
+        target: 'one-dead-creature',
+        targetType: 'creature',
+        creatureTypeFilter: ['humanoid'],
+      },
+      {
+        kind: 'spawn',
+        count: 1,
+        mapMonsterIdFromTargetRemains: { corpse: 'zombie', bones: 'skeleton' },
+        initiativeMode: 'individual',
+      },
+      {
         kind: 'note',
-        text: 'Creates a Skeleton from bones or a Zombie from a corpse; Bonus Action to command within 60 ft. Reassert control for up to four creatures with a repeat cast. +2 undead per slot level above 3.',
-        category: 'under-modeled' as const,
+        text: 'Bonus Action to command within 60 ft. Reassert control for up to four creatures with a repeat cast. +2 undead per slot level above 3.',
+        category: 'flavor' as const,
       },
     ],
     scaling: [{ category: 'other', description: '+2 undead creatures per spell slot level above 3', mode: 'per-slot-level', startsAtSlotLevel: 4 }],

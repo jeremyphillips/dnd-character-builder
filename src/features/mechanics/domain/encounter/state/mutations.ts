@@ -34,3 +34,4 @@ export {
   addDamageResistanceMarker,
   removeDamageResistanceMarker,
 } from './resistance-mutations'
+export { patchCombatantEquipmentSnapshot } from './equipment-mutations'

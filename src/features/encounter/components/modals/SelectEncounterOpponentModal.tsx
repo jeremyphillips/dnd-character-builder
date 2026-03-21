@@ -9,8 +9,8 @@ import type { CombatantOption } from './SelectEncounterCombatantModal'
 type MonsterOptionSource = {
   id: string
   name: string
-  challengeRating?: string
-  creatureType?: string
+  challengeRating: string
+  creatureType: string
 }
 
 type NpcOptionSource = {

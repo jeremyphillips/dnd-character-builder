@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { calculateMonsterArmorClass } from '@/features/content/monsters/domain/mechanics/calculateMonsterArmorClass'
+import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import {
   buildActiveMonsterEffects,
@@ -45,7 +46,9 @@ export function OpponentCombatantSetupPreviewCard({
 }: OpponentCombatantSetupPreviewCardProps) {
   const { catalog } = useCampaignRules()
 
-  const initiativeModifier = getAbilityModifier(monster.mechanics.abilities?.dexterity ?? 10)
+  const initiativeModifier = getAbilityModifier(
+    getAbilityScoreValue(monster.mechanics.abilities, 'dex'),
+  )
   const armorClass = calculateMonsterArmorClass(monster, catalog.armorById).value
   const averageHitPoints =
     Math.floor(monster.mechanics.hitPoints.count * ((monster.mechanics.hitPoints.die + 1) / 2)) +

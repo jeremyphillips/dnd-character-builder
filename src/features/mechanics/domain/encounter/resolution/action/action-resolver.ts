@@ -21,7 +21,13 @@ import {
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
-import { rollDie, rollDamage } from '../../../resolution/engines/dice.engine'
+import { formatCasterOptionSummary } from '../../../spells/caster-options'
+import {
+  rollDamage,
+  resolveD20RollMode,
+  rollD20WithRollMode,
+  type D20RollMode,
+} from '../../../resolution/engines/dice.engine'
 import {
   spendActionCost,
   getCombatantTurnResources,
@@ -35,7 +41,7 @@ import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSa
 export type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
 
 type RollModifierResult = {
-  rollMod: 'advantage' | 'disadvantage' | 'normal'
+  rollMod: D20RollMode
   attackerMarkers: RollModifierMarker[]
   defenderMarkers: RollModifierMarker[]
 }
@@ -59,13 +65,7 @@ function resolveRollModifier(
     ...getIncomingAttackModifiersForAttack(attacker, defender, attackRange),
   ]
 
-  const all = [...markerModifiers, ...conditionModifiers]
-  const hasAdv = all.includes('advantage')
-  const hasDisadv = all.includes('disadvantage')
-  const rollMod = hasAdv && hasDisadv ? 'normal'
-    : hasAdv ? 'advantage'
-    : hasDisadv ? 'disadvantage'
-    : 'normal'
+  const rollMod = resolveD20RollMode([...markerModifiers, ...conditionModifiers])
 
   return { rollMod, attackerMarkers, defenderMarkers }
 }
@@ -73,23 +73,6 @@ function resolveRollModifier(
 function matchesRollContext(marker: RollModifierMarker, context: string): boolean {
   const targets = Array.isArray(marker.appliesTo) ? marker.appliesTo : [marker.appliesTo]
   return targets.some((t) => t === context || t === 'all' || context.includes(t))
-}
-
-function rollD20WithModifier(
-  rollMod: 'advantage' | 'disadvantage' | 'normal',
-  rng: () => number,
-): { rawRoll: number; detail: string } {
-  if (rollMod === 'normal') {
-    const rawRoll = rollDie(20, rng)
-    return { rawRoll, detail: `d20 ${rawRoll}` }
-  }
-  const roll1 = rollDie(20, rng)
-  const roll2 = rollDie(20, rng)
-  const rawRoll = rollMod === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2)
-  return {
-    rawRoll,
-    detail: `d20 ${roll1}, ${roll2} (${rollMod}: ${rawRoll})`,
-  }
 }
 
 function deriveAttackRange(action: CombatActionDefinition): 'melee' | 'ranged' {
@@ -207,7 +190,15 @@ function resolveCombatActionInternal(
 
   const rng = options.rng ?? Math.random
   const actionLabel = getActionLabel(action)
+  const applyEffectsOpts = {
+    rng,
+    sourceLabel: actionLabel,
+    monstersById: options.monstersById,
+    buildSummonAllyCombatant: options.buildSummonAllyCombatant,
+    casterOptions: selection.casterOptions,
+  }
   const targetLabel = target ? getEncounterCombatantLabel(state, target.instanceId) : 'no target'
+  const casterSummary = formatCasterOptionSummary(action.casterOptions, selection.casterOptions)
   const allMarkerIds: string[] = []
 
   let nextState = appendEncounterLogEvent(state, {
@@ -216,7 +207,7 @@ function resolveCombatActionInternal(
     targetIds: target ? [target.instanceId] : undefined,
     round: state.roundNumber,
     turn: state.turnIndex + 1,
-    summary: `${actor.source.label} uses ${actionLabel}${target ? ` against ${targetLabel}` : ''}.`,
+    summary: `${actor.source.label} uses ${actionLabel}${casterSummary}${target ? ` against ${targetLabel}` : ''}.`,
   })
 
   if (action.movement) {
@@ -249,6 +240,7 @@ function resolveCombatActionInternal(
             actorId: actor.instanceId,
             targetId: selection.targetId,
             actionId: childAction.id,
+            casterOptions: selection.casterOptions,
           },
           options,
           { skipCost: true },
@@ -289,7 +281,7 @@ function resolveCombatActionInternal(
 
     const attackRange = deriveAttackRange(action)
     const { rollMod, attackerMarkers, defenderMarkers } = resolveRollModifier(actor, target, 'attack rolls', attackRange)
-    const { rawRoll, detail: rollDetail } = rollD20WithModifier(rollMod, rng)
+    const { rawRoll, detail: rollDetail } = rollD20WithRollMode(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
     const isNaturalTwenty = rawRoll === 20
     const isNaturalOne = rawRoll === 1
@@ -346,7 +338,7 @@ function resolveCombatActionInternal(
         nextState.combatantsById[target.instanceId] ?? target,
         action,
         action.onHitEffects,
-        { rng, sourceLabel: actionLabel },
+        applyEffectsOpts,
       )
       nextState = hitResult.state
       allMarkerIds.push(...hitResult.createdMarkerIds)
@@ -398,7 +390,7 @@ function resolveCombatActionInternal(
           saveTarget,
           action,
           action.onFailEffects,
-          { rng, sourceLabel: actionLabel },
+          applyEffectsOpts,
         )
         nextState = saveEffectResult.state
         allMarkerIds.push(...saveEffectResult.createdMarkerIds)
@@ -416,16 +408,9 @@ function resolveCombatActionInternal(
         continue
       }
 
-      const condSaveMods = getSaveModifiersFromConditions(saveTarget, saveAbility)
-      const saveHasAdv = condSaveMods.includes('advantage')
-      const saveHasDisadv = condSaveMods.includes('disadvantage')
-      const saveRollMod: 'advantage' | 'disadvantage' | 'normal' =
-        saveHasAdv && saveHasDisadv ? 'normal'
-          : saveHasAdv ? 'advantage'
-          : saveHasDisadv ? 'disadvantage'
-          : 'normal'
+      const saveRollMod = resolveD20RollMode(getSaveModifiersFromConditions(saveTarget, saveAbility))
 
-      const { rawRoll, detail: saveRollDetail } = rollD20WithModifier(saveRollMod, rng)
+      const { rawRoll, detail: saveRollDetail } = rollD20WithRollMode(saveRollMod, rng)
       const saveModifier = getSaveModifier(saveTarget, saveAbility)
       const totalRoll = rawRoll + saveModifier
       const succeeded = totalRoll >= action.saveProfile.dc
@@ -468,13 +453,20 @@ function resolveCombatActionInternal(
         saveTarget,
         action,
         succeeded ? action.onSuccessEffects : action.onFailEffects,
-        { rng, sourceLabel: actionLabel },
+        applyEffectsOpts,
       )
       nextState = saveEffectResult.state
       allMarkerIds.push(...saveEffectResult.createdMarkerIds)
     }
   } else if (action.resolutionMode === 'effects') {
-    if (targets.length === 0 && action.effects?.length) {
+    const effectTargets =
+      targets.length > 0
+        ? targets
+        : action.targeting?.kind === 'none'
+          ? [actor]
+          : []
+
+    if (effectTargets.length === 0 && action.effects?.length) {
       nextState = appendEncounterLogEvent(nextState, {
         type: 'action-resolved',
         actorId: actor.instanceId,
@@ -483,7 +475,7 @@ function resolveCombatActionInternal(
         summary: `${actionLabel} resolves with no valid targets.`,
       })
     } else {
-      for (const effectTarget of targets) {
+      for (const effectTarget of effectTargets) {
         const resolvedTarget = nextState.combatantsById[effectTarget.instanceId] ?? effectTarget
         const effectPayload =
           action.hpThreshold != null
@@ -497,7 +489,7 @@ function resolveCombatActionInternal(
           resolvedTarget,
           action,
           effectPayload,
-          { rng, sourceLabel: actionLabel },
+          applyEffectsOpts,
         )
         nextState = effectResult.state
         allMarkerIds.push(...effectResult.createdMarkerIds)
@@ -506,7 +498,7 @@ function resolveCombatActionInternal(
       nextState = appendEncounterLogEvent(nextState, {
         type: 'action-resolved',
         actorId: actor.instanceId,
-        targetIds: targets.map((t) => t.instanceId),
+        targetIds: effectTargets.map((t) => t.instanceId),
         round: state.roundNumber,
         turn: state.turnIndex + 1,
         summary: `${actionLabel} resolves its effects.`,
@@ -522,7 +514,7 @@ function resolveCombatActionInternal(
       turn: state.turnIndex + 1,
       summary:
         action.kind === 'spell'
-          ? `${actor.source.label} logs spell effect: ${actionLabel}.`
+          ? `${actor.source.label} logs spell effect: ${actionLabel}${casterSummary}.`
           : `${actionLabel} resolves as a log-only action.`,
       details: action.logText,
     })

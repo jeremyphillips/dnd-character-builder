@@ -113,6 +113,8 @@ The encounter action system resolves combat actions against encounter state:
 | `action-targeting` | Shared targeting query layer: `isValidActionTarget` (predicate), `getActionTargetCandidates` (candidate list for UI), `getActionTargets` (resolved targets for action resolution); sequence step counts |
 | `action-effects` | Applies effects to encounter state: damage, healing, conditions (with repeat-save hooks), states, saves, modifiers (AC add/set, speed add/set/multiply, resistance add), roll-modifiers (advantage/disadvantage), immunities, intervals (registered as turn hooks), damage resistance markers, movement, and advanced effect logging (trigger, activation, check, grant, form) |
 
+**Caster options:** `ResolveCombatActionSelection` may include `casterOptions` (`Record<string, string>` keyed by authored field ids). Spell `resolution.casterOptions` is copied onto `CombatActionDefinition` by `buildSpellCombatActions`; encounter UI collects values before `resolveCombatAction` runs. `action-resolver` includes a formatted fragment in `action-declared` and spell `log-only` summaries (`formatCasterOptionSummary` in `mechanics/domain/spells/caster-options.ts`). For **summon spells**, enum options typically encode **form** (e.g. giant centipede vs spider) or **CR tier** (Conjure Minor Elementals / Woodland Beings); resolution will combine these with the monster catalog to pick stat blocks or random eligible creatures—see [§8 — Summon spells and spawn](#summon-spells-and-spawn) below.
+
 **Action resolution modes:**
 
 - `attack-roll` — roll d20 + attack bonus vs AC, apply damage and on-hit effects
@@ -126,22 +128,26 @@ The encounter action system resolves combat actions against encounter state:
 - `single-target` — one living combatant (HP > 0) subject to policy below; weapon attacks and most offensive spells use this kind
 - `all-enemies` — all living enemy combatants
 - `self` — the acting combatant
+- `none` — no creature target; used when the action does not select another combatant (e.g. **ally summon**). The resolver still runs the `effects` pipeline once, passing the **actor** into `applyActionEffects` for API compatibility; **`spawn`** should treat the actor as source only. Target picker has **no** candidates. Prefer over **`self`** for summons (caster is not the subject of the effect bundle like a self-buff).
 - `single-creature` — any living combatant regardless of side (used by healing spells and other creature-targeting effects)
-- `dead-creature` — any combatant at 0 HP regardless of side (used by resurrection spells)
+- `dead-creature` — combatant at 0 HP with a **valid body** (`remains` not `dust` or `disintegrated`; see `CombatantInstance` in encounter state). Used by resurrection and **Animate Dead** (often with `creatureTypeFilter`, e.g. humanoid). `creatureTypeFilter` is applied the same as for living targets.
 - `entered-during-move` — creatures entered during movement
 
 **Targeting profile fields:**
 
 - `requiresWilling` — when `true` on `single-target`, valid targets are same-side only (caster + allies); “willing” is approximated as allies until explicit consent exists. Such actions are **non-hostile** for charm / hostile-action rules. Authored on spells via `targeting.requiresWilling` in spell effects.
+- `requiresSight` — when `true` (spell `targeting.requiresSight` → `buildSpellCombatActions`), valid targets must pass `canSeeForTargeting` in `encounter/state/visibility-seams.ts`: not blinded (via `canSee`), invisible targets blocked unless the observer has the See Invisibility state, and LOS/LoE geometry stubs (currently always `true`). Not applied to `self`, `none`, or `all-enemies` (area mapping does not validate per-creature sight).
 - `suppressSameSideHostileActions` — passed through `ResolveCombatActionOptions` (default **true** when omitted: legacy “no friendly fire”). When **true**, hostile `single-target` actions cannot target same-side combatants. When **false**, core resolution allows same-side targets (e.g. PC vs PC). Campaign/app code can drive this from `mechanics.combat.encounter.suppressSameSideHostile` on the ruleset.
 
 **Targeting query layer** (`action-targeting.ts`):
 
 Targeting validation is centralized so the resolver and UI share a single source of truth:
 
-- `isValidActionTarget(combatant, actor, action, options?)` — predicate. Checks banished state, creature type filter, charmed exclusion, HP alive/dead, `requiresWilling` (same-side), and optional same-side suppression for hostile `single-target` actions.
-- `getActionTargetCandidates(state, actor, action, options?)` — returns all combatants that pass `isValidActionTarget`, in initiative order. Used by the UI to populate the target picker.
+- `isValidActionTarget(state, combatant, actor, action, options?)` — predicate. Checks banished state, creature type filter, charmed exclusion, `requiresSight` (when set), HP alive/dead, `requiresWilling` (same-side), and optional same-side suppression for hostile `single-target` actions.
+- `getActionTargetCandidates(state, actor, action, options?)` — returns all combatants that pass `isValidActionTarget`. **Initiative order** for most kinds; for **`dead-creature`**, also includes combatants in `combatantsById` that are **missing from `initiativeOrder`** (e.g. corpses dropped when a new round re-rolls initiative from living participants only in `advanceEncounterTurn`). Used by the UI to populate the target picker.
 - `getActionTargets(state, actor, selection, action, options?)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
+
+**LOS / visibility seams** (`visibility-seams.ts`): `lineOfSightClear` and `lineOfEffectClear` are compatibility stubs returning `true` until grid or terrain exists. `canSeeForTargeting` is the single entry point for “can I select this target for a sight-required action?”; replace the stubs later without changing call sites.
 
 ### 4.5 Condition Consequence Framework
 
@@ -194,7 +200,7 @@ Condition consequences model the mechanical rules of each `EffectConditionId` as
 - `action-resolver.ts` `resolveRollModifier` — combines spell/effect `RollModifierMarker` entries with condition-derived attack modifiers. Blinded, poisoned, prone, restrained, invisible, frightened, paralyzed, stunned, unconscious, and petrified now affect attack rolls.
 - `action-resolver.ts` saving-throw resolution — checks `autoFailsSave` before rolling. Paralyzed, stunned, unconscious, and petrified combatants auto-fail Str/Dex saves. Restrained combatants roll Dex saves at disadvantage.
 - `action-resolver.ts` attack-roll resolution — natural 20 = auto-hit + critical hit (doubled damage dice). Natural 1 = auto-miss.
-- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types.
+- `damage-mutations.ts` `applyDamageToCombatant` — checks `getDamageResistanceFromConditions` after marker-based resistance. Petrified combatants have resistance to all damage types. **Charm Person (early end):** if the target has `charmed` with `sourceInstanceId` set to the charmer’s combatant id, and the damage source (`options.actorId` or `activeCombatantId`) is on the **same** `CombatantSide` as that charmer, the `charmed` marker(s) matching that rule are stripped and a `condition-removed` log line is emitted.
 - `action-targeting.ts` `isValidActionTarget` — uses `cannotTargetWithHostileAction` (backed by `getSourceRelativeRestrictions`) to enforce the charmed targeting exclusion via the consequence framework instead of the ad-hoc `getCharmedSourceIds` helper.
 
 **Consequence wiring status:**
@@ -345,10 +351,22 @@ Conditions and states can include a `repeatSave` field:
 repeatSave?: {
   ability: AbilityRef;
   timing: 'turn-start' | 'turn-end';
+  singleAttempt?: boolean;
+  onFail?: { addCondition?: EffectConditionId; markerClassification?: string[] };
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
+  outcomeTrack?: {
+    successCountToEnd?: number;
+    failCountToLock?: number;
+    failLockStateId?: string;
+  };
 };
 ```
 
-When `applyActionEffects` applies a condition or state with `repeatSave`, it registers a `RuntimeTurnHook` of type `repeat-save` on the target combatant. At the specified turn boundary, `executeTurnHooks` rolls the save vs the source's DC. On success, the linked condition/state is automatically removed.
+When `applyActionEffects` applies a condition or state with `repeatSave`, it registers a `RuntimeTurnHook` of type `repeat-save` on the target combatant. At the specified turn boundary, `executeTurnHooks` rolls the save vs the source's DC. On success, the linked condition/state is automatically removed and the hook is cleared.
+
+**Default:** failed saves keep the condition and the hook fires again on later boundaries (save each turn until success). **`singleAttempt: true`:** one resolution at the next boundary; on success the interim condition is removed; on failure `onFail.addCondition` is applied (e.g. Sleep: `unconscious` with `markerClassification: ['sleep']`) and the hook is removed. **`autoSuccessIfImmuneTo`:** if the target has that condition immunity, the repeat save succeeds without rolling (mirrors `SaveEffect.autoSuccessIfImmuneTo` on the initial save). **`outcomeTrack`:** Contagion-style counting — `successCountToEnd` / `failCountToLock` with progress on `RuntimeTurnHook.repeatSaveProgress`; reaching the success threshold removes the linked condition and the hook; reaching the failure threshold removes the hook, keeps the condition, and optionally applies `failLockStateId` as a state marker.
+
+Sleep unconscious created this way ends when the target takes damage (`applyDamageToCombatant` clears `unconscious` markers tagged with `sleep`). Shaking a creature awake within 5 feet is not automated.
 
 ### Adding damage resistance
 
@@ -469,7 +487,7 @@ Healing actions use `targeting: { kind: 'single-creature' }`, which allows any l
 `classifySpellResolutionMode` (in `src/features/encounter/helpers/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
 
 - **`attack-roll`** — spell has `deliveryMethod` (`melee-spell-attack` or `ranged-spell-attack`); damage and on-hit riders come from the spell’s effects, but the primary hit uses the attack pipeline.
-- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`), and effects are not **only** `note` and/or `targeting`.
+- **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`, **`spawn`**), and effects are not **only** `note` and/or `targeting`. Spells with **`spawn`** use **`targeting: { kind: 'none' }`** (see [§8 — Summon spells and spawn](#summon-spells-and-spawn)).
 - **`log-only`** — empty effects, only `note` / `targeting`, or only kinds such as `grant` / `move` that the encounter layer currently resolves as structured log output without the same mechanical path.
 
 Multi-instance **auto-hit** spells authored with a single root `damage` effect and `instances.count` above 1 (no top-level `save`) are built as a **parent `effects` action with `sequence`** plus a child `effects` action per hit (same pattern as multi-beam spell attacks). Each child applies one damage resolution against the selected target until proper multi-target selection exists.
@@ -478,7 +496,11 @@ Multi-instance **auto-hit** spells authored with a single root `damage` effect a
 
 **Timed spell duration on effects:** `until-turn-boundary` spell durations map to the same-shaped effect duration; `timed` spell durations (minute/hour/day) map to `fixed` effect duration in **combat turns** via the same 6-second-per-turn heuristic used for concentration display, so modifiers and similar markers can tick down in encounter time.
 
+**Spell level vs cantrips:** Authored `spell.level` is **0** for cantrips. For formulas that need a positive spell tier when slot level is not modeled, use `effectiveSpellLevelForScaling` in `spells/shared.ts` (**0 → 1**). Cantrip damage scaling by **character** level uses effect `levelScaling` / `cantripDamageScaling`, not that helper.
+
 Behavioral tests in `encounter-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
+
+**Equipment snapshot:** `CombatantInstance.equipment` mirrors character loadout (armor, weapons, shield) when built from PCs. **`patchCombatantEquipmentSnapshot`** merges a partial snapshot and removes `statModifiers` whose `eligibility.requiresUnarmored` no longer holds (e.g. Mage Armor after donning armor). Set `armor_class` modifiers with that eligibility store `armorClassBeforeApply` so AC can be restored. Encounter UI must invoke this (or rebuild combatants) when loadout changes—there is no automatic sync from the character sheet yet.
 
 ## 8. Supported Effect Matrix
 
@@ -504,7 +526,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 | `check` | **Log** | Logs ability check requirement |
 | `grant` | **Log** | Logs granted capability |
 | `form` | **Log** | Logs form change description |
-| `spawn` | **Log** | Logs summoned creature description |
+| `spawn` | **Partial** | When **`monstersById`**, **`buildSummonAllyCombatant`**, and resolved ids are available, **`applyActionEffects`** merges **`Monster`**-backed allies into the encounter (party side) with **`initiativeMode`**. Otherwise logs via **`describeResolvedSpawn`**. Classifier + adapter: **`effects`** + **`targeting: none`**. **`casterOptions`** are passed into spawn resolution for **`mapMonsterIdFromCasterOption`** / **`poolFromCasterOption`** (see [Summon spells and spawn](#summon-spells-and-spawn)). |
 
 **Resolution levels:**
 
@@ -512,6 +534,39 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 - **Partial**: Some sub-cases resolved, others degrade to log.
 - **Handled**: Consumed elsewhere in the pipeline (not in `applyActionEffects`).
 - **Log**: Structured summary logged to encounter log; no mechanical state changes.
+
+### Summon spells and spawn
+
+This subsection documents **intent and architecture** for ally summon spells. Implementation may lag; the [effects.md §13 `spawn`](./effects.md#spawn) entry stays aligned with runtime truth. Phased delivery: [`summon_spells_phased.plan.md`](../../.cursor/plans/summon_spells_phased.plan.md).
+
+**Implemented path**
+
+- **`mergeCombatantsIntoEncounter`** appends party combatants and sorts initiative; **`applyActionEffects`** runs **`spawn`** when effects resolve.
+- **`ResolveCombatActionOptions`**: **`monstersById`**, **`buildSummonAllyCombatant`**, **`rng`**. **`ApplyActionEffectsOptions.casterOptions`** mirrors **`selection.casterOptions`** so enum choices feed **`resolveSpawnMonsterIds`**.
+- **`SpawnEffect`**: **`monsterId`** / **`monsterIds`**, **`pool`**, **`mapMonsterIdFromCasterOption`**, **`poolFromCasterOption`**, **`initiativeMode`**.
+
+**Remaining gaps**
+
+- Higher-slot **count multipliers** for conjures (6th / 8th) and Animate Dead **+2 undead** are not yet applied to **`spawn.count`** / pool resolution.
+- **Concentration** / dismissal at 0 HP (Phase 5 in the plan).
+
+**Ally summon behavior**
+
+- **Source of truth:** **`Monster.id`** from the merged catalog (`monstersById`), except legacy **`creature`** strings where needed.
+- **Side:** allies use the party-side summon builder; they are merged as **party** combatants.
+- **`casterOptions`:** map to explicit ids via **`mapMonsterIdFromCasterOption`**, or to **count + type + CR cap** via **`poolFromCasterOption`** (conjure tiers).
+- **Random pools:** filter by `type` and `lore.challengeRating <= cap`; pick with encounter **`rng`**.
+- **Initiative:** **`initiativeMode`** on **`SpawnEffect`** (`'group' | 'share-caster' | 'individual'`).
+
+**Classifier / adapter**
+
+- **`classifySpellResolutionMode`** treats **`spawn`** as actionable: **`effects`** actions with **`targeting: { kind: 'none' }`** — not **`self`**.
+
+**Authoring examples (directional)**
+
+- Animate Dead: enum → `skeleton` / `zombie` ids; scaling for extra creatures can follow later.
+- Giant Insect: enum → `giant-centipede` / `giant-spider` / `giant-wasp`; initiative: **after caster** on same count.
+- Conjure Woodland Beings / Minor Elementals: keep existing CR-tier enums; resolver picks random fey/elemental from the catalog under the tier cap.
 
 ## 9. Known Pressure Points
 
@@ -524,6 +579,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 Current targeting covers creature-selectable cases only. Future work will likely require separate handling for at least three targeting families:
 
 - **Creature-selectable** — the current model. Actor picks one or more creatures from a candidate pool (single-target, all-enemies, single-creature, dead-creature, self).
+- **Non-targeted** — **`none`**: no creature selected; used for summons and similar. Distinct from **`self`** (caster is not modeled as the “target” of the effect loop for UI semantics).
 - **Event-driven** — targeting determined by a game event rather than player choice. `entered-during-move` is the current example. This should not be treated as a template for general creature-targeting abstraction.
 - **Spatial/area** — point-and-shape selection (cone, sphere, line, cube) with inclusion/exclusion, friend/foe filtering, line-of-effect, and range. This is a qualitatively different problem from creature selection and should be designed as its own subsystem.
 

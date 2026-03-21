@@ -89,3 +89,44 @@ export function rollHealing(
 ): { total: number; details: string } | null {
   return rollExpression(input, rng, 'Healing')
 }
+
+// ---------------------------------------------------------------------------
+// d20 + advantage / disadvantage (single implementation for encounter + spells)
+// ---------------------------------------------------------------------------
+
+/** Resolved roll mode after combining sources (5e: advantage + disadvantage → normal). */
+export type D20RollMode = 'advantage' | 'disadvantage' | 'normal'
+
+/**
+ * Combine any number of advantage/disadvantage flags (e.g. from conditions, markers).
+ * If both appear, they cancel and the roll is normal.
+ */
+export function resolveD20RollMode(modifiers: ReadonlyArray<string>): D20RollMode {
+  const hasAdv = modifiers.includes('advantage')
+  const hasDisadv = modifiers.includes('disadvantage')
+  if (hasAdv && hasDisadv) return 'normal'
+  if (hasAdv) return 'advantage'
+  if (hasDisadv) return 'disadvantage'
+  return 'normal'
+}
+
+/**
+ * Roll a single d20, or two d20s and take the higher (advantage) or lower (disadvantage).
+ * Use with {@link resolveD20RollMode} so all paths share the same math.
+ */
+export function rollD20WithRollMode(
+  mode: D20RollMode,
+  rng: () => number,
+): { rawRoll: number; detail: string } {
+  if (mode === 'normal') {
+    const rawRoll = rollDie(20, rng)
+    return { rawRoll, detail: `d20 ${rawRoll}` }
+  }
+  const roll1 = rollDie(20, rng)
+  const roll2 = rollDie(20, rng)
+  const rawRoll = mode === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2)
+  return {
+    rawRoll,
+    detail: `d20 ${roll1}, ${roll2} (${mode}: ${rawRoll})`,
+  }
+}

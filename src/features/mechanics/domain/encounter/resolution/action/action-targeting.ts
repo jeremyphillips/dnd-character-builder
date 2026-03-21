@@ -1,8 +1,13 @@
-import type { CombatActionDefinition, CombatActionSequenceStep } from '../combat-action.types'
+import type {
+  CombatActionDefinition,
+  CombatActionSequenceStep,
+  CombatActionTargetingProfile,
+} from '../combat-action.types'
 import type { CombatantInstance } from '../../state'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
 import { cannotTargetWithHostileAction } from '../../state/condition-rules'
+import { canSeeForTargeting } from '../../state/visibility-seams'
 
 /** Options for who counts as a valid target; mirrors {@link import('../action-resolution.types').ResolveCombatActionOptions} targeting fields. */
 export type ActionTargetingResolveOptions = {
@@ -36,7 +41,9 @@ function passesCreatureTypeFilter(
   filter: string[] | undefined,
 ): boolean {
   if (!filter || filter.length === 0) return true
-  return !!combatant.creatureType && filter.includes(combatant.creatureType)
+  const t = combatant.creatureType?.toLowerCase()
+  if (!t) return false
+  return filter.some((f) => f.toLowerCase() === t)
 }
 
 export function isHostileAction(action: CombatActionDefinition): boolean {
@@ -44,6 +51,7 @@ export function isHostileAction(action: CombatActionDefinition): boolean {
     return action.hostileApplication
   }
   const kind = action.targeting?.kind
+  if (kind === 'none') return false
   if (action.targeting?.requiresWilling) return false
   return !kind || kind === 'single-target' || kind === 'all-enemies' || kind === 'entered-during-move'
 }
@@ -58,7 +66,39 @@ function shouldSuppressSameSideHostile(options?: ActionTargetingResolveOptions):
   return options?.suppressSameSideHostileActions !== false
 }
 
+/**
+ * When a new round starts, `advanceEncounterTurn` re-rolls initiative from living combatants only,
+ * so dead bodies drop out of `initiativeOrder` while remaining in `combatantsById`. Dead-creature
+ * spells must still see those corpses as candidates.
+ */
+function getCombatantsToScanForTargeting(
+  state: EncounterState,
+  targetingKind: CombatActionTargetingProfile['kind'] | undefined,
+): CombatantInstance[] {
+  if (targetingKind !== 'dead-creature') {
+    return state.initiativeOrder
+      .map((id) => state.combatantsById[id])
+      .filter((c): c is CombatantInstance => Boolean(c))
+  }
+
+  const byId = state.combatantsById
+  const seen = new Set<string>()
+  const ordered: CombatantInstance[] = []
+  for (const id of state.initiativeOrder) {
+    const c = byId[id]
+    if (c) {
+      seen.add(id)
+      ordered.push(c)
+    }
+  }
+  const rest = Object.values(byId)
+    .filter((c) => !seen.has(c.instanceId))
+    .sort((a, b) => a.instanceId.localeCompare(b.instanceId))
+  return [...ordered, ...rest]
+}
+
 export function isValidActionTarget(
+  state: EncounterState,
   combatant: CombatantInstance,
   actor: CombatantInstance,
   action: CombatActionDefinition,
@@ -74,7 +114,23 @@ export function isValidActionTarget(
     return false
   }
 
-  if (kind === 'dead-creature') return combatant.stats.currentHitPoints === 0
+  if (
+    action.targeting?.requiresSight &&
+    kind !== 'self' &&
+    kind !== 'all-enemies' &&
+    kind !== 'none' &&
+    !canSeeForTargeting(state, actor.instanceId, combatant.instanceId)
+  ) {
+    return false
+  }
+
+  if (kind === 'none') return false
+  if (kind === 'dead-creature') {
+    if (combatant.stats.currentHitPoints !== 0) return false
+    const r = combatant.remains
+    if (r === 'dust' || r === 'disintegrated') return false
+    return true
+  }
   if (combatant.stats.currentHitPoints <= 0) return false
   if (kind === 'single-creature') return true
 
@@ -97,11 +153,9 @@ export function getActionTargetCandidates(
   action: CombatActionDefinition,
   options?: ActionTargetingResolveOptions,
 ): CombatantInstance[] {
-  return state.initiativeOrder
-    .map((id) => state.combatantsById[id])
-    .filter(
-      (c): c is CombatantInstance => Boolean(c) && isValidActionTarget(c, actor, action, options),
-    )
+  return getCombatantsToScanForTargeting(state, action.targeting?.kind).filter((c) =>
+    isValidActionTarget(state, c, actor, action, options),
+  )
 }
 
 export function getActionTargets(
@@ -111,6 +165,8 @@ export function getActionTargets(
   action: CombatActionDefinition,
   options?: ActionTargetingResolveOptions,
 ): CombatantInstance[] {
+  if (action.targeting?.kind === 'none') return []
+
   if (action.targeting?.kind === 'self') return [actor]
 
   if (action.targeting?.kind === 'all-enemies') {
@@ -120,19 +176,19 @@ export function getActionTargets(
   if (action.targeting?.kind === 'single-creature') {
     if (!selection.targetId) return [actor]
     const target = state.combatantsById[selection.targetId]
-    if (!target || !isValidActionTarget(target, actor, action, options)) return []
+    if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
     return [target]
   }
 
   if (action.targeting?.kind === 'dead-creature') {
     if (!selection.targetId) return []
     const target = state.combatantsById[selection.targetId]
-    if (!target || !isValidActionTarget(target, actor, action, options)) return []
+    if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
     return [target]
   }
 
   if (!selection.targetId) return []
   const target = state.combatantsById[selection.targetId]
-  if (!target || !isValidActionTarget(target, actor, action, options)) return []
+  if (!target || !isValidActionTarget(state, target, actor, action, options)) return []
   return [target]
 }

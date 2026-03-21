@@ -30,8 +30,9 @@ function reverseStatModifierFromStats(
     if (modifier.mode === 'add') {
       return { ...stats, armorClass: stats.armorClass - modifier.value }
     }
-    // 'set' modifiers can't be cleanly reversed without storing the original value;
-    // recalculating from base would be needed for full correctness.
+    if (modifier.mode === 'set' && modifier.armorClassBeforeApply != null) {
+      return { ...stats, armorClass: modifier.armorClassBeforeApply }
+    }
   }
   if (modifier.target === 'speed' && modifier.mode === 'add') {
     const speeds = { ...(stats.speeds ?? {}) }

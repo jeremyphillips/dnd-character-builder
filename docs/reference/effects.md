@@ -52,6 +52,8 @@ Boundaries:
 - `description.summary` is short UI copy.
 - **Catalog audit:** run `npm run test:run -- src/features/encounter/helpers/spell-catalog-audit.test.ts` for merged-system-spell metrics (stranded counts, ambiguous delivery, explicit `save.dc`, etc.). Counts are for reporting, not CI gates; see `spell-resolution-audit.ts` and [resolution.md](./resolution.md) §7 “Spell combat adapter”.
 - **`resolution.hpThreshold`** — optional HP-gated branches: main `effects` when target current HP ≤ `maxHp`, `aboveMaxHpEffects` when above (combat adapter maps to `CombatActionDefinition`). Use for spells like Power Word Kill; keep rules text in `description.full`.
+- **`resolution.casterOptions`** — optional encounter choices (e.g. Hex disadvantage ability, Symbol glyph effect, Antipathy vs Sympathy). Shape: `CasterOptionField` in [`caster-options.ts`](../../src/features/mechanics/domain/spells/caster-options.ts) (`kind: 'ability'` with `id`/`label`, or `kind: 'enum'` with `options: { value, label }[]`). The spell combat adapter copies these to `CombatActionDefinition.casterOptions`; encounter UI renders selects and passes values into `ResolveCombatActionSelection.casterOptions` (keyed by field `id`). Resolution appends them to combat log summaries (`formatCasterOptionSummary`). Antipathy/Sympathy keeps authored values `antipathy` / `sympathy`; map to `frightened` / `charmed` via `ANTIPATHY_SYMPATHY_MODE_TO_CONDITION` / `getConditionFromAntipathySympathyMode` when applying conditions.
+- **Summon spells (ally creatures)** — spells that create or call creatures to fight alongside the party should eventually reference **catalog `Monster` ids** (same ids as `monstersById` in the ruleset) rather than opaque string tokens. Use **`resolution.casterOptions`** for caster-facing choices that affect which stat block applies: e.g. skeleton vs zombie, giant insect form, or “CR band” options for Conjure Minor Elementals / Conjure Woodland Beings. Pair structured choices with a **`spawn`** effect (see §13 `spawn`) and keep **`description.full`** authoritative for full 5e rules. Runtime behavior (adding combatants to the encounter’s **party** side, initiative placement, random pick from `type: 'fey'` / `type: 'elemental'` pools) is specified in [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn) and the [`spawn` row in the supported-effect matrix](./resolution.md#supported-effect-matrix).
 
 ### Delivery Method
 
@@ -383,7 +385,7 @@ Status meanings:
 - `hold-breath`: `canonical`
 - `tracked-part`: `provisional`
 - `extra-reaction`: `provisional`
-- `spawn`: `provisional`
+- `spawn`: `provisional` (summon spells: prefer **monster id**-backed shapes once the encounter engine supports ally combatants; see §13 `spawn`)
 - `aura`: `canonical`
 - `custom`: escape hatch only
 - Use these only when their current shared meaning fits.
@@ -684,9 +686,12 @@ This is a reserved extension point for future upcasting work. Do not defer scali
 
 Spells carry an optional `resolution` field for per-spell qualitative metadata:
 
+Shared spell/monster resolution shape: [`ContentResolutionMeta`](../../src/features/mechanics/domain/resolution/content-resolution.types.ts) (`caveats`, optional `subtype`). Spells intersect it with spell-only fields (`hpThreshold`, `hostileIntent`) in `SpellResolutionMeta`.
+
 ```ts
 resolution?: {
   caveats?: string[];
+  subtype?: string;
 };
 ```
 
@@ -734,7 +739,7 @@ Adapter inputs derived from the caster:
 
 `CombatantInstance.creatureType` carries the creature's type at runtime. PCs currently default to `'humanoid'` (shim — will be derived from race/species once modeled). Monsters derive their type from `Monster.type`.
 
-`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type. Both the resolution engine (`getActionTargets`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
+`CombatActionTargetingProfile.creatureTypeFilter` restricts valid targets by creature type (compared case-insensitively to `CombatantInstance.creatureType` in `isValidActionTarget`). The spell combat adapter sets it from `targeting.creatureTypeFilter` or from `condition: { kind: 'creature-type', ... }` via `getSpellCreatureTypeFilter`. Both the resolution engine (`getActionTargets` / `getActionTargetCandidates`) and the encounter UI (`availableActionTargets`) enforce this filter. Combatants without a `creatureType` are excluded when a filter is active.
 
 ### Charmed Hostile-Action Restriction
 
@@ -752,6 +757,10 @@ The following spell mechanics are not yet fully resolved by the combat adapter:
 - ~~Repeat saves~~ — **resolved**: `condition.repeatSave` registers turn hooks for automatic save-or-remove at turn boundaries
 - ~~Damage type resistance~~ — **resolved**: `DamageResistanceMarker` on `CombatantInstance`; damage application halves/doubles matching damage
 - ~~HP-threshold gating~~ — **resolved**: `resolution.hpThreshold` gates effect application; used by Power Word Kill/Stun/Heal
+- ~~Charm Person early end on damage from caster or allies~~ — **resolved (encounter)**: `applyDamageToCombatant` removes `charmed` when the attacker shares the charmer’s side (`CombatantSide`), using `sourceInstanceId` on the condition marker
+- ~~Sleep interim save → unconscious, wake on damage, exhaustion auto-success~~ — **resolved (encounter)**: `RepeatSave` with `singleAttempt` / `onFail` / `markerClassification` (`sleep`); `autoSuccessIfImmuneTo: 'exhaustion'` on initial and repeat saves; damage clears sleep-tagged `unconscious` (`damage-mutations.ts`, `turn-hooks.ts`)
+- ~~Mage Armor ends when armor is worn~~ — **resolved (encounter)**: `patchCombatantEquipmentSnapshot` + unarmored eligibility + `armorClassBeforeApply` for set AC (`equipment-mutations.ts`); UI must still patch or rebuild combatants when loadout changes
+- ~~Spells requiring sight / See Invisibility vs invisible~~ — **resolved (targeting)**: `CombatActionTargetingProfile.requiresSight` from spell `targeting.requiresSight`; `canSeeForTargeting` in `visibility-seams.ts` (blinded, invisible vs See Invisibility state; LOS/LoE geometry stubs always clear). Area spells mapped to `all-enemies` still skip per-target sight checks
 - Spell slot resource management
 - Healing upcasting (`extra-healing` scaling category is authored but not yet resolved at runtime)
 - Charmed save advantage when allies are fighting the target (authored as `save.text`, not yet resolved)
@@ -759,7 +768,10 @@ The following spell mechanics are not yet fully resolved by the combat adapter:
 - Caster-choice mechanics (element selection, condition selection at cast time)
 - Multi-area targeting and deduplication (e.g. Meteor Swarm)
 - Moving areas and trigger-timing resolution (e.g. Flaming Sphere, Cloudkill)
-- Success/failure tracking (e.g. Flesh to Stone, Contagion)
+- ~~Contagion repeat-save outcome track (3 successes / 3 failures)~~ — **resolved (encounter)**: `repeatSave.outcomeTrack` on conditions; `RuntimeTurnHook.repeatSaveProgress`; lock adds optional `failLockStateId` state (e.g. `contagion-prolonged`)
+- Success/failure tracking for other spells (e.g. Flesh to Stone petrification stages) — not yet modeled
+
+**Spell level for scaling (until slots are modeled):** Authored spell `level` is **0** for cantrips. When a runtime formula needs a **positive** spell tier (e.g. per-level dice) and slots are not tracked, use `effectiveSpellLevelForScaling` in `src/features/mechanics/domain/rulesets/system/spells/shared.ts`, which maps **0 → 1**; levels 1–9 pass through unchanged. Do **not** use this for cantrip damage scaling by **character** level — that remains `levelScaling` thresholds / `cantripDamageScaling`.
 
 Mechanics resolved since initial authoring:
 
@@ -771,6 +783,11 @@ Mechanics resolved since initial authoring:
 - **Damage resistance**: `DamageResistanceMarker` tracks active resistances/vulnerabilities; `applyDamageToCombatant` halves or doubles matching damage types.
 - **Auto-hit resolution**: `auto-hit` action mode skips attack rolls; multi-instance spells generate sequence steps for independent resolution.
 - **HP-threshold gating**: `CombatActionDefinition.hpThreshold` gates effect application on target current HP vs threshold.
+- **Charm ends on ally/caster damage**: condition markers with `sourceInstanceId` (charmer) are cleared when the damage source is on the same side as the charmer (`damage-mutations.ts`).
+- **Sleep**: layered Wisdom saves via `repeatSave.singleAttempt` and `onFail` to `unconscious` with `sleep` classification; wake on damage; exhaustion immunity auto-success on saves.
+- **Equipment-linked buffs**: `patchCombatantEquipmentSnapshot` drops ineligible modifiers (e.g. Mage Armor when armor is equipped).
+- **Sight-required targeting**: `requiresSight` on combat actions; `canSeeForTargeting` (`visibility-seams.ts`).
+- **Repeat-save outcome tracks**: `repeatSave.outcomeTrack` for Contagion-style success/failure counting (`turn-hooks.ts`).
 - **Advanced effect logging**: `trigger`, `activation`, `check`, `grant`, `form`, and `targeting` effects log meaningful summaries instead of "unsupported".
 
 ## 11. Anti-Patterns
@@ -815,6 +832,7 @@ Follow the extension policy: under-model first, promote only when the pattern pr
 
 - `trigger`, `activation`, `form`, `spawn`, `aura`, `check`, `grant` (runtime), `containment`, `visibility-rule`, `hold-breath`, `tracked-part`, `extra-reaction`, `resource`, `formula`
 - These remain authored as structured content but resolve to log-text at runtime until demand justifies engine investment.
+- **`spawn` (summon spells):** targeted for promotion: ally-side **`Monster`** instances in encounter state, optional **random pool** selection filtered by `Monster.type` and CR (with `casterOptions` driving caps), wired through `classifySpellResolutionMode` / `applyActionEffects`. See [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn).
 
 ### Key Scaling Principle
 
@@ -857,9 +875,10 @@ Status of monster-specific and cross-cutting effect kinds, using the standard ma
 
 ### `spawn`
 
-- Status: `under-modeled`
-- Authored but does not create a simulated combatant in the encounter. Logged as a note.
-- Used by: Troll Loathsome Limbs.
+- Status: `under-modeled` (summon-spell support **in progress** — see [resolution.md — Summon spells and spawn](./resolution.md#summon-spells-and-spawn))
+- **Today:** Spell adapter classifies **`spawn`** as **`effects`** with **`targeting: none`**. When the encounter supplies **`monstersById`** and **`buildSummonAllyCombatant`**, **`applyActionEffects`** creates **`CombatantInstance`**s and merges them; otherwise it logs via **`describeResolvedSpawn`**. **`ApplyActionEffectsOptions.casterOptions`** is used for **`mapMonsterIdFromCasterOption`** (enum → catalog id) and **`poolFromCasterOption`** (enum → count + type + CR cap + random picks).
+- **Authoring:** **`monsterId`** (× **`count`**), **`monsterIds`**, **`pool`**: `{ creatureType, maxChallengeRating }`, **`mapMonsterIdFromCasterOption`**, **`poolFromCasterOption`**, legacy **`creature`**, optional **`initiativeMode`**. Pair with **`resolution.casterOptions`** where the rules offer a choice. See [`spawn-resolution.ts`](../../src/features/mechanics/domain/encounter/resolution/action/spawn-resolution.ts). Spell combat actions use **`targeting.kind: 'none'`** — [resolution.md — Action targeting kinds](./resolution.md#action-targeting-kinds).
+- **Used by:** Find Familiar (legacy `creature` token), Troll Loathsome Limbs, Animate Dead, Conjure Minor Elementals, Conjure Woodland Beings, Giant Insect, and similar.
 
 ### `hold-breath`
 

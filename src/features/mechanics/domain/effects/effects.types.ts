@@ -7,6 +7,7 @@ import type { AbilityKey, AbilityRef } from '../character';
 import type { EffectDuration } from './timing.types';
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab';
 import type { MonsterSizeCategory, MonsterType } from '@/features/content/monsters/domain/vocab/monster.vocab';
+import type { EffectNoteCategory } from '@/features/mechanics/domain/resolution/content-resolution.types';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/engines/formula.engine';
 
@@ -148,6 +149,8 @@ export type SaveEffect = EffectBase<'save'> & {
   };
   onFail: Effect[];
   onSuccess?: Effect[];
+  /** When set, targets with this condition immunity pass the save without rolling (e.g. Sleep vs exhaustion). */
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
 };
 
 export type CheckEffect = EffectBase<'check'> & {
@@ -168,6 +171,28 @@ export type CheckEffect = EffectBase<'check'> & {
 export type RepeatSave = {
   ability: AbilityRef;
   timing: 'turn-start' | 'turn-end';
+  /**
+   * When true, the hook is removed after the first save attempt (success or fail).
+   * Use for Sleep-style “one repeat at end of next turn” vs default repeat-until-success.
+   */
+  singleAttempt?: boolean;
+  /** After a failed repeat save when `singleAttempt` is true: remove `removeCondition` and apply this. */
+  onFail?: {
+    addCondition?: EffectConditionId;
+    markerClassification?: string[];
+  };
+  /** Same as SaveEffect.autoSuccessIfImmuneTo — auto-pass repeat save without rolling. */
+  autoSuccessIfImmuneTo?: ConditionImmunityId;
+  /**
+   * Contagion-style: count consecutive outcomes from repeat saves at this hook.
+   * After `successCountToEnd` successes, remove `removeCondition` and the hook.
+   * After `failCountToLock` failures, remove the hook (condition remains) and optionally add `failLockStateId`.
+   */
+  outcomeTrack?: {
+    successCountToEnd?: number;
+    failCountToLock?: number;
+    failLockStateId?: string;
+  };
 };
 
 export type ConditionEffect = EffectBase<'condition'> & {
@@ -369,11 +394,58 @@ export type FormEffect = EffectBase<'form'> & {
   notes?: string;
 };
 
-export type SpawnEffect = EffectBase<'spawn'> & {
-  creature: string;
+/** Filter for random spawn from the merged monster catalog (e.g. Conjure Woodland Beings). */
+export type SpawnPoolFilter = {
+  creatureType: MonsterType;
+  maxChallengeRating: number;
+};
+
+/** Per-option pool + count from a spell `resolution.casterOptions` enum (CR-tier conjures). */
+export type SpawnPoolFromCasterOptionSpec = {
   count: number;
-  location: 'self-space' | 'self-cell';
-  actsWhen: 'immediately-after-source-turn';
+  maxChallengeRating: number;
+  creatureType: MonsterType;
+};
+
+export type SpawnSummonInitiativeMode = 'group' | 'share-caster' | 'individual';
+
+export type SpawnEffect = EffectBase<'spawn'> & {
+  count: number;
+  /** Legacy authored token when not using catalog ids (e.g. familiar, Troll Limb). */
+  creature?: string;
+  location?: 'self-space' | 'self-cell';
+  actsWhen?: 'immediately-after-source-turn';
+  /** Single catalog monster id; `count` copies (e.g. multiple zombies). */
+  monsterId?: string;
+  /** Explicit catalog ids (length usually matches `count`). */
+  monsterIds?: string[];
+  /** Random picks from catalog: `type` match and CR ≤ cap. */
+  pool?: SpawnPoolFilter;
+  /**
+   * Resolve catalog id from the **spawn target’s** `remains` (`corpse` / `bones`; unset treated as `corpse`).
+   * Used e.g. Animate Dead (zombie vs skeleton). Invalid if target is `dust` / `disintegrated`.
+   */
+  mapMonsterIdFromTargetRemains?: {
+    corpse: string;
+    bones: string;
+  };
+  /**
+   * Resolve `monsterId` from `casterOptions[fieldId]` (e.g. conjure forms).
+   * When present, resolution requires that caster option; ignores static `monsterId` / `pool`.
+   */
+  mapMonsterIdFromCasterOption?: {
+    fieldId: string;
+    valueToMonsterId: Record<string, string>;
+  };
+  /**
+   * Resolve pool + count from `casterOptions[fieldId]` (e.g. conjure CR tiers).
+   * When present, resolution requires that caster option; ignores static `pool` / `count` for picks.
+   */
+  poolFromCasterOption?: {
+    fieldId: string;
+    mapping: Record<string, SpawnPoolFromCasterOptionSpec>;
+  };
+  initiativeMode?: SpawnSummonInitiativeMode;
 };
 
 export type HitPointsEffect = EffectBase<'hit-points'> & {
@@ -390,7 +462,7 @@ export type AuraEffect = EffectBase<'aura'> & {
 
 export type NoteEffect = EffectBase<'note'> & {
   text: string;
-  category?: 'under-modeled' | 'flavor';
+  category?: EffectNoteCategory;
 };
 
 export type RemoveClassificationEffect = EffectBase<'remove-classification'> & {

@@ -1,4 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
+import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import {
   calculateCreatureArmorClass,
   type CreatureArmorCatalogEntry,
@@ -9,13 +10,8 @@ import {
 type ArmorCatalog = Record<string, CreatureArmorCatalogEntry>
 type MonsterArmorSource = Pick<Monster, 'mechanics'>
 
-function getMonsterDexterityScore(monster: MonsterArmorSource): number {
-  const abilities = monster.mechanics.abilities as
-    | { dexterity?: number; dex?: number }
-    | undefined
-
-  return abilities?.dexterity ?? abilities?.dex ?? 10
-}
+/** Unarmored AC baseline before natural offset and DEX; single source of truth until ruleset config exposes it. */
+export const MONSTER_UNARMORED_AC_BASELINE = 10
 
 function resolveMonsterArmorReference(
   monster: MonsterArmorSource,
@@ -52,9 +48,7 @@ export function calculateMonsterArmorClass(
     }
   }
 
-  const dexterityScore = getMonsterDexterityScore(monster)
-  const dexApplies = armorClass.dexApplies ?? true
-  const maxDexBonus = armorClass.maxDexBonus
+  const dexterityScore = getAbilityScoreValue(monster.mechanics.abilities, 'dex')
 
   if (armorClass.kind === 'equipment') {
     const armors = (armorClass.armorRefs ?? [])
@@ -65,8 +59,6 @@ export function calculateMonsterArmorClass(
       dexterityScore,
       defaultBaseAC: 10,
       baseLabel: 'Base',
-      dexApplies,
-      maxDexBonus,
       overrideAC: armorClass.override,
       armors,
     })
@@ -74,10 +66,9 @@ export function calculateMonsterArmorClass(
 
   return calculateCreatureArmorClass({
     dexterityScore,
-    defaultBaseAC: armorClass.base ?? 10,
+    defaultBaseAC:
+      MONSTER_UNARMORED_AC_BASELINE + (armorClass.offset ?? 0),
     baseLabel: 'Natural Armor',
-    dexApplies,
-    maxDexBonus,
     overrideAC: armorClass.override,
   })
 }

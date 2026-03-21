@@ -438,6 +438,88 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
     },
   },
   {
+    id: 'young-black-dragon',
+    name: 'Young Black Dragon',
+    type: 'dragon',
+    sizeCategory: 'large',
+    languages: [{ id: 'common' }, { id: 'draconic' }],
+    description: {
+      short: 'A large black dragon wyrm — acid and malice in equal measure.',
+      long: 'Young black dragons claim swamps and ruins, hoarding treasure and perfecting ambush with caustic breath.',
+    },
+    mechanics: {
+      hitPoints: { count: 15, die: 10, modifier: 45 },
+      armorClass: { kind: 'natural', offset: 6 },
+      movement: { ground: 40, fly: 80, swim: 40 },
+      abilities: { str: 19, dex: 14, con: 17, int: 12, wis: 11, cha: 15 },
+      senses: {
+        special: [
+          { type: 'blindsight', range: 30 },
+          { type: 'darkvision', range: 120 },
+        ],
+        passivePerception: 16,
+      },
+      proficiencies: {
+        skills: { perception: { proficiencyLevel: 2 }, stealth: { proficiencyLevel: 1 } },
+      },
+      proficiencyBonus: 3,
+      savingThrows: {
+        dex: { proficiencyLevel: 1 },
+        con: { proficiencyLevel: 1 },
+        wis: { proficiencyLevel: 1 },
+        cha: { proficiencyLevel: 1 },
+      },
+      immunities: ['acid'],
+      traits: [
+        {
+          name: 'Amphibious',
+          description: 'The dragon can breathe air and water.',
+        },
+      ],
+      actions: [
+        {
+          kind: 'special',
+          name: 'Multiattack',
+          description: 'The dragon makes three Rend attacks.',
+          sequence: [{ actionName: 'Rend', count: 3 }],
+        },
+        {
+          kind: 'natural',
+          name: 'Rend',
+          attackType: 'claw',
+          attackBonus: 7,
+          reach: 10,
+          damage: '2d4',
+          damageBonus: 4,
+          damageType: 'slashing',
+          onHitEffects: [{ kind: 'damage', damage: '1d6', damageType: 'acid' }],
+        },
+        {
+          kind: 'special',
+          name: 'Acid Breath',
+          description:
+            'Dexterity Saving Throw: DC 14, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 49 (14d6) Acid damage. Success: Half damage.',
+          save: { ability: 'dex', dc: 14 },
+          target: 'creatures-in-area',
+          area: { kind: 'line', size: 30 },
+          damage: '14d6',
+          damageType: 'acid',
+          halfDamageOnSave: true,
+          recharge: { min: 5, max: 6 },
+          resolution: {
+            caveats: ['Line template may be simplified in encounter adapter.'],
+          },
+        },
+      ],
+    },
+    lore: {
+      alignment: 'ce',
+      challengeRating: 7,
+      xpValue: 2900,
+      intelligence: 'average',
+    },
+  },
+  {
     id: "young-red-dragon",
     name: "Young Red Dragon",
     type: "dragon",

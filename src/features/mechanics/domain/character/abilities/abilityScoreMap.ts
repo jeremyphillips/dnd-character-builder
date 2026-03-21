@@ -4,6 +4,7 @@ import type {
   AbilityScoreMap,
   AbilityScoreMapResolved,
   AbilityScoreValue,
+  MonsterAbilityScoreMap,
 } from './abilities.types'
 import { abilityRegistry } from './abilities.utils'
 
@@ -14,7 +15,7 @@ const DEFAULT_ABILITY_SCORE = 10 as const
  * Prefer `abilityId` when both are present (caller's map should not duplicate; if it does, id wins).
  */
 export function getAbilityScoreValue(
-  map: AbilityScoreMap | undefined | null,
+  map: AbilityScoreMap | MonsterAbilityScoreMap | undefined | null,
   abilityId: AbilityId,
   defaultScore: AbilityScoreValue | typeof DEFAULT_ABILITY_SCORE = DEFAULT_ABILITY_SCORE,
 ): number {

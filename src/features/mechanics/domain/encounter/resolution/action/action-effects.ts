@@ -20,7 +20,6 @@ import type { ConditionImmunityGrantEffect } from '../../../effects/effects.type
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
 import { abilityIdToKey, type AbilityRef } from '../../../character'
 import type { Condition } from '../../../conditions/condition.types'
-import type { CreatureSnapshot } from '../../../conditions/evaluation-context.types'
 import { evaluateCondition } from '../../../conditions/evaluateCondition'
 import type { Effect } from '../../../effects/effects.types'
 import type { CombatActionDefinition } from '../combat-action.types'
@@ -35,7 +34,8 @@ import {
   rollHealing,
 } from '../../../resolution/engines/dice.engine'
 import { inferStatModifierEligibilityFromEffect } from '../../state/equipment-eligibility'
-import type { AbilityScoreMapResolved } from '../../../character/abilities/abilities.types'
+import { combatantToCreatureSnapshot } from '../../state/combatant-evaluation-snapshot'
+import { isImmuneToConditionIncludingScopedGrants } from '../../state/condition-immunity-resolution'
 
 function reviveBlockedReason(
   target: CombatantInstance,
@@ -60,35 +60,6 @@ function damageRemainsOnKill(action: CombatActionDefinition): CombatantRemainsKi
     return 'disintegrated'
   }
   return undefined
-}
-
-const DEFAULT_ABILITIES: AbilityScoreMapResolved = {
-  strength: 10,
-  dexterity: 10,
-  constitution: 10,
-  intelligence: 10,
-  wisdom: 10,
-  charisma: 10,
-}
-
-function combatantToCreatureSnapshot(c: CombatantInstance): CreatureSnapshot {
-  const scores = c.stats.abilityScores
-  return {
-    id: c.instanceId,
-    level: 1,
-    hp: c.stats.currentHitPoints,
-    hpMax: c.stats.maxHitPoints,
-    abilities: scores
-      ? ({ ...DEFAULT_ABILITIES, ...scores } as AbilityScoreMapResolved)
-      : DEFAULT_ABILITIES,
-    conditions: c.conditions.map((m) => m.label),
-    resources: {},
-    equipment: {
-      armorEquipped: c.equipment?.armorEquipped ?? null,
-      shieldEquipped: c.equipment?.shieldId != null && c.equipment.shieldId.length > 0,
-    },
-    flags: {},
-  }
 }
 
 function modifierEffectAppliesToTarget(
@@ -259,7 +230,7 @@ export function applyActionEffects(
         saveDetail = `Auto-fail ${ability.toUpperCase()} save (condition).`
       } else if (
         effect.autoSuccessIfImmuneTo &&
-        target.conditionImmunities?.includes(effect.autoSuccessIfImmuneTo)
+        isImmuneToConditionIncludingScopedGrants(target, effect.autoSuccessIfImmuneTo, actor)
       ) {
         succeeded = true
         saveDetail = `Auto-success (immune to ${effect.autoSuccessIfImmuneTo}).`

@@ -1,5 +1,5 @@
-import type { ConditionImmunityId } from '@/features/mechanics/domain/conditions/effect-condition-definitions'
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
+import { isImmuneToConditionIncludingScopedGrants } from './condition-immunity-resolution'
 import type { EncounterState, RuntimeMarkerDuration } from './types'
 import { buildRuntimeMarker, markerMatches, updateCombatant } from './shared'
 import { appendLog, getCombatantLabel } from './logging'
@@ -24,7 +24,10 @@ export function addConditionToCombatant(
     return state
   }
 
-  if (target.conditionImmunities?.includes(trimmedCondition as ConditionImmunityId)) {
+  const applyingSource = options?.sourceInstanceId
+    ? state.combatantsById[options.sourceInstanceId]
+    : undefined
+  if (isImmuneToConditionIncludingScopedGrants(target, trimmedCondition, applyingSource)) {
     return appendLog(state, {
       type: 'note',
       actorId: state.activeCombatantId ?? undefined,

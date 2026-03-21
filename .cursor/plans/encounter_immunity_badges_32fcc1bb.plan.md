@@ -1,6 +1,6 @@
 ---
 name: Encounter immunity badges
-overview: Derive encounter defense badges from unconditional condition immunities plus structured scoped grants, with damage defenses in a separate view-model; enforce an engine invariant that flat conditionImmunities is unconditional-only; Phase 1 ships honest UI only—scoped immunity rules evaluation is Phase 3.
+overview: Derive encounter defense badges from unconditional condition immunities plus structured scoped grants, with damage defenses in a separate view-model; enforce an engine invariant that flat conditionImmunities is unconditional-only; Phase 1 presentation; Phase 2 persist + concentration cleanup; Phase 3 isImmuneToConditionIncludingScopedGrants for addCondition, saves, repeat saves.
 todos:
   - id: invariant-docs-types
     content: Document invariant on combatant.conditionImmunities (unconditional only); align types so scoped grants never use flat includes() paths
@@ -13,16 +13,16 @@ todos:
     status: completed
   - id: phase1-preview
     content: Shared chip builder; OpponentCombatantActivePreviewCard (+ Ally preview) parity
-    status: completed
+    status: cancelled
   - id: phase1-tests
     content: Tests for selectors + presentable; assert Phase 1 does not change condition application for scoped grants
-    status: completed
+    status: cancelled
   - id: phase2-persist-grants
     content: Persist structured EffectConditionImmunityGrant on activeEffects; never merge into conditionImmunities
     status: completed
   - id: phase3-resolution-scope
     content: Rules evaluation of scoped immunity vs incoming effect metadata (addConditionToCombatant, save shortcuts)
-    status: pending
+    status: completed
 isProject: true
 ---
 
@@ -131,8 +131,9 @@ This avoids the trap where UI implies a capability the engine does not yet enfor
 
 ## Phase 3 — Rules evaluation
 
-- `addConditionToCombatant`, save shortcuts, and related paths evaluate **intrinsic** `conditionImmunities` **plus** active scoped grants **against incoming effect metadata** (attacker type, tags, magical, etc.).
-- Scoped rows **still** not stored in flat `conditionImmunities`.
+- **Implemented:** `[isImmuneToConditionIncludingScopedGrants](src/features/mechanics/domain/encounter/state/condition-immunity-resolution.ts)` — flat `conditionImmunities` **or** a matching `activeEffects` grant whose `effect.condition` evaluates with `self` = target and `source` = applying combatant.
+- Wired into `[addConditionToCombatant](src/features/mechanics/domain/encounter/state/condition-mutations.ts)` (uses `options.sourceInstanceId`), save `autoSuccessIfImmuneTo` in `[action-effects.ts](src/features/mechanics/domain/encounter/resolution/action/action-effects.ts)` (uses `actor`), and `repeatSave.autoSuccessIfImmuneTo` in `[turn-hooks.ts](src/features/mechanics/domain/encounter/state/turn-hooks.ts)` (uses `casterInstanceId` when present).
+- Requires `**combatant.creatureType`** on the source for `creature-type` conditions; omitting `sourceInstanceId` skips scoped checks (intrinsic only).
 
 ---
 

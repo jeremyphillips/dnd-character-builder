@@ -96,6 +96,8 @@ describe('applyActionEffects — condition-immunity grant', () => {
       { rng: () => 0.5, sourceLabel: action.label },
     )
 
+    expect(result.createdMarkerIds).toContain('grant-ci-spell-protection-from-evil-ally-charmed')
+
     const updated = result.state.combatantsById.ally!
     expect(updated.activeEffects).toHaveLength(1)
     const g = updated.activeEffects[0]!
@@ -104,6 +106,7 @@ describe('applyActionEffects — condition-immunity grant', () => {
     if (g.kind === 'grant' && g.grantType === 'condition-immunity') {
       expect(g.value).toBe('charmed')
       expect(g.duration).toEqual({ kind: 'fixed', value: 100, unit: 'turn' })
+      expect(g.concentrationLinkId).toBe('grant-ci-spell-protection-from-evil-ally-charmed')
     }
 
     expect(deriveRuntimeEffects(updated)).toHaveLength(0)

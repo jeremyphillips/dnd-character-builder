@@ -664,15 +664,24 @@ export function applyActionEffects(
 
       if (effect.grantType === 'condition-immunity') {
         const duration = effect.duration ?? spellTurnDurationFromAction(action)
+        const meta = action.displayMeta
+        const isConcentrationSpell = meta?.source === 'spell' && meta.concentration === true
+        const concentrationLinkId = isConcentrationSpell
+          ? `grant-ci-${action.id}-${target.instanceId}-${effect.value}`
+          : undefined
         const grantPayload: ConditionImmunityGrantEffect = {
           ...effect,
           ...(duration ? { duration } : {}),
           source: effect.source ?? options.sourceLabel,
+          ...(concentrationLinkId ? { concentrationLinkId } : {}),
         }
         nextState = updateEncounterCombatant(nextState, target.instanceId, (c) => ({
           ...c,
           activeEffects: [...c.activeEffects, grantPayload],
         }))
+        if (concentrationLinkId) {
+          markerIds.push(concentrationLinkId)
+        }
         nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Grants immunity (${effect.value}) on target — tracked for encounter UI.`, {
           actorId: actor.instanceId,
           targetIds: [target.instanceId],

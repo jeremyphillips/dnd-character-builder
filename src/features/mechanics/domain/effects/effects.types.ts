@@ -55,6 +55,11 @@ export type EffectMeta = {
   condition?: Condition;
   duration?: EffectDuration;
   priority?: number;
+  /**
+   * When applying a concentration spell, set to the same id pushed to `ConcentrationState.linkedMarkerIds`
+   * so {@link dropConcentration} can remove this row from `activeEffects` when concentration ends.
+   */
+  concentrationLinkId?: string;
 };
 
 export type EffectBase<K extends string> = EffectMeta & { kind: K };

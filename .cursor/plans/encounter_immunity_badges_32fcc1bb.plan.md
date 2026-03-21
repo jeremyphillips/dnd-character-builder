@@ -125,6 +125,7 @@ This avoids the trap where UI implies a capability the engine does not yet enfor
 - Persist spell/item grants as structured effects (`EffectConditionImmunityGrant` or equivalent on `activeEffects`) including scope.
 - **Never** append scoped grants to `conditionImmunities`.
 - Improve runtime labels / derivation so `activeConditionImmunityGrants` is populated.
+- **Concentration lifecycle:** For concentration spells, each grant gets a stable `concentrationLinkId` (also pushed into `createdMarkerIds` / `linkedMarkerIds`). `dropConcentration` removes matching rows from **all** combatants’ `activeEffects` so PfEG-style buffs clear when concentration ends.
 
 ---
 
@@ -137,9 +138,8 @@ This avoids the trap where UI implies a capability the engine does not yet enfor
 
 ## Current gaps (reference)
 
-- `[collectPresentableEffects](src/features/encounter/domain/presentable-effects.ts)` does not consume `conditionImmunities` or `damageResistanceMarkers`.
-- Preview cards omit defense badges.
-- Spell `grant` + `condition-immunity` is note-only in `[action-effects.ts](src/features/mechanics/domain/encounter/resolution/action/action-effects.ts)`; PfEG (`[level1-m-z.ts](src/features/mechanics/domain/rulesets/system/spells/data/level1-m-z.ts)`) has no structured encounter state until Phase 2.
+- Phase 3: scoped immunity **rules** vs intrinsic flat checks (see Phase 3 section).
+- Non-concentration spells with timed grants may need duration wiring beyond `concentrationDurationTurns` when display meta is extended.
 
 ---
 

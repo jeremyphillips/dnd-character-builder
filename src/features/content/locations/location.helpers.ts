@@ -4,17 +4,6 @@ import type { Location } from './types'
  * Maps the new `scale` field back to legacy location type strings
  * used by the existing filter UI. Temporary bridge during migration.
  */
-export function getLegacyType(location: { scale?: string }): string {
-  if (location.scale === 'world') return 'world'
-  if (location.scale === 'region') return 'region'
-  if (location.scale === 'settlement') return 'city'
-  if (location.scale === 'district') return 'district'
-  if (location.scale === 'site') return 'landmark'
-  if (location.scale === 'building') return 'building'
-  if (location.scale === 'room') return 'room'
-
-  return 'other'
-}
 
 const SCALE_ORDER = [
   'world',

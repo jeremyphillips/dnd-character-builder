@@ -1,16 +1,18 @@
 import type { EncounterSpace, EncounterCell } from './space.types'
 
-export function createZoneGridSpace(opts: {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  locationId?: string | null;
+export function createSquareGridSpace(opts: {
+  id: string
+  name: string
+  columns: number
+  rows: number
+  cellFeet?: 5 | 10
+  locationId?: string | null
 }): EncounterSpace {
-  const cells: EncounterCell[] = [];
+  const cellFeet = opts.cellFeet ?? 5
+  const cells: EncounterCell[] = []
 
-  for (let y = 0; y < opts.height; y++) {
-    for (let x = 0; x < opts.width; x++) {
+  for (let y = 0; y < opts.rows; y++) {
+    for (let x = 0; x < opts.columns; x++) {
       cells.push({
         id: `c-${x}-${y}`,
         x,
@@ -22,7 +24,7 @@ export function createZoneGridSpace(opts: {
         blocksProjectiles: false,
         terrainTags: [],
         featureIds: [],
-      });
+      })
     }
   }
 
@@ -30,11 +32,11 @@ export function createZoneGridSpace(opts: {
     id: opts.id,
     locationId: opts.locationId ?? null,
     name: opts.name,
-    mode: 'zone-grid',
-    width: opts.width,
-    height: opts.height,
+    mode: 'square-grid',
+    width: opts.columns,
+    height: opts.rows,
     cells,
     features: [],
-    scale: { kind: 'zone' },
-  };
+    scale: { kind: 'grid', cellFeet },
+  }
 }

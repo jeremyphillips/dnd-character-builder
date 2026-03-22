@@ -31,8 +31,10 @@ import {
   SelectEncounterOpponentModal,
   EncounterEditModal,
   CombatTurnOrderModal,
+  EncounterGrid,
 } from '../components'
 import type { EnvironmentSetupValues } from '../components/EncounterEnvironmentSetup'
+import { selectGridViewModel } from '../space/space.selectors'
 
 const DEFAULT_ENVIRONMENT: EnvironmentSetupValues = {
   setting: 'outdoors',
@@ -196,6 +198,19 @@ export default function EncounterRoute() {
     [availableActionTargets, selectedActionTargetId],
   )
 
+  const selectedActionRangeFt = useMemo(() => {
+    const action = availableActions.find((a) => a.id === selectedActionId)
+    return action?.targeting?.rangeFt ?? null
+  }, [availableActions, selectedActionId])
+
+  const gridViewModel = useMemo(() => {
+    if (!encounterState) return undefined
+    return selectGridViewModel(encounterState, {
+      selectedTargetId: selectedActionTargetId || null,
+      selectedActionRangeFt,
+    })
+  }, [encounterState, selectedActionTargetId, selectedActionRangeFt])
+
   const turnResources = activeCombatant?.turnResources
     ? {
         actionAvailable: activeCombatant.turnResources.actionAvailable,
@@ -351,6 +366,17 @@ export default function EncounterRoute() {
             </>
           }
           environmentSummary={<EncounterEnvironmentSummary values={environmentSetup} />}
+          grid={
+            gridViewModel ? (
+              <EncounterGrid
+                grid={gridViewModel}
+                onCellClick={(cellId) => {
+                  const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
+                  if (occupant) setSelectedActionTargetId(occupant.combatantId)
+                }}
+              />
+            ) : undefined
+          }
           allyLane={
             <CombatLane title="Allies" description="Party members in this encounter.">
               <Stack spacing={1.5}>

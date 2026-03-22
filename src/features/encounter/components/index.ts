@@ -30,4 +30,5 @@ export {
 export { CombatActionPreviewCard } from './CombatActionPreviewCard'
 export { CombatTargetPreviewCard } from './CombatTargetPreviewCard'
 export { CombatLogPanel } from './CombatLogPanel'
+export { EncounterGrid } from './EncounterGrid'
 export * from './modals'

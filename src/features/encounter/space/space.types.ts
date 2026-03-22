@@ -1,5 +1,3 @@
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state'
-
 export type EncounterSpaceMode =
   | 'zone-grid'
   | 'square-grid'
@@ -19,8 +17,8 @@ export type EncounterSpace = {
 
   mode: EncounterSpaceMode;
 
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
 
   cells: EncounterCell[];
   edges?: EncounterEdge[];
@@ -32,8 +30,8 @@ export type EncounterSpace = {
 
 export type EncounterCell = {
   id: string;
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
 
   label?: string;
   kind?: 'open' | 'wall' | 'difficult' | 'blocking' | 'hazard' | 'elevated';
@@ -78,6 +76,8 @@ export type EncounterSpaceRenderMeta = {
 export type CombatantPosition = {
   combatantId: string;
   cellId: string;
+  /** Footprint in cells (1 = Medium/Small, 2 = Large, 3 = Huge, 4 = Gargantuan). Default 1. */
+  size?: number;
 };
 
 export type InitialPlacementOptions = {
@@ -85,11 +85,3 @@ export type InitialPlacementOptions = {
   enemySide?: 'left' | 'right' | 'top' | 'bottom';
   randomizeWithinSide?: boolean;
 };
-
-export function generateInitialPlacements(
-  space: EncounterSpace,
-  combatants: CombatantInstance[],
-  opts?: InitialPlacementOptions
-): CombatantPosition[] {
-  return [];
-}

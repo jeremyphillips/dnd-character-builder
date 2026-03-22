@@ -6,6 +6,7 @@ type EncounterActiveViewProps = {
   actionPreview: React.ReactNode
   targetPreview: React.ReactNode
   environmentSummary: React.ReactNode
+  grid?: React.ReactNode
   allyLane: React.ReactNode
   opponentLane: React.ReactNode
   combatLog: React.ReactNode
@@ -16,6 +17,7 @@ export function EncounterActiveView({
   actionPreview,
   targetPreview,
   environmentSummary,
+  grid,
   allyLane,
   opponentLane,
   combatLog,
@@ -41,6 +43,8 @@ export function EncounterActiveView({
 
         {combatLog}
       </Box>
+
+      {grid}
 
       {environmentSummary}
 

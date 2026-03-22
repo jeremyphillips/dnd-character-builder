@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+
 import Box from '@mui/material/Box'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -55,9 +57,8 @@ export function EncounterGrid({ grid, onCellClick }: EncounterGridProps) {
         const isWall = cell.kind === 'wall' || cell.kind === 'blocking'
         const clickable = !isWall && Boolean(onCellClick)
 
-        const content = (
+        const cellBox = (
           <Box
-            key={cell.cellId}
             onClick={clickable ? () => onCellClick?.(cell.cellId) : undefined}
             sx={{
               width: cellSizePx,
@@ -113,12 +114,12 @@ export function EncounterGrid({ grid, onCellClick }: EncounterGridProps) {
         if (cell.occupantLabel) {
           return (
             <Tooltip key={cell.cellId} title={cell.occupantLabel} placement="top" arrow>
-              {content}
+              {cellBox}
             </Tooltip>
           )
         }
 
-        return content
+        return <Fragment key={cell.cellId}>{cellBox}</Fragment>
       })}
     </Box>
   )

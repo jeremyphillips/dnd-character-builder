@@ -8,14 +8,14 @@ function sideColumns(side: Side, width: number): number[] {
   switch (side) {
     case 'left': return [0, 1]
     case 'right': return [width - 1, width - 2]
-    case 'top': return [0, 1]
-    case 'bottom': return [0, 1]
+    case 'top':
+    case 'bottom': return Array.from({ length: width }, (_, i) => i)
   }
 }
 
 function sideRows(side: Side, height: number): number[] {
   switch (side) {
-    case 'left': return Array.from({ length: height }, (_, i) => i)
+    case 'left':
     case 'right': return Array.from({ length: height }, (_, i) => i)
     case 'top': return [0, 1]
     case 'bottom': return [height - 1, height - 2]

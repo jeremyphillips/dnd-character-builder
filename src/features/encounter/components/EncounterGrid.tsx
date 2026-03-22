@@ -15,6 +15,7 @@ function cellColor(cell: GridCellViewModel, palette: ReturnType<typeof useTheme>
   if (cell.kind === 'wall' || cell.kind === 'blocking') return palette.action.disabledBackground
   if (cell.isActive) return alpha(palette.secondary.main, 0.35)
   if (cell.isSelectedTarget) return alpha(palette.primary.main, 0.30)
+  if (cell.isReachable) return alpha(palette.success.light, 0.18)
   if (cell.isInRange) return alpha(palette.secondary.light, 0.12)
   return palette.background.paper
 }

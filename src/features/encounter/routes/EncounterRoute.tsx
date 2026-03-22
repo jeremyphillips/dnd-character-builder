@@ -37,6 +37,7 @@ import {
 } from '../components'
 import type { EnvironmentSetupValues } from '../components/EncounterEnvironmentSetup'
 import type { GridSizePreset } from '../components/EncounterGridSetup'
+import type { InteractionMode } from '../components/EncounterActiveFooter'
 import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 
@@ -132,6 +133,7 @@ export default function EncounterRoute() {
     handleAddState: _handleAddState,
     handleRemoveState: _handleRemoveState,
     handleTriggerReducedToZeroHook: _handleTriggerReducedToZeroHook,
+    handleMoveCombatant,
     handleMonsterFormChange: _handleMonsterFormChange,
     handleMonsterManualTriggerChange: _handleMonsterManualTriggerChange,
   } = useEncounterState({
@@ -144,6 +146,7 @@ export default function EncounterRoute() {
 
   const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(DEFAULT_ENVIRONMENT)
   const [gridSizePreset, setGridSizePreset] = useState<GridSizePreset>('medium')
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('select-target')
   const [allyModalOpen, setAllyModalOpen] = useState(false)
   const [opponentModalOpen, setOpponentModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -191,6 +194,13 @@ export default function EncounterRoute() {
     [opponentOptions, handleOpponentSelectionChange],
   )
 
+  // Reset interaction mode when the active combatant changes (turn advance, encounter reset)
+  const prevActiveCombatantId = useRef(activeCombatantId)
+  if (prevActiveCombatantId.current !== activeCombatantId) {
+    prevActiveCombatantId.current = activeCombatantId
+    if (interactionMode !== 'select-target') setInteractionMode('select-target')
+  }
+
   const mode = encounterState ? 'active' : 'setup'
   const canStartEncounter = selectedCombatants.length > 0 && unresolvedCombatantCount === 0
 
@@ -213,8 +223,9 @@ export default function EncounterRoute() {
     return selectGridViewModel(encounterState, {
       selectedTargetId: selectedActionTargetId || null,
       selectedActionRangeFt,
+      showReachable: interactionMode === 'move',
     })
-  }, [encounterState, selectedActionTargetId, selectedActionRangeFt])
+  }, [encounterState, selectedActionTargetId, selectedActionRangeFt, interactionMode])
 
   const turnResources = activeCombatant?.turnResources
     ? {
@@ -286,6 +297,10 @@ export default function EncounterRoute() {
           selectedActionTargetId &&
           availableActions.some((a) => a.id === selectedActionId),
         )
+      }
+      interactionMode={interactionMode}
+      onToggleInteractionMode={() =>
+        setInteractionMode((prev) => prev === 'move' ? 'select-target' : 'move')
       }
       onResolveAction={handleResolveAction}
       onEndTurn={handleNextTurn}
@@ -391,6 +406,14 @@ export default function EncounterRoute() {
               <EncounterGrid
                 grid={gridViewModel}
                 onCellClick={(cellId) => {
+                  if (interactionMode === 'move') {
+                    handleMoveCombatant(cellId)
+                    const combatant = activeCombatant
+                    const remaining = combatant?.turnResources?.movementRemaining ?? 0
+                    const cellFeet = gridViewModel.cellFeet
+                    if (remaining <= cellFeet) setInteractionMode('select-target')
+                    return
+                  }
                   const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
                   if (occupant) setSelectedActionTargetId(occupant.combatantId)
                 }}

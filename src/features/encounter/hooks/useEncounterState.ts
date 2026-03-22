@@ -30,6 +30,7 @@ import { buildSummonAllyMonsterCombatant } from '../helpers/encounter-helpers'
 
 import type { OpponentRosterEntry } from '../types'
 import type { EncounterSpace, InitialPlacementOptions } from '../space'
+import { moveCombatant } from '../space'
 
 type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
@@ -331,6 +332,11 @@ export function useEncounterState({
     }))
   }
 
+  function handleMoveCombatant(targetCellId: string) {
+    if (!encounterState || !activeCombatantId) return
+    setEncounterState(moveCombatant(encounterState, activeCombatantId, targetCellId))
+  }
+
   function handleMonsterManualTriggerChange(
     runtimeId: string,
     trigger: keyof ManualMonsterTriggerContext,
@@ -396,6 +402,7 @@ export function useEncounterState({
     handleAddState,
     handleRemoveState,
     handleTriggerReducedToZeroHook,
+    handleMoveCombatant,
     handleMonsterFormChange,
     handleMonsterManualTriggerChange,
   }

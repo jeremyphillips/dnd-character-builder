@@ -1,6 +1,6 @@
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
 import type { EncounterCell, CombatantPosition, EncounterSpace } from './space.types'
-import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt } from './space.helpers'
+import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from './space.helpers'
 import type { CombatantSide } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
 
 // ---------------------------------------------------------------------------
@@ -55,6 +55,7 @@ export type GridCellViewModel = {
   isActive: boolean
   isSelectedTarget: boolean
   isInRange: boolean
+  isReachable: boolean
 }
 
 export type GridViewModel = {
@@ -69,6 +70,7 @@ export function selectGridViewModel(
   opts?: {
     selectedTargetId?: string | null
     selectedActionRangeFt?: number | null
+    showReachable?: boolean
   },
 ): GridViewModel | undefined {
   const { space, placements } = state
@@ -80,6 +82,10 @@ export function selectGridViewModel(
   const rangeFt = opts?.selectedActionRangeFt ?? null
 
   const activeCellId = activeId ? getCellForCombatant(placements, activeId) : undefined
+
+  const reachableSet = opts?.showReachable && activeId
+    ? selectCellsWithinDistance(state, activeId)
+    : undefined
 
   const cells: GridCellViewModel[] = space.cells.map((cell) => {
     const occupantId = getOccupant(placements, cell.id) ?? null
@@ -102,6 +108,7 @@ export function selectGridViewModel(
       isActive: occupantId !== null && occupantId === activeId,
       isSelectedTarget: occupantId !== null && occupantId === selectedTargetId,
       isInRange: inRange,
+      isReachable: reachableSet?.has(cell.id) ?? false,
     }
   })
 
@@ -136,5 +143,120 @@ export function placeCombatant(
   return {
     ...state,
     placements: [...filtered, { combatantId, cellId }],
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Movement
+// ---------------------------------------------------------------------------
+
+function isCellPassable(cell: EncounterCell): boolean {
+  return cell.kind !== 'wall' && cell.kind !== 'blocking'
+}
+
+/**
+ * Geometric (Chebyshev) cells within `movementRemaining` distance.
+ * Does NOT account for walls, terrain costs, or pathing -- purely metric.
+ * Sufficient for generated open grids.
+ */
+export function selectCellsWithinDistance(
+  state: EncounterState,
+  combatantId: string,
+): Set<string> {
+  const result = new Set<string>()
+  const { space, placements } = state
+  if (!space || !placements) return result
+
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant) return result
+
+  const movementRemaining = combatant.turnResources?.movementRemaining ?? 0
+  if (movementRemaining <= 0) return result
+
+  const currentCellId = getCellForCombatant(placements, combatantId)
+  if (!currentCellId) return result
+
+  const cellFeet = space.scale.kind === 'grid' ? space.scale.cellFeet : 5
+
+  for (const cell of space.cells) {
+    if (cell.id === currentCellId) continue
+    if (!isCellPassable(cell)) continue
+    if (isCellOccupied(placements, cell.id)) continue
+
+    const dist = gridDistanceFt(space, currentCellId, cell.id)
+    if (dist !== undefined && dist <= movementRemaining) {
+      result.add(cell.id)
+    }
+  }
+
+  return result
+}
+
+/**
+ * Single predicate: can the combatant move to the target cell?
+ * Checks distance, movement remaining, cell validity, and occupancy.
+ */
+export function canMoveTo(
+  state: EncounterState,
+  combatantId: string,
+  targetCellId: string,
+): boolean {
+  const { space, placements } = state
+  if (!space || !placements) return false
+
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant) return false
+
+  const movementRemaining = combatant.turnResources?.movementRemaining ?? 0
+  if (movementRemaining <= 0) return false
+
+  const cell = getCellById(space, targetCellId)
+  if (!cell || !isCellPassable(cell)) return false
+  if (isCellOccupied(placements, targetCellId)) return false
+
+  const currentCellId = getCellForCombatant(placements, combatantId)
+  if (!currentCellId) return false
+
+  const dist = gridDistanceFt(space, currentCellId, targetCellId)
+  if (dist === undefined) return false
+
+  return dist <= movementRemaining
+}
+
+/**
+ * Move a combatant to a target cell, deducting movement cost.
+ * Returns the original state if the move is invalid.
+ */
+export function moveCombatant(
+  state: EncounterState,
+  combatantId: string,
+  targetCellId: string,
+): EncounterState {
+  if (!canMoveTo(state, combatantId, targetCellId)) return state
+
+  const { space, placements } = state
+  const currentCellId = getCellForCombatant(placements!, combatantId)!
+  const dist = gridDistanceFt(space!, currentCellId, targetCellId)!
+
+  const combatant = state.combatantsById[combatantId]
+  const updatedResources = {
+    ...combatant.turnResources!,
+    movementRemaining: combatant.turnResources!.movementRemaining - dist,
+  }
+
+  const updatedCombatant = {
+    ...combatant,
+    turnResources: updatedResources,
+  }
+
+  const filteredPlacements = placements!.filter((p) => p.combatantId !== combatantId)
+
+  return {
+    ...state,
+    combatantsById: {
+      ...state.combatantsById,
+      [combatantId]: updatedCombatant,
+    },
+    placements: [...filteredPlacements, { combatantId, cellId: targetCellId }],
   }
 }

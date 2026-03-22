@@ -113,6 +113,7 @@ function LoadedAllyCombatantSetupPreviewCard({
         damage: attack.damage,
         damageType: attack.damageType,
         damageBreakdown: attack.damageBreakdown,
+        range: attack.range,
       })),
     [characterId, combatStats.attacks],
   )

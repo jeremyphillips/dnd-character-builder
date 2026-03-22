@@ -13,11 +13,15 @@ type TurnResources = {
   movementRemaining: number
 }
 
+export type InteractionMode = 'select-target' | 'move'
+
 type EncounterActiveFooterProps = {
   turnResources: TurnResources | null
   selectedActionLabel: string | null
   selectedTargetLabel: string | null
   canResolveAction: boolean
+  interactionMode?: InteractionMode
+  onToggleInteractionMode?: () => void
   onResolveAction: () => void
   onEndTurn: () => void
 }
@@ -36,10 +40,16 @@ export function EncounterActiveFooter({
   selectedActionLabel,
   selectedTargetLabel,
   canResolveAction,
+  interactionMode = 'select-target',
+  onToggleInteractionMode,
   onResolveAction,
   onEndTurn,
 }: EncounterActiveFooterProps) {
-  const stateLine = getActionStateLine(selectedActionLabel, selectedTargetLabel)
+  const stateLine = interactionMode === 'move'
+    ? `Move mode \u2014 ${turnResources?.movementRemaining ?? 0} ft remaining`
+    : getActionStateLine(selectedActionLabel, selectedTargetLabel)
+
+  const canMove = (turnResources?.movementRemaining ?? 0) > 0
 
   return (
     <Paper
@@ -65,7 +75,7 @@ export function EncounterActiveFooter({
               />
               <AppBadge
                 label={`Movement: ${turnResources.movementRemaining} ft`}
-                tone="default"
+                tone={interactionMode === 'move' ? 'success' : 'default'}
                 variant="outlined"
                 size="small"
               />
@@ -83,10 +93,21 @@ export function EncounterActiveFooter({
         </Box>
 
         <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+          {onToggleInteractionMode && (
+            <Button
+              variant={interactionMode === 'move' ? 'contained' : 'outlined'}
+              color={interactionMode === 'move' ? 'success' : 'inherit'}
+              size="large"
+              disabled={!canMove && interactionMode !== 'move'}
+              onClick={onToggleInteractionMode}
+            >
+              {interactionMode === 'move' ? 'Cancel Move' : 'Move'}
+            </Button>
+          )}
           <Button
             variant="contained"
             size="large"
-            disabled={!canResolveAction}
+            disabled={!canResolveAction || interactionMode === 'move'}
             onClick={onResolveAction}
           >
             Resolve Action

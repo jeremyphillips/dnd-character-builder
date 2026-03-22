@@ -244,7 +244,7 @@ Pure formatting functions that take raw resolution data and return `string[]` fo
 |--------|-------------|-------|
 | `formatAttackRollDebug` | attack-hit / attack-missed events | Roll mode, contributing roll-modifier markers, condition-derived attack modifiers with range |
 | `formatAutoFailDebug` | save auto-fail events | Which conditions caused auto-fail and which abilities they cover |
-| `formatSaveDebug` | save-roll events | Save roll mode and contributing condition modifiers |
+| `formatSaveDebug` | save-roll events | Save roll mode (always, including `normal`) and contributing condition modifiers when non-trivial |
 | `formatDamageResistanceDebug` | damage-resistance notes | Which conditions provide resistance/vulnerability |
 | `formatTurnResourceDebug` | noOp resource-blocked notes | Which conditions disabled the required turn resource |
 | `formatConditionConsequencesDebug` | condition-applied events | Full consequence breakdown for the applied condition (action limits, movement, attack mods, save mods, speech, visibility, etc.) |
@@ -516,7 +516,7 @@ How each effect kind is resolved at runtime by `action-effects.ts`:
 | `note` | **Full** | Logs text; `category` distinguishes `under-modeled` from `flavor` |
 | `targeting` | **Handled** | Consumed by the action resolver for target selection, not by `applyActionEffects` |
 | `modifier` | **Partial** | `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) fully resolved; other targets log gracefully |
-| `roll-modifier` | **Full** | Registers `RollModifierMarker` on target; applied during attack-roll and saving throw resolution |
+| `roll-modifier` | **Full** (attack) | Registers `RollModifierMarker` on target. Hyphenated `appliesTo` tokens (e.g. `attack-rolls`, `incoming-attacks`); optional `effect.condition` is evaluated at attack-roll time. Spell markers on saving throws are not merged into save resolution yet. |
 | `interval` | **Full** | Registers `RuntimeTurnHook` for per-turn effect application |
 | `immunity` | **Partial** | `spell` and `source-action` scopes resolved; other scopes log |
 | `move` | **Log** | Logs structured summary (direction, distance); no position tracking |

@@ -499,6 +499,7 @@ export function applyActionEffects(
     if (effect.kind === 'roll-modifier') {
       const runtimeDuration = effectDurationToRuntimeDuration(effect) ?? undefined
       const markerId = `roll-mod-${action.id}-${target.instanceId}`
+      const cond = 'condition' in effect ? effect.condition : undefined
       nextState = addRollModifierToCombatant(
         nextState,
         target.instanceId,
@@ -509,6 +510,7 @@ export function applyActionEffects(
           modifier: effect.modifier,
           duration: runtimeDuration,
           sourceInstanceId: actor.instanceId,
+          ...(cond ? { condition: cond } : {}),
         },
         { sourceLabel: options.sourceLabel },
       )

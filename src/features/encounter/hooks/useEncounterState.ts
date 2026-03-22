@@ -29,6 +29,7 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 import { buildSummonAllyMonsterCombatant } from '../helpers/encounter-helpers'
 
 import type { OpponentRosterEntry } from '../types'
+import type { EncounterSpace, InitialPlacementOptions } from '../space'
 
 type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
@@ -213,9 +214,17 @@ export function useEncounterState({
     })
   }, [])
 
-  function handleStartEncounter() {
+  function handleStartEncounter(opts?: {
+    space?: EncounterSpace
+    placementOptions?: InitialPlacementOptions
+  }) {
     if (selectedCombatants.length === 0 || unresolvedCombatantCount > 0) return
-    setEncounterState(createEncounterState(selectedCombatants))
+    setEncounterState(
+      createEncounterState(selectedCombatants, {
+        space: opts?.space,
+        placementOptions: opts?.placementOptions,
+      }),
+    )
   }
 
   function handleNextTurn() {

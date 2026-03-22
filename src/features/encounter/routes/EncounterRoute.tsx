@@ -32,9 +32,13 @@ import {
   EncounterEditModal,
   CombatTurnOrderModal,
   EncounterGrid,
+  EncounterGridSetup,
+  GRID_SIZE_PRESETS,
 } from '../components'
 import type { EnvironmentSetupValues } from '../components/EncounterEnvironmentSetup'
+import type { GridSizePreset } from '../components/EncounterGridSetup'
 import { selectGridViewModel } from '../space/space.selectors'
+import { createSquareGridSpace } from '../space/createSquareGridSpace'
 
 const DEFAULT_ENVIRONMENT: EnvironmentSetupValues = {
   setting: 'outdoors',
@@ -139,6 +143,7 @@ export default function EncounterRoute() {
   })
 
   const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(DEFAULT_ENVIRONMENT)
+  const [gridSizePreset, setGridSizePreset] = useState<GridSizePreset>('medium')
   const [allyModalOpen, setAllyModalOpen] = useState(false)
   const [opponentModalOpen, setOpponentModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -234,7 +239,16 @@ export default function EncounterRoute() {
       opponentCount={opponentRoster.length}
       environmentSummary={environmentSummary}
       canStartEncounter={canStartEncounter}
-      onStartEncounter={handleStartEncounter}
+      onStartEncounter={() => {
+        const preset = GRID_SIZE_PRESETS[gridSizePreset]
+        const space = createSquareGridSpace({
+          id: `grid-${Date.now()}`,
+          name: 'Combat Grid',
+          columns: preset.columns,
+          rows: preset.rows,
+        })
+        handleStartEncounter({ space })
+      }}
     />
   )
 
@@ -292,6 +306,12 @@ export default function EncounterRoute() {
             <EncounterEnvironmentSetup
               values={environmentSetup}
               onChange={setEnvironmentSetup}
+            />
+          }
+          gridSetup={
+            <EncounterGridSetup
+              value={gridSizePreset}
+              onChange={setGridSizePreset}
             />
           }
           allyLane={

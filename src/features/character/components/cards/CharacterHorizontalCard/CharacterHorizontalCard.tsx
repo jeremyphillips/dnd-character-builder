@@ -1,7 +1,8 @@
 import { HorizontalCompactCard } from '@/ui/patterns'
+import { CardBadge } from '@/ui/primitives'
 import type { CardBadgeProps } from '@/ui/primitives'
 import type { CharacterClassSummary } from '@/features/character/read-model'
-import { formatCharacterClassLine } from '@/features/character/helpers/formatCharacterClassLine'
+import { formatCharacterIdentityLine } from '@/features/character/formatters'
 
 interface CharacterHorizontalCardProps {
   characterId: string
@@ -30,27 +31,37 @@ const CharacterHorizontalCard = ({
   onEdit,
   actions,
 }: CharacterHorizontalCardProps) => {
-  const classLine = formatCharacterClassLine(classes ?? [])
+  const classLine = formatCharacterIdentityLine(classes ?? [])
   const raceName = race?.name ?? undefined
   const subheadline = [raceName, classLine]
     .filter(Boolean)
     .join(' · ')
 
-  const badges: CardBadgeProps[] = [
+  const badgeItems: CardBadgeProps[] = [
     ...(status ? [{ type: 'status', value: status }] : []),
     ...(campaign ? [{ type: 'tag', value: `Campaign: ${campaign.name}` }] : []),
   ] as CardBadgeProps[]
+
+  const titleBadges = (
+    <>
+      {badgeItems.map((b, i) => (
+        <CardBadge key={i} type={b.type} value={b.value} />
+      ))}
+    </>
+  )
 
   return (
     <HorizontalCompactCard
       image={imageUrl}
       headline={name}
       subheadline={subheadline}
-      badges={badges}
-      link={link ?? `/characters/${characterId}`}
+      titleBadges={titleBadges}
+      footerActionTo={link ?? `/characters/${characterId}`}
+      footerActionLabel="View details"
+      footerActionOpenInNewTab={false}
+      footerStart={actions}
       isEditable={isEditable}
       onEdit={onEdit}
-      actions={actions}
     />
   )
 }

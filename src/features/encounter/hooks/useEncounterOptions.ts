@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 
-import { formatMonsterOptionSubtitle, formatNpcOptionSubtitle, formatAllyOptionSubtitle } from '../helpers'
+import { formatCharacterSubtitleLine, formatNpcClassLine } from '@/features/character/formatters'
+import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import type {
   EncounterMonstersById,
   EncounterNpc,
@@ -21,7 +22,11 @@ export function useEncounterOptions(args: {
       allies.map((member) => ({
         id: member.id,
         label: member.name,
-        subtitle: formatAllyOptionSubtitle(member),
+        subtitle: formatCharacterSubtitleLine({
+          raceName: member.race?.name,
+          classes: member.classes,
+          ownerName: member.ownerName,
+        }),
       })),
     [allies],
   )
@@ -35,7 +40,7 @@ export function useEncounterOptions(args: {
           sourceId: monster.id,
           kind: 'monster' as const,
           label: monster.name,
-          subtitle: formatMonsterOptionSubtitle(monster),
+          subtitle: formatMonsterIdentityLine(monster),
         })),
     [monstersById],
   )
@@ -45,19 +50,18 @@ export function useEncounterOptions(args: {
       npcs
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map((npc) => ({
-          key: `npc:${npc._id}`,
-          sourceId: npc._id,
-          kind: 'npc' as const,
-          label: npc.name,
-          subtitle: formatNpcOptionSubtitle({
-            race: typeof npc.race === 'string' ? npc.race : null,
-            classes: npc.classes?.map((cls) => ({
-              className: cls.classId,
-              level: cls.level,
-            })),
-          }),
-        })),
+        .map((npc) => {
+          const classLine = formatNpcClassLine(npc)
+          const raceStr = typeof npc.race === 'string' ? npc.race : null
+          const subtitle = [raceStr, classLine].filter(Boolean).join(' · ')
+          return {
+            key: `npc:${npc._id}`,
+            sourceId: npc._id,
+            kind: 'npc' as const,
+            label: npc.name,
+            subtitle,
+          }
+        }),
     [npcs],
   )
 

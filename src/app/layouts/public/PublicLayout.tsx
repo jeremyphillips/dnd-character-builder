@@ -5,8 +5,8 @@ import Typography from '@mui/material/Typography'
 import Container from '@mui/material/Container'
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
-import { ROUTES } from '../routes'
-import { useAuth } from '../providers/AuthProvider'
+import { ROUTES } from '../../routes'
+import { useAuth } from '../../providers/AuthProvider'
 
 export default function PublicLayout() {
   const { user, signOut } = useAuth()

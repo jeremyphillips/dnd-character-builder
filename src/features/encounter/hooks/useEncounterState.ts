@@ -169,16 +169,16 @@ export function useEncounterState({
   }, [controlTargetId, encounterState])
 
   useEffect(() => {
-    const nextActionId = availableActions[0]?.id ?? ''
-    if (!selectedActionId || !availableActions.some((action) => action.id === selectedActionId)) {
-      setSelectedActionId(nextActionId)
+    if (selectedActionId && !availableActions.some((action) => action.id === selectedActionId)) {
+      setSelectedActionId('')
     }
   }, [availableActions, selectedActionId])
 
   useEffect(() => {
+    if (!selectedActionTargetId) return
     const validTargetIds = new Set(availableActionTargets.map((target) => target.id))
-    if (!selectedActionTargetId || !validTargetIds.has(selectedActionTargetId)) {
-      setSelectedActionTargetId(availableActionTargets[0]?.id ?? '')
+    if (!validTargetIds.has(selectedActionTargetId)) {
+      setSelectedActionTargetId('')
     }
   }, [availableActionTargets, selectedActionTargetId])
 

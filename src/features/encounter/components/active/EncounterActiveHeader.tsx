@@ -12,7 +12,6 @@ type EncounterActiveHeaderProps = {
   nextCombatantLabel: string | null
   onEditEncounter: () => void
   onResetEncounter: () => void
-  onViewTurnOrder: () => void
 }
 
 export function EncounterActiveHeader({
@@ -23,7 +22,6 @@ export function EncounterActiveHeader({
   nextCombatantLabel,
   onEditEncounter,
   onResetEncounter,
-  onViewTurnOrder,
 }: EncounterActiveHeaderProps) {
   return (
     <Paper
@@ -54,14 +52,9 @@ export function EncounterActiveHeader({
           </Stack>
         </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Typography variant="body2" color="text.secondary">
-            Round {roundNumber} &bull; Turn {turnIndex + 1}/{turnCount}
-          </Typography>
-          <Button variant="text" size="small" onClick={onViewTurnOrder} sx={{ minWidth: 0 }}>
-            View Turn Order
-          </Button>
-        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          Round {roundNumber} &bull; Turn {turnIndex + 1}/{turnCount}
+        </Typography>
       </Stack>
     </Paper>
   )

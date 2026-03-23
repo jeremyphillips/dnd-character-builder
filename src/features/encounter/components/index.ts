@@ -7,11 +7,12 @@ export { TurnOrderList } from './active/TurnOrderList'
 export type { TurnOrderEntry } from './active/TurnOrderList'
 export { EncounterView } from './shared/EncounterView'
 export { EncounterSetupView } from './setup/EncounterSetupView'
-export { EncounterActiveView } from './active/EncounterActiveView'
+// EncounterActiveView removed -- replaced by grid-centric layout in EncounterActiveRoute
 export { EncounterSetupHeader } from './setup/EncounterSetupHeader'
 export { EncounterActiveHeader } from './active/EncounterActiveHeader'
 export { EncounterActiveFooter } from './active/EncounterActiveFooter'
 export type { InteractionMode } from './active/EncounterActiveFooter'
+export type { GridInteractionMode } from '../domain/encounter-interaction.types'
 export { EncounterEnvironmentSetup } from './setup/EncounterEnvironmentSetup'
 export type { EnvironmentSetupValues } from './setup/EncounterEnvironmentSetup'
 export { EncounterEnvironmentSummary } from './shared/EncounterEnvironmentSummary'
@@ -19,8 +20,10 @@ export { AllyCombatantSetupPreviewCard } from './setup/AllyCombatantSetupPreview
 export { OpponentCombatantSetupPreviewCard } from './setup/OpponentCombatantSetupPreviewCard'
 export { AllyCombatantActivePreviewCard } from './active/AllyCombatantActivePreviewCard'
 export { OpponentCombatantActivePreviewCard } from './active/OpponentCombatantActivePreviewCard'
-export { AllyCombatantActiveCard } from './active/AllyCombatantActiveCard'
-export { OpponentCombatantActiveCard } from './active/OpponentCombatantActiveCard'
+// AllyCombatantActiveCard and OpponentCombatantActiveCard superseded by AllyActionDrawer / OpponentActionDrawer
+export { AllyActionDrawer } from './active/AllyActionDrawer'
+export { OpponentActionDrawer } from './active/OpponentActionDrawer'
+export { CombatantActionDrawer } from './shared/CombatantActionDrawer'
 export type { CombatantStatBadge, CombatantTrackedPartBadge } from './shared/combatant-badges'
 export {
   CombatantCoreBadgeRow,
@@ -28,9 +31,9 @@ export {
   CombatantStatBadgeRow,
   CombatantTrackedPartBadgeRow,
 } from './shared/combatant-badges'
-export { CombatActionPreviewCard } from './shared/CombatActionPreviewCard'
-export { CombatTargetPreviewCard } from './shared/CombatTargetPreviewCard'
+// CombatActionPreviewCard and CombatTargetPreviewCard removed -- replaced by CombatantActionDrawer
 export { CombatLogPanel } from './active/CombatLogPanel'
+export { EncounterActiveSidebar } from './active/EncounterActiveSidebar'
 export { EncounterGrid } from './active/EncounterGrid'
 export { EncounterGridSetup, GRID_SIZE_PRESETS } from './setup/EncounterGridSetup'
 export type { GridSizePreset } from './setup/EncounterGridSetup'

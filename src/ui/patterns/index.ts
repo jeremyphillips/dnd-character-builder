@@ -99,3 +99,11 @@ export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'
 export { default as ImageUploadField } from './form/ImageUploadField'
 
 export { default as FormActions } from './form/FormActions'
+
+export { ZoomControl } from './ZoomControl/ZoomControl'
+export type { ZoomControlProps } from './ZoomControl/ZoomControl'
+
+export { AppDrawer } from './AppDrawer/AppDrawer'
+export type { AppDrawerProps } from './AppDrawer/AppDrawer'
+
+export { AppTabs, AppTab } from './AppTabs/AppTabs'

@@ -1,15 +1,23 @@
-import { Fragment } from 'react'
+import { Fragment, type ReactNode, useCallback, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
+import Popover from '@mui/material/Popover'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import type { GridViewModel, GridCellViewModel } from '../../space/space.selectors'
 
+const BASE_CELL_SIZE = 48
+const HOVER_DELAY_MS = 350
+
 type EncounterGridProps = {
   grid: GridViewModel
+  zoom: number
+  pan: { x: number; y: number }
+  onPanChange: (pan: { x: number; y: number }) => void
   onCellClick?: (cellId: string) => void
+  renderTokenPopover?: (occupantId: string) => ReactNode
 }
 
 function cellColor(cell: GridCellViewModel, palette: Theme['palette']) {
@@ -34,95 +42,217 @@ function tokenInitials(label: string | null): string {
   return (words[0][0] + words[1][0]).toUpperCase()
 }
 
-export function EncounterGrid({ grid, onCellClick }: EncounterGridProps) {
+export function EncounterGrid({
+  grid,
+  zoom,
+  pan,
+  onPanChange,
+  onCellClick,
+  renderTokenPopover,
+}: EncounterGridProps) {
   const theme = useTheme()
   const { palette } = theme
-  const cellSizePx = 48
+  const cellSizePx = BASE_CELL_SIZE
+
+  const dragState = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragMoved = useRef(false)
+
+  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null)
+  const [hoveredOccupantId, setHoveredOccupantId] = useState<string | null>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleTokenMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLElement>, occupantId: string) => {
+      if (!renderTokenPopover) return
+      hoverTimer.current = setTimeout(() => {
+        setPopoverAnchor(e.currentTarget)
+        setHoveredOccupantId(occupantId)
+      }, HOVER_DELAY_MS)
+    },
+    [renderTokenPopover],
+  )
+
+  const handleTokenMouseLeave = useCallback(() => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+    setPopoverAnchor(null)
+    setHoveredOccupantId(null)
+  }, [])
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.button !== 0) return
+      handleTokenMouseLeave()
+      dragState.current = { startX: e.clientX, startY: e.clientY, startPanX: pan.x, startPanY: pan.y }
+      dragMoved.current = false
+      setIsDragging(true)
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    },
+    [pan.x, pan.y, handleTokenMouseLeave],
+  )
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragState.current) return
+      const dx = e.clientX - dragState.current.startX
+      const dy = e.clientY - dragState.current.startY
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved.current = true
+      onPanChange({
+        x: dragState.current.startPanX + dx,
+        y: dragState.current.startPanY + dy,
+      })
+    },
+    [onPanChange],
+  )
+
+  const handlePointerUp = useCallback(() => {
+    dragState.current = null
+    setIsDragging(false)
+  }, [])
+
+  const popoverOpen = Boolean(popoverAnchor) && Boolean(hoveredOccupantId)
 
   return (
     <Box
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       sx={{
-        display: 'inline-grid',
-        gridTemplateColumns: `repeat(${grid.columns}, ${cellSizePx}px)`,
-        gridTemplateRows: `repeat(${grid.rows}, ${cellSizePx}px)`,
-        gap: '1px',
-        bgcolor: 'divider',
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 1,
-        overflow: 'auto',
-        maxWidth: '100%',
+        position: 'absolute',
+        inset: 0,
+        overflow: 'hidden',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      {grid.cells.map((cell) => {
-        const bg = cellColor(cell, palette)
-        const isWall = cell.kind === 'wall' || cell.kind === 'blocking'
-        const clickable = !isWall && Boolean(onCellClick)
+      <Box
+        sx={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
+          willChange: 'transform',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'inline-grid',
+            gridTemplateColumns: `repeat(${grid.columns}, ${cellSizePx}px)`,
+            gridTemplateRows: `repeat(${grid.rows}, ${cellSizePx}px)`,
+            gap: '1px',
+            bgcolor: 'divider',
+            border: 1,
+            borderColor: 'divider',
+            borderRadius: 1,
+          }}
+        >
+          {grid.cells.map((cell) => {
+            const bg = cellColor(cell, palette)
+            const isWall = cell.kind === 'wall' || cell.kind === 'blocking'
+            const clickable = !isWall && Boolean(onCellClick)
+            const hasPopover = Boolean(cell.occupantId && renderTokenPopover)
 
-        const cellBox = (
-          <Box
-            onClick={clickable ? () => onCellClick?.(cell.cellId) : undefined}
-            sx={{
-              width: cellSizePx,
-              height: cellSizePx,
-              bgcolor: bg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: clickable ? 'pointer' : 'default',
-              position: 'relative',
-              transition: 'background-color 0.15s',
-              '&:hover': clickable
-                ? { bgcolor: alpha(palette.action.hover, 0.08) }
-                : undefined,
-            }}
-          >
-            {cell.occupantId && (
+            const cellBox = (
               <Box
+                onClick={
+                  clickable
+                    ? () => {
+                        if (!dragMoved.current) onCellClick?.(cell.cellId)
+                      }
+                    : undefined
+                }
                 sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  bgcolor: tokenColor(cell, palette),
+                  width: cellSizePx,
+                  height: cellSizePx,
+                  bgcolor: bg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: cell.isActive ? 2 : 1,
-                  borderColor: cell.isActive
-                    ? palette.secondary.main
-                    : alpha(palette.common.white, 0.4),
-                  boxShadow: cell.isSelectedTarget
-                    ? `0 0 0 2px ${palette.primary.main}`
+                  cursor: clickable ? 'pointer' : 'default',
+                  position: 'relative',
+                  transition: 'background-color 0.15s',
+                  '&:hover': clickable
+                    ? { bgcolor: alpha(palette.action.hover, 0.08) }
                     : undefined,
                 }}
               >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: palette.common.white,
-                    fontWeight: 700,
-                    fontSize: '0.65rem',
-                    lineHeight: 1,
-                    userSelect: 'none',
-                  }}
-                >
-                  {tokenInitials(cell.occupantLabel)}
-                </Typography>
+                {cell.occupantId && (
+                  <Box
+                    onMouseEnter={
+                      hasPopover
+                        ? (e) => handleTokenMouseEnter(e, cell.occupantId!)
+                        : undefined
+                    }
+                    onMouseLeave={hasPopover ? handleTokenMouseLeave : undefined}
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      bgcolor: tokenColor(cell, palette),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: cell.isActive ? 2 : 1,
+                      borderColor: cell.isActive
+                        ? palette.secondary.main
+                        : alpha(palette.common.white, 0.4),
+                      boxShadow: cell.isSelectedTarget
+                        ? `0 0 0 2px ${palette.primary.main}`
+                        : undefined,
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: palette.common.white,
+                        fontWeight: 700,
+                        fontSize: '0.65rem',
+                        lineHeight: 1,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {tokenInitials(cell.occupantLabel)}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-            )}
+            )
+
+            if (!hasPopover && cell.occupantLabel) {
+              return (
+                <Tooltip key={cell.cellId} title={cell.occupantLabel} placement="top" arrow>
+                  {cellBox}
+                </Tooltip>
+              )
+            }
+
+            return <Fragment key={cell.cellId}>{cellBox}</Fragment>
+          })}
+        </Box>
+      </Box>
+
+      {renderTokenPopover && (
+        <Popover
+          open={popoverOpen}
+          anchorEl={popoverAnchor}
+          onClose={handleTokenMouseLeave}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          slotProps={{
+            paper: { sx: { pointerEvents: 'none', maxWidth: 320 } },
+          }}
+          disableRestoreFocus
+          sx={{ pointerEvents: 'none' }}
+        >
+          <Box sx={{ p: 1 }}>
+            {hoveredOccupantId && renderTokenPopover(hoveredOccupantId)}
           </Box>
-        )
-
-        if (cell.occupantLabel) {
-          return (
-            <Tooltip key={cell.cellId} title={cell.occupantLabel} placement="top" arrow>
-              {cellBox}
-            </Tooltip>
-          )
-        }
-
-        return <Fragment key={cell.cellId}>{cellBox}</Fragment>
-      })}
+        </Popover>
+      )}
     </Box>
   )
 }

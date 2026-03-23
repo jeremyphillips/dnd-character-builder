@@ -7,13 +7,13 @@ import {
   enrichPresentableEffects,
   sortByPriority,
   groupBySection,
-} from '../domain'
+} from '../../domain'
 import {
   COMBATANT_CORE_STAT_TOOLTIP_BY_LABEL,
   TRACKED_PARTS_BADGE_TOOLTIP,
   formatSigned,
-} from '../helpers'
-import { CombatantActiveCard } from './CombatantActiveCard'
+} from '../../helpers'
+import { CombatantActiveCard } from '../shared/CombatantActiveCard'
 
 type OpponentCombatantActiveCardProps = {
   combatant: CombatantInstance

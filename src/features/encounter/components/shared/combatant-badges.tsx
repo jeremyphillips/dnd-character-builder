@@ -1,35 +1,15 @@
-import { type ReactElement } from 'react'
-
-import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 
-import { AppBadge, AppTooltip } from '@/ui/primitives'
+import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import type { AppBadgeTone } from '@/ui/types'
 import type {
   CombatantStatBadge,
   CombatantTrackedPartBadge,
   PreviewChip,
   PreviewTone,
-} from '../domain'
+} from '../../domain'
 
-export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../domain'
-
-export function BadgeWithOptionalTooltip({
-  tooltip,
-  children,
-}: {
-  tooltip?: string
-  children: ReactElement
-}) {
-  if (!tooltip?.trim()) return children
-  return (
-    <AppTooltip title={tooltip} placement="top">
-      <Box component="span" sx={{ display: 'inline-flex' }}>
-        {children}
-      </Box>
-    </AppTooltip>
-  )
-}
+export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../../domain'
 
 function previewToneToAppBadgeTone(tone: PreviewTone | undefined): AppBadgeTone {
   if (!tone || tone === 'neutral') return 'default'
@@ -51,14 +31,14 @@ export function CombatantStatBadgeRow({
   return (
     <Stack direction="row" spacing={stackSpacing} flexWrap="wrap" useFlexGap>
       {stats.map((s) => (
-        <BadgeWithOptionalTooltip key={s.label} tooltip={s.tooltip}>
+        <AppTooltipWrap key={s.label} tooltip={s.tooltip}>
           <AppBadge
             label={`${s.label}: ${s.value}`}
             tone="default"
             variant="outlined"
             size={size}
           />
-        </BadgeWithOptionalTooltip>
+        </AppTooltipWrap>
       ))}
     </Stack>
   )
@@ -77,14 +57,14 @@ export function CombatantTrackedPartBadgeRow({
   return (
     <Stack direction="row" spacing={stackSpacing} flexWrap="wrap" useFlexGap>
       {parts.map((tp) => (
-        <BadgeWithOptionalTooltip key={tp.label} tooltip={tp.tooltip}>
+        <AppTooltipWrap key={tp.label} tooltip={tp.tooltip}>
           <AppBadge
             label={`${tp.label}: ${tp.current}/${tp.initial}`}
             tone={tp.current < tp.initial ? 'warning' : 'default'}
             variant="outlined"
             size={size}
           />
-        </BadgeWithOptionalTooltip>
+        </AppTooltipWrap>
       ))}
     </Stack>
   )
@@ -105,25 +85,25 @@ export function CombatantCoreBadgeRow({
   return (
     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
       {stats.map((s) => (
-        <BadgeWithOptionalTooltip key={s.label} tooltip={s.tooltip}>
+        <AppTooltipWrap key={s.label} tooltip={s.tooltip}>
           <AppBadge
             label={`${s.label}: ${s.value}`}
             tone="default"
             variant="outlined"
             size={size}
           />
-        </BadgeWithOptionalTooltip>
+        </AppTooltipWrap>
       ))}
       {hasParts &&
         trackedParts!.map((tp) => (
-          <BadgeWithOptionalTooltip key={tp.label} tooltip={tp.tooltip}>
+          <AppTooltipWrap key={tp.label} tooltip={tp.tooltip}>
             <AppBadge
               label={`${tp.label}: ${tp.current}/${tp.initial}`}
               tone={tp.current < tp.initial ? 'warning' : 'default'}
               variant="outlined"
               size={size}
             />
-          </BadgeWithOptionalTooltip>
+          </AppTooltipWrap>
         ))}
     </Stack>
   )
@@ -135,13 +115,13 @@ export function CombatantPreviewChipRow({ chips }: { chips: PreviewChip[] }) {
   return (
     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
       {chips.map((chip) => (
-        <BadgeWithOptionalTooltip key={chip.id} tooltip={chip.tooltip}>
+        <AppTooltipWrap key={chip.id} tooltip={chip.tooltip}>
           <AppBadge
             label={chip.label}
             tone={previewToneToAppBadgeTone(chip.tone)}
             size="small"
           />
-        </BadgeWithOptionalTooltip>
+        </AppTooltipWrap>
       ))}
     </Stack>
   )

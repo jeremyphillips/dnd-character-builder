@@ -12,7 +12,7 @@ import {
   type MonsterFormContext,
   type CombatantInstance,
 } from '@/features/mechanics/domain/encounter'
-import type { CombatantPreviewCardProps, PreviewStat } from '../domain'
+import type { CombatantPreviewCardProps, PreviewStat } from '../../domain'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import {
   buildMonsterAttackEntries,
@@ -21,8 +21,8 @@ import {
   formatMonsterOptionSubtitle,
   formatSigned,
   getPreviewStatTooltip,
-} from '../helpers'
-import { CombatantPreviewCard } from './CombatantPreviewCard'
+} from '../../helpers'
+import { CombatantPreviewCard } from '../shared/CombatantPreviewCard'
 
 type OpponentCombatantSetupPreviewCardProps = {
   monster: Monster

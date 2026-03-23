@@ -2,7 +2,7 @@ import Typography from '@mui/material/Typography'
 
 import { AppBadge } from '@/ui/primitives'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { formatSigned } from '../../helpers'
+import { formatSigned } from '../../../helpers'
 import { ActionRowBase } from './ActionRowBase'
 
 type NaturalActionRowProps = {

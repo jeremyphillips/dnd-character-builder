@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography'
 
 import { AppBadge } from '@/ui/primitives'
 
-import type { CombatantPreviewCardProps } from '../domain'
+import type { CombatantPreviewCardProps } from '../../domain'
 import { CombatantPreviewChipRow, CombatantStatBadgeRow } from './combatant-badges'
 
 export function CombatantPreviewCard({

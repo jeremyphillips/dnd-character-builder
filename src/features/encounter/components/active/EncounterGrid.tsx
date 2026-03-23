@@ -4,7 +4,7 @@ import Box from '@mui/material/Box'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { alpha, useTheme } from '@mui/material/styles'
-import type { GridViewModel, GridCellViewModel } from '../space/space.selectors'
+import type { GridViewModel, GridCellViewModel } from '../../space/space.selectors'
 
 type EncounterGridProps = {
   grid: GridViewModel

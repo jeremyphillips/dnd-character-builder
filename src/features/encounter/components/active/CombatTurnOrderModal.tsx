@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 import { AppModal } from '@/ui/patterns'
 import type { EncounterState } from '@/features/mechanics/domain/encounter'
 import type { TurnOrderStatus } from '../../domain'
-import { TurnOrderList } from '../TurnOrderList'
-import type { TurnOrderEntry } from '../TurnOrderList'
+import { TurnOrderList } from './TurnOrderList'
+import type { TurnOrderEntry } from './TurnOrderList'
 
 type CombatTurnOrderModalProps = {
   open: boolean

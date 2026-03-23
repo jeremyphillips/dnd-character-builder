@@ -8,11 +8,11 @@ import Typography from '@mui/material/Typography'
 
 import { AppModal } from '@/ui/patterns'
 import type { CombatLogEvent } from '@/features/mechanics/domain/encounter'
-import type { CombatLogPresentationMode } from '../../domain/combat-log.types'
 import {
   filterLogByMode,
   groupLogEntries,
   formatLogGroupHeader,
+  type CombatLogPresentationMode,
 } from '../../domain'
 import { toCombatLogEntries } from '../../helpers'
 

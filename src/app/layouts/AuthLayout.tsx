@@ -401,17 +401,7 @@ export default function AuthLayout() {
                   </IconButton> */}
                 </ListItemButton>
                 {canAccessAdmin && (
-                  <>
-                    {/* <ListItemButton
-                      component={NavLink}
-                      to={ROUTES.ADMIN_INVITES}
-                      selected={location.pathname.startsWith(ROUTES.ADMIN)}
-                      sx={{ pl: 0 }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 36 }}><GroupAddIcon fontSize="small" /></ListItemIcon>
-                      <ListItemText primary="Invites" slotProps={{ primary: { fontSize: '0.85rem' } }} />
-                    </ListItemButton> */}
-                    
+                  <>                    
                     <Divider />
 
                     <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1, mt: 2, fontSize: '0.7rem' }}>

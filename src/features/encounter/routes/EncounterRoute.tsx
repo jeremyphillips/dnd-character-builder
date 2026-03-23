@@ -34,10 +34,10 @@ import {
   EncounterGrid,
   EncounterGridSetup,
   GRID_SIZE_PRESETS,
+  type EnvironmentSetupValues,
+  type GridSizePreset,
+  type InteractionMode,
 } from '../components'
-import type { EnvironmentSetupValues } from '../components/EncounterEnvironmentSetup'
-import type { GridSizePreset } from '../components/EncounterGridSetup'
-import type { InteractionMode } from '../components/EncounterActiveFooter'
 import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 

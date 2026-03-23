@@ -12,7 +12,7 @@ import type {
   PresentableCombatEffect,
   PresentableTurnHook,
 } from './presentable-effects.types'
-import { defenseBadgesToPresentableCombatEffects } from './encounter-defense-badges'
+import { defenseBadgesToPresentableCombatEffects } from '../badges/defense/encounter-defense-badges'
 import {
   COMBAT_STATE_UI_MAP,
   getFallbackPresentation,

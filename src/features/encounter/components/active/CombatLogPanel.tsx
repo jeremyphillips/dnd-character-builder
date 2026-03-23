@@ -8,13 +8,13 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
 import type { CombatLogEvent } from '@/features/mechanics/domain/encounter'
-import type { CombatLogPresentationMode } from '../domain/combat-log.types'
 import {
   filterLogByMode,
   groupLogEntries,
   formatLogGroupHeader,
-} from '../domain'
-import { toCombatLogEntries } from '../helpers'
+  type CombatLogPresentationMode,
+} from '../../domain'
+import { toCombatLogEntries } from '../../helpers'
 
 type CombatLogPanelProps = {
   log: CombatLogEvent[]

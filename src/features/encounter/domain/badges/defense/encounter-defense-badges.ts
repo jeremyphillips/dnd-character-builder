@@ -7,8 +7,8 @@ import {
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import { MONSTER_TYPE_OPTIONS } from '@/features/content/monsters/domain/vocab/monster.vocab'
-import type { PreviewChip } from './encounter-view.types'
-import type { PresentableCombatEffect } from './presentable-effects.types'
+import type { PreviewChip } from '../../view/encounter-view.types'
+import type { PresentableCombatEffect } from '../../effects/presentable-effects.types'
 import type {
   EncounterConditionImmunityBadge,
   EncounterDamageDefenseBadge,

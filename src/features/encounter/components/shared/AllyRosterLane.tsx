@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add'
 
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import { CombatLane } from './CombatLane'
-import { AllyCombatantSetupPreviewCard } from './AllyCombatantSetupPreviewCard'
+import { AllyCombatantSetupPreviewCard } from '../setup/AllyCombatantSetupPreviewCard'
 
 type AllyRosterLaneProps = {
   selectedAllyIds: string[]

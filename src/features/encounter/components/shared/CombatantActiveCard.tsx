@@ -10,19 +10,19 @@ import Typography from '@mui/material/Typography'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
-import { AppBadge } from '@/ui/primitives'
+import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import type { CombatActionDefinition, CombatActionKind } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import type {
   CombatantStatBadge,
   CombatantTrackedPartBadge,
   EnrichedPresentableEffect,
   CombatStateSection,
-} from '../domain'
-import { BadgeWithOptionalTooltip, CombatantCoreBadgeRow } from './combatant-badges'
-import { ActionRow } from './ActionRow'
+} from '../../domain'
+import { CombatantCoreBadgeRow } from './combatant-badges'
+import { ActionRow } from './ActionRow/ActionRow'
 import { CasterOptionsFields } from './CasterOptionsFields'
 
-export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../domain'
+export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../../domain'
 
 type CombatantActiveCardProps = {
   title: string
@@ -258,13 +258,13 @@ export function CombatantActiveCard({
                   <Stack spacing={0.5}>
                     {effects.map((effect) => (
                       <Stack key={effect.id} direction="row" spacing={1} alignItems="center">
-                        <BadgeWithOptionalTooltip tooltip={effect.presentation.rulesText}>
+                        <AppTooltipWrap tooltip={effect.presentation.rulesText}>
                           <AppBadge
                             label={effect.label}
                             tone={effect.presentation.tone === 'neutral' ? 'default' : effect.presentation.tone}
                             size="small"
                           />
-                        </BadgeWithOptionalTooltip>
+                        </AppTooltipWrap>
                         {effect.duration && (
                           <Typography variant="caption" color="text.secondary">
                             {effect.duration}

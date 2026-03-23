@@ -5,7 +5,7 @@ import { alpha } from '@mui/material/styles'
 
 import { AppBadge } from '@/ui/primitives'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { formatSigned } from '../helpers'
+import { formatSigned } from '../../helpers'
 
 type CombatActionPreviewCardProps = {
   action: CombatActionDefinition | null

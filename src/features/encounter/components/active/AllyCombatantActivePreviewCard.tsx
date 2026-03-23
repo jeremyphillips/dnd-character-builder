@@ -1,12 +1,12 @@
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import { buildEncounterDefensePreviewChips, type CombatantPreviewCardProps, type PreviewChip, type PreviewStat } from '../domain'
+import { buildEncounterDefensePreviewChips, type CombatantPreviewCardProps, type PreviewChip, type PreviewStat } from '../../domain'
 import {
   CONCENTRATING_BADGE_TOOLTIP,
   formatSigned,
   getPreviewStatTooltip,
   tooltipForConditionMarkerLabel,
-} from '../helpers'
-import { CombatantPreviewCard } from './CombatantPreviewCard'
+} from '../../helpers'
+import { CombatantPreviewCard } from '../shared/CombatantPreviewCard'
 
 type AllyCombatantActivePreviewCardProps = {
   combatant: CombatantInstance

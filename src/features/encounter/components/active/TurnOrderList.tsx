@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography'
 
 import { AppBadge } from '@/ui/primitives'
 import type { AppBadgeTone } from '@/ui/types'
-import type { TurnOrderStatus } from '../domain'
+import type { TurnOrderStatus } from '../../domain'
 
 export type TurnOrderEntry = {
   combatantId: string

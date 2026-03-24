@@ -4,6 +4,7 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import ButtonBase from '@mui/material/ButtonBase'
 import Collapse from '@mui/material/Collapse'
+import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -11,13 +12,15 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
-import type { CombatActionDefinition, CombatActionKind } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import {
   deriveBucketChrome,
   deriveBucketState,
   type CombatStateSection,
   type EnrichedPresentableEffect,
 } from '../../../domain'
+import type { ActionSemanticCategory } from '../../../domain/badges/action/action-presentation.types'
+import { deriveActionPresentation } from '../../../domain/badges/action/action-presentation'
 import { ActionRow } from '../action-row/ActionRow'
 import { CasterOptionsFields } from '../action-row/CasterOptionsFields'
 
@@ -83,27 +86,105 @@ function CollapsibleSection({
   )
 }
 
-const ACTION_KIND_ORDER: CombatActionKind[] = ['weapon-attack', 'monster-action', 'spell', 'combat-effect']
+// ---------------------------------------------------------------------------
+// Category grouping
+// ---------------------------------------------------------------------------
 
-const ACTION_KIND_LABELS: Partial<Record<CombatActionKind, string>> = {
-  'weapon-attack': 'Weapons',
-  'monster-action': 'Natural',
+const CATEGORY_ORDER: ActionSemanticCategory[] = ['attack', 'spell', 'heal', 'buff', 'utility', 'item']
+
+const CATEGORY_LABELS: Record<ActionSemanticCategory, string> = {
+  attack: 'Attacks',
   spell: 'Spells',
-  'combat-effect': 'Effects',
+  heal: 'Healing',
+  buff: 'Buffs',
+  utility: 'Utility',
+  item: 'Items',
 }
 
-function groupActionsByKind(actions: CombatActionDefinition[]) {
-  const groups = new Map<CombatActionKind, CombatActionDefinition[]>()
+type CategoryGroup = {
+  category: ActionSemanticCategory
+  label: string
+  actions: CombatActionDefinition[]
+}
+
+function groupActionsByCategory(actions: CombatActionDefinition[]): CategoryGroup[] {
+  const groups = new Map<ActionSemanticCategory, CombatActionDefinition[]>()
   for (const action of actions) {
-    const list = groups.get(action.kind)
+    const { category } = deriveActionPresentation(action)
+    const list = groups.get(category)
     if (list) list.push(action)
-    else groups.set(action.kind, [action])
+    else groups.set(category, [action])
   }
-  return ACTION_KIND_ORDER.filter((kind) => groups.has(kind)).map((kind) => ({
-    kind,
-    label: ACTION_KIND_LABELS[kind] ?? kind,
-    actions: groups.get(kind)!,
-  }))
+  return CATEGORY_ORDER
+    .filter((cat) => groups.has(cat))
+    .map((cat) => ({ category: cat, label: CATEGORY_LABELS[cat], actions: groups.get(cat)! }))
+}
+
+// ---------------------------------------------------------------------------
+// Recommended actions
+// ---------------------------------------------------------------------------
+
+const MAX_RECOMMENDED = 3
+const MIN_ACTIONS_FOR_RECOMMENDED = 4
+
+function deriveRecommendedActions(
+  actions: CombatActionDefinition[],
+  availableActionIds: Set<string> | undefined,
+  validActionIdsForTarget: Set<string> | undefined,
+): CombatActionDefinition[] {
+  if (validActionIdsForTarget == null) return []
+  if (actions.length < MIN_ACTIONS_FOR_RECOMMENDED) return []
+
+  const allTreatAsAvailable = availableActionIds == null
+
+  const candidates = actions.filter((a) => {
+    const resourceAvailable = allTreatAsAvailable || availableActionIds!.has(a.id)
+    const validForTarget = validActionIdsForTarget.has(a.id)
+    return resourceAvailable && validForTarget
+  })
+
+  if (candidates.length === 0) return []
+
+  candidates.sort((a, b) => {
+    const aOffensive = a.attackProfile != null ? 0 : 1
+    const bOffensive = b.attackProfile != null ? 0 : 1
+    if (aOffensive !== bOffensive) return aOffensive - bOffensive
+    return a.label.localeCompare(b.label)
+  })
+
+  return candidates.slice(0, MAX_RECOMMENDED)
+}
+
+// ---------------------------------------------------------------------------
+// Action list rendering
+// ---------------------------------------------------------------------------
+
+function ActionItem({
+  action,
+  isAvailable,
+  isSelected,
+  onSelectAction,
+}: {
+  action: CombatActionDefinition
+  isAvailable: boolean
+  isSelected: boolean
+  onSelectAction?: (actionId: string) => void
+}) {
+  return (
+    <ActionRow
+      action={action}
+      isSelected={isSelected}
+      isAvailable={isAvailable}
+      onSelect={
+        onSelectAction
+          ? () => {
+              if (!isAvailable) return
+              onSelectAction(action.id)
+            }
+          : undefined
+      }
+    />
+  )
 }
 
 function GroupedActionList({
@@ -119,53 +200,81 @@ function GroupedActionList({
   selectedActionId?: string
   onSelectAction?: (actionId: string) => void
 }) {
-  const groups = useMemo(() => groupActionsByKind(actions), [actions])
+  const groups = useMemo(() => groupActionsByCategory(actions), [actions])
+  const recommended = useMemo(
+    () => deriveRecommendedActions(actions, availableActionIds, validActionIdsForTarget),
+    [actions, availableActionIds, validActionIdsForTarget],
+  )
+
   const needsHeaders = groups.length > 1
   const allTreatAsAvailable = availableActionIds == null
+  const showRecommended = recommended.length > 0
+
+  function isActionAvailable(action: CombatActionDefinition): boolean {
+    const resourceAvailable = allTreatAsAvailable || availableActionIds!.has(action.id)
+    const validForTarget = validActionIdsForTarget == null || validActionIdsForTarget.has(action.id)
+    return resourceAvailable && validForTarget
+  }
+
+  if (actions.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ pt: 0.5 }}>
+        No actions available.
+      </Typography>
+    )
+  }
 
   return (
     <Stack spacing={1} sx={{ pt: 0.5 }}>
-      {actions.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No actions available.
-        </Typography>
-      ) : (
-        groups.map(({ kind, label, actions: groupActions }) => (
-          <Box key={kind}>
-            {needsHeaders && (
-              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                {label}
-              </Typography>
-            )}
-            <Stack spacing={1}>
-              {groupActions.map((action) => {
-                const resourceAvailable = allTreatAsAvailable || availableActionIds!.has(action.id)
-                const validForTarget = validActionIdsForTarget == null || validActionIdsForTarget.has(action.id)
-                const isAvailable = resourceAvailable && validForTarget
-                return (
-                  <ActionRow
-                    key={action.id}
-                    action={action}
-                    isSelected={action.id === selectedActionId}
-                    isAvailable={isAvailable}
-                    onSelect={
-                      onSelectAction
-                        ? () => {
-                            if (!isAvailable) return
-                            onSelectAction(action.id)
-                          }
-                        : undefined
-                    }
-                  />
-                )
-              })}
+      {showRecommended && (
+        <>
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', letterSpacing: '0.08em' }}>
+              For this target
+            </Typography>
+            <Stack spacing={0.75}>
+              {recommended.map((action) => (
+                <ActionItem
+                  key={`rec-${action.id}`}
+                  action={action}
+                  isAvailable={isActionAvailable(action)}
+                  isSelected={action.id === selectedActionId}
+                  onSelectAction={onSelectAction}
+                />
+              ))}
             </Stack>
           </Box>
-        ))
+          <Divider sx={{ my: 0.5 }} />
+        </>
       )}
+
+      {groups.map(({ category, label, actions: groupActions }) => (
+        <Box key={category}>
+          {needsHeaders && (
+            <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+              {label}
+            </Typography>
+          )}
+          <Stack spacing={1}>
+            {groupActions.map((action) => (
+              <ActionItem
+                key={action.id}
+                action={action}
+                isAvailable={isActionAvailable(action)}
+                isSelected={action.id === selectedActionId}
+                onSelectAction={onSelectAction}
+              />
+            ))}
+          </Stack>
+        </Box>
+      ))}
     </Stack>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Drawer
+// ---------------------------------------------------------------------------
 
 export function CombatantActionDrawer({
   open,

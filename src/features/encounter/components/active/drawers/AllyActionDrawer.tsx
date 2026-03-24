@@ -30,9 +30,9 @@ type AllyActionDrawerProps = {
   onDismissAoeError?: () => void
   aoeAffectedNames?: string[]
   aoeAffectedTotal?: number
-  aoeAffectedExtra?: number
+  aoeAffectedOverflow?: number
   onCancelAoe?: () => void
-  onBackFromAoeConfirm?: () => void
+  onUndoAoeSelection?: () => void
 }
 
 export function AllyActionDrawer({
@@ -54,9 +54,9 @@ export function AllyActionDrawer({
   onDismissAoeError,
   aoeAffectedNames,
   aoeAffectedTotal,
-  aoeAffectedExtra,
+  aoeAffectedOverflow,
   onCancelAoe,
-  onBackFromAoeConfirm,
+  onUndoAoeSelection,
 }: AllyActionDrawerProps) {
   const availableActionIds = useMemo(
     () => new Set(availableActions.map((a) => a.id)),
@@ -101,9 +101,9 @@ export function AllyActionDrawer({
       onDismissAoeError={onDismissAoeError}
       aoeAffectedNames={aoeAffectedNames}
       aoeAffectedTotal={aoeAffectedTotal}
-      aoeAffectedExtra={aoeAffectedExtra}
+      aoeAffectedOverflow={aoeAffectedOverflow}
       onCancelAoe={onCancelAoe}
-      onBackFromAoeConfirm={onBackFromAoeConfirm}
+      onUndoAoeSelection={onUndoAoeSelection}
     />
   )
 }

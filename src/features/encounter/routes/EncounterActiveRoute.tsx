@@ -32,7 +32,7 @@ const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
 const ZOOM_STEP = 0.25
 
-const AFFECTED_NAME_CAP = 5
+const AFFECTED_NAME_MAX = 40
 
 export default function EncounterActiveRoute() {
   const {
@@ -167,35 +167,38 @@ export default function EncounterActiveRoute() {
 
   const aoeAffectedSummary = useMemo(() => {
     if (!encounterState || !selectedAction?.areaTemplate || (aoeStep !== 'confirm' && aoeStep !== 'placing')) {
-      return { names: [] as string[], total: 0, extra: 0 }
+      return { names: [] as string[], total: 0, overflow: 0 }
     }
     const r = areaTemplateRadiusFt(selectedAction.areaTemplate)
     const space = encounterState.space
     const placements = encounterState.placements
     let previewOrigin: string | null = null
-    if (aoeStep === 'confirm' && aoeOriginCellId) {
-      previewOrigin = aoeOriginCellId
-    } else if (aoeStep === 'placing' && aoeHoverCellId && space && placements && activeCombatantId) {
+    if (space && placements && activeCombatantId) {
       const casterCell = getCellForCombatant(placements, activeCombatantId)
       const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
-      if (
-        casterCell &&
-        isValidAoeOriginCell(space, casterCell, aoeHoverCellId, castRangeFt)
-      ) {
+      const hoverValid =
+        Boolean(
+          casterCell &&
+            aoeHoverCellId &&
+            isValidAoeOriginCell(space, casterCell, aoeHoverCellId, castRangeFt),
+        )
+      if (hoverValid && aoeHoverCellId) {
         previewOrigin = aoeHoverCellId
+      } else if (aoeStep === 'confirm' && aoeOriginCellId) {
+        previewOrigin = aoeOriginCellId
       }
     }
     if (!previewOrigin) {
-      return { names: [] as string[], total: 0, extra: 0 }
+      return { names: [] as string[], total: 0, overflow: 0 }
     }
     const ids = selectCombatantIdsInAoeFootprint(encounterState, previewOrigin, r)
     const names = ids
       .map((id) => encounterState.combatantsById[id]?.source.label)
       .filter((n): n is string => Boolean(n))
     const total = names.length
-    const shown = names.slice(0, AFFECTED_NAME_CAP)
-    const extra = Math.max(0, total - shown.length)
-    return { names: shown, total, extra }
+    const shown = names.slice(0, AFFECTED_NAME_MAX)
+    const overflow = Math.max(0, total - shown.length)
+    return { names: shown, total, overflow }
   }, [encounterState, selectedAction, aoeOriginCellId, aoeHoverCellId, aoeStep, activeCombatantId])
 
   const canResolveAction = useMemo(() => {
@@ -228,7 +231,7 @@ export default function EncounterActiveRoute() {
     setSelectedActionId('')
   }, [resetAoePlacement, setSelectedActionId])
 
-  const handleBackFromAoeConfirm = useCallback(() => {
+  const handleUndoAoeSelection = useCallback(() => {
     if (!selectedAction || !isAreaGridAction(selectedAction)) return
     if (isSelfCenteredAreaAction(selectedAction)) {
       resetAoePlacement()
@@ -267,11 +270,12 @@ export default function EncounterActiveRoute() {
     (cellId: string) => {
       if (!encounterState || !activeCombatantId) return
 
-      if (selectedAction && isAreaGridAction(selectedAction) && aoeStep === 'confirm') {
-        return
-      }
-
-      if (aoeStep === 'placing' && selectedAction && isAreaGridAction(selectedAction)) {
+      if (
+        (aoeStep === 'placing' || aoeStep === 'confirm') &&
+        selectedAction &&
+        isAreaGridAction(selectedAction) &&
+        !isSelfCenteredAreaAction(selectedAction)
+      ) {
         const space = encounterState.space
         const placements = encounterState.placements
         if (!space || !placements) return
@@ -340,9 +344,9 @@ export default function EncounterActiveRoute() {
     onDismissAoeError: () => setPlacementError(null),
     aoeAffectedNames: aoeAffectedSummary.names,
     aoeAffectedTotal: aoeAffectedSummary.total,
-    aoeAffectedExtra: aoeAffectedSummary.extra,
+    aoeAffectedOverflow: aoeAffectedSummary.overflow,
     onCancelAoe: handleCancelAoe,
-    onBackFromAoeConfirm: handleBackFromAoeConfirm,
+    onUndoAoeSelection: handleUndoAoeSelection,
   }
 
   return (

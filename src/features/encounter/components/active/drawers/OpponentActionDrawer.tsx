@@ -30,9 +30,9 @@ type OpponentActionDrawerProps = {
   onDismissAoeError?: () => void
   aoeAffectedNames?: string[]
   aoeAffectedTotal?: number
-  aoeAffectedExtra?: number
+  aoeAffectedOverflow?: number
   onCancelAoe?: () => void
-  onBackFromAoeConfirm?: () => void
+  onUndoAoeSelection?: () => void
 }
 
 export function OpponentActionDrawer({
@@ -54,9 +54,9 @@ export function OpponentActionDrawer({
   onDismissAoeError,
   aoeAffectedNames,
   aoeAffectedTotal,
-  aoeAffectedExtra,
+  aoeAffectedOverflow,
   onCancelAoe,
-  onBackFromAoeConfirm,
+  onUndoAoeSelection,
 }: OpponentActionDrawerProps) {
   const availableActionIds = useMemo(
     () => new Set(availableActions.map((a) => a.id)),
@@ -101,9 +101,9 @@ export function OpponentActionDrawer({
       onDismissAoeError={onDismissAoeError}
       aoeAffectedNames={aoeAffectedNames}
       aoeAffectedTotal={aoeAffectedTotal}
-      aoeAffectedExtra={aoeAffectedExtra}
+      aoeAffectedOverflow={aoeAffectedOverflow}
       onCancelAoe={onCancelAoe}
-      onBackFromAoeConfirm={onBackFromAoeConfirm}
+      onUndoAoeSelection={onUndoAoeSelection}
     />
   )
 }

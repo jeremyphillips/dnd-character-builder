@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import ButtonBase from '@mui/material/ButtonBase'
@@ -13,12 +12,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
-import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
-import type {
-  CombatActionAreaTemplate,
-  CombatActionDefinition,
-} from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { isAreaGridAction, isSelfCenteredAreaAction, type AoeStep } from '../../../helpers/area-grid-action'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { isAreaGridAction, type AoeStep } from '../../../helpers/area-grid-action'
+import { AoePlacementPanel } from './drawer-modes/AoePlacementPanel'
 import {
   deriveBucketChrome,
   deriveBucketState,
@@ -53,14 +49,9 @@ type CombatantActionDrawerProps = {
   onDismissAoeError?: () => void
   aoeAffectedNames?: string[]
   aoeAffectedTotal?: number
-  aoeAffectedExtra?: number
+  aoeAffectedOverflow?: number
   onCancelAoe?: () => void
-  onBackFromAoeConfirm?: () => void
-}
-
-function formatAreaTemplateLabel(t: CombatActionAreaTemplate): string {
-  if (t.kind === 'sphere') return `${t.radiusFt} ft sphere`
-  return `${t.edgeFt} ft cube`
+  onUndoAoeSelection?: () => void
 }
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {
@@ -345,9 +336,9 @@ export function CombatantActionDrawer({
   onDismissAoeError,
   aoeAffectedNames = [],
   aoeAffectedTotal = 0,
-  aoeAffectedExtra = 0,
+  aoeAffectedOverflow = 0,
   onCancelAoe,
-  onBackFromAoeConfirm,
+  onUndoAoeSelection,
 }: CombatantActionDrawerProps) {
   const effectSections = (Object.entries(combatEffects) as [CombatStateSection, EnrichedPresentableEffect[]][]).filter(
     ([, effects]) => effects.length > 0,
@@ -396,55 +387,17 @@ export function CombatantActionDrawer({
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
             {inAoeFlow && aoeAction?.areaTemplate && (
-              <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'action.hover', border: 1, borderColor: 'divider' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }} gutterBottom>
-                  {aoeAction.label}
-                </Typography>
-                {aoeStep === 'placing' && !isSelfCenteredAreaAction(aoeAction) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Choose a point within {aoeAction.targeting?.rangeFt ?? '—'} ft. Area:{' '}
-                    {formatAreaTemplateLabel(aoeAction.areaTemplate)} (Chebyshev grid approximation). Hover to preview;
-                    click a valid cell to lock, then confirm.
-                  </Typography>
-                )}
-                {aoeStep === 'placing' && isSelfCenteredAreaAction(aoeAction) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Area centered on you: {formatAreaTemplateLabel(aoeAction.areaTemplate)}. Confirm to resolve.
-                  </Typography>
-                )}
-                {aoeStep === 'confirm' && (
-                  <>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Origin locked. Range {aoeAction.targeting?.rangeFt ?? '—'} ft ·{' '}
-                      {formatAreaTemplateLabel(aoeAction.areaTemplate)} (~{areaTemplateRadiusFt(aoeAction.areaTemplate)}{' '}
-                      ft radius)
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      Creatures in area: {aoeAffectedTotal}
-                      {aoeAffectedNames.length > 0
-                        ? ` — ${aoeAffectedNames.join(', ')}${aoeAffectedExtra > 0 ? `, +${aoeAffectedExtra} more` : ''}`
-                        : ''}
-                    </Typography>
-                  </>
-                )}
-                {aoePlacementError && (
-                  <Alert severity="warning" sx={{ mt: 1 }} onClose={onDismissAoeError}>
-                    {aoePlacementError}
-                  </Alert>
-                )}
-                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
-                  {aoeStep === 'placing' && (
-                    <Button size="small" variant="outlined" onClick={() => onCancelAoe?.()}>
-                      Cancel
-                    </Button>
-                  )}
-                  {aoeStep === 'confirm' && (
-                    <Button size="small" variant="outlined" onClick={() => onBackFromAoeConfirm?.()}>
-                      Back
-                    </Button>
-                  )}
-                </Stack>
-              </Box>
+              <AoePlacementPanel
+                action={aoeAction}
+                aoeStep={aoeStep}
+                aoePlacementError={aoePlacementError}
+                onDismissAoeError={onDismissAoeError}
+                aoeAffectedNames={aoeAffectedNames}
+                aoeAffectedTotal={aoeAffectedTotal}
+                aoeAffectedOverflow={aoeAffectedOverflow}
+                onCancelAoe={onCancelAoe}
+                onUndoAoeSelection={onUndoAoeSelection}
+              />
             )}
 
             <Collapse in={!inAoeFlow} timeout="auto" unmountOnExit>
@@ -557,11 +510,6 @@ export function CombatantActionDrawer({
             {!inAoeFlow && (
               <Typography variant="body2" color="text.secondary" noWrap>
                 Target: {targetLabel || 'None selected'}
-              </Typography>
-            )}
-            {inAoeFlow && (
-              <Typography variant="body2" color="text.secondary" noWrap>
-                {aoeStep === 'placing' ? 'Placing area on the grid…' : 'Confirm area, then resolve.'}
               </Typography>
             )}
             <Stack direction="row" spacing={1}>

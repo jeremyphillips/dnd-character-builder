@@ -132,20 +132,22 @@ export function selectGridViewModel(
     : undefined
 
   const aoe = opts?.aoe
-  const invalidHover =
-    aoe &&
-    aoe.step === 'placing' &&
-    aoe.hoverCellId &&
-    !isValidAoeOriginCell(space, aoe.casterCellId, aoe.hoverCellId, aoe.castRangeFt)
+  const hoverValid =
+    Boolean(
+      aoe &&
+        aoe.hoverCellId &&
+        isValidAoeOriginCell(space, aoe.casterCellId, aoe.hoverCellId, aoe.castRangeFt),
+    )
+  const invalidHover = Boolean(aoe && aoe.hoverCellId && !hoverValid)
 
-  const previewCenterId =
-    !aoe || invalidHover
-      ? null
-      : aoe.step === 'confirm' && aoe.originCellId
-        ? aoe.originCellId
-        : aoe.step === 'placing' && aoe.hoverCellId
-          ? aoe.hoverCellId
-          : null
+  /** Valid hover previews first (including while origin is locked); else locked origin; else none. */
+  const previewCenterId = !aoe
+    ? null
+    : invalidHover
+      ? aoe.originCellId ?? null
+      : hoverValid
+        ? aoe.hoverCellId!
+        : aoe.originCellId ?? null
 
   const cells: GridCellViewModel[] = space.cells.map((cell) => {
     const occupantId = getOccupant(placements, cell.id) ?? null
@@ -165,14 +167,19 @@ export function selectGridViewModel(
     if (aoe && activeCellId) {
       const dist = gridDistanceFt(space, aoe.casterCellId, cell.id)
       aoeCastRange = dist !== undefined && dist <= aoe.castRangeFt
-      if (previewCenterId && !invalidHover) {
+      if (previewCenterId) {
         const dArea = gridDistanceFt(space, previewCenterId, cell.id)
         aoeInTemplate = dArea !== undefined && dArea <= aoe.areaRadiusFt
       }
       if (invalidHover && cell.id === aoe.hoverCellId) {
         aoeInvalidOriginHover = true
       }
-      if (aoe.step === 'confirm' && aoe.originCellId && cell.id === aoe.originCellId) {
+      if (
+        aoe.step === 'confirm' &&
+        aoe.originCellId &&
+        cell.id === aoe.originCellId &&
+        !(hoverValid && aoe.hoverCellId !== aoe.originCellId)
+      ) {
         aoeOriginLocked = true
       }
     }

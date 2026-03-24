@@ -4,8 +4,8 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 
 import { AppModal } from '@/ui/patterns'
-import type { EnvironmentSetupValues } from '../setup/EncounterEnvironmentSetup'
-import { EncounterEnvironmentSetup } from '../setup/EncounterEnvironmentSetup'
+import type { EnvironmentSetupValues } from '../../setup/options/EncounterEnvironmentSetup'
+import { EncounterEnvironmentSetup } from '../../setup/options/EncounterEnvironmentSetup'
 
 type EncounterEditModalProps = {
   open: boolean

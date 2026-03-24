@@ -7,8 +7,8 @@ import {
   enrichPresentableEffects,
   sortByPriority,
   groupBySection,
-} from '../../domain'
-import { CombatantActionDrawer } from '../shared/CombatantActionDrawer'
+} from '../../../domain'
+import { CombatantActionDrawer } from './CombatantActionDrawer'
 
 type OpponentActionDrawerProps = {
   open: boolean

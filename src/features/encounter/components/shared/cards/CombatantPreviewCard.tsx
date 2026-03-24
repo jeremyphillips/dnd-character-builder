@@ -6,7 +6,7 @@ import Paper from '@mui/material/Paper'
 import { AppAvatar } from '@/ui/primitives'
 import { EntitySummaryCard } from '@/ui/patterns'
 
-import type { CombatantPreviewCardProps } from '../../domain'
+import type { CombatantPreviewCardProps } from '../../../domain'
 import { CombatantPreviewChipRow } from './combatant-badges'
 
 export function CombatantPreviewCard({

@@ -1,41 +1,38 @@
-import { useMemo } from 'react'
-
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import MonsterAvatar from '@/features/content/monsters/components/MonsterAvatar/MonsterAvatar'
-import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import CharacterAvatar from '@/features/character/components/CharacterAvatar'
+import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
+import { useCharacter } from '@/features/character/hooks'
+import { AppAvatar } from '@/ui/primitives'
 
-import { buildEncounterDefensePreviewChips, type CombatantPreviewCardProps, type PreviewChip, type PreviewStat } from '../../domain'
+import { buildEncounterDefensePreviewChips, type CombatantPreviewCardProps, type PreviewChip, type PreviewStat } from '../../../domain'
 import {
   CONCENTRATING_BADGE_TOOLTIP,
   formatSigned,
   getPreviewStatTooltip,
   tooltipForConditionMarkerLabel,
-} from '../../helpers'
-import { CombatantPreviewCard } from '../shared/CombatantPreviewCard'
+} from '../../../helpers'
+import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
 
-type OpponentCombatantActivePreviewCardProps = {
+type AllyCombatantActivePreviewCardProps = {
   combatant: CombatantInstance
   isCurrentTurn?: boolean
   isSelected?: boolean
   onClick?: () => void
 }
 
-export function OpponentCombatantActivePreviewCard({
+export function AllyCombatantActivePreviewCard({
   combatant,
   isCurrentTurn = false,
   isSelected = false,
   onClick,
-}: OpponentCombatantActivePreviewCardProps) {
-  const { catalog } = useCampaignRules()
+}: AllyCombatantActivePreviewCardProps) {
   const isDefeated = combatant.stats.currentHitPoints <= 0
 
-  const monster = catalog.monstersById[combatant.source.sourceId]
-
-  const subtitle = useMemo(() => {
-    if (monster) return formatMonsterIdentityLine(monster)
-    return combatant.creatureType ?? undefined
-  }, [combatant.creatureType, monster])
+  const characterId =
+    combatant.source.kind === 'pc' || combatant.source.kind === 'npc'
+      ? combatant.source.sourceId
+      : undefined
+  const { character } = useCharacter(characterId)
 
   const stats: PreviewStat[] = [
     { label: 'AC', value: String(combatant.stats.armorClass), tooltip: getPreviewStatTooltip('AC') },
@@ -54,17 +51,6 @@ export function OpponentCombatantActivePreviewCard({
       value: `${groundSpeed} ft`,
       tooltip: getPreviewStatTooltip('Move'),
     })
-  }
-
-  if (combatant.trackedParts && combatant.trackedParts.length > 0) {
-    for (const part of combatant.trackedParts) {
-      const headOrLimbs = part.part === 'head' ? 'Heads' : 'Limbs'
-      stats.push({
-        label: headOrLimbs,
-        value: `${part.currentCount}/${part.initialCount}`,
-        tooltip: getPreviewStatTooltip(headOrLimbs),
-      })
-    }
   }
 
   const chips: PreviewChip[] = [
@@ -88,13 +74,21 @@ export function OpponentCombatantActivePreviewCard({
     ...buildEncounterDefensePreviewChips(combatant),
   ]
 
+  const subtitle = character ? formatCharacterDetailSubtitle(character) : undefined
+
+  const avatar = character ? (
+    <CharacterAvatar imageUrl={character.imageUrl ?? undefined} name={character.name} size="sm" />
+  ) : (
+    <AppAvatar name={combatant.source.label} size="sm" />
+  )
+
   const previewProps: CombatantPreviewCardProps = {
     id: combatant.instanceId,
-    kind: 'monster',
+    kind: 'character',
     mode: 'active',
     title: combatant.source.label,
     subtitle,
-    avatar: <MonsterAvatar name={combatant.source.label} size="sm" />,
+    avatar,
     stats,
     chips: chips.length > 0 ? chips : undefined,
     isCurrentTurn,

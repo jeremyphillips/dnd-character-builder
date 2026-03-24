@@ -17,9 +17,9 @@ import {
   deriveBucketState,
   type CombatStateSection,
   type EnrichedPresentableEffect,
-} from '../../domain'
-import { ActionRow } from './ActionRow/ActionRow'
-import { CasterOptionsFields } from './CasterOptionsFields'
+} from '../../../domain'
+import { ActionRow } from '../action-row/ActionRow'
+import { CasterOptionsFields } from '../action-row/CasterOptionsFields'
 
 type CombatantActionDrawerProps = {
   open: boolean

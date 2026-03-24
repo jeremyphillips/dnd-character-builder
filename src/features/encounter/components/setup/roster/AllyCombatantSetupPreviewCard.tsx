@@ -12,7 +12,7 @@ import { useCharacter, useCombatStats } from '@/features/character/hooks'
 import { toCharacterForEngine } from '@/features/character/read-model'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { CombatantInstance, CombatantSide } from '@/features/mechanics/domain/encounter'
-import type { CombatantPreviewCardProps, PreviewStat } from '../../domain'
+import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import {
   buildCharacterCombatantInstance,
   buildSpellCombatActions,
@@ -20,8 +20,8 @@ import {
   formatSigned,
   getCharacterSpellcastingStats,
   getPreviewStatTooltip,
-} from '../../helpers'
-import { CombatantPreviewCard } from '../shared/CombatantPreviewCard'
+} from '../../../helpers'
+import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
 
 type AllyCombatantSetupPreviewCardProps = {
   characterId: string

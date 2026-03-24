@@ -7,9 +7,9 @@ import type {
   CombatantTrackedPartBadge,
   PreviewChip,
   PreviewTone,
-} from '../../domain'
+} from '../../../domain'
 
-export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../../domain'
+export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../../../domain'
 
 function previewToneToAppBadgeTone(tone: PreviewTone | undefined): AppBadgeTone {
   if (!tone || tone === 'neutral') return 'default'

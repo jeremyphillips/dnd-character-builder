@@ -14,10 +14,10 @@ import {
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
 } from '@/features/mechanics/domain/encounter'
-import type { OpponentOption, OpponentRosterEntry } from '../../types'
+import type { OpponentOption, OpponentRosterEntry } from '../../../types'
 import { CombatLane } from './CombatLane'
-import { AllyCombatantSetupPreviewCard } from '../setup/AllyCombatantSetupPreviewCard'
-import { OpponentCombatantSetupPreviewCard } from '../setup/OpponentCombatantSetupPreviewCard'
+import { AllyCombatantSetupPreviewCard } from './AllyCombatantSetupPreviewCard'
+import { OpponentCombatantSetupPreviewCard } from './OpponentCombatantSetupPreviewCard'
 
 type OpponentRosterLaneProps = {
   opponentRoster: OpponentRosterEntry[]

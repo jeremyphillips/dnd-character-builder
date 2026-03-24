@@ -8,9 +8,9 @@ import Typography from '@mui/material/Typography'
 import { AppTabs, AppTab } from '@/ui/patterns'
 import type { CombatantInstance, EncounterState } from '@/features/mechanics/domain/encounter'
 
-import { AllyCombatantActivePreviewCard } from './AllyCombatantActivePreviewCard'
-import { OpponentCombatantActivePreviewCard } from './OpponentCombatantActivePreviewCard'
-import { CombatLogPanel } from './CombatLogPanel'
+import { AllyCombatantActivePreviewCard } from '../cards/AllyCombatantActivePreviewCard'
+import { OpponentCombatantActivePreviewCard } from '../cards/OpponentCombatantActivePreviewCard'
+import { CombatLogPanel } from '../combat-log/CombatLogPanel'
 
 type EncounterActiveSidebarProps = {
   encounterState: EncounterState

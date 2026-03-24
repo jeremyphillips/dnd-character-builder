@@ -3,8 +3,8 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import { AppBadge } from '@/ui/primitives'
-import type { GroupedLogEntry } from '../../domain'
-import { formatLogGroupHeader } from '../../domain'
+import type { GroupedLogEntry } from '../../../domain'
+import { formatLogGroupHeader } from '../../../domain'
 
 type CombatLogEntryProps = {
   group: GroupedLogEntry

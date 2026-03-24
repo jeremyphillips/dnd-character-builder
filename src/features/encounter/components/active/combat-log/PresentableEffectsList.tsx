@@ -12,8 +12,8 @@ import {
   groupBySection,
   shouldShowPresentationInHeader,
   sortByPriority,
-} from '../../domain'
-import type { CombatStateSection, EnrichedPresentableEffect } from '../../domain'
+} from '../../../domain'
+import type { CombatStateSection, EnrichedPresentableEffect } from '../../../domain'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {

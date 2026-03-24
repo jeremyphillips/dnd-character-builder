@@ -8,7 +8,7 @@ import {
   TERRAIN_MOVEMENT_TYPES,
   VISIBILITY_OBSCURED_LEVELS,
 } from '@/features/mechanics/domain/encounter/environment'
-import type { EnvironmentSetupValues } from '../setup/EncounterEnvironmentSetup'
+import type { EnvironmentSetupValues } from '../../setup/options/EncounterEnvironmentSetup'
 
 type EncounterEnvironmentSummaryProps = {
   values: EnvironmentSetupValues

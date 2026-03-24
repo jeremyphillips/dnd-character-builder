@@ -6,7 +6,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
-import type { GridViewModel, GridCellViewModel } from '../../space/space.selectors'
+import type { GridViewModel, GridCellViewModel } from '../../../space/space.selectors'
 
 const BASE_CELL_SIZE = 48
 const HOVER_DELAY_MS = 350

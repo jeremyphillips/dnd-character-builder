@@ -360,7 +360,7 @@ export function CombatantActionDrawer({
   )
 
   return (
-    <AppDrawer open={open} onClose={onClose} anchor="right" title={title} width={420}>
+    <AppDrawer open={open} onClose={onClose} anchor="right" title={title} width={420} nonModal>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>

@@ -14,6 +14,12 @@ export type {
   ActionBadgeDescriptor,
   ActionBadgeKind,
 } from './badges/action/combat-action-badges.types'
+export { deriveActionPresentation } from './badges/action/action-presentation'
+export type {
+  ActionPresentationViewModel,
+  ActionSemanticCategory,
+  ActionFooterLink,
+} from './badges/action/action-presentation.types'
 export {
   collectPresentableEffects,
   enrichPresentableEffects,

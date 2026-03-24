@@ -1,7 +1,11 @@
 import type { Spell, SpellDuration, SpellRange } from '@/features/content/spells/domain/types/spell.types'
 import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
-import type { CombatActionDefinition, CombatActionTargetingProfile } from '@/features/mechanics/domain/encounter'
+import type {
+  CombatActionAreaTemplate,
+  CombatActionDefinition,
+  CombatActionTargetingProfile,
+} from '@/features/mechanics/domain/encounter'
 import { classifySpellResolutionMode } from './spell-resolution-classifier'
 import { deriveSpellHostility, spellHostilityToHostileApplication } from './spell-hostility'
 
@@ -115,6 +119,21 @@ function buildSpellActionCost(spell: Spell): { action?: boolean; bonusAction?: b
 
 function getSpellTargetingEffect(spell: Spell): Extract<Effect, { kind: 'targeting' }> | undefined {
   return spell.effects?.find((e): e is Extract<Effect, { kind: 'targeting' }> => e.kind === 'targeting')
+}
+
+/** Maps spell AoE metadata to grid placement; cone/line/cylinder omit template until modeled. */
+function deriveCombatAreaTemplate(spell: Spell): CombatActionAreaTemplate | undefined {
+  const t = getSpellTargetingEffect(spell)
+  if (t?.kind !== 'targeting' || !t.area) return undefined
+  if (t.target !== 'creatures-in-area') return undefined
+  if (t.area.kind === 'sphere') return { kind: 'sphere', radiusFt: t.area.size }
+  if (t.area.kind === 'cube') return { kind: 'cube', edgeFt: t.area.size }
+  return undefined
+}
+
+function deriveAreaPlacement(spell: Spell, hasAreaTemplate: boolean): 'remote' | 'self' | undefined {
+  if (!hasAreaTemplate) return undefined
+  return spell.range?.kind === 'self' ? 'self' : 'remote'
 }
 
 function getSpellRequiresSight(spell: Spell): boolean {
@@ -370,6 +389,9 @@ function buildSpellEffectsAction(
       )
     : undefined
 
+  const areaTemplate = deriveCombatAreaTemplate(spell)
+  const areaPlacement = deriveAreaPlacement(spell, Boolean(areaTemplate))
+
   return {
     id: `${runtimeId}-spell-${spell.id}`,
     label: spell.name,
@@ -383,6 +405,7 @@ function buildSpellEffectsAction(
     logText: buildSpellLogText(spell),
     displayMeta: buildSpellDisplayMeta(spell),
     usage,
+    ...(areaTemplate ? { areaTemplate, ...(areaPlacement ? { areaPlacement } : {}) } : {}),
   }
 }
 

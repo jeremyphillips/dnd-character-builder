@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import ButtonBase from '@mui/material/ButtonBase'
@@ -12,7 +13,12 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
+import type {
+  CombatActionAreaTemplate,
+  CombatActionDefinition,
+} from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { isAreaGridAction, isSelfCenteredAreaAction, type AoeStep } from '../../../helpers/area-grid-action'
 import {
   deriveBucketChrome,
   deriveBucketState,
@@ -42,6 +48,19 @@ type CombatantActionDrawerProps = {
   canResolveAction?: boolean
   onResolveAction?: () => void
   onEndTurn?: () => void
+  aoeStep?: AoeStep
+  aoePlacementError?: string | null
+  onDismissAoeError?: () => void
+  aoeAffectedNames?: string[]
+  aoeAffectedTotal?: number
+  aoeAffectedExtra?: number
+  onCancelAoe?: () => void
+  onBackFromAoeConfirm?: () => void
+}
+
+function formatAreaTemplateLabel(t: CombatActionAreaTemplate): string {
+  if (t.kind === 'sphere') return `${t.radiusFt} ft sphere`
+  return `${t.edgeFt} ft cube`
 }
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {
@@ -321,6 +340,14 @@ export function CombatantActionDrawer({
   canResolveAction,
   onResolveAction,
   onEndTurn,
+  aoeStep = 'none',
+  aoePlacementError,
+  onDismissAoeError,
+  aoeAffectedNames = [],
+  aoeAffectedTotal = 0,
+  aoeAffectedExtra = 0,
+  onCancelAoe,
+  onBackFromAoeConfirm,
 }: CombatantActionDrawerProps) {
   const effectSections = (Object.entries(combatEffects) as [CombatStateSection, EnrichedPresentableEffect[]][]).filter(
     ([, effects]) => effects.length > 0,
@@ -359,11 +386,69 @@ export function CombatantActionDrawer({
     [onCasterOptionsChange],
   )
 
+  const inAoeFlow = aoeStep !== 'none'
+  const aoeAction =
+    selectedActionDefinition && isAreaGridAction(selectedActionDefinition) ? selectedActionDefinition : null
+
   return (
     <AppDrawer open={open} onClose={onClose} anchor="right" title={title} width={420} nonModal>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
+            {inAoeFlow && aoeAction?.areaTemplate && (
+              <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'action.hover', border: 1, borderColor: 'divider' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }} gutterBottom>
+                  {aoeAction.label}
+                </Typography>
+                {aoeStep === 'placing' && !isSelfCenteredAreaAction(aoeAction) && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Choose a point within {aoeAction.targeting?.rangeFt ?? '—'} ft. Area:{' '}
+                    {formatAreaTemplateLabel(aoeAction.areaTemplate)} (Chebyshev grid approximation). Hover to preview;
+                    click a valid cell to lock, then confirm.
+                  </Typography>
+                )}
+                {aoeStep === 'placing' && isSelfCenteredAreaAction(aoeAction) && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Area centered on you: {formatAreaTemplateLabel(aoeAction.areaTemplate)}. Confirm to resolve.
+                  </Typography>
+                )}
+                {aoeStep === 'confirm' && (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Origin locked. Range {aoeAction.targeting?.rangeFt ?? '—'} ft ·{' '}
+                      {formatAreaTemplateLabel(aoeAction.areaTemplate)} (~{areaTemplateRadiusFt(aoeAction.areaTemplate)}{' '}
+                      ft radius)
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Creatures in area: {aoeAffectedTotal}
+                      {aoeAffectedNames.length > 0
+                        ? ` — ${aoeAffectedNames.join(', ')}${aoeAffectedExtra > 0 ? `, +${aoeAffectedExtra} more` : ''}`
+                        : ''}
+                    </Typography>
+                  </>
+                )}
+                {aoePlacementError && (
+                  <Alert severity="warning" sx={{ mt: 1 }} onClose={onDismissAoeError}>
+                    {aoePlacementError}
+                  </Alert>
+                )}
+                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
+                  {aoeStep === 'placing' && (
+                    <Button size="small" variant="outlined" onClick={() => onCancelAoe?.()}>
+                      Cancel
+                    </Button>
+                  )}
+                  {aoeStep === 'confirm' && (
+                    <Button size="small" variant="outlined" onClick={() => onBackFromAoeConfirm?.()}>
+                      Back
+                    </Button>
+                  )}
+                </Stack>
+              </Box>
+            )}
+
+            <Collapse in={!inAoeFlow} timeout="auto" unmountOnExit>
+              <Stack spacing={2}>
             <CollapsibleSection
               key={`${open}-actions-${actionsSection.title}`}
               title={actionsSection.title}
@@ -452,6 +537,8 @@ export function CombatantActionDrawer({
                 )}
               </Stack>
             </CollapsibleSection>
+              </Stack>
+            </Collapse>
           </Stack>
         </Box>
 
@@ -467,9 +554,16 @@ export function CombatantActionDrawer({
           }}
         >
           <Stack spacing={1.5}>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              Target: {targetLabel || 'None selected'}
-            </Typography>
+            {!inAoeFlow && (
+              <Typography variant="body2" color="text.secondary" noWrap>
+                Target: {targetLabel || 'None selected'}
+              </Typography>
+            )}
+            {inAoeFlow && (
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {aoeStep === 'placing' ? 'Placing area on the grid…' : 'Confirm area, then resolve.'}
+              </Typography>
+            )}
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained"

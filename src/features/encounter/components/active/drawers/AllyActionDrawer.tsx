@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { AoeStep } from '../../../helpers/area-grid-action'
 import {
   collectPresentableEffects,
   enrichPresentableEffects,
@@ -24,6 +25,14 @@ type AllyActionDrawerProps = {
   canResolveAction?: boolean
   onResolveAction?: () => void
   onEndTurn?: () => void
+  aoeStep?: AoeStep
+  aoePlacementError?: string | null
+  onDismissAoeError?: () => void
+  aoeAffectedNames?: string[]
+  aoeAffectedTotal?: number
+  aoeAffectedExtra?: number
+  onCancelAoe?: () => void
+  onBackFromAoeConfirm?: () => void
 }
 
 export function AllyActionDrawer({
@@ -40,6 +49,14 @@ export function AllyActionDrawer({
   canResolveAction,
   onResolveAction,
   onEndTurn,
+  aoeStep,
+  aoePlacementError,
+  onDismissAoeError,
+  aoeAffectedNames,
+  aoeAffectedTotal,
+  aoeAffectedExtra,
+  onCancelAoe,
+  onBackFromAoeConfirm,
 }: AllyActionDrawerProps) {
   const availableActionIds = useMemo(
     () => new Set(availableActions.map((a) => a.id)),
@@ -79,6 +96,14 @@ export function AllyActionDrawer({
       canResolveAction={canResolveAction}
       onResolveAction={onResolveAction}
       onEndTurn={onEndTurn}
+      aoeStep={aoeStep}
+      aoePlacementError={aoePlacementError}
+      onDismissAoeError={onDismissAoeError}
+      aoeAffectedNames={aoeAffectedNames}
+      aoeAffectedTotal={aoeAffectedTotal}
+      aoeAffectedExtra={aoeAffectedExtra}
+      onCancelAoe={onCancelAoe}
+      onBackFromAoeConfirm={onBackFromAoeConfirm}
     />
   )
 }

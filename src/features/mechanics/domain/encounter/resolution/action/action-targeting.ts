@@ -8,7 +8,27 @@ import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
 import { cannotTargetWithHostileAction } from '../../state/condition-rules'
 import { canSeeForTargeting } from '../../state/visibility-seams'
-import { isWithinRange } from '@/features/encounter/space'
+import { gridDistanceFt, getCellForCombatant, isWithinRange } from '@/features/encounter/space'
+import type { CombatActionAreaTemplate } from '../combat-action.types'
+
+/** Chebyshev distance from origin cell to combatant cell; used as first-pass sphere/cube approximation. */
+export function areaTemplateRadiusFt(template: CombatActionAreaTemplate): number {
+  if (template.kind === 'sphere') return template.radiusFt
+  return template.edgeFt / 2
+}
+
+function combatantCellWithinAoeRadius(
+  state: EncounterState,
+  combatantId: string,
+  originCellId: string,
+  radiusFt: number,
+): boolean {
+  if (!state.space || !state.placements) return false
+  const cellId = getCellForCombatant(state.placements, combatantId)
+  if (!cellId) return false
+  const d = gridDistanceFt(state.space, originCellId, cellId)
+  return d !== undefined && d <= radiusFt
+}
 
 /** Options for who counts as a valid target; mirrors {@link import('../action-resolution.types').ResolveCombatActionOptions} targeting fields. */
 export type ActionTargetingResolveOptions = {
@@ -182,7 +202,15 @@ export function getActionTargets(
   if (action.targeting?.kind === 'self') return [actor]
 
   if (action.targeting?.kind === 'all-enemies') {
-    return getActionTargetCandidates(state, actor, action, options)
+    const candidates = getActionTargetCandidates(state, actor, action, options)
+    const template = action.areaTemplate
+    if (!template) return candidates
+
+    const originCellId = selection.aoeOriginCellId
+    if (!originCellId) return []
+
+    const radiusFt = areaTemplateRadiusFt(template)
+    return candidates.filter((c) => combatantCellWithinAoeRadius(state, c.instanceId, originCellId, radiusFt))
   }
 
   if (action.targeting?.kind === 'single-creature') {

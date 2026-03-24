@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -31,6 +32,9 @@ import {
   type EnvironmentSetupValues,
   type GridSizePreset,
 } from '../components'
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
+import { isAreaGridAction } from '../helpers/area-grid-action'
+import { getCellForCombatant } from '../space/space.helpers'
 import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 
@@ -105,6 +109,13 @@ function useEncounterRuntimeValue() {
     handleResetEncounter: handleResetEncounterBase,
     handleMoveCombatant,
     registerCombatLogAppended,
+    aoeStep,
+    setAoeStep,
+    aoeOriginCellId,
+    setAoeOriginCellId,
+    aoeHoverCellId,
+    setAoeHoverCellId,
+    resetAoePlacement,
   } = useEncounterState({
     selectedCombatantIds,
     opponentRoster,
@@ -198,24 +209,74 @@ function useEncounterRuntimeValue() {
     if (interactionMode !== 'select-target') setInteractionMode('select-target')
   }
 
+  useEffect(() => {
+    if (aoeStep !== 'none') {
+      setInteractionMode('aoe-place')
+    }
+  }, [aoeStep])
+
+  useEffect(() => {
+    if (aoeStep === 'none' && interactionMode === 'aoe-place') {
+      setInteractionMode('select-target')
+    }
+  }, [aoeStep, interactionMode])
+
   const canStartEncounter = selectedCombatants.length > 0 && unresolvedCombatantCount === 0
 
   // selectedActionLabel / selectedTargetLabel were consumed by the now-commented-out footer.
   // The route derives these directly when needed (e.g. CombatantActionDrawer).
 
+  const selectedAction = useMemo(
+    () => availableActions.find((a) => a.id === selectedActionId) ?? null,
+    [availableActions, selectedActionId],
+  )
+
   const selectedActionRangeFt = useMemo(() => {
-    const action = availableActions.find((a) => a.id === selectedActionId)
-    return action?.targeting?.rangeFt ?? null
-  }, [availableActions, selectedActionId])
+    return selectedAction?.targeting?.rangeFt ?? null
+  }, [selectedAction])
+
+  const aoeGridOverlay = useMemo(() => {
+    if (!encounterState?.space || !encounterState.placements || !activeCombatantId) return null
+    if (!selectedAction || !isAreaGridAction(selectedAction) || aoeStep === 'none') return null
+    const casterCellId = getCellForCombatant(encounterState.placements, activeCombatantId)
+    if (!casterCellId || !selectedAction.areaTemplate) return null
+    const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
+    const areaRadiusFt = areaTemplateRadiusFt(selectedAction.areaTemplate)
+    return {
+      castRangeFt,
+      areaRadiusFt,
+      casterCellId,
+      hoverCellId: aoeHoverCellId,
+      originCellId: aoeOriginCellId,
+      step: aoeStep === 'confirm' ? 'confirm' as const : 'placing' as const,
+    }
+  }, [
+    encounterState,
+    activeCombatantId,
+    selectedAction,
+    aoeStep,
+    aoeHoverCellId,
+    aoeOriginCellId,
+  ])
 
   const gridViewModel = useMemo(() => {
     if (!encounterState) return undefined
+    const rangeForRing = aoeGridOverlay ? null : selectedActionRangeFt
     return selectGridViewModel(encounterState, {
       selectedTargetId: selectedActionTargetId || null,
-      selectedActionRangeFt,
-      showReachable: (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0,
+      selectedActionRangeFt: rangeForRing,
+      showReachable:
+        (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 && interactionMode !== 'aoe-place',
+      aoe: aoeGridOverlay,
     })
-  }, [encounterState, selectedActionTargetId, selectedActionRangeFt, activeCombatant])
+  }, [
+    encounterState,
+    selectedActionTargetId,
+    selectedActionRangeFt,
+    activeCombatant,
+    aoeGridOverlay,
+    interactionMode,
+  ])
 
   // turnResources was consumed by the now-commented-out footer.
   // activeCombatant.turnResources is still accessible directly via the context.
@@ -310,6 +371,14 @@ function useEncounterRuntimeValue() {
     setSelectedCasterOptions,
     selectedActionTargetId,
     setSelectedActionTargetId,
+    selectedAction,
+    aoeStep,
+    setAoeStep,
+    aoeOriginCellId,
+    setAoeOriginCellId,
+    aoeHoverCellId,
+    setAoeHoverCellId,
+    resetAoePlacement,
     unresolvedCombatantCount,
     selectedCombatants,
     environmentContext,

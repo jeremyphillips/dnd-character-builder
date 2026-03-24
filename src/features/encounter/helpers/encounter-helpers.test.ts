@@ -799,6 +799,8 @@ describe('buildSpellCombatActions', () => {
     })
 
     expect(actions[0]!.targeting).toEqual({ kind: 'all-enemies', rangeFt: 120 })
+    expect(actions[0]!.areaTemplate).toEqual({ kind: 'sphere', radiusFt: 20 })
+    expect(actions[0]!.areaPlacement).toBe('remote')
   })
 
   it('maps self-range area targeting to all-enemies with reach from area.size', () => {
@@ -825,6 +827,8 @@ describe('buildSpellCombatActions', () => {
     })
 
     expect(actions[0]!.targeting).toEqual({ kind: 'all-enemies', rangeFt: 15 })
+    expect(actions[0]!.areaTemplate).toEqual({ kind: 'cube', edgeFt: 15 })
+    expect(actions[0]!.areaPlacement).toBe('self')
   })
 
   it('strips targeting effects from resolved effects list', () => {

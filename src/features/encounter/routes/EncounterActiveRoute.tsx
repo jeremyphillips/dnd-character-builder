@@ -6,9 +6,16 @@ import Box from '@mui/material/Box'
 import { AppToast, type AppAlertTone } from '@/ui/primitives'
 import { ZoomControl } from '@/ui/patterns'
 
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import { isValidActionTarget } from '@/features/mechanics/domain/encounter'
 
 import { buildEncounterActionToastPayload } from '../helpers/encounter-action-toast'
+import {
+  isAreaGridAction,
+  isSelfCenteredAreaAction,
+} from '../helpers/area-grid-action'
+import { getCellForCombatant } from '../space/space.helpers'
+import { isValidAoeOriginCell, selectCombatantIdsInAoeFootprint } from '../space/space.selectors'
 import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,
@@ -25,6 +32,8 @@ const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
 const ZOOM_STEP = 0.25
 
+const AFFECTED_NAME_CAP = 5
+
 export default function EncounterActiveRoute() {
   const {
     encounterState,
@@ -39,6 +48,14 @@ export default function EncounterActiveRoute() {
     setSelectedCasterOptions,
     selectedActionTargetId,
     setSelectedActionTargetId,
+    selectedAction,
+    aoeStep,
+    setAoeStep,
+    aoeOriginCellId,
+    setAoeOriginCellId,
+    aoeHoverCellId,
+    setAoeHoverCellId,
+    resetAoePlacement,
     gridViewModel,
     handleMoveCombatant,
     handleResolveAction,
@@ -53,6 +70,7 @@ export default function EncounterActiveRoute() {
     mechanics: string
   } | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
+  const [placementError, setPlacementError] = useState<string | null>(null)
 
   useEffect(() => {
     registerCombatLogAppended((events) => {
@@ -107,11 +125,119 @@ export default function EncounterActiveRoute() {
     [encounterState, activeCombatant, availableActions, selectedActionId, setSelectedActionTargetId, setSelectedActionId],
   )
 
-  const canResolveAction = Boolean(
-    selectedActionId &&
-    selectedActionTargetId &&
-    availableActions.some((a) => a.id === selectedActionId),
+  const handleSelectAction = useCallback(
+    (actionId: string) => {
+      const action = availableActions.find((a) => a.id === actionId)
+      setSelectedActionId(actionId)
+      setPlacementError(null)
+
+      if (isAreaGridAction(action)) {
+        setSelectedActionTargetId('')
+        if (!encounterState?.space || !encounterState.placements || !activeCombatantId || !action?.areaTemplate) {
+          resetAoePlacement()
+          return
+        }
+        if (isSelfCenteredAreaAction(action)) {
+          const cell = getCellForCombatant(encounterState.placements, activeCombatantId)
+          if (cell) {
+            setAoeOriginCellId(cell)
+            setAoeStep('confirm')
+          } else {
+            resetAoePlacement()
+          }
+        } else {
+          setAoeOriginCellId(null)
+          setAoeStep('placing')
+        }
+      } else {
+        resetAoePlacement()
+      }
+    },
+    [
+      availableActions,
+      encounterState,
+      activeCombatantId,
+      setSelectedActionId,
+      setSelectedActionTargetId,
+      setAoeOriginCellId,
+      setAoeStep,
+      resetAoePlacement,
+    ],
   )
+
+  const aoeAffectedSummary = useMemo(() => {
+    if (!encounterState || !selectedAction?.areaTemplate || (aoeStep !== 'confirm' && aoeStep !== 'placing')) {
+      return { names: [] as string[], total: 0, extra: 0 }
+    }
+    const r = areaTemplateRadiusFt(selectedAction.areaTemplate)
+    const space = encounterState.space
+    const placements = encounterState.placements
+    let previewOrigin: string | null = null
+    if (aoeStep === 'confirm' && aoeOriginCellId) {
+      previewOrigin = aoeOriginCellId
+    } else if (aoeStep === 'placing' && aoeHoverCellId && space && placements && activeCombatantId) {
+      const casterCell = getCellForCombatant(placements, activeCombatantId)
+      const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
+      if (
+        casterCell &&
+        isValidAoeOriginCell(space, casterCell, aoeHoverCellId, castRangeFt)
+      ) {
+        previewOrigin = aoeHoverCellId
+      }
+    }
+    if (!previewOrigin) {
+      return { names: [] as string[], total: 0, extra: 0 }
+    }
+    const ids = selectCombatantIdsInAoeFootprint(encounterState, previewOrigin, r)
+    const names = ids
+      .map((id) => encounterState.combatantsById[id]?.source.label)
+      .filter((n): n is string => Boolean(n))
+    const total = names.length
+    const shown = names.slice(0, AFFECTED_NAME_CAP)
+    const extra = Math.max(0, total - shown.length)
+    return { names: shown, total, extra }
+  }, [encounterState, selectedAction, aoeOriginCellId, aoeHoverCellId, aoeStep, activeCombatantId])
+
+  const canResolveAction = useMemo(() => {
+    if (!selectedActionId || !availableActions.some((a) => a.id === selectedActionId)) return false
+    if (selectedAction && isAreaGridAction(selectedAction)) {
+      return (
+        aoeStep === 'confirm' &&
+        Boolean(aoeOriginCellId) &&
+        Boolean(selectedAction.areaTemplate)
+      )
+    }
+    return Boolean(selectedActionTargetId)
+  }, [
+    selectedActionId,
+    selectedAction,
+    availableActions,
+    aoeStep,
+    aoeOriginCellId,
+    selectedActionTargetId,
+  ])
+
+  const handleCloseDrawer = useCallback(() => {
+    resetAoePlacement()
+    setSelectedActionId('')
+    setActionDrawerOpen(false)
+  }, [resetAoePlacement, setSelectedActionId])
+
+  const handleCancelAoe = useCallback(() => {
+    resetAoePlacement()
+    setSelectedActionId('')
+  }, [resetAoePlacement, setSelectedActionId])
+
+  const handleBackFromAoeConfirm = useCallback(() => {
+    if (!selectedAction || !isAreaGridAction(selectedAction)) return
+    if (isSelfCenteredAreaAction(selectedAction)) {
+      resetAoePlacement()
+      setSelectedActionId('')
+      return
+    }
+    setAoeStep('placing')
+    setAoeOriginCellId(null)
+  }, [selectedAction, resetAoePlacement, setSelectedActionId, setAoeStep, setAoeOriginCellId])
 
   const renderTokenPopover = useCallback(
     (occupantId: string) => {
@@ -139,7 +265,27 @@ export default function EncounterActiveRoute() {
 
   const handleCellClick = useCallback(
     (cellId: string) => {
-      if (!encounterState) return
+      if (!encounterState || !activeCombatantId) return
+
+      if (selectedAction && isAreaGridAction(selectedAction) && aoeStep === 'confirm') {
+        return
+      }
+
+      if (aoeStep === 'placing' && selectedAction && isAreaGridAction(selectedAction)) {
+        const space = encounterState.space
+        const placements = encounterState.placements
+        if (!space || !placements) return
+        const casterCell = getCellForCombatant(placements, activeCombatantId)
+        const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
+        if (!casterCell || !isValidAoeOriginCell(space, casterCell, cellId, castRangeFt)) {
+          setPlacementError('Choose a valid point within range (not blocked).')
+          return
+        }
+        setPlacementError(null)
+        setAoeOriginCellId(cellId)
+        setAoeStep('confirm')
+        return
+      }
 
       const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
       if (occupant) {
@@ -149,7 +295,23 @@ export default function EncounterActiveRoute() {
         handleMoveCombatant(cellId)
       }
     },
-    [encounterState, handleMoveCombatant, handleSelectTarget],
+    [
+      encounterState,
+      activeCombatantId,
+      aoeStep,
+      selectedAction,
+      handleMoveCombatant,
+      handleSelectTarget,
+      setAoeOriginCellId,
+      setAoeStep,
+    ],
+  )
+
+  const handleCellHover = useCallback(
+    (cellId: string | null) => {
+      setAoeHoverCellId(cellId)
+    },
+    [setAoeHoverCellId],
   )
 
   if (!encounterState) {
@@ -158,6 +320,30 @@ export default function EncounterActiveRoute() {
   }
 
   const actionDrawerCombatant = activeCombatant
+
+  const drawerProps = {
+    open: actionDrawerOpen,
+    onClose: handleCloseDrawer,
+    combatant: actionDrawerCombatant!,
+    availableActions,
+    validActionIdsForTarget: validActionIdsForTarget,
+    selectedActionId,
+    onSelectAction: handleSelectAction,
+    selectedCasterOptions,
+    onCasterOptionsChange: setSelectedCasterOptions,
+    targetLabel: targetCombatant?.source.label,
+    canResolveAction,
+    onResolveAction: handleResolveAction,
+    onEndTurn: handleNextTurn,
+    aoeStep,
+    aoePlacementError: placementError,
+    onDismissAoeError: () => setPlacementError(null),
+    aoeAffectedNames: aoeAffectedSummary.names,
+    aoeAffectedTotal: aoeAffectedSummary.total,
+    aoeAffectedExtra: aoeAffectedSummary.extra,
+    onCancelAoe: handleCancelAoe,
+    onBackFromAoeConfirm: handleBackFromAoeConfirm,
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -182,6 +368,7 @@ export default function EncounterActiveRoute() {
             onPanChange={setPan}
             renderTokenPopover={renderTokenPopover}
             onCellClick={handleCellClick}
+            onCellHover={handleCellHover}
           />
         )}
 
@@ -208,37 +395,9 @@ export default function EncounterActiveRoute() {
 
       {actionDrawerCombatant && (
         actionDrawerCombatant.side === 'party' ? (
-          <AllyActionDrawer
-            open={actionDrawerOpen}
-            onClose={() => setActionDrawerOpen(false)}
-            combatant={actionDrawerCombatant}
-            availableActions={availableActions}
-            validActionIdsForTarget={validActionIdsForTarget}
-            selectedActionId={selectedActionId}
-            onSelectAction={setSelectedActionId}
-            selectedCasterOptions={selectedCasterOptions}
-            onCasterOptionsChange={setSelectedCasterOptions}
-            targetLabel={targetCombatant?.source.label}
-            canResolveAction={canResolveAction}
-            onResolveAction={handleResolveAction}
-            onEndTurn={handleNextTurn}
-          />
+          <AllyActionDrawer {...drawerProps} />
         ) : (
-          <OpponentActionDrawer
-            open={actionDrawerOpen}
-            onClose={() => setActionDrawerOpen(false)}
-            combatant={actionDrawerCombatant}
-            availableActions={availableActions}
-            validActionIdsForTarget={validActionIdsForTarget}
-            selectedActionId={selectedActionId}
-            onSelectAction={setSelectedActionId}
-            selectedCasterOptions={selectedCasterOptions}
-            onCasterOptionsChange={setSelectedCasterOptions}
-            targetLabel={targetCombatant?.source.label}
-            canResolveAction={canResolveAction}
-            onResolveAction={handleResolveAction}
-            onEndTurn={handleNextTurn}
-          />
+          <OpponentActionDrawer {...drawerProps} />
         )
       )}
     </Box>

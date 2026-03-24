@@ -17,11 +17,16 @@ type EncounterGridProps = {
   pan: { x: number; y: number }
   onPanChange: (pan: { x: number; y: number }) => void
   onCellClick?: (cellId: string) => void
+  onCellHover?: (cellId: string | null) => void
   renderTokenPopover?: (occupantId: string) => ReactNode
 }
 
 function cellColor(cell: GridCellViewModel, palette: Theme['palette']) {
   if (cell.kind === 'wall' || cell.kind === 'blocking') return palette.action.disabledBackground
+  if (cell.aoeInvalidOriginHover) return alpha(palette.error.main, 0.42)
+  if (cell.aoeOriginLocked) return alpha(palette.warning.main, 0.32)
+  if (cell.aoeInTemplate) return alpha(palette.info.main, 0.26)
+  if (cell.aoeCastRange) return alpha(palette.success.light, 0.12)
   if (cell.isActive) return alpha(palette.secondary.main, 0.35)
   if (cell.isSelectedTarget) return alpha(palette.primary.main, 0.30)
   if (cell.isReachable) return alpha(palette.success.light, 0.18)
@@ -48,6 +53,7 @@ export function EncounterGrid({
   pan,
   onPanChange,
   onCellClick,
+  onCellHover,
   renderTokenPopover,
 }: EncounterGridProps) {
   const theme = useTheme()
@@ -120,6 +126,7 @@ export function EncounterGrid({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerLeave={() => onCellHover?.(null)}
       sx={{
         position: 'absolute',
         inset: 0,
@@ -158,6 +165,7 @@ export function EncounterGrid({
 
             const cellBox = (
               <Box
+                onPointerEnter={onCellHover ? () => onCellHover(cell.cellId) : undefined}
                 onClick={
                   clickable
                     ? () => {

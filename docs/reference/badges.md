@@ -1,0 +1,351 @@
+# Badge Presentation Systems
+
+Reference for the two badge-producing pipelines in the encounter UI:
+**action badges** (properties of a combat action) and **condition badges**
+(states applied to a combatant). Both converge to the shared `AppBadge`
+UI primitive but have intentionally separate derivation logic.
+
+---
+
+## Action Badge Pipeline
+
+### Purpose
+
+Produce compact, ordered badge chips for combat action rows and cards
+(to-hit bonus, damage, range, save DC, concentration, recharge, etc.).
+
+### Key files
+
+| File | Role |
+|---|---|
+| `src/features/encounter/domain/badges/action/combat-action-badges.types.ts` | `ActionBadgeKind`, `ActionBadgeDescriptor` |
+| `src/features/encounter/domain/badges/action/combat-action-badges.ts` | `deriveCombatActionBadges()` -- pure derivation |
+| `src/features/encounter/domain/badges/action/combat-action-badges.test.ts` | Unit tests (21 cases) |
+| `src/features/encounter/domain/badges/action/action-presentation.types.ts` | `ActionPresentationViewModel`, `ActionSemanticCategory`, `ActionSourceTag` |
+| `src/features/encounter/domain/badges/action/action-presentation.ts` | `deriveActionPresentation()` -- wraps badge derivation with name, category, sourceTag |
+| `src/features/encounter/domain/badges/action/action-presentation.test.ts` | Unit tests (29 cases) |
+| `src/features/encounter/components/active/action-row/ActionRowBase.tsx` | Maps `ActionBadgeDescriptor[]` to `AppBadge` components |
+| `src/features/encounter/components/active/action-row/ActionRow.tsx` | Consumes `ActionPresentationViewModel` |
+| `src/features/encounter/components/active/cards/CombatActionPreviewCard.tsx` | Also uses `deriveCombatActionBadges` directly |
+
+### Data flow
+
+```
+CombatActionDefinition
+  --> deriveActionPresentation(action)
+        --> deriveCombatActionBadges(action) --> ActionBadgeDescriptor[]
+        --> deriveCategory(action)           --> ActionSemanticCategory
+        --> deriveSourceTag(action)          --> ActionSourceTag
+        --> deriveDisplayName / secondLine / footerLink
+  --> ActionPresentationViewModel
+        --> ActionRow --> ActionRowBase --> AppBadge[]
+```
+
+### ActionBadgeDescriptor
+
+```typescript
+type ActionBadgeDescriptor = {
+  kind: ActionBadgeKind    // semantic badge type
+  label: string            // compact display text
+  priority: number         // lower = rendered first (10-80 range)
+  tone: CombatStateTone    // shared tone vocabulary from condition system
+  tooltip?: string         // hover detail (optional)
+}
+```
+
+### Badge kinds and priority tiers
+
+| Kind | Example label | Priority constant | Tier |
+|---|---|---|---|
+| `to-hit` | `+7 to hit` | `PRIORITY_CRITICAL` (10) | Critical |
+| `save-dc` | `DEX DC 15` | `PRIORITY_CRITICAL_SECONDARY` (20) | Critical |
+| `damage` | `2d6+4 slashing` | `PRIORITY_HIGH` (30) | High |
+| `range` | `60ft` | `PRIORITY_HIGH_SECONDARY` (40) | High |
+| `concentration` | `conc.` | `PRIORITY_NORMAL` (50) | Normal |
+| `sequence` | `Rend x3` | `PRIORITY_NORMAL_SECONDARY` (60) | Normal |
+| `recharge` | `Rch 5-6` | `PRIORITY_LOW` (70) | Low |
+| `uses` | `1/1` | `PRIORITY_LOW_SECONDARY` (80) | Low |
+
+Badges are sorted ascending by priority before rendering.
+
+### ActionPresentationViewModel
+
+```typescript
+type ActionPresentationViewModel = {
+  actionId: string
+  displayName: string           // "Fireball . Lvl 3" for spells, label for others
+  secondLine?: string           // spell summary or natural action description
+  badges: ActionBadgeDescriptor[]
+  category: ActionSemanticCategory  // primary user-intent grouping
+  sourceTag: ActionSourceTag        // origin metadata for future filtering
+  footerLink?: ActionFooterLink     // spell detail link
+}
+```
+
+### Category vs Source (two-axis model)
+
+Primary grouping is by **user intent** (`category`), not by source type:
+
+| `ActionSemanticCategory` | Groups actions by... |
+|---|---|
+| `attack` | Offensive: weapons, offensive spells, multiattack, hostile effects |
+| `heal` | Healing: cure spells, healing features |
+| `buff` | Buffs: non-hostile spells/effects that grant modifiers or states |
+| `utility` | Everything else: non-offensive, non-heal, non-buff |
+| `item` | Item-based actions (future) |
+
+Source/origin is a **separate metadata axis** (`sourceTag`) for future filtering:
+
+| `ActionSourceTag` | Origin |
+|---|---|
+| `weapon` | Weapon-based actions |
+| `spell` | Spell-based actions |
+| `natural` | Monster natural/special actions |
+| `feature` | Class features, combat effects, fallback |
+| `item` | Item-based (future) |
+
+**Rules:** grouping logic references `category` only. `sourceTag` is never used
+for primary organization. No presentation logic should assume source and category
+are the same thing.
+
+### Category derivation rules
+
+**Spells:**
+1. Has healing effect --> `heal`
+2. Has `attackProfile`, `saveProfile`, or `hostileApplication` --> `attack`
+3. Has buff-like effects (modifier, grant, state) and NOT hostile --> `buff`
+4. Fallback --> `utility`
+
+**Weapon / monster actions:**
+1. Has `sequence` (multiattack) --> `attack`
+2. `log-only` with no attack profile and no damage --> `utility`
+3. Fallback --> `attack`
+
+**Combat effects:** --> `utility`
+
+---
+
+## Condition Badge Pipeline
+
+### Purpose
+
+Present active conditions and combat states on a combatant as compact badges
+organized by urgency sections (Critical Now, Ongoing Effects, Restrictions,
+Turn Triggers, System Details).
+
+### Key files
+
+| File | Role |
+|---|---|
+| `src/features/mechanics/domain/conditions/effect-condition-definitions.ts` | `EFFECT_CONDITION_DEFINITIONS` -- PHB condition data |
+| `src/features/mechanics/domain/encounter/state/condition-rules/condition-definitions.ts` | `CONDITION_RULES` -- mechanical consequence rules |
+| `src/features/encounter/domain/effects/presentable-effects.types.ts` | `CombatStateTone`, `CombatStatePriority`, `CombatStateSection`, `CombatStatePresentation`, `EnrichedPresentableEffect` |
+| `src/features/encounter/domain/effects/presentable-effects.ts` | `collectPresentableEffects`, `enrichPresentableEffects`, `sortByPriority`, `groupBySection` |
+| `src/features/encounter/domain/effects/combat-state-ui-map.ts` | `COMBAT_STATE_UI_MAP` -- merged lookup from condition definitions + engine markers |
+| `src/features/encounter/components/active/combat-log/PresentableEffectsList.tsx` | Section-grouped badge list rendering |
+| `src/features/encounter/components/active/drawers/CombatantActionDrawer.tsx` | Inline condition badge rendering in drawer |
+| `src/features/encounter/components/shared/cards/combatant-badges.tsx` | `CombatantPreviewChipRow` -- preview card chips |
+
+### Data flow
+
+```
+CombatantInstance
+  --> collectPresentableEffects(combatant) --> PresentableCombatEffect[]
+  --> enrichPresentableEffects(effects)    --> EnrichedPresentableEffect[]
+  --> sortByPriority(enriched)             --> ordered list
+  --> groupBySection(sorted)               --> Record<CombatStateSection, EnrichedPresentableEffect[]>
+  --> PresentableEffectsList / drawer      --> AppBadge[]
+```
+
+### CombatStatePresentation
+
+```typescript
+type CombatStatePresentation = {
+  label: string
+  tone: CombatStateTone            // danger | warning | info | success | neutral
+  priority: CombatStatePriority    // critical | high | normal | low | hidden
+  defaultSection: CombatStateSection
+  rulesText?: string               // SRD tooltip text
+  userFacing?: boolean
+}
+```
+
+### Tone vocabulary (shared)
+
+```typescript
+type CombatStateTone = 'danger' | 'warning' | 'info' | 'success' | 'neutral'
+```
+
+Defined in `presentable-effects.types.ts`. Reused by `ActionBadgeDescriptor.tone`.
+Mapped to `AppBadgeTone` at render time (`neutral` --> `default`).
+
+### Priority model (condition-specific)
+
+Categorical: `critical > high > normal > low > hidden`.
+Used for section triage and cross-section ordering.
+Different from action badges which use numeric priority for within-row ordering.
+
+### Section placement
+
+| Section | Content |
+|---|---|
+| `critical-now` | Active conditions needing immediate attention |
+| `ongoing-effects` | Persistent effects with duration |
+| `restrictions` | Movement/action limitations |
+| `turn-triggers` | Start/end-of-turn effects |
+| `system-details` | Engine-internal markers |
+
+---
+
+## Shared Infrastructure
+
+### AppBadge (UI primitive)
+
+Both pipelines render to the same component at `src/ui/primitives/`.
+
+```typescript
+<AppBadge label={...} tone={...} variant="outlined" size="small" />
+```
+
+`AppBadgeTone`: `default | info | success | warning | danger | primary`
+
+### Tone mapping
+
+Both pipelines have a one-line mapping function (`neutral` --> `default`)
+to bridge `CombatStateTone` to `AppBadgeTone`:
+
+- `badgeToneToAppBadgeTone` in `ActionRowBase.tsx`
+- `toneToAppBadgeTone` in `PresentableEffectsList.tsx`
+- `previewToneToAppBadgeTone` in `combatant-badges.tsx`
+
+These are identical in logic and independently maintained.
+
+### Barrel exports
+
+`src/features/encounter/domain/index.ts` re-exports:
+- `deriveCombatActionBadges`, `ActionBadgeDescriptor`, `ActionBadgeKind`
+- `deriveActionPresentation`, `ActionPresentationViewModel`, `ActionSemanticCategory`, `ActionSourceTag`, `ActionFooterLink`
+- `CombatStateTone`, `CombatStatePriority`, `CombatStateSection`, `CombatStatePresentation`, `EnrichedPresentableEffect`
+- All condition enrichment and grouping functions
+
+---
+
+## Drawer: Recommended Actions
+
+The `CombatantActionDrawer` includes a "For this target" recommended block
+at the top of each action list section.
+
+### When it renders
+
+- A target must be selected (`validActionIdsForTarget` is not null)
+- At least one action must be both resource-available AND valid for the target
+
+### How validity is determined
+
+`EncounterActiveRoute.tsx` computes `validActionIdsForTarget` using
+`isValidActionTarget()` from the mechanics domain. This checks:
+range, sight, creature type, hostile/charm rules, allegiance, and
+all other existing targeting constraints.
+
+### Sorting
+
+1. Multiattack (has `sequence`) first
+2. Then by category priority: attack > heal > buff > utility > item
+3. Then alphabetical by label
+
+### Multiattack handling
+
+- Multiattack always eligible regardless of total action count
+- When multiattack parent is recommended, its child actions (matched by label)
+  are suppressed from the recommended list to avoid redundancy
+- Capped at 3 recommended actions
+
+### Target-change reconciliation
+
+When the user clicks a new target, `handleSelectTarget` in
+`EncounterActiveRoute.tsx` reconciles the selected action:
+- If the action is still valid for the new target (via `isValidActionTarget`),
+  it is preserved
+- If not, the action is cleared
+- The new target is always set (target clicks are authoritative)
+
+---
+
+## Overlap and Alignment Assessment
+
+### What both systems share
+
+- `CombatStateTone` vocabulary (intentional, via import)
+- Terminal `AppBadge` primitive
+- Tone mapping glue (duplicated but trivial)
+- Compact label + optional tooltip pattern
+
+### What stays intentionally separate
+
+| Aspect | Actions | Conditions |
+|---|---|---|
+| Input | `CombatActionDefinition` | `CombatantInstance` |
+| Priority | Numeric (10-80) | Categorical (critical/high/normal/low) |
+| Sectioning | None (scoped to action row) | Section-based triage |
+| Duration/source | N/A | Duration, source metadata |
+| Derivation | Pure function from action | Static lookup + runtime enrichment |
+
+### Why not to unify now
+
+- Duplication is minimal (three one-line tone mappers)
+- Both pipelines are still evolving
+- Different priority granularity serves different needs
+- Premature abstraction would constrain both systems
+
+---
+
+## Future Enhancement Recommendations
+
+### Near-term
+
+1. **Source-filter chips/tabs**: `ActionSourceTag` is on the view model
+   and ready for future filter UI without reworking grouping logic.
+
+2. **Additional badge kinds**: `damage-type` kind exists in the type union
+   but is not yet emitted by `deriveCombatActionBadges`. Could be added
+   when damage type badges are desired as separate chips.
+
+3. **Condition-aware action badges**: Actions that interact with conditions
+   (e.g., "advantage against stunned targets") could derive contextual badges.
+   This would require encounter state as input, which the current pure
+   derivation does not accept.
+
+### Medium-term
+
+4. **Shared `CompactBadgeDescriptor`**: When a third badge-producing pipeline
+   appears (equipment, spell slots, resources), extract a minimal shared type
+   to `src/ui/types/`:
+   ```typescript
+   type CompactBadgeDescriptor = {
+     label: string
+     tone: CombatStateTone
+     tooltip?: string
+   }
+   ```
+   Both `ActionBadgeDescriptor` and `CombatStatePresentation` can extend or
+   map to it. Include a shared tone-mapping utility at the same time.
+
+5. **`PreviewChip` alignment**: The existing `PreviewChip` type in
+   `encounter-view.types.ts` uses `PreviewTone` (same values as
+   `CombatStateTone`). A future pass could unify these tone types
+   and have `PreviewChip` implement the shared badge descriptor.
+
+### Long-term
+
+6. **Cross-surface action presentation**: `ActionPresentationViewModel`
+   is designed to be surface-agnostic. Future CharacterView or builder
+   surfaces can consume it directly without encounter-specific concerns.
+
+7. **Grouped/filterable action lists**: The category + sourceTag two-axis
+   model supports future multi-axis filtering (group by intent, filter by
+   source) without restructuring the derivation layer.
+
+8. **Condition + action convergence**: If both systems eventually need
+   shared rendering in the same compact layout (e.g., a unified "status
+   bar" with both conditions and action properties), the shared tone
+   vocabulary makes this feasible without prior unification work.

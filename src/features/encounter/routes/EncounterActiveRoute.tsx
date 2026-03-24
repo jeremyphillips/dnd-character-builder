@@ -6,6 +6,8 @@ import Box from '@mui/material/Box'
 import { AppToast, type AppAlertTone } from '@/ui/primitives'
 import { ZoomControl } from '@/ui/patterns'
 
+import { isValidActionTarget } from '@/features/mechanics/domain/encounter'
+
 import { buildEncounterActionToastPayload } from '../helpers/encounter-action-toast'
 import {
   AllyCombatantActivePreviewCard,
@@ -79,6 +81,32 @@ export default function EncounterActiveRoute() {
     return encounterState.combatantsById[selectedActionTargetId] ?? null
   }, [encounterState, selectedActionTargetId])
 
+  const validActionIdsForTarget = useMemo(() => {
+    if (!encounterState || !activeCombatant || !targetCombatant) return undefined
+    const ids = new Set<string>()
+    for (const action of availableActions) {
+      if (isValidActionTarget(encounterState, targetCombatant, activeCombatant, action)) {
+        ids.add(action.id)
+      }
+    }
+    return ids
+  }, [encounterState, activeCombatant, targetCombatant, availableActions])
+
+  const handleSelectTarget = useCallback(
+    (nextTargetId: string) => {
+      setSelectedActionTargetId(nextTargetId)
+
+      if (selectedActionId && encounterState && activeCombatant) {
+        const nextTarget = encounterState.combatantsById[nextTargetId]
+        const action = availableActions.find((a) => a.id === selectedActionId)
+        if (!nextTarget || !action || !isValidActionTarget(encounterState, nextTarget, activeCombatant, action)) {
+          setSelectedActionId('')
+        }
+      }
+    },
+    [encounterState, activeCombatant, availableActions, selectedActionId, setSelectedActionTargetId, setSelectedActionId],
+  )
+
   const canResolveAction = Boolean(
     selectedActionId &&
     selectedActionTargetId &&
@@ -115,13 +143,13 @@ export default function EncounterActiveRoute() {
 
       const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
       if (occupant) {
-        setSelectedActionTargetId(occupant.combatantId)
+        handleSelectTarget(occupant.combatantId)
         setActionDrawerOpen(true)
       } else {
         handleMoveCombatant(cellId)
       }
     },
-    [encounterState, handleMoveCombatant, setSelectedActionTargetId],
+    [encounterState, handleMoveCombatant, handleSelectTarget],
   )
 
   if (!encounterState) {
@@ -172,7 +200,7 @@ export default function EncounterActiveRoute() {
           activeCombatantId={activeCombatantId}
           selectedTargetId={selectedActionTargetId}
           onSelectTarget={(combatantId) => {
-            setSelectedActionTargetId(combatantId)
+            handleSelectTarget(combatantId)
             setActionDrawerOpen(true)
           }}
         />
@@ -185,6 +213,7 @@ export default function EncounterActiveRoute() {
             onClose={() => setActionDrawerOpen(false)}
             combatant={actionDrawerCombatant}
             availableActions={availableActions}
+            validActionIdsForTarget={validActionIdsForTarget}
             selectedActionId={selectedActionId}
             onSelectAction={setSelectedActionId}
             selectedCasterOptions={selectedCasterOptions}
@@ -200,6 +229,7 @@ export default function EncounterActiveRoute() {
             onClose={() => setActionDrawerOpen(false)}
             combatant={actionDrawerCombatant}
             availableActions={availableActions}
+            validActionIdsForTarget={validActionIdsForTarget}
             selectedActionId={selectedActionId}
             onSelectAction={setSelectedActionId}
             selectedCasterOptions={selectedCasterOptions}

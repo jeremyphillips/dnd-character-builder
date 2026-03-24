@@ -4,8 +4,25 @@ import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
 import { AppBadge } from '@/ui/primitives'
+import type { AppBadgeTone } from '@/ui/types'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { formatSigned } from '../../../helpers'
+import type { CombatStateTone } from '../../../domain/effects/presentable-effects.types'
+import { deriveCombatActionBadges } from '../../../domain/badges/action/combat-action-badges'
+
+function badgeToneToAppBadgeTone(tone: CombatStateTone): AppBadgeTone {
+  if (tone === 'neutral') return 'default'
+  return tone
+}
+
+const TARGETING_LABELS: Record<string, string> = {
+  'single-target': 'Single Target',
+  'all-enemies': 'All Enemies',
+  'entered-during-move': 'Entered During Move',
+  'self': 'Self',
+  'single-creature': 'Single Creature',
+  'dead-creature': 'Dead Creature',
+  'none': 'No Target',
+}
 
 type CombatActionPreviewCardProps = {
   action: CombatActionDefinition | null
@@ -29,41 +46,15 @@ export function CombatActionPreviewCard({
   if (action.cost.bonusAction) costParts.push('Bonus Action')
   if (action.cost.reaction) costParts.push('Reaction')
 
-  const detailParts: string[] = []
-  if (action.attackProfile) {
-    detailParts.push(`${formatSigned(action.attackProfile.attackBonus)} to hit`)
-    if (action.attackProfile.damage) {
-      detailParts.push(
-        action.attackProfile.damageType
-          ? `${action.attackProfile.damage} ${action.attackProfile.damageType}`
-          : action.attackProfile.damage,
-      )
-    }
-  }
-  if (action.saveProfile) {
-    detailParts.push(`DC ${action.saveProfile.dc} ${action.saveProfile.ability.toUpperCase()} save`)
-  }
-  if (action.damage && !action.attackProfile) {
-    detailParts.push(
-      action.damageType ? `${action.damage} ${action.damageType}` : action.damage,
-    )
-  }
-  if (action.targeting) {
-    const targetLabels: Record<string, string> = {
-      'single-target': 'Single Target',
-      'all-enemies': 'All Enemies',
-      'entered-during-move': 'Entered During Move',
-      'self': 'Self',
-      'single-creature': 'Single Creature',
-      'dead-creature': 'Dead Creature',
-    }
-    detailParts.push(targetLabels[action.targeting.kind] ?? action.targeting.kind)
-  }
+  const badges = deriveCombatActionBadges(action)
+  const targetingLabel = action.targeting
+    ? TARGETING_LABELS[action.targeting.kind] ?? action.targeting.kind
+    : undefined
 
   return (
     <Paper
       variant="outlined"
-      sx={{ 
+      sx={{
         p: 2,
         borderColor: 'primary.main',
         bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
@@ -77,8 +68,21 @@ export function CombatActionPreviewCard({
             <AppBadge key={cost} label={cost} tone="default" variant="outlined" size="small" />
           ))}
         </Stack>
-        {detailParts.length > 0 && (
-          <Typography variant="body2" color="text.secondary">{detailParts.join(' · ')}</Typography>
+        {(badges.length > 0 || targetingLabel) && (
+          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            {badges.map((b) => (
+              <AppBadge
+                key={`${b.kind}-${b.label}`}
+                label={b.label}
+                tone={badgeToneToAppBadgeTone(b.tone)}
+                variant="outlined"
+                size="small"
+              />
+            ))}
+            {targetingLabel && (
+              <Typography variant="caption" color="text.secondary">{targetingLabel}</Typography>
+            )}
+          </Stack>
         )}
       </Stack>
     </Paper>

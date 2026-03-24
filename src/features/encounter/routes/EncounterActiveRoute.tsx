@@ -1,9 +1,12 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
 import Box from '@mui/material/Box'
 
+import { AppToast, type AppAlertTone } from '@/ui/primitives'
 import { ZoomControl } from '@/ui/patterns'
+
+import { buildEncounterActionToastPayload } from '../helpers/encounter-action-toast'
 import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,
@@ -38,7 +41,27 @@ export default function EncounterActiveRoute() {
     handleMoveCombatant,
     handleResolveAction,
     handleNextTurn,
+    registerCombatLogAppended,
   } = useEncounterRuntime()
+
+  const [toastPayload, setToastPayload] = useState<{
+    title: string
+    tone: AppAlertTone
+    narrative: string
+    mechanics: string
+  } | null>(null)
+  const [toastOpen, setToastOpen] = useState(false)
+
+  useEffect(() => {
+    registerCombatLogAppended((events) => {
+      const payload = buildEncounterActionToastPayload(events)
+      if (payload) {
+        setToastPayload(payload)
+        setToastOpen(true)
+      }
+    })
+    return () => registerCombatLogAppended(undefined)
+  }, [registerCombatLogAppended])
 
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -111,6 +134,16 @@ export default function EncounterActiveRoute() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {activeHeader}
+
+      <AppToast
+        open={toastOpen && toastPayload != null}
+        onClose={() => setToastOpen(false)}
+        title={toastPayload?.title ?? ''}
+        tone={toastPayload?.tone ?? 'info'}
+        mechanics={toastPayload?.mechanics || undefined}
+      >
+        {toastPayload?.narrative || undefined}
+      </AppToast>
 
       <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {gridViewModel && (

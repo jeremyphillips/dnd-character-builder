@@ -4,6 +4,8 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
+import { encounterActiveBarSx } from '@/ui/primitives'
+
 type EncounterActiveHeaderProps = {
   roundNumber: number
   turnIndex: number
@@ -27,7 +29,11 @@ export function EncounterActiveHeader({
     <Paper
       square
       elevation={1}
-      sx={{ px: 4, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        ...encounterActiveBarSx,
+      }}
     >
       <Stack spacing={0.5}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>

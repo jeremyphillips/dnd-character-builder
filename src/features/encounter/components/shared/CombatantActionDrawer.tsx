@@ -4,7 +4,6 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import ButtonBase from '@mui/material/ButtonBase'
 import Collapse from '@mui/material/Collapse'
-import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -13,9 +12,11 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
 import type { CombatActionDefinition, CombatActionKind } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import type {
-  EnrichedPresentableEffect,
-  CombatStateSection,
+import {
+  deriveBucketChrome,
+  deriveBucketState,
+  type CombatStateSection,
+  type EnrichedPresentableEffect,
 } from '../../domain'
 import { ActionRow } from './ActionRow/ActionRow'
 import { CasterOptionsFields } from './CasterOptionsFields'
@@ -59,12 +60,12 @@ function CollapsibleSection({
   defaultOpen?: boolean
   children: React.ReactNode
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [expanded, setExpanded] = useState(defaultOpen)
 
   return (
     <Box>
       <ButtonBase
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setExpanded((prev) => !prev)}
         sx={{ width: '100%', justifyContent: 'space-between', py: 1, px: 0.5, borderRadius: 1 }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
@@ -75,9 +76,9 @@ function CollapsibleSection({
             ({count})
           </Typography>
         </Stack>
-        {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
       </ButtonBase>
-      <Collapse in={open}>{children}</Collapse>
+      <Collapse in={expanded}>{children}</Collapse>
     </Box>
   )
 }
@@ -189,6 +190,26 @@ export function CombatantActionDrawer({
   )
   const totalEffects = effectSections.reduce((sum, [, effects]) => sum + effects.length, 0)
 
+  const availableIdsList = useMemo(
+    () => (availableActionIds ? [...availableActionIds] : undefined),
+    [availableActionIds],
+  )
+
+  const actionsSection = useMemo(() => {
+    const state = deriveBucketState(actions, availableIdsList)
+    return deriveBucketChrome('Actions', state)
+  }, [actions, availableIdsList])
+
+  const bonusSection = useMemo(() => {
+    const state = deriveBucketState(bonusActions, availableIdsList)
+    return deriveBucketChrome('Bonus Actions', state)
+  }, [bonusActions, availableIdsList])
+
+  const effectsSection = useMemo(
+    () => deriveBucketChrome('Combat Effects', totalEffects === 0 ? 'empty' : 'available'),
+    [totalEffects],
+  )
+
   const selectedActionDefinition = useMemo(() => {
     if (!selectedActionId) return undefined
     return [...actions, ...bonusActions].find((a) => a.id === selectedActionId)
@@ -206,7 +227,12 @@ export function CombatantActionDrawer({
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
-            <CollapsibleSection title="Actions" count={actions.length}>
+            <CollapsibleSection
+              key={`${open}-actions-${actionsSection.title}`}
+              title={actionsSection.title}
+              count={actions.length}
+              defaultOpen={actionsSection.defaultOpen}
+            >
               <GroupedActionList
                 actions={actions}
                 availableActionIds={availableActionIds}
@@ -216,7 +242,12 @@ export function CombatantActionDrawer({
               />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Bonus Actions" count={bonusActions.length} defaultOpen={bonusActions.length > 0}>
+            <CollapsibleSection
+              key={`${open}-bonus-${bonusSection.title}`}
+              title={bonusSection.title}
+              count={bonusActions.length}
+              defaultOpen={bonusSection.defaultOpen}
+            >
               <GroupedActionList
                 actions={bonusActions}
                 availableActionIds={availableActionIds}
@@ -239,7 +270,12 @@ export function CombatantActionDrawer({
                 />
               )}
 
-            <CollapsibleSection title="Combat Effects" count={totalEffects} defaultOpen={totalEffects > 0}>
+            <CollapsibleSection
+              key={`${open}-effects-${effectsSection.title}`}
+              title={effectsSection.title}
+              count={totalEffects}
+              defaultOpen={effectsSection.defaultOpen}
+            >
               <Stack spacing={1} sx={{ pt: 0.5 }}>
                 {totalEffects === 0 ? (
                   <Typography variant="body2" color="text.secondary">

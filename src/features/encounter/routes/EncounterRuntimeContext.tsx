@@ -104,6 +104,7 @@ function useEncounterRuntimeValue() {
     handleResolveAction,
     handleResetEncounter: handleResetEncounterBase,
     handleMoveCombatant,
+    registerCombatLogAppended,
   } = useEncounterState({
     selectedCombatantIds,
     opponentRoster,
@@ -345,6 +346,7 @@ function useEncounterRuntimeValue() {
     activeFooter,
     handleStartEncounter,
     handleResetEncounter,
+    registerCombatLogAppended,
   }
 }
 

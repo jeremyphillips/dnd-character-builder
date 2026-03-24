@@ -51,6 +51,12 @@ export type {
 } from './combat-log/combat-log.types'
 export type { GridInteractionMode } from './encounter-interaction.types'
 export {
+  deriveBucketChrome,
+  deriveBucketState,
+  deriveTurnExhaustion,
+} from './turn-options'
+export type { TurnOptionBucketState } from './turn-options'
+export {
   deriveEncounterCapabilities,
 } from './capabilities/encounter-capabilities.types'
 export type {

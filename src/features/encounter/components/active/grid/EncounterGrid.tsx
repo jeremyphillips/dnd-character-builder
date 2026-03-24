@@ -227,8 +227,35 @@ export function EncounterGrid({
                     </Typography>
                   </Box>
                 )}
+                {cell.obstacleLabel && (
+                  <Typography
+                    variant="caption"
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      bottom: 2,
+                      right: 2,
+                      fontWeight: 800,
+                      fontSize: '0.6rem',
+                      lineHeight: 1,
+                      color: 'text.secondary',
+                      userSelect: 'none',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {cell.obstacleKind === 'tree' ? 'T' : 'P'}
+                  </Typography>
+                )}
               </Box>
             )
+
+            if (cell.obstacleLabel) {
+              return (
+                <Tooltip key={cell.cellId} title={cell.obstacleLabel} placement="top" arrow>
+                  {cellBox}
+                </Tooltip>
+              )
+            }
 
             if (!hasPopover && cell.occupantLabel) {
               return (

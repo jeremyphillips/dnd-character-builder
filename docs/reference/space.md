@@ -15,19 +15,30 @@ The system is intentionally separate from narrative `Location` content. Location
 ```
 src/features/encounter/space/
 ├── index.ts                        # Public barrel
-├── space.types.ts                  # EncounterSpace, EncounterCell, CombatantPosition
+├── space.types.ts                  # EncounterSpace, EncounterCell, GridObstacle, CombatantPosition
 ├── space.helpers.ts                # Pure cell/distance/occupancy queries
 ├── space.selectors.ts              # State-level selectors, GridViewModel, movement
 ├── createSquareGridSpace.ts        # Factory: square-grid EncounterSpace
 ├── createZoneGridSpace.ts          # Factory: zone-grid EncounterSpace
-└── generateInitialPlacements.ts    # Side-based initial combatant placement
+├── generateInitialPlacements.ts    # Side-based initial combatant placement
+└── placeRandomGridObstacle.ts      # Optional single random obstruction from environment
 ```
 
 ## 3. Current Functionality
 
 ### Grid creation
 
-`createSquareGridSpace` generates a rectangular `EncounterSpace` with mode `'square-grid'`, a configurable `cellFeet` scale (default 5ft), and `width * height` cells. Each cell has an `(x, y)` coordinate and a string `id` of the form `cell-{x}-{y}`.
+`createSquareGridSpace` generates a rectangular `EncounterSpace` with mode `'square-grid'`, a configurable `cellFeet` scale (default 5ft), and `width * height` cells. Each cell has an `(x, y)` coordinate and a string `id` of the form `c-{x}-{y}`.
+
+When an encounter is started from setup, the app may call **`placeRandomGridObstacle`** immediately after `createSquareGridSpace`. That inserts **exactly one** random obstruction on an **open** cell, records it in **`EncounterSpace.obstacles`** (`GridObstacle`: `kind` `tree` | `pillar`, `cellId`, and stub booleans `blocksLineOfSight` / `blocksMovement` for future rules), and sets the chosen cell’s **`kind`** to **`blocking`** with blocking flags so placement and AoE origin checks stay aligned.
+
+**Environment → obstacle kind (first pass):**
+
+- `indoors` → pillar  
+- `outdoors` → tree  
+- `mixed` and `other` → pillar (neutral default until richer mapping exists)
+
+**Timing note:** Obstacles are chosen **before** `generateInitialPlacements` runs (combatants are not on the grid yet). The implementation only avoids cells already listed in `obstacles`; it does not reserve cells against future token positions beyond marking the cell as impassable.
 
 ### Distance
 
@@ -50,7 +61,7 @@ src/features/encounter/space/
 
 ### Grid view model
 
-`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries `isActive`, `isSelectedTarget`, `isInRange`, and `isReachable` flags. The `showReachable` option is driven by movement budget (`movementRemaining > 0`) so reachable cells highlight automatically at the start of each turn without requiring an explicit mode toggle.
+`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries `isActive`, `isSelectedTarget`, `isInRange`, and `isReachable` flags, plus **`obstacleKind` / `obstacleLabel`** when the cell has an entry in `space.obstacles`. The active grid shows a small corner marker and a **hover tooltip** with the obstruction name (`Tree` or `Pillar`). The `showReachable` option is driven by movement budget (`movementRemaining > 0`) so reachable cells highlight automatically at the start of each turn without requiring an explicit mode toggle.
 
 ### Movement
 
@@ -71,7 +82,7 @@ These are intentional simplifications for the current milestone, not bugs:
 - **Character speed is hardcoded 30ft.** No race/species-based speeds. Refined when race modeling is added.
 - **No opportunity attacks.** Movement does not trigger reactions. The seam exists via `turnHooks` and `reactionAvailable`.
 - **No Disengage or Dash actions.** Dash would double `movementRemaining`; Disengage would suppress opportunity attacks. `CombatActionCost.movementFeet` exists for future action costs.
-- **No pathfinding, LOS, or cover.** These are three distinct concerns (path-aware reachability, line-of-sight, cover bonuses) that should remain separate. All are deferred.
+- **No pathfinding or ray-based LOS yet.** `EncounterSpace.obstacles` and per-cell blocking flags are a data seam for future LOS; there is no line-of-sight or cover calculation. **Cover** as a combat bonus remains deferred.
 - **No large creature footprints.** `CombatantPosition.size` exists as a seam but is not consumed by placement, movement, or range validation.
 - **`EncounterCell.movementCost` is not consumed.** The field exists for future difficult terrain but `moveCombatant` does not read it.
 
@@ -97,7 +108,8 @@ Current naming intentionally distinguishes *in-range by metric* (`selectCellsWit
 
 | Type | Location | Purpose |
 |------|----------|---------|
-| `EncounterSpace` | `space.types.ts` | Grid definition: cells, scale, dimensions |
+| `EncounterSpace` | `space.types.ts` | Grid definition: cells, optional `obstacles`, scale, dimensions |
+| `GridObstacle` | `space.types.ts` | Obstruction record: kind, cellId, future blocking flags |
 | `EncounterCell` | `space.types.ts` | Single cell: position, kind, terrain tags |
 | `CombatantPosition` | `space.types.ts` | Links combatant to cell |
 | `CombatantAttackRange` | `combatant.types.ts` | Discriminated union: melee (rangeFt) or ranged (normalFt, longFt) |

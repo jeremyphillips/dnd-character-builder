@@ -37,6 +37,7 @@ import { isAreaGridAction } from '../helpers/area-grid-action'
 import { getCellForCombatant } from '../space/space.helpers'
 import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
+import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
 
@@ -297,12 +298,13 @@ function useEncounterRuntimeValue() {
       canStartEncounter={canStartEncounter}
       onStartEncounter={() => {
         const preset = GRID_SIZE_PRESETS[gridSizePreset]
-        const space = createSquareGridSpace({
+        const base = createSquareGridSpace({
           id: `grid-${Date.now()}`,
           name: 'Combat Grid',
           columns: preset.columns,
           rows: preset.rows,
         })
+        const space = placeRandomGridObstacle(base, environmentSetup.setting)
         handleStartEncounter({ space })
       }}
     />

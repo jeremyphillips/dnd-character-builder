@@ -1,5 +1,6 @@
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
-import type { EncounterCell } from './space.types'
+import type { EncounterCell, GridObstacleKind } from './space.types'
+import { gridObstacleDisplayName } from './placeRandomGridObstacle'
 import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from './space.helpers'
 import type { CombatantSide } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
 
@@ -67,6 +68,9 @@ export type GridCellViewModel = {
   occupantId: string | null
   occupantLabel: string | null
   occupantSide: CombatantSide | null
+  /** Obstruction on this cell (from `EncounterSpace.obstacles`), for labels / tooltips. */
+  obstacleKind: GridObstacleKind | null
+  obstacleLabel: string | null
   isActive: boolean
   isSelectedTarget: boolean
   isInRange: boolean
@@ -149,9 +153,16 @@ export function selectGridViewModel(
         ? aoe.hoverCellId!
         : aoe.originCellId ?? null
 
+  const obstacleByCellId = new Map<string, GridObstacleKind>()
+  for (const o of space.obstacles ?? []) {
+    obstacleByCellId.set(o.cellId, o.kind)
+  }
+
   const cells: GridCellViewModel[] = space.cells.map((cell) => {
     const occupantId = getOccupant(placements, cell.id) ?? null
     const combatant = occupantId ? state.combatantsById[occupantId] ?? null : null
+    const obstacleKind = obstacleByCellId.get(cell.id) ?? null
+    const obstacleLabel = obstacleKind != null ? gridObstacleDisplayName(obstacleKind) : null
 
     let inRange = false
     if (rangeFt != null && activeCellId) {
@@ -192,6 +203,8 @@ export function selectGridViewModel(
       occupantId,
       occupantLabel: combatant?.source.label ?? null,
       occupantSide: combatant?.side ?? null,
+      obstacleKind,
+      obstacleLabel,
       isActive: occupantId !== null && occupantId === activeId,
       isSelectedTarget: occupantId !== null && occupantId === selectedTargetId,
       isInRange: inRange,

@@ -21,6 +21,8 @@ import {
   type RuntimeTurnHook,
 } from '@/features/mechanics/domain/encounter'
 
+import { getCombatantPortraitImageKey } from './getCombatantPortraitImageKey'
+
 const CONDITION_IDS: ReadonlySet<string> = new Set<EffectConditionId>(EFFECT_CONDITION_IDS)
 
 const CONDITION_ADJACENT_IMMUNITIES: ReadonlySet<string> = new Set(CONDITION_IMMUNITY_ONLY_IDS)
@@ -137,6 +139,7 @@ export function buildCharacterCombatantInstance(args: {
       sourceId: character.id,
       label: character.name,
     },
+    portraitImageKey: getCombatantPortraitImageKey({ character: { imageKey: character.imageKey } }),
     creatureType: 'humanoid',
     equipment: {
       armorEquipped: character.combat?.loadout?.armorId ?? null,
@@ -221,6 +224,7 @@ export function buildMonsterCombatantInstance(args: {
       sourceId: monster.id,
       label: monster.name,
     },
+    portraitImageKey: getCombatantPortraitImageKey({ monster: { imageKey: monster.imageKey } }),
     creatureType: monster.type,
     equipment: {
       armorEquipped: null,

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+import type { Monster } from '@/features/content/monsters/domain/types'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import type { AoeStep } from '../../../helpers/area-grid-action'
@@ -17,6 +19,8 @@ import { CombatantActionDrawer } from './CombatantActionDrawer'
 type OpponentActionDrawerProps = {
   open: boolean
   onClose: () => void
+  monstersById: Record<string, Monster>
+  characterPortraitById: Record<string, CombatantPortraitEntry>
   combatant: CombatantInstance
   drawerTitle?: string
   availableActions: CombatActionDefinition[]
@@ -45,6 +49,8 @@ type OpponentActionDrawerProps = {
 export function OpponentActionDrawer({
   open,
   onClose,
+  monstersById,
+  characterPortraitById,
   combatant,
   drawerTitle,
   availableActions,
@@ -89,12 +95,16 @@ export function OpponentActionDrawer({
     targetCombatant.side === 'party' ? (
       <AllyCombatantActivePreviewCard
         combatant={targetCombatant}
+        monstersById={monstersById}
+        characterPortraitById={characterPortraitById}
         allCombatants={allCombatants}
         showChips={false}
       />
     ) : (
       <OpponentCombatantActivePreviewCard
         combatant={targetCombatant}
+        monstersById={monstersById}
+        characterPortraitById={characterPortraitById}
         allCombatants={allCombatants}
         showChips={false}
       />

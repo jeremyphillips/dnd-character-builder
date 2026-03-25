@@ -1,18 +1,21 @@
 import { useMemo } from 'react'
 
+import type { Monster } from '@/features/content/monsters/domain/types'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
-import CharacterAvatar from '@/features/character/components/CharacterAvatar'
 import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
 import { useCharacter } from '@/features/character/hooks'
-import { AppAvatar } from '@/ui/primitives'
 
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { buildCombatantPreviewChips, formatSigned, getPreviewStatTooltip } from '../../../helpers'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
+import { CombatantAvatar } from '../../shared/CombatantAvatar'
 
 type AllyCombatantActivePreviewCardProps = {
   combatant: CombatantInstance
+  monstersById: Record<string, Monster>
+  characterPortraitById: Record<string, CombatantPortraitEntry>
   /** When set, title and fallback avatar use duplicate-aware labels. */
   allCombatants?: readonly CombatantInstance[]
   isCurrentTurn?: boolean
@@ -23,6 +26,8 @@ type AllyCombatantActivePreviewCardProps = {
 
 export function AllyCombatantActivePreviewCard({
   combatant,
+  monstersById,
+  characterPortraitById,
   allCombatants,
   isCurrentTurn = false,
   isSelected = false,
@@ -68,15 +73,19 @@ export function AllyCombatantActivePreviewCard({
 
   const subtitle = character ? formatCharacterDetailSubtitle(character) : undefined
 
-  const avatar = character ? (
-    <CharacterAvatar
-      imageKey={character.imageKey}
-      imageUrl={character.imageUrl ?? undefined}
-      name={character.name}
+  const portraitOverride = character
+    ? { imageKey: character.imageKey, imageUrl: character.imageUrl }
+    : undefined
+
+  const avatar = (
+    <CombatantAvatar
+      combatant={combatant}
+      monstersById={monstersById}
+      characterPortraitById={characterPortraitById}
+      portraitOverride={portraitOverride}
+      displayName={title}
       size="sm"
     />
-  ) : (
-    <AppAvatar name={title} size="sm" />
   )
 
   const previewProps: CombatantPreviewCardProps = {

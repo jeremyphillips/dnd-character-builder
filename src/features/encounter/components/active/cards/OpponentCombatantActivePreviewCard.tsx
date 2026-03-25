@@ -1,18 +1,20 @@
 import { useMemo } from 'react'
 
-import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
-import MonsterAvatar from '@/features/content/monsters/components/MonsterAvatar/MonsterAvatar'
+import type { Monster } from '@/features/content/monsters/domain/types'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { buildCombatantPreviewChips, formatSigned, getPreviewStatTooltip } from '../../../helpers'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
-import { resolveImageUrl } from '@/shared/lib/media'
+import { CombatantAvatar } from '../../shared/CombatantAvatar'
 
 type OpponentCombatantActivePreviewCardProps = {
   combatant: CombatantInstance
+  monstersById: Record<string, Monster>
+  characterPortraitById: Record<string, CombatantPortraitEntry>
   allCombatants?: readonly CombatantInstance[]
   isCurrentTurn?: boolean
   isSelected?: boolean
@@ -22,13 +24,14 @@ type OpponentCombatantActivePreviewCardProps = {
 
 export function OpponentCombatantActivePreviewCard({
   combatant,
+  monstersById,
+  characterPortraitById,
   allCombatants,
   isCurrentTurn = false,
   isSelected = false,
   showChips = true,
   onClick,
 }: OpponentCombatantActivePreviewCardProps) {
-  const { catalog } = useCampaignRules()
   const isDefeated = combatant.stats.currentHitPoints <= 0
 
   const title = useMemo(
@@ -39,7 +42,7 @@ export function OpponentCombatantActivePreviewCard({
     [allCombatants, combatant],
   )
 
-  const monster = catalog.monstersById[combatant.source.sourceId]
+  const monster = monstersById[combatant.source.sourceId]
 
   const subtitle = useMemo(() => {
     if (monster) return formatMonsterIdentityLine(monster)
@@ -84,7 +87,15 @@ export function OpponentCombatantActivePreviewCard({
     mode: 'active',
     title,
     subtitle,
-    avatar: <MonsterAvatar name={title} size="sm" imageUrl={resolveImageUrl(monster?.imageKey)} />,
+    avatar: (
+      <CombatantAvatar
+        combatant={combatant}
+        monstersById={monstersById}
+        characterPortraitById={characterPortraitById}
+        displayName={title}
+        size="sm"
+      />
+    ),
     stats,
     chips: showChips && chips.length > 0 ? chips : undefined,
     isCurrentTurn,

@@ -66,6 +66,8 @@ export default function EncounterActiveRoute() {
     registerCombatLogAppended,
     actionDrawerOpen,
     setActionDrawerOpen,
+    monstersById,
+    characterPortraitById,
   } = useEncounterRuntime()
 
   const [toastPayload, setToastPayload] = useState<{
@@ -271,6 +273,8 @@ export default function EncounterActiveRoute() {
         return (
           <AllyCombatantActivePreviewCard
             combatant={combatant}
+            monstersById={monstersById}
+            characterPortraitById={characterPortraitById}
             allCombatants={roster}
             isCurrentTurn={occupantId === activeCombatantId}
           />
@@ -279,12 +283,14 @@ export default function EncounterActiveRoute() {
       return (
         <OpponentCombatantActivePreviewCard
           combatant={combatant}
+          monstersById={monstersById}
+          characterPortraitById={characterPortraitById}
           allCombatants={roster}
           isCurrentTurn={occupantId === activeCombatantId}
         />
       )
     },
-    [encounterState, activeCombatantId],
+    [encounterState, activeCombatantId, monstersById, characterPortraitById],
   )
 
   const handleCellClick = useCallback(
@@ -350,6 +356,8 @@ export default function EncounterActiveRoute() {
   const drawerProps = {
     open: actionDrawerOpen,
     onClose: handleCloseDrawer,
+    monstersById,
+    characterPortraitById,
     combatant: actionDrawerCombatant!,
     drawerTitle: getCombatantDisplayLabel(actionDrawerCombatant!, combatantRoster),
     availableActions,
@@ -414,6 +422,8 @@ export default function EncounterActiveRoute() {
 
         <EncounterActiveSidebar
           encounterState={encounterState}
+          monstersById={monstersById}
+          characterPortraitById={characterPortraitById}
           activeCombatantId={activeCombatantId}
           selectedTargetId={selectedActionTargetId}
           onSelectTarget={(combatantId) => {

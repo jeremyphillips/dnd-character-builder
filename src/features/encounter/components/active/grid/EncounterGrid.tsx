@@ -5,6 +5,8 @@ import Popover from '@mui/material/Popover'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { alpha, useTheme } from '@mui/material/styles'
+import { AppAvatar } from '@/ui/primitives'
+import { resolveImageUrl } from '@/shared/lib/media'
 import type { Theme } from '@mui/material/styles'
 import type { GridViewModel, GridCellViewModel } from '../../../space/space.selectors'
 
@@ -38,13 +40,6 @@ function tokenColor(cell: GridCellViewModel, palette: Theme['palette']) {
   if (cell.occupantSide === 'party') return palette.primary.main
   if (cell.occupantSide === 'enemies') return palette.error?.main ?? '#d32f2f'
   return palette.grey[500]
-}
-
-function tokenInitials(label: string | null): string {
-  if (!label) return '?'
-  const words = label.trim().split(/\s+/)
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return (words[0][0] + words[1][0]).toUpperCase()
 }
 
 export function EncounterGrid({
@@ -162,6 +157,7 @@ export function EncounterGrid({
             const isWall = cell.kind === 'wall' || cell.kind === 'blocking'
             const clickable = !isWall && Boolean(onCellClick)
             const hasPopover = Boolean(cell.occupantId && renderTokenPopover)
+            const tokenSrc = resolveImageUrl(cell.occupantPortraitImageKey)
 
             const cellBox = (
               <Box
@@ -200,31 +196,25 @@ export function EncounterGrid({
                       width: 32,
                       height: 32,
                       borderRadius: '50%',
-                      bgcolor: tokenColor(cell, palette),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: cell.isActive ? 2 : 1,
-                      borderColor: cell.isActive
-                        ? palette.secondary.main
-                        : alpha(palette.common.white, 0.4),
+                      boxSizing: 'border-box',
+                      border: '2px solid',
+                      borderColor: tokenColor(cell, palette),
+                      bgcolor: tokenSrc ? 'transparent' : tokenColor(cell, palette),
+                      outline: cell.isActive ? `2px solid ${palette.secondary.main}` : undefined,
+                      outlineOffset: cell.isActive ? 0 : undefined,
                       boxShadow: cell.isSelectedTarget
                         ? `0 0 0 2px ${palette.primary.main}`
                         : undefined,
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: palette.common.white,
-                        fontWeight: 700,
-                        fontSize: '0.65rem',
-                        lineHeight: 1,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {tokenInitials(cell.occupantLabel)}
-                    </Typography>
+                    <AppAvatar
+                      src={tokenSrc}
+                      name={cell.occupantLabel ?? undefined}
+                      size="sm"
+                    />
                   </Box>
                 )}
                 {cell.obstacleLabel && (

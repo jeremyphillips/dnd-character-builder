@@ -47,6 +47,8 @@ import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
 
+import type { CombatantPortraitEntry } from '../helpers/resolveCombatantAvatarSrc'
+
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
 
 const DEFAULT_ENVIRONMENT: EnvironmentSetupValues = {
@@ -63,6 +65,21 @@ function useEncounterRuntimeValue() {
   const { catalog } = useCampaignRules()
   const { party } = useCampaignParty('approved')
   const { characters: npcs } = useCharacters({ type: 'npc' })
+
+  const characterPortraitById = useMemo(() => {
+    const out: Record<string, CombatantPortraitEntry> = {}
+    for (const m of party) {
+      out[m.id] = { imageKey: m.imageKey ?? null, imageUrl: m.imageUrl }
+    }
+    for (const n of npcs) {
+      const doc = n as { _id: string; imageKey?: string | null; imageUrl?: string | null }
+      out[doc._id] = {
+        imageKey: doc.imageKey ?? null,
+        imageUrl: doc.imageUrl ?? null,
+      }
+    }
+    return out
+  }, [party, npcs])
 
   const runtimeIdCounter = useRef(0)
   const nextRuntimeId = (prefix: string) => {
@@ -461,6 +478,7 @@ function useEncounterRuntimeValue() {
     capabilities,
     campaignId,
     monstersById,
+    characterPortraitById,
     allyOptions,
     opponentOptions,
     selectedAllyIds,
@@ -569,6 +587,7 @@ function EncounterRuntimeModals() {
     setEnvironmentSetup,
     opponentRoster,
     monstersById,
+    characterPortraitById,
     environmentContext,
     monsterFormsById,
     monsterManualTriggersById,
@@ -608,6 +627,8 @@ function EncounterRuntimeModals() {
         allyLane={
           <AllyRosterLane
             selectedAllyIds={selectedAllyIds}
+            characterPortraitById={characterPortraitById}
+            monstersById={monstersById}
             onOpenModal={() => {
               setEditModalOpen(false)
               setAllyModalOpen(true)
@@ -620,6 +641,7 @@ function EncounterRuntimeModals() {
           <OpponentRosterLane
             opponentRoster={opponentRoster}
             monstersById={monstersById}
+            characterPortraitById={characterPortraitById}
             environmentContext={environmentContext}
             monsterFormsById={monsterFormsById}
             monsterManualTriggersById={monsterManualTriggersById}

@@ -10,6 +10,8 @@ import {
   ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR,
   ENCOUNTER_ACTIVE_HEADER_LAYOUT_HEIGHT_PX,
 } from '@/ui/primitives'
+import type { Monster } from '@/features/content/monsters/domain/types'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
 import type { CombatantInstance, EncounterState } from '@/features/mechanics/domain/encounter'
 
 import { AllyCombatantActivePreviewCard } from '../cards/AllyCombatantActivePreviewCard'
@@ -18,6 +20,8 @@ import { CombatLogPanel } from '../combat-log/CombatLogPanel'
 
 type EncounterActiveSidebarProps = {
   encounterState: EncounterState
+  monstersById: Record<string, Monster>
+  characterPortraitById: Record<string, CombatantPortraitEntry>
   activeCombatantId: string | null
   selectedTargetId: string | null
   onSelectTarget: (combatantId: string) => void
@@ -27,6 +31,8 @@ const SIDEBAR_WIDTH = 320
 
 export function EncounterActiveSidebar({
   encounterState,
+  monstersById,
+  characterPortraitById,
   activeCombatantId,
   selectedTargetId,
   onSelectTarget,
@@ -70,6 +76,8 @@ export function EncounterActiveSidebar({
           <InitiativeOrderTab
             initiativeOrder={initiativeOrder}
             combatantsById={combatantsById}
+            monstersById={monstersById}
+            characterPortraitById={characterPortraitById}
             activeCombatantId={activeCombatantId}
             selectedTargetId={selectedTargetId}
             onSelectTarget={onSelectTarget}
@@ -84,12 +92,16 @@ export function EncounterActiveSidebar({
 function InitiativeOrderTab({
   initiativeOrder,
   combatantsById,
+  monstersById,
+  characterPortraitById,
   activeCombatantId,
   selectedTargetId,
   onSelectTarget,
 }: {
   initiativeOrder: string[]
   combatantsById: Record<string, CombatantInstance>
+  monstersById: Record<string, Monster>
+  characterPortraitById: Record<string, CombatantPortraitEntry>
   activeCombatantId: string | null
   selectedTargetId: string | null
   onSelectTarget: (combatantId: string) => void
@@ -118,6 +130,8 @@ function InitiativeOrderTab({
             <AllyCombatantActivePreviewCard
               key={id}
               combatant={combatant}
+              monstersById={monstersById}
+              characterPortraitById={characterPortraitById}
               allCombatants={allCombatants}
               isCurrentTurn={isCurrentTurn}
               isSelected={isSelected}
@@ -130,6 +144,8 @@ function InitiativeOrderTab({
           <OpponentCombatantActivePreviewCard
             key={id}
             combatant={combatant}
+            monstersById={monstersById}
+            characterPortraitById={characterPortraitById}
             allCombatants={allCombatants}
             isCurrentTurn={isCurrentTurn}
             isSelected={isSelected}

@@ -69,6 +69,8 @@ export type GridCellViewModel = {
   occupantId: string | null
   occupantLabel: string | null
   occupantSide: CombatantSide | null
+  /** From `CombatantInstance.portraitImageKey` — resolve URLs in UI only. */
+  occupantPortraitImageKey: string | null
   /** Obstruction on this cell (from `EncounterSpace.obstacles`), for labels / tooltips. */
   obstacleKind: GridObstacleKind | null
   obstacleLabel: string | null
@@ -206,6 +208,7 @@ export function selectGridViewModel(
       occupantId,
       occupantLabel: combatant ? getCombatantDisplayLabel(combatant, combatantRoster) : null,
       occupantSide: combatant?.side ?? null,
+      occupantPortraitImageKey: combatant?.portraitImageKey ?? null,
       obstacleKind,
       obstacleLabel,
       isActive: occupantId !== null && occupantId === activeId,

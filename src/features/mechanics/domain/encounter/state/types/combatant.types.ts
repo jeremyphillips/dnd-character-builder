@@ -229,6 +229,11 @@ export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
+  /**
+   * Portrait media key at roster/build time (storage key or `/…` path). Not a resolved CDN URL.
+   * Presentation uses `resolveImageUrl`; keeps encounter state stable across URL strategy changes.
+   */
+  portraitImageKey?: string | null
   creatureType?: string
   /**
    * Set when the combatant is dead (0 HP): what is left to target for spells.

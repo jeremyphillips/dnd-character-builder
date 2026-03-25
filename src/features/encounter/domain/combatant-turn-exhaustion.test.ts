@@ -27,12 +27,12 @@ describe('deriveCombatantTurnExhaustion', () => {
     expect(r.hasAnyPrimaryOptionRemaining).toBe(true)
   })
 
-  it('no movement, no actions left in buckets, no reaction → fully spent', () => {
+  it('no movement, no actions left in buckets → fully spent', () => {
     const tr = {
       ...createCombatTurnResources(0),
       actionAvailable: false,
       bonusActionAvailable: false,
-      reactionAvailable: false,
+      movementRemaining: 0
     }
     const r = deriveCombatantTurnExhaustion({
       combatantActions: [strike()],

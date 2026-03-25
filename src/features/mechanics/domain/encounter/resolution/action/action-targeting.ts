@@ -194,6 +194,14 @@ export function getActionTargetInvalidReason(
   const suppressSameSideHostile = shouldSuppressSameSideHostile(options)
 
   if (combatant.states.some((s) => s.label === 'banished')) return 'Target is banished'
+
+  if (kind === 'dead-creature') {
+    if (combatant.stats.currentHitPoints !== 0) return 'Requires dead creature'
+    const r = combatant.remains
+    if (r === 'dust' || r === 'disintegrated') return 'Remains destroyed'
+    return null
+  }
+  
   if (!passesCreatureTypeFilter(combatant, action.targeting?.creatureTypeFilter)) return 'Invalid creature type'
 
   if (isHostileAction(action) && cannotTargetWithHostileAction(actor, combatant.instanceId)) {
@@ -210,24 +218,8 @@ export function getActionTargetInvalidReason(
     return 'Target not visible'
   }
 
-  if (
-    action.targeting?.rangeFt != null &&
-    kind !== 'self' &&
-    kind !== 'none' &&
-    state.space &&
-    state.placements &&
-    !isWithinRange(state.space, state.placements, actor.instanceId, combatant.instanceId, action.targeting.rangeFt)
-  ) {
-    return 'Out of range'
-  }
-
   if (kind === 'none') return 'No target required'
-  if (kind === 'dead-creature') {
-    if (combatant.stats.currentHitPoints !== 0) return 'Requires dead creature'
-    const r = combatant.remains
-    if (r === 'dust' || r === 'disintegrated') return 'Remains destroyed'
-    return null
-  }
+
   if (combatant.stats.currentHitPoints <= 0) return 'Target is defeated'
   if (kind === 'single-creature') return null
 
@@ -241,6 +233,17 @@ export function getActionTargetInvalidReason(
     return null
   }
 
+  if (
+    action.targeting?.rangeFt != null &&
+    kind !== 'self' &&
+    kind !== 'none' &&
+    state.space &&
+    state.placements &&
+    !isWithinRange(state.space, state.placements, actor.instanceId, combatant.instanceId, action.targeting.rangeFt)
+  ) {
+    return 'Out of range'
+  }
+  
   return combatant.side !== actor.side ? null : 'Requires enemy target'
 }
 

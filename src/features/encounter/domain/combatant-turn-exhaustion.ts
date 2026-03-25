@@ -34,6 +34,5 @@ export function deriveCombatantTurnExhaustion(
     actionState,
     bonusActionState,
     movementRemaining: turnResources?.movementRemaining ?? null,
-    reactionState: reactionAvailabilityToBucketState(turnResources),
   })
 }

@@ -70,7 +70,7 @@ export function EncounterActiveHeader({
 }: EncounterActiveHeaderProps) {
   const move = turnResources?.movementRemaining ?? 0
   const headerRootRef = useRef<HTMLDivElement>(null)
-
+  const resourcesExhausted = !turnResources || (turnResources.actionAvailable === false && turnResources.bonusActionAvailable === false && turnResources.movementRemaining === 0)
   const actionBonusBadges = useMemo(() => {
     if (!turnResources || !activeCombatant) return null
     const { actionDefs, bonusDefs } = partitionCombatantActionBuckets(activeCombatant.actions)
@@ -182,12 +182,9 @@ export function EncounterActiveHeader({
                 variant="outlined"
                 size="small"
               />
-              <AppBadge
-                label={`Reaction ${turnResources.reactionAvailable ? '●' : '○'}`}
-                tone={turnResources.reactionAvailable ? 'success' : 'default'}
-                variant="outlined"
-                size="small"
-              />
+              <Typography variant="caption" color="text.secondary" sx={{  letterSpacing: '0.06em' }}>
+                Reaction: <strong>{turnResources.reactionAvailable ? 'ready' : 'spent'}</strong>
+              </Typography>
             </Stack>
           )}
         </Stack>
@@ -204,6 +201,7 @@ export function EncounterActiveHeader({
         >
           <Typography
             variant="subtitle1"
+            color={resourcesExhausted ? 'warning.main' : 'inherit'}
             sx={{
               fontWeight: 700,
               lineHeight: 1.35,

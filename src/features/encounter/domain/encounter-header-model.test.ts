@@ -121,7 +121,6 @@ describe('deriveEncounterHeaderModel', () => {
       ...baseTurn,
       actionAvailable: false,
       bonusActionAvailable: false,
-      reactionAvailable: false,
       movementRemaining: 0,
     }
     const m = deriveEncounterHeaderModel({

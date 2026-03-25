@@ -82,7 +82,6 @@ export function deriveTurnExhaustion(input: {
   actionState: TurnOptionBucketState
   bonusActionState: TurnOptionBucketState
   movementRemaining?: number | null
-  reactionState?: TurnOptionBucketState
 }): {
   isFullySpent: boolean
   hasAnyPrimaryOptionRemaining: boolean
@@ -90,13 +89,10 @@ export function deriveTurnExhaustion(input: {
   const hasMovement =
     input.movementRemaining != null && input.movementRemaining > 0
 
-  const hasReaction =
-    input.reactionState !== undefined && input.reactionState === 'available'
 
   const hasAnyPrimaryOptionRemaining =
     input.actionState === 'available' ||
     input.bonusActionState === 'available' ||
-    hasReaction ||
     hasMovement
 
   return {

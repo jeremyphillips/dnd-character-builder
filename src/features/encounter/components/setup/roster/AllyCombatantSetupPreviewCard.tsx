@@ -189,6 +189,7 @@ function LoadedAllyCombatantSetupPreviewCard({
     subtitle: formatCharacterDetailSubtitle(character),
     avatar: (
       <CharacterAvatar
+        imageKey={character.imageKey}
         imageUrl={character.imageUrl ?? undefined}
         name={character.name}
         size="sm"

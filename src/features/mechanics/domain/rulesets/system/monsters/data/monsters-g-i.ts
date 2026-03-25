@@ -639,6 +639,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
 {
     id: "goblin-warrior",
     name: "Goblin Warrior",
+    imageKey: '/assets/system/monsters/goblin-warrior.png',
     type: "fey",
     subtype: "goblinoid",
     languages: [{ id: "common" }, { id: "goblin" }],

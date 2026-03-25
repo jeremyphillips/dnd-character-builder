@@ -9,6 +9,7 @@ import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { buildCombatantPreviewChips, formatSigned, getPreviewStatTooltip } from '../../../helpers'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
+import { resolveImageUrl } from '@/shared/lib/media'
 
 type OpponentCombatantActivePreviewCardProps = {
   combatant: CombatantInstance
@@ -83,7 +84,7 @@ export function OpponentCombatantActivePreviewCard({
     mode: 'active',
     title,
     subtitle,
-    avatar: <MonsterAvatar name={title} size="sm" />,
+    avatar: <MonsterAvatar name={title} size="sm" imageUrl={resolveImageUrl(monster?.imageKey)} />,
     stats,
     chips: showChips && chips.length > 0 ? chips : undefined,
     isCurrentTurn,

@@ -467,6 +467,10 @@ export function CombatantActionDrawer({
             {!inAoeFlow && bothBucketsSpent && (
               <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
                 All actions spent this turn
+
+                <Button variant="contained" color="primary" fullWidth onClick={_onEndTurn}>
+                  End Turn
+                </Button>
               </Typography>
             )}
 

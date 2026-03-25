@@ -24,6 +24,7 @@ import {
   getPreviewStatTooltip,
 } from '../../../helpers'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
+import { resolveImageUrl } from '@/shared/lib/media'
 
 type OpponentCombatantSetupPreviewCardProps = {
   monster: Monster
@@ -117,7 +118,7 @@ export function OpponentCombatantSetupPreviewCard({
     mode: 'setup',
     title: monster.name,
     subtitle: formatMonsterIdentityLine(monster),
-    avatar: <MonsterAvatar name={monster.name} size="sm" />,
+    avatar: <MonsterAvatar name={monster.name} size="sm" imageUrl={resolveImageUrl(monster?.imageKey)} />,
     stats,
     secondaryActions: [
       { id: 'duplicate', label: 'Copy', onClick: onDuplicate },

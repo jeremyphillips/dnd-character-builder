@@ -69,7 +69,12 @@ export function AllyCombatantActivePreviewCard({
   const subtitle = character ? formatCharacterDetailSubtitle(character) : undefined
 
   const avatar = character ? (
-    <CharacterAvatar imageUrl={character.imageUrl ?? undefined} name={character.name} size="sm" />
+    <CharacterAvatar
+      imageKey={character.imageKey}
+      imageUrl={character.imageUrl ?? undefined}
+      name={character.name}
+      size="sm"
+    />
   ) : (
     <AppAvatar name={title} size="sm" />
   )

@@ -161,6 +161,8 @@ function useEncounterRuntimeValue() {
         id: a.id,
         label: a.label,
         subtitle: a.subtitle,
+        imageKey: a.imageKey,
+        imageUrl: a.imageUrl,
       })),
     [allyOptions],
   )
@@ -175,6 +177,8 @@ function useEncounterRuntimeValue() {
             id: o.key,
             label: o.label,
             subtitle: o.subtitle,
+            imageKey: o.imageKey,
+            imageUrl: o.imageUrl,
           }
         }
         return {
@@ -182,6 +186,7 @@ function useEncounterRuntimeValue() {
           label: o.label,
           subtitle: formatMonsterIdentityLine(block),
           stats: buildMonsterModalStats(block, catalog.armorById),
+          imageKey: block.imageKey,
         }
       })
     const npcList = opponentOptions
@@ -190,6 +195,8 @@ function useEncounterRuntimeValue() {
         id: o.key,
         label: o.label,
         subtitle: o.subtitle,
+        imageKey: o.imageKey,
+        imageUrl: o.imageUrl,
       }))
     return { monsterModalOptions: monsters, npcModalOptions: npcList }
   }, [opponentOptions, monstersById, catalog.armorById])

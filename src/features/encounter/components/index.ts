@@ -21,7 +21,10 @@ export { AllyCombatantActivePreviewCard } from './active/cards/AllyCombatantActi
 export { OpponentCombatantActivePreviewCard } from './active/cards/OpponentCombatantActivePreviewCard'
 export { AllyActionDrawer } from './active/drawers/AllyActionDrawer'
 export { OpponentActionDrawer } from './active/drawers/OpponentActionDrawer'
-export { CombatantActionDrawer } from './active/drawers/CombatantActionDrawer'
+export {
+  CombatantActionDrawer,
+  useCloseCombatantActionDrawerOnActiveCombatantChange,
+} from './active/drawers/CombatantActionDrawer'
 export type { CombatantStatBadge, CombatantTrackedPartBadge } from './shared/cards/combatant-badges'
 export {
   CombatantCoreBadgeRow,

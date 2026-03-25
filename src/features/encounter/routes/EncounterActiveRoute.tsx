@@ -23,6 +23,7 @@ import {
   EncounterGrid,
   OpponentCombatantActivePreviewCard,
   OpponentActionDrawer,
+  useCloseCombatantActionDrawerOnActiveCombatantChange,
 } from '../components'
 import { campaignEncounterSetupPath } from './encounterPaths'
 import { useEncounterRuntime } from './EncounterRuntimeContext'
@@ -225,6 +226,8 @@ export default function EncounterActiveRoute() {
     setSelectedActionId('')
     setActionDrawerOpen(false)
   }, [resetAoePlacement, setSelectedActionId])
+
+  useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawer)
 
   const handleCancelAoe = useCallback(() => {
     resetAoePlacement()

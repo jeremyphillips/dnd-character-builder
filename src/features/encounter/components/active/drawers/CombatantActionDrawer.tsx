@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -52,6 +52,23 @@ type CombatantActionDrawerProps = {
   aoeAffectedOverflow?: number
   onCancelAoe?: () => void
   onUndoAoeSelection?: () => void
+}
+
+/**
+ * Closes the combatant action drawer when `activeCombatantId` changes (turn advance / end).
+ * Use from the active encounter route with the same `onClose` that clears action selection and AoE state.
+ */
+export function useCloseCombatantActionDrawerOnActiveCombatantChange(
+  activeCombatantId: string | null | undefined,
+  onClose: () => void,
+) {
+  const prevIdRef = useRef<string | null | undefined>(undefined)
+  useLayoutEffect(() => {
+    if (prevIdRef.current !== undefined && prevIdRef.current !== activeCombatantId) {
+      onClose()
+    }
+    prevIdRef.current = activeCombatantId ?? null
+  }, [activeCombatantId, onClose])
 }
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {

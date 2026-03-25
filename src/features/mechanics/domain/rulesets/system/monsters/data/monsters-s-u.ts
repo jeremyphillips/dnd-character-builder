@@ -85,7 +85,7 @@ export const MONSTERS_S_U: readonly MonsterCatalogEntry[] = [
         skills: { stealth: { proficiencyLevel: 1 } },
       },
       proficiencyBonus: 2,
-      immunities: ['fire', 'poison', 'exhaustion', 'poisoned'],
+      immunities: ['fire', 'poison', 'exhaustion'],
       traits: [
         {
           name: 'Blurred Form',

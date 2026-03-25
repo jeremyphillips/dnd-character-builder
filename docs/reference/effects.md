@@ -321,6 +321,13 @@ Status meanings:
 { kind: 'grant', grantType: 'condition-immunity', value: 'poisoned' }
 ```
 
+**Monster stat-block immunities and `DAMAGE_IMPLIES_CONDITION`:**
+When authoring a monster's `immunities` array, use the **damage-type id** alone
+(e.g. `'poison'`) for entries that have a condition counterpart. The
+`DAMAGE_IMPLIES_CONDITION` map in `effect-condition-definitions.ts` automatically
+infers the matching condition immunity (`'poisoned'`) at partition time. Do not
+list both `'poison'` and `'poisoned'` — this produces duplicate badges.
+
 ### `resource`
 
 - Status: `canonical`, domain-skewed
@@ -800,6 +807,7 @@ Mechanics resolved since initial authoring:
 - mixing naming styles for equivalent discriminants
 - using `note` as a substitute for already-supported structure
 - overfitting authored content to current combat or runtime limits
+- listing both a damage-type id and its condition counterpart in monster `immunities` (e.g. `'poison'` + `'poisoned'`) — use the damage-type id only; `DAMAGE_IMPLIES_CONDITION` infers the condition automatically
 - letting runtime adapter needs dictate content schema
 - repeating full rules text inside effects when an owning description field already exists
 

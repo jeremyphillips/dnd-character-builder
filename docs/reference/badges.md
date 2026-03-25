@@ -137,16 +137,19 @@ Turn Triggers, System Details).
 
 | File | Role |
 |---|---|
-| `src/features/mechanics/domain/conditions/effect-condition-definitions.ts` | `EFFECT_CONDITION_DEFINITIONS` -- PHB condition data |
+| `src/features/mechanics/domain/conditions/effect-condition-definitions.ts` | `EFFECT_CONDITION_DEFINITIONS` -- PHB condition data; `DAMAGE_IMPLIES_CONDITION` -- damage→condition dedup map |
 | `src/features/mechanics/domain/encounter/state/condition-rules/condition-definitions.ts` | `CONDITION_RULES` -- mechanical consequence rules |
 | `src/features/encounter/domain/effects/presentable-effects.types.ts` | `CombatStateTone`, `CombatStatePriority`, `CombatStateSection`, `CombatStatePresentation`, `EnrichedPresentableEffect` |
 | `src/features/encounter/domain/effects/presentable-effects.ts` | `collectPresentableEffects`, `enrichPresentableEffects`, `sortByPriority`, `groupBySection` |
 | `src/features/encounter/domain/effects/combat-state-ui-map.ts` | `COMBAT_STATE_UI_MAP` -- merged lookup from condition definitions + engine markers |
+| `src/features/encounter/domain/badges/defense/encounter-defense-badges.ts` | `buildEncounterDefensePreviewChips` -- defense preview chips with filtering options |
+| `src/features/encounter/helpers/build-combatant-preview-chips.ts` | `buildCombatantPreviewChips` -- priority-driven preview chip pipeline |
+| `src/features/encounter/helpers/format-turn-duration.ts` | `formatTurnDuration` -- shared turn-duration formatter |
 | `src/features/encounter/components/active/combat-log/PresentableEffectsList.tsx` | Section-grouped badge list rendering |
 | `src/features/encounter/components/active/drawers/CombatantActionDrawer.tsx` | Inline condition badge rendering in drawer |
-| `src/features/encounter/components/shared/cards/combatant-badges.tsx` | `CombatantPreviewChipRow` -- preview card chips |
+| `src/features/encounter/components/shared/cards/combatant-badges.tsx` | `CombatantPreviewChipRow` -- preview card chips with `maxVisible` overflow |
 
-### Data flow
+### Data flow: full effects list (drawers / panels)
 
 ```
 CombatantInstance
@@ -155,6 +158,23 @@ CombatantInstance
   --> sortByPriority(enriched)             --> ordered list
   --> groupBySection(sorted)               --> Record<CombatStateSection, EnrichedPresentableEffect[]>
   --> PresentableEffectsList / drawer      --> AppBadge[]
+```
+
+### Data flow: preview card chips (roster lane / compact identity)
+
+```
+CombatantInstance
+  --> buildCombatantPreviewChips(combatant, options?)
+        1. Collect candidates:
+           bloodied (derived from HP ≤ 50%)
+           concentration (uniform chip + timeLabel)
+           conditions (priority + tone from COMBAT_STATE_UI_MAP)
+           states (priority + tone from COMBAT_STATE_UI_MAP)
+           defense chips (via buildEncounterDefensePreviewChips with filtering)
+        2. Sort by CombatStatePriority (critical > high > normal > low)
+        3. Attach tooltips (always on) and timeLabel
+  --> PreviewChip[]
+        --> CombatantPreviewChipRow (maxVisible=4, +N overflow with tooltip)
 ```
 
 ### CombatStatePresentation
@@ -170,6 +190,24 @@ type CombatStatePresentation = {
 }
 ```
 
+### PreviewChip
+
+```typescript
+type PreviewChip = {
+  id: string
+  label: string
+  tone?: PreviewTone
+  tooltip?: string
+  priority?: CombatStatePriority    // sorting rank for preview card display
+  timeLabel?: string                // compact duration, e.g. "6s/60s" or "18s left"
+}
+```
+
+`timeLabel` is produced by the shared `formatTurnDuration` helper
+(`src/features/encounter/helpers/format-turn-duration.ts`). It accepts
+concentration-style `{ remainingTurns, totalTurns }` or marker-style
+`{ remainingTurns }` and returns `"Xs/Ys"` or `"Xs left"` respectively.
+
 ### Tone vocabulary (shared)
 
 ```typescript
@@ -182,7 +220,7 @@ Mapped to `AppBadgeTone` at render time (`neutral` --> `default`).
 ### Priority model (condition-specific)
 
 Categorical: `critical > high > normal > low > hidden`.
-Used for section triage and cross-section ordering.
+Used for section triage, cross-section ordering, **and preview chip sorting**.
 Different from action badges which use numeric priority for within-row ordering.
 
 ### Section placement
@@ -211,14 +249,27 @@ Both pipelines render to the same component at `src/ui/primitives/`.
 
 ### Tone mapping
 
-Both pipelines have a one-line mapping function (`neutral` --> `default`)
-to bridge `CombatStateTone` to `AppBadgeTone`:
+A single shared function bridges `CombatStateTone` / `PreviewTone` to `AppBadgeTone`:
 
-- `badgeToneToAppBadgeTone` in `ActionRowBase.tsx`
-- `toneToAppBadgeTone` in `PresentableEffectsList.tsx`
-- `previewToneToAppBadgeTone` in `combatant-badges.tsx`
+```typescript
+combatToneToAppBadgeTone(tone) // in combatant-badges.tsx, exported
+```
 
-These are identical in logic and independently maintained.
+All badge-rendering components import this shared mapper (`neutral` --> `default`).
+
+### Immunity deduplication: `DAMAGE_IMPLIES_CONDITION`
+
+`src/features/mechanics/domain/conditions/effect-condition-definitions.ts` exports
+`DAMAGE_IMPLIES_CONDITION`, a map from damage-type ids to their condition counterpart:
+
+```typescript
+{ poison: 'poisoned' }
+```
+
+When `partitionMonsterImmunities` encounters a damage type in this map, it
+automatically infers the condition immunity. Monster authors only need the
+damage-type id (e.g. `'poison'`); the condition id (`'poisoned'`) is derived.
+This prevents duplicate badges at the source rather than patching display logic.
 
 ### Barrel exports
 
@@ -290,9 +341,9 @@ When the user clicks a new target, `handleSelectTarget` in
 | Duration/source | N/A | Duration, source metadata |
 | Derivation | Pure function from action | Static lookup + runtime enrichment |
 
-### Why not to unify now
+### Why not to unify further now
 
-- Duplication is minimal (three one-line tone mappers)
+- Tone mapping is now consolidated (single `combatToneToAppBadgeTone`)
 - Both pipelines are still evolving
 - Different priority granularity serves different needs
 - Premature abstraction would constrain both systems
@@ -330,10 +381,13 @@ When the user clicks a new target, `handleSelectTarget` in
    Both `ActionBadgeDescriptor` and `CombatStatePresentation` can extend or
    map to it. Include a shared tone-mapping utility at the same time.
 
-5. **`PreviewChip` alignment**: The existing `PreviewChip` type in
-   `encounter-view.types.ts` uses `PreviewTone` (same values as
-   `CombatStateTone`). A future pass could unify these tone types
-   and have `PreviewChip` implement the shared badge descriptor.
+5. **`PreviewChip` alignment**: ~~The existing `PreviewChip` type in
+   `encounter-view.types.ts` uses `PreviewTone`.~~ **Addressed:**
+   `PreviewChip` now includes `priority?: CombatStatePriority` and
+   `timeLabel?: string`. `buildCombatantPreviewChips` assigns priority
+   from `COMBAT_STATE_UI_MAP` and sorts by it. The tone mapper is
+   consolidated as `combatToneToAppBadgeTone`. Full tone-type
+   unification (`PreviewTone` → `CombatStateTone`) can follow if needed.
 
 ### Long-term
 

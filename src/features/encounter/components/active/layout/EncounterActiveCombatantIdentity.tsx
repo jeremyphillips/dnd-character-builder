@@ -4,31 +4,15 @@ import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
 import { useCharacter } from '@/features/character/hooks'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 
-import type { PreviewTone } from '../../../domain'
 import { buildCombatantPreviewChips } from '../../../helpers'
+import { combatToneToAppBadgeTone } from '../../shared/cards/combatant-badges'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import { AppBadge } from '@/ui/primitives'
-import type { AppBadgeTone } from '@/ui/types'
 
 const MAX_CHIPS = 4
-
-function mapPreviewTone(t: PreviewTone | undefined): AppBadgeTone {
-  switch (t) {
-    case 'info':
-      return 'info'
-    case 'warning':
-      return 'warning'
-    case 'danger':
-      return 'danger'
-    case 'success':
-      return 'success'
-    default:
-      return 'default'
-  }
-}
 
 type EncounterActiveCombatantIdentityProps = {
   combatant: CombatantInstance
@@ -57,15 +41,14 @@ export function EncounterActiveCombatantIdentity({
         ? formatCharacterDetailSubtitle(character)
         : undefined
 
-  const chips = buildCombatantPreviewChips(combatant, {
+  const allChips = buildCombatantPreviewChips(combatant, {
     maxConditions: 3,
     includeStates: false,
     maxDefenseChips: 2,
-    maxTotalChips: MAX_CHIPS,
-    includeTooltips: false,
-  }).map((c) => ({
+  })
+  const chips = allChips.slice(0, MAX_CHIPS).map((c) => ({
     ...c,
-    tone: mapPreviewTone(c.tone),
+    tone: combatToneToAppBadgeTone(c.tone),
   }))
 
   return (

@@ -7,6 +7,8 @@ import {
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import { MONSTER_TYPE_OPTIONS } from '@/features/content/monsters/domain/vocab/monster.vocab'
+import { ENERGY_DAMAGE_TYPES } from '@/features/mechanics/domain/damage/energyDamageTypes'
+import { WEAPON_DAMAGE_TYPE_OPTIONS } from '@/features/content/equipment/weapons/domain/vocab/weapons.vocab'
 import type { PreviewChip } from '../../view/encounter-view.types'
 import type { PresentableCombatEffect } from '../../effects/presentable-effects.types'
 import type {
@@ -14,6 +16,38 @@ import type {
   EncounterDamageDefenseBadge,
   EncounterDefenseBadges,
 } from './encounter-defense-badges.types'
+
+export type DefensePreviewChipOptions = {
+  /** Skip innate stat-block defenses (sourceId 'monster-innate', no duration). */
+  excludeGranted?: boolean
+  /** Skip damage-vulnerability badges. */
+  excludeVulnerabilities?: boolean
+}
+
+const DAMAGE_TYPE_DISPLAY_NAME = new Map<string, string>([
+  ...ENERGY_DAMAGE_TYPES.map((r) => [r.id, r.name] as const),
+  ...WEAPON_DAMAGE_TYPE_OPTIONS.filter((r) => r.value !== 'none').map(
+    (r) => [r.value, r.label] as const,
+  ),
+])
+
+function damageTypeDisplayName(damageType: string): string {
+  return DAMAGE_TYPE_DISPLAY_NAME.get(damageType) ?? damageType
+}
+
+function formatDamageDefenseLabel(level: string, damageType: string): string {
+  const name = damageTypeDisplayName(damageType)
+  switch (level) {
+    case 'immunity':
+      return `Immune: ${name}`
+    case 'vulnerability':
+      return `Vulnerable: ${name}`
+    case 'resistance':
+      return `Resist: ${name}`
+    default:
+      return `${level}: ${name}`
+  }
+}
 
 const EFFECT_NAME_BY_ID = new Map(
   EFFECT_CONDITION_DEFINITIONS.map((r) => [r.id, r.name] as const),
@@ -189,11 +223,16 @@ export function defenseBadgesToPresentableCombatEffects(
 const PREVIEW_TOOLTIP_PHASE1 =
   'Presentation only: scoped immunity rules are not enforced in encounter resolution yet (Phase 3).'
 
-export function buildEncounterDefensePreviewChips(combatant: CombatantInstance): PreviewChip[] {
+export function buildEncounterDefensePreviewChips(
+  combatant: CombatantInstance,
+  options?: DefensePreviewChipOptions,
+): PreviewChip[] {
+  const { excludeGranted = false, excludeVulnerabilities = false } = options ?? {}
   const { condition, damage } = deriveEncounterDefenseBadges(combatant)
   const chips: PreviewChip[] = []
 
   for (const b of condition) {
+    if (excludeGranted && !b.conditional) continue
     const tooltipParts = [b.scopeLabel, b.sourceLabel, b.conditional ? PREVIEW_TOOLTIP_PHASE1 : undefined].filter(
       Boolean,
     ) as string[]
@@ -206,9 +245,11 @@ export function buildEncounterDefensePreviewChips(combatant: CombatantInstance):
   }
 
   for (const d of damage) {
+    if (excludeVulnerabilities && d.kind === 'damage-vulnerability') continue
+    if (excludeGranted && !d.conditional) continue
     chips.push({
       id: `defense-${d.markerId}`,
-      label: d.label,
+      label: formatDamageDefenseLabel(d.kind.replace('damage-', ''), d.damageType),
       tone: 'neutral',
       tooltip: d.conditional ? 'Temporary or sourced defense (see combat log / resolution).' : undefined,
     })

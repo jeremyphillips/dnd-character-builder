@@ -991,7 +991,7 @@ export const MONSTERS_B: readonly MonsterCatalogEntry[] = [
       },
       proficiencyBonus: 4,
       resistances: ['cold'],
-      immunities: ['fire', 'poison', 'poisoned'],
+      immunities: ['fire', 'poison'],
       resolution: {
         caveats: ['Telepathy 120 ft. not a separate language row.'],
       },

@@ -19,6 +19,7 @@ import {
   getPriorityOrder,
   getSectionOrder,
 } from './combat-state-ui-map'
+import { formatTurnDuration } from '../../helpers/format-turn-duration'
 
 const DEFENSE_BADGE_PRESENTATION_BASE: CombatStatePresentation = {
   label: '',
@@ -119,11 +120,10 @@ export function collectPresentableEffects(combatant: CombatantInstance): Present
 
   // Derived: concentrating
   if (combatant.concentration) {
-    const SECONDS_PER_TURN = 6
     const { remainingTurns, totalTurns } = combatant.concentration
     const timeLabel =
       remainingTurns != null && totalTurns != null
-        ? ` (${(totalTurns - remainingTurns) * SECONDS_PER_TURN}s/${totalTurns * SECONDS_PER_TURN}s)`
+        ? ` (${formatTurnDuration({ remainingTurns, totalTurns })})`
         : ''
     effects.push({
       id: `${instanceId}-concentrating`,

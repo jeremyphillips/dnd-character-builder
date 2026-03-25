@@ -26,7 +26,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
         skills: { stealth: { proficiencyLevel: 2 } },
       },
       proficiencyBonus: 2,
-      immunities: ['poison', 'exhaustion', 'petrified', 'poisoned'],
+      immunities: ['poison', 'exhaustion', 'petrified'],
       traits: [
         {
           name: 'Flyby',
@@ -259,7 +259,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
         passivePerception: 10,
       },
       proficiencyBonus: 2,
-      immunities: ['poison', 'charmed', 'exhaustion', 'poisoned'],
+      immunities: ['poison', 'charmed', 'exhaustion'],
       actions: [
         {
           kind: 'special',

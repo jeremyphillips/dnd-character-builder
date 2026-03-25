@@ -3,7 +3,6 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import { AppBadge, AppTooltip } from '@/ui/primitives'
-import type { AppBadgeTone } from '@/ui/types'
 
 import {
   collectPresentableEffects,
@@ -15,6 +14,7 @@ import {
 } from '../../../domain'
 import type { CombatStateSection, EnrichedPresentableEffect } from '../../../domain'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import { combatToneToAppBadgeTone } from '../../shared/cards/combatant-badges'
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {
   'critical-now': 'Critical Now',
@@ -22,13 +22,6 @@ const SECTION_LABELS: Record<CombatStateSection, string> = {
   restrictions: 'Restrictions',
   'turn-triggers': 'Turn Triggers',
   'system-details': 'System Details',
-}
-
-function toneToAppBadgeTone(
-  tone: EnrichedPresentableEffect['presentation']['tone'],
-): AppBadgeTone {
-  if (tone === 'neutral') return 'default'
-  return tone
 }
 
 function EffectChip({ effect }: { effect: EnrichedPresentableEffect }) {
@@ -43,7 +36,7 @@ function EffectChip({ effect }: { effect: EnrichedPresentableEffect }) {
   const badge = (
     <AppBadge
       label={withDuration}
-      tone={toneToAppBadgeTone(effect.presentation.tone)}
+      tone={combatToneToAppBadgeTone(effect.presentation.tone)}
       variant="outlined"
       size="small"
     />

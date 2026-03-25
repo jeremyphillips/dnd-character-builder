@@ -234,7 +234,12 @@ export default function EncounterActiveRoute() {
     setActionDrawerOpen(false)
   }, [resetAoePlacement, setSelectedActionId, setActionDrawerOpen])
 
-  useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawer)
+  const handleCloseDrawerOnTurnChange = useCallback(() => {
+    handleCloseDrawer()
+    setSelectedActionTargetId('')
+  }, [handleCloseDrawer, setSelectedActionTargetId])
+
+  useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawerOnTurnChange)
 
   const handleCancelAoe = useCallback(() => {
     resetAoePlacement()
@@ -350,6 +355,8 @@ export default function EncounterActiveRoute() {
     onSelectAction: handleSelectAction,
     selectedCasterOptions,
     onCasterOptionsChange: setSelectedCasterOptions,
+    targetCombatant,
+    allCombatants: combatantRoster,
     targetLabel: targetCombatant ? getCombatantDisplayLabel(targetCombatant, combatantRoster) : undefined,
     canResolveAction,
     onResolveAction: handleResolveAction,

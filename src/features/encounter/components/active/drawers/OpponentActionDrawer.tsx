@@ -10,6 +10,8 @@ import {
   partitionCombatantActionBuckets,
   sortByPriority,
 } from '../../../domain'
+import { AllyCombatantActivePreviewCard } from '../cards/AllyCombatantActivePreviewCard'
+import { OpponentCombatantActivePreviewCard } from '../cards/OpponentCombatantActivePreviewCard'
 import { CombatantActionDrawer } from './CombatantActionDrawer'
 
 type OpponentActionDrawerProps = {
@@ -23,6 +25,8 @@ type OpponentActionDrawerProps = {
   onSelectAction?: (actionId: string) => void
   selectedCasterOptions?: Record<string, string>
   onCasterOptionsChange?: (values: Record<string, string>) => void
+  targetCombatant?: CombatantInstance | null
+  allCombatants?: readonly CombatantInstance[]
   targetLabel?: string | null
   canResolveAction?: boolean
   onResolveAction?: () => void
@@ -48,6 +52,8 @@ export function OpponentActionDrawer({
   onSelectAction,
   selectedCasterOptions,
   onCasterOptionsChange,
+  targetCombatant,
+  allCombatants,
   targetLabel,
   canResolveAction,
   onResolveAction,
@@ -77,6 +83,22 @@ export function OpponentActionDrawer({
     return groupBySection(sorted)
   }, [combatant])
 
+  const targetPreview = targetCombatant ? (
+    targetCombatant.side === 'party' ? (
+      <AllyCombatantActivePreviewCard
+        combatant={targetCombatant}
+        allCombatants={allCombatants}
+        showChips={false}
+      />
+    ) : (
+      <OpponentCombatantActivePreviewCard
+        combatant={targetCombatant}
+        allCombatants={allCombatants}
+        showChips={false}
+      />
+    )
+  ) : null
+
   return (
     <CombatantActionDrawer
       open={open}
@@ -91,6 +113,7 @@ export function OpponentActionDrawer({
       selectedCasterOptions={selectedCasterOptions}
       onCasterOptionsChange={onCasterOptionsChange}
       combatEffects={combatEffects}
+      targetPreview={targetPreview}
       targetLabel={targetLabel}
       canResolveAction={canResolveAction}
       onResolveAction={onResolveAction}

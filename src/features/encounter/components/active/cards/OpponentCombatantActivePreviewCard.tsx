@@ -15,6 +15,7 @@ type OpponentCombatantActivePreviewCardProps = {
   allCombatants?: readonly CombatantInstance[]
   isCurrentTurn?: boolean
   isSelected?: boolean
+  showChips?: boolean
   onClick?: () => void
 }
 
@@ -23,6 +24,7 @@ export function OpponentCombatantActivePreviewCard({
   allCombatants,
   isCurrentTurn = false,
   isSelected = false,
+  showChips = true,
   onClick,
 }: OpponentCombatantActivePreviewCardProps) {
   const { catalog } = useCampaignRules()
@@ -83,7 +85,7 @@ export function OpponentCombatantActivePreviewCard({
     subtitle,
     avatar: <MonsterAvatar name={title} size="sm" />,
     stats,
-    chips: chips.length > 0 ? chips : undefined,
+    chips: showChips && chips.length > 0 ? chips : undefined,
     isCurrentTurn,
     isSelected,
     isDefeated,

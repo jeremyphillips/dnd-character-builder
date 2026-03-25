@@ -282,6 +282,7 @@ export function useEncounterState({
     })
     resetAoePlacement()
     setSelectedActionId('')
+    setSelectedActionTargetId('')
   }, [
     selectedActionId,
     selectedActionTargetId,

@@ -17,6 +17,7 @@ type AllyCombatantActivePreviewCardProps = {
   allCombatants?: readonly CombatantInstance[]
   isCurrentTurn?: boolean
   isSelected?: boolean
+  showChips?: boolean
   onClick?: () => void
 }
 
@@ -25,6 +26,7 @@ export function AllyCombatantActivePreviewCard({
   allCombatants,
   isCurrentTurn = false,
   isSelected = false,
+  showChips = true,
   onClick,
 }: AllyCombatantActivePreviewCardProps) {
   const isDefeated = combatant.stats.currentHitPoints <= 0
@@ -80,7 +82,7 @@ export function AllyCombatantActivePreviewCard({
     subtitle,
     avatar,
     stats,
-    chips: chips.length > 0 ? chips : undefined,
+    chips: showChips && chips.length > 0 ? chips : undefined,
     isCurrentTurn,
     isSelected,
     isDefeated,

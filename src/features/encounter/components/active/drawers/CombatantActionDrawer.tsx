@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -25,6 +25,7 @@ import type { ActionSemanticCategory } from '../../../domain/badges/action/actio
 import { deriveActionPresentation } from '../../../domain/badges/action/action-presentation'
 import { ActionRow } from '../action-row/ActionRow'
 import { CasterOptionsFields } from '../action-row/CasterOptionsFields'
+import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
 
 type CombatantActionDrawerProps = {
   open: boolean
@@ -40,6 +41,7 @@ type CombatantActionDrawerProps = {
   selectedCasterOptions?: Record<string, string>
   onCasterOptionsChange?: (values: Record<string, string>) => void
   combatEffects: Record<CombatStateSection, EnrichedPresentableEffect[]>
+  targetPreview?: ReactNode
   targetLabel?: string | null
   canResolveAction?: boolean
   onResolveAction?: () => void
@@ -214,31 +216,40 @@ function deriveRecommendedActions(
 // Action list rendering
 // ---------------------------------------------------------------------------
 
-function ActionItem({
+function ActionItemWithHint({
   action,
   isAvailable,
   isSelected,
+  hint,
   onSelectAction,
 }: {
   action: CombatActionDefinition
   isAvailable: boolean
   isSelected: boolean
+  hint: string | null
   onSelectAction?: (actionId: string) => void
 }) {
   return (
-    <ActionRow
-      action={action}
-      isSelected={isSelected}
-      isAvailable={isAvailable}
-      onSelect={
-        onSelectAction
-          ? () => {
-              if (!isAvailable) return
-              onSelectAction(action.id)
-            }
-          : undefined
-      }
-    />
+    <Box>
+      <ActionRow
+        action={action}
+        isSelected={isSelected}
+        isAvailable={isAvailable}
+        onSelect={
+          onSelectAction
+            ? () => {
+                if (!isAvailable) return
+                onSelectAction(action.id)
+              }
+            : undefined
+        }
+      />
+      {hint && (
+        <Typography variant="caption" color="text.secondary" sx={{ pl: 1, pt: 0.25, display: 'block' }}>
+          {hint}
+        </Typography>
+      )}
+    </Box>
   )
 }
 
@@ -289,11 +300,12 @@ function GroupedActionList({
             </Typography>
             <Stack spacing={0.75}>
               {recommended.map((action) => (
-                <ActionItem
+                <ActionItemWithHint
                   key={`rec-${action.id}`}
                   action={action}
                   isAvailable={isActionAvailable(action)}
                   isSelected={action.id === selectedActionId}
+                  hint={deriveActionUnavailableHint(action, availableActionIds, validActionIdsForTarget)}
                   onSelectAction={onSelectAction}
                 />
               ))}
@@ -312,11 +324,12 @@ function GroupedActionList({
           )}
           <Stack spacing={1}>
             {groupActions.map((action) => (
-              <ActionItem
+              <ActionItemWithHint
                 key={action.id}
                 action={action}
                 isAvailable={isActionAvailable(action)}
                 isSelected={action.id === selectedActionId}
+                hint={deriveActionUnavailableHint(action, availableActionIds, validActionIdsForTarget)}
                 onSelectAction={onSelectAction}
               />
             ))}
@@ -331,6 +344,23 @@ function GroupedActionList({
 // Drawer
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// CTA label helper
+// ---------------------------------------------------------------------------
+
+function deriveCtaLabel(
+  targetLabel: string | null | undefined,
+  selectedActionLabel: string | undefined,
+  canResolveAction: boolean | undefined,
+  inAoeFlow: boolean,
+): string {
+  if (inAoeFlow) return 'Place Area'
+  if (!targetLabel) return 'Select a Target'
+  if (!selectedActionLabel) return 'Choose an Action'
+  if (canResolveAction) return `Resolve ${selectedActionLabel}`
+  return `Resolve ${selectedActionLabel}`
+}
+
 export function CombatantActionDrawer({
   open,
   onClose,
@@ -344,10 +374,11 @@ export function CombatantActionDrawer({
   selectedCasterOptions,
   onCasterOptionsChange,
   combatEffects,
+  targetPreview,
   targetLabel,
   canResolveAction,
   onResolveAction,
-  onEndTurn,
+  onEndTurn: _onEndTurn,
   aoeStep = 'none',
   aoePlacementError,
   onDismissAoeError,
@@ -398,11 +429,42 @@ export function CombatantActionDrawer({
   const aoeAction =
     selectedActionDefinition && isAreaGridAction(selectedActionDefinition) ? selectedActionDefinition : null
 
+  const bothBucketsSpent = actionsSection.title.includes('spent') && bonusSection.title.includes('spent')
+  const ctaLabel = deriveCtaLabel(targetLabel, selectedActionDefinition?.label, canResolveAction, inAoeFlow)
+
   return (
     <AppDrawer open={open} onClose={onClose} anchor="right" title={title} width={420} nonModal>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
+            {/* --- Target context (top of drawer) --- */}
+            {!inAoeFlow && (
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', letterSpacing: '0.08em' }}>
+                  Target
+                </Typography>
+                {targetPreview ? (
+                  <Box sx={{ mt: 0.5 }}>{targetPreview}</Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Select a target on the map or sidebar
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* --- Workflow status --- */}
+            {!inAoeFlow && targetLabel && !selectedActionId && (
+              <Typography variant="body2" color="text.secondary">
+                Choose an action below
+              </Typography>
+            )}
+            {!inAoeFlow && bothBucketsSpent && (
+              <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
+                All actions spent this turn
+              </Typography>
+            )}
+
             {inAoeFlow && aoeAction?.areaTemplate && (
               <AoePlacementPanel
                 action={aoeAction}
@@ -523,26 +585,21 @@ export function CombatantActionDrawer({
             py: 2,
           }}
         >
-          <Stack spacing={1.5}>
-            {!inAoeFlow && (
-              <Typography variant="body2" color="text.secondary" noWrap>
-                Target: {targetLabel || 'None selected'}
-              </Typography>
-            )}
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={!canResolveAction}
-                onClick={onResolveAction}
-              >
-                Resolve Action
-              </Button>
-              <Button variant="outlined" fullWidth onClick={onEndTurn}>
-                End Turn
-              </Button>
-            </Stack>
-          </Stack>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            disabled={!canResolveAction}
+            onClick={onResolveAction}
+          >
+            {ctaLabel}
+          </Button>
+          {/* Phase-one: End Turn temporarily removed from drawer to reduce footer competition.
+              Reintroduce when header / End Turn flow is redesigned.
+          <Button variant="outlined" fullWidth onClick={_onEndTurn}>
+            End Turn
+          </Button>
+          */}
         </Box>
       </Box>
     </AppDrawer>

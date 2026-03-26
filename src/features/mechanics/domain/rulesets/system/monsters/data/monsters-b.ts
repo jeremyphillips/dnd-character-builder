@@ -1287,6 +1287,7 @@ export const MONSTERS_B: readonly MonsterCatalogEntry[] = [
   {
     id: 'bugbear-warrior',
     name: 'Bugbear Warrior',
+    imageKey: '/assets/system/monsters/bugbear-warrior.png',
     type: 'fey',
     sizeCategory: 'medium',
     languages: [{ id: 'common' }, { id: 'goblin' }],

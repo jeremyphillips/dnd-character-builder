@@ -17,6 +17,7 @@ import { useCharacters } from '@/features/character/hooks'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import { buildMonsterModalStats } from '../helpers/combatant-modal-stats'
 import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 
 import {
@@ -386,6 +387,9 @@ function useEncounterRuntimeValue() {
         aoeStep,
         aoeOriginCellId,
         selectedActionTargetId,
+        selectedCasterOptions,
+        encounterState,
+        activeCombatant,
       }),
     [
       selectedActionId,
@@ -394,6 +398,9 @@ function useEncounterRuntimeValue() {
       aoeStep,
       aoeOriginCellId,
       selectedActionTargetId,
+      selectedCasterOptions,
+      encounterState,
+      activeCombatant,
     ],
   )
 
@@ -423,6 +430,9 @@ function useEncounterRuntimeValue() {
         selectedAction,
         aoeStep,
         canResolveAction: canResolveActionForHeader,
+        selectedActionRequiresCreatureTarget: selectedAction
+          ? actionRequiresCreatureTargetForResolve(selectedAction)
+          : undefined,
       },
       display: {
         selectedActionLabel: selectedAction?.label ?? null,

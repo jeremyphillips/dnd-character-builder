@@ -24,7 +24,7 @@ import {
   type MonsterFormContext,
 } from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
-import { buildDefaultCasterOptions } from '@/features/mechanics/domain/spells/caster-options'
+import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 import type { Armor } from '@/features/content/equipment/armor/domain/types/armor.types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
 import type { Monster } from '@/features/content/monsters/domain/types'
@@ -213,7 +213,7 @@ export function useEncounterState({
 
   useEffect(() => {
     const action = availableActions.find((a) => a.id === selectedActionId) ?? null
-    setSelectedCasterOptions(buildDefaultCasterOptions(action?.casterOptions))
+    setSelectedCasterOptions(buildInitialCasterOptionsForAction(action))
   // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when selectedActionId changes; availableActions is read fresh
   }, [selectedActionId])
 

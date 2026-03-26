@@ -13,7 +13,11 @@ import {
 import { ZoomControl } from '@/ui/patterns'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
-import { isValidActionTarget } from '@/features/mechanics/domain/encounter'
+import {
+  isValidActionTarget,
+  actionRequiresCreatureTargetForResolve,
+  getPrimaryResolutionMissing,
+} from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 
 import { buildEncounterActionToastPayload } from '../helpers/encounter-action-toast'
@@ -141,7 +145,7 @@ export default function EncounterActiveRoute() {
   }, [encounterState, selectedActionTargetId])
 
   const targetValidation = useMemo(() => {
-    if (!encounterState || !activeCombatant || !targetCombatant) return undefined
+    if (!encounterState || !activeCombatant) return undefined
     return selectValidActionIdsForTarget(encounterState, activeCombatant, targetCombatant, availableActions)
   }, [encounterState, activeCombatant, targetCombatant, availableActions])
 
@@ -155,8 +159,12 @@ export default function EncounterActiveRoute() {
       if (selectedActionId && encounterState && activeCombatant) {
         const nextTarget = encounterState.combatantsById[nextTargetId]
         const action = availableActions.find((a) => a.id === selectedActionId)
-        if (!nextTarget || !action || !isValidActionTarget(encounterState, nextTarget, activeCombatant, action)) {
+        if (!action) {
           setSelectedActionId('')
+        } else if (actionRequiresCreatureTargetForResolve(action)) {
+          if (!nextTarget || !isValidActionTarget(encounterState, nextTarget, activeCombatant, action)) {
+            setSelectedActionId('')
+          }
         }
       }
     },
@@ -252,6 +260,9 @@ export default function EncounterActiveRoute() {
         aoeStep,
         aoeOriginCellId,
         selectedActionTargetId,
+        selectedCasterOptions,
+        encounterState,
+        activeCombatant,
       }),
     [
       selectedActionId,
@@ -260,6 +271,30 @@ export default function EncounterActiveRoute() {
       aoeStep,
       aoeOriginCellId,
       selectedActionTargetId,
+      selectedCasterOptions,
+      encounterState,
+      activeCombatant,
+    ],
+  )
+
+  const primaryResolutionMissing = useMemo(
+    () =>
+      getPrimaryResolutionMissing(selectedAction, {
+        selectedActionTargetId,
+        aoeStep,
+        aoeOriginCellId,
+        selectedCasterOptions,
+        encounterState,
+        activeCombatant,
+      }),
+    [
+      selectedAction,
+      selectedActionTargetId,
+      aoeStep,
+      aoeOriginCellId,
+      selectedCasterOptions,
+      encounterState,
+      activeCombatant,
     ],
   )
 
@@ -441,6 +476,7 @@ export default function EncounterActiveRoute() {
     allCombatants: combatantRoster,
     targetLabel: targetCombatant ? getCombatantDisplayLabel(targetCombatant, combatantRoster) : undefined,
     canResolveAction,
+    primaryResolutionMissingMessage: primaryResolutionMissing?.message,
     onResolveAction: handleResolveAction,
     onEndTurn: handleNextTurn,
     aoeStep,

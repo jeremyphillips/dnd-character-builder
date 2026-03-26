@@ -23,6 +23,11 @@ export type EncounterHeaderInteractionArgs = {
   selectedAction: CombatActionDefinition | null
   aoeStep: AoeStep
   canResolveAction: boolean
+  /**
+   * When `false`, the selected action does not use a creature target (e.g. summon with `targeting.none`).
+   * When omitted, treated as `true` for backward compatibility.
+   */
+  selectedActionRequiresCreatureTarget?: boolean
 }
 
 export type EncounterHeaderDisplayArgs = {
@@ -50,6 +55,7 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     selectedAction,
     aoeStep,
     canResolveAction,
+    selectedActionRequiresCreatureTarget,
   } = interaction
   const { selectedActionLabel, selectedTargetLabel } = display
 
@@ -117,6 +123,12 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
   }
 
   if (hasActionPick && !hasTargetPick && selectedAction && !isAreaGridAction(selectedAction)) {
+    if (selectedActionRequiresCreatureTarget === false) {
+      return {
+        directive: `Finish ${selectedActionLabel ?? 'this action'} in the action panel`,
+        endTurnEmphasis: defaultEmphasis(),
+      }
+    }
     return {
       directive: `Choose a target for ${selectedActionLabel ?? 'this action'}`,
       endTurnEmphasis: defaultEmphasis(),

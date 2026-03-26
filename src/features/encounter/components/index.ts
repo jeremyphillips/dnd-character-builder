@@ -25,6 +25,7 @@ export { OpponentActionDrawer } from './active/drawers/OpponentActionDrawer'
 export {
   CombatantActionDrawer,
   useCloseCombatantActionDrawerOnActiveCombatantChange,
+  type CombatantActionDrawerView,
 } from './active/drawers/CombatantActionDrawer'
 export type { CombatantStatBadge, CombatantTrackedPartBadge } from './shared/cards/combatant-badges'
 export {

@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -12,9 +12,15 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import {
+  buildInitialCasterOptionsForAction,
+  formatCasterOptionSummary,
+} from '@/features/mechanics/domain/spells/caster-options'
 import { isAreaGridAction, type AoeStep } from '../../../helpers/area-grid-action'
 import { AoePlacementPanel } from './drawer-modes/AoePlacementPanel'
+import { CasterOptionsDrawerPanel } from './drawer-modes/CasterOptionsDrawerPanel'
 import {
   deriveBucketChrome,
   deriveBucketState,
@@ -22,11 +28,16 @@ import {
   type CombatStateSection,
   type EnrichedPresentableEffect,
 } from '../../../domain'
-import type { ActionSemanticCategory } from '../../../domain/badges/action/action-presentation.types'
+import type { ActionSemanticCategory } from '../../../domain/actions/action-presentation.types'
 import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
 import { ActionRow } from '../action-row/ActionRow'
-import { CasterOptionsFields } from '../action-row/CasterOptionsFields'
 import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
+
+/**
+ * Drawer sub-views. `aoePlacement` is derived from encounter `aoeStep` + area action (parent-driven).
+ * Future: e.g. `singleCellPlacement` can follow the same pattern (parent flag or local state).
+ */
+export type CombatantActionDrawerView = 'main' | 'aoePlacement' | 'casterOptions'
 
 type CombatantActionDrawerProps = {
   open: boolean
@@ -46,6 +57,8 @@ type CombatantActionDrawerProps = {
   combatEffects: Record<CombatStateSection, EnrichedPresentableEffect[]>
   targetPreview?: ReactNode
   targetLabel?: string | null
+  /** First unsatisfied resolution gate for the selected action (CTA when disabled). */
+  primaryResolutionMissingMessage?: string | null
   canResolveAction?: boolean
   onResolveAction?: () => void
   onEndTurn?: () => void
@@ -349,6 +362,9 @@ function GroupedActionList({
 // Drawer
 // ---------------------------------------------------------------------------
 
+/** Must match caster-option message from `getPrimaryResolutionMissing` / `getActionResolutionReadiness`. */
+const PRIMARY_MISSING_CASTER_OPTIONS_MSG = 'Choose spell options'
+
 // ---------------------------------------------------------------------------
 // CTA label helper
 // ---------------------------------------------------------------------------
@@ -356,13 +372,20 @@ function GroupedActionList({
 function deriveCtaLabel(
   targetLabel: string | null | undefined,
   selectedActionLabel: string | undefined,
+  selectedAction: CombatActionDefinition | undefined,
   canResolveAction: boolean | undefined,
-  inAoeFlow: boolean,
+  primaryResolutionMissingMessage: string | null | undefined,
+  effectiveView: CombatantActionDrawerView,
 ): string {
-  if (inAoeFlow) return `Cast ${selectedActionLabel}`
-  if (!targetLabel) return 'Select a Target'
-  if (!selectedActionLabel) return 'Choose an Action'
+  if (effectiveView === 'aoePlacement') return `Cast ${selectedActionLabel ?? 'spell'}`
+  if (!selectedActionLabel) {
+    if (!targetLabel) return 'Choose an action or target'
+    return 'Choose an Action'
+  }
+  const needsTarget = actionRequiresCreatureTargetForResolve(selectedAction)
+  if (needsTarget && !targetLabel) return 'Select a Target'
   if (canResolveAction) return `Resolve ${selectedActionLabel}`
+  if (primaryResolutionMissingMessage) return primaryResolutionMissingMessage
   return `Resolve ${selectedActionLabel}`
 }
 
@@ -377,11 +400,12 @@ export function CombatantActionDrawer({
   invalidActionReasons,
   selectedActionId,
   onSelectAction,
-  selectedCasterOptions,
+  selectedCasterOptions = {},
   onCasterOptionsChange,
   combatEffects,
   targetPreview,
   targetLabel,
+  primaryResolutionMissingMessage,
   canResolveAction,
   onResolveAction,
   onEndTurn: _onEndTurn,
@@ -394,6 +418,23 @@ export function CombatantActionDrawer({
   onCancelAoe,
   onUndoAoeSelection,
 }: CombatantActionDrawerProps) {
+  /** `aoePlacement` overrides when parent is in AoE flow; otherwise `main` or `casterOptions`. */
+  const [localSubView, setLocalSubView] = useState<'main' | 'casterOptions'>('main')
+  const [fallbackCasterOptions, setFallbackCasterOptions] = useState<Record<string, string>>({})
+  const isCasterOptionsControlled = onCasterOptionsChange != null
+
+  useLayoutEffect(() => {
+    if (!open) setLocalSubView('main')
+  }, [open])
+
+  useLayoutEffect(() => {
+    setLocalSubView('main')
+  }, [selectedActionId])
+
+  useLayoutEffect(() => {
+    if (aoeStep !== 'none') setLocalSubView('main')
+  }, [aoeStep])
+
   const effectSections = (Object.entries(combatEffects) as [CombatStateSection, EnrichedPresentableEffect[]][]).filter(
     ([, effects]) => effects.length > 0,
   )
@@ -424,58 +465,86 @@ export function CombatantActionDrawer({
     return [...actions, ...bonusActions].find((a) => a.id === selectedActionId)
   }, [actions, bonusActions, selectedActionId])
   const casterFields = selectedActionDefinition?.casterOptions
-  const stableOnCasterOptions = useCallback(
+
+  // Uncontrolled: reset local draft when spell selection changes (no parent `useEncounterState`).
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional sync from selected action metadata */
+  useEffect(() => {
+    if (isCasterOptionsControlled) return
+    if (!selectedActionId) {
+      setFallbackCasterOptions({})
+      return
+    }
+    setFallbackCasterOptions(buildInitialCasterOptionsForAction(selectedActionDefinition ?? null))
+  }, [isCasterOptionsControlled, selectedActionId, selectedActionDefinition])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const resolvedCasterOptions = isCasterOptionsControlled ? selectedCasterOptions : fallbackCasterOptions
+
+  const emitCasterOptions = useCallback(
     (next: Record<string, string>) => {
-      onCasterOptionsChange?.(next)
+      if (onCasterOptionsChange) onCasterOptionsChange(next)
+      else setFallbackCasterOptions(next)
     },
     [onCasterOptionsChange],
   )
 
-  const inAoeFlow = aoeStep !== 'none'
+  const showSpellOptionsSection = Boolean(
+    casterFields?.length && selectedActionId && selectedActionDefinition,
+  )
+
   const aoeAction =
     selectedActionDefinition && isAreaGridAction(selectedActionDefinition) ? selectedActionDefinition : null
 
+  const effectiveView: CombatantActionDrawerView = useMemo(() => {
+    if (aoeStep !== 'none' && aoeAction?.areaTemplate) return 'aoePlacement'
+    return localSubView === 'casterOptions' ? 'casterOptions' : 'main'
+  }, [aoeStep, aoeAction?.areaTemplate, localSubView])
+
+  const isMain = effectiveView === 'main'
+
   const bothBucketsSpent = actionsSection.title.includes('spent') && bonusSection.title.includes('spent')
-  const ctaLabel = deriveCtaLabel(targetLabel, selectedActionDefinition?.label, canResolveAction, inAoeFlow)
+  const ctaLabel = deriveCtaLabel(
+    targetLabel,
+    selectedActionDefinition?.label,
+    selectedActionDefinition,
+    canResolveAction,
+    primaryResolutionMissingMessage,
+    effectiveView,
+  )
+
+  /** Footer reused the same copy as spell options but stayed disabled; open the options subview instead of resolve. */
+  const shouldFooterOpenSpellOptions =
+    effectiveView === 'main' &&
+    !canResolveAction &&
+    primaryResolutionMissingMessage === PRIMARY_MISSING_CASTER_OPTIONS_MSG &&
+    Boolean(selectedActionDefinition?.casterOptions?.length)
+
+  const footerPrimaryDisabled = shouldFooterOpenSpellOptions ? false : !canResolveAction
+
+  const handleFooterPrimaryClick = useCallback(() => {
+    if (shouldFooterOpenSpellOptions) {
+      setLocalSubView('casterOptions')
+      return
+    }
+    onResolveAction?.()
+  }, [shouldFooterOpenSpellOptions, onResolveAction])
+
+  const drawerFooterPrimaryLabel =
+    shouldFooterOpenSpellOptions && effectiveView === 'main' ? 'Choose Spell Options' : ctaLabel
+
+  const casterOptionSummaryLine = useMemo(() => {
+    if (!casterFields?.length) return ''
+    const raw = formatCasterOptionSummary(casterFields, resolvedCasterOptions).trim()
+    if (!raw) return ''
+    return raw.replace(/^\s*\(/, '').replace(/\)\s*$/, '').trim()
+  }, [casterFields, resolvedCasterOptions])
 
   return (
     <AppDrawer open={open} onClose={onClose} anchor="right" title={title} width={420} nonModal>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
-            {/* --- Target context (top of drawer) --- */}
-            {!inAoeFlow && (
-              <Box>
-                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', letterSpacing: '0.08em' }}>
-                  Target
-                </Typography>
-                {targetPreview ? (
-                  <Box sx={{ mt: 0.5 }}>{targetPreview}</Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Select a target on the map or sidebar
-                  </Typography>
-                )}
-              </Box>
-            )}
-
-            {/* --- Workflow status --- */}
-            {!inAoeFlow && targetLabel && !selectedActionId && (
-              <Typography variant="body2" color="text.secondary">
-                Choose an action below
-              </Typography>
-            )}
-            {!inAoeFlow && bothBucketsSpent && (
-              <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
-                All actions spent this turn
-
-                <Button variant="contained" color="primary" fullWidth onClick={_onEndTurn}>
-                  End Turn
-                </Button>
-              </Typography>
-            )}
-
-            {inAoeFlow && aoeAction?.areaTemplate && (
+            {effectiveView === 'aoePlacement' && aoeAction?.areaTemplate && aoeStep !== 'none' && (
               <AoePlacementPanel
                 action={aoeAction}
                 aoeStep={aoeStep}
@@ -489,100 +558,161 @@ export function CombatantActionDrawer({
               />
             )}
 
-            <Collapse in={!inAoeFlow} timeout="auto" unmountOnExit>
-              <Stack spacing={2}>
-            <CollapsibleSection
-              key={`${open}-actions-${actionsSection.title}`}
-              title={actionsSection.title}
-              count={actions.length}
-              defaultOpen={actionsSection.defaultOpen}
-            >
-              <GroupedActionList
-                actions={actions}
-                availableActionIds={availableActionIds}
-                validActionIdsForTarget={validActionIdsForTarget}
-                invalidActionReasons={invalidActionReasons}
-                selectedActionId={selectedActionId}
-                onSelectAction={onSelectAction}
-              />
-            </CollapsibleSection>
-
-            <CollapsibleSection
-              key={`${open}-bonus-${bonusSection.title}`}
-              title={bonusSection.title}
-              count={bonusActions.length}
-              defaultOpen={bonusSection.defaultOpen}
-            >
-              <GroupedActionList
-                actions={bonusActions}
-                availableActionIds={availableActionIds}
-                validActionIdsForTarget={validActionIdsForTarget}
-                invalidActionReasons={invalidActionReasons}
-                selectedActionId={selectedActionId}
-                onSelectAction={onSelectAction}
-              />
-            </CollapsibleSection>
-
-            {casterFields &&
-              casterFields.length > 0 &&
-              selectedActionId &&
-              selectedCasterOptions &&
-              onCasterOptionsChange && (
-                <CasterOptionsFields
-                  formKey={selectedActionId}
-                  fields={casterFields}
-                  value={selectedCasterOptions}
-                  onChange={stableOnCasterOptions}
+            {effectiveView === 'casterOptions' && showSpellOptionsSection && (
+                <CasterOptionsDrawerPanel
+                  formKey={selectedActionId!}
+                  actionLabel={selectedActionDefinition!.label}
+                  fields={casterFields!}
+                  value={resolvedCasterOptions}
+                  onChange={emitCasterOptions}
+                  onBack={() => setLocalSubView('main')}
                 />
               )}
 
-            <CollapsibleSection
-              key={`${open}-effects-${effectsSection.title}`}
-              title={effectsSection.title}
-              count={totalEffects}
-              defaultOpen={effectsSection.defaultOpen}
-            >
-              <Stack spacing={1} sx={{ pt: 0.5 }}>
-                {totalEffects === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No active combat effects.
+            {isMain && (
+              <>
+                <Box>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', letterSpacing: '0.08em' }}>
+                    Target
                   </Typography>
-                ) : (
-                  effectSections.map(([section, effects]) => (
-                    <Box key={section}>
-                      <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                        {SECTION_LABELS[section]}
-                      </Typography>
-                      <Stack spacing={0.5}>
-                        {effects.map((effect) => (
-                          <Stack key={effect.id} direction="row" spacing={1} alignItems="center">
-                            <AppTooltipWrap tooltip={effect.presentation.rulesText}>
-                              <AppBadge
-                                label={getUserFacingEffectLabel(effect)}
-                                tone={effect.presentation.tone === 'neutral' ? 'default' : effect.presentation.tone}
-                                size="small"
-                              />
-                            </AppTooltipWrap>
-                            {effect.duration && (
-                              <Typography variant="caption" color="text.secondary">
-                                {effect.duration}
-                              </Typography>
-                            )}
-                            {effect.summary && (
-                              <Typography variant="caption" color="text.secondary">
-                                {effect.summary}
-                              </Typography>
-                            )}
-                          </Stack>
-                        ))}
-                      </Stack>
-                    </Box>
-                  ))
+                  {targetPreview ? (
+                    <Box sx={{ mt: 0.5 }}>{targetPreview}</Box>
+                  ) : selectedActionDefinition &&
+                    !actionRequiresCreatureTargetForResolve(selectedActionDefinition) ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      No creature target required for this action
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Select a target on the map or sidebar
+                    </Typography>
+                  )}
+                </Box>
+
+                {targetLabel && !selectedActionId && (
+                  <Typography variant="body2" color="text.secondary">
+                    Choose an action below
+                  </Typography>
                 )}
-              </Stack>
-            </CollapsibleSection>
-              </Stack>
-            </Collapse>
+                {!targetLabel &&
+                  selectedActionId &&
+                  selectedActionDefinition &&
+                  actionRequiresCreatureTargetForResolve(selectedActionDefinition) && (
+                    <Typography variant="body2" color="text.secondary">
+                      Select a target on the map or sidebar
+                    </Typography>
+                  )}
+                {bothBucketsSpent && (
+                  <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
+                    All actions spent this turn
+
+                    <Button variant="contained" color="primary" fullWidth onClick={_onEndTurn}>
+                      End Turn
+                    </Button>
+                  </Typography>
+                )}
+
+                <Stack spacing={2}>
+                    <CollapsibleSection
+                      key={`${open}-actions-${actionsSection.title}`}
+                      title={actionsSection.title}
+                      count={actions.length}
+                      defaultOpen={actionsSection.defaultOpen}
+                    >
+                      <GroupedActionList
+                        actions={actions}
+                        availableActionIds={availableActionIds}
+                        validActionIdsForTarget={validActionIdsForTarget}
+                        invalidActionReasons={invalidActionReasons}
+                        selectedActionId={selectedActionId}
+                        onSelectAction={onSelectAction}
+                      />
+                    </CollapsibleSection>
+
+                    <CollapsibleSection
+                      key={`${open}-bonus-${bonusSection.title}`}
+                      title={bonusSection.title}
+                      count={bonusActions.length}
+                      defaultOpen={bonusSection.defaultOpen}
+                    >
+                      <GroupedActionList
+                        actions={bonusActions}
+                        availableActionIds={availableActionIds}
+                        validActionIdsForTarget={validActionIdsForTarget}
+                        invalidActionReasons={invalidActionReasons}
+                        selectedActionId={selectedActionId}
+                        onSelectAction={onSelectAction}
+                      />
+                    </CollapsibleSection>
+
+                    {showSpellOptionsSection && (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+                            Spell options
+                          </Typography>
+                          {casterOptionSummaryLine ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              {casterOptionSummaryLine}
+                            </Typography>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              None selected
+                            </Typography>
+                          )}
+                          <Button variant="outlined" fullWidth onClick={() => setLocalSubView('casterOptions')}>
+                            Choose Spell Options
+                          </Button>
+                        </Box>
+                      )}
+
+                    <CollapsibleSection
+                      key={`${open}-effects-${effectsSection.title}`}
+                      title={effectsSection.title}
+                      count={totalEffects}
+                      defaultOpen={effectsSection.defaultOpen}
+                    >
+                      <Stack spacing={1} sx={{ pt: 0.5 }}>
+                        {totalEffects === 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            No active combat effects.
+                          </Typography>
+                        ) : (
+                          effectSections.map(([section, effects]) => (
+                            <Box key={section}>
+                              <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                                {SECTION_LABELS[section]}
+                              </Typography>
+                              <Stack spacing={0.5}>
+                                {effects.map((effect) => (
+                                  <Stack key={effect.id} direction="row" spacing={1} alignItems="center">
+                                    <AppTooltipWrap tooltip={effect.presentation.rulesText}>
+                                      <AppBadge
+                                        label={getUserFacingEffectLabel(effect)}
+                                        tone={effect.presentation.tone === 'neutral' ? 'default' : effect.presentation.tone}
+                                        size="small"
+                                      />
+                                    </AppTooltipWrap>
+                                    {effect.duration && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {effect.duration}
+                                      </Typography>
+                                    )}
+                                    {effect.summary && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {effect.summary}
+                                      </Typography>
+                                    )}
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            </Box>
+                          ))
+                        )}
+                      </Stack>
+                    </CollapsibleSection>
+                  </Stack>
+              </>
+            )}
           </Stack>
         </Box>
 
@@ -597,15 +727,21 @@ export function CombatantActionDrawer({
             py: 2,
           }}
         >
+          {effectiveView === 'casterOptions' ? (
+            <Button variant="contained" color="primary" fullWidth onClick={() => setLocalSubView('main')}>
+              Done
+            </Button>
+          ) : (
           <Button
             variant="contained"
             color="primary"
             fullWidth
-            disabled={!canResolveAction}
-            onClick={onResolveAction}
+            disabled={footerPrimaryDisabled}
+            onClick={handleFooterPrimaryClick}
           >
-            {ctaLabel}
+            {drawerFooterPrimaryLabel}
           </Button>
+          )}
           {/* Phase-one: End Turn temporarily removed from drawer to reduce footer competition.
               Reintroduce when header / End Turn flow is redesigned.
           <Button variant="outlined" fullWidth onClick={_onEndTurn}>

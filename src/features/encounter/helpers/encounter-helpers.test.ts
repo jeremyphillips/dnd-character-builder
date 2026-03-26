@@ -379,6 +379,56 @@ describe('buildSpellCombatActions', () => {
     expect(actions[0]!.effects?.some((e) => e.kind === 'spawn')).toBe(true)
   })
 
+  it('copies resolution.casterOptions onto spell combat actions (e.g. Giant Insect)', () => {
+    const spell = makeSpell({
+      id: 'giant-insect',
+      name: 'Giant Insect',
+      level: 4,
+      range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+      duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true },
+      resolution: {
+        casterOptions: [
+          {
+            kind: 'enum',
+            id: 'giant-insect-form',
+            label: 'Form',
+            options: [
+              { value: 'centipede', label: 'Giant centipede' },
+              { value: 'spider', label: 'Giant spider' },
+              { value: 'wasp', label: 'Giant wasp' },
+            ],
+          },
+        ],
+      },
+      effects: [
+        {
+          kind: 'spawn',
+          count: 1,
+          mapMonsterIdFromCasterOption: {
+            fieldId: 'giant-insect-form',
+            valueToMonsterId: {
+              centipede: 'giant-centipede',
+              spider: 'giant-spider',
+              wasp: 'giant-wasp',
+            },
+          },
+          initiativeMode: 'share-caster',
+        },
+        { kind: 'note', text: 'Stat block', category: 'flavor' as const },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['giant-insect'],
+      spellsById: { 'giant-insect': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.casterOptions?.length).toBe(1)
+    expect(actions[0]!.casterOptions?.[0]?.id).toBe('giant-insect-form')
+  })
+
   it('injects spell save DC into save effects that lack a DC', () => {
     const spell = makeSpell({
       id: 'charm-person',

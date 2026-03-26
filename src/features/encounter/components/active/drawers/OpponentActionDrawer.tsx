@@ -33,6 +33,7 @@ type OpponentActionDrawerProps = {
   targetCombatant?: CombatantInstance | null
   allCombatants?: readonly CombatantInstance[]
   targetLabel?: string | null
+  primaryResolutionMissingMessage?: string | null
   canResolveAction?: boolean
   onResolveAction?: () => void
   onEndTurn?: () => void
@@ -63,6 +64,7 @@ export function OpponentActionDrawer({
   targetCombatant,
   allCombatants,
   targetLabel,
+  primaryResolutionMissingMessage,
   canResolveAction,
   onResolveAction,
   onEndTurn,
@@ -128,6 +130,7 @@ export function OpponentActionDrawer({
       combatEffects={combatEffects}
       targetPreview={targetPreview}
       targetLabel={targetLabel}
+      primaryResolutionMissingMessage={primaryResolutionMissingMessage}
       canResolveAction={canResolveAction}
       onResolveAction={onResolveAction}
       onEndTurn={onEndTurn}

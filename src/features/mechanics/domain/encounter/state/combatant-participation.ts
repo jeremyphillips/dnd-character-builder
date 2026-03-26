@@ -19,6 +19,13 @@
  *    Represented by `diedAtRound` (and usually `remains`) when lethal 0 HP is applied.
  * 3. **Remains** — what is left for targeting (corpse, bones, dust, disintegrated).
  *
+ * **Defeated without a death record (`HP ≤ 0` but `diedAtRound` unset):**
+ * Current lethal resolution (`applyDamageToCombatant`) always writes a death record when
+ * crossing from above 0 to 0 HP, so this combination is **not** a normal finalized kill
+ * in production — it appears in **tests, synthetic state, or future mechanics** (e.g.
+ * unconscious at 0 HP without a recorded death). Do not infer “dead” from HP alone; use
+ * `isDeadCombatant` (record-based) vs `isDefeatedCombatant` (HP-based).
+ *
  * **Recommended option for this codebase:** Option C–style — keep existing instance
  * fields (`remains`, `diedAtRound`, HP) and expose semantics only through these helpers
  * so call sites stop re-interpreting raw numbers. A dedicated `encounterStatus` field
@@ -27,7 +34,11 @@
 
 import type { CombatantInstance } from './types/combatant.types'
 
-/** In initiative and normal “living” targeting — HP above 0. */
+/**
+ * “Alive” for encounter rules: **HP > 0**. Matches initiative re-roll eligibility in
+ * `buildAliveInitiativeParticipants` (runtime.ts) — same predicate as filtering to living
+ * combatants when a new round rolls initiative.
+ */
 export function isActiveCombatant(c: CombatantInstance): boolean {
   return c.stats.currentHitPoints > 0
 }
@@ -42,9 +53,11 @@ export function isDefeatedCombatant(c: CombatantInstance): boolean {
 }
 
 /**
- * Death **recorded** this encounter: revival windows and aftermath apply.
- * Prefer `diedAtRound`; when tests or migrations only set HP to 0, use
- * `isDefeatedCombatant` + `canTargetAsDeadCreature` instead of inferring “dead” from HP alone.
+ * **Dead (recorded)** — truth source is **`diedAtRound`**, not HP. A creature can be
+ * defeated (`HP ≤ 0`) without a death record in synthetic tests; lethal gameplay
+ * normally sets the record when damage reduces HP to 0. **Do not equate “dead” with
+ * `HP ≤ 0` alone** — use `isDefeatedCombatant` for participation and `isDeadCombatant`
+ * for “death was recorded this encounter.”
  */
 export function isDeadCombatant(c: CombatantInstance): boolean {
   return c.diedAtRound != null
@@ -53,7 +66,7 @@ export function isDeadCombatant(c: CombatantInstance): boolean {
 /**
  * Targeting for `CombatActionTargetingProfile.kind === 'dead-creature'`.
  * Requires exactly **0 HP** (engine never stores negative HP) and remains that still
- * represent a targetable body (`corpse` / `bones`, or **undefined** remains treated as corpse).
+ * represent a targetable body (`corpse` / `bones`, or **undefined** remains treated as implicit corpse for spells).
  * Excludes `dust` and `disintegrated` (destroyed / no intact corpse).
  */
 export function canTargetAsDeadCreature(c: CombatantInstance): boolean {
@@ -66,6 +79,14 @@ export function canTargetAsDeadCreature(c: CombatantInstance): boolean {
 /**
  * Something physical remains on the grid worth tracking (excludes total disintegration).
  * Useful for narrative/spawn hooks; targeting uses {@link canTargetAsDeadCreature}.
+ *
+ * **`remains === undefined`:** treated as **no explicit aftermath** → returns **false**.
+ * Normal lethal damage sets `remains` when a death record is applied, so defeated
+ * combatants usually have a concrete kind. `undefined` is typical for living
+ * combatants and for synthetic/test state. We keep this predicate **strict** (requires
+ * an explicit non-disintegrated `remains`) so UI/spawn hooks do not assume a body
+ * exists without stored data; {@link canTargetAsDeadCreature} still treats `undefined`
+ * at 0 HP as an implicit corpse for spell targeting, which is intentionally a separate rule.
  */
 export function hasRemainsOnGrid(c: CombatantInstance): boolean {
   const r = c.remains
@@ -75,7 +96,8 @@ export function hasRemainsOnGrid(c: CombatantInstance): boolean {
 
 /**
  * Body intact enough for Raise Dead–style revival checks (not dust / disintegrated).
- * Does not assert HP — pair with `isDefeatedCombatant` or `canTargetAsDeadCreature` as needed.
+ * **`remains === undefined`** is treated as **intact** (not destroyed) so revival
+ * resolution can run; pair with `isDefeatedCombatant` or `canTargetAsDeadCreature` for HP.
  */
 export function hasIntactRemainsForRevival(c: CombatantInstance): boolean {
   const r = c.remains

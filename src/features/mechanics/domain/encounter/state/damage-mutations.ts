@@ -403,6 +403,11 @@ function checkConcentrationOnDamage(
   return nextState
 }
 
+/**
+ * Healing only clears **death aftermath** when the target **revives** (`prevHp ≤ 0` and `newHp > 0`):
+ * `remains` and `diedAtRound` are removed so the combatant is no longer dead-recorded or
+ * targetable as `dead-creature`. Healing that leaves HP at 0 does not clear those fields.
+ */
 export function applyHealingToCombatant(
   state: EncounterState,
   targetId: string,

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CombatantInstance } from './types/combatant.types'
 import {
   canTargetAsDeadCreature,
+  hasIntactRemainsForRevival,
   hasRemainsOnGrid,
   isDeadCombatant,
   isDefeatedCombatant,
@@ -30,7 +31,7 @@ function minimalCombatant(overrides: Partial<CombatantInstance>): CombatantInsta
 }
 
 describe('combatant participation / death / dead-creature targeting', () => {
-  it('defeated but not dead: 0 HP without death record (test-only edge)', () => {
+  it('defeated but no death record: synthetic/test state; production lethal path sets diedAtRound', () => {
     const c = minimalCombatant({
       stats: {
         armorClass: 10,
@@ -87,5 +88,23 @@ describe('combatant participation / death / dead-creature targeting', () => {
     expect(isDefeatedCombatant(alive)).toBe(false)
     expect(isDeadCombatant(alive)).toBe(false)
     expect(canTargetAsDeadCreature(alive)).toBe(false)
+  })
+
+  it('undefined remains: living has no grid remains; implicit corpse only for dead-creature targeting at 0 HP', () => {
+    const living = minimalCombatant({})
+    expect(hasRemainsOnGrid(living)).toBe(false)
+    expect(hasIntactRemainsForRevival(living)).toBe(true)
+
+    const syntheticZeroNoRecord = minimalCombatant({
+      stats: {
+        armorClass: 10,
+        maxHitPoints: 10,
+        currentHitPoints: 0,
+        initiativeModifier: 0,
+      },
+    })
+    expect(hasRemainsOnGrid(syntheticZeroNoRecord)).toBe(false)
+    expect(canTargetAsDeadCreature(syntheticZeroNoRecord)).toBe(true)
+    expect(hasIntactRemainsForRevival(syntheticZeroNoRecord)).toBe(true)
   })
 })

@@ -252,15 +252,18 @@ export interface CombatantInstance {
   portraitImageKey?: string | null
   creatureType?: string
   /**
-   * Aftermath on the grid once {@link diedAtRound} is recorded (lethal 0 HP).
-   * Not authoritative alone — use `canTargetAsDeadCreature` / `hasRemainsOnGrid` from
-   * `combatant-participation` for targeting. Mutated by lethal damage (e.g. disintegrate)
-   * and `death-outcome` effects (e.g. turns-to-dust → `dust`).
+   * Aftermath once a death record exists (lethal 0 HP). Semantics by helper:
+   * - **Living:** usually `undefined` (no corpse on the field).
+   * - **Defeated with record:** concrete kind (`corpse`, `bones`, `dust`, …).
+   * - **`undefined` at 0 HP:** possible only in synthetic/test state; `canTargetAsDeadCreature`
+   *   treats that as implicit corpse for spells; `hasRemainsOnGrid` stays false until explicit `remains`.
+   * Mutated by lethal damage (e.g. disintegrate) and `death-outcome` effects (e.g. turns-to-dust).
    */
   remains?: CombatantRemainsKind
   /**
-   * Set when a **death record** is applied (typically crossing to 0 HP in damage resolution).
-   * Used for revival windows (e.g. Revivify). Cleared on healing above 0 HP.
+   * **Death record** — set when damage (etc.) applies a lethal crossing to 0 HP in resolution.
+   * **Truth source for “dead” in code** (`isDeadCombatant`): not the same as “defeated” (`HP ≤ 0`).
+   * Cleared when healing brings `currentHitPoints` above 0 (revival). Used for revival windows (e.g. Revivify).
    */
   diedAtRound?: number
   /** When set (e.g. from character loadout), enables authored `effect.condition` gates that read `equipment.armorEquipped`. */

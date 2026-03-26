@@ -1,9 +1,12 @@
+import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter'
+import { isHostileAction, isValidActionTarget } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 import type { EncounterCell, GridObstacleKind } from './space.types'
 import { gridObstacleDisplayName } from './placeRandomGridObstacle'
 import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from './space.helpers'
 import type { CombatantSide } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
+import { isAreaGridAction } from '../helpers/area-grid-action'
 
 // ---------------------------------------------------------------------------
 // State-level selectors
@@ -76,7 +79,14 @@ export type GridCellViewModel = {
   obstacleLabel: string | null
   isActive: boolean
   isSelectedTarget: boolean
-  isInRange: boolean
+  /** True when this cell is within Chebyshev distance of the active combatant for the selected action's `rangeFt` (distance only; not full targeting validity). */
+  isWithinSelectedActionRange: boolean
+  /** When a creature-targeting action is active (not AoE placement), true iff this occupant is a valid target. */
+  isLegalTargetForSelectedAction: boolean
+  /** Selected valid hostile target — use for subtle red pulse on token only. */
+  isHostileSelectedTargetPulse: boolean
+  /** Valid target for a hostile application (offensive) — error-tint emphasis; false for heals/buffs. */
+  isHostileLegalTargetForSelectedAction: boolean
   isReachable: boolean
   /** AoE: within spell cast range from caster (valid origin band). */
   aoeCastRange?: boolean
@@ -108,11 +118,21 @@ export function isValidAoeOriginCell(
   return d !== undefined && d <= castRangeFt
 }
 
+
+/** True when the selected action expects choosing a creature on the grid (not area-origin placement). */
+export function actionUsesGridCreatureTargeting(action: CombatActionDefinition | null | undefined): boolean {
+  if (!action) return false
+  if (isAreaGridAction(action)) return false
+  const kind = action.targeting?.kind
+  return kind === 'single-target' || kind === 'single-creature' || kind === 'dead-creature'
+}
+
 export function selectGridViewModel(
   state: EncounterState,
   opts?: {
     selectedTargetId?: string | null
     selectedActionRangeFt?: number | null
+    selectedAction?: CombatActionDefinition | null
     showReachable?: boolean
     aoe?: {
       castRangeFt: number
@@ -131,6 +151,7 @@ export function selectGridViewModel(
   const activeId = state.activeCombatantId
   const selectedTargetId = opts?.selectedTargetId ?? null
   const rangeFt = opts?.selectedActionRangeFt ?? null
+  const selectedAction = opts?.selectedAction ?? null
 
   const activeCellId = activeId ? getCellForCombatant(placements, activeId) : undefined
 
@@ -169,10 +190,30 @@ export function selectGridViewModel(
     const obstacleKind = obstacleByCellId.get(cell.id) ?? null
     const obstacleLabel = obstacleKind != null ? gridObstacleDisplayName(obstacleKind) : null
 
-    let inRange = false
+    let withinSelectedActionRange = false
     if (rangeFt != null && activeCellId) {
       const dist = gridDistanceFt(space, activeCellId, cell.id)
-      inRange = dist !== undefined && dist <= rangeFt
+      withinSelectedActionRange = dist !== undefined && dist <= rangeFt
+    }
+
+    let isLegalTargetForSelectedAction = false
+    let isHostileSelectedTargetPulse = false
+    let isHostileLegalTargetForSelectedAction = false
+    const aoeActive = Boolean(aoe)
+    if (!aoeActive && selectedAction && activeId && occupantId && actionUsesGridCreatureTargeting(selectedAction)) {
+      const targetCombatant = combatant
+      const actor = state.combatantsById[activeId]
+      if (targetCombatant && actor) {
+        isLegalTargetForSelectedAction = isValidActionTarget(state, targetCombatant, actor, selectedAction)
+        isHostileSelectedTargetPulse = Boolean(
+          occupantId === selectedTargetId &&
+            isLegalTargetForSelectedAction &&
+            isHostileAction(selectedAction),
+        )
+        isHostileLegalTargetForSelectedAction = Boolean(
+          isLegalTargetForSelectedAction && isHostileAction(selectedAction),
+        )
+      }
     }
 
     let aoeCastRange: boolean | undefined
@@ -213,7 +254,10 @@ export function selectGridViewModel(
       obstacleLabel,
       isActive: occupantId !== null && occupantId === activeId,
       isSelectedTarget: occupantId !== null && occupantId === selectedTargetId,
-      isInRange: inRange,
+      isWithinSelectedActionRange: withinSelectedActionRange,
+      isLegalTargetForSelectedAction,
+      isHostileSelectedTargetPulse,
+      isHostileLegalTargetForSelectedAction,
       isReachable: reachableSet?.has(cell.id) ?? false,
       ...(aoe
         ? {
@@ -334,6 +378,40 @@ export function canMoveTo(
 
   return dist <= movementRemaining
 }
+
+/**
+ * Short rejection label for an illegal move attempt, or `null` when the move would be valid
+ * or movement budget is exhausted (caller should not surface status in that case).
+ */
+export function getMoveRejectionReason(
+  state: EncounterState,
+  combatantId: string,
+  targetCellId: string,
+): string | null {
+  const { space, placements } = state
+  if (!space || !placements) return null
+
+  const combatant = state.combatantsById[combatantId]
+  if (!combatant) return null
+
+  const movementRemaining = combatant.turnResources?.movementRemaining ?? 0
+  if (movementRemaining <= 0) return null
+
+  const cell = getCellById(space, targetCellId)
+  if (!cell || !isCellPassable(cell)) return 'Blocked'
+
+  if (isCellOccupied(placements, targetCellId)) return 'Cell occupied'
+
+  const currentCellId = getCellForCombatant(placements, combatantId)
+  if (!currentCellId) return null
+
+  const dist = gridDistanceFt(space, currentCellId, targetCellId)
+  if (dist === undefined) return null
+  if (dist > movementRemaining) return 'Out of range'
+
+  return null
+}
+
 
 /**
  * Move a combatant to a target cell, deducting movement cost.

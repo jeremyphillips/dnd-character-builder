@@ -359,7 +359,7 @@ function deriveCtaLabel(
   canResolveAction: boolean | undefined,
   inAoeFlow: boolean,
 ): string {
-  if (inAoeFlow) return 'Place Area'
+  if (inAoeFlow) return `Cast ${selectedActionLabel}`
   if (!targetLabel) return 'Select a Target'
   if (!selectedActionLabel) return 'Choose an Action'
   if (canResolveAction) return `Resolve ${selectedActionLabel}`

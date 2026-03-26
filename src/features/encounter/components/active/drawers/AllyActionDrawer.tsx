@@ -31,6 +31,8 @@ type AllyActionDrawerProps = {
   onSelectAction?: (actionId: string) => void
   selectedCasterOptions?: Record<string, string>
   onCasterOptionsChange?: (values: Record<string, string>) => void
+  selectedSummonCellId?: string | null
+  onSelectedSummonCellIdChange?: (cellId: string | null) => void
   targetCombatant?: CombatantInstance | null
   allCombatants?: readonly CombatantInstance[]
   targetLabel?: string | null
@@ -62,6 +64,8 @@ export function AllyActionDrawer({
   onSelectAction,
   selectedCasterOptions,
   onCasterOptionsChange,
+  selectedSummonCellId,
+  onSelectedSummonCellIdChange,
   targetCombatant,
   allCombatants,
   targetLabel,
@@ -128,6 +132,8 @@ export function AllyActionDrawer({
       onSelectAction={onSelectAction}
       selectedCasterOptions={selectedCasterOptions}
       onCasterOptionsChange={onCasterOptionsChange}
+      selectedSummonCellId={selectedSummonCellId}
+      onSelectedSummonCellIdChange={onSelectedSummonCellIdChange}
       combatEffects={combatEffects}
       targetPreview={targetPreview}
       targetLabel={targetLabel}

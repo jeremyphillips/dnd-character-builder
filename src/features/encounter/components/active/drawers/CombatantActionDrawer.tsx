@@ -54,6 +54,9 @@ type CombatantActionDrawerProps = {
   onSelectAction?: (actionId: string) => void
   selectedCasterOptions?: Record<string, string>
   onCasterOptionsChange?: (values: Record<string, string>) => void
+  /** Summon placement cell (when required); wired from encounter runtime. */
+  selectedSummonCellId?: string | null
+  onSelectedSummonCellIdChange?: (cellId: string | null) => void
   combatEffects: Record<CombatStateSection, EnrichedPresentableEffect[]>
   targetPreview?: ReactNode
   targetLabel?: string | null
@@ -402,6 +405,8 @@ export function CombatantActionDrawer({
   onSelectAction,
   selectedCasterOptions = {},
   onCasterOptionsChange,
+  selectedSummonCellId: _selectedSummonCellId,
+  onSelectedSummonCellIdChange: _onSelectedSummonCellIdChange,
   combatEffects,
   targetPreview,
   targetLabel,

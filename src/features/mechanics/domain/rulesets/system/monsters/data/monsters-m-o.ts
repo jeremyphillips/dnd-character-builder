@@ -369,6 +369,7 @@ export const MONSTERS_M_O: readonly MonsterCatalogEntry[] = [
 {
     id: "owlbear",
     name: "Owlbear",
+    imageKey: '/assets/system/monsters/owlbear.png',
     type: "monstrosity",
     sizeCategory: "large",
     languages: [],
@@ -428,6 +429,7 @@ export const MONSTERS_M_O: readonly MonsterCatalogEntry[] = [
 {
     id: "mimic",
     name: "Mimic",
+    imageKey: '/assets/system/monsters/mimic.png',
     type: "monstrosity",
     languages: [],
     sizeCategory: "medium",

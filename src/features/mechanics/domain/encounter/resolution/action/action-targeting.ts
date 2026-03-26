@@ -236,7 +236,6 @@ export function getActionTargetInvalidReason(
   if (
     action.targeting?.rangeFt != null &&
     kind !== 'self' &&
-    kind !== 'none' &&
     state.space &&
     state.placements &&
     !isWithinRange(state.space, state.placements, actor.instanceId, combatant.instanceId, action.targeting.rangeFt)

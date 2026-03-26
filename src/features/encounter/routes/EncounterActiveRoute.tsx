@@ -2,8 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
 import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 
-import { AppToast, type AppAlertTone } from '@/ui/primitives'
+import {
+  AppToast,
+  ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR,
+  ENCOUNTER_ACTIVE_HEADER_LAYOUT_HEIGHT_PX,
+  type AppAlertTone,
+} from '@/ui/primitives'
 import { ZoomControl } from '@/ui/patterns'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
@@ -17,7 +23,11 @@ import {
   isSelfCenteredAreaAction,
 } from '../helpers/area-grid-action'
 import { getCellForCombatant } from '../space/space.helpers'
-import { isValidAoeOriginCell, selectCombatantIdsInAoeFootprint } from '../space/space.selectors'
+import {
+  actionUsesGridCreatureTargeting,
+  isValidAoeOriginCell,
+  selectCombatantIdsInAoeFootprint,
+} from '../space/space.selectors'
 import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,
@@ -27,6 +37,7 @@ import {
   OpponentActionDrawer,
   useCloseCombatantActionDrawerOnActiveCombatantChange,
 } from '../components'
+import { deriveGridHoverStatusMessage } from '../helpers/deriveGridHoverStatus'
 import { campaignEncounterSetupPath } from './encounterPaths'
 import { useEncounterRuntime } from './EncounterRuntimeContext'
 
@@ -68,6 +79,7 @@ export default function EncounterActiveRoute() {
     setActionDrawerOpen,
     monstersById,
     characterPortraitById,
+    interactionMode,
   } = useEncounterRuntime()
 
   const [toastPayload, setToastPayload] = useState<{
@@ -346,6 +358,46 @@ export default function EncounterActiveRoute() {
     [setAoeHoverCellId],
   )
 
+  const movementHighlightActive = useMemo(
+    () =>
+      (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 && interactionMode !== 'aoe-place',
+    [activeCombatant, interactionMode],
+  )
+
+  const creatureTargetingActive = useMemo(() => {
+    if (!selectedAction) return false
+    if (
+      aoeStep !== 'none' &&
+      isAreaGridAction(selectedAction) &&
+      !isSelfCenteredAreaAction(selectedAction)
+    ) {
+      return false
+    }
+    return actionUsesGridCreatureTargeting(selectedAction)
+  }, [selectedAction, aoeStep])
+
+  const gridHoverStatusMessage = useMemo(
+    () =>
+      deriveGridHoverStatusMessage({
+        encounterState,
+        activeCombatantId,
+        activeCombatant,
+        hoveredCellId: aoeHoverCellId,
+        selectedAction,
+        aoeStep,
+        movementHighlightActive,
+      }),
+    [
+      encounterState,
+      activeCombatantId,
+      activeCombatant,
+      aoeHoverCellId,
+      selectedAction,
+      aoeStep,
+      movementHighlightActive,
+    ],
+  )
+
   if (!encounterState) {
     if (campaignId) return <Navigate to={campaignEncounterSetupPath(campaignId)} replace />
     return null
@@ -384,8 +436,33 @@ export default function EncounterActiveRoute() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
       {activeHeader}
+
+      {gridHoverStatusMessage && (
+        <Typography
+          variant="caption"
+          component="div"
+          role="status"
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: `calc(var(${ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR}, ${ENCOUNTER_ACTIVE_HEADER_LAYOUT_HEIGHT_PX}px))`,
+            zIndex: (theme) => theme.zIndex.appBar,
+            px: 2,
+            py: 0.5,
+            minHeight: 26,
+            textAlign: 'center',
+            color: 'text.secondary',
+            fontWeight: 600,
+            pointerEvents: 'none',
+            textShadow: (theme) => `0 1px 0 ${theme.palette.background.paper}`,
+          }}
+        >
+          {gridHoverStatusMessage}
+        </Typography>
+      )}
 
       <AppToast
         open={toastOpen && toastPayload != null}
@@ -407,6 +484,10 @@ export default function EncounterActiveRoute() {
             renderTokenPopover={renderTokenPopover}
             onCellClick={handleCellClick}
             onCellHover={handleCellHover}
+            hoveredCellId={aoeHoverCellId}
+            movementHighlightActive={movementHighlightActive}
+            hasMovementRemaining={(activeCombatant?.turnResources?.movementRemaining ?? 0) > 0}
+            creatureTargetingActive={creatureTargetingActive}
           />
         )}
 

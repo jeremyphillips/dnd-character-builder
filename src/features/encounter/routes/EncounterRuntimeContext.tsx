@@ -299,6 +299,7 @@ function useEncounterRuntimeValue() {
     return selectGridViewModel(encounterState, {
       selectedTargetId: selectedActionTargetId || null,
       selectedActionRangeFt: rangeForRing,
+      selectedAction,
       showReachable:
         (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 && interactionMode !== 'aoe-place',
       aoe: aoeGridOverlay,
@@ -307,6 +308,7 @@ function useEncounterRuntimeValue() {
     encounterState,
     selectedActionTargetId,
     selectedActionRangeFt,
+    selectedAction,
     activeCombatant,
     aoeGridOverlay,
     interactionMode,

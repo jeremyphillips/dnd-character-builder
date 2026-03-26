@@ -100,6 +100,7 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
   {
     id: 'wight',
     name: 'Wight',
+    imageKey: '/assets/system/monsters/wight.png',
     type: 'undead',
     sizeCategory: 'medium',
     languages: [{ id: 'common' }, { id: 'goblin' }],
@@ -382,6 +383,7 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
   {
     id: "zombie",
     name: "Zombie",
+    imageKey: '/assets/system/monsters/zombie.png',
     type: "undead",
     languages: [{ id: "common", speaks: false }],
     description: {

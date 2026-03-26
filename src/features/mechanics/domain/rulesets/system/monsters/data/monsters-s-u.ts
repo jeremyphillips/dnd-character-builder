@@ -152,6 +152,7 @@ export const MONSTERS_S_U: readonly MonsterCatalogEntry[] = [
 {
     id: "troll",
     name: "Troll",
+    imageKey: '/assets/system/monsters/troll.png',
     type: "giant",
     sizeCategory: "large",
     languages: [{ id: "giant" }],

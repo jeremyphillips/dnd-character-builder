@@ -6,6 +6,7 @@ export const MONSTERS_A: readonly MonsterCatalogEntry[] = [
   {
     id: 'aboleth',
     name: 'Aboleth',
+    imageKey: '/assets/system/monsters/aboleth.png',
     type: 'aberration',
     sizeCategory: 'large',
     languages: [{ id: 'common' }],

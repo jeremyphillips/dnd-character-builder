@@ -67,6 +67,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
 {
     id: "gelatinous-cube",
     name: "Gelatinous Cube",
+    imageKey: '/assets/system/monsters/gelatinous-cube.png',
     type: "ooze",
     sizeCategory: "large",
     languages: [],

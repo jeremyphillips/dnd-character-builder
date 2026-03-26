@@ -23,7 +23,7 @@ import {
   type EnrichedPresentableEffect,
 } from '../../../domain'
 import type { ActionSemanticCategory } from '../../../domain/badges/action/action-presentation.types'
-import { deriveActionPresentation } from '../../../domain/badges/action/action-presentation'
+import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
 import { ActionRow } from '../action-row/ActionRow'
 import { CasterOptionsFields } from '../action-row/CasterOptionsFields'
 import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
@@ -359,7 +359,7 @@ function deriveCtaLabel(
   canResolveAction: boolean | undefined,
   inAoeFlow: boolean,
 ): string {
-  if (inAoeFlow) return 'Place Area'
+  if (inAoeFlow) return `Cast ${selectedActionLabel}`
   if (!targetLabel) return 'Select a Target'
   if (!selectedActionLabel) return 'Choose an Action'
   if (canResolveAction) return `Resolve ${selectedActionLabel}`

@@ -1,13 +1,13 @@
-import { Fragment, type ReactNode, useCallback, useRef, useState } from 'react'
+import { Fragment, type ReactNode, useCallback, useMemo, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Popover from '@mui/material/Popover'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { alpha, useTheme } from '@mui/material/styles'
+import { alpha, keyframes, useTheme } from '@mui/material/styles'
+import type { Theme } from '@mui/material/styles'
 import { AppAvatar } from '@/ui/primitives'
 import { resolveImageUrl } from '@/shared/lib/media'
-import type { Theme } from '@mui/material/styles'
 import type { GridViewModel, GridCellViewModel } from '../../../space/space.selectors'
 
 const BASE_CELL_SIZE = 48
@@ -21,25 +21,69 @@ type EncounterGridProps = {
   onCellClick?: (cellId: string) => void
   onCellHover?: (cellId: string | null) => void
   renderTokenPopover?: (occupantId: string) => ReactNode
+  hoveredCellId?: string | null
+  movementHighlightActive?: boolean
+  hasMovementRemaining?: boolean
+  creatureTargetingActive?: boolean
 }
 
+/** Base cell fill: paper only. Tinted fills: walls, AoE overlay, or legal-movement hover (in cell `sx`). */
 function cellColor(cell: GridCellViewModel, palette: Theme['palette']) {
   if (cell.kind === 'wall' || cell.kind === 'blocking') return palette.action.disabledBackground
   if (cell.aoeInvalidOriginHover) return alpha(palette.error.main, 0.42)
-  if (cell.aoeOriginLocked) return alpha(palette.warning.main, 0.32)
-  if (cell.aoeInTemplate) return alpha(palette.info.main, 0.26)
-  if (cell.aoeCastRange) return alpha(palette.success.light, 0.12)
-  if (cell.isActive) return alpha(palette.secondary.main, 0.35)
-  if (cell.isSelectedTarget) return alpha(palette.primary.main, 0.30)
-  if (cell.isReachable) return alpha(palette.success.light, 0.18)
-  if (cell.isInRange) return alpha(palette.secondary.light, 0.12)
+  if (cell.aoeOriginLocked) return alpha(palette.error.main, 0.32)
+  if (cell.aoeInTemplate) return alpha(palette.error.light, 0.26)
   return palette.background.paper
 }
 
-function tokenColor(cell: GridCellViewModel, palette: Theme['palette']) {
+function tokenRingColor(cell: GridCellViewModel, palette: Theme['palette']) {
   if (cell.occupantSide === 'party') return palette.primary.main
   if (cell.occupantSide === 'enemies') return palette.error?.main ?? '#d32f2f'
   return palette.grey[500]
+}
+
+function resolveCellCursor(params: {
+  cell: GridCellViewModel
+  hoveredCellId: string | null | undefined
+  movementHighlightActive: boolean
+  hasMovementRemaining: boolean
+  creatureTargetingActive: boolean
+  clickable: boolean
+}): string {
+  const {
+    cell,
+    hoveredCellId,
+    movementHighlightActive,
+    hasMovementRemaining,
+    creatureTargetingActive,
+    clickable,
+  } = params
+  const isHover = Boolean(hoveredCellId && hoveredCellId === cell.cellId)
+  const isWall = cell.kind === 'wall' || cell.kind === 'blocking'
+
+  if (isHover) {
+    const movementIllegal =
+      movementHighlightActive &&
+      hasMovementRemaining &&
+      !cell.occupantId &&
+      !isWall &&
+      !cell.isReachable
+
+    const targetingIllegalOccupant =
+      creatureTargetingActive &&
+      Boolean(cell.occupantId) &&
+      !cell.isLegalTargetForSelectedAction
+
+    const targetingIllegalEmpty =
+      creatureTargetingActive && !cell.occupantId && !isWall
+
+    if (movementIllegal || targetingIllegalOccupant || targetingIllegalEmpty) {
+      return 'not-allowed'
+    }
+  }
+
+  if (clickable) return 'pointer'
+  return 'default'
 }
 
 export function EncounterGrid({
@@ -50,10 +94,48 @@ export function EncounterGrid({
   onCellClick,
   onCellHover,
   renderTokenPopover,
+  hoveredCellId = null,
+  movementHighlightActive = false,
+  hasMovementRemaining = false,
+  creatureTargetingActive = false,
 }: EncounterGridProps) {
   const theme = useTheme()
   const { palette } = theme
   const cellSizePx = BASE_CELL_SIZE
+
+  const activeTurnPulse = useMemo(
+    () =>
+      keyframes`
+        0%, 100% {
+          box-shadow: 0 0 0 3px ${alpha(palette.secondary.main, 0.98)},
+            0 0 16px ${alpha(palette.secondary.main, 0.55)},
+            0 0 28px ${alpha(palette.secondary.main, 0.28)};
+        }
+        50% {
+          box-shadow: 0 0 0 4px ${alpha(palette.secondary.main, 0.9)},
+            0 0 22px ${alpha(palette.secondary.main, 0.65)},
+            0 0 36px ${alpha(palette.secondary.main, 0.35)};
+        }
+      `,
+    [palette.secondary.main],
+  )
+
+  const legalTargetRedPulse = useMemo(
+    () =>
+      keyframes`
+        0%, 100% {
+          box-shadow: 0 0 0 3px ${alpha(palette.error.main, 0.98)},
+            0 0 16px ${alpha(palette.error.main, 0.55)},
+            0 0 28px ${alpha(palette.error.main, 0.28)};
+        }
+        50% {
+          box-shadow: 0 0 0 4px ${alpha(palette.error.main, 0.9)},
+            0 0 22px ${alpha(palette.error.main, 0.65)},
+            0 0 36px ${alpha(palette.error.main, 0.35)};
+        }
+      `,
+    [palette.error.main],
+  )
 
   const dragState = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -146,9 +228,9 @@ export function EncounterGrid({
             gridTemplateColumns: `repeat(${grid.columns}, ${cellSizePx}px)`,
             gridTemplateRows: `repeat(${grid.rows}, ${cellSizePx}px)`,
             gap: '1px',
-            bgcolor: 'divider',
+            bgcolor: 'grey.500',
             border: 1,
-            borderColor: 'divider',
+            borderColor: 'grey.500',
             borderRadius: 1,
           }}
         >
@@ -158,6 +240,45 @@ export function EncounterGrid({
             const clickable = !isWall && Boolean(onCellClick)
             const hasPopover = Boolean(cell.occupantId && renderTokenPopover)
             const tokenSrc = resolveImageUrl(cell.occupantPortraitImageKey)
+            const isHoverCell = hoveredCellId === cell.cellId
+            const ring = tokenRingColor(cell, palette)
+
+            const cellCursor = resolveCellCursor({
+              cell,
+              hoveredCellId,
+              movementHighlightActive,
+              hasMovementRemaining,
+              creatureTargetingActive,
+              clickable,
+            })
+
+            const movementRejectedHover =
+              movementHighlightActive &&
+              hasMovementRemaining &&
+              isHoverCell &&
+              !cell.occupantId &&
+              !isWall &&
+              !cell.isReachable
+
+            const reachablePositiveHover =
+              movementHighlightActive && hasMovementRemaining && isHoverCell && cell.isReachable
+
+            const showReachableMovementBorder =
+              movementHighlightActive && hasMovementRemaining && cell.isReachable && !isWall
+
+            const isAoeOverlayCell = Boolean(
+              cell.aoeInvalidOriginHover ||
+                cell.aoeOriginLocked ||
+                cell.aoeInTemplate ||
+                cell.aoeCastRange,
+            )
+            const showReachableMovementFill = showReachableMovementBorder && !isAoeOverlayCell
+
+            const legalTarget = cell.isLegalTargetForSelectedAction
+            const showLegalTargetRedPulse =
+              legalTarget &&
+              !cell.isActive &&
+              (isHoverCell || cell.isSelectedTarget)
 
             const cellBox = (
               <Box
@@ -176,16 +297,36 @@ export function EncounterGrid({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: clickable ? 'pointer' : 'default',
+                  cursor: cellCursor,
                   position: 'relative',
-                  transition: 'background-color 0.15s',
-                  '&:hover': clickable
-                    ? { bgcolor: alpha(palette.action.hover, 0.08) }
-                    : undefined,
+                  transition: 'background-color 0.15s, box-shadow 0.15s, outline 0.15s',
+                  outlineOffset: 0,
+                  boxSizing: 'border-box',
+                  ...(movementRejectedHover
+                    ? {
+                        outline: `1px dashed ${alpha(palette.error.main, 0.55)}`,
+                      }
+                    : {}),
+                  ...(reachablePositiveHover && showReachableMovementFill
+                    ? {
+                        outline: `1px solid ${alpha(palette.success.main, 0.75)}`,
+                        bgcolor: alpha(palette.success.main, 0.5),
+                      }
+                    : showReachableMovementFill
+                      ? {
+                          outline: `1px solid ${alpha(palette.success.main, 0.65)}`,
+                          bgcolor: alpha(palette.success.main, 0.3),
+                        }
+                      : showReachableMovementBorder
+                        ? {
+                            outline: `1px solid ${alpha(palette.success.light, 0.88)}`,
+                          }
+                        : {}),
                 }}
               >
                 {cell.occupantId && (
                   <Box
+                    onPointerEnter={() => onCellHover?.(cell.cellId)}
                     onMouseEnter={
                       hasPopover
                         ? (e) => handleTokenMouseEnter(e, cell.occupantId!)
@@ -193,21 +334,22 @@ export function EncounterGrid({
                     }
                     onMouseLeave={hasPopover ? handleTokenMouseLeave : undefined}
                     sx={{
-                      width: 32,
-                      height: 32,
+                      width: 34,
+                      height: 34,
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       boxSizing: 'border-box',
-                      border: '2px solid',
-                      borderColor: tokenColor(cell, palette),
-                      bgcolor: tokenSrc ? 'transparent' : tokenColor(cell, palette),
-                      outline: cell.isActive ? `2px solid ${palette.secondary.main}` : undefined,
-                      outlineOffset: cell.isActive ? 0 : undefined,
-                      boxShadow: cell.isSelectedTarget
-                        ? `0 0 0 2px ${palette.primary.main}`
-                        : undefined,
+                      border: '3px solid',
+                      borderColor: ring,
+                      bgcolor: tokenSrc ? 'transparent' : ring,
+                      zIndex: 1,
+                      animation: cell.isActive
+                        ? `${activeTurnPulse} 2.4s ease-in-out infinite`
+                        : showLegalTargetRedPulse
+                          ? `${legalTargetRedPulse} 2.4s ease-in-out infinite`
+                          : undefined,
                     }}
                   >
                     <AppAvatar

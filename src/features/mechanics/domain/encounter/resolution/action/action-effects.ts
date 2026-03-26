@@ -38,14 +38,14 @@ import {
 import { inferStatModifierEligibilityFromEffect } from '../../state/equipment-eligibility'
 import { combatantToCreatureSnapshot } from '../../state/combatant-evaluation-snapshot'
 import { isImmuneToConditionIncludingScopedGrants } from '../../state/condition-immunity-resolution'
+import { hasIntactRemainsForRevival } from '../../state/combatant-participation'
 
 function reviveBlockedReason(
   target: CombatantInstance,
   state: EncounterState,
   action: CombatActionDefinition,
 ): string | null {
-  const r = target.remains
-  if (r === 'dust' || r === 'disintegrated') {
+  if (!hasIntactRemainsForRevival(target)) {
     return 'No intact body remains.'
   }
   const meta = action.displayMeta
@@ -542,6 +542,9 @@ export function applyActionEffects(
       return
     }
 
+    // Death-outcome: does not deal damage or kill by itself; runs after lethal damage when
+    // the target is already defeated (HP ≤ 0). Refines remains (e.g. turns-to-dust) while
+    // leaving defeat + death metadata intact.
     if (effect.kind === 'death-outcome') {
       if (target.stats.currentHitPoints <= 0) {
         if (effect.outcome === 'turns-to-dust') {

@@ -231,6 +231,16 @@ export type CombatantEquipmentSnapshot = {
 /** Physical remains after death — drives resurrection / animate targeting. */
 export type CombatantRemainsKind = 'corpse' | 'bones' | 'dust' | 'disintegrated'
 
+/**
+ * Recorded when damage (or equivalent) reduces a creature to 0 HP and defeat is finalized.
+ * Not applied when a trait stabilizes the creature (e.g. Undead Fortitude → 1 HP).
+ * Semantic helpers live in `combatant-participation.ts`.
+ */
+export type CombatantDeathRecord = {
+  remains: CombatantRemainsKind
+  diedAtRound: number
+}
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
@@ -242,11 +252,16 @@ export interface CombatantInstance {
   portraitImageKey?: string | null
   creatureType?: string
   /**
-   * Set when the combatant is dead (0 HP): what is left to target for spells.
-   * Defaults to `corpse` on first death unless overridden (e.g. disintegrate, death-outcome).
+   * Aftermath on the grid once {@link diedAtRound} is recorded (lethal 0 HP).
+   * Not authoritative alone — use `canTargetAsDeadCreature` / `hasRemainsOnGrid` from
+   * `combatant-participation` for targeting. Mutated by lethal damage (e.g. disintegrate)
+   * and `death-outcome` effects (e.g. turns-to-dust → `dust`).
    */
   remains?: CombatantRemainsKind
-  /** Encounter `roundNumber` when the creature first reached 0 HP (for Revivify window). */
+  /**
+   * Set when a **death record** is applied (typically crossing to 0 HP in damage resolution).
+   * Used for revival windows (e.g. Revivify). Cleared on healing above 0 HP.
+   */
   diedAtRound?: number
   /** When set (e.g. from character loadout), enables authored `effect.condition` gates that read `equipment.armorEquipped`. */
   equipment?: CombatantEquipmentSnapshot

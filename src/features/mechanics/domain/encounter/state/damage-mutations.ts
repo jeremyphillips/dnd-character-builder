@@ -1,5 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantRemainsKind } from './types/combatant.types'
+import type { CombatantDeathRecord, CombatantRemainsKind } from './types/combatant.types'
 import type { EncounterState } from './types'
 import {
   buildRuntimeMarker,
@@ -157,12 +157,7 @@ export function applyDamageToCombatant(
     const rawNewHp = fatalTrackedPart ? 0 : Math.max(0, combatant.stats.currentHitPoints - effectiveAmount)
 
     let newHp = rawNewHp
-    let deathFields:
-      | {
-          remains: CombatantRemainsKind
-          diedAtRound: number
-        }
-      | undefined
+    let deathRecord: CombatantDeathRecord | undefined
 
     if (!isFatalTrackedPart && prevHp > 0 && rawNewHp === 0) {
       const reduced = resolveReducedToZeroHpTrait(
@@ -183,10 +178,10 @@ export function applyDamageToCombatant(
       )
       if (reduced) {
         newHp = reduced.newHp
-        deathFields = reduced.deathFields
+        deathRecord = reduced.defeatOutcome?.death
         reducedToZeroLogEvents = reduced.logEvents
       } else {
-        deathFields =
+        deathRecord =
           prevHp > 0 && rawNewHp === 0
             ? {
                 remains: (options?.remainsOnKill ?? combatant.remains ?? 'corpse') as CombatantRemainsKind,
@@ -196,7 +191,7 @@ export function applyDamageToCombatant(
       }
     } else {
       newHp = rawNewHp
-      deathFields =
+      deathRecord =
         prevHp > 0 && rawNewHp === 0
           ? {
               remains: (options?.remainsOnKill ?? combatant.remains ?? 'corpse') as CombatantRemainsKind,
@@ -207,7 +202,7 @@ export function applyDamageToCombatant(
 
     return {
       ...combatant,
-      ...deathFields,
+      ...(deathRecord ? { remains: deathRecord.remains, diedAtRound: deathRecord.diedAtRound } : {}),
       stats: {
         ...combatant.stats,
         currentHitPoints: newHp,

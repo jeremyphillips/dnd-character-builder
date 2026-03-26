@@ -62,8 +62,9 @@ export function AoePlacementPanel({
         ) : (
           <>
             <Typography variant="body2" color="text.secondary">
-              Choose a point on the grid. Hover to preview, click to lock. Click another valid cell to move the
-              origin.
+              Hover to preview, then click a valid cell to lock the area (hover no longer moves it). Click the locked
+              cell again or use Undo selection to unlock and reposition. You can also click a different valid cell to
+              move the origin without unlocking.
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
               ~{approxFt} ft radius (Chebyshev grid)

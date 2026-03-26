@@ -441,7 +441,16 @@ export default function EncounterActiveRoute() {
         if (!space || !placements) return
         const casterCell = getCellForCombatant(placements, activeCombatantId)
         const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
-        if (!casterCell || !isValidAoeOriginCell(space, casterCell, cellId, castRangeFt)) {
+        if (!casterCell) return
+
+        if (aoeStep === 'confirm' && aoeOriginCellId === cellId) {
+          setPlacementError(null)
+          setAoeOriginCellId(null)
+          setAoeStep('placing')
+          return
+        }
+
+        if (!isValidAoeOriginCell(space, casterCell, cellId, castRangeFt)) {
           setPlacementError('Choose a valid point within range (not blocked).')
           return
         }
@@ -463,6 +472,7 @@ export default function EncounterActiveRoute() {
       encounterState,
       activeCombatantId,
       aoeStep,
+      aoeOriginCellId,
       selectedAction,
       interactionMode,
       handleMoveCombatant,

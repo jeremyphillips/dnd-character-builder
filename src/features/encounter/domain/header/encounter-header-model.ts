@@ -1,4 +1,5 @@
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
 
 import { isAreaGridAction, isSelfCenteredAreaAction, type AoeStep } from '../../helpers/area-grid-action'
 import { deriveCombatantTurnExhaustion, type CombatantTurnExhaustionInput } from '../turn/combatant-turn-exhaustion'
@@ -25,7 +26,8 @@ export type EncounterHeaderInteractionArgs = {
   canResolveAction: boolean
   /**
    * When `false`, the selected action does not use a creature target (e.g. summon with `targeting.none`).
-   * When omitted, treated as `true` for backward compatibility.
+   * When omitted, inferred from {@link actionRequiresCreatureTargetForResolve} so spawn / none-targeting
+   * spells are not treated as needing a creature pick.
    */
   selectedActionRequiresCreatureTarget?: boolean
 }
@@ -130,7 +132,11 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
   }
 
   if (hasActionPick && !hasTargetPick && selectedAction && !isAreaGridAction(selectedAction)) {
-    if (selectedActionRequiresCreatureTarget === false) {
+    const requiresCreatureTarget =
+      selectedActionRequiresCreatureTarget !== undefined
+        ? selectedActionRequiresCreatureTarget
+        : actionRequiresCreatureTargetForResolve(selectedAction)
+    if (!requiresCreatureTarget) {
       return {
         directive: `Finish ${selectedActionLabel ?? 'this action'} in the action panel`,
         endTurnEmphasis: defaultEmphasis(),

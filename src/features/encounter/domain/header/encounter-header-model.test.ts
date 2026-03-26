@@ -198,4 +198,34 @@ describe('deriveEncounterHeaderModel', () => {
     expect(m.directive).toContain('Finish')
     expect(m.directive).toContain('Giant Insect')
   })
+
+  it('infers no creature target when selectedActionRequiresCreatureTarget is omitted (spawn / none)', () => {
+    const summon = action('gi2', {
+      label: 'Giant Insect',
+      kind: 'spell',
+      targeting: { kind: 'none' },
+      resolutionMode: 'effects',
+      effects: [{ kind: 'spawn', count: 1 }],
+    })
+    const m = deriveEncounterHeaderModel({
+      turn: {
+        combatantActions: [summon],
+        availableActionIds: ['gi2'],
+        turnResources: baseTurn,
+      },
+      interaction: {
+        interactionMode: 'select-target',
+        selectedActionId: 'gi2',
+        selectedAction: summon,
+        aoeStep: 'none',
+        canResolveAction: false,
+      },
+      display: {
+        selectedActionLabel: 'Giant Insect',
+        selectedTargetLabel: null,
+      },
+    })
+    expect(m.directive).toContain('Finish')
+    expect(m.directive).toContain('Giant Insect')
+  })
 })

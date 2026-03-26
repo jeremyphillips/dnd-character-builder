@@ -391,7 +391,9 @@ function deriveCtaLabel(
   primaryResolutionMissingMessage: string | null | undefined,
   effectiveView: CombatantActionDrawerView,
 ): string {
-  if (effectiveView === 'singleCellPlacement') return 'Done'
+  if (effectiveView === 'singleCellPlacement') {
+    return selectedActionLabel ? `Resolve ${selectedActionLabel}` : 'Resolve'
+  }
   if (effectiveView === 'aoePlacement') return `Cast ${selectedActionLabel ?? 'spell'}`
   if (!selectedActionLabel) {
     if (!targetLabel) return 'Choose an action or target'
@@ -400,7 +402,16 @@ function deriveCtaLabel(
   const needsTarget = actionRequiresCreatureTargetForResolve(selectedAction)
   if (needsTarget && !targetLabel) return 'Select a Target'
   if (canResolveAction) return `Resolve ${selectedActionLabel}`
-  if (primaryResolutionMissingMessage) return primaryResolutionMissingMessage
+  if (primaryResolutionMissingMessage) {
+    if (
+      !needsTarget &&
+      (primaryResolutionMissingMessage === 'Select a target' ||
+        primaryResolutionMissingMessage === 'Invalid target')
+    ) {
+      return `Resolve ${selectedActionLabel ?? 'action'}`
+    }
+    return primaryResolutionMissingMessage
+  }
   return `Resolve ${selectedActionLabel}`
 }
 
@@ -548,18 +559,54 @@ export function CombatantActionDrawer({
     primaryResolutionMissingMessage === PRIMARY_MISSING_CASTER_OPTIONS_MSG &&
     Boolean(selectedActionDefinition?.casterOptions?.length)
 
-  const footerPrimaryDisabled = shouldFooterOpenSpellOptions ? false : !canResolveAction
+  /** Same pattern for placement: primary missing message is placement/invalid-cell — open placement subview instead of a dead disabled CTA. */
+  const shouldFooterOpenPlacement = useMemo(
+    () =>
+      effectiveView === 'main' &&
+      !canResolveAction &&
+      singleCellPlacementRequirement != null &&
+      (primaryResolutionMissingMessage === getPlacementCtaLabel(singleCellPlacementRequirement) ||
+        primaryResolutionMissingMessage === 'Invalid placement'),
+    [
+      effectiveView,
+      canResolveAction,
+      singleCellPlacementRequirement,
+      primaryResolutionMissingMessage,
+    ],
+  )
+
+  const footerPrimaryDisabled =
+    shouldFooterOpenSpellOptions || shouldFooterOpenPlacement ? false : !canResolveAction
 
   const handleFooterPrimaryClick = useCallback(() => {
     if (shouldFooterOpenSpellOptions) {
       setLocalSubView('casterOptions')
       return
     }
+    if (shouldFooterOpenPlacement) {
+      setLocalSubView('singleCellPlacement')
+      onEnterSingleCellPlacementMode?.()
+      return
+    }
     onResolveAction?.()
-  }, [shouldFooterOpenSpellOptions, onResolveAction])
+  }, [shouldFooterOpenSpellOptions, shouldFooterOpenPlacement, onEnterSingleCellPlacementMode, onResolveAction])
 
   const drawerFooterPrimaryLabel =
     shouldFooterOpenSpellOptions && effectiveView === 'main' ? 'Choose Spell Options' : ctaLabel
+
+  const handleCasterOptionsDone = useCallback(() => {
+    if (singleCellPlacementRequirement && !selectedSingleCellPlacementCellId?.trim()) {
+      setLocalSubView('singleCellPlacement')
+      onEnterSingleCellPlacementMode?.()
+      return
+    }
+    setLocalSubView('main')
+  }, [singleCellPlacementRequirement, selectedSingleCellPlacementCellId, onEnterSingleCellPlacementMode])
+
+  const handleResolveFromSingleCellPlacement = useCallback(() => {
+    onResolveAction?.()
+    onExitSingleCellPlacementMode?.()
+  }, [onResolveAction, onExitSingleCellPlacementMode])
 
   const casterOptionSummaryLine = useMemo(() => {
     if (!casterFields?.length) return ''
@@ -803,20 +850,18 @@ export function CombatantActionDrawer({
           }}
         >
           {effectiveView === 'casterOptions' ? (
-            <Button variant="contained" color="primary" fullWidth onClick={() => setLocalSubView('main')}>
-              Done
+            <Button variant="contained" color="primary" fullWidth onClick={handleCasterOptionsDone}>
+              Confirm Option
             </Button>
           ) : effectiveView === 'singleCellPlacement' ? (
             <Button
               variant="contained"
               color="primary"
               fullWidth
-              onClick={() => {
-                setLocalSubView('main')
-                onExitSingleCellPlacementMode?.()
-              }}
+              disabled={!canResolveAction}
+              onClick={handleResolveFromSingleCellPlacement}
             >
-              Done
+              {ctaLabel}
             </Button>
           ) : (
             <Button

@@ -206,14 +206,19 @@ export function selectGridViewModel(
     )
   const invalidHover = Boolean(aoe && aoe.hoverCellId && !hoverValid)
 
-  /** Valid hover previews first (including while origin is locked); else locked origin; else none. */
+  /**
+   * While `step === 'confirm'` with an origin, the AoE footprint stays on that cell — hover does not move it.
+   * Unlock: undo, or click the same origin cell again (see route handler).
+   */
   const previewCenterId = !aoe
     ? null
-    : invalidHover
-      ? aoe.originCellId ?? null
-      : hoverValid
-        ? aoe.hoverCellId!
-        : aoe.originCellId ?? null
+    : aoe.step === 'confirm' && aoe.originCellId
+      ? aoe.originCellId
+      : invalidHover
+        ? aoe.originCellId ?? null
+        : hoverValid
+          ? aoe.hoverCellId!
+          : aoe.originCellId ?? null
 
   const obstacleByCellId = new Map<string, GridObstacleKind>()
   for (const o of space.obstacles ?? []) {
@@ -269,12 +274,7 @@ export function selectGridViewModel(
       if (invalidHover && cell.id === aoe.hoverCellId) {
         aoeInvalidOriginHover = true
       }
-      if (
-        aoe.step === 'confirm' &&
-        aoe.originCellId &&
-        cell.id === aoe.originCellId &&
-        !(hoverValid && aoe.hoverCellId !== aoe.originCellId)
-      ) {
+      if (aoe.step === 'confirm' && aoe.originCellId && cell.id === aoe.originCellId) {
         aoeOriginLocked = true
       }
     }

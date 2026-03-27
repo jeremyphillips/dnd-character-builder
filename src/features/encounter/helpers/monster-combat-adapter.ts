@@ -175,6 +175,14 @@ function buildMonsterActionSequence(
   })
 }
 
+/**
+ * Maps **`MonsterSpecialAction`** `recharge` / `uses` to **`CombatActionDefinition['usage']`**.
+ *
+ * Only **`kind: 'special'`** actions participate; weapon and natural actions return `undefined`.
+ * Recharge begins **`ready: true`** until encounter turn logic rolls recharge (see
+ * `processActionRecharge` in encounter state runtime). Per-day uses copy **`max`**, **`remaining`**, and
+ * **`period`** from **`EffectUses`**. Spend / block rules: `applyActionCost` in the action resolver.
+ */
 function buildMonsterActionUsage(action: MonsterAction): CombatActionDefinition['usage'] {
   if (action.kind !== 'special' || (!action.recharge && !action.uses)) return undefined
 

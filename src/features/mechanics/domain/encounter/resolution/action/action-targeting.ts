@@ -6,7 +6,7 @@ import type {
 import type { CombatantInstance } from '../../state'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
-import { cannotTargetWithHostileAction } from '../../state/condition-rules'
+import { cannotTargetWithHostileAction, hasBattlefieldAbsenceConsequence } from '../../state/condition-rules'
 import {
   canTargetAsDeadCreature,
   isActiveCombatant,
@@ -140,7 +140,7 @@ export function isValidActionTarget(
   const kind = action.targeting?.kind
   const suppressSameSideHostile = shouldSuppressSameSideHostile(options)
 
-  if (combatant.states.some((s) => s.label === 'banished')) return false
+  if (hasBattlefieldAbsenceConsequence(combatant, 'banished')) return false
   if (!passesCreatureTypeFilter(combatant, action.targeting?.creatureTypeFilter)) return false
 
   if (isHostileAction(action) && cannotTargetWithHostileAction(actor, combatant.instanceId)) {
@@ -202,7 +202,7 @@ export function getActionTargetInvalidReason(
   const kind = action.targeting?.kind
   const suppressSameSideHostile = shouldSuppressSameSideHostile(options)
 
-  if (combatant.states.some((s) => s.label === 'banished')) return 'Target is banished'
+  if (hasBattlefieldAbsenceConsequence(combatant, 'banished')) return 'Target is banished'
 
   if (kind === 'dead-creature') {
     if (!canTargetAsDeadCreature(combatant)) {

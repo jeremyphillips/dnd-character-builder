@@ -30,9 +30,23 @@
  * fields (`remains`, `diedAtRound`, HP) and expose semantics only through these helpers
  * so call sites stop re-interpreting raw numbers. A dedicated `encounterStatus` field
  * would duplicate HP until we model unconscious-at-0 separately from dead.
+ *
+ * **CombatantTurnStatus** — derived view of battlefield presence, action capability, and
+ * auto-skip hints; see {@link getCombatantTurnStatus}. Condition flags come from
+ * merged condition + engine-state rules (`getActiveConsequences`); defeat/death from HP + `diedAtRound`;
+ * corpse replacement via `remainsConsumed` on {@link CombatantInstance}.
  */
 
-import type { CombatantInstance } from './types/combatant.types'
+import {
+  canTakeActions as conditionsAllowActions,
+  canTakeReactions as conditionsAllowReactions,
+  getBattlefieldPresenceSkipReason,
+  getSpeedConsequences,
+  hasBattlefieldAbsenceConsequence,
+} from './condition-rules'
+import type { CombatantInstance, CombatantTurnStatus } from './types/combatant.types'
+
+export type { CombatantTurnStatus } from './types/combatant.types'
 
 /**
  * “Alive” for encounter rules: **HP > 0**. Matches initiative re-roll eligibility in
@@ -67,13 +81,21 @@ export function isDeadCombatant(c: CombatantInstance): boolean {
  * Targeting for `CombatActionTargetingProfile.kind === 'dead-creature'`.
  * Requires exactly **0 HP** (engine never stores negative HP) and remains that still
  * represent a targetable body (`corpse` / `bones`, or **undefined** remains treated as implicit corpse for spells).
- * Excludes `dust` and `disintegrated` (destroyed / no intact corpse).
+ * Excludes `dust` and `disintegrated` (destroyed / no intact corpse), and consumed remains.
  */
 export function canTargetAsDeadCreature(c: CombatantInstance): boolean {
+  if (c.remainsConsumed) return false
   if (c.stats.currentHitPoints !== 0) return false
   const r = c.remains
   if (r === 'dust' || r === 'disintegrated') return false
   return true
+}
+
+/**
+ * Dead combatant with an explicit remains kind that has not been consumed (e.g. Animate Dead input).
+ */
+export function hasConsumableRemains(c: CombatantInstance): boolean {
+  return isDeadCombatant(c) && !!c.remains && !c.remainsConsumed
 }
 
 /**
@@ -87,8 +109,10 @@ export function canTargetAsDeadCreature(c: CombatantInstance): boolean {
  * an explicit non-disintegrated `remains`) so UI/spawn hooks do not assume a body
  * exists without stored data; {@link canTargetAsDeadCreature} still treats `undefined`
  * at 0 HP as an implicit corpse for spell targeting, which is intentionally a separate rule.
+ * **`remainsConsumed`:** no on-grid body token for this combatant.
  */
 export function hasRemainsOnGrid(c: CombatantInstance): boolean {
+  if (c.remainsConsumed) return false
   const r = c.remains
   if (r === undefined) return false
   return r !== 'disintegrated'
@@ -103,4 +127,92 @@ export function hasIntactRemainsForRevival(c: CombatantInstance): boolean {
   const r = c.remains
   if (r === 'dust' || r === 'disintegrated') return false
   return true
+}
+
+/**
+ * On the battlefield for presence purposes: not banished / off-grid, and still represented
+ * (living, explicit remains, or implicit dead-creature target at 0 HP).
+ */
+export function hasBattlefieldPresence(c: CombatantInstance): boolean {
+  if (hasBattlefieldAbsenceConsequence(c)) {
+    return false
+  }
+  return (
+    isActiveCombatant(c) || hasRemainsOnGrid(c) || canTargetAsDeadCreature(c)
+  )
+}
+
+/**
+ * Living combatants can take actions unless condition consequences disallow (e.g. incapacitated).
+ * Defeated combatants cannot.
+ */
+export function canCombatantTakeActions(c: CombatantInstance): boolean {
+  return isActiveCombatant(c) && conditionsAllowActions(c)
+}
+
+/** Matches `createCombatantTurnResources` — bonus action availability tracks action availability in v1. */
+export function canCombatantTakeBonusActions(c: CombatantInstance): boolean {
+  return canCombatantTakeActions(c)
+}
+
+export function canCombatantTakeReactions(c: CombatantInstance): boolean {
+  return isActiveCombatant(c) && conditionsAllowReactions(c)
+}
+
+function resolveAutoSkipReason(c: CombatantInstance): CombatantTurnStatus['skipReason'] {
+  const battlefield = getBattlefieldPresenceSkipReason(c)
+  if (battlefield === 'banished') return 'banished'
+  if (battlefield === 'off-grid') return 'off-grid'
+  if (c.remainsConsumed && isDefeatedCombatant(c)) return 'remains-consumed'
+  if (isDefeatedCombatant(c)) return 'defeated'
+  return 'cannot-act'
+}
+
+/**
+ * Skip the turn when defeated, absent from the battlefield (banished / off-grid), or
+ * conditions block meaningful actions (e.g. stunned) while still “alive” for initiative.
+ */
+export function shouldAutoSkipCombatantTurn(c: CombatantInstance): boolean {
+  if (isDefeatedCombatant(c)) return true
+  if (hasBattlefieldAbsenceConsequence(c)) return true
+  if (isActiveCombatant(c) && !conditionsAllowActions(c)) return true
+  return false
+}
+
+export function getCombatantTurnStatus(c: CombatantInstance): CombatantTurnStatus {
+  const isDefeated = isDefeatedCombatant(c)
+  const isDead = isDeadCombatant(c)
+  const banishedTargeting = hasBattlefieldAbsenceConsequence(c, 'banished')
+
+  const hasPresence = hasBattlefieldPresence(c)
+  const occupiesGrid = hasPresence
+  const canBeTargetedOnGrid = banishedTargeting
+    ? false
+    : isActiveCombatant(c)
+      ? true
+      : canTargetAsDeadCreature(c)
+
+  const canTakeActions = canCombatantTakeActions(c)
+  const canTakeBonusActions = canCombatantTakeBonusActions(c)
+  const canTakeReactions = canCombatantTakeReactions(c)
+  const canMove =
+    isActiveCombatant(c) && !getSpeedConsequences(c).speedBecomesZero
+
+  const shouldAutoSkipTurn = shouldAutoSkipCombatantTurn(c)
+  const skipReason = shouldAutoSkipTurn ? resolveAutoSkipReason(c) : undefined
+
+  return {
+    isDefeated,
+    isDead,
+    hasBattlefieldPresence: hasPresence,
+    occupiesGrid,
+    canBeTargetedOnGrid,
+    canTakeActions,
+    canTakeBonusActions,
+    canTakeReactions,
+    canMove,
+    shouldAutoSkipTurn,
+    skipReason,
+    remainsInInitiative: isActiveCombatant(c),
+  }
 }

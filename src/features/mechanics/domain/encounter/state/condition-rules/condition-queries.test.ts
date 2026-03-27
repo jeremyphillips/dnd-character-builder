@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest'
 
 import type { CombatantInstance } from '../types/combatant.types'
 import {
+  canTakeActions,
+  getActiveConsequences,
+  getActiveConsequencesWithOrigin,
   getIncomingAttackModifiers,
   getIncomingAttackModifiersForAttack,
   getOutgoingAttackModifiers,
   getOutgoingAttackModifiersForAttack,
+  hasBattlefieldAbsenceConsequence,
 } from './condition-queries'
 
 function makeCombatant(
@@ -61,5 +65,30 @@ describe('attack modifiers with attacker/defender pair (See Invisibility)', () =
     const defender = makeCombatant('d', { states: ['see-invisibility'] })
     expect(getOutgoingAttackModifiers(attacker, 'ranged')).toContain('advantage')
     expect(getOutgoingAttackModifiersForAttack(attacker, defender, 'ranged')).not.toContain('advantage')
+  })
+})
+
+describe('engine state rules merged into active consequences', () => {
+  it('applies banished consequences from state markers (cannot act + battlefield absence)', () => {
+    const c = makeCombatant('x', { states: ['banished'] })
+    const cons = getActiveConsequences(c)
+    expect(cons.some((x) => x.kind === 'action_limit' && x.cannotTakeActions)).toBe(true)
+    expect(
+      cons.some((x) => x.kind === 'battlefield_absence' && x.presenceReason === 'banished'),
+    ).toBe(true)
+    expect(hasBattlefieldAbsenceConsequence(c, 'banished')).toBe(true)
+  })
+
+  it('merges incapacitated condition with banished state without breaking action checks', () => {
+    const c = makeCombatant('x', { conditions: ['incapacitated'], states: ['banished'] })
+    expect(getActiveConsequences(c).filter((x) => x.kind === 'action_limit').length).toBeGreaterThanOrEqual(2)
+    expect(canTakeActions(c)).toBe(false)
+  })
+
+  it('tags origins for core conditions vs engine states', () => {
+    const c = makeCombatant('x', { conditions: ['prone'], states: ['banished'] })
+    const origins = getActiveConsequencesWithOrigin(c)
+    expect(origins.some((o) => o.ruleId === 'prone' && o.source === 'condition')).toBe(true)
+    expect(origins.some((o) => o.ruleId === 'banished' && o.source === 'engine_state')).toBe(true)
   })
 })

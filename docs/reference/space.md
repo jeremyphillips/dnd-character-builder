@@ -63,13 +63,28 @@ When an encounter is started from setup, the app may call **`placeRandomGridObst
 
 ### Grid view model
 
-`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries **`isActive`**, **`isSelectedTarget`**, **`isWithinSelectedActionRange`** (Chebyshev distance from the active combatant to that cell within the selected action’s `rangeFt` — distance only, not full targeting validity), **`isLegalTargetForSelectedAction`**, **`isHostileLegalTargetForSelectedAction`**, **`isHostileSelectedTargetPulse`**, and **`isReachable`**, plus **`obstacleKind` / `obstacleLabel`** when the cell has an entry in `space.obstacles`. The active encounter grid uses **token-first** emphasis (rings, pulses) for turn and targeting; it does **not** apply a full-board tint for “in range” distance.
+`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries **`isActive`**, **`isSelectedTarget`**, **`isWithinSelectedActionRange`** (Chebyshev distance from the active combatant to that cell within the selected action’s `rangeFt` — distance only, not full targeting validity), **`isLegalTargetForSelectedAction`**, **`isHostileLegalTargetForSelectedAction`**, **`isHostileSelectedTargetPulse`**, and **`isReachable`**, plus **`obstacleKind` / `obstacleLabel`** when the cell has an entry in `space.obstacles`. Token styling uses **`occupantIsDefeated`** (dimmed token when HP ≤ 0) and **`occupantRendersToken`**: the avatar/token is drawn only when the occupant has **battlefield presence** (see below). The active encounter grid uses **token-first** emphasis (rings, pulses) for turn and targeting; it does **not** apply a full-board tint for “in range” distance.
 
 The `showReachable` option is driven by movement budget (`movementRemaining > 0`) and UI mode (movement highlights are suppressed during AoE origin placement) so reachable cells can highlight without an explicit movement mode.
 
 **Movement rejection helper:** `getMoveRejectionReason(state, combatantId, targetCellId)` returns short labels such as `Out of range`, `Cell occupied`, or `Blocked` when a move would fail, for anchored status text (not tooltips on cells).
 
 **Grid hover status:** `deriveGridHoverStatusMessage` (encounter helpers) composes a single line for illegal hover (movement, creature targeting, or invalid AoE origin) to show under the encounter header.
+
+### Battlefield presence, occupancy, and return placement (mechanics linkage)
+
+Grid **`CombatantPosition[]`** is the source of truth for **which combatant occupies which cell**. Separately, **participation / battlefield presence** (whether a creature should appear on the tactical map at all) is defined in mechanics via `hasBattlefieldPresence` and engine-state rules (e.g. **banished**, **off-grid**) — see `combatant-participation.ts` and `condition-rules/engine-state-definitions.ts` in `src/features/mechanics/domain/encounter/state/`.
+
+**When a combatant becomes temporarily absent** (those engine states), mechanics **`battlefield-return-placement.ts`**:
+
+- Clears their row from **`EncounterState.placements`** so the cell is **no longer occupied** for movement and targeting (no “invisible blocker”).
+- Stores **`battlefieldReturnCellId`** on the combatant for deterministic return.
+
+**When absence ends** (explicit `removeStateFromCombatant`, marker duration tick, or **concentration** `dropConcentration` stripping linked markers), the same module **restores** placement immediately using **`placeCombatant`** in `space.selectors.ts` — preferred cell first, then nearest passable unoccupied cell (Chebyshev rings, stable tie-break).
+
+The grid view model’s **`occupantRendersToken`** flag stays aligned with presence: if mechanics have cleared placement, there is usually no `occupantId`; if state ever diverged, the flag still suppresses the token when presence is false.
+
+**UI:** Initiative / preview cards use shared participation visuals (`src/features/encounter/domain/presentation-participation.ts`) — defeated vs battlefield-absent dimming — separate from this folder but driven by the same presence semantics.
 
 ### Spawn and grid replacement (tactical token handoff)
 
@@ -134,8 +149,9 @@ Current naming intentionally distinguishes *in-range by metric* (`selectCellsWit
 | `EncounterCell` | `space.types.ts` | Single cell: position, kind, terrain tags |
 | `CombatantPosition` | `space.types.ts` | Links combatant to cell |
 | `CombatantAttackRange` | `combatant.types.ts` | Discriminated union: melee (rangeFt) or ranged (normalFt, longFt) |
-| `GridCellViewModel` | `space.selectors.ts` | UI-ready cell with highlight flags |
+| `GridCellViewModel` | `space.selectors.ts` | UI-ready cell with highlight flags; includes **`occupantRendersToken`**, **`occupantIsDefeated`** |
 | `GridViewModel` | `space.selectors.ts` | Complete grid for rendering |
+| `placeCombatant` | `space.selectors.ts` | Authoritative placement update: filter prior row, append `{ combatantId, cellId }` for passable cells |
 | `applyGridSpawnReplacementFromTarget` | `applyGridSpawnReplacement.ts` | Transfers tactical `placements` from a spawn target to new combatant(s) (replacement / corpse→minion) |
 | `hasLineOfSight` | `space.sight.ts` | Binary LoS along supercover segment between cell centers |
 | `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move'` UI mode |

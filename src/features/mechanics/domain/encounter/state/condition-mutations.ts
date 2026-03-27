@@ -1,6 +1,10 @@
 import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.types'
 import { isImmuneToConditionIncludingScopedGrants } from './condition-immunity-resolution'
 import type { EncounterState, RuntimeMarkerDuration } from './types'
+import {
+  applyBattlefieldAbsenceOnEngineStateAdded,
+  maybeRestoreBattlefieldPlacement,
+} from './battlefield-return-placement'
 import { buildRuntimeMarker, markerMatches, updateCombatant } from './shared'
 import { appendLog, getCombatantLabel } from './logging'
 import { formatConditionConsequencesDebug } from '../resolution/action/resolution-debug'
@@ -115,7 +119,9 @@ export function addStateToCombatant(
     states: [...combatant.states, buildRuntimeMarker(trimmedMarker, options)],
   }))
 
-  return appendLog(nextState, {
+  const withPlacement = applyBattlefieldAbsenceOnEngineStateAdded(nextState, targetId, trimmedMarker)
+
+  return appendLog(withPlacement, {
     type: 'state-applied',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
@@ -151,7 +157,9 @@ export function removeStateFromCombatant(
     states: combatant.states.filter((entry) => !markerMatches(entry, trimmedMarker)),
   }))
 
-  return appendLog(nextState, {
+  const restored = maybeRestoreBattlefieldPlacement(nextState, targetId)
+
+  return appendLog(restored, {
     type: 'state-removed',
     actorId: state.activeCombatantId ?? undefined,
     targetIds: [targetId],
@@ -185,7 +193,8 @@ export function removeStatesByClassification(
     ),
   }))
 
-  let result = nextState
+  let result = maybeRestoreBattlefieldPlacement(nextState, targetId)
+
   for (const marker of matching) {
     result = appendLog(result, {
       type: 'state-removed',

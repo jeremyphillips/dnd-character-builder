@@ -14,7 +14,7 @@ import {
 } from '../../../domain'
 import { AllyCombatantActivePreviewCard } from '../cards/AllyCombatantActivePreviewCard'
 import { OpponentCombatantActivePreviewCard } from '../cards/OpponentCombatantActivePreviewCard'
-import { CombatantActionDrawer } from './CombatantActionDrawer'
+import { CombatantActionDrawer, type CombatantActionDrawerProps } from './CombatantActionDrawer'
 
 type AllyActionDrawerProps = {
   open: boolean
@@ -53,6 +53,7 @@ type AllyActionDrawerProps = {
   onDismissSingleCellPlacementError?: () => void
   onEnterSingleCellPlacementMode?: () => void
   onExitSingleCellPlacementMode?: () => void
+  attachedEmanationSetup?: CombatantActionDrawerProps['attachedEmanationSetup']
 }
 
 export function AllyActionDrawer({
@@ -91,6 +92,7 @@ export function AllyActionDrawer({
   onDismissSingleCellPlacementError,
   onEnterSingleCellPlacementMode,
   onExitSingleCellPlacementMode,
+  attachedEmanationSetup,
 }: AllyActionDrawerProps) {
   const availableActionIds = useMemo(
     () => new Set(availableActions.map((a) => a.id)),
@@ -164,6 +166,7 @@ export function AllyActionDrawer({
       onDismissSingleCellPlacementError={onDismissSingleCellPlacementError}
       onEnterSingleCellPlacementMode={onEnterSingleCellPlacementMode}
       onExitSingleCellPlacementMode={onExitSingleCellPlacementMode}
+      attachedEmanationSetup={attachedEmanationSetup}
     />
   )
 }

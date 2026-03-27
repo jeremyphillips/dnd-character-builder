@@ -1,3 +1,4 @@
+import { getCellForCombatant } from '@/features/encounter/space/space.helpers'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { CombatantInstance } from '../../state'
@@ -115,6 +116,12 @@ function areaSelectionSatisfied(
   ctx: ActionResolutionReadinessContext,
 ): boolean {
   if (!isAreaGridCombatAction(action)) return true
+  if (action.attachedEmanation && action.areaPlacement === 'self') {
+    const placements = ctx.encounterState?.placements
+    const activeId = ctx.activeCombatant?.instanceId
+    if (!placements || !activeId) return false
+    return Boolean(getCellForCombatant(placements, activeId))
+  }
   return ctx.aoeStep === 'confirm' && Boolean(ctx.aoeOriginCellId) && Boolean(action.areaTemplate)
 }
 

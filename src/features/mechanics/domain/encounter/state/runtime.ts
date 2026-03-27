@@ -331,6 +331,7 @@ export function createEncounterState(
     log: [],
     space: options.space,
     placements,
+    attachedAuraInstances: [],
   }
 
   state.log = [createEncounterStartedLog(state)]

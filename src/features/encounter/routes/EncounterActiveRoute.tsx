@@ -48,6 +48,7 @@ import {
   OpponentActionDrawer,
   useCloseCombatantActionDrawerOnActiveCombatantChange,
 } from '../components'
+import type { CombatantActionDrawerProps } from '../components/active/drawers/CombatantActionDrawer'
 import { deriveGridHoverStatusMessage } from '../helpers/deriveGridHoverStatus'
 import { campaignEncounterSetupPath } from './encounterPaths'
 import { useEncounterRuntime } from './EncounterRuntimeContext'
@@ -112,6 +113,9 @@ export default function EncounterActiveRoute() {
     setInteractionMode,
     singleCellPlacementHoverCellId,
     setSingleCellPlacementHoverCellId,
+    unaffectedCombatantIds,
+    setUnaffectedCombatantIds,
+    suppressSameSideHostile,
   } = useEncounterRuntime()
 
   const [toastPayload, setToastPayload] = useState<{
@@ -165,6 +169,41 @@ export default function EncounterActiveRoute() {
     [encounterState],
   )
 
+  const unaffectedCombatantOptions = useMemo(() => {
+    if (!encounterState?.combatantsById || !activeCombatantId) return []
+    const roster = Object.values(encounterState.combatantsById)
+    return roster
+      .filter((c) => c.instanceId !== activeCombatantId)
+      .map((c) => ({
+        id: c.instanceId,
+        label: getCombatantDisplayLabel(c, roster),
+        subtitle: c.side === 'party' ? 'Ally' : 'Enemy',
+        imageKey: c.portraitImageKey ?? null,
+      }))
+  }, [encounterState, activeCombatantId])
+
+  const attachedEmanationSetup = useMemo((): CombatantActionDrawerProps['attachedEmanationSetup'] => {
+    if (!selectedAction?.attachedEmanation || !encounterState || !activeCombatantId) return null
+    return {
+      activeCombatantId,
+      allCombatants: combatantRoster,
+      combatantOptions: unaffectedCombatantOptions,
+      unaffectedCombatantIds,
+      onUnaffectedChange: setUnaffectedCombatantIds,
+      suppressSameSideHostile,
+      partyCombatantIds: encounterState.partyCombatantIds,
+    }
+  }, [
+    selectedAction?.attachedEmanation,
+    encounterState,
+    activeCombatantId,
+    combatantRoster,
+    unaffectedCombatantOptions,
+    unaffectedCombatantIds,
+    setUnaffectedCombatantIds,
+    suppressSameSideHostile,
+  ])
+
   const placementCellSummaryLabel = useMemo(() => {
     if (!encounterState?.space || !selectedSingleCellPlacementCellId) return null
     return formatGridCellLabel(encounterState.space, selectedSingleCellPlacementCellId)
@@ -208,6 +247,16 @@ export default function EncounterActiveRoute() {
       setSelectedActionId(actionId)
       setPlacementError(null)
 
+      if (action?.attachedEmanation) {
+        if (suppressSameSideHostile && encounterState && activeCombatantId) {
+          setUnaffectedCombatantIds(encounterState.partyCombatantIds.filter((id) => id !== activeCombatantId))
+        } else {
+          setUnaffectedCombatantIds([])
+        }
+      } else {
+        setUnaffectedCombatantIds([])
+      }
+
       if (isAreaGridAction(action)) {
         setSelectedActionTargetId('')
         if (!encounterState?.space || !encounterState.placements || !activeCombatantId || !action?.areaTemplate) {
@@ -237,6 +286,8 @@ export default function EncounterActiveRoute() {
       availableActions,
       encounterState,
       activeCombatantId,
+      suppressSameSideHostile,
+      setUnaffectedCombatantIds,
       setSelectedActionId,
       setSelectedActionTargetId,
       setAoeOriginCellId,
@@ -344,12 +395,14 @@ export default function EncounterActiveRoute() {
     setInteractionMode('select-target')
     setSingleCellPlacementHoverCellId(null)
     setSingleCellPlacementError(null)
+    setUnaffectedCombatantIds([])
     setSelectedActionId('')
     setActionDrawerOpen(false)
   }, [
     resetAoePlacement,
     setInteractionMode,
     setSingleCellPlacementHoverCellId,
+    setUnaffectedCombatantIds,
     setSelectedActionId,
     setActionDrawerOpen,
   ])
@@ -592,6 +645,7 @@ export default function EncounterActiveRoute() {
     aoeAffectedOverflow: aoeAffectedSummary.overflow,
     onCancelAoe: handleCancelAoe,
     onUndoAoeSelection: handleUndoAoeSelection,
+    attachedEmanationSetup,
   }
 
   return (

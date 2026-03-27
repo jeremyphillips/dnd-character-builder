@@ -21,6 +21,7 @@ export {
   getEncounterCombatantLabel,
 } from './logging'
 export * from './types'
+export { addAttachedAuraInstance, removeAttachedAurasForSpell } from './attached-aura-mutations'
 export {
   addConditionToCombatant,
   addDamageResistanceMarker,

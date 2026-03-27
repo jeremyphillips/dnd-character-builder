@@ -38,13 +38,16 @@ import type { ActionSemanticCategory } from '../../../domain/actions/action-pres
 import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
 import { ActionRow } from '../action-row/ActionRow'
 import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
+import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantOption } from '../../setup/modals/SelectEncounterCombatantModal'
+import { AttachedEmanationSetupPanel } from './AttachedEmanationSetupPanel'
 
 /**
  * Drawer sub-views. `aoePlacement` is parent-driven via `aoeStep`. `singleCellPlacement` uses local subview + map mode.
  */
 export type CombatantActionDrawerView = 'main' | 'aoePlacement' | 'casterOptions' | 'singleCellPlacement'
 
-type CombatantActionDrawerProps = {
+export type CombatantActionDrawerProps = {
   open: boolean
   onClose: () => void
   title: string
@@ -84,6 +87,16 @@ type CombatantActionDrawerProps = {
   aoeAffectedOverflow?: number
   onCancelAoe?: () => void
   onUndoAoeSelection?: () => void
+  /** When the selected spell has {@link CombatActionDefinition.attachedEmanation}. */
+  attachedEmanationSetup?: {
+    activeCombatantId: string
+    allCombatants: readonly CombatantInstance[]
+    combatantOptions: CombatantOption[]
+    unaffectedCombatantIds: string[]
+    onUnaffectedChange: (ids: string[]) => void
+    suppressSameSideHostile: boolean
+    partyCombatantIds: string[]
+  } | null
 }
 
 /**
@@ -450,6 +463,7 @@ export function CombatantActionDrawer({
   aoeAffectedOverflow = 0,
   onCancelAoe,
   onUndoAoeSelection,
+  attachedEmanationSetup = null,
 }: CombatantActionDrawerProps) {
   /** `aoePlacement` overrides when parent is in AoE flow; otherwise `main` or `casterOptions`. */
   const [localSubView, setLocalSubView] = useState<'main' | 'casterOptions' | 'singleCellPlacement'>('main')
@@ -666,6 +680,18 @@ export function CombatantActionDrawer({
 
             {isMain && (
               <>
+                {selectedActionDefinition?.attachedEmanation && attachedEmanationSetup && (
+                  <AttachedEmanationSetupPanel
+                    actionLabel={selectedActionDefinition.label}
+                    activeCombatantId={attachedEmanationSetup.activeCombatantId}
+                    allCombatants={attachedEmanationSetup.allCombatants}
+                    combatantOptions={attachedEmanationSetup.combatantOptions}
+                    unaffectedCombatantIds={attachedEmanationSetup.unaffectedCombatantIds}
+                    onUnaffectedChange={attachedEmanationSetup.onUnaffectedChange}
+                    suppressSameSideHostile={attachedEmanationSetup.suppressSameSideHostile}
+                    partyCombatantIds={attachedEmanationSetup.partyCombatantIds}
+                  />
+                )}
                 <Box>
                   <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.6rem', letterSpacing: '0.08em' }}>
                     Target

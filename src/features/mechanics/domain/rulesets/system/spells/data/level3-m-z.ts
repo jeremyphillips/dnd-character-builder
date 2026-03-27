@@ -363,6 +363,12 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
     effects: [
+      {
+        kind: 'emanation',
+        attachedTo: 'self',
+        area: { kind: 'sphere', size: 15 },
+        selectUnaffectedAtCast: true,
+      },
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
       {
         kind: 'interval',

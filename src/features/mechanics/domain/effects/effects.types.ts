@@ -480,6 +480,16 @@ export type AuraEffect = EffectBase<'aura'> & {
   effects: Effect[];
 };
 
+/**
+ * Persistent self-centered battlefield emanation (e.g. Spirit Guardians).
+ * Not applied as a direct mechanical payload — the spell combat adapter and encounter UI use it for setup + grid aura.
+ */
+export type EmanationEffect = EffectBase<'emanation'> & {
+  attachedTo: 'self';
+  area: { kind: 'sphere'; size: number };
+  selectUnaffectedAtCast: boolean;
+};
+
 export type NoteEffect = EffectBase<'note'> & {
   text: string;
   category?: EffectNoteCategory;
@@ -525,6 +535,7 @@ export type Effect =
   | SpawnEffect
   | HitPointsEffect
   | AuraEffect
+  | EmanationEffect
   | NoteEffect
   | RemoveClassificationEffect
   | RegenerationEffect

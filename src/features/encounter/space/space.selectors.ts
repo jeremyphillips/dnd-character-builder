@@ -107,6 +107,8 @@ export type GridCellViewModel = {
   placementInvalidHover?: boolean
   /** Single-cell placement: confirmed chosen cell. */
   placementSelected?: boolean
+  /** Persistent attached emanation (e.g. Spirit Guardians) — cell inside the moving aura footprint. */
+  persistentAttachedAura?: boolean
   /** Token dimming — `isDefeatedCombatant` when an occupant is present. */
   occupantIsDefeated: boolean
   /** False when a placement exists but the creature is absent from the grid (banished, off-grid, …). */
@@ -184,6 +186,8 @@ export function selectGridViewModel(
       hoverCellId: string | null
       selectedCellId: string | null
     } | null
+    /** Ongoing attached auras (center follows source combatant). */
+    persistentAttachedAuras?: Array<{ sourceCombatantId: string; areaRadiusFt: number }>
   },
 ): GridViewModel | undefined {
   const { space, placements } = state
@@ -203,6 +207,7 @@ export function selectGridViewModel(
 
   const aoe = opts?.aoe
   const placementPick = opts?.placementPick
+  const persistentAttachedAuras = opts?.persistentAttachedAuras
   const hoverValid =
     Boolean(
       aoe &&
@@ -307,6 +312,19 @@ export function selectGridViewModel(
       placementSelected = placementPick.selectedCellId === cell.id
     }
 
+    let persistentAttachedAura: boolean | undefined
+    if (persistentAttachedAuras?.length) {
+      for (const pa of persistentAttachedAuras) {
+        const center = getCellForCombatant(placements, pa.sourceCombatantId)
+        if (!center) continue
+        const dAura = gridDistanceFt(space, center, cell.id)
+        if (dAura !== undefined && dAura <= pa.areaRadiusFt) {
+          persistentAttachedAura = true
+          break
+        }
+      }
+    }
+
     return {
       cellId: cell.id,
       x: cell.x,
@@ -344,6 +362,7 @@ export function selectGridViewModel(
             placementSelected,
           }
         : {}),
+      ...(persistentAttachedAura ? { persistentAttachedAura: true } : {}),
     }
   })
 

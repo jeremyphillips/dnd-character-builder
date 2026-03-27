@@ -156,6 +156,15 @@ Status meanings:
 
 **Hostile application (encounter / charm rules):** `deriveSpellHostility` (see `spell-hostility.ts`) walks spell `effects` and sets `CombatActionDefinition.hostileApplication` when definitive: `resolution.hostileIntent` override → `requiresWilling` → `SPELL_STATE_HOSTILITY` for `state` ids (e.g. `hallowed` non-hostile) → any `damage` or `save` → hostile; healing (`hit-points` heal) → non-hostile; otherwise unknown (legacy `targeting` kind rules). Prefer explicit `requiresWilling` for willing touch buffs when the tree has no damage/save/state map hit.
 
+### `emanation`
+
+- Status: `provisional`
+- Purpose: mark a spell as a **self-centered area** that moves with the caster on the encounter grid (e.g. Spirit Guardians), distinct from one-shot AoE placement.
+- Key fields: `attachedTo: 'caster'`, `area` (template and radius, e.g. sphere 15 ft), **optional** `selectUnaffectedAtCast: true` when the rules let the caster designate creatures that ignore the aura.
+- The spell combat adapter derives **`CombatActionDefinition.attachedEmanation`** (radius, `selectUnaffectedAtCast`) and keeps **`targeting`** + emanation for resolution; other authored effects may be filtered or deferred for the current encounter phase.
+- At cast time, the encounter UI can collect **unaffected combatant ids** (reusing the combatant-picker modal pattern). When **`ruleset.mechanics.combat.encounter.suppressSameSideHostile`** is true, same-side party members are treated as non-hostile for the aura without manual selection.
+- **Runtime:** an **`AttachedAuraInstance`** is stored on **`EncounterState`** while the spell lasts; it is removed when concentration on that spell ends. Grid rendering may show the aura footprint while active; per-turn damage and movement riders are optional follow-ups.
+
 ### `damage`
 
 - Status: `canonical`; `instances` is `provisional`; `levelScaling` is `provisional`

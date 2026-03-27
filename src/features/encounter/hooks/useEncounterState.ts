@@ -72,6 +72,8 @@ export function useEncounterState({
   const [aoeStep, setAoeStep] = useState<AoeStep>('none')
   const [aoeOriginCellId, setAoeOriginCellId] = useState<string | null>(null)
   const [aoeHoverCellId, setAoeHoverCellId] = useState<string | null>(null)
+  /** Spirit Guardians–style: designated unaffected combatant ids before resolve. */
+  const [unaffectedCombatantIds, setUnaffectedCombatantIds] = useState<string[]>([])
   /** Grid cell id for summon / single-cell placement readiness (when required by spawn metadata). */
   const [selectedSingleCellPlacementCellId, setSelectedSingleCellPlacementCellId] = useState<string | null>(null)
   const [singleCellPlacementHoverCellId, setSingleCellPlacementHoverCellId] = useState<string | null>(null)
@@ -278,6 +280,7 @@ export function useEncounterState({
           casterOptions: selectedCasterOptions,
           aoeOriginCellId: aoeOriginCellId || undefined,
           singleCellPlacementCellId: selectedSingleCellPlacementCellId || undefined,
+          unaffectedCombatantIds,
         },
         { monstersById, buildSummonAllyCombatant },
       )
@@ -291,12 +294,14 @@ export function useEncounterState({
     setSelectedActionId('')
     setSelectedActionTargetId('')
     setSelectedSingleCellPlacementCellId(null)
+    setUnaffectedCombatantIds([])
   }, [
     selectedActionId,
     selectedActionTargetId,
     selectedCasterOptions,
     aoeOriginCellId,
     selectedSingleCellPlacementCellId,
+    unaffectedCombatantIds,
     monstersById,
     buildSummonAllyCombatant,
     resetAoePlacement,
@@ -432,6 +437,8 @@ export function useEncounterState({
     aoeHoverCellId,
     setAoeHoverCellId,
     resetAoePlacement,
+    unaffectedCombatantIds,
+    setUnaffectedCombatantIds,
     unresolvedCombatantCount,
     selectedCombatants,
     controlTargetId,

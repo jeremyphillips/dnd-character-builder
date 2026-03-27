@@ -25,6 +25,8 @@ function baseFillSx(theme: Theme, kind: CellBaseFillKind): SystemStyleObject<The
     case 'aoe-cast-range':
       // First-class overlay: same as open ground (no extra tint); precedence still suppresses movement fill.
       return { bgcolor: palette.background.paper }
+    case 'persistent-attached-aura':
+      return { bgcolor: alpha(palette.secondary.main, 0.12) }
     case 'paper':
       return { bgcolor: palette.background.paper }
     default: {

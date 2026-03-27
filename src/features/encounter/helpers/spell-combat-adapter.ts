@@ -121,6 +121,20 @@ function getSpellTargetingEffect(spell: Spell): Extract<Effect, { kind: 'targeti
   return spell.effects?.find((e): e is Extract<Effect, { kind: 'targeting' }> => e.kind === 'targeting')
 }
 
+function getSpellEmanationEffect(spell: Spell): Extract<Effect, { kind: 'emanation' }> | undefined {
+  return spell.effects?.find((e): e is Extract<Effect, { kind: 'emanation' }> => e.kind === 'emanation')
+}
+
+function deriveAttachedEmanation(spell: Spell): CombatActionDefinition['attachedEmanation'] | undefined {
+  const em = getSpellEmanationEffect(spell)
+  if (!em || em.attachedTo !== 'self' || em.area.kind !== 'sphere') return undefined
+  return {
+    spellId: spell.id,
+    radiusFt: em.area.size,
+    selectUnaffectedAtCast: em.selectUnaffectedAtCast,
+  }
+}
+
 /** Maps spell AoE metadata to grid placement; cone/line/cylinder omit template until modeled. */
 function deriveCombatAreaTemplate(spell: Spell): CombatActionAreaTemplate | undefined {
   const t = getSpellTargetingEffect(spell)
@@ -380,7 +394,11 @@ function buildSpellEffectsAction(
     spellSaveDc,
     spellcastingAbilityModifier,
   )
-  const resolvableEffects = enrichedEffects.filter((e) => e.kind !== 'targeting')
+  let resolvableEffects = enrichedEffects.filter((e) => e.kind !== 'targeting' && e.kind !== 'emanation')
+  // Phase 1: defer interval damage / speed — aura + concentration + grid only.
+  if (spell.id === 'spirit-guardians') {
+    resolvableEffects = resolvableEffects.filter((e) => e.kind !== 'interval' && e.kind !== 'modifier')
+  }
 
   const hpCfg = spell.resolution?.hpThreshold
   const aboveThresholdEffects = hpCfg?.aboveMaxHpEffects?.length
@@ -391,6 +409,7 @@ function buildSpellEffectsAction(
 
   const areaTemplate = deriveCombatAreaTemplate(spell)
   const areaPlacement = deriveAreaPlacement(spell, Boolean(areaTemplate))
+  const attachedEmanation = deriveAttachedEmanation(spell)
 
   return {
     id: `${runtimeId}-spell-${spell.id}`,
@@ -406,6 +425,7 @@ function buildSpellEffectsAction(
     displayMeta: buildSpellDisplayMeta(spell),
     usage,
     ...(areaTemplate ? { areaTemplate, ...(areaPlacement ? { areaPlacement } : {}) } : {}),
+    ...(attachedEmanation ? { attachedEmanation } : {}),
   }
 }
 

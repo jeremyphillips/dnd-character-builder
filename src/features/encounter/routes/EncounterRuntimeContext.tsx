@@ -64,7 +64,8 @@ function useEncounterRuntimeValue() {
   useActiveCampaign()
   const navigate = useNavigate()
   const { id: campaignId } = useParams<{ id: string }>()
-  const { catalog } = useCampaignRules()
+  const { catalog, ruleset } = useCampaignRules()
+  const suppressSameSideHostile = ruleset.mechanics.combat.encounter.suppressSameSideHostile === true
   const { party } = useCampaignParty('approved')
   const { characters: npcs } = useCharacters({ type: 'npc' })
 
@@ -148,6 +149,8 @@ function useEncounterRuntimeValue() {
     aoeHoverCellId,
     setAoeHoverCellId,
     resetAoePlacement,
+    unaffectedCombatantIds,
+    setUnaffectedCombatantIds,
   } = useEncounterState({
     selectedCombatantIds,
     opponentRoster,
@@ -250,12 +253,6 @@ function useEncounterRuntimeValue() {
   }
 
   useEffect(() => {
-    if (aoeStep !== 'none') {
-      setInteractionMode('aoe-place')
-    }
-  }, [aoeStep])
-
-  useEffect(() => {
     if (aoeStep === 'none' && interactionMode === 'aoe-place') {
       setInteractionMode('select-target')
     }
@@ -271,9 +268,23 @@ function useEncounterRuntimeValue() {
     [availableActions, selectedActionId],
   )
 
+  useEffect(() => {
+    if (aoeStep !== 'none' && !selectedAction?.attachedEmanation) {
+      setInteractionMode('aoe-place')
+    }
+  }, [aoeStep, selectedAction?.attachedEmanation])
+
   const selectedActionRangeFt = useMemo(() => {
     return selectedAction?.targeting?.rangeFt ?? null
   }, [selectedAction])
+
+  const persistentAttachedAuras = useMemo(() => {
+    if (!encounterState?.attachedAuraInstances?.length) return undefined
+    return encounterState.attachedAuraInstances.map((a) => ({
+      sourceCombatantId: a.sourceCombatantId,
+      areaRadiusFt: a.area.size,
+    }))
+  }, [encounterState?.attachedAuraInstances])
 
   const aoeGridOverlay = useMemo(() => {
     if (!encounterState?.space || !encounterState.placements || !activeCombatantId) return null
@@ -338,6 +349,7 @@ function useEncounterRuntimeValue() {
         interactionMode !== 'single-cell-place',
       aoe: aoeGridOverlay,
       placementPick: singleCellPlacementGridOverlay,
+      persistentAttachedAuras,
     })
   }, [
     encounterState,
@@ -348,6 +360,7 @@ function useEncounterRuntimeValue() {
     aoeGridOverlay,
     singleCellPlacementGridOverlay,
     interactionMode,
+    persistentAttachedAuras,
   ])
 
   // turnResources was consumed by the now-commented-out footer.
@@ -563,6 +576,9 @@ function useEncounterRuntimeValue() {
     aoeHoverCellId,
     setAoeHoverCellId,
     resetAoePlacement,
+    unaffectedCombatantIds,
+    setUnaffectedCombatantIds,
+    suppressSameSideHostile,
     unresolvedCombatantCount,
     selectedCombatants,
     environmentContext,

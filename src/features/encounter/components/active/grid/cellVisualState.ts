@@ -13,6 +13,7 @@ export type CellBaseFillKind =
   | 'aoe-origin-locked'
   | 'aoe-template'
   | 'aoe-cast-range'
+  | 'persistent-attached-aura'
   | 'paper'
 
 /**
@@ -63,6 +64,7 @@ export function resolveBaseFillKind(cell: GridCellViewModel): CellBaseFillKind {
   if (cell.aoeOriginLocked) return 'aoe-origin-locked'
   if (cell.aoeInTemplate) return 'aoe-template'
   if (cell.aoeCastRange) return 'aoe-cast-range'
+  if (cell.persistentAttachedAura) return 'persistent-attached-aura'
   return 'paper'
 }
 

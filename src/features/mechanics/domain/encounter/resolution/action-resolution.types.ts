@@ -11,6 +11,8 @@ export interface ResolveCombatActionSelection {
   aoeOriginCellId?: string
   /** Grid cell id for summon placement when the action requires single-cell placement (spawn `single-cell`). */
   singleCellPlacementCellId?: string
+  /** Spirit Guardians–style: combatants designated unaffected at cast (stored on attached aura). */
+  unaffectedCombatantIds?: string[]
 }
 
 export interface ResolveCombatActionOptions {

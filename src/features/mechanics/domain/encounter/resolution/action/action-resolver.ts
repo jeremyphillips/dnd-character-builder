@@ -11,6 +11,7 @@ import {
   getSaveModifiersFromConditions,
   type CombatantInstance,
   type RollModifierMarker,
+  addAttachedAuraInstance,
 } from '../../state'
 import {
   formatAttackRollDebug,
@@ -166,13 +167,22 @@ export function resolveCombatAction(
   const result = resolveCombatActionInternal(state, selection, options, { skipCost: false })
   let finalState = result.state
 
-  if (action && isConcentrationAction(action) && result.createdMarkerIds.length > 0) {
-    const meta = action.displayMeta as { source: 'spell'; spellId: string; concentrationDurationTurns?: number }
+  const meta = action?.displayMeta as { source: 'spell'; spellId: string; concentrationDurationTurns?: number } | undefined
+  const needsConcFromAttachedEmanation =
+    Boolean(action?.attachedEmanation) && isConcentrationAction(action) && result.createdMarkerIds.length === 0
+  const linkedForConc =
+    result.createdMarkerIds.length > 0
+      ? result.createdMarkerIds
+      : needsConcFromAttachedEmanation && action?.attachedEmanation
+        ? [`attached-emanation-${action.attachedEmanation.spellId}`]
+        : []
+
+  if (action && isConcentrationAction(action) && linkedForConc.length > 0 && meta?.source === 'spell') {
     const durationTurns = meta.concentrationDurationTurns
     finalState = setConcentration(finalState, selection.actorId, {
       spellId: meta.spellId,
       spellLabel: action.label,
-      linkedMarkerIds: result.createdMarkerIds,
+      linkedMarkerIds: linkedForConc,
       remainingTurns: durationTurns,
       totalTurns: durationTurns,
     })
@@ -511,11 +521,13 @@ function resolveCombatActionInternal(
     }
   } else if (action.resolutionMode === 'effects') {
     const effectTargets =
-      targets.length > 0
-        ? targets
-        : action.targeting?.kind === 'none'
-          ? [actor]
-          : []
+      action.attachedEmanation && action.effects?.length
+        ? [actor]
+        : targets.length > 0
+          ? targets
+          : action.targeting?.kind === 'none'
+            ? [actor]
+            : []
 
     if (effectTargets.length === 0 && action.effects?.length) {
       nextState = appendEncounterLogEvent(nextState, {
@@ -583,5 +595,17 @@ function resolveCombatActionInternal(
         ),
         turnResources: spendActionCost(getCombatantTurnResources(combatant), action.cost),
       }))
-  return { state: finalState, createdMarkerIds: allMarkerIds }
+  let finalReturnState = finalState
+  if (action.attachedEmanation && !behavior.skipCost) {
+    const ids = selection.unaffectedCombatantIds ?? []
+    finalReturnState = addAttachedAuraInstance(finalState, {
+      id: `attached-emanation-${action.attachedEmanation.spellId}-${selection.actorId}`,
+      sourceCombatantId: selection.actorId,
+      spellId: action.attachedEmanation.spellId,
+      attachedTo: 'self',
+      area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
+      unaffectedCombatantIds: [...ids],
+    })
+  }
+  return { state: finalReturnState, createdMarkerIds: allMarkerIds }
 }

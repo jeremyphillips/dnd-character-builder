@@ -143,4 +143,13 @@ export interface CombatActionDefinition {
   areaTemplate?: CombatActionAreaTemplate
   /** Remote grid point vs centered on caster (self-range emanation). */
   areaPlacement?: 'remote' | 'self'
+  /**
+   * Persistent self-centered emanation (e.g. Spirit Guardians): cast-time unaffected setup + battlefield aura.
+   * Does not replace `areaTemplate` / `all-enemies` for targeting metadata.
+   */
+  attachedEmanation?: {
+    spellId: string
+    radiusFt: number
+    selectUnaffectedAtCast: boolean
+  }
 }

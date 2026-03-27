@@ -549,10 +549,17 @@ export function CombatantActionDrawer({
   )
 
   const effectiveView: CombatantActionDrawerView = useMemo(() => {
-    if (aoeStep !== 'none' && aoeAction?.areaTemplate) return 'aoePlacement'
+    // Attached emanations (e.g. Spirit Guardians) use main + AttachedEmanationSetupPanel, not point-and-place AoE UI.
+    if (
+      aoeStep !== 'none' &&
+      aoeAction?.areaTemplate &&
+      !selectedActionDefinition?.attachedEmanation
+    ) {
+      return 'aoePlacement'
+    }
     if (localSubView === 'singleCellPlacement') return 'singleCellPlacement'
     return localSubView === 'casterOptions' ? 'casterOptions' : 'main'
-  }, [aoeStep, aoeAction?.areaTemplate, localSubView])
+  }, [aoeStep, aoeAction?.areaTemplate, selectedActionDefinition?.attachedEmanation, localSubView])
 
   const isMain = effectiveView === 'main'
 

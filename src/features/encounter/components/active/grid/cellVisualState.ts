@@ -25,6 +25,8 @@ export type CellMovementVisual =
   | 'reachable-fill-strong'
   | 'reachable-fill-weak'
   | 'reachable-border-only'
+  /** Same as border-only but thicker inset ring when hovered (overlay suppresses movement fill). */
+  | 'reachable-border-only-hover'
 
 export type CellVisualContext = {
   hoveredCellId: string | null | undefined
@@ -89,7 +91,8 @@ export function getCellVisualState(cell: GridCellViewModel, ctx: CellVisualConte
     movementVisual = 'rejected-hover'
   } else if (showReachableMovementBorder) {
     if (suppressMovementFill) {
-      movementVisual = 'reachable-border-only'
+      movementVisual =
+        isHoverCell && cell.isReachable ? 'reachable-border-only-hover' : 'reachable-border-only'
     } else if (isHoverCell && cell.isReachable) {
       movementVisual = 'reachable-fill-strong'
     } else {

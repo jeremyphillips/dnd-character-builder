@@ -103,6 +103,14 @@ describe('getCellVisualState', () => {
     expect(s.movementVisual).toBe('reachable-border-only')
   })
 
+  it('uses reachable-border-only-hover when suppressed overlay and cell is hovered', () => {
+    const s = getCellVisualState(
+      baseCell({ cellId: 'c-1-1', isReachable: true, aoeCastRange: true }),
+      { ...movementCtx, hoveredCellId: 'c-1-1' },
+    )
+    expect(s.movementVisual).toBe('reachable-border-only-hover')
+  })
+
   it('uses reachable fill when reachable and overlay does not suppress', () => {
     const s = getCellVisualState(baseCell({ isReachable: true }), movementCtx)
     expect(s.movementVisual).toBe('reachable-fill-weak')

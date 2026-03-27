@@ -42,19 +42,30 @@ function movementSx(theme: Theme, visual: CellMovementVisual): SystemStyleObject
     case 'none':
       return {}
     case 'rejected-hover':
-      return { outline: `1px dashed ${alpha(palette.error.main, 0.55)}` }
+      return {
+        // Inset ring + dashed edge: readable on aura/placement fills without a movement fill.
+        boxShadow: `inset 0 0 0 2px ${alpha(palette.error.main, 0.4)}`,
+        outline: `1px dashed ${alpha(palette.error.main, 0.5)}`,
+        outlineOffset: 0,
+      }
     case 'reachable-fill-strong':
       return {
-        outline: `1px solid ${alpha(palette.success.main, 0.75)}`,
-        bgcolor: alpha(palette.success.main, 0.5),
+        boxShadow: `inset 0 0 0 3px ${alpha(palette.success.main, 0.4)}`,
+        // bgcolor: alpha(palette.success.main, 0.5),
       }
     case 'reachable-fill-weak':
       return {
-        outline: `1px solid ${alpha(palette.success.main, 0.65)}`,
-        bgcolor: alpha(palette.success.main, 0.3),
+        boxShadow: `inset 0 0 0 2px ${alpha(palette.success.main, 0.3)}`,
+        // bgcolor: alpha(palette.success.main, 0.3),
       }
     case 'reachable-border-only':
-      return { outline: `1px solid ${alpha(palette.success.light, 0.88)}` }
+      return {
+        boxShadow: `inset 0 0 0 2px ${alpha(palette.success.main, 0.92)}`,
+      }
+    case 'reachable-border-only-hover':
+      return {
+        boxShadow: `inset 0 0 0 3px ${alpha(palette.success.main, 1)}`,
+      }
     default: {
       const _exhaustive: never = visual
       return _exhaustive

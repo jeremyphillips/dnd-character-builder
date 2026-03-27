@@ -72,7 +72,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
     name: 'Giant Insect',
     school: 'conjuration',
     level: 4,
-    classes: ['druid'],
+    classes: ['druid', 'cleric'],
     castingTime: { normal: { value: 1, unit: 'action' } },
     range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
@@ -95,6 +95,12 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
       {
         kind: 'spawn',
         count: 1,
+        placement: {
+          kind: 'single-cell',
+          rangeFromCaster: { value: 60, unit: 'ft' },
+          requiresLineOfSight: true,
+          mustBeUnoccupied: true,
+        },
         mapMonsterIdFromCasterOption: {
           fieldId: 'giant-insect-form',
           valueToMonsterId: {

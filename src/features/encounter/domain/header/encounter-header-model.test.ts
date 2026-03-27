@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import { createCombatTurnResources } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
 
-import { deriveEncounterHeaderModel } from '../encounter-header-model'
+import { deriveEncounterHeaderModel } from './encounter-header-model'
 
 const baseTurn = createCombatTurnResources(30)
 
@@ -166,5 +166,66 @@ describe('deriveEncounterHeaderModel', () => {
     })
     expect(m.directive).toContain('Move on the grid')
     expect(m.directive).toContain('15')
+  })
+
+  it('summon-style action without creature target → finish in panel, not choose target', () => {
+    const summon = action('gi', {
+      label: 'Giant Insect',
+      kind: 'spell',
+      targeting: { kind: 'none' },
+      resolutionMode: 'effects',
+      effects: [{ kind: 'spawn', count: 1 }],
+    })
+    const m = deriveEncounterHeaderModel({
+      turn: {
+        combatantActions: [summon],
+        availableActionIds: ['gi'],
+        turnResources: baseTurn,
+      },
+      interaction: {
+        interactionMode: 'select-target',
+        selectedActionId: 'gi',
+        selectedAction: summon,
+        aoeStep: 'none',
+        canResolveAction: false,
+        selectedActionRequiresCreatureTarget: false,
+      },
+      display: {
+        selectedActionLabel: 'Giant Insect',
+        selectedTargetLabel: null,
+      },
+    })
+    expect(m.directive).toContain('Finish')
+    expect(m.directive).toContain('Giant Insect')
+  })
+
+  it('infers no creature target when selectedActionRequiresCreatureTarget is omitted (spawn / none)', () => {
+    const summon = action('gi2', {
+      label: 'Giant Insect',
+      kind: 'spell',
+      targeting: { kind: 'none' },
+      resolutionMode: 'effects',
+      effects: [{ kind: 'spawn', count: 1 }],
+    })
+    const m = deriveEncounterHeaderModel({
+      turn: {
+        combatantActions: [summon],
+        availableActionIds: ['gi2'],
+        turnResources: baseTurn,
+      },
+      interaction: {
+        interactionMode: 'select-target',
+        selectedActionId: 'gi2',
+        selectedAction: summon,
+        aoeStep: 'none',
+        canResolveAction: false,
+      },
+      display: {
+        selectedActionLabel: 'Giant Insect',
+        selectedTargetLabel: null,
+      },
+    })
+    expect(m.directive).toContain('Finish')
+    expect(m.directive).toContain('Giant Insect')
   })
 })

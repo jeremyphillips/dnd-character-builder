@@ -17,6 +17,8 @@ import { useCharacters } from '@/features/character/hooks'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import { buildMonsterModalStats } from '../helpers/combatant-modal-stats'
 import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
+import { getSingleCellPlacementRequirement } from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 
 import {
@@ -121,6 +123,10 @@ function useEncounterRuntimeValue() {
     setSelectedActionId,
     selectedCasterOptions,
     setSelectedCasterOptions,
+    selectedSingleCellPlacementCellId,
+    setSelectedSingleCellPlacementCellId,
+    singleCellPlacementHoverCellId,
+    setSingleCellPlacementHoverCellId,
     selectedActionTargetId,
     setSelectedActionTargetId,
     unresolvedCombatantCount,
@@ -293,16 +299,45 @@ function useEncounterRuntimeValue() {
     aoeOriginCellId,
   ])
 
+  const singleCellPlacementGridOverlay = useMemo(() => {
+    if (!encounterState?.space || !encounterState.placements || !activeCombatantId) return null
+    if (interactionMode !== 'single-cell-place') return null
+    if (!selectedAction) return null
+    const req = getSingleCellPlacementRequirement(selectedAction)
+    if (!req) return null
+    const casterCellId = getCellForCombatant(encounterState.placements, activeCombatantId)
+    if (!casterCellId) return null
+    return {
+      casterCellId,
+      rangeFt: req.rangeFt,
+      lineOfSightRequired: req.lineOfSightRequired,
+      mustBeUnoccupied: req.mustBeUnoccupied,
+      hoverCellId: singleCellPlacementHoverCellId,
+      selectedCellId: selectedSingleCellPlacementCellId,
+    }
+  }, [
+    encounterState,
+    activeCombatantId,
+    selectedAction,
+    interactionMode,
+    singleCellPlacementHoverCellId,
+    selectedSingleCellPlacementCellId,
+  ])
+
   const gridViewModel = useMemo(() => {
     if (!encounterState) return undefined
-    const rangeForRing = aoeGridOverlay ? null : selectedActionRangeFt
+    const rangeForRing =
+      aoeGridOverlay || singleCellPlacementGridOverlay ? null : selectedActionRangeFt
     return selectGridViewModel(encounterState, {
       selectedTargetId: selectedActionTargetId || null,
       selectedActionRangeFt: rangeForRing,
       selectedAction,
       showReachable:
-        (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 && interactionMode !== 'aoe-place',
+        (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 &&
+        interactionMode !== 'aoe-place' &&
+        interactionMode !== 'single-cell-place',
       aoe: aoeGridOverlay,
+      placementPick: singleCellPlacementGridOverlay,
     })
   }, [
     encounterState,
@@ -311,6 +346,7 @@ function useEncounterRuntimeValue() {
     selectedAction,
     activeCombatant,
     aoeGridOverlay,
+    singleCellPlacementGridOverlay,
     interactionMode,
   ])
 
@@ -386,6 +422,10 @@ function useEncounterRuntimeValue() {
         aoeStep,
         aoeOriginCellId,
         selectedActionTargetId,
+        selectedCasterOptions,
+        selectedSingleCellPlacementCellId,
+        encounterState,
+        activeCombatant,
       }),
     [
       selectedActionId,
@@ -394,6 +434,10 @@ function useEncounterRuntimeValue() {
       aoeStep,
       aoeOriginCellId,
       selectedActionTargetId,
+      selectedCasterOptions,
+      selectedSingleCellPlacementCellId,
+      encounterState,
+      activeCombatant,
     ],
   )
 
@@ -423,6 +467,9 @@ function useEncounterRuntimeValue() {
         selectedAction,
         aoeStep,
         canResolveAction: canResolveActionForHeader,
+        selectedActionRequiresCreatureTarget: selectedAction
+          ? actionRequiresCreatureTargetForResolve(selectedAction)
+          : undefined,
       },
       display: {
         selectedActionLabel: selectedAction?.label ?? null,
@@ -502,6 +549,10 @@ function useEncounterRuntimeValue() {
     setSelectedActionId,
     selectedCasterOptions,
     setSelectedCasterOptions,
+    selectedSingleCellPlacementCellId,
+    setSelectedSingleCellPlacementCellId,
+    singleCellPlacementHoverCellId,
+    setSingleCellPlacementHoverCellId,
     selectedActionTargetId,
     setSelectedActionTargetId,
     selectedAction,

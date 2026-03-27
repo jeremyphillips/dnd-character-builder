@@ -13,7 +13,16 @@ import {
 import { ZoomControl } from '@/ui/patterns'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
-import { isValidActionTarget } from '@/features/mechanics/domain/encounter'
+import {
+  isValidActionTarget,
+  actionRequiresCreatureTargetForResolve,
+  getPrimaryResolutionMissing,
+} from '@/features/mechanics/domain/encounter'
+import {
+  getSingleCellPlacementRequirement,
+  validateSingleCellPlacement,
+  type PlacementValidationReason,
+} from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
 
 import { buildEncounterActionToastPayload } from '../helpers/encounter-action-toast'
@@ -24,7 +33,7 @@ import {
   isAreaGridAction,
   isSelfCenteredAreaAction,
 } from '../helpers/area-grid-action'
-import { getCellForCombatant } from '../space/space.helpers'
+import { formatGridCellLabel, getCellForCombatant } from '../space/space.helpers'
 import {
   actionUsesGridCreatureTargeting,
   isValidAoeOriginCell,
@@ -42,6 +51,21 @@ import {
 import { deriveGridHoverStatusMessage } from '../helpers/deriveGridHoverStatus'
 import { campaignEncounterSetupPath } from './encounterPaths'
 import { useEncounterRuntime } from './EncounterRuntimeContext'
+
+function placementReasonMessage(reason: PlacementValidationReason): string {
+  switch (reason) {
+    case 'out-of-range':
+      return 'Out of range'
+    case 'no-line-of-sight':
+      return 'No line of sight'
+    case 'occupied':
+      return 'Cell occupied'
+    case 'invalid-terrain':
+      return 'Invalid terrain'
+    default:
+      return 'Invalid placement'
+  }
+}
 
 const DEFAULT_ZOOM = 1
 const MIN_ZOOM = 0.25
@@ -62,6 +86,8 @@ export default function EncounterActiveRoute() {
     setSelectedActionId,
     selectedCasterOptions,
     setSelectedCasterOptions,
+    selectedSingleCellPlacementCellId,
+    setSelectedSingleCellPlacementCellId,
     selectedActionTargetId,
     setSelectedActionTargetId,
     selectedAction,
@@ -83,6 +109,9 @@ export default function EncounterActiveRoute() {
     monstersById,
     characterPortraitById,
     interactionMode,
+    setInteractionMode,
+    singleCellPlacementHoverCellId,
+    setSingleCellPlacementHoverCellId,
   } = useEncounterRuntime()
 
   const [toastPayload, setToastPayload] = useState<{
@@ -93,6 +122,7 @@ export default function EncounterActiveRoute() {
   } | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
   const [placementError, setPlacementError] = useState<string | null>(null)
+  const [singleCellPlacementError, setSingleCellPlacementError] = useState<string | null>(null)
   const [gameOverDismissed, setGameOverDismissed] = useState(false)
 
   const encounterOutcome = useMemo(() => deriveEncounterSideOutcome(encounterState), [encounterState])
@@ -135,13 +165,18 @@ export default function EncounterActiveRoute() {
     [encounterState],
   )
 
+  const placementCellSummaryLabel = useMemo(() => {
+    if (!encounterState?.space || !selectedSingleCellPlacementCellId) return null
+    return formatGridCellLabel(encounterState.space, selectedSingleCellPlacementCellId)
+  }, [encounterState, selectedSingleCellPlacementCellId])
+
   const targetCombatant = useMemo(() => {
     if (!encounterState || !selectedActionTargetId) return null
     return encounterState.combatantsById[selectedActionTargetId] ?? null
   }, [encounterState, selectedActionTargetId])
 
   const targetValidation = useMemo(() => {
-    if (!encounterState || !activeCombatant || !targetCombatant) return undefined
+    if (!encounterState || !activeCombatant) return undefined
     return selectValidActionIdsForTarget(encounterState, activeCombatant, targetCombatant, availableActions)
   }, [encounterState, activeCombatant, targetCombatant, availableActions])
 
@@ -155,8 +190,12 @@ export default function EncounterActiveRoute() {
       if (selectedActionId && encounterState && activeCombatant) {
         const nextTarget = encounterState.combatantsById[nextTargetId]
         const action = availableActions.find((a) => a.id === selectedActionId)
-        if (!nextTarget || !action || !isValidActionTarget(encounterState, nextTarget, activeCombatant, action)) {
+        if (!action) {
           setSelectedActionId('')
+        } else if (actionRequiresCreatureTargetForResolve(action)) {
+          if (!nextTarget || !isValidActionTarget(encounterState, nextTarget, activeCombatant, action)) {
+            setSelectedActionId('')
+          }
         }
       }
     },
@@ -189,6 +228,9 @@ export default function EncounterActiveRoute() {
         }
       } else {
         resetAoePlacement()
+        setInteractionMode('select-target')
+        setSingleCellPlacementHoverCellId(null)
+        setSingleCellPlacementError(null)
       }
     },
     [
@@ -200,6 +242,9 @@ export default function EncounterActiveRoute() {
       setAoeOriginCellId,
       setAoeStep,
       resetAoePlacement,
+      setInteractionMode,
+      setSingleCellPlacementHoverCellId,
+      setSingleCellPlacementError,
     ],
   )
 
@@ -252,6 +297,10 @@ export default function EncounterActiveRoute() {
         aoeStep,
         aoeOriginCellId,
         selectedActionTargetId,
+        selectedCasterOptions,
+        selectedSingleCellPlacementCellId,
+        encounterState,
+        activeCombatant,
       }),
     [
       selectedActionId,
@@ -260,14 +309,50 @@ export default function EncounterActiveRoute() {
       aoeStep,
       aoeOriginCellId,
       selectedActionTargetId,
+      selectedCasterOptions,
+      selectedSingleCellPlacementCellId,
+      encounterState,
+      activeCombatant,
+    ],
+  )
+
+  const primaryResolutionMissing = useMemo(
+    () =>
+      getPrimaryResolutionMissing(selectedAction, {
+        selectedActionTargetId,
+        aoeStep,
+        aoeOriginCellId,
+        selectedCasterOptions,
+        selectedSingleCellPlacementCellId,
+        encounterState,
+        activeCombatant,
+      }),
+    [
+      selectedAction,
+      selectedActionTargetId,
+      aoeStep,
+      aoeOriginCellId,
+      selectedCasterOptions,
+      selectedSingleCellPlacementCellId,
+      encounterState,
+      activeCombatant,
     ],
   )
 
   const handleCloseDrawer = useCallback(() => {
     resetAoePlacement()
+    setInteractionMode('select-target')
+    setSingleCellPlacementHoverCellId(null)
+    setSingleCellPlacementError(null)
     setSelectedActionId('')
     setActionDrawerOpen(false)
-  }, [resetAoePlacement, setSelectedActionId, setActionDrawerOpen])
+  }, [
+    resetAoePlacement,
+    setInteractionMode,
+    setSingleCellPlacementHoverCellId,
+    setSelectedActionId,
+    setActionDrawerOpen,
+  ])
 
   const handleCloseDrawerOnTurnChange = useCallback(() => {
     handleCloseDrawer()
@@ -327,6 +412,24 @@ export default function EncounterActiveRoute() {
     (cellId: string) => {
       if (!encounterState || !activeCombatantId) return
 
+      if (interactionMode === 'single-cell-place') {
+        const space = encounterState.space
+        const placements = encounterState.placements
+        if (!space || !placements || !selectedAction) return
+        const req = getSingleCellPlacementRequirement(selectedAction)
+        if (!req) return
+        const casterCell = getCellForCombatant(placements, activeCombatantId)
+        if (!casterCell) return
+        const v = validateSingleCellPlacement(space, placements, casterCell, cellId, req)
+        if (!v.isValid) {
+          setSingleCellPlacementError(placementReasonMessage(v.reasons[0] ?? 'out-of-range'))
+          return
+        }
+        setSingleCellPlacementError(null)
+        setSelectedSingleCellPlacementCellId(cellId)
+        return
+      }
+
       if (
         (aoeStep === 'placing' || aoeStep === 'confirm') &&
         selectedAction &&
@@ -338,7 +441,16 @@ export default function EncounterActiveRoute() {
         if (!space || !placements) return
         const casterCell = getCellForCombatant(placements, activeCombatantId)
         const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
-        if (!casterCell || !isValidAoeOriginCell(space, casterCell, cellId, castRangeFt)) {
+        if (!casterCell) return
+
+        if (aoeStep === 'confirm' && aoeOriginCellId === cellId) {
+          setPlacementError(null)
+          setAoeOriginCellId(null)
+          setAoeStep('placing')
+          return
+        }
+
+        if (!isValidAoeOriginCell(space, casterCell, cellId, castRangeFt)) {
           setPlacementError('Choose a valid point within range (not blocked).')
           return
         }
@@ -360,29 +472,40 @@ export default function EncounterActiveRoute() {
       encounterState,
       activeCombatantId,
       aoeStep,
+      aoeOriginCellId,
       selectedAction,
+      interactionMode,
       handleMoveCombatant,
       handleSelectTarget,
       setAoeOriginCellId,
       setAoeStep,
       setActionDrawerOpen,
+      setSelectedSingleCellPlacementCellId,
+      setSingleCellPlacementError,
     ],
   )
 
   const handleCellHover = useCallback(
     (cellId: string | null) => {
-      setAoeHoverCellId(cellId)
+      if (interactionMode === 'single-cell-place') {
+        setSingleCellPlacementHoverCellId(cellId)
+      } else {
+        setAoeHoverCellId(cellId)
+      }
     },
-    [setAoeHoverCellId],
+    [interactionMode, setAoeHoverCellId, setSingleCellPlacementHoverCellId],
   )
 
   const movementHighlightActive = useMemo(
     () =>
-      (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 && interactionMode !== 'aoe-place',
+      (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 &&
+      interactionMode !== 'aoe-place' &&
+      interactionMode !== 'single-cell-place',
     [activeCombatant, interactionMode],
   )
 
   const creatureTargetingActive = useMemo(() => {
+    if (interactionMode === 'single-cell-place') return false
     if (!selectedAction) return false
     if (
       aoeStep !== 'none' &&
@@ -392,7 +515,7 @@ export default function EncounterActiveRoute() {
       return false
     }
     return actionUsesGridCreatureTargeting(selectedAction)
-  }, [selectedAction, aoeStep])
+  }, [selectedAction, aoeStep, interactionMode])
 
   const gridHoverStatusMessage = useMemo(
     () =>
@@ -400,19 +523,23 @@ export default function EncounterActiveRoute() {
         encounterState,
         activeCombatantId,
         activeCombatant,
-        hoveredCellId: aoeHoverCellId,
+        hoveredCellId:
+          interactionMode === 'single-cell-place' ? singleCellPlacementHoverCellId : aoeHoverCellId,
         selectedAction,
         aoeStep,
         movementHighlightActive,
+        interactionMode,
       }),
     [
       encounterState,
       activeCombatantId,
       activeCombatant,
       aoeHoverCellId,
+      singleCellPlacementHoverCellId,
       selectedAction,
       aoeStep,
       movementHighlightActive,
+      interactionMode,
     ],
   )
 
@@ -437,10 +564,24 @@ export default function EncounterActiveRoute() {
     onSelectAction: handleSelectAction,
     selectedCasterOptions,
     onCasterOptionsChange: setSelectedCasterOptions,
+    selectedSingleCellPlacementCellId,
+    onSelectedSingleCellPlacementCellIdChange: setSelectedSingleCellPlacementCellId,
+    placementCellSummaryLabel,
+    singleCellPlacementError,
+    onDismissSingleCellPlacementError: () => setSingleCellPlacementError(null),
+    onEnterSingleCellPlacementMode: () => {
+      setSingleCellPlacementError(null)
+      setInteractionMode('single-cell-place')
+    },
+    onExitSingleCellPlacementMode: () => {
+      setInteractionMode('select-target')
+      setSingleCellPlacementHoverCellId(null)
+    },
     targetCombatant,
     allCombatants: combatantRoster,
     targetLabel: targetCombatant ? getCombatantDisplayLabel(targetCombatant, combatantRoster) : undefined,
     canResolveAction,
+    primaryResolutionMissingMessage: primaryResolutionMissing?.message,
     onResolveAction: handleResolveAction,
     onEndTurn: handleNextTurn,
     aoeStep,
@@ -512,10 +653,13 @@ export default function EncounterActiveRoute() {
             renderTokenPopover={renderTokenPopover}
             onCellClick={handleCellClick}
             onCellHover={handleCellHover}
-            hoveredCellId={aoeHoverCellId}
+            hoveredCellId={
+              interactionMode === 'single-cell-place' ? singleCellPlacementHoverCellId : aoeHoverCellId
+            }
             movementHighlightActive={movementHighlightActive}
             hasMovementRemaining={(activeCombatant?.turnResources?.movementRemaining ?? 0) > 0}
             creatureTargetingActive={creatureTargetingActive}
+            singleCellPlacementPickActive={interactionMode === 'single-cell-place'}
           />
         )}
 

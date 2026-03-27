@@ -6,6 +6,8 @@ import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { Ruleset } from '@/shared/types/ruleset'
 import { CHARACTER_PROFICIENCY_BONUS_TABLE } from '@/features/mechanics/domain/progression'
 import { isHostileAction } from '@/features/mechanics/domain/encounter'
+import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
+import { getSystemSpell } from '@/features/mechanics/domain/rulesets/system/spells'
 import {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,
@@ -375,6 +377,69 @@ describe('buildSpellCombatActions', () => {
 
     expect(actions).toHaveLength(1)
     expect(actions[0]!.resolutionMode).toBe('effects')
+    expect(actions[0]!.targeting?.kind).toBe('none')
+    expect(actions[0]!.effects?.some((e) => e.kind === 'spawn')).toBe(true)
+  })
+
+  it('copies resolution.casterOptions onto spell combat actions (e.g. Giant Insect)', () => {
+    const spell = makeSpell({
+      id: 'giant-insect',
+      name: 'Giant Insect',
+      level: 4,
+      range: { kind: 'distance', value: { value: 60, unit: 'ft' } },
+      duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true },
+      resolution: {
+        casterOptions: [
+          {
+            kind: 'enum',
+            id: 'giant-insect-form',
+            label: 'Form',
+            options: [
+              { value: 'centipede', label: 'Giant centipede' },
+              { value: 'spider', label: 'Giant spider' },
+              { value: 'wasp', label: 'Giant wasp' },
+            ],
+          },
+        ],
+      },
+      effects: [
+        {
+          kind: 'spawn',
+          count: 1,
+          mapMonsterIdFromCasterOption: {
+            fieldId: 'giant-insect-form',
+            valueToMonsterId: {
+              centipede: 'giant-centipede',
+              spider: 'giant-spider',
+              wasp: 'giant-wasp',
+            },
+          },
+          initiativeMode: 'share-caster',
+        },
+        { kind: 'note', text: 'Stat block', category: 'flavor' as const },
+      ],
+    })
+
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['giant-insect'],
+      spellsById: { 'giant-insect': spell },
+    })
+
+    expect(actions).toHaveLength(1)
+    expect(actions[0]!.casterOptions?.length).toBe(1)
+    expect(actions[0]!.casterOptions?.[0]?.id).toBe('giant-insect-form')
+    expect(actions[0]!.targeting?.kind).toBe('none')
+  })
+
+  it('system catalog Giant Insect resolves to targeting none (spawn, not single-target)', () => {
+    const spell = getSystemSpell(DEFAULT_SYSTEM_RULESET_ID, 'giant-insect')
+    expect(spell).toBeDefined()
+    const actions = buildSpellCombatActions({
+      ...baseArgs,
+      spellIds: ['giant-insect'],
+      spellsById: { 'giant-insect': spell! },
+    })
     expect(actions[0]!.targeting?.kind).toBe('none')
     expect(actions[0]!.effects?.some((e) => e.kind === 'spawn')).toBe(true)
   })

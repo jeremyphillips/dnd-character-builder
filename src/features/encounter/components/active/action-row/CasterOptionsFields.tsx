@@ -3,9 +3,11 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import { FormSelectField } from '@/ui/patterns'
+import { FormCheckboxField, FormSelectField } from '@/ui/patterns'
 import {
   buildDefaultCasterOptions,
+  parseEnumMultiStored,
+  serializeEnumMultiStored,
   type CasterOptionField,
 } from '@/features/mechanics/domain/spells/caster-options'
 import { ABILITIES } from '@/features/mechanics/domain/character/abilities/abilities'
@@ -20,22 +22,48 @@ type CasterOptionsFieldsProps = {
   onChange: (next: Record<string, string>) => void
 }
 
+type CasterFormValues = Record<string, string | string[]>
+
+function wireCasterFormToRecord(fields: CasterOptionField[], watched: CasterFormValues): Record<string, string> {
+  const next: Record<string, string> = {}
+  for (const f of fields) {
+    if (f.kind === 'enum-multi') {
+      const arr = watched[f.id]
+      next[f.id] = Array.isArray(arr) ? serializeEnumMultiStored(arr) : ''
+    } else {
+      const s = watched[f.id]
+      next[f.id] = typeof s === 'string' ? s : ''
+    }
+  }
+  return next
+}
+
 function CasterOptionsFieldsInner({ fields, value, onChange }: Omit<CasterOptionsFieldsProps, 'formKey'>) {
   const defaults = useMemo(() => buildDefaultCasterOptions(fields), [fields])
-  const merged = useMemo(() => ({ ...defaults, ...value }), [defaults, value])
+  const merged = useMemo(() => {
+    const out: CasterFormValues = { ...defaults }
+    for (const f of fields) {
+      if (f.kind === 'enum-multi') {
+        out[f.id] = parseEnumMultiStored(value[f.id] ?? '')
+      } else {
+        out[f.id] = value[f.id] ?? defaults[f.id] ?? ''
+      }
+    }
+    return out
+  }, [defaults, fields, value])
 
-  const methods = useForm({ defaultValues: merged, values: merged })
+  const methods = useForm<CasterFormValues>({ defaultValues: merged, values: merged })
   const watched = useWatch({ control: methods.control })
   const prevJson = useRef('')
 
   useEffect(() => {
     if (!watched || typeof watched !== 'object') return
-    const next = watched as Record<string, string>
+    const next = wireCasterFormToRecord(fields, watched as CasterFormValues)
     const s = JSON.stringify(next)
     if (s === prevJson.current) return
     prevJson.current = s
     onChange(next)
-  }, [watched, onChange])
+  }, [watched, fields, onChange])
 
   return (
     <FormProvider {...methods}>
@@ -48,6 +76,14 @@ function CasterOptionsFieldsInner({ fields, value, onChange }: Omit<CasterOption
               name={field.id}
               label={field.label}
               options={ABILITY_SELECT_OPTIONS}
+              required
+            />
+          ) : field.kind === 'enum-multi' ? (
+            <FormCheckboxField
+              key={field.id}
+              name={field.id}
+              label={field.label}
+              options={field.options.map((o) => ({ label: o.label, value: o.value }))}
               required
             />
           ) : (

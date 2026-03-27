@@ -50,8 +50,12 @@ src/features/mechanics/domain/encounter/resolution/
     ├── action-resolver.ts            # Combat action orchestrator
     ├── action-cost.ts                # Turn resource management
     ├── action-targeting.ts           # Target selection and sequence steps
+    ├── action-resolution-requirements.ts  # UI readiness: legacy kinds + delegates to requirement model
+    ├── action-requirement-model.ts   # Declarative ActionRequirement[], ActionStepDefinition[], placement validation
     └── action-effects.ts             # Effect application to encounter state
 ```
+
+**Action requirements vs steps:** `getActionRequirements` derives what inputs an action needs (caster options, creature target, single-cell placement, area placement). `getActionSteps` maps those to ordered drawer views (`casterOptions`, `singleCellPlacement`, etc.). Line of sight is modeled as **validation** on placement/targeting requirements (`validateSingleCellPlacement`), not as its own step. `SpawnEffect.placement` in spell/monster data describes summon placement semantics (`single-cell`, `self-space`, `inherit-from-target`).
 
 ## 4. Layers
 
@@ -111,9 +115,10 @@ The encounter action system resolves combat actions against encounter state:
 | `action-resolver` | Orchestrates action resolution: validates, targets, resolves, updates state |
 | `action-cost` | Turn resource management: spend/check action, bonus action, reaction, movement |
 | `action-targeting` | Shared targeting query layer: `isValidActionTarget` (predicate), `getActionTargetCandidates` (candidate list for UI), `getActionTargets` (resolved targets for action resolution); sequence step counts |
+| `action-resolution-requirements` | Encounter UI readiness: `getActionResolutionRequirements`, `getActionResolutionReadiness`, `actionRequiresCreatureTargetForResolve` |
 | `action-effects` | Applies effects to encounter state: damage, healing, conditions (with repeat-save hooks), states, saves, modifiers (AC add/set, speed add/set/multiply, resistance add), roll-modifiers (advantage/disadvantage), immunities, intervals (registered as turn hooks), damage resistance markers, movement, and advanced effect logging (trigger, activation, check, grant, form) |
 
-**Caster options:** `ResolveCombatActionSelection` may include `casterOptions` (`Record<string, string>` keyed by authored field ids). Spell `resolution.casterOptions` is copied onto `CombatActionDefinition` by `buildSpellCombatActions`; encounter UI collects values before `resolveCombatAction` runs. `action-resolver` includes a formatted fragment in `action-declared` and spell `log-only` summaries (`formatCasterOptionSummary` in `mechanics/domain/spells/caster-options.ts`). For **summon spells**, enum options typically encode **form** (e.g. giant centipede vs spider) or **CR tier** (Conjure Minor Elementals / Woodland Beings); resolution will combine these with the monster catalog to pick stat blocks or random eligible creatures—see [§8 — Summon spells and spawn](#summon-spells-and-spawn) below.
+**Caster options:** `ResolveCombatActionSelection` may include `casterOptions` (`Record<string, string>` keyed by authored field ids). On action select, the encounter uses `buildInitialCasterOptionsForAction`: non-summon actions default enum fields to the first option; **summon** actions (effects include `spawn`) start with **empty** enum values so readiness can require an explicit choice before Resolve. Spell `resolution.casterOptions` is copied onto `CombatActionDefinition` by `buildSpellCombatActions`; encounter UI collects values before `resolveCombatAction` runs. `action-resolver` includes a formatted fragment in `action-declared` and spell `log-only` summaries (`formatCasterOptionSummary` in `mechanics/domain/spells/caster-options.ts`). For **summon spells**, enum options typically encode **form** (e.g. giant centipede vs spider) or **CR tier** (Conjure Minor Elementals / Woodland Beings); resolution will combine these with the monster catalog to pick stat blocks or random eligible creatures—see [§8 — Summon spells and spawn](#summon-spells-and-spawn) below.
 
 **Action resolution modes:**
 
@@ -150,6 +155,17 @@ Targeting validation is centralized so the resolver and UI share a single source
 - `getActionTargets(state, actor, selection, action, options?)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
 
 **LOS / visibility seams** (`visibility-seams.ts`): `lineOfSightClear` / `lineOfEffectClear` delegate to `hasLineOfSight` when `EncounterSpace` and placements exist; otherwise they stay **clear** for backwards compatibility. `canSeeForTargeting` is the single entry point for “can I select this target for a sight-required action?” Geometry is **binary** LoS only (see `docs/reference/space.md`).
+
+**Encounter UI readiness** (`action-resolution-requirements.ts`, `encounter/domain/interaction/encounter-resolve-selection.ts`):
+
+Pure helpers describe what must be true before the encounter action drawer enables **Resolve**, independent of the resolver pipeline:
+
+- `getActionResolutionRequirements(action)` — returns requirement kinds: `creature-target`, `area-selection`, `single-cell-placement`, `caster-option`, or `none`. Composed from `CombatActionDefinition` (targeting kind, `areaTemplate`, `casterOptions`, and `spawn` effects). Area-grid actions (`all-enemies` + `areaTemplate`) only list `area-selection` for this layer.
+- `getActionResolutionReadiness(action, ctx)` — returns `{ canResolve, missingRequirements }` from current selection (`selectedActionTargetId`, AoE step/origin, `selectedCasterOptions`, `selectedSingleCellPlacementCellId` when required, encounter state + actor). Single-cell placement is satisfied when a valid grid cell is chosen and validated for range, line of sight, and occupancy per `validateSingleCellPlacement`.
+- `actionRequiresCreatureTargetForResolve(action)` — true only when the action uses the creature target picker for resolution (single-target, single-creature, dead-creature, entered-during-move). **Not** inferred from “spell” in general; `targeting.kind === 'none'` summons skip creature selection.
+- `selectValidActionIdsForTarget` — marks actions that require a creature target as invalid with “Select a target” when no target is chosen; actions that do not require a target stay valid without a selected combatant.
+- `canResolveCombatActionSelection` — enables Resolve when readiness is satisfied (including caster options filled; spawn spells with empty initial caster options use `buildInitialCasterOptionsForAction` in `caster-options.ts`).
+
 
 ### 4.5 Condition Consequence Framework
 

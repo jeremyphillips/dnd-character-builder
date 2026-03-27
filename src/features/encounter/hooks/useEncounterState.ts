@@ -24,7 +24,7 @@ import {
   type MonsterFormContext,
 } from '@/features/mechanics/domain/encounter'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
-import { buildDefaultCasterOptions } from '@/features/mechanics/domain/spells/caster-options'
+import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 import type { Armor } from '@/features/content/equipment/armor/domain/types/armor.types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
 import type { Monster } from '@/features/content/monsters/domain/types'
@@ -72,6 +72,9 @@ export function useEncounterState({
   const [aoeStep, setAoeStep] = useState<AoeStep>('none')
   const [aoeOriginCellId, setAoeOriginCellId] = useState<string | null>(null)
   const [aoeHoverCellId, setAoeHoverCellId] = useState<string | null>(null)
+  /** Grid cell id for summon / single-cell placement readiness (when required by spawn metadata). */
+  const [selectedSingleCellPlacementCellId, setSelectedSingleCellPlacementCellId] = useState<string | null>(null)
+  const [singleCellPlacementHoverCellId, setSingleCellPlacementHoverCellId] = useState<string | null>(null)
 
   const resetAoePlacement = useCallback(() => {
     setAoeStep('none')
@@ -213,7 +216,8 @@ export function useEncounterState({
 
   useEffect(() => {
     const action = availableActions.find((a) => a.id === selectedActionId) ?? null
-    setSelectedCasterOptions(buildDefaultCasterOptions(action?.casterOptions))
+    setSelectedCasterOptions(buildInitialCasterOptionsForAction(action))
+    setSelectedSingleCellPlacementCellId(null)
   // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when selectedActionId changes; availableActions is read fresh
   }, [selectedActionId])
 
@@ -273,6 +277,7 @@ export function useEncounterState({
           actionId: selectedActionId,
           casterOptions: selectedCasterOptions,
           aoeOriginCellId: aoeOriginCellId || undefined,
+          singleCellPlacementCellId: selectedSingleCellPlacementCellId || undefined,
         },
         { monstersById, buildSummonAllyCombatant },
       )
@@ -285,11 +290,13 @@ export function useEncounterState({
     resetAoePlacement()
     setSelectedActionId('')
     setSelectedActionTargetId('')
+    setSelectedSingleCellPlacementCellId(null)
   }, [
     selectedActionId,
     selectedActionTargetId,
     selectedCasterOptions,
     aoeOriginCellId,
+    selectedSingleCellPlacementCellId,
     monstersById,
     buildSummonAllyCombatant,
     resetAoePlacement,
@@ -412,6 +419,10 @@ export function useEncounterState({
     setSelectedActionId,
     selectedCasterOptions,
     setSelectedCasterOptions,
+    selectedSingleCellPlacementCellId,
+    setSelectedSingleCellPlacementCellId,
+    singleCellPlacementHoverCellId,
+    setSingleCellPlacementHoverCellId,
     selectedActionTargetId,
     setSelectedActionTargetId,
     aoeStep,

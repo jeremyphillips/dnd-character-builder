@@ -157,6 +157,8 @@ function useEncounterRuntimeValue() {
     monstersById,
     weaponsById: catalog.weaponsById,
     armorById: catalog.armorById,
+    spellsById: catalog.spellsById,
+    suppressSameSideHostile,
   })
 
   const handleStartEncounter = useCallback(

@@ -1,4 +1,7 @@
+import type { InitiativeRoll } from '../../resolution'
 import type { CombatantInstance } from './combatant.types'
+import type { CombatLogEvent } from './combat-log.types'
+import type { EncounterSpace, CombatantPosition } from '@/features/encounter/space'
 
 /** Runtime attached battlefield aura (e.g. Spirit Guardians emanation). */
 export type AttachedAuraInstance = {
@@ -8,10 +11,9 @@ export type AttachedAuraInstance = {
   attachedTo: 'self'
   area: { kind: 'sphere'; size: number }
   unaffectedCombatantIds: string[]
+  /** Caster's spell save DC at cast time; used for interval payloads (e.g. end-of-turn saves). */
+  spellSaveDc?: number
 }
-import type { InitiativeRoll } from '../../resolution'
-import type { CombatLogEvent } from './combat-log.types'
-import type { EncounterSpace, CombatantPosition } from '@/features/encounter/space'
 
 export interface EncounterState {
   combatantsById: Record<string, CombatantInstance>

@@ -423,6 +423,7 @@ function buildSpellEffectsAction(
     targeting: buildSpellTargeting(spell),
     logText: buildSpellLogText(spell),
     displayMeta: buildSpellDisplayMeta(spell),
+    spellSaveDc,
     usage,
     ...(areaTemplate ? { areaTemplate, ...(areaPlacement ? { areaPlacement } : {}) } : {}),
     ...(attachedEmanation ? { attachedEmanation } : {}),

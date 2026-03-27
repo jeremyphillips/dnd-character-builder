@@ -36,6 +36,10 @@ import { executeTurnHooks } from './turn-hooks'
 import { tickConcentrationDuration } from './concentration-mutations'
 import { formatRuntimeEffectLabel } from './shared'
 import { shouldAutoSkipCombatantTurn } from './combatant-participation'
+import {
+  resolveIntervalEffectsForCombatantAtTurnBoundary,
+  type BattlefieldIntervalResolutionOptions,
+} from './battlefield-interval-resolution'
 
 function resetCombatantTurnState(state: EncounterState, combatantId: string | null): EncounterState {
   if (!combatantId) return state
@@ -271,9 +275,14 @@ export function removeCombatantFromInitiativeOrder(
   }
 }
 
+/** Options for {@link advanceEncounterTurn} (initiative RNG + optional attached-aura interval resolution). */
+export type AdvanceEncounterTurnOptions = InitiativeResolverOptions & {
+  battlefieldInterval?: BattlefieldIntervalResolutionOptions
+}
+
 function skipNonInteractiveTurnsAfterActiveTurn(
   state: EncounterState,
-  options: InitiativeResolverOptions,
+  options: AdvanceEncounterTurnOptions,
   depth: number,
 ): EncounterState {
   const maxDepth = Math.max(state.initiativeOrder.length * 2, 16)
@@ -354,7 +363,7 @@ export function createEncounterState(
 
 function advanceEncounterTurnOnce(
   state: EncounterState,
-  options: InitiativeResolverOptions = {},
+  options: AdvanceEncounterTurnOptions = {},
 ): EncounterState {
   if (!state.started || state.initiativeOrder.length === 0 || !state.activeCombatantId) {
     return state
@@ -365,13 +374,19 @@ function advanceEncounterTurnOnce(
     log: [...state.log, createTurnEndedLog(state)],
   }
   const withTurnEndHooks = executeTurnHooks(withTurnEndLog, state.activeCombatantId, 'end')
-  const withConcentrationTick = tickConcentrationDuration(withTurnEndHooks, state.activeCombatantId)
+  const withAttachedIntervals =
+    options.battlefieldInterval != null
+      ? resolveIntervalEffectsForCombatantAtTurnBoundary(
+          withTurnEndHooks,
+          state.activeCombatantId,
+          'end',
+          options.battlefieldInterval,
+        )
+      : withTurnEndHooks
+  const withConcentrationTick = tickConcentrationDuration(withAttachedIntervals, state.activeCombatantId)
   const endedState = processMarkerBoundary(
     processRuntimeEffectBoundary(
-      processTrackedPartTurnEnd(
-        withConcentrationTick,
-        state.activeCombatantId,
-      ),
+      processTrackedPartTurnEnd(withConcentrationTick, state.activeCombatantId),
       state.activeCombatantId,
       'end',
     ),
@@ -447,7 +462,7 @@ function advanceEncounterTurnOnce(
 
 export function advanceEncounterTurn(
   state: EncounterState,
-  options: InitiativeResolverOptions = {},
+  options: AdvanceEncounterTurnOptions = {},
 ): EncounterState {
   return skipNonInteractiveTurnsAfterActiveTurn(advanceEncounterTurnOnce(state, options), options, 0)
 }

@@ -23,6 +23,10 @@ export {
 export * from './types'
 export { addAttachedAuraInstance, removeAttachedAurasForSpell } from './attached-aura-mutations'
 export {
+  resolveIntervalEffectsForCombatantAtTurnBoundary,
+  type BattlefieldIntervalResolutionOptions,
+} from './battlefield-interval-resolution'
+export {
   addConditionToCombatant,
   addDamageResistanceMarker,
   addRollModifierToCombatant,
@@ -54,7 +58,14 @@ export {
   reconcileBattlefieldPresenceForCombatants,
   stripPlacementAndRememberReturnCell,
 } from './battlefield-return-placement'
-export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel, mergeCombatantsIntoEncounter, removeCombatantFromInitiativeOrder } from './runtime'
+export {
+  createEncounterState,
+  advanceEncounterTurn,
+  formatRuntimeEffectLabel,
+  mergeCombatantsIntoEncounter,
+  removeCombatantFromInitiativeOrder,
+  type AdvanceEncounterTurnOptions,
+} from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'
 export { combatantToCreatureSnapshot } from './combatant-evaluation-snapshot'

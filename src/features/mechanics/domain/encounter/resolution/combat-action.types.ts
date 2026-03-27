@@ -130,6 +130,11 @@ export interface CombatActionDefinition {
   logText?: string
   displayMeta?: CombatActionDisplayMeta
   /**
+   * Spell actions: caster's spell save DC (8 + PB + ability), used when persisting attached auras
+   * that resolve interval saves later (e.g. Spirit Guardians end-of-turn damage).
+   */
+  spellSaveDc?: number
+  /**
    * Spell-derived: whether the action is a hostile application for charm / same-side targeting rules.
    * When set (spell actions from `buildSpellCombatActions`), `isHostileAction` uses this; otherwise legacy `targeting` kind rules apply.
    */

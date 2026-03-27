@@ -605,6 +605,7 @@ function resolveCombatActionInternal(
       attachedTo: 'self',
       area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
       unaffectedCombatantIds: [...ids],
+      ...(typeof action.spellSaveDc === 'number' ? { spellSaveDc: action.spellSaveDc } : {}),
     })
   }
   return { state: finalReturnState, createdMarkerIds: allMarkerIds }

@@ -28,6 +28,7 @@ import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/
 import type { Armor } from '@/features/content/equipment/armor/domain/types/armor.types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
 import type { Monster } from '@/features/content/monsters/domain/types'
+import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import { buildSummonAllyMonsterCombatant } from '../helpers/encounter-helpers'
 import type { AoeStep } from '../helpers/area-grid-action'
 
@@ -41,6 +42,9 @@ type UseEncounterStateArgs = {
   monstersById: Record<string, Monster>
   weaponsById?: Record<string, Weapon>
   armorById?: Record<string, Armor>
+  /** When set, end-of-turn interval resolution can load spell payloads (e.g. Spirit Guardians). */
+  spellsById?: Record<string, Spell>
+  suppressSameSideHostile?: boolean
 }
 
 export function useEncounterState({
@@ -49,6 +53,8 @@ export function useEncounterState({
   monstersById,
   weaponsById,
   armorById,
+  spellsById,
+  suppressSameSideHostile,
 }: UseEncounterStateArgs) {
   const [resolvedCombatantsById, setResolvedCombatantsById] = useState<Record<string, CombatantInstance>>({})
   const [encounterState, setEncounterState] = useState<EncounterState | null>(null)
@@ -264,7 +270,26 @@ export function useEncounterState({
   }
 
   function handleNextTurn() {
-    setEncounterState((prev) => (prev ? advanceEncounterTurn(prev) : prev))
+    setEncounterState((prev) => {
+      if (!prev) return prev
+      const startLen = prev.log.length
+      const next = advanceEncounterTurn(prev, {
+        rng: Math.random,
+        battlefieldInterval:
+          spellsById != null
+            ? {
+                spellLookup: (id) => spellsById[id],
+                suppressSameSideHostile,
+                monstersById,
+              }
+            : undefined,
+      })
+      const appended = next.log.slice(startLen)
+      if (appended.length > 0) {
+        queueMicrotask(() => combatLogAppendedRef.current?.(appended, next))
+      }
+      return next
+    })
   }
 
   const handleResolveAction = useCallback(() => {

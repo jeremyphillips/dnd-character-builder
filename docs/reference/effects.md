@@ -160,10 +160,12 @@ Status meanings:
 
 - Status: `provisional`
 - Purpose: mark a spell as a **self-centered area** that moves with the caster on the encounter grid (e.g. Spirit Guardians), distinct from one-shot AoE placement.
-- Key fields: `attachedTo: 'caster'`, `area` (template and radius, e.g. sphere 15 ft), **optional** `selectUnaffectedAtCast: true` when the rules let the caster designate creatures that ignore the aura.
+- Key fields: `attachedTo: 'self'`, `area` (template and radius, e.g. sphere 15 ft), **optional** `selectUnaffectedAtCast: true` when the rules let the caster designate creatures that ignore the aura.
 - The spell combat adapter derives **`CombatActionDefinition.attachedEmanation`** (radius, `selectUnaffectedAtCast`) and keeps **`targeting`** + emanation for resolution; other authored effects may be filtered or deferred for the current encounter phase.
 - At cast time, the encounter UI can collect **unaffected combatant ids** (reusing the combatant-picker modal pattern). When **`ruleset.mechanics.combat.encounter.suppressSameSideHostile`** is true, same-side party members are treated as non-hostile for the aura without manual selection.
-- **Runtime:** an **`AttachedAuraInstance`** is stored on **`EncounterState`** while the spell lasts; it is removed when concentration on that spell ends. Grid rendering may show the aura footprint while active; per-turn damage and movement riders are optional follow-ups.
+- **Runtime:** an **`AttachedAuraInstance`** is stored on **`EncounterState`** while the spell lasts; it is removed when concentration on that spell ends. Grid rendering may show the aura footprint while active.
+- **Encounter integration (tactical grid):** turn-boundary **interval** payloads (e.g. Spirit Guardians damage) resolve via **`resolveIntervalEffectsForCombatantAtTurnBoundary`** when the acting combatant is inside the aura; **movement-entry** payloads after a move use **`resolveAttachedAuraSpatialEntryAfterMovement`**. Both use the same spell lookup and same-side suppression options as other battlefield resolution (see [resolution.md](./resolution.md) §4.4 / attached-aura notes).
+- **Spatial speed modifiers:** authored **`modifier`** effects on the spell with **`target: 'speed'`** and **`mode: 'multiply'`** (e.g. `0.5` for “speed halved in the area”) are **not** stamped as permanent combatant modifiers at cast. They are read from spell data when computing **current overlap** with attached sphere auras: **`getSpatialAttachedAuraSpeedMultiplier`** / **`getEffectiveGroundMovementBudgetFt`** in **`battlefield-spatial-movement-modifiers.ts`**. Effective speed updates when the creature moves or the aura moves. UI/presentation can surface **`speed_halved`** via **`collectPresentableEffects(combatant, spatial)`** using the same overlap rules — see [space.md](./space.md) §3 Movement.
 
 ### `damage`
 
@@ -210,6 +212,8 @@ Status meanings:
 ```ts
 { kind: 'modifier', target: 'armor_class', mode: 'add', value: 5 }
 ```
+
+- **`target: 'speed'`** — In normal combat resolution, speed add/set/multiply modifiers from actions apply to **combatant state** when the effect is applied. For **attached emanation** spells that also author a **speed multiply** (e.g. “creatures in the area have speed halved”), the encounter engine may instead apply that **`multiply`** **only while** the creature’s grid position overlaps the active **`AttachedAuraInstance`** sphere (see **`emanation`** above and [space.md](./space.md)). Authored spell `effects` remain the source of the multiplier; overlap is evaluated at movement and turn boundaries, not at cast time.
 
 ### `immunity`
 
@@ -834,7 +838,7 @@ Already stable. No scaling concerns.
 
 Small, bounded engine changes with high payoff.
 
-- `modifier`: `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) are fully resolved. Other stat targets (`attack`, `damage_bonus`, saving throw modifiers) log gracefully until resolved.
+- `modifier`: `armor_class` (add/set), `speed` (add/set/multiply), and `resistance` (add) are fully resolved. Other stat targets (`attack`, `damage_bonus`, saving throw modifiers) log gracefully until resolved. For **attached emanations**, authored **`speed`** **`multiply`** may be applied **spatially** on the tactical grid (see **`emanation`** / [space.md](./space.md)) instead of only as immediate `applyActionEffects` stat modifiers.
 - `immunity`: `spell` and `source-action` scopes resolved. Condition immunity scopes remain under-modeled.
 
 ### Tier 3 — New Runtime Resolution

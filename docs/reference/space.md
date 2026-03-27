@@ -105,6 +105,15 @@ When a **`spawn`** effect creates new combatants that **replace** an existing to
 
 `moveCombatant` validates distance and movement budget, deducts from `turnResources.movementRemaining`, and updates placements. 5e split movement (move-attack-move) works naturally since `movementRemaining` is persistent per-turn state.
 
+**Optional battlefield spell context:** When the caller passes **`BattlefieldSpellContext`** (`spellLookup`, optional **`suppressSameSideHostile`**) as the fourth argument, movement is reconciled against **effective ground speed** for the combatant’s **current** cell after each step:
+
+- **`getEffectiveGroundMovementBudgetFt`** (`src/features/mechanics/domain/encounter/state/battlefield-spatial-movement-modifiers.ts`) applies **`floor(baseSpeed × product)`**, where the product comes from overlapping **attached sphere auras** (`EncounterState.attachedAuraInstances`) whose spells define **`modifier`** effects with **`target: 'speed'`** and **`mode: 'multiply'`** (e.g. Spirit Guardians `0.5`). Overlap uses the same geometry as aura rendering; the aura **source** and **`unaffectedCombatantIds`** are skipped; defeated combatants and same-side suppression follow **`battlefield-attached-aura-shared`** rules.
+- **`turnContext.movementSpentThisTurn`** accumulates feet moved; after each move, **`movementRemaining = max(0, effectiveMax − spent)`** so entering or leaving an aura mid-turn updates the budget without double-counting.
+
+When no context is passed, behavior remains **remaining − distance** (legacy/tests).
+
+Turn start resets movement via **`createCombatantTurnResources`** in **`shared.ts`**: when **`advanceEncounterTurn`** / **`createEncounterState`** supply spell lookup (same object shape as interval resolution), the initial **`movementRemaining`** uses the same **effective** budget for the combatant’s position at turn start.
+
 `selectCellsWithinDistance` returns cell IDs within movement range using Chebyshev distance. `canMoveTo` is the single predicate combining distance, budget, cell passability, and occupancy.
 
 ### Character speed
@@ -136,7 +145,7 @@ Current naming intentionally distinguishes *in-range by metric* (`selectCellsWit
 
 ### Split movement model extensibility
 
-5e split movement is compatible because `movementRemaining` is tracked as persistent per-turn state. No special phase model is required. Future rules logic (forced movement not consuming budget, Dash changing budget, stand-up costing movement, mid-turn speed reduction) does not invalidate the model but will need targeted additions.
+5e split movement is compatible because `movementRemaining` is tracked as persistent per-turn state. No special phase model is required. **Spatial speed reduction** from overlapping attached auras is handled by reconciling remaining movement against **current** effective speed (`movementSpentThisTurn` + `getEffectiveGroundMovementBudgetFt`). Other rules (forced movement not consuming budget, Dash doubling budget, prone stand-up half-move) still need targeted additions when modeled.
 
 ### Range semantics will expand beyond a single scalar
 
@@ -154,6 +163,8 @@ Current naming intentionally distinguishes *in-range by metric* (`selectCellsWit
 | `GridCellViewModel` | `space.selectors.ts` | UI-ready cell with highlight flags; includes **`occupantRendersToken`**, **`occupantIsDefeated`** |
 | `GridViewModel` | `space.selectors.ts` | Complete grid for rendering |
 | `placeCombatant` | `space.selectors.ts` | Authoritative placement update: filter prior row, append `{ combatantId, cellId }` for passable cells |
+| `moveCombatant` | `space.selectors.ts` | Validates move; updates `movementRemaining` and `placements`; optional 4th arg **`BattlefieldSpellContext`** for spatial speed reconciliation |
+| `getEffectiveGroundMovementBudgetFt` | `encounter/state/battlefield-spatial-movement-modifiers.ts` | Effective movement cap from base speed × attached-aura speed multipliers (current overlap) |
 | `applyGridSpawnReplacementFromTarget` | `applyGridSpawnReplacement.ts` | Transfers tactical `placements` from a spawn target to new combatant(s) (replacement / corpse→minion) |
 | `hasLineOfSight` | `space.sight.ts` | Binary LoS along supercover segment between cell centers |
 | `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move'` UI mode |

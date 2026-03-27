@@ -7,33 +7,84 @@ import type {
   SaveModConsequence,
   DamageInteractionConsequence,
   SourceRelativeConsequence,
+  BattlefieldAbsenceConsequence,
 } from './condition-consequences.types'
 import { CONDITION_RULES } from './condition-definitions'
+import { ENGINE_STATE_RULES } from './engine-state-definitions'
 
-function getActiveConditionIds(combatant: CombatantInstance): EffectConditionId[] {
+function getActiveCoreConditionIds(combatant: CombatantInstance): EffectConditionId[] {
   const knownIds = new Set<string>(Object.keys(CONDITION_RULES))
   return combatant.conditions
     .filter((m) => knownIds.has(m.label))
     .map((m) => m.label as EffectConditionId)
 }
 
+/** Active engine-state rule ids from `combatant.states` (labels matching {@link ENGINE_STATE_RULES}). */
+export function getActiveEngineStateRuleIds(combatant: CombatantInstance): string[] {
+  const knownIds = new Set<string>(Object.keys(ENGINE_STATE_RULES))
+  return combatant.states.filter((m) => knownIds.has(m.label)).map((m) => m.label)
+}
+
 export function getActiveConsequences(combatant: CombatantInstance): ConditionConsequence[] {
-  return getActiveConditionIds(combatant).flatMap(
+  const fromConditions = getActiveCoreConditionIds(combatant).flatMap(
     (id) => CONDITION_RULES[id].consequences,
   )
+  const fromEngineStates = getActiveEngineStateRuleIds(combatant).flatMap(
+    (id) => ENGINE_STATE_RULES[id].consequences,
+  )
+  return [...fromConditions, ...fromEngineStates]
 }
 
 export type ConsequenceWithOrigin = {
-  conditionId: EffectConditionId
+  /** Rule id: core SRD condition id or engine-state id (e.g. `banished`). */
+  ruleId: string
+  source: 'condition' | 'engine_state'
   consequence: ConditionConsequence
 }
 
 export function getActiveConsequencesWithOrigin(
   combatant: CombatantInstance,
 ): ConsequenceWithOrigin[] {
-  return getActiveConditionIds(combatant).flatMap((id) =>
-    CONDITION_RULES[id].consequences.map((consequence) => ({ conditionId: id, consequence })),
+  const fromConditions = getActiveCoreConditionIds(combatant).flatMap((id) =>
+    CONDITION_RULES[id].consequences.map((consequence) => ({
+      ruleId: id,
+      source: 'condition' as const,
+      consequence,
+    })),
   )
+  const fromEngineStates = getActiveEngineStateRuleIds(combatant).flatMap((id) =>
+    ENGINE_STATE_RULES[id].consequences.map((consequence) => ({
+      ruleId: id,
+      source: 'engine_state' as const,
+      consequence,
+    })),
+  )
+  return [...fromConditions, ...fromEngineStates]
+}
+
+export function hasBattlefieldAbsenceConsequence(
+  combatant: CombatantInstance,
+  presenceReason?: BattlefieldAbsenceConsequence['presenceReason'],
+): boolean {
+  return getActiveConsequences(combatant).some(
+    (c): c is BattlefieldAbsenceConsequence =>
+      c.kind === 'battlefield_absence' &&
+      c.absentFromBattlefield &&
+      (presenceReason == null || c.presenceReason === presenceReason),
+  )
+}
+
+/** Precedence: banished over off-grid when both are present. */
+export function getBattlefieldPresenceSkipReason(
+  combatant: CombatantInstance,
+): 'banished' | 'off-grid' | undefined {
+  let offGrid = false
+  for (const c of getActiveConsequences(combatant)) {
+    if (c.kind !== 'battlefield_absence' || !c.absentFromBattlefield) continue
+    if (c.presenceReason === 'banished') return 'banished'
+    if (c.presenceReason === 'off-grid') offGrid = true
+  }
+  return offGrid ? 'off-grid' : undefined
 }
 
 export function canTakeActions(combatant: CombatantInstance): boolean {
@@ -104,7 +155,7 @@ function combatantHasStateLabel(combatant: CombatantInstance, stateLabel: string
  * Suppresses invisible-related adv/disadv when the other combatant has See Invisibility.
  */
 export function shouldCountAttackModForAttackRoll(
-  conditionId: EffectConditionId,
+  ruleId: string,
   consequence: AttackModConsequence,
   _bearer: CombatantInstance,
   counterpart: CombatantInstance,
@@ -113,7 +164,7 @@ export function shouldCountAttackModForAttackRoll(
   if (consequence.kind !== 'attack_mod') return false
   if (consequence.appliesTo !== 'incoming' && consequence.appliesTo !== 'outgoing') return false
   if (consequence.range && consequence.range !== 'any' && consequence.range !== attackRange) return false
-  if (conditionId === 'invisible') {
+  if (ruleId === 'invisible') {
     if (consequence.appliesTo === 'incoming' && combatantHasStateLabel(counterpart, SEE_INVISIBILITY_STATE_LABEL)) {
       return false
     }
@@ -131,9 +182,9 @@ function collectAttackModsWithPairContext(
   range: 'melee' | 'ranged',
 ): ('advantage' | 'disadvantage')[] {
   const mods: ('advantage' | 'disadvantage')[] = []
-  for (const { conditionId, consequence } of getActiveConsequencesWithOrigin(bearer)) {
+  for (const { ruleId, consequence } of getActiveConsequencesWithOrigin(bearer)) {
     if (consequence.kind !== 'attack_mod' || consequence.appliesTo !== appliesTo) continue
-    if (!shouldCountAttackModForAttackRoll(conditionId, consequence, bearer, counterpart, range)) continue
+    if (!shouldCountAttackModForAttackRoll(ruleId, consequence, bearer, counterpart, range)) continue
     mods.push(consequence.modifier)
   }
   return mods

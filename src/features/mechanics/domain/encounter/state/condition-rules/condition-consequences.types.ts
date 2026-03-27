@@ -1,5 +1,4 @@
 import type { AbilityRef } from '@/features/mechanics/domain/character'
-import type { EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
 
 export type ConditionConsequence =
   | ActionLimitConsequence
@@ -13,6 +12,7 @@ export type ConditionConsequence =
   | CritWindowConsequence
   | SourceRelativeConsequence
   | DamageInteractionConsequence
+  | BattlefieldAbsenceConsequence
 
 export interface ActionLimitConsequence {
   kind: 'action_limit'
@@ -81,8 +81,23 @@ export interface DamageInteractionConsequence {
   modifier: 'resistance' | 'vulnerability'
 }
 
-export interface ConditionRule {
-  id: EffectConditionId
+/**
+ * Not on the tactical grid / not a valid on-grid presence target (engine markers such as
+ * banished or off-grid). Distinct from SRD conditions; modeled in the engine-state rule map.
+ */
+export interface BattlefieldAbsenceConsequence {
+  kind: 'battlefield_absence'
+  absentFromBattlefield: true
+  /** When set, drives auto-skip reason and targeting edge cases (banished vs off-grid). */
+  presenceReason?: 'banished' | 'off-grid'
+}
+
+/** Rule entry for a named marker (core SRD condition or custom engine state). */
+export interface MarkerRule {
+  id: string
   label: string
   consequences: ConditionConsequence[]
 }
+
+/** @deprecated Use {@link MarkerRule}; name kept for call sites tied to core conditions. */
+export type ConditionRule = MarkerRule

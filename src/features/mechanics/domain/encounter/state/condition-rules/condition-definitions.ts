@@ -1,5 +1,5 @@
 import type { EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
-import type { ConditionRule } from './condition-consequences.types'
+import type { MarkerRule } from './condition-consequences.types'
 import {
   cannotAct,
   immobile,
@@ -13,7 +13,7 @@ import {
   unawareOfSurroundings,
 } from './condition-consequence-helpers'
 
-export const CONDITION_RULES: Record<EffectConditionId, ConditionRule> = {
+export const CONDITION_RULES: Record<EffectConditionId, MarkerRule> = {
   blinded: {
     id: 'blinded',
     label: 'Blinded',

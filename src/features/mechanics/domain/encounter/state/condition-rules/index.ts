@@ -1,6 +1,7 @@
 export type {
   ConditionConsequence,
   ConditionRule,
+  MarkerRule,
   ActionLimitConsequence,
   MovementConsequence,
   AttackModConsequence,
@@ -12,10 +13,16 @@ export type {
   CritWindowConsequence,
   SourceRelativeConsequence,
   DamageInteractionConsequence,
+  BattlefieldAbsenceConsequence,
 } from './condition-consequences.types'
 export { CONDITION_RULES } from './condition-definitions'
+export { ENGINE_STATE_RULES } from './engine-state-definitions'
+export { ALL_MARKER_RULES } from './marker-rules'
 export {
   getActiveConsequences,
+  getActiveEngineStateRuleIds,
+  hasBattlefieldAbsenceConsequence,
+  getBattlefieldPresenceSkipReason,
   canTakeActions,
   canTakeReactions,
   getSpeedConsequences,

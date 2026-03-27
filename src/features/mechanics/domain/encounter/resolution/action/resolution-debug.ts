@@ -1,6 +1,6 @@
 import type { AbilityRef } from '../../../character'
-import type { D20RollMode } from '../../../resolution/engines/dice.engine'
 import type { EffectConditionId } from '../../../effects/effects.types'
+import type { D20RollMode } from '../../../resolution/engines/dice.engine'
 import type { CombatantInstance, RollModifierMarker } from '../../state/types'
 import type { CombatActionCost } from '../combat-action.types'
 import type { ConditionConsequence, SaveModConsequence, DamageInteractionConsequence } from '../../state/condition-rules'
@@ -30,18 +30,18 @@ export function formatAttackRollDebug(
     lines.push(`  ${m.label} -> incoming ${m.modifier}`)
   }
 
-  for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(attacker)) {
+  for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(attacker)) {
     if (c.kind !== 'attack_mod' || c.appliesTo !== 'outgoing') continue
-    if (!shouldCountAttackModForAttackRoll(conditionId, c, attacker, defender, attackRange)) continue
+    if (!shouldCountAttackModForAttackRoll(ruleId, c, attacker, defender, attackRange)) continue
     const rangeSuffix = c.range && c.range !== 'any' ? ` (${c.range})` : ''
-    lines.push(`  ${conditionId} -> outgoing attack ${c.modifier}${rangeSuffix}`)
+    lines.push(`  ${ruleId} -> outgoing attack ${c.modifier}${rangeSuffix}`)
   }
 
-  for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(defender)) {
+  for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(defender)) {
     if (c.kind !== 'attack_mod' || c.appliesTo !== 'incoming') continue
-    if (!shouldCountAttackModForAttackRoll(conditionId, c, defender, attacker, attackRange)) continue
+    if (!shouldCountAttackModForAttackRoll(ruleId, c, defender, attacker, attackRange)) continue
     const rangeSuffix = c.range && c.range !== 'any' ? ` (${c.range})` : ''
-    lines.push(`  ${conditionId} -> incoming attack ${c.modifier}${rangeSuffix}`)
+    lines.push(`  ${ruleId} -> incoming attack ${c.modifier}${rangeSuffix}`)
   }
 
   return lines
@@ -53,12 +53,12 @@ export function formatAutoFailDebug(
 ): string[] {
   const sources = getActiveConsequencesWithOrigin(combatant)
     .filter(
-      (e): e is { conditionId: typeof e.conditionId; consequence: SaveModConsequence } =>
+      (e) =>
         e.consequence.kind === 'save_mod' &&
         e.consequence.modifier === 'auto_fail' &&
         (e.consequence as SaveModConsequence).abilities.includes(ability),
     )
-    .map((e) => `${e.conditionId} -> auto-fail ${(e.consequence as SaveModConsequence).abilities.map((a) => a.toUpperCase()).join('/')} saves`)
+    .map((e) => `${e.ruleId} -> auto-fail ${(e.consequence as SaveModConsequence).abilities.map((a) => a.toUpperCase()).join('/')} saves`)
 
   return sources.length > 0
     ? [`auto-fail sources:`, ...sources.map((s) => `  ${s}`)]
@@ -72,11 +72,11 @@ export function formatSaveDebug(
 ): string[] {
   const lines: string[] = [`save roll mode: ${saveRollMod}`]
 
-  for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
+  for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
     if (c.kind !== 'save_mod') continue
     if (c.modifier === 'auto_fail') continue
     if (!(c as SaveModConsequence).abilities.includes(ability)) continue
-    lines.push(`  ${conditionId} -> ${ability.toUpperCase()} save ${c.modifier}`)
+    lines.push(`  ${ruleId} -> ${ability.toUpperCase()} save ${c.modifier}`)
   }
 
   return lines
@@ -88,11 +88,11 @@ export function formatDamageResistanceDebug(
 ): string[] {
   const lines: string[] = []
 
-  for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
+  for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
     if (c.kind !== 'damage_interaction') continue
     const di = c as DamageInteractionConsequence
     if (di.damageType !== 'all' && damageType && di.damageType !== damageType.trim().toLowerCase()) continue
-    lines.push(`${conditionId} -> ${di.modifier} to ${di.damageType} damage`)
+    lines.push(`${ruleId} -> ${di.modifier} to ${di.damageType} damage`)
   }
 
   return lines
@@ -104,17 +104,17 @@ export function formatTurnResourceDebug(
 ): string[] {
   const lines: string[] = []
 
-  for (const { conditionId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
+  for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
     if (c.kind === 'action_limit') {
       if (c.cannotTakeActions && (cost.action || cost.bonusAction)) {
-        lines.push(`${conditionId} -> cannot take actions`)
+        lines.push(`${ruleId} -> cannot take actions`)
       }
       if (c.cannotTakeReactions && cost.reaction) {
-        lines.push(`${conditionId} -> cannot take reactions`)
+        lines.push(`${ruleId} -> cannot take reactions`)
       }
     }
     if (c.kind === 'movement' && c.speedBecomesZero && cost.movementFeet) {
-      lines.push(`${conditionId} -> speed is zero`)
+      lines.push(`${ruleId} -> speed is zero`)
     }
   }
 
@@ -189,6 +189,8 @@ function formatConsequence(c: ConditionConsequence): string[] {
     }
     case 'damage_interaction':
       return [`${c.modifier} to ${c.damageType} damage`]
+    case 'battlefield_absence':
+      return ['absent from battlefield']
     default:
       return []
   }
@@ -242,21 +244,21 @@ export function formatCombatantStatusSnapshot(combatant: CombatantInstance): str
   if (!canTakeActions(combatant)) {
     const sources = getActiveConsequencesWithOrigin(combatant)
       .filter((e) => e.consequence.kind === 'action_limit' && e.consequence.cannotTakeActions)
-      .map((e) => e.conditionId)
+      .map((e) => e.ruleId)
     lines.push(`actions: disabled (${[...new Set(sources)].join(', ')})`)
   }
 
   if (!canTakeReactions(combatant)) {
     const sources = getActiveConsequencesWithOrigin(combatant)
       .filter((e) => e.consequence.kind === 'action_limit' && e.consequence.cannotTakeReactions)
-      .map((e) => e.conditionId)
+      .map((e) => e.ruleId)
     lines.push(`reactions: disabled (${[...new Set(sources)].join(', ')})`)
   }
 
   if (getSpeedConsequences(combatant).speedBecomesZero) {
     const sources = getActiveConsequencesWithOrigin(combatant)
       .filter((e) => e.consequence.kind === 'movement' && e.consequence.speedBecomesZero)
-      .map((e) => e.conditionId)
+      .map((e) => e.ruleId)
     lines.push(`movement: 0 (${[...new Set(sources)].join(', ')})`)
   }
 

@@ -33,22 +33,20 @@
  *
  * **CombatantTurnStatus** — derived view of battlefield presence, action capability, and
  * auto-skip hints; see {@link getCombatantTurnStatus}. Condition flags come from
- * `condition-rules` / `CONDITION_RULES`; defeat/death from HP + `diedAtRound`;
+ * merged condition + engine-state rules (`getActiveConsequences`); defeat/death from HP + `diedAtRound`;
  * corpse replacement via `remainsConsumed` on {@link CombatantInstance}.
  */
 
 import {
   canTakeActions as conditionsAllowActions,
   canTakeReactions as conditionsAllowReactions,
+  getBattlefieldPresenceSkipReason,
   getSpeedConsequences,
+  hasBattlefieldAbsenceConsequence,
 } from './condition-rules'
 import type { CombatantInstance, CombatantTurnStatus } from './types/combatant.types'
 
 export type { CombatantTurnStatus } from './types/combatant.types'
-
-function combatantHasStateLabel(c: CombatantInstance, label: string): boolean {
-  return c.states.some((s) => s.label === label)
-}
 
 /**
  * “Alive” for encounter rules: **HP > 0**. Matches initiative re-roll eligibility in
@@ -136,7 +134,7 @@ export function hasIntactRemainsForRevival(c: CombatantInstance): boolean {
  * (living, explicit remains, or implicit dead-creature target at 0 HP).
  */
 export function hasBattlefieldPresence(c: CombatantInstance): boolean {
-  if (combatantHasStateLabel(c, 'banished') || combatantHasStateLabel(c, 'off-grid')) {
+  if (hasBattlefieldAbsenceConsequence(c)) {
     return false
   }
   return (
@@ -162,8 +160,9 @@ export function canCombatantTakeReactions(c: CombatantInstance): boolean {
 }
 
 function resolveAutoSkipReason(c: CombatantInstance): CombatantTurnStatus['skipReason'] {
-  if (combatantHasStateLabel(c, 'banished')) return 'banished'
-  if (combatantHasStateLabel(c, 'off-grid')) return 'off-grid'
+  const battlefield = getBattlefieldPresenceSkipReason(c)
+  if (battlefield === 'banished') return 'banished'
+  if (battlefield === 'off-grid') return 'off-grid'
   if (c.remainsConsumed && isDefeatedCombatant(c)) return 'remains-consumed'
   if (isDefeatedCombatant(c)) return 'defeated'
   return 'cannot-act'
@@ -175,8 +174,7 @@ function resolveAutoSkipReason(c: CombatantInstance): CombatantTurnStatus['skipR
  */
 export function shouldAutoSkipCombatantTurn(c: CombatantInstance): boolean {
   if (isDefeatedCombatant(c)) return true
-  if (combatantHasStateLabel(c, 'banished')) return true
-  if (combatantHasStateLabel(c, 'off-grid')) return true
+  if (hasBattlefieldAbsenceConsequence(c)) return true
   if (isActiveCombatant(c) && !conditionsAllowActions(c)) return true
   return false
 }
@@ -184,11 +182,11 @@ export function shouldAutoSkipCombatantTurn(c: CombatantInstance): boolean {
 export function getCombatantTurnStatus(c: CombatantInstance): CombatantTurnStatus {
   const isDefeated = isDefeatedCombatant(c)
   const isDead = isDeadCombatant(c)
-  const banished = combatantHasStateLabel(c, 'banished')
+  const banishedTargeting = hasBattlefieldAbsenceConsequence(c, 'banished')
 
   const hasPresence = hasBattlefieldPresence(c)
   const occupiesGrid = hasPresence
-  const canBeTargetedOnGrid = banished
+  const canBeTargetedOnGrid = banishedTargeting
     ? false
     : isActiveCombatant(c)
       ? true

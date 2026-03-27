@@ -51,15 +51,20 @@ export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'
 export { combatantToCreatureSnapshot } from './combatant-evaluation-snapshot'
 export { isImmuneToConditionIncludingScopedGrants } from './condition-immunity-resolution'
 export {
+  ALL_MARKER_RULES,
   CONDITION_RULES,
+  ENGINE_STATE_RULES,
   canTakeActions,
   canTakeReactions,
   getActiveConsequences,
+  getActiveEngineStateRuleIds,
+  getBattlefieldPresenceSkipReason,
   getSpeedConsequences,
   getIncomingAttackModifiers,
   getOutgoingAttackModifiers,
   getIncomingAttackModifiersForAttack,
   getOutgoingAttackModifiersForAttack,
+  hasBattlefieldAbsenceConsequence,
   shouldCountAttackModForAttackRoll,
   autoFailsSave,
   getSaveModifiersFromConditions,
@@ -73,8 +78,10 @@ export {
   isAwareOfSurroundings,
   canSee,
   getActiveConsequencesWithOrigin,
+  type BattlefieldAbsenceConsequence,
   type ConditionConsequence,
   type ConditionRule,
+  type MarkerRule,
   type SourceRelativeRestriction,
   type ConsequenceWithOrigin,
 } from './condition-rules'

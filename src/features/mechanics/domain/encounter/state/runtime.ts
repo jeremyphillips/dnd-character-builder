@@ -35,6 +35,7 @@ import {
 import { executeTurnHooks } from './turn-hooks'
 import { tickConcentrationDuration } from './concentration-mutations'
 import { formatRuntimeEffectLabel } from './shared'
+import { shouldAutoSkipCombatantTurn } from './combatant-participation'
 
 function resetCombatantTurnState(state: EncounterState, combatantId: string | null): EncounterState {
   if (!combatantId) return state
@@ -212,6 +213,81 @@ export function mergeCombatantsIntoEncounter(
   }
 }
 
+/**
+ * Removes a combatant from initiative ordering without deleting their record (e.g. corpse consumed by replacement spawn).
+ */
+export function removeCombatantFromInitiativeOrder(
+  state: EncounterState,
+  combatantId: string,
+): EncounterState {
+  if (!state.initiativeOrder.includes(combatantId)) return state
+
+  const oldOrder = state.initiativeOrder
+  const removedIdx = oldOrder.indexOf(combatantId)
+  const activeId = state.activeCombatantId
+
+  const newOrder = oldOrder.filter((id) => id !== combatantId)
+  const newInitiative = state.initiative.filter((r) => r.combatantId !== combatantId)
+
+  if (newOrder.length === 0) {
+    return {
+      ...state,
+      initiative: [],
+      initiativeOrder: [],
+      activeCombatantId: null,
+      turnIndex: 0,
+    }
+  }
+
+  let nextActive = activeId
+  let nextTurnIndex: number
+
+  if (activeId === combatantId) {
+    const nextIdx = (removedIdx + 1) % oldOrder.length
+    nextActive = oldOrder[nextIdx]!
+    if (nextActive === combatantId) {
+      nextActive = newOrder[0] ?? null
+    }
+    nextTurnIndex = nextActive ? newOrder.indexOf(nextActive) : 0
+    if (nextTurnIndex < 0) {
+      nextTurnIndex = 0
+      nextActive = newOrder[0] ?? null
+    }
+  } else {
+    nextActive = activeId
+    nextTurnIndex = activeId ? newOrder.indexOf(activeId) : 0
+    if (nextTurnIndex < 0) {
+      nextTurnIndex = 0
+      nextActive = newOrder[0] ?? null
+    }
+  }
+
+  return {
+    ...state,
+    initiative: newInitiative,
+    initiativeOrder: newOrder,
+    turnIndex: nextTurnIndex,
+    activeCombatantId: nextActive,
+  }
+}
+
+function skipNonInteractiveTurnsAfterActiveTurn(
+  state: EncounterState,
+  options: InitiativeResolverOptions,
+  depth: number,
+): EncounterState {
+  const maxDepth = Math.max(state.initiativeOrder.length * 2, 16)
+  if (depth > maxDepth) return state
+
+  const activeId = state.activeCombatantId
+  if (!activeId || !state.started) return state
+
+  const active = state.combatantsById[activeId]
+  if (!active || !shouldAutoSkipCombatantTurn(active)) return state
+
+  return skipNonInteractiveTurnsAfterActiveTurn(advanceEncounterTurnOnce(state, options), options, depth + 1)
+}
+
 export function createEncounterState(
   combatants: CombatantInstance[],
   options: InitiativeResolverOptions & {
@@ -268,13 +344,14 @@ export function createEncounterState(
     )
     const withStartExpiry = processRuntimeEffectBoundary(withRecharge, state.activeCombatantId, 'start')
     const withMarkerExpiry = processMarkerBoundary(withStartExpiry, state.activeCombatantId, 'start')
-    return executeTurnHooks(withMarkerExpiry, state.activeCombatantId, 'start')
+    const afterStart = executeTurnHooks(withMarkerExpiry, state.activeCombatantId, 'start')
+    return skipNonInteractiveTurnsAfterActiveTurn(afterStart, options, 0)
   }
 
   return state
 }
 
-export function advanceEncounterTurn(
+function advanceEncounterTurnOnce(
   state: EncounterState,
   options: InitiativeResolverOptions = {},
 ): EncounterState {
@@ -365,6 +442,13 @@ export function advanceEncounterTurn(
     withRecharge.activeCombatantId,
     'start',
   )
+}
+
+export function advanceEncounterTurn(
+  state: EncounterState,
+  options: InitiativeResolverOptions = {},
+): EncounterState {
+  return skipNonInteractiveTurnsAfterActiveTurn(advanceEncounterTurnOnce(state, options), options, 0)
 }
 
 export { formatRuntimeEffectLabel }

@@ -45,7 +45,7 @@ export {
   lineOfEffectClear,
   canSeeForTargeting,
 } from './visibility-seams'
-export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel, mergeCombatantsIntoEncounter } from './runtime'
+export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel, mergeCombatantsIntoEncounter, removeCombatantFromInitiativeOrder } from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'
 export { combatantToCreatureSnapshot } from './combatant-evaluation-snapshot'

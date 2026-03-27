@@ -108,6 +108,9 @@ describe('applyActionEffects — spawn grid replacement (remains → new occupan
       spawnInstanceId: spawnedId,
     })
 
+    expect(state.initiativeOrder.includes('fallen')).toBe(false)
+    expect(state.initiativeOrder).toContain(spawnedId!)
+
     expect(state.placements!.some((p) => p.combatantId === 'fallen')).toBe(false)
     expect(getOccupant(state.placements!, 'c-2-2')).toBe(spawnedId)
 

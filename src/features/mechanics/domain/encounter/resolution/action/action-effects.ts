@@ -15,6 +15,7 @@ import {
   removeStatesByClassification,
   updateEncounterCombatant,
   mergeCombatantsIntoEncounter,
+  removeCombatantFromInitiativeOrder,
   type CombatantInstance,
 } from '../../state'
 import type { EffectDuration } from '../../../effects/timing.types'
@@ -728,6 +729,7 @@ export function applyActionEffects(
                 ...(firstSpawnId ? { spawnInstanceId: firstSpawnId } : {}),
               },
             }))
+            nextState = removeCombatantFromInitiativeOrder(nextState, spawnTarget.instanceId)
           } else if (
             effectiveSpawnPlacement(effect).kind === 'single-cell' &&
             options.singleCellPlacementCellId

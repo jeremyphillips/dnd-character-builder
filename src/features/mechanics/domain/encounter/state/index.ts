@@ -45,6 +45,13 @@ export {
   lineOfEffectClear,
   canSeeForTargeting,
 } from './visibility-seams'
+export {
+  combatantHasBattlefieldAbsenceEngineState,
+  findNearestUnoccupiedPassableCell,
+  markerCausesBattlefieldAbsence,
+  maybeRestoreBattlefieldPlacement,
+  stripPlacementAndRememberReturnCell,
+} from './battlefield-return-placement'
 export { createEncounterState, advanceEncounterTurn, formatRuntimeEffectLabel, mergeCombatantsIntoEncounter, removeCombatantFromInitiativeOrder } from './runtime'
 export { triggerManualHook } from './manual-hooks'
 export { effectDurationToRuntimeDuration, formatMarkerLabel } from './shared'

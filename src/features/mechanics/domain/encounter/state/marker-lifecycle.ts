@@ -10,6 +10,7 @@ import {
   syncCombatantTurnResources,
   updateCombatant,
 } from './shared'
+import { maybeRestoreBattlefieldPlacement } from './battlefield-return-placement'
 import { appendLog, getCombatantLabel } from './logging'
 import { applyHealingToCombatant, expireStatModifier } from './mutations'
 import type { StatModifierMarker } from './types'
@@ -313,7 +314,7 @@ export function processMarkerBoundary(
     })
   })
 
-  return nextState
+  return maybeRestoreBattlefieldPlacement(nextState, combatantId)
 }
 
 export function processRuntimeEffectBoundary(

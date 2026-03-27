@@ -329,6 +329,11 @@ export interface CombatantInstance {
    * Scoped grants stay on `activeEffects` and derived presentation only until Phase 3 resolution.
    */
   conditionImmunities?: ConditionImmunityId[]
+  /**
+   * Grid cell to return to when the creature re-enters the map after temporary battlefield absence
+   * (e.g. banished, off-grid). Set when placement is cleared; cleared after a successful restore placement.
+   */
+  battlefieldReturnCellId?: string
   conditions: RuntimeMarker[]
   states: RuntimeMarker[]
 }

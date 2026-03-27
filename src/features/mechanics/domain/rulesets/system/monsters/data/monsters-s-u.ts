@@ -104,9 +104,16 @@ export const MONSTERS_S_U: readonly MonsterCatalogEntry[] = [
           description:
             'The mephit explodes when it dies. Dexterity Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Fire damage. Success: Half damage.',
           trigger: { kind: 'reduced-to-0-hp' },
+          effects: [
+            {
+              kind: 'note',
+              text: 'On death only (not a persistent aura): 5-ft emanation; Dexterity DC 10; 2d4 Fire damage, half on success.',
+              category: 'under-modeled',
+            },
+          ],
           resolution: {
             caveats: [
-              'Resolve 5-ft emanation Dex save DC 10 vs 2d4 fire (half on success) at table; not automated in encounter.',
+              'Death-triggered burst is not resolved automatically; use manual damage when the mephit is reduced to 0 HP.',
             ],
           },
         },

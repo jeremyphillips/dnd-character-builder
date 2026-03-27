@@ -25,8 +25,11 @@ export function getEffectsForAttachedBattlefieldSource(
       const found = findMonsterSpecialActionByRuntimeActionId(monster, source.actionId)
       return found?.action.effects ?? []
     }
-    case 'monster-trait':
-      return []
+    case 'monster-trait': {
+      const monster = opts.monstersById?.[source.monsterId]
+      const trait = monster?.mechanics.traits?.[source.traitIndex]
+      return trait?.effects ?? []
+    }
   }
 }
 
@@ -42,7 +45,10 @@ export function getLabelForAttachedBattlefieldSource(
       const found = monster ? findMonsterSpecialActionByRuntimeActionId(monster, source.actionId) : undefined
       return found?.action.name ?? source.actionId
     }
-    case 'monster-trait':
-      return source.traitKey
+    case 'monster-trait': {
+      const monster = opts.monstersById?.[source.monsterId]
+      const trait = monster?.mechanics.traits?.[source.traitIndex]
+      return trait?.name ?? `trait-${source.traitIndex}`
+    }
   }
 }

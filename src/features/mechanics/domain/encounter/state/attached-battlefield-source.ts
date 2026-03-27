@@ -5,7 +5,7 @@
 export type AttachedBattlefieldEffectSource =
   | { kind: 'spell'; spellId: string }
   | { kind: 'monster-action'; monsterId: string; actionId: string }
-  | { kind: 'monster-trait'; monsterId: string; traitKey: string }
+  | { kind: 'monster-trait'; monsterId: string; traitIndex: number }
 
 /** Stable id for {@link EncounterState.attachedAuraInstances} rows (unique per source combatant). */
 export function attachedAuraInstanceId(
@@ -18,7 +18,7 @@ export function attachedAuraInstanceId(
     case 'monster-action':
       return `attached-emanation-${source.monsterId}-${source.actionId}-${actorId}`
     case 'monster-trait':
-      return `attached-emanation-trait-${source.monsterId}-${source.traitKey}-${actorId}`
+      return `attached-emanation-trait-${source.monsterId}-${source.traitIndex}-${actorId}`
   }
 }
 
@@ -41,6 +41,6 @@ export function attachedBattlefieldSourceEquals(
     case 'monster-action':
       return b.kind === 'monster-action' && a.monsterId === b.monsterId && a.actionId === b.actionId
     case 'monster-trait':
-      return b.kind === 'monster-trait' && a.monsterId === b.monsterId && a.traitKey === b.traitKey
+      return b.kind === 'monster-trait' && a.monsterId === b.monsterId && a.traitIndex === b.traitIndex
   }
 }

@@ -700,9 +700,24 @@ export const MONSTERS_A: readonly MonsterCatalogEntry[] = [
           name: 'Fire Aura',
           description:
             'At the end of each of the azer’s turns, each creature of the azer’s choice in a 5-foot Emanation originating from the azer takes 5 (1d10) Fire damage unless the azer has the Incapacitated condition.',
+          effects: [
+            {
+              kind: 'emanation',
+              attachedTo: 'self',
+              area: { kind: 'sphere', size: 5 },
+              selectUnaffectedAtCast: false,
+            },
+            {
+              kind: 'interval',
+              stateId: 'azer-sentinel-fire-aura',
+              every: { value: 1, unit: 'turn' },
+              effects: [{ kind: 'damage', damage: '1d10', damageType: 'fire' }],
+            },
+          ],
           resolution: {
             caveats: [
-              'End-of-turn 5-ft emanation fire damage and azer’s choice of targets are not automated in encounter resolution.',
+              'Rules as written: damage applies at the end of the azer’s turn to chosen creatures in the emanation; Incapacitated suppression is not modeled.',
+              'Encounter automation applies fire damage when a hostile creature ends its turn inside the 5-ft emanation (Spirit Guardians–style timing), not only on the azer’s turn.',
             ],
           },
         },

@@ -1,3 +1,4 @@
+import type { Monster } from '@/features/content/monsters/domain/types'
 import type { CombatantInstance } from './types'
 import {
   rollInitiative,
@@ -20,6 +21,11 @@ import {
   rollRechargeDie,
 } from './shared'
 import type { BattlefieldSpellContext } from './battlefield-spatial-movement-modifiers'
+import {
+  collectMonsterTraitAttachedAuras,
+  DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER,
+  type MonsterRuntimeContext,
+} from '../runtime/monster-runtime'
 import {
   appendLog,
   createEncounterStartedLog,
@@ -149,6 +155,9 @@ export function mergeCombatantsIntoEncounter(
   options: InitiativeResolverOptions & {
     initiativeMode?: SpawnSummonInitiativeMode
     casterInstanceId?: string
+    /** When set, monster combatants can receive trait-sourced {@link EncounterState.attachedAuraInstances}. */
+    monstersById?: Record<string, Monster>
+    monsterRuntimeContext?: MonsterRuntimeContext
   },
 ): EncounterState {
   if (newCombatants.length === 0) return state
@@ -214,6 +223,13 @@ export function mergeCombatantsIntoEncounter(
     combatantsById[c.instanceId] = c
   }
 
+  const traitAuras = collectMonsterTraitAttachedAuras(
+    seeded,
+    options.monstersById,
+    options.monsterRuntimeContext ?? DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER,
+  )
+  const mergedAuras = [...(state.attachedAuraInstances ?? []), ...traitAuras]
+
   return {
     ...state,
     combatantsById,
@@ -222,6 +238,7 @@ export function mergeCombatantsIntoEncounter(
     initiativeOrder,
     turnIndex,
     activeCombatantId: state.activeCombatantId,
+    attachedAuraInstances: mergedAuras,
   }
 }
 
@@ -312,6 +329,13 @@ export function createEncounterState(
     placementOptions?: InitialPlacementOptions
     /** When set with `spellLookup`, turn-start movement uses spatial attached-aura modifiers. */
     battlefieldSpell?: BattlefieldSpellContext
+    /**
+     * Context for which monster trait effects are considered active when seeding trait attached auras.
+     * Defaults to a neutral baseline (see {@link DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER}).
+     */
+    monsterRuntimeContext?: MonsterRuntimeContext
+    /** Monster catalog lookup for trait attached auras; falls back to `battlefieldSpell.monstersById`. */
+    monstersById?: Record<string, Monster>
   } = {},
 ): EncounterState {
   const seededCombatants = combatants.map(seedRuntimeEffects)
@@ -337,6 +361,13 @@ export function createEncounterState(
     ? generateInitialPlacements(options.space, seededCombatants, options.placementOptions)
     : undefined
 
+  const monstersById = options.monstersById ?? options.battlefieldSpell?.monstersById
+  const traitAuras = collectMonsterTraitAttachedAuras(
+    seededCombatants,
+    monstersById,
+    options.monsterRuntimeContext ?? DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER,
+  )
+
   const state: EncounterState = {
     combatantsById: indexCombatants(seededCombatants),
     partyCombatantIds,
@@ -350,7 +381,7 @@ export function createEncounterState(
     log: [],
     space: options.space,
     placements,
-    attachedAuraInstances: [],
+    attachedAuraInstances: traitAuras,
   }
 
   state.log = [createEncounterStartedLog(state)]

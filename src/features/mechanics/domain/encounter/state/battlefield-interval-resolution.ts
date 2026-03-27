@@ -63,15 +63,6 @@ export function resolveIntervalEffectsForCombatantAtTurnBoundary(
     if (aura.attachedTo !== 'self' || aura.area.kind !== 'sphere') continue
 
     const saveDc = aura.saveDc
-    if (saveDc == null) {
-      const label = getLabelForAttachedBattlefieldSource(aura.source, resolveOpts)
-      nextState = appendEncounterNote(
-        nextState,
-        `Attached aura (${label}): missing save DC; skipped interval resolution.`,
-        { targetIds: [actingCombatantId] },
-      )
-      continue
-    }
 
     const rootEffects = getEffectsForAttachedBattlefieldSource(aura.source, resolveOpts)
     if (rootEffects.length === 0) {
@@ -118,7 +109,8 @@ export function resolveIntervalEffectsForCombatantAtTurnBoundary(
     if (!syntheticAction) continue
 
     for (const interval of intervals) {
-      const payload = injectSpellSaveDcDeep(interval.effects, saveDc)
+      const payload =
+        typeof saveDc === 'number' ? injectSpellSaveDcDeep(interval.effects, saveDc) : interval.effects
       const result = applyActionEffects(nextState, source, acting, syntheticAction, payload, {
         rng,
         sourceLabel: `${auraLabel} (aura)`,

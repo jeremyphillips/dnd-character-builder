@@ -418,7 +418,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
       summary: '20ft sphere gas. Heavily Obscured. Con save or Poisoned (no action/bonus).',
     },
   },
-{
+  {
     id: 'tiny-hut',
     name: 'Tiny Hut',
     school: 'evocation',
@@ -445,7 +445,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
       summary: '10ft dome. Creatures inside pass freely; others barred. Blocks 3rd-level or lower spells.',
     },
   },
-{
+  {
     id: 'tongues',
     name: 'Tongues',
     school: 'divination',

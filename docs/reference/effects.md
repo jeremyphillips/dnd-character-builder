@@ -156,7 +156,7 @@ Status meanings:
 
 **Hostile application (encounter / charm rules):** `deriveSpellHostility` (see `spell-hostility.ts`) walks spell `effects` and sets `CombatActionDefinition.hostileApplication` when definitive: `resolution.hostileIntent` override → `requiresWilling` → `SPELL_STATE_HOSTILITY` for `state` ids (e.g. `hallowed` non-hostile) → any `damage` or `save` → hostile; healing (`hit-points` heal) → non-hostile; otherwise unknown (legacy `targeting` kind rules). Prefer explicit `requiresWilling` for willing touch buffs when the tree has no damage/save/state map hit.
 
-### `emanation`
+### `emanation` {#emanation}
 
 - Status: `provisional`
 - Purpose: mark a spell as a **self-centered area** that moves with the caster on the encounter grid (e.g. Spirit Guardians), distinct from one-shot AoE placement.
@@ -169,7 +169,7 @@ Status meanings:
 - **Encounter integration (tactical grid):** turn-boundary **interval** payloads (e.g. Spirit Guardians damage) resolve via **`resolveIntervalEffectsForCombatantAtTurnBoundary`** when the acting combatant is inside the aura; **movement-entry** payloads after a move use **`resolveAttachedAuraSpatialEntryAfterMovement`**. Both use the same spell lookup and same-side suppression options as other battlefield resolution (see [resolution.md](./resolution.md) §4.4 / attached-aura notes).
 - **Spatial speed modifiers:** authored **`modifier`** effects on the spell with **`target: 'speed'`** and **`mode: 'multiply'`** (e.g. `0.5` for “speed halved in the area”) are **not** stamped as permanent combatant modifiers at cast. They are read from spell data when computing **current overlap** with attached sphere auras: **`getSpatialAttachedAuraSpeedMultiplier`** / **`getEffectiveGroundMovementBudgetFt`** in **`battlefield-spatial-movement-modifiers.ts`**. Effective speed updates when the creature moves or the aura moves. UI/presentation can surface **`speed_halved`** via **`collectPresentableEffects(combatant, spatial)`** using the same overlap rules — see [space.md](./space.md) §3 Movement.
 
-**Monster traits / actions:** authored **`emanation`** on **`MonsterSpecialAction.effects`** is **not** wired to **`attachedEmanation`** today (monster combat actions do not copy **`effects`** onto **`CombatActionDefinition`**, and attached aura IDs are spell-centric). Use **`resolution.caveats`** on traits or actions for emanation-shaped rules that are not automated (see system catalog examples: Fire Aura, Death Burst).
+**Monster content:** **`MonsterSpecialAction.effects`** may include **`emanation`**; the monster combat adapter maps it to **`CombatActionDefinition.attachedEmanation`** and preserves resolvable **`effects`** (see `monster-combat-adapter.ts`). **`MonsterTrait.effects`** may include **`emanation`** for **trait-sourced** attached auras (`AttachedBattlefieldEffectSource` **`monster-trait`**) seeded when the encounter has **`monstersById`**. Pair **`emanation`** with **`interval`** (and nested **`save`** / **`damage`** as needed) following the same runtime notes above. Authoring checklist and stat-block dice rules: [monster-authoring.md § Traits: emanations and attached battlefield](./monster-authoring.md#traits-emanations-and-attached-battlefield). **Death-only** area bursts (**`trigger: reduced-to-0-hp`**) should **not** add a persistent **`emanation`**; use **`note`** with **`category: 'under-modeled'`** plus **`resolution.caveats`** so no attached aura is created at init.
 
 ### `damage`
 

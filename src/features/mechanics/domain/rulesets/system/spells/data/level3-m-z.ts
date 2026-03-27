@@ -352,7 +352,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
       summary: '30ft emanation: speak with plants, question past day, alter Difficult Terrain.',
     },
   },
-{
+  {
     id: 'spirit-guardians',
     name: 'Spirit Guardians',
     school: 'conjuration',
@@ -386,7 +386,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
       summary: '15ft emanation: Speed halved, Wis save or 3d8 radiant/necrotic. +1d8 per slot.',
     },
   },
-{
+  {
     id: 'stinking-cloud',
     name: 'Stinking Cloud',
     school: 'conjuration',

@@ -1,3 +1,4 @@
+import { EXTRAPLANAR_CREATURE_TYPE_IDS } from '@/features/content/monsters/domain/vocab/monster.vocab';
 import type { SpellEntry } from '../types';
 
 /**
@@ -67,20 +68,20 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
     components: { verbal: true, somatic: true, material: { description: 'a pentacle' } },
     resolution: {
       caveats: [
-        'Full-minute duration, native-plane routing, and return placement are not simulated.',
+        'Native-plane routing is not simulated.',
       ],
     },
     effects: [
-      { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+      { kind: 'targeting', target: 'one-creature', targetType: 'creature', creatureTypeFilter: [...EXTRAPLANAR_CREATURE_TYPE_IDS] },
       {
         kind: 'save',
         save: { ability: 'cha' },
         onFail: [
           { kind: 'condition', conditionId: 'incapacitated' },
           { kind: 'state', stateId: 'banished' },
+          { kind: 'note', text: 'Target is transported to a harmless demiplane for the duration.', category: 'flavor' as const },
         ],
       },
-      { kind: 'note', text: 'Target is transported to a harmless demiplane for the duration.', category: 'flavor' as const },
       {
         kind: 'note',
         text: 'Aberration, Celestial, Elemental, Fey, or Fiend: if the spell lasts the full 1 minute, the target does not return—it is transported to a random location on an associated plane (GM).',

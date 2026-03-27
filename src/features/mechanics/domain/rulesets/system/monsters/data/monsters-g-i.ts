@@ -321,6 +321,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
   {
     id: 'giant-centipede',
     name: 'Giant Centipede',
+    imageKey: '/assets/system/monsters/giant-centipede.png',
     type: 'beast',
     sizeCategory: 'small',
     languages: [],
@@ -379,6 +380,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
   {
     id: 'giant-spider',
     name: 'Giant Spider',
+    imageKey: '/assets/system/monsters/giant-spider.png',
     type: 'beast',
     sizeCategory: 'large',
     languages: [],
@@ -447,6 +449,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
   {
     id: 'giant-wasp',
     name: 'Giant Wasp',
+    imageKey: '/assets/system/monsters/giant-wasp.png',
     type: 'beast',
     sizeCategory: 'medium',
     languages: [],

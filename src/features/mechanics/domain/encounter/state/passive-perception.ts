@@ -32,12 +32,11 @@ export function getCombatantAbilityScore(stats: CombatantInstance['stats'], key:
 
 /**
  * Passive Perception — precedence (see tests):
- * 1. `stats.skillRuntime.passivePerception` (preferred runtime seam)
- * 2. `stats.passivePerception` (legacy / hand-built combatants)
- * 3. Skill-derived: `10 + Wisdom modifier + (proficiencyBonus × perceptionProficiencyLevel)` when `proficiencyBonus` is a positive number
- * 4. Fallback: `10 + Wisdom modifier`
+ * 1. Explicit runtime override: `stats.skillRuntime.passivePerception`, then legacy `stats.passivePerception`
+ * 2. Skill-derived (when `proficiencyBonus` is a positive number): `10 + Wis mod + (PB × perceptionProficiencyLevel)`
+ * 3. Fallback: `10 + Wisdom modifier`
  *
- * Future: flat Perception skill modifier before passive conversion can slot in as another layer before step 3
+ * Future: a precomputed Perception skill modifier (before passive conversion) can slot between (1) and (2)
  * without changing call sites.
  */
 export function getPassivePerceptionScore(combatant: CombatantInstance): number {
@@ -62,11 +61,11 @@ export function getPassivePerceptionScore(combatant: CombatantInstance): number 
 
 /**
  * Stealth check modifier — precedence:
- * 1. `stats.skillRuntime.stealthCheckModifierOverride` when set
- * 2. Dexterity modifier + `(proficiencyBonus × stealthProficiencyLevel)` when `proficiencyBonus` is a positive number
- * 3. Dexterity modifier only
+ * 1. Explicit override: `stats.skillRuntime.stealthCheckModifierOverride` when set
+ * 2. Proficiency-based: Dex mod + `(PB × stealthProficiencyLevel)` when `proficiencyBonus` is a positive number
+ * 3. Fallback: Dexterity modifier only
  *
- * Future: item bonuses and flat skill modifiers can extend step 2 or add a precomputed branch before override.
+ * Future: item / flat Stealth bonuses can extend step 2 or insert before the override when modeled on the snapshot.
  */
 export function getStealthCheckModifier(combatant: CombatantInstance): number {
   const sr = combatant.stats.skillRuntime

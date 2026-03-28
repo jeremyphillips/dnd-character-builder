@@ -42,6 +42,19 @@ describe('passive-perception / stealth snapshot helpers', () => {
     ).toBe(15)
   })
 
+  it('getCombatantAbilityScore resolves short ability ids (e.g. dex) via getAbilityScoreValue', () => {
+    expect(
+      getCombatantAbilityScore(
+        {
+          ...baseStats(),
+          abilityScores: { dex: 18 } as CombatantInstance['stats']['abilityScores'],
+          dexterityScore: 12,
+        },
+        'dexterity',
+      ),
+    ).toBe(18)
+  })
+
   it('getPassivePerceptionScore: skillRuntime.passivePerception wins over stats.passivePerception', () => {
     const a: CombatantInstance = {
       instanceId: 'x',
@@ -176,32 +189,36 @@ describe('passive-perception / stealth snapshot helpers', () => {
 })
 
 describe('combatant builders thread Perception / Stealth runtime', () => {
-  const minimalCharacter = (overrides: Partial<CharacterDetailDto> = {}): CharacterDetailDto =>
-    ({
-      id: 'c1',
-      _id: 'c1',
-      name: 'Rogue',
-      type: 'pc',
-      imageUrl: null,
-      classes: [{ classId: 'rogue' as any, level: 5, name: 'Rogue', subclassId: null }],
-      level: 5,
-      totalLevel: 5,
-      abilityScores: {
-        strength: 10,
-        dexterity: 16,
-        constitution: 12,
-        intelligence: 10,
-        wisdom: 14,
-        charisma: 10,
-      },
-      proficiencies: [{ id: 'perception', name: 'Perception' }, { id: 'stealth', name: 'Stealth' }],
-      equipment: { armor: [], weapons: [], gear: [] },
-      wealth: {},
-      hitPoints: { total: 30 },
-      armorClass: { current: 15 },
-      combat: {},
-      ...overrides,
-    }) as CharacterDetailDto
+  const minimalCharacter = (overrides: Partial<CharacterDetailDto> = {}): CharacterDetailDto => ({
+    id: 'c1',
+    _id: 'c1',
+    name: 'Rogue',
+    type: 'pc',
+    imageUrl: null,
+    race: null,
+    classes: [{ classId: 'rogue', className: 'Rogue', level: 5, subclassId: null }],
+    level: 5,
+    totalLevel: 5,
+    abilityScores: {
+      strength: 10,
+      dexterity: 16,
+      constitution: 12,
+      intelligence: 10,
+      wisdom: 14,
+      charisma: 10,
+    },
+    proficiencies: [
+      { id: 'perception', name: 'Perception' },
+      { id: 'stealth', name: 'Stealth' },
+    ],
+    equipment: { armor: [], weapons: [], gear: [] },
+    wealth: {},
+    hitPoints: { total: 30 },
+    armorClass: { current: 15 },
+    combat: {},
+    campaigns: [],
+    ...overrides,
+  })
 
   const mockCombatStats = (pb: number): ReturnType<typeof useCombatStats> =>
     ({

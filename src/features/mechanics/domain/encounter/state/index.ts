@@ -97,6 +97,7 @@ export {
   getCombatantIdsEligibleForOpportunityAttackAgainstMover,
   type OpportunityAttackLegalityDenialReason,
 } from './opportunity-attack'
+export { getCombatantHideEligibilityExtensionOptions } from './combatant-hide-eligibility'
 export {
   canVisuallyPerceiveSubjectForRules,
   getSightBasedCheckLegalityDenialReason,

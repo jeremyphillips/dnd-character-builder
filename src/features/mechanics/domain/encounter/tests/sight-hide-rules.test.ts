@@ -271,4 +271,36 @@ describe('hide attempt eligibility', () => {
     ).toBe(null)
     expect(getStealthHideAttemptDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
   })
+
+  it('combatant skillRuntime.hideEligibilityFeatureFlags allows half cover without call-site options', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const orcWithFeat = {
+      ...o,
+      stats: {
+        ...o.stats,
+        skillRuntime: { hideEligibilityFeatureFlags: { allowHalfCoverForHide: true } },
+      },
+    }
+    const base = createEncounterState([w, orcWithFeat], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-half',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'half' },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe(null)
+    expect(getStealthHideAttemptDenialReason(state, 'orc', 'wiz')).toBe(null)
+  })
 })

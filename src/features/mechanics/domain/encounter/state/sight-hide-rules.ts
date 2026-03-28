@@ -2,6 +2,7 @@ import { getCellForCombatant } from '@/features/encounter/space'
 import { resolveWorldEnvironmentFromEncounterState } from '@/features/mechanics/domain/encounter/environment/environment.resolve'
 import type { EncounterWorldCellEnvironment } from '@/features/mechanics/domain/encounter/environment/environment.types'
 
+import { getCombatantHideEligibilityExtensionOptions } from './combatant-hide-eligibility'
 import { canPerceiveTargetOccupantForCombat } from './combatant-pair-visibility'
 import type { CombatantHideEligibilityExtension } from './types/combatant.types'
 import type { EncounterState } from './types'
@@ -93,9 +94,13 @@ export function cellWorldSupportsHideAttemptWorldBasis(
 }
 
 /**
- * Resolves which hide-extension flags apply for a combatant. **Hide attempts** prefer call-site
- * `options.hideEligibility` when set (current resolver/context); **stealth sustain** prefers values
- * persisted on `stealth.hideEligibility` so reconciliation matches the basis that allowed hiding.
+ * Resolves which hide-extension flags apply for a combatant. Precedence:
+ *
+ * - **`hide-attempt`:** call-site `options.hideEligibility` (tests/DM override) → persisted
+ *   `stealth.hideEligibility` → **combatant-derived** {@link getCombatantHideEligibilityExtensionOptions}
+ *   (`stats.skillRuntime.hideEligibilityFeatureFlags`).
+ * - **`stealth-sustain`:** persisted `stealth.hideEligibility` → call-site → **combatant-derived** (so
+ *   reconciliation matches entry when flags live on the combatant and need not be re-threaded).
  */
 export function resolveHideEligibilityForCombatant(
   state: EncounterState,
@@ -103,10 +108,12 @@ export function resolveHideEligibilityForCombatant(
   options: { hideEligibility?: HideEligibilityExtensionOptions } | undefined,
   mode: 'hide-attempt' | 'stealth-sustain',
 ): HideEligibilityExtensionOptions | undefined {
-  const persisted = state.combatantsById[combatantId]?.stealth?.hideEligibility
+  const combatant = state.combatantsById[combatantId]
+  const derived = combatant != null ? getCombatantHideEligibilityExtensionOptions(combatant) : undefined
+  const persisted = combatant?.stealth?.hideEligibility
   const callSite = options?.hideEligibility
-  if (mode === 'stealth-sustain') return persisted ?? callSite
-  return callSite ?? persisted
+  if (mode === 'stealth-sustain') return persisted ?? callSite ?? derived
+  return callSite ?? persisted ?? derived
 }
 
 export type HideAttemptEligibilityDenialReason =

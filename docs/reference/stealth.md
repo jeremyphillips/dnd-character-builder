@@ -36,7 +36,9 @@ That world basis includes:
 - **Concealment** — same as before: dim/darkness lighting, light/heavy obscurement, magical darkness (`cellWorldSupportsHideConcealment`).
 - **Terrain cover (baseline)** — merged **`terrainCover`** on [`EncounterWorldCellEnvironment`](../../src/features/mechanics/domain/encounter/environment/environment.types.ts): **three-quarters** or **full** (total cover) counts toward eligibility; **half cover does not** by itself. Cover here is **cell-local** (baseline + environment zones), not per-observer line-of-sight geometry.
 
-**Extension seam:** optional **`hideEligibility`** on **`StealthRulesOptions`** / **`GetHideAttemptEligibilityDenialReasonOptions`** — today supports **`featureFlags.allowHalfCoverForHide`** so future feat/class wiring can treat half cover as sufficient without changing default behavior. **`resolveHideEligibilityForCombatant`** picks effective flags: for **hide attempts**, call-site options win when present, else **`stealth.hideEligibility`**; for **stealth sustain**, persisted **`stealth.hideEligibility`** wins, else call-site **`StealthRulesOptions.hideEligibility`** (e.g. tests or callers that do not yet persist flags on the combatant).
+**Combatant-sourced feature flags:** **`getCombatantHideEligibilityExtensionOptions`** ([`combatant-hide-eligibility.ts`](../../src/features/mechanics/domain/encounter/state/combatant-hide-eligibility.ts)) reads **`stats.skillRuntime.hideEligibilityFeatureFlags`** (set at combatant build time; **TODO:** effect/marker-driven grants). That output feeds **`resolveHideEligibilityForCombatant`** after call-site / persisted layers.
+
+**Optional overrides:** **`hideEligibility`** on **`StealthRulesOptions`** / **`GetHideAttemptEligibilityDenialReasonOptions`** — for tests or tools; normal encounter flow does **not** need to pass flags when they exist on the combatant. **`resolveHideEligibilityForCombatant`** precedence: **hide-attempt** — call-site → **`stealth.hideEligibility`** → **combatant-derived**; **stealth-sustain** — **`stealth.hideEligibility`** → call-site → **combatant-derived**.
 
 Dim light / light obscurement behavior still follows **`cellWorldSupportsHideConcealment`** — not a table-wide “always hide in dim for everyone” rule beyond that helper.
 
@@ -57,7 +59,7 @@ Eligibility answers **whether a hide attempt may be attempted** vs a given obser
 3. **Stealth total:** when there is at least one candidate, **`action-resolver.ts`** rolls **d20 + Stealth modifier** for **`resolutionMode === 'hide'`**. Modifier comes from **`hideProfile.stealthModifier`** or **`getStealthCheckModifier(actor)`** (runtime snapshot: Dex + proficiency when threaded — see [`passive-perception.ts`](../../src/features/mechanics/domain/encounter/state/passive-perception.ts)).
 4. **Comparison:** **`resolveHideWithPassivePerception(state, hiderId, stealthTotal, options)`** compares that total to each **candidate** observer’s **passive Perception** via **`getPassivePerceptionScore(observer)`**.
 5. **Threshold:** **`stealthBeatsPassivePerception(total, passive)`** — Stealth must be **strictly greater than** passive Perception (**`>`**). A **tie** (**`==`**) does **not** count as hidden from that observer (observer wins ties). This matches the strict-greater tests in **`action-resolution.hide.test.ts`** and **`stealth-rules.test.ts`**.
-6. **Storage (partial success):** For each **candidate**, **beat** → observer id is **on** **`hiddenFromObserverIds`**; **fail or tie** → that id is **removed** if it was only in the candidate set. Observer ids **not** in the candidate list for this attempt are **unchanged** (so prior hidden-from state can persist for observers you did not re-contest). When **`options.hideEligibility`** is set, it is **persisted** on **`stealth.hideEligibility`** (merged with any prior) so later **`reconcileStealthBreakWhenNoConcealmentInCell`** honors the same feat-style basis.
+6. **Storage (partial success):** For each **candidate**, **beat** → observer id is **on** **`hiddenFromObserverIds`**; **fail or tie** → that id is **removed** if it was only in the candidate set. Observer ids **not** in the candidate list for this attempt are **unchanged** (so prior hidden-from state can persist for observers you did not re-contest). **`stealth.hideEligibility`** is set from the **effective** merged eligibility (**`resolveHideEligibilityForCombatant`** in **`hide-attempt`** mode), so call-site overrides, prior stealth snapshot, and **`skillRuntime.hideEligibilityFeatureFlags`** are reflected for later sustain.
 
 **Passive Perception source:** authoritative runtime seam **`getPassivePerceptionScore`** — prefers **`stats.skillRuntime`** (explicit passive, PB × Perception proficiency, etc.) and legacy **`stats.passivePerception`**, then derived **`10 + Wisdom`** as in [`passive-perception.ts`](../../src/features/mechanics/domain/encounter/state/passive-perception.ts). Populated from character/monster builders ([`combatant-builders.ts`](../../src/features/encounter/helpers/combatant-builders.ts)).
 
@@ -77,7 +79,7 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 |--------|---------|
 | **`reconcileStealthAfterMovementOrEnvironmentChange`** | **Authoritative sequence:** (1) for **each** combatant with `stealth`, **`reconcileStealthBreakWhenNoConcealmentInCell`**; (2) **`reconcileStealthHiddenForPerceivedObservers`**. Use after movement, placement, zone, or baseline changes. |
 | **`reconcileStealthHiddenForPerceivedObservers`** | Drop an observer from the subject’s list when that observer **can** perceive the subject’s occupant (observer-relative; partial lists preserved). |
-| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear **that** subject’s stealth when their merged-world cell **no longer** supports **`cellWorldSupportsHideAttemptWorldBasis`** using **`resolveHideEligibilityForCombatant`** (**`stealth-sustain`** mode: persisted **`stealth.hideEligibility`**, then optional **`StealthRulesOptions.hideEligibility`**). Same rule path as hide entry — not a separate baseline-only check. |
+| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear **that** subject’s stealth when their merged-world cell **no longer** supports **`cellWorldSupportsHideAttemptWorldBasis`** using **`resolveHideEligibilityForCombatant`** (**`stealth-sustain`** mode). Same rule path as hide entry — not a separate baseline-only check. |
 | **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`** | **`updateEncounterEnvironmentBaseline`** + full reconcile (baseline-only callers; avoids circular imports). |
 
 **Runtime integration (deterministic order):**
@@ -88,7 +90,7 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 
 **Pure baseline patch:** **`updateEncounterEnvironmentBaseline`** does **not** run stealth (keeps tests and imports simple). For runtime lighting/obscurement changes that should affect hidden state, use **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`**.
 
-**TODO:** derive **`hideEligibility`** from combatant traits/effects in **`action-resolver`** / builders (today resolver passes **`perceptionCapabilities`** only; flags must be supplied via **`StealthRulesOptions`** or persisted **`stealth.hideEligibility`**). **Also:** observer-relative cover rays; sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
+**TODO:** wire **`skillRuntime.hideEligibilityFeatureFlags`** from character/feats in **`combatant-builders`** / loaders; **also** merge effect/marker-driven grants into **`getCombatantHideEligibilityExtensionOptions`**. **Also:** observer-relative cover rays; sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
 
 ---
 
@@ -123,6 +125,7 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth-attack
 
 | Export | Role |
 |--------|------|
+| `getCombatantHideEligibilityExtensionOptions` | Derive **`hideEligibility`** from **`stats.skillRuntime`** (combatant runtime). |
 | `getStealthHideAttemptDenialReason` | Hide **attempt** eligibility (delegates). |
 | `getPassivePerceptionScore` | Passive Perception for hide comparison. |
 | `getStealthCheckModifier` | Dex-based Stealth modifier for the Hide action roll. |
@@ -143,7 +146,7 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth-attack
 
 ## TODO / future work
 
-- **Combatant-derived `hideEligibility`** — populate from traits/feats/effects in builders or resolver instead of only manual **`StealthRulesOptions`** / persisted stealth.
+- **Authoring** — populate **`skillRuntime.hideEligibilityFeatureFlags`** from character sheet / feats in **`combatant-builders`**; **dynamic** grants from effects/markers in **`getCombatantHideEligibilityExtensionOptions`**.
 - **Observer-relative or partial break** on attack (vs global `breakStealthOnAttack`).
 - **Guessed location / sound** awareness for unseen targets (not occupant perception).
 - **Active opposed** Stealth vs **rolled** Perception (contested check path; keep passive baseline as fallback).

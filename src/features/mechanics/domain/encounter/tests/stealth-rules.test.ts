@@ -259,6 +259,47 @@ describe('stealth-rules', () => {
     expect(afterReconcile.combatantsById.orc?.stealth?.hiddenFromObserverIds).toContain('wiz')
   })
 
+  it('resolveHideWithPassivePerception + reconcile use combatant-derived hide flags (skillRuntime)', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const orcWithFeat = {
+      ...o,
+      stats: {
+        ...o.stats,
+        skillRuntime: { hideEligibilityFeatureFlags: { allowHalfCoverForHide: true } },
+      },
+    }
+    const base = createEncounterState([w, orcWithFeat], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-half',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'half' },
+        },
+      ],
+      combatantsById: {
+        ...base.combatantsById,
+        wiz: {
+          ...base.combatantsById.wiz!,
+          stats: { ...base.combatantsById.wiz!.stats, passivePerception: 10 },
+        },
+      },
+    }
+    const beat = resolveHideWithPassivePerception(state, 'orc', 11)
+    expect(beat.state.combatantsById.orc?.stealth?.hideEligibility?.featureFlags?.allowHalfCoverForHide).toBe(true)
+    const afterReconcile = reconcileStealthBreakWhenNoConcealmentInCell(beat.state, 'orc')
+    expect(afterReconcile.combatantsById.orc?.stealth?.hiddenFromObserverIds).toContain('wiz')
+  })
+
   it('reconcileStealthBreakWhenNoConcealmentInCell clears stealth when feature-qualified cover is lost', () => {
     const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
     const w = testPc('wiz', 'Wizard', 20)

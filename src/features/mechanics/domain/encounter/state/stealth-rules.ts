@@ -18,6 +18,7 @@ import { getPassivePerceptionScore } from './passive-perception'
 import { canPerceiveTargetOccupantForCombat } from './combatant-pair-visibility'
 import { updateEncounterEnvironmentBaseline } from './environment-baseline-mutations'
 import { updateEncounterCombatant } from './mutations'
+import { getCombatantHideEligibilityExtensionOptions } from './combatant-hide-eligibility'
 import {
   cellWorldSupportsHideAttemptWorldBasis,
   getHideAttemptEligibilityDenialReason,
@@ -34,7 +35,10 @@ export type { HideEligibilityExtensionOptions, HideEligibilityFeatureFlags }
 
 export type StealthRulesOptions = {
   perceptionCapabilities?: EncounterViewerPerceptionCapabilities
-  /** Future feat/subclass hooks for hide eligibility — see `HideEligibilityExtensionOptions`. */
+  /**
+   * Optional override for hide eligibility (tests / DM tools). Normal runtime uses
+   * `getCombatantHideEligibilityExtensionOptions` from `stats.skillRuntime.hideEligibilityFeatureFlags`.
+   */
   hideEligibility?: HideEligibilityExtensionOptions
 }
 
@@ -105,7 +109,8 @@ export function applyStealthHideSuccess(
     const next: CombatantStealthRuntime = {
       ...c.stealth,
       hiddenFromObserverIds: merged,
-      hideEligibility: applyOptions?.hideEligibility ?? c.stealth?.hideEligibility,
+      hideEligibility:
+        applyOptions?.hideEligibility ?? getCombatantHideEligibilityExtensionOptions(c) ?? c.stealth?.hideEligibility,
     }
     return { ...c, stealth: next }
   })
@@ -184,7 +189,8 @@ export function resolveHideWithPassivePerception(
         : {
             ...c.stealth,
             hiddenFromObserverIds: [...nextIds],
-            hideEligibility: options?.hideEligibility ?? c.stealth?.hideEligibility,
+            hideEligibility:
+              resolveHideEligibilityForCombatant(state, hiderId, options, 'hide-attempt') ?? c.stealth?.hideEligibility,
           },
   }))
 

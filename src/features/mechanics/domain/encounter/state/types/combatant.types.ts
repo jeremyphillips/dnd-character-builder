@@ -39,6 +39,14 @@ export type CombatantSkillProficiencyLevel = 0 | 1 | 2
  * Minimal Perception / Stealth runtime seam for encounter rules (no generalized skill engine).
  * Populated by character/monster combatant builders; stealth rules read only this plus ability scores.
  */
+/**
+ * Feat/trait-sourced inputs for hide eligibility (`sight-hide-rules` / `combatant-hide-eligibility.ts`).
+ * Extend with new optional booleans as hide rules grow; keep in sync with `CombatantHideEligibilityExtension.featureFlags`.
+ */
+export type CombatantHideEligibilityFeatureFlagsRuntime = {
+  allowHalfCoverForHide?: boolean
+}
+
 export type CombatantSkillRuntimeSnapshot = {
   /** Ruleset or creature proficiency bonus; used as `bonus × proficiencyLevel` for skills when deriving modifiers. */
   proficiencyBonus?: number
@@ -50,6 +58,12 @@ export type CombatantSkillRuntimeSnapshot = {
   passivePerception?: number
   /** When set, Stealth check uses this total modifier instead of Dex + proficiency contribution. */
   stealthCheckModifierOverride?: number
+  /**
+   * Runtime hide-eligibility feature permissions (feats/traits from builders). Consumed by
+   * `getCombatantHideEligibilityExtensionOptions` — not persisted stealth snapshot (see `stealth.hideEligibility`).
+   * **TODO:** drive from active effects / `RuntimeMarker` when grants are modeled dynamically.
+   */
+  hideEligibilityFeatureFlags?: CombatantHideEligibilityFeatureFlagsRuntime
 }
 
 export interface CombatantStatBlock {

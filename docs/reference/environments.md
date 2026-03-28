@@ -5,7 +5,7 @@ Domain contract for **baseline** encounter defaults, **localized environment zon
 ## Layers
 
 1. **Baseline — `EncounterEnvironmentBaseline`**  
-   Global/default encounter environment edited in setup (`EncounterEnvironmentSetup`). Fields:
+   Global default for the encounter: edited in setup before combat, then stored on `EncounterState.environmentBaseline` as **live runtime state** (weather, time of day, DM adjustments). Update at runtime with `updateEncounterEnvironmentBaseline` / `applyEnvironmentBaselinePatch` (partial merge; see type docs for `atmosphereTags`). Fields:
    - `setting` — indoors / outdoors / mixed / other  
    - `lightingLevel` — bright / dim / darkness (illumination)  
    - `terrainMovement` — default movement cost class for the encounter  
@@ -18,7 +18,7 @@ Domain contract for **baseline** encounter defaults, **localized environment zon
    Patches, emanations, hazards (see `kind`). Each zone has `id`, optional `priority`, `sourceKind` / `sourceId`, `area` (`EncounterEnvironmentAreaLink`), partial `overrides` (including optional `setting`), and optional `magical` flags (`magical`, `magicalDarkness`, `blocksDarkvision`).
 
 3. **Encounter state**  
-   `EncounterState.environmentBaseline` and `EncounterState.environmentZones` (optional on older snapshots; `createEncounterState` sets defaults). Baseline is copied from setup when the encounter starts.
+   `EncounterState.environmentBaseline` and `EncounterState.environmentZones` (optional on older snapshots; `createEncounterState` sets defaults). Baseline is initialized from setup when the encounter starts and **may change during play**; it is not an immutable snapshot.
 
 4. **Resolved world cell — `EncounterWorldCellEnvironment`**  
    Pure **world/environment** state at a cell — not viewer perception, not render state. Produced by `resolveWorldEnvironmentForCell` / `buildResolvedWorldEnvironmentCellMap` / `resolveWorldEnvironmentFromEncounterState`.
@@ -40,6 +40,15 @@ Use `cellIdInEnvironmentArea(space, area, cellId)` for membership (requires `Enc
 4. **`atmosphereTags`** — start from baseline; for each zone in sorted order: **replace** (if set) → **remove** → **add**.  
 5. **Magical flags** — `magicalDarkness`, `blocksDarkvision`, `magical`: **OR** across applicable zones (any zone sets true → true).
 
+## Runtime baseline mutation
+
+| Function | Purpose |
+|----------|---------|
+| `applyEnvironmentBaselinePatch(baseline, patch)` | Pure merge (`EncounterEnvironmentBaselinePatch` = partial fields) |
+| `updateEncounterEnvironmentBaseline(state, patch)` | Returns new `EncounterState` with updated `environmentBaseline` |
+
+No event log, history, or undo — callers append combat log notes if needed.
+
 ## API (see `environment.resolve.ts`)
 
 | Function | Purpose |
@@ -57,7 +66,8 @@ Use `cellIdInEnvironmentArea(space, area, cellId)` for membership (requires `Enc
 
 - No viewer perception or token hiding in this module.  
 - Grid UI (`EncounterGrid`) must not define environment semantics; use resolved world state or projections.  
-- Spell/action resolution does not yet create `environmentZones` rows (see TODO in `attached-aura-mutations.ts`).
+- Spell/action resolution does not yet create `environmentZones` rows (see TODO in `attached-aura-mutations.ts`).  
+- **Deferred:** wiring setup/edit UI (`environmentSetup` in React) to call `updateEncounterEnvironmentBaseline` when the encounter is already active — not implemented here.
 
 ## Related types
 

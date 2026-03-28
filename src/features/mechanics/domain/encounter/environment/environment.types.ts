@@ -13,7 +13,8 @@ export type EncounterVisibilityObscured = (typeof VISIBILITY_OBSCURED_LEVELS)[nu
 export type EncounterAtmosphereTag = (typeof ATMOSPHERE_TAGS)[number]['id']
 
 /**
- * Global/default encounter environment edited in setup (baseline layer).
+ * Global default encounter environment: setup seeds it, and `EncounterState.environmentBaseline`
+ * holds the **current runtime** values for the fight (day/night, weather, DM edits, etc.).
  * Localized zones apply on top via {@link EncounterEnvironmentZone} and resolve to
  * {@link EncounterWorldCellEnvironment}.
  *
@@ -27,6 +28,12 @@ export type EncounterEnvironmentBaseline = {
   /** Additive domain tags; combined with baseline lighting/visibility, not a replacement for them. */
   atmosphereTags: EncounterAtmosphereTag[]
 }
+
+/**
+ * Partial update for {@link EncounterEnvironmentBaseline}. Omitted keys are unchanged.
+ * When `atmosphereTags` is present, it **replaces** the full tag list (not merged per tag).
+ */
+export type EncounterEnvironmentBaselinePatch = Partial<EncounterEnvironmentBaseline>
 
 export type EncounterAtmosphere = {
   tags?: EncounterAtmosphereTag[]

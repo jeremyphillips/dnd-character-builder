@@ -43,8 +43,9 @@ export interface EncounterState {
   /** Persistent battlefield effects (e.g. emanation auras). */
   attachedAuraInstances?: BattlefieldEffectInstance[]
   /**
-   * Global encounter environment snapshot (from setup). Layer with `environmentZones` via
-   * `resolveWorldEnvironmentForCell` / `resolveWorldEnvironmentFromEncounterState`.
+   * **Runtime** global encounter environment (initialized from setup when the encounter starts).
+   * May change during play via `updateEncounterEnvironmentBaseline`. Layer with `environmentZones`
+   * for per-cell resolution (`resolveWorldEnvironmentForCell` / `resolveWorldEnvironmentFromEncounterState`).
    */
   environmentBaseline?: EncounterEnvironmentBaseline
   /** Localized environment overrides (magical darkness patches, fog, etc.). */

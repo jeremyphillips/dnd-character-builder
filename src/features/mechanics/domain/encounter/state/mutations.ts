@@ -35,3 +35,4 @@ export {
   removeDamageResistanceMarker,
 } from './resistance-mutations'
 export { patchCombatantEquipmentSnapshot } from './equipment-mutations'
+export { updateEncounterEnvironmentBaseline } from './environment-baseline-mutations'

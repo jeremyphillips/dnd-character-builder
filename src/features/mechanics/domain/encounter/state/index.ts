@@ -76,6 +76,7 @@ export {
   tickConcentrationDuration,
   updateEncounterCombatant,
   patchCombatantEquipmentSnapshot,
+  updateEncounterEnvironmentBaseline,
 } from './mutations'
 export { inferStatModifierEligibilityFromEffect } from './equipment-eligibility'
 export {

@@ -19,7 +19,11 @@ import {
   encounterActiveBarSx,
 } from '@/ui/primitives'
 
-import type { EndTurnEmphasis, EncounterPerceptionUiFeedback } from '../../../domain'
+import type {
+  EndTurnEmphasis,
+  EncounterPerceptionUiFeedback,
+  ViewerCombatantPresentationKind,
+} from '../../../domain'
 import {
   deriveTurnResourceBucketState,
   partitionCombatantActionBuckets,
@@ -53,8 +57,8 @@ export type EncounterActiveHeaderProps = {
   onResetEncounter: () => void
   /** Grid POV + magical darkness status (from `deriveEncounterPerceptionUiFeedback`). */
   perceptionFeedback?: EncounterPerceptionUiFeedback | null
-  /** Next in initiative is not perceived by the active viewer (same seam as grid/sidebar). */
-  nextCombatantUnseenFromViewer?: boolean
+  /** Next combatant’s viewer presentation (strict POV); null when N/A. */
+  nextCombatantPresentationKind?: ViewerCombatantPresentationKind | null
 }
 
 export function EncounterActiveHeader({
@@ -76,7 +80,7 @@ export function EncounterActiveHeader({
   onEditEncounter,
   onResetEncounter,
   perceptionFeedback,
-  nextCombatantUnseenFromViewer = false,
+  nextCombatantPresentationKind = null,
 }: EncounterActiveHeaderProps) {
   const move = turnResources?.movementRemaining ?? 0
   const headerRootRef = useRef<HTMLDivElement>(null)
@@ -199,8 +203,11 @@ export function EncounterActiveHeader({
               <Typography variant="body2" color="text.secondary" noWrap>
                 Next: <strong>{nextCombatantLabel}</strong>
               </Typography>
-              {nextCombatantUnseenFromViewer && (
-                <AppBadge label="Unseen" tone="default" variant="outlined" size="small" />
+              {nextCombatantPresentationKind === 'out-of-sight' && (
+                <AppBadge label="Out of sight" tone="default" variant="outlined" size="small" />
+              )}
+              {nextCombatantPresentationKind === 'hidden' && (
+                <AppBadge label="Hidden" tone="warning" variant="outlined" size="small" />
               )}
             </Stack>
           )}

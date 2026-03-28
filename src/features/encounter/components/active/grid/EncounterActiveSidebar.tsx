@@ -13,7 +13,7 @@ import {
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
-import type { ViewerCombatantVisibilityPresentation } from '@/features/encounter/domain'
+import type { ViewerCombatantPresentationKind } from '@/features/encounter/domain'
 import type { CombatantInstance, EncounterState } from '@/features/mechanics/domain/encounter'
 import { isDefeatedCombatant } from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
 
@@ -30,7 +30,7 @@ type EncounterActiveSidebarProps = {
   onSelectTarget: (combatantId: string) => void
   spellsById?: Record<string, Spell>
   suppressSameSideHostile?: boolean
-  combatantVisibilityPresentationById?: Record<string, ViewerCombatantVisibilityPresentation>
+  combatantViewerPresentationKindById?: Record<string, ViewerCombatantPresentationKind>
 }
 
 const SIDEBAR_WIDTH = 320
@@ -44,7 +44,7 @@ export function EncounterActiveSidebar({
   onSelectTarget,
   spellsById,
   suppressSameSideHostile,
-  combatantVisibilityPresentationById,
+  combatantViewerPresentationKindById,
 }: EncounterActiveSidebarProps) {
   const [tab, setTab] = useState(0)
 
@@ -93,7 +93,7 @@ export function EncounterActiveSidebar({
             onSelectTarget={onSelectTarget}
             spellsById={spellsById}
             suppressSameSideHostile={suppressSameSideHostile}
-            combatantVisibilityPresentationById={combatantVisibilityPresentationById}
+            combatantViewerPresentationKindById={combatantViewerPresentationKindById}
           />
         )}
         {tab === 1 && <CombatLogPanel log={log} />}
@@ -113,7 +113,7 @@ function InitiativeOrderTab({
   onSelectTarget,
   spellsById,
   suppressSameSideHostile,
-  combatantVisibilityPresentationById,
+  combatantViewerPresentationKindById,
 }: {
   encounterState: EncounterState
   initiativeOrder: string[]
@@ -125,7 +125,7 @@ function InitiativeOrderTab({
   onSelectTarget: (combatantId: string) => void
   spellsById?: Record<string, Spell>
   suppressSameSideHostile?: boolean
-  combatantVisibilityPresentationById?: Record<string, ViewerCombatantVisibilityPresentation>
+  combatantViewerPresentationKindById?: Record<string, ViewerCombatantPresentationKind>
 }) {
   const allCombatants = useMemo(() => Object.values(combatantsById), [combatantsById])
 
@@ -179,7 +179,7 @@ function InitiativeOrderTab({
 
     const isCurrentTurn = id === activeCombatantId
     const isSelected = id === selectedTargetId
-    const viewerVisibilityPresentation = combatantVisibilityPresentationById?.[id] ?? 'normal'
+    const viewerPresentationKind = combatantViewerPresentationKindById?.[id] ?? 'visible'
 
     if (combatant.side === 'party') {
       return (
@@ -192,7 +192,7 @@ function InitiativeOrderTab({
           isCurrentTurn={isCurrentTurn}
           isSelected={isSelected}
           spatialPresentation={spatialPresentation}
-          viewerVisibilityPresentation={viewerVisibilityPresentation}
+          viewerPresentationKind={viewerPresentationKind}
           onClick={() => onSelectTarget(id)}
         />
       )
@@ -208,7 +208,7 @@ function InitiativeOrderTab({
         isCurrentTurn={isCurrentTurn}
         isSelected={isSelected}
         spatialPresentation={spatialPresentation}
-        viewerVisibilityPresentation={viewerVisibilityPresentation}
+        viewerPresentationKind={viewerPresentationKind}
         onClick={() => onSelectTarget(id)}
       />
     )

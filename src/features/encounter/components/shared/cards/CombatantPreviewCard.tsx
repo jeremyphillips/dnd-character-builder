@@ -6,7 +6,7 @@ import Paper from '@mui/material/Paper'
 import { AppAvatar } from '@/ui/primitives'
 import { EntitySummaryCard } from '@/ui/patterns'
 
-import type { CombatantPreviewCardProps } from '../../../domain'
+import type { CombatantPreviewCardProps, ViewerCombatantPresentationKind } from '../../../domain'
 import { getCombatantPreviewCardOpacity } from '../../../domain/presentation-participation'
 import { CombatantPreviewChipRow } from './combatant-badges'
 
@@ -23,11 +23,14 @@ export function CombatantPreviewCard({
   isSelected = false,
   isDefeated = false,
   hasBattlefieldPresence = true,
-  viewerVisibilityPresentation = 'normal',
+  viewerPresentationKind = 'visible',
   primaryAction,
   secondaryActions,
   onClick,
 }: CombatantPreviewCardProps) {
+  const resolvedPresentation: ViewerCombatantPresentationKind = viewerPresentationKind ?? 'visible'
+  const nonVisiblePresentation = resolvedPresentation !== 'visible'
+
   const borderColor = isCurrentTurn
     ? 'primary.main'
     : isSelected
@@ -44,10 +47,16 @@ export function CombatantPreviewCard({
 
   const avatarNode = avatar ?? <AppAvatar name={title} size="sm" />
 
-  const chipsWithVisibility =
-    viewerVisibilityPresentation === 'unseen-from-viewer'
-      ? [{ id: 'viewer-unseen', label: 'Unseen', tone: 'neutral' as const }, ...(chips ?? [])]
-      : chips
+  const visibilityLeadChip =
+    resolvedPresentation === 'out-of-sight'
+      ? ({ id: 'viewer-oos', label: 'Out of sight', tone: 'neutral' as const })
+      : resolvedPresentation === 'hidden'
+        ? ({ id: 'viewer-hidden', label: 'Hidden', tone: 'warning' as const })
+        : null
+
+  const chipsWithVisibility = visibilityLeadChip
+    ? [visibilityLeadChip, ...(chips ?? [])]
+    : chips
 
   const content = (
     <EntitySummaryCard
@@ -75,7 +84,7 @@ export function CombatantPreviewCard({
         opacity: getCombatantPreviewCardOpacity({
           isDefeated,
           hasBattlefieldPresence,
-          unseenFromActiveViewer: viewerVisibilityPresentation === 'unseen-from-viewer',
+          nonVisibleViewerPresentation: nonVisiblePresentation,
         }),
         overflow: 'hidden',
       }}

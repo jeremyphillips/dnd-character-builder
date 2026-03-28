@@ -7,7 +7,7 @@ import {
   hasBattlefieldPresence,
   isDefeatedCombatant,
 } from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
-import type { TurnOrderStatus, ViewerCombatantVisibilityPresentation } from '../../../domain'
+import type { TurnOrderStatus, ViewerCombatantPresentationKind } from '../../../domain'
 import { TurnOrderList } from './TurnOrderList'
 import type { TurnOrderEntry } from './TurnOrderList'
 
@@ -15,7 +15,7 @@ type CombatTurnOrderModalProps = {
   open: boolean
   onClose: () => void
   encounterState: EncounterState
-  combatantVisibilityPresentationById?: Record<string, ViewerCombatantVisibilityPresentation>
+  combatantViewerPresentationKindById?: Record<string, ViewerCombatantPresentationKind>
 }
 
 function resolveTurnStatus(
@@ -35,7 +35,7 @@ export function CombatTurnOrderModal({
   open,
   onClose,
   encounterState,
-  combatantVisibilityPresentationById,
+  combatantViewerPresentationKindById,
 }: CombatTurnOrderModalProps) {
   const entries: TurnOrderEntry[] = useMemo(() => {
     const roster = Object.values(encounterState.combatantsById)
@@ -50,10 +50,10 @@ export function CombatTurnOrderModal({
         initiativeTotal: roll.total,
         status: resolveTurnStatus(roll.combatantId, encounterState, index),
         isBattlefieldAbsent,
-        visibilityPresentation: combatantVisibilityPresentationById?.[roll.combatantId] ?? 'normal',
+        presentationKind: combatantViewerPresentationKindById?.[roll.combatantId] ?? 'visible',
       }
     })
-  }, [encounterState, combatantVisibilityPresentationById])
+  }, [encounterState, combatantViewerPresentationKindById])
 
   return (
     <AppModal

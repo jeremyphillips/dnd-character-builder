@@ -5,7 +5,8 @@ import { createEncounterState } from '@/features/mechanics/domain/encounter/stat
 import { createCombatant } from '@/features/mechanics/domain/encounter/tests/action-resolution.test-helpers'
 
 import {
-  buildCombatantViewerVisibilityPresentationById,
+  buildCombatantViewerPresentationKindById,
+  deriveViewerCombatantPresentationKind,
   shouldRenderOccupantTokenForEncounterViewer,
 } from './grid-occupant-render-visibility'
 
@@ -43,6 +44,73 @@ function baseGridState() {
     { rng: () => 0.5, space },
   )
 }
+
+describe('deriveViewerCombatantPresentationKind', () => {
+  it('classifies non-perception as out-of-sight (invisible target)', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const s = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'orc',
+          label: 'Orc',
+          side: 'enemies',
+          initiativeModifier: 1,
+          dexterityScore: 10,
+          armorClass: 12,
+          conditions: [{ label: 'invisible' }],
+        }),
+        createCombatant({
+          instanceId: 'wiz',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 2,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.5, space },
+    )
+    const withGrid = {
+      ...s,
+      placements: [
+        { combatantId: 'orc', cellId: 'c-2-2' },
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+      ],
+    }
+    expect(
+      deriveViewerCombatantPresentationKind(withGrid, {
+        viewerCombatantId: 'wiz',
+        viewerRole: 'pc',
+        occupantCombatantId: 'orc',
+      }),
+    ).toBe('out-of-sight')
+  })
+
+  it('classifies stale hidden-from-observer as hidden when pair perception passes', () => {
+    const s = baseGridState()
+    const withStealth = {
+      ...s,
+      combatantsById: {
+        ...s.combatantsById,
+        orc: {
+          ...s.combatantsById.orc!,
+          stealth: { hiddenFromObserverIds: ['wiz'] },
+        },
+      },
+      placements: [
+        { combatantId: 'orc', cellId: 'c-2-2' },
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+      ],
+    }
+    expect(
+      deriveViewerCombatantPresentationKind(withStealth, {
+        viewerCombatantId: 'wiz',
+        viewerRole: 'pc',
+        occupantCombatantId: 'orc',
+      }),
+    ).toBe('hidden')
+  })
+})
 
 describe('shouldRenderOccupantTokenForEncounterViewer', () => {
   it('DM viewer always renders occupant tokens', () => {
@@ -121,7 +189,7 @@ describe('shouldRenderOccupantTokenForEncounterViewer', () => {
     ).toBe(false)
   })
 
-  it('suppresses when hidden from observer even if occupant seam would allow sight (stale bookkeeping)', () => {
+  it('suppresses when hidden from observer while occupant is perceivable (stale bookkeeping)', () => {
     const s = baseGridState()
     const withStealth = {
       ...s,
@@ -173,8 +241,8 @@ describe('shouldRenderOccupantTokenForEncounterViewer', () => {
   })
 })
 
-describe('buildCombatantViewerVisibilityPresentationById', () => {
-  it('marks all normal when perception input omitted', () => {
+describe('buildCombatantViewerPresentationKindById', () => {
+  it('marks all visible when perception input omitted', () => {
     const s = baseGridState()
     const withGrid = {
       ...s,
@@ -183,12 +251,12 @@ describe('buildCombatantViewerVisibilityPresentationById', () => {
         { combatantId: 'wiz', cellId: 'c-0-0' },
       ],
     }
-    const map = buildCombatantViewerVisibilityPresentationById(withGrid, undefined, ['orc', 'wiz'])
-    expect(map.orc).toBe('normal')
-    expect(map.wiz).toBe('normal')
+    const map = buildCombatantViewerPresentationKindById(withGrid, undefined, ['orc', 'wiz'])
+    expect(map.orc).toBe('visible')
+    expect(map.wiz).toBe('visible')
   })
 
-  it('DM input leaves everyone normal', () => {
+  it('DM input leaves everyone visible', () => {
     const s = baseGridState()
     const withStealth = {
       ...s,
@@ -204,15 +272,15 @@ describe('buildCombatantViewerVisibilityPresentationById', () => {
         { combatantId: 'wiz', cellId: 'c-0-0' },
       ],
     }
-    const map = buildCombatantViewerVisibilityPresentationById(
+    const map = buildCombatantViewerPresentationKindById(
       withStealth,
       { viewerCombatantId: 'wiz', viewerRole: 'dm' },
       ['orc', 'wiz'],
     )
-    expect(map.orc).toBe('normal')
+    expect(map.orc).toBe('visible')
   })
 
-  it('PC viewer gets unseen-from-viewer for hidden subject', () => {
+  it('PC viewer gets hidden for stealth-only blocked subject when pair perception passes', () => {
     const s = baseGridState()
     const withStealth = {
       ...s,
@@ -228,12 +296,12 @@ describe('buildCombatantViewerVisibilityPresentationById', () => {
         { combatantId: 'wiz', cellId: 'c-0-0' },
       ],
     }
-    const map = buildCombatantViewerVisibilityPresentationById(
+    const map = buildCombatantViewerPresentationKindById(
       withStealth,
       { viewerCombatantId: 'wiz', viewerRole: 'pc' },
       ['orc', 'wiz'],
     )
-    expect(map.orc).toBe('unseen-from-viewer')
-    expect(map.wiz).toBe('normal')
+    expect(map.orc).toBe('hidden')
+    expect(map.wiz).toBe('visible')
   })
 })

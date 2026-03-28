@@ -43,8 +43,10 @@ describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
     })
     const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
     expect(orcCell?.viewerPerceivesOccupantToken).toBe(false)
+    expect(orcCell?.viewerOccupantPresentationKind).toBe('out-of-sight')
     const wizCell = grid?.cells.find((c) => c.occupantId === 'wiz')
     expect(wizCell?.viewerPerceivesOccupantToken).toBe(true)
+    expect(wizCell?.viewerOccupantPresentationKind).toBe('visible')
   })
 
   it('DM perception leaves viewerPerceivesOccupantToken true for all occupied cells', () => {
@@ -83,6 +85,7 @@ describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
     })
     const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
     expect(orcCell?.viewerPerceivesOccupantToken).toBe(true)
+    expect(orcCell?.viewerOccupantPresentationKind).toBe('visible')
     expect(orcCell?.perception?.occupantTokenVisibility).toBe('all')
   })
 
@@ -159,6 +162,7 @@ describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
     expect(orcCell?.occupantId).toBe('orc')
     expect(orcCell?.occupantLabel).toBeTruthy()
     expect(orcCell?.viewerPerceivesOccupantToken).toBe(false)
+    expect(orcCell?.viewerOccupantPresentationKind).toBe('out-of-sight')
   })
 
   it('heavy obscurement on target: cell perception and pair seam both suppress distant occupant token', () => {
@@ -209,5 +213,6 @@ describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
     expect(selfCell?.viewerPerceivesOccupantToken).toBe(true)
     expect(obscuredCell?.perception?.occupantTokenVisibility).toBe('none')
     expect(obscuredCell?.viewerPerceivesOccupantToken).toBe(false)
+    expect(obscuredCell?.viewerOccupantPresentationKind).toBe('out-of-sight')
   })
 })

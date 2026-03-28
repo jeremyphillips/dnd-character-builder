@@ -52,7 +52,7 @@ import {
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import { isAreaGridAction } from '../helpers/area-grid-action'
 import { getCellForCombatant } from '../space/space.helpers'
-import { buildCombatantViewerVisibilityPresentationById } from '../space/grid-occupant-render-visibility'
+import { buildCombatantViewerPresentationKindById } from '../space/grid-occupant-render-visibility'
 import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
@@ -425,7 +425,7 @@ function useEncounterRuntimeValue() {
     viewerContext.debugPerceptionOverrides,
   ])
 
-  const combatantVisibilityPresentationById = useMemo(() => {
+  const combatantViewerPresentationKindById = useMemo(() => {
     if (!encounterState) return {}
     const ids = Object.keys(encounterState.combatantsById)
     const perceptionViewerRole =
@@ -438,7 +438,7 @@ function useEncounterRuntimeValue() {
             debugOverrides: viewerContext.debugPerceptionOverrides,
           }
         : undefined
-    return buildCombatantViewerVisibilityPresentationById(encounterState, perceptionInput, ids)
+    return buildCombatantViewerPresentationKindById(encounterState, perceptionInput, ids)
   }, [
     encounterState,
     activeCombatantId,
@@ -502,12 +502,10 @@ function useEncounterRuntimeValue() {
     return getCombatantDisplayLabel(nextCombatant, encounterCombatantRoster)
   }, [encounterState, encounterCombatantRoster, nextCombatantId])
 
-  const nextCombatantUnseenFromViewer = useMemo(
-    () =>
-      nextCombatantId != null &&
-      combatantVisibilityPresentationById[nextCombatantId] === 'unseen-from-viewer',
-    [nextCombatantId, combatantVisibilityPresentationById],
-  )
+  const nextCombatantPresentationKind = useMemo(() => {
+    if (!nextCombatantId) return null
+    return combatantViewerPresentationKindById[nextCombatantId] ?? 'visible'
+  }, [nextCombatantId, combatantViewerPresentationKindById])
 
   const perceptionUiFeedback = useMemo(
     () =>
@@ -653,7 +651,7 @@ function useEncounterRuntimeValue() {
         onEditEncounter={() => setEditModalOpen(true)}
         onResetEncounter={handleResetEncounter}
         perceptionFeedback={perceptionUiFeedback}
-        nextCombatantUnseenFromViewer={nextCombatantUnseenFromViewer}
+        nextCombatantPresentationKind={nextCombatantPresentationKind}
       />
     ) : undefined
 
@@ -741,7 +739,7 @@ function useEncounterRuntimeValue() {
     handleOpponentModalApply,
     canStartEncounter,
     gridViewModel,
-    combatantVisibilityPresentationById,
+    combatantViewerPresentationKindById,
     setupHeader,
     activeHeader,
     activeFooter,
@@ -800,7 +798,7 @@ function EncounterRuntimeModals() {
     removeOpponentCombatant,
     addOpponentCopy,
     encounterState,
-    combatantVisibilityPresentationById,
+    combatantViewerPresentationKindById,
   } = useEncounterRuntime()
 
   return (
@@ -867,7 +865,7 @@ function EncounterRuntimeModals() {
           open={turnOrderModalOpen}
           onClose={() => setTurnOrderModalOpen(false)}
           encounterState={encounterState}
-          combatantVisibilityPresentationById={combatantVisibilityPresentationById}
+          combatantViewerPresentationKindById={combatantViewerPresentationKindById}
         />
       )}
     </>

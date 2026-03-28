@@ -15,6 +15,7 @@ import type { BattlefieldSpellContext } from '@/features/mechanics/domain/encoun
 import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-spatial-movement-modifiers'
 import { createEmptyTurnContext } from '@/features/mechanics/domain/encounter/state/shared'
 import { isAreaGridAction } from '../helpers/area-grid-action'
+import type { ViewerCombatantPresentationKind } from '@/features/encounter/domain'
 import {
   buildCellPerceptionRenderState,
   buildGridPerceptionSlice,
@@ -23,7 +24,7 @@ import {
   type EncounterGridCellRenderState,
   type GridPerceptionInput,
 } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
-import { shouldRenderOccupantTokenForEncounterViewer } from './grid-occupant-render-visibility'
+import { deriveViewerCombatantPresentationKind } from './grid-occupant-render-visibility'
 
 // ---------------------------------------------------------------------------
 // State-level selectors
@@ -127,10 +128,12 @@ export type GridCellViewModel = {
   occupantRendersToken: boolean
   /**
    * When set from {@link selectGridViewModel} with `perception` opts, false suppresses the normal token
-   * for this occupant for the active viewer (pair perception + hidden-from-observer bookkeeping).
+   * under strict POV (`kind !== 'visible'`).
    * Undefined when perception is omitted — grid falls back to legacy “always show” for tokens.
    */
   viewerPerceivesOccupantToken?: boolean
+  /** Presentation reason for strict POV + future dim/placeholder/guessed-cell (same seams as token). */
+  viewerOccupantPresentationKind?: ViewerCombatantPresentationKind
   /** Viewer-relative render projection (perception layer); undefined when perception opts omitted. */
   perception?: EncounterGridCellRenderState
 }
@@ -362,13 +365,16 @@ export function selectGridViewModel(
     }
 
     let viewerPerceivesOccupantToken: boolean | undefined
+    let viewerOccupantPresentationKind: ViewerCombatantPresentationKind | undefined
     if (opts?.perception && occupantId && combatant && hasBattlefieldPresence(combatant)) {
-      viewerPerceivesOccupantToken = shouldRenderOccupantTokenForEncounterViewer(state, {
+      const caps = mergeGridPerceptionInputCapabilities(opts.perception)
+      viewerOccupantPresentationKind = deriveViewerCombatantPresentationKind(state, {
         viewerCombatantId: opts.perception.viewerCombatantId,
         viewerRole: opts.perception.viewerRole,
         occupantCombatantId: occupantId,
-        capabilities: mergeGridPerceptionInputCapabilities(opts.perception),
+        capabilities: caps,
       })
+      viewerPerceivesOccupantToken = viewerOccupantPresentationKind === 'visible'
     }
 
     return {
@@ -385,6 +391,7 @@ export function selectGridViewModel(
         occupantId && combatant && hasBattlefieldPresence(combatant),
       ),
       ...(viewerPerceivesOccupantToken !== undefined ? { viewerPerceivesOccupantToken } : {}),
+      ...(viewerOccupantPresentationKind !== undefined ? { viewerOccupantPresentationKind } : {}),
       obstacleKind,
       obstacleLabel,
       isActive: occupantId !== null && occupantId === activeId,

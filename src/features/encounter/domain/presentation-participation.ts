@@ -22,13 +22,13 @@ export function getCombatantPreviewCardOpacity(input: {
   isDefeated: boolean
   /** From {@link hasBattlefieldPresence}; false ⇒ banished / off-grid style dimming when still in initiative. */
   hasBattlefieldPresence: boolean
-  /** Active viewer does not perceive this combatant (sidebar / initiative; not DM POV). */
-  unseenFromActiveViewer?: boolean
+  /** True when viewer presentation is `out-of-sight` or `hidden` (not fully visible to POV). */
+  nonVisibleViewerPresentation?: boolean
 }): number {
   let o = 1
   if (input.isDefeated) o = PARTICIPATION_VISUALS.defeated.opacity
   else if (!input.hasBattlefieldPresence) o = PARTICIPATION_VISUALS.battlefieldAbsent.opacity
-  if (input.unseenFromActiveViewer) o *= UNSEEN_FROM_VIEWER_DIM
+  if (input.nonVisibleViewerPresentation) o *= UNSEEN_FROM_VIEWER_DIM
   return o
 }
 
@@ -36,11 +36,11 @@ export function getTurnOrderRowOpacity(input: {
   status: TurnOrderStatus
   /** True when the combatant is not defeated but has no battlefield presence (banished, off-grid, …). */
   isBattlefieldAbsent: boolean
-  isUnseenFromViewer?: boolean
+  nonVisibleViewerPresentation?: boolean
 }): number {
   let o = 1
   if (input.status === 'defeated') o = PARTICIPATION_VISUALS.defeated.opacity
   else if (input.isBattlefieldAbsent) o = PARTICIPATION_VISUALS.battlefieldAbsent.opacity
-  if (input.isUnseenFromViewer) o *= UNSEEN_FROM_VIEWER_DIM
+  if (input.nonVisibleViewerPresentation) o *= UNSEEN_FROM_VIEWER_DIM
   return o
 }

@@ -11,7 +11,7 @@ describe('getCombatantPreviewCardOpacity', () => {
     const unseen = getCombatantPreviewCardOpacity({
       isDefeated: false,
       hasBattlefieldPresence: true,
-      unseenFromActiveViewer: true,
+      nonVisibleViewerPresentation: true,
     })
     expect(unseen).toBeLessThan(base)
     expect(unseen).toBeGreaterThan(0)
@@ -27,7 +27,7 @@ describe('getTurnOrderRowOpacity', () => {
     const unseen = getTurnOrderRowOpacity({
       status: 'upcoming',
       isBattlefieldAbsent: false,
-      isUnseenFromViewer: true,
+      nonVisibleViewerPresentation: true,
     })
     expect(unseen).toBeLessThan(base)
   })

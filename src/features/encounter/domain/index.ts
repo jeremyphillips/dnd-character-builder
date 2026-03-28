@@ -132,5 +132,5 @@ export type {
   SetupPreviewWrapperProps,
   ActivePreviewWrapperProps,
   TurnOrderStatus,
-  ViewerCombatantVisibilityPresentation,
+  ViewerCombatantPresentationKind,
 } from './view/encounter-view.types'

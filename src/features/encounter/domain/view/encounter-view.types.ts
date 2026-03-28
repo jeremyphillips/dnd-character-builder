@@ -5,8 +5,14 @@ import type { CombatStatePriority } from '../effects/presentable-effects.types'
 export type CombatantPreviewMode = 'setup' | 'active'
 export type CombatantPreviewKind = 'character' | 'monster'
 
-/** Active encounter: how the current viewer perceives this combatant in bookkeeping UI (sidebar, turn order). */
-export type ViewerCombatantVisibilityPresentation = 'normal' | 'unseen-from-viewer'
+/**
+ * Viewer-relative **presentation** for a combatant (sidebar, initiative, header, grid metadata).
+ * Derived only from existing rule seams — not a second visibility engine.
+ *
+ * Future: may extend with e.g. `guessed-position` when awareness presentation ships; render can then
+ * branch without changing `canPerceiveTargetOccupantForCombat` / stealth reconciliation.
+ */
+export type ViewerCombatantPresentationKind = 'visible' | 'out-of-sight' | 'hidden'
 
 export type PreviewTone = 'neutral' | 'info' | 'warning' | 'danger' | 'success'
 
@@ -61,8 +67,8 @@ export type CombatantPreviewCardProps = {
    * When false, dim the card like defeated (banished / off-grid). Defaults to true when omitted (e.g. setup roster).
    */
   hasBattlefieldPresence?: boolean
-  /** When `unseen-from-viewer`, card is dimmed and tagged for the active viewer (grid uses the same seam). Defaults to `normal`. */
-  viewerVisibilityPresentation?: ViewerCombatantVisibilityPresentation
+  /** Bookkeeping UI dim/chip; defaults to `visible` when omitted (e.g. setup roster). */
+  viewerPresentationKind?: ViewerCombatantPresentationKind
   primaryAction?: CombatantPreviewAction
   secondaryActions?: CombatantPreviewAction[]
   onClick?: () => void

@@ -102,7 +102,7 @@ export default function EncounterActiveRoute() {
     setAoeHoverCellId,
     resetAoePlacement,
     gridViewModel,
-    combatantVisibilityPresentationById,
+    combatantViewerPresentationKindById,
     handleMoveCombatant,
     handleResolveAction,
     handleNextTurn,
@@ -871,7 +871,7 @@ export default function EncounterActiveRoute() {
           selectedTargetId={selectedActionTargetId}
           spellsById={spellsById}
           suppressSameSideHostile={suppressSameSideHostile}
-          combatantVisibilityPresentationById={combatantVisibilityPresentationById}
+          combatantViewerPresentationKindById={combatantViewerPresentationKindById}
           onSelectTarget={(combatantId) => {
             handleSelectTarget(combatantId)
             setActionDrawerOpen(true)

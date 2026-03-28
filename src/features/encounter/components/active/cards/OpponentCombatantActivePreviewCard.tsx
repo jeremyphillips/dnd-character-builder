@@ -12,7 +12,8 @@ import {
 } from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
 
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
-import { buildCombatantPreviewChips, formatSigned, getPreviewStatTooltip } from '../../../helpers'
+import { formatSigned } from '@/features/encounter/helpers/combatants'
+import { buildCombatantPreviewChips, getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
 import { CombatantAvatar } from '../../shared/CombatantAvatar'
 

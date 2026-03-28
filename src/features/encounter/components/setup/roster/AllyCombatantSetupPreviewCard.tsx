@@ -8,21 +8,20 @@ import Typography from '@mui/material/Typography'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
-import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
+import {
+  buildCharacterCombatantInstance,
+  formatSigned,
+  type CombatantPortraitEntry,
+} from '@/features/encounter/helpers/combatants'
+import { buildSkillAffordanceCombatActions } from '@/features/encounter/helpers/actions'
+import { buildTurnHooksFromEffects } from '@/features/encounter/helpers/monsters'
+import { getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
+import { buildSpellCombatActions, getCharacterSpellcastingStats } from '@/features/encounter/helpers/spells'
 import { useCharacter, useCombatStats } from '@/features/character/hooks'
 import { toCharacterForEngine } from '@/features/character/read-model'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import type { CombatantInstance, CombatantSide } from '@/features/mechanics/domain/encounter'
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
-import {
-  buildCharacterCombatantInstance,
-  buildSkillAffordanceCombatActions,
-  buildSpellCombatActions,
-  buildTurnHooksFromEffects,
-  formatSigned,
-  getCharacterSpellcastingStats,
-  getPreviewStatTooltip,
-} from '../../../helpers'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
 import { CombatantAvatar } from '../../shared/CombatantAvatar'
 

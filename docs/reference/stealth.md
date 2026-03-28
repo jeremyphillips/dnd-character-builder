@@ -61,15 +61,20 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 
 | Helper | Purpose |
 |--------|---------|
-| **`reconcileStealthHiddenForPerceivedObservers`** | Drop an observer from the subject’s list when that observer **can** perceive the subject’s occupant. |
-| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear stealth when the hider’s merged world cell **no longer** supports hide concealment (`cellWorldSupportsHideConcealment`). |
+| **`reconcileStealthAfterMovementOrEnvironmentChange`** | **Authoritative sequence:** (1) for **each** combatant with `stealth`, **`reconcileStealthBreakWhenNoConcealmentInCell`**; (2) **`reconcileStealthHiddenForPerceivedObservers`**. Use after movement, placement, zone, or baseline changes. |
+| **`reconcileStealthHiddenForPerceivedObservers`** | Drop an observer from the subject’s list when that observer **can** perceive the subject’s occupant (observer-relative; partial lists preserved). |
+| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear **that** subject’s stealth when their merged-world cell **no longer** supports hide concealment (`cellWorldSupportsHideConcealment`). |
+| **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`** | **`updateEncounterEnvironmentBaseline`** + full reconcile (baseline-only callers; avoids circular imports). |
 
-**Call sites (this pass):**
+**Runtime integration (deterministic order):**
 
-- **`resolveCombatActionInternal`** — runs **`reconcileStealthHiddenForPerceivedObservers`** before target resolution.
-- **`useEncounterState` `handleMoveCombatant`** — after **`moveCombatant`**, runs **`reconcileStealthBreakWhenNoConcealmentInCell`** for the mover and **`reconcileStealthHiddenForPerceivedObservers`** on the result.
+1. **`reconcileBattlefieldEffectAnchors`** (placement mutations, obstacle moves, aura anchor refresh) ends with **`reconcileStealthAfterMovementOrEnvironmentChange`** after environment-zone projection — covers **`placeCombatant`**, **`moveGridObstacleInEncounterState`**, and any path that runs this anchor pass.
+2. **`useEncounterState` `handleMoveCombatant`** — after **`moveCombatant`**, runs **`reconcileBattlefieldEffectAnchors`** (so creature-anchored zones + stealth stay aligned), then **`resolveAttachedAuraSpatialEntryAfterMovement`** when spell context is present.
+3. **`resolveCombatActionInternal`** — still runs **`reconcileStealthHiddenForPerceivedObservers`** **before** resolving the declared action (unchanged).
 
-Other code paths that mutate grid placement without going through that hook should call the same reconciliation or hidden state may drift.
+**Pure baseline patch:** **`updateEncounterEnvironmentBaseline`** does **not** run stealth (keeps tests and imports simple). For runtime lighting/obscurement changes that should affect hidden state, use **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`**.
+
+**TODO:** cover/feature/sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
 
 ---
 
@@ -90,6 +95,8 @@ Other code paths that mutate grid placement without going through that hook shou
 | `stealthBeatsPassivePerception` | Strict **`>`** threshold helper. |
 | `applyStealthHideSuccess` | Merge **observerIds** (manual / future active contest). |
 | `resolveDefaultHideObservers` | Candidate observers (eligibility only). |
+| `reconcileStealthAfterMovementOrEnvironmentChange` | Full sequence: concealment loss + perceived-again pruning. |
+| `applyEncounterEnvironmentBaselinePatchAndReconcileStealth` | Baseline patch + full reconcile. |
 | `reconcileStealthHiddenForPerceivedObservers` | Align hidden-from with perception. |
 | `reconcileStealthBreakWhenNoConcealmentInCell` | Clear stealth if cell has no concealment. |
 | `breakStealthOnAttack` | Clear attacker stealth (baseline). |

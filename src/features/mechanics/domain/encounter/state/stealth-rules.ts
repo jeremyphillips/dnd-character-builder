@@ -11,10 +11,12 @@
  */
 
 import { getCellForCombatant } from '@/features/encounter/space'
+import type { EncounterEnvironmentBaselinePatch } from '@/features/mechanics/domain/encounter/environment/environment.types'
 import { resolveWorldEnvironmentFromEncounterState } from '@/features/mechanics/domain/encounter/environment/environment.resolve'
 
 import { getPassivePerceptionScore } from './passive-perception'
 import { canPerceiveTargetOccupantForCombat } from './combatant-pair-visibility'
+import { updateEncounterEnvironmentBaseline } from './environment-baseline-mutations'
 import { updateEncounterCombatant } from './mutations'
 import {
   cellWorldSupportsHideConcealment,
@@ -215,12 +217,55 @@ export function reconcileStealthHiddenForPerceivedObservers(
 }
 
 /**
+ * **Authoritative stealth reconciliation** after movement, placement, environment baseline, or
+ * environment-zone changes (including attached-aura zone projection). Call this (or code paths that
+ * delegate to it) so hidden state stays aligned with the shared perception + merged-world concealment
+ * model — not ad hoc checks in movement code.
+ *
+ * **Deterministic order:**
+ * 1. For each combatant that currently has `stealth`, {@link reconcileStealthBreakWhenNoConcealmentInCell}
+ *    — hider left concealment that supported hiding → clear that subject’s stealth.
+ * 2. {@link reconcileStealthHiddenForPerceivedObservers} — drop observer ids when that observer can
+ *    perceive the subject’s occupant (partial / observer-relative pruning).
+ *
+ * **Integration:** `reconcileBattlefieldEffectAnchors` (after zone sync), `updateEncounterEnvironmentBaseline`,
+ * and `useEncounterState` `handleMoveCombatant` (after `moveCombatant` + battlefield anchor pass) end with
+ * this sequence so runtime play does not leave stale `hiddenFromObserverIds`.
+ */
+export function reconcileStealthAfterMovementOrEnvironmentChange(
+  state: EncounterState,
+  options?: StealthRulesOptions,
+): EncounterState {
+  const hiderIds = Object.values(state.combatantsById)
+    .filter((c) => c.stealth != null)
+    .map((c) => c.instanceId)
+
+  let next = state
+  for (const id of hiderIds) {
+    next = reconcileStealthBreakWhenNoConcealmentInCell(next, id)
+  }
+  return reconcileStealthHiddenForPerceivedObservers(next, options)
+}
+
+/**
+ * Applies {@link updateEncounterEnvironmentBaseline} then {@link reconcileStealthAfterMovementOrEnvironmentChange}.
+ * Use this when global baseline lighting/obscurement changes at runtime (composition lives here to avoid
+ * circular imports between baseline mutations and this module).
+ */
+export function applyEncounterEnvironmentBaselinePatchAndReconcileStealth(
+  state: EncounterState,
+  patch: EncounterEnvironmentBaselinePatch,
+  options?: StealthRulesOptions,
+): EncounterState {
+  return reconcileStealthAfterMovementOrEnvironmentChange(updateEncounterEnvironmentBaseline(state, patch), options)
+}
+
+/**
  * **Reconciliation:** if the hider’s cell no longer supports hide concealment (merged world), clear
  * stealth — leaving cover/obscurity that enabled hiding is treated as ending hidden state for this pass.
  *
- * Primary grid move path: `useEncounterState` `handleMoveCombatant` (after `moveCombatant`). Other
- * placement/mutation paths that change cell without going through that hook should call this (or full
- * stealth reconciliation) or hidden state may drift — see docs/reference/stealth.md.
+ * Used inside {@link reconcileStealthAfterMovementOrEnvironmentChange} and when you need a single
+ * combatant only. Primary move path uses the full sequence above — see docs/reference/stealth.md.
  */
 export function reconcileStealthBreakWhenNoConcealmentInCell(
   state: EncounterState,

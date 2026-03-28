@@ -7,6 +7,9 @@ import type { EncounterState } from './types'
 /**
  * Updates `environmentBaseline` on encounter state (runtime global environment).
  * Does not log or emit events — callers add log lines if needed.
+ *
+ * For stealth alignment after baseline changes, use {@link applyEncounterEnvironmentBaselinePatchAndReconcileStealth}
+ * in `stealth-rules.ts` (avoids circular imports through the mutations barrel).
  */
 export function updateEncounterEnvironmentBaseline(
   state: EncounterState,

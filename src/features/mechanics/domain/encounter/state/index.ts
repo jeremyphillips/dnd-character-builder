@@ -110,6 +110,8 @@ export {
   breakStealthOnAttack,
   getStealthHideAttemptDenialReason,
   isHiddenFromObserver,
+  applyEncounterEnvironmentBaselinePatchAndReconcileStealth,
+  reconcileStealthAfterMovementOrEnvironmentChange,
   reconcileStealthBreakWhenNoConcealmentInCell,
   reconcileStealthHiddenForPerceivedObservers,
   resolveDefaultHideObservers,

@@ -3,6 +3,7 @@ import { findGridObstacleById, moveGridObstacleToCell } from '@/features/encount
 import { reconcileEnvironmentZonesFromAttachedAuras } from '../environment/environment-zones-battlefield-sync'
 import { dropConcentration } from './concentration-mutations'
 import { resolveBattlefieldEffectOriginCellId } from './battlefield-effect-anchor'
+import { reconcileStealthAfterMovementOrEnvironmentChange } from './stealth-rules'
 import type { BattlefieldEffectInstance, EncounterState } from './types'
 
 /**
@@ -19,11 +20,14 @@ import type { BattlefieldEffectInstance, EncounterState } from './types'
  * “suspended” ghost row.
  *
  * Call after mutations that can move or remove anchor targets: placements, obstacles, or turn boundaries.
+ *
+ * Ends with {@link reconcileStealthAfterMovementOrEnvironmentChange} after zone projection so
+ * placement/aura-driven environment changes update hidden state consistently.
  */
 export function reconcileBattlefieldEffectAnchors(state: EncounterState): EncounterState {
   const auras = state.attachedAuraInstances
   if (!auras?.length) {
-    return reconcileEnvironmentZonesFromAttachedAuras(state)
+    return reconcileStealthAfterMovementOrEnvironmentChange(reconcileEnvironmentZonesFromAttachedAuras(state))
   }
 
   const { space, placements } = state
@@ -56,7 +60,7 @@ export function reconcileBattlefieldEffectAnchors(state: EncounterState): Encoun
     kept.length === auras.length &&
     kept.every((k, i) => k === auras[i])
   if (unchanged) {
-    return reconcileEnvironmentZonesFromAttachedAuras(state)
+    return reconcileStealthAfterMovementOrEnvironmentChange(reconcileEnvironmentZonesFromAttachedAuras(state))
   }
 
   let next: EncounterState = {
@@ -76,7 +80,7 @@ export function reconcileBattlefieldEffectAnchors(state: EncounterState): Encoun
     next = dropConcentration(next, r.casterCombatantId)
   }
 
-  return reconcileEnvironmentZonesFromAttachedAuras(next)
+  return reconcileStealthAfterMovementOrEnvironmentChange(reconcileEnvironmentZonesFromAttachedAuras(next))
 }
 
 /**

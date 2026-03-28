@@ -11,7 +11,7 @@
  * (cover/concealment basis for a new Hide attempt) alone does **not** prune observer-relative hidden state.
  */
 
-import type { EncounterEnvironmentBaselinePatch } from '@/features/mechanics/domain/encounter/environment/environment.types'
+import type { EncounterEnvironmentBaselinePatch } from '@/features/mechanics/domain/environment/environment.types'
 
 import { reconcileAwarenessGuessesWithPerception } from '../awareness/awareness-rules'
 import { getPassivePerceptionScore } from '../awareness/passive-perception'
@@ -34,7 +34,7 @@ import {
 import { getCellForCombatant } from '@/features/encounter/space/space.helpers'
 import type { CombatantStealthRuntime } from '../types/combatant.types'
 import type { EncounterState } from '../types'
-import type { EncounterViewerPerceptionCapabilities } from '../../environment/perception.types'
+import type { EncounterViewerPerceptionCapabilities } from '@/features/mechanics/domain/perception/perception.types'
 import {
   appendStealthHideBasisLostContextNote,
   appendStealthHideSuccessAppliedNote,

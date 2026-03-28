@@ -47,7 +47,7 @@ Other modules (**`action-resolver.ts`**, **`useEncounterState`**) call exported 
 **Concealment and feature-flag branches** still use the **hider’s merged cell** only (same as before):
 
 - **Baseline concealment** — [`cellWorldSupportsHideConcealment`](../../src/features/mechanics/domain/encounter/state/stealth/sight-hide-rules.ts): heavy obscurement; **non-magical** light obscurement; darkness lighting; **magical darkness**. Dim-only and magical light obscurement need the feat/runtime flags below.
-- **Feature-flag branches** (OR-merge, **hider cell only** — entry + sustain): **`allowDimLightHide`**, **`allowMagicalConcealmentHide`**, **`allowDifficultTerrainHide`** (merged **`terrainMovement`** **`difficult`** or **`greater-difficult`**), **`allowHighWindHide`** (merged **`atmosphereTags`** includes **`high-wind`**). See [`environment.resolve.ts`](../../src/features/mechanics/domain/encounter/environment/environment.resolve.ts) for `world.magical` and atmosphere merge.
+- **Feature-flag branches** (OR-merge, **hider cell only** — entry + sustain): **`allowDimLightHide`**, **`allowMagicalConcealmentHide`**, **`allowDifficultTerrainHide`** (merged **`terrainMovement`** **`difficult`** or **`greater-difficult`**), **`allowHighWindHide`** (merged **`atmosphereTags`** includes **`high-wind`**). See [`environment.resolve.ts`](../../src/features/mechanics/domain/environment/environment.resolve.ts) for `world.magical` and atmosphere merge.
 
 **Terrain cover for hide** (when concealment/flags do not already allow the attempt):
 

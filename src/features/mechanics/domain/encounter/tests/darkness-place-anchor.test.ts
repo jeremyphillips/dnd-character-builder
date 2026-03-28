@@ -6,9 +6,9 @@ import { buildSpellCombatActions, classifySpellResolutionMode } from '@/features
 import { SPELLS_LEVEL_2_A_F } from '@/features/mechanics/domain/rulesets/system/spells/data/level2-a-f'
 import { resolveCombatAction } from '../resolution'
 import { createEncounterState } from '../state'
-import { environmentZoneIdForAttachedAuraInstance } from '../environment/environment-zones-battlefield-sync'
+import { environmentZoneIdForAttachedAuraInstance } from '@/features/mechanics/domain/environment/environment-zones-battlefield-sync'
 import { resolveBattlefieldEffectOriginCellId } from '../state/battlefield/battlefield-effect-anchor'
-import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
+import { resolveWorldEnvironmentFromEncounterState } from '@/features/mechanics/domain/environment/environment.resolve'
 import {
   getActionResolutionRequirements,
   isAreaGridCombatAction,

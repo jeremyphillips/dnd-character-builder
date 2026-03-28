@@ -5,7 +5,7 @@
  * Does not implement stealth or perception rules — only chooses which combatant id feeds the viewer seam.
  * Action ownership / turn resolution remain tied to {@link EncounterState.activeCombatantId}.
  */
-import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { EncounterState } from '@/features/mechanics/domain/encounter'
 
 import type { EncounterSimulatorViewerMode } from '../capabilities/encounter-capabilities.types'

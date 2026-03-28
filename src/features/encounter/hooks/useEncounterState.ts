@@ -33,7 +33,7 @@ import type { Weapon } from '@/features/content/equipment/weapons/domain/types/w
 import type {
   EncounterEnvironmentBaseline,
   EncounterEnvironmentZone,
-} from '@/features/mechanics/domain/encounter/environment'
+} from '@/features/mechanics/domain/environment'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import { buildSummonAllyMonsterCombatant } from '../helpers/combatants'

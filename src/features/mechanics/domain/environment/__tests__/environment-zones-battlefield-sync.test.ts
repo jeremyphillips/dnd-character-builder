@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 
 import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import type { GridObstacle } from '@/features/encounter/space/space.types'
-import { removeAttachedAurasForSpell } from '../state/auras/attached-aura-mutations'
+import { removeAttachedAurasForSpell } from '../../encounter/state/auras/attached-aura-mutations'
 import {
   moveGridObstacleInEncounterState,
   reconcileBattlefieldEffectAnchors,
-} from '../state/auras/battlefield-effect-anchor-reconciliation'
-import { resolveWorldEnvironmentFromEncounterState } from './environment.resolve'
+} from '../../encounter/state/auras/battlefield-effect-anchor-reconciliation'
+import { resolveWorldEnvironmentFromEncounterState } from '../environment.resolve'
 import {
   environmentZoneIdForAttachedAuraInstance,
   reconcileEnvironmentZonesFromAttachedAuras,
-} from './environment-zones-battlefield-sync'
-import type { EncounterState } from '../state/types/encounter-state.types'
+} from '../environment-zones-battlefield-sync'
+import type { EncounterState } from '../../encounter/state/types/encounter-state.types'
 
 function treeObstacle(id: string, cellId: string): GridObstacle {
   return {

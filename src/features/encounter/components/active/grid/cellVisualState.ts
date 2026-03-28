@@ -1,4 +1,4 @@
-import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/perception/perception.render.projection'
 
 import type { GridCellViewModel } from '../../../space/selectors/space.selectors'
 

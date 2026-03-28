@@ -1,4 +1,4 @@
-import type { GridPerceptionDebugOverrides } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+import type { GridPerceptionDebugOverrides } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { EncounterState } from '@/features/mechanics/domain/encounter'
 
 export type EncounterViewerRole = 'dm' | 'pc'

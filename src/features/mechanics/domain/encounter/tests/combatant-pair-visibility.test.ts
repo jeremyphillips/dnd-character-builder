@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveViewerPerceptionForCellFromState } from '@/features/mechanics/domain/encounter/environment/perception.resolve'
+import { resolveViewerPerceptionForCellFromState } from '@/features/mechanics/domain/perception/perception.resolve'
 import { resolveRollModifier } from '@/features/mechanics/domain/encounter/resolution/action/action-resolver'
 import {
   addConditionToCombatant,

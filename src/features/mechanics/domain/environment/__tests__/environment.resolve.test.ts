@@ -8,8 +8,8 @@ import {
   resolveCellEnvironment,
   resolveWorldEnvironmentForCell,
   sortZonesForMerge,
-} from './environment.resolve'
-import type { EncounterEnvironmentBaseline, EncounterEnvironmentZone } from './environment.types'
+} from '../environment.resolve'
+import type { EncounterEnvironmentBaseline, EncounterEnvironmentZone } from '../environment.types'
 
 function zone(
   partial: Omit<EncounterEnvironmentZone, 'kind' | 'sourceKind'> & {

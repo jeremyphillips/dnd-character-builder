@@ -19,7 +19,7 @@ import { buildMonsterModalStats } from '../helpers/presentation'
 import {
   ATMOSPHERE_TAGS,
   DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
-} from '@/features/mechanics/domain/encounter/environment'
+} from '@/features/mechanics/domain/environment'
 import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state'
 import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-effect-anchor'
 import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'

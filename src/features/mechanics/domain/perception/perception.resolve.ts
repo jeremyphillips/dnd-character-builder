@@ -1,8 +1,8 @@
 import { getCellForCombatant } from '@/features/encounter/space'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
 
-import { resolveWorldEnvironmentFromEncounterState } from './environment.resolve'
-import type { EncounterWorldCellEnvironment } from './environment.types'
+import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
+import type { EncounterWorldCellEnvironment } from '../environment/environment.types'
 import type {
   EncounterViewerBattlefieldPerception,
   EncounterViewerPerceptionCapabilities,

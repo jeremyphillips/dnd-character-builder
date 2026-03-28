@@ -1,4 +1,4 @@
-import type { EncounterEnvironmentSetting } from '@/features/mechanics/domain/encounter/environment'
+import type { EncounterEnvironmentSetting } from '@/features/mechanics/domain/environment'
 
 import type { EncounterSpace, GridObstacle, GridObstacleKind } from '../space.types'
 

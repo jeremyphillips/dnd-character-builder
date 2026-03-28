@@ -4,8 +4,8 @@ import type { EncounterState } from '@/features/mechanics/domain/encounter/state
 
 import { updateEncounterEnvironmentBaseline } from '@/features/mechanics/domain/encounter/state/environment/environment-baseline-mutations'
 
-import { applyEnvironmentBaselinePatch } from './environment.baseline.patch'
-import { DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE } from './environment.resolve'
+import { applyEnvironmentBaselinePatch } from '../environment.baseline.patch'
+import { DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE } from '../environment.resolve'
 
 function emptyEncounterState(overrides: Partial<EncounterState> = {}): EncounterState {
   return {

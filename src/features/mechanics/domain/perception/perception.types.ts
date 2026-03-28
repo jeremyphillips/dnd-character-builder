@@ -2,7 +2,7 @@ import type {
   EncounterLightingLevel,
   EncounterVisibilityObscured,
   EncounterWorldCellEnvironment,
-} from './environment.types'
+} from '../environment/environment.types'
 
 /**
  * Optional senses for perception resolution. Omitted flags mean “not available” for this pass.

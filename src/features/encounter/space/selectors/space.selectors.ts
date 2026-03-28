@@ -23,7 +23,7 @@ import {
   type EncounterBattlefieldRenderState,
   type EncounterGridCellRenderState,
   type GridPerceptionInput,
-} from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+} from '@/features/mechanics/domain/perception/perception.render.projection'
 import { deriveViewerCombatantPresentationKind } from '../rendering/grid-occupant-render-visibility'
 
 // ---------------------------------------------------------------------------

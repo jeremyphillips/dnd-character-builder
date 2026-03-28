@@ -12,10 +12,10 @@ import type { ViewerCombatantPresentationKind } from '@/features/encounter/domai
 import {
   mergeGridPerceptionInputCapabilities,
   type GridPerceptionInput,
-} from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+} from '@/features/mechanics/domain/perception/perception.render.projection'
 import { canPerceiveTargetOccupantForCombat } from '@/features/mechanics/domain/encounter/state/visibility/combatant-pair-visibility'
 import { isHiddenFromObserver } from '@/features/mechanics/domain/encounter/state/stealth/stealth-rules'
-import type { EncounterViewerPerceptionCapabilities } from '@/features/mechanics/domain/encounter/environment/perception.types'
+import type { EncounterViewerPerceptionCapabilities } from '@/features/mechanics/domain/perception/perception.types'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
 
 export type { ViewerCombatantPresentationKind }

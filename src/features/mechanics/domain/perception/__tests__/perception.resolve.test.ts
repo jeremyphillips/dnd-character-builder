@@ -4,8 +4,8 @@ import {
   effectiveMagicalDarknessBypass,
   resolveViewerBattlefieldPerception,
   resolveViewerPerceptionForCell,
-} from './perception.resolve'
-import type { EncounterWorldCellEnvironment } from './environment.types'
+} from '../perception.resolve'
+import type { EncounterWorldCellEnvironment } from '../../environment/environment.types'
 
 function world(partial: Partial<EncounterWorldCellEnvironment>): EncounterWorldCellEnvironment {
   return {

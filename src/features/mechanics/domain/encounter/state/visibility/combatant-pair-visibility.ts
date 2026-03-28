@@ -1,6 +1,6 @@
 import { getCellForCombatant } from '@/features/encounter/space'
-import { resolveViewerPerceptionForCellFromState } from '@/features/mechanics/domain/encounter/environment/perception.resolve'
-import type { EncounterViewerPerceptionCapabilities } from '@/features/mechanics/domain/encounter/environment/perception.types'
+import { resolveViewerPerceptionForCellFromState } from '@/features/mechanics/domain/perception/perception.resolve'
+import type { EncounterViewerPerceptionCapabilities } from '@/features/mechanics/domain/perception/perception.types'
 
 import type { CombatantInstance } from '../types'
 import type { EncounterState } from '../types'

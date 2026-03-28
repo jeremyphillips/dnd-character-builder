@@ -6,7 +6,7 @@
 import { getCellForCombatant } from '@/features/encounter/space'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
 
-import { resolveWorldEnvironmentFromEncounterState } from './environment.resolve'
+import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
 import {
   resolveViewerBattlefieldPerception,
   resolveViewerPerceptionForCell,

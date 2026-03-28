@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { EncounterViewerBattlefieldPerception } from './perception.types'
-import type { EncounterViewerPerceptionCell } from './perception.types'
+import type { EncounterViewerBattlefieldPerception } from '../perception.types'
+import type { EncounterViewerPerceptionCell } from '../perception.types'
 import {
   projectBattlefieldRenderState,
   projectGridCellRenderState,
   resolvePerceptionPresentationFill,
-} from './perception.render.projection'
+} from '../perception.render.projection'
 
 function baseBattlefield(overrides: Partial<EncounterViewerBattlefieldPerception> = {}): EncounterViewerBattlefieldPerception {
   return {

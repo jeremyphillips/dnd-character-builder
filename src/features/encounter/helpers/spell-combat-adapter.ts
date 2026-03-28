@@ -191,6 +191,15 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   if (hasSpawn) return { kind: 'none', ...sight }
 
   const emanationAnchor = getSpellEmanationEffect(spell)
+  /** Persistent sphere centered on a chosen creature; anchor uses shared target selection (`targetId`). */
+  if (emanationAnchor?.anchorMode === 'creature') {
+    const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
+    const targeting = effects.find((e) => e.kind === 'targeting')
+    if (targeting?.kind === 'targeting' && targeting.requiresWilling) {
+      return { kind: 'single-target', creatureTypeFilter, requiresWilling: true, ...sight, ...rangeField }
+    }
+    return { kind: 'single-target', creatureTypeFilter, ...sight, ...rangeField }
+  }
   /** Place-anchored persistent sphere: pick origin via shared AoE flow; no creature target for resolve. */
   if (emanationAnchor?.anchorMode === 'place') {
     return { kind: 'self', ...sight, ...rangeField }
@@ -430,6 +439,10 @@ function buildSpellEffectsAction(
     /** Emanation is always a sphere; origin placement reuses AoE overlay radius from the same authored size. */
     areaTemplate = { kind: 'sphere', radiusFt: attachedEmanation.radiusFt }
     areaPlacement = 'remote'
+  } else if (attachedEmanation?.anchorMode === 'creature') {
+    /** Origin follows target combatant — no AoE placement row on the action. */
+    areaTemplate = undefined
+    areaPlacement = undefined
   }
 
   return {

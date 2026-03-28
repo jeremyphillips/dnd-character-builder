@@ -3,6 +3,10 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 
 export interface ResolveCombatActionSelection {
   actorId: string
+  /**
+   * Selected creature for single-target actions. For **creature-anchored** attached emanations
+   * (`attachedEmanation.anchorMode === 'creature'`), this id is also the runtime sphere anchor combatant.
+   */
   targetId?: string
   actionId: string
   /** Values for {@link CombatActionDefinition.casterOptions}, keyed by field `id`. */

@@ -528,7 +528,11 @@ function resolveCombatActionInternal(
   } else if (action.resolutionMode === 'effects') {
     const effectTargets =
       action.attachedEmanation && action.effects?.length
-        ? [actor]
+        ? action.attachedEmanation.anchorMode === 'creature'
+          ? targets.length > 0
+            ? targets
+            : []
+          : [actor]
         : targets.length > 0
           ? targets
           : action.targeting?.kind === 'none'
@@ -604,8 +608,8 @@ function resolveCombatActionInternal(
   let finalReturnState = finalState
   if (action.attachedEmanation && !behavior.skipCost) {
     const mode = action.attachedEmanation.anchorMode
-    if (mode === 'creature' || mode === 'object') {
-      // Deferred: creature/object anchor selection — do not create a misleading instance.
+    if (mode === 'object') {
+      // Deferred: object anchor selection not wired yet.
     } else {
       const ids = selection.unaffectedCombatantIds ?? []
       const anchor =
@@ -613,7 +617,11 @@ function resolveCombatActionInternal(
           ? selection.aoeOriginCellId
             ? ({ kind: 'place' as const, cellId: selection.aoeOriginCellId })
             : null
-          : { kind: 'creature' as const, combatantId: selection.actorId }
+          : mode === 'creature'
+            ? selection.targetId && finalState.combatantsById[selection.targetId]
+              ? ({ kind: 'creature' as const, combatantId: selection.targetId })
+              : null
+            : { kind: 'creature' as const, combatantId: selection.actorId }
       if (anchor) {
         finalReturnState = addAttachedAuraInstance(finalState, {
           id: attachedAuraInstanceId(action.attachedEmanation.source, selection.actorId),

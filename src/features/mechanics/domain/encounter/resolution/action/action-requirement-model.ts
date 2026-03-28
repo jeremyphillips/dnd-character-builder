@@ -94,6 +94,7 @@ function isAreaGridCombatAction(action: CombatActionDefinition | undefined | nul
 
 function actionRequiresCreatureTargetForResolveLocal(action: CombatActionDefinition | undefined | null): boolean {
   if (!action) return false
+  if (action.attachedEmanation?.anchorMode === 'creature') return true
   if (isAreaGridCombatAction(action)) return false
   const kind = action.targeting?.kind
   if (kind === 'none' || kind === 'self' || kind === 'all-enemies') return false

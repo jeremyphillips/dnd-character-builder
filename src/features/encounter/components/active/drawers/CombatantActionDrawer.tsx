@@ -549,10 +549,10 @@ export function CombatantActionDrawer({
   )
 
   const effectiveView: CombatantActionDrawerView = useMemo(() => {
-    /** Caster anchored: main + AttachedEmanationSetupPanel only. Place anchored: shared AoE origin UI (+ unaffected when authored). */
-    const skipAoeForCasterEmanation =
-      selectedActionDefinition?.attachedEmanation?.anchorMode === 'caster'
-    if (aoeStep !== 'none' && aoeAction?.areaTemplate && !skipAoeForCasterEmanation) {
+    /** Only `place` anchored emanations use the AoE placement panel; caster/creature use main + target flow. */
+    const useAoePlacementForAttachedEmanation =
+      selectedActionDefinition?.attachedEmanation?.anchorMode === 'place'
+    if (aoeStep !== 'none' && aoeAction?.areaTemplate && useAoePlacementForAttachedEmanation) {
       return 'aoePlacement'
     }
     if (localSubView === 'singleCellPlacement') return 'singleCellPlacement'

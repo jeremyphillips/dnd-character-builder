@@ -41,9 +41,11 @@ export function isAreaGridCombatAction(action: CombatActionDefinition | undefine
 /**
  * True when resolve flow needs a selected combatant id from the target picker
  * (map/sidebar), matching `getActionTargets` / grid creature targeting.
+ * Includes attached emanations with `anchorMode === 'creature'` (anchor follows selected target).
  */
 export function actionRequiresCreatureTargetForResolve(action: CombatActionDefinition | undefined | null): boolean {
   if (!action) return false
+  if (action.attachedEmanation?.anchorMode === 'creature') return true
   if (isAreaGridCombatAction(action)) return false
   const kind = action.targeting?.kind
   if (kind === 'none' || kind === 'self' || kind === 'all-enemies') return false
@@ -60,10 +62,7 @@ export function actionRequiresCreatureTargetForResolve(action: CombatActionDefin
  * Does not execute resolution — metadata only.
  */
 export function getActionResolutionRequirements(action: CombatActionDefinition): ActionResolutionRequirementKind[] {
-  if (
-    action.attachedEmanation?.anchorMode === 'creature' ||
-    action.attachedEmanation?.anchorMode === 'object'
-  ) {
+  if (action.attachedEmanation?.anchorMode === 'object') {
     return ['emanation-anchor-deferred']
   }
   if (isAreaGridCombatAction(action)) {
@@ -148,16 +147,13 @@ export function getActionResolutionReadiness(
     return { canResolve: false, missingRequirements: [] }
   }
 
-  if (
-    action.attachedEmanation?.anchorMode === 'creature' ||
-    action.attachedEmanation?.anchorMode === 'object'
-  ) {
+  if (action.attachedEmanation?.anchorMode === 'object') {
     return {
       canResolve: false,
       missingRequirements: [
         {
           kind: 'emanation-anchor-deferred',
-          message: 'This emanation anchor is not supported yet.',
+          message: 'Object anchoring is not supported yet.',
         },
       ],
     }

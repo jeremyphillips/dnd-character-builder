@@ -31,7 +31,7 @@ A subject can be **hidden** from an observer **and** still have a **guessed cell
 - **`awareness?: CombatantAwarenessRuntime`** on the **subject** combatant.
 - **`guessedCellByObserverId?: Record<string, string>`** — observer combatant id → **grid cell id** (string id from placements / space).
 
-Mutations and rules live in **`awareness-rules.ts`**. Helpers include **`getGuessedCellForObserver`**, **`setGuessedCellForObserver`**, **`clearGuessedCellForObserver`**, **`applyNoiseAwarenessForSubject`**, **`reconcileAwarenessGuessesWithPerception`**, **`resolveTargetLocationAwareness`** (classifies **visible** vs **guessed-location** vs **unknown** for an observer–subject pair).
+Mutations and rules live in **`awareness/awareness-rules.ts`**. Helpers include **`getGuessedCellForObserver`**, **`setGuessedCellForObserver`**, **`clearGuessedCellForObserver`**, **`applyNoiseAwarenessForSubject`**, **`reconcileAwarenessGuessesWithPerception`**, **`resolveTargetLocationAwareness`** (classifies **visible** vs **guessed-location** vs **unknown** for an observer–subject pair).
 
 ---
 
@@ -47,7 +47,7 @@ Mutations and rules live in **`awareness-rules.ts`**. Helpers include **`getGues
 ## What clears guessed position
 
 - **`reconcileAwarenessGuessesWithPerception`** — removes an observer’s guess when that observer **can** perceive the subject’s occupant (**vision supersedes** sound-only hints).
-- **Integration:** **`reconcileStealthHiddenForPerceivedObservers`** (in **`stealth-rules.ts`**) ends with **`reconcileAwarenessGuessesWithPerception`**, so any path that reconciles stealth after perception changes also aligns guesses.
+- **Integration:** **`reconcileStealthHiddenForPerceivedObservers`** (in **`stealth/stealth-rules.ts`**) ends with **`reconcileAwarenessGuessesWithPerception`**, so any path that reconciles stealth after perception changes also aligns guesses.
 
 **Not** fully modeled yet: clearing guesses when the subject **silently** leaves a cell, successful hide with no subsequent noise, or “lost track” without a perception change — those need explicit hooks or a future **hearing / sensory** layer.
 

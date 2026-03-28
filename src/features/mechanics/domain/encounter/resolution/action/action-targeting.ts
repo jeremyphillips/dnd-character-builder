@@ -6,14 +6,14 @@ import type {
 import type { CombatantInstance } from '../../state'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection } from '../action-resolution.types'
-import { cannotTargetWithHostileAction, hasBattlefieldAbsenceConsequence } from '../../state/condition-rules'
+import { cannotTargetWithHostileAction, hasBattlefieldAbsenceConsequence } from '../../state/conditions/condition-rules'
 import {
   canTargetAsDeadCreature,
   isActiveCombatant,
   isDefeatedCombatant,
-} from '../../state/combatant-participation'
-import { getGuessedCellForObserver } from '../../state/awareness-rules'
-import { canSeeForTargeting } from '../../state/visibility-seams'
+} from '../../state/combatants/combatant-participation'
+import { getGuessedCellForObserver } from '../../state/awareness/awareness-rules'
+import { canSeeForTargeting } from '../../state/visibility/visibility-seams'
 import { gridDistanceFt, getCellForCombatant, isWithinRange } from '@/features/encounter/space'
 import type { CombatActionAreaTemplate } from '../combat-action.types'
 

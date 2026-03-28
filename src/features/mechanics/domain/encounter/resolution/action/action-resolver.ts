@@ -25,7 +25,7 @@ import type { EncounterViewerPerceptionCapabilities } from '../../environment/pe
 import {
   attachedAuraInstanceId,
   concentrationLinkedMarkerIdForSpellAttachedEmanation,
-} from '../../state/attached-battlefield-source'
+} from '../../state/auras/attached-battlefield-source'
 import {
   formatAttackRollDebug,
   formatAutoFailDebug,
@@ -52,7 +52,7 @@ import {
   spendCombatActionUsage,
 } from './action-cost'
 import { evaluateCondition } from '../../../conditions/evaluateCondition'
-import { combatantToCreatureSnapshot } from '../../state/combatant-evaluation-snapshot'
+import { combatantToCreatureSnapshot } from '../../state/combatants/combatant-evaluation-snapshot'
 import { getActionTargets, getSequenceStepCount, type ActionTargetingResolveOptions } from './action-targeting'
 import { applyActionEffects, formatMovementSummary, getImmunityStateLabel, getSaveModifier } from './action-effects'
 

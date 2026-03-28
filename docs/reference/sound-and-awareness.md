@@ -14,9 +14,9 @@ Preserve the **mental model** already encoded in code: **visual perception**, **
 
 | Band | Meaning | Primary seam / state |
 |------|---------|---------------------|
-| **Visually perceived** | Observer can **see** the subject’s **occupant** for combat rules. | `canPerceiveTargetOccupantForCombat` / `canSeeForTargeting` (`combatant-pair-visibility.ts`, `visibility-seams.ts`) |
-| **Hidden / unseen** | Observer-relative stealth: subject is **hidden from** that observer. | `CombatantStealthRuntime.hiddenFromObserverIds` — **`stealth-rules.ts`** only |
-| **Guessed position** | Observer does **not** see the occupant but has a **last attributed grid cell** (e.g. noise). | `CombatantAwarenessRuntime.guessedCellByObserverId` — **`awareness-rules.ts`** |
+| **Visually perceived** | Observer can **see** the subject’s **occupant** for combat rules. | `canPerceiveTargetOccupantForCombat` / `canSeeForTargeting` (`visibility/combatant-pair-visibility.ts`, `visibility/visibility-seams.ts`) |
+| **Hidden / unseen** | Observer-relative stealth: subject is **hidden from** that observer. | `CombatantStealthRuntime.hiddenFromObserverIds` — **`stealth/stealth-rules.ts`** only |
+| **Guessed position** | Observer does **not** see the occupant but has a **last attributed grid cell** (e.g. noise). | `CombatantAwarenessRuntime.guessedCellByObserverId` — **`awareness/awareness-rules.ts`** |
 
 `resolveTargetLocationAwareness` classifies an observer–subject pair as **`visible`**, **`guessed-location`**, or **`unknown`**.
 
@@ -33,8 +33,8 @@ Preserve the **mental model** already encoded in code: **visual perception**, **
 ## 4. What is currently implemented
 
 - Shared **occupant** visibility for targeting, attack modifiers, opportunity attacks, hide eligibility, and stealth reconciliation (`canPerceiveTargetOccupantForCombat` / `canSeeForTargeting`).
-- **Stealth** entry (`resolveHideWithPassivePerception`, `getStealthHideAttemptDenialReason`), sustain/reconcile (`reconcileStealthAfterMovementOrEnvironmentChange`, `reconcileStealthBreakWhenNoConcealmentInCell`, `reconcileStealthHiddenForPerceivedObservers`) using **`getHideAttemptEligibilityDenialReason`** with **`hide-attempt`** vs **`stealth-sustain`** modes where documented in **`sight-hide-rules.ts`** / **`stealth-rules.ts`**.
-- **Passive Perception** and **Stealth check** modifiers from **`getPassivePerceptionScore`** / **`getStealthCheckModifier`** (`passive-perception.ts`) on **`CombatantInstance`** — not ad hoc source-model reads in resolution.
+- **Stealth** entry (`resolveHideWithPassivePerception`, `getStealthHideAttemptDenialReason`), sustain/reconcile (`reconcileStealthAfterMovementOrEnvironmentChange`, `reconcileStealthBreakWhenNoConcealmentInCell`, `reconcileStealthHiddenForPerceivedObservers`) using **`getHideAttemptEligibilityDenialReason`** with **`hide-attempt`** vs **`stealth-sustain`** modes where documented in **`stealth/sight-hide-rules.ts`** / **`stealth/stealth-rules.ts`**.
+- **Passive Perception** and **Stealth check** modifiers from **`getPassivePerceptionScore`** / **`getStealthCheckModifier`** (`awareness/passive-perception.ts`) on **`CombatantInstance`** — not ad hoc source-model reads in resolution.
 - **Guessed cells**: **`getGuessedCellForObserver`**, **`setGuessedCellForObserver`**, **`applyNoiseAwarenessForSubject`** (e.g. after attack resolution in **`action-resolver.ts`**), **`reconcileAwarenessGuessesWithPerception`** (also after **`reconcileStealthHiddenForPerceivedObservers`**).
 - **Movement / environment**: **`reconcileBattlefieldEffectAnchors`** ends with **`reconcileStealthAfterMovementOrEnvironmentChange`** (see **`stealth.md`**); baseline patches use **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`**.
 - **Resolver** runs **`reconcileStealthHiddenForPerceivedObservers`** before building targets so stealth aligns with perception at resolve time.
@@ -47,7 +47,7 @@ Preserve the **mental model** already encoded in code: **visual perception**, **
 - **Hearing range simulation** — distance bands, deafness, blindsight vs audio.
 - **Wrong-square attacks** — stale guess, miss when the creature moved, attack-a-square without a creature id.
 - **Richer sensory capability systems** — full threading of **`EncounterViewerPerceptionCapabilities`** for non-visual senses vs stealth/guesses.
-- **Silent vs noisy movement hooks** — automatic refresh/clear of guesses on move (partially noted as TODO in **`awareness-rules.ts`**).
+- **Silent vs noisy movement hooks** — automatic refresh/clear of guesses on move (partially noted as TODO in **`awareness/awareness-rules.ts`**).
 
 ---
 
@@ -64,7 +64,7 @@ Preserve the **mental model** already encoded in code: **visual perception**, **
 - Should **guessed cell** ever **substitute** for range measurement, or always **actual** placement for **`isWithinRange`** (current: **actual** placement only)?
 - When an observer **gains** vision, guesses drop — should **losing** vision ever **seed** a guess from last known cell without a noise event?
 - **Ally** vs **enemy** noise rules — current noise path focuses on **opposing** sides; allies might need different semantics later.
-- **Global** vs **observer-relative** break on **`breakStealthOnAttack`** — still a **`stealth-rules.ts`** TODO for feature-specific behavior.
+- **Global** vs **observer-relative** break on **`breakStealthOnAttack`** — still a **`stealth/stealth-rules.ts`** TODO for feature-specific behavior.
 
 ---
 

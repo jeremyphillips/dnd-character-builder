@@ -8,7 +8,7 @@ import { SPELLS_LEVEL_2_A_F } from '@/features/mechanics/domain/rulesets/system/
 import { resolveCombatAction } from '../resolution'
 import { createEncounterState } from '../state'
 import { environmentZoneIdForAttachedAuraInstance } from '../environment/environment-zones-battlefield-sync'
-import { resolveBattlefieldEffectOriginCellId } from '../state/battlefield-effect-anchor'
+import { resolveBattlefieldEffectOriginCellId } from '../state/battlefield/battlefield-effect-anchor'
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
 import {
   getActionResolutionRequirements,

@@ -39,10 +39,10 @@ import {
   rollDamage,
   rollHealing,
 } from '../../../resolution/engines/dice.engine'
-import { inferStatModifierEligibilityFromEffect } from '../../state/equipment-eligibility'
-import { combatantToCreatureSnapshot } from '../../state/combatant-evaluation-snapshot'
-import { isImmuneToConditionIncludingScopedGrants } from '../../state/condition-immunity-resolution'
-import { hasIntactRemainsForRevival } from '../../state/combatant-participation'
+import { inferStatModifierEligibilityFromEffect } from '../../state/combatants/equipment-eligibility'
+import { combatantToCreatureSnapshot } from '../../state/combatants/combatant-evaluation-snapshot'
+import { isImmuneToConditionIncludingScopedGrants } from '../../state/conditions/condition-immunity-resolution'
+import { hasIntactRemainsForRevival } from '../../state/combatants/combatant-participation'
 import {
   applyGridSpawnReplacementFromTarget,
   pickNearestOpenCellIds,

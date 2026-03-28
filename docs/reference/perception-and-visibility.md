@@ -22,7 +22,7 @@ See [Encounter environment (layered model)](./environments.md) for baseline, zon
 
 ### Pair visibility / perception
 
-For **two combatants**, the domain asks whether an **observer** can perceive the **target’s occupant** for combat rules. The core function is **`canPerceiveTargetOccupantForCombat`** (`combatant-pair-visibility.ts`), which composes:
+For **two combatants**, the domain asks whether an **observer** can perceive the **target’s occupant** for combat rules. The core function is **`canPerceiveTargetOccupantForCombat`** (`visibility/combatant-pair-visibility.ts`), which composes:
 
 - Condition-based **can the observer see at all** (`canSee` / blinded, etc.)
 - **Invisible** vs **See Invisibility** on the observer
@@ -59,22 +59,22 @@ Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modi
 
 | Concern | Entry point | Notes |
 |--------|-------------|--------|
-| **Attack visibility relation** | `resolveCombatantPairVisibilityForAttackRoll`, `getAttackVisibilityRollModifiersFromPair` | `combatant-pair-visibility.ts`; feeds `resolveRollModifier` in action resolution. |
+| **Attack visibility relation** | `resolveCombatantPairVisibilityForAttackRoll`, `getAttackVisibilityRollModifiersFromPair` | `visibility/combatant-pair-visibility.ts`; feeds `resolveRollModifier` in action resolution. |
 | **Can select sight-required target** | `canSeeForTargeting` | Alias of `canPerceiveTargetOccupantForCombat`; used with action targeting profiles. |
-| **OA visibility gating** | `canReactorPerceiveDepartingOccupantForOpportunityAttack`, `getOpportunityAttackLegalityDenialReason` | `opportunity-attack.ts`; sight uses pre-move state and the same occupant seam. |
-| **Sight-based check legality** | `getSightBasedCheckLegalityDenialReason`, `getEncounterAbilityCheckSightDenialReason` | `sight-hide-rules.ts` / `encounter-ability-check-resolution.ts`; check effects with `requiresSight` gate in `applyActionEffects`. Denial id: **`cannot-perceive-subject`**. |
+| **OA visibility gating** | `canReactorPerceiveDepartingOccupantForOpportunityAttack`, `getOpportunityAttackLegalityDenialReason` | `reactions/opportunity-attack.ts`; sight uses pre-move state and the same occupant seam. |
+| **Sight-based check legality** | `getSightBasedCheckLegalityDenialReason`, `getEncounterAbilityCheckSightDenialReason` | `stealth/sight-hide-rules.ts` / `encounter-ability-check-resolution.ts`; check effects with `requiresSight` gate in `applyActionEffects`. Denial id: **`cannot-perceive-subject`**. |
 
-Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`sight-hide-rules.ts`): occupant seam plus merged **world** hide support at the hider’s cell — **concealment** (lighting/obscurement/magical darkness) **and/or** baseline **terrain cover** (three-quarters or full on `terrainCover`; half does not count unless a **`hideEligibility`** flag opts in). **Stealth sustain** after movement/zones uses the **same** **`cellWorldSupportsHideAttemptWorldBasis`** check with **`resolveHideEligibilityForCombatant`**, which layers persisted stealth, optional call-site overrides, and **`getCombatantHideEligibilityExtensionOptions`** from **`stats.skillRuntime.hideEligibilityFeatureFlags`**. See [Stealth — Hide attempt eligibility](./stealth.md#hide-attempt-eligibility).
+Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`stealth/sight-hide-rules.ts`): occupant seam plus merged **world** hide support at the hider’s cell — **concealment** (lighting/obscurement/magical darkness) **and/or** baseline **terrain cover** (three-quarters or full on `terrainCover`; half does not count unless a **`hideEligibility`** flag opts in). **Stealth sustain** after movement/zones uses the **same** **`cellWorldSupportsHideAttemptWorldBasis`** check with **`resolveHideEligibilityForCombatant`**, which layers persisted stealth, optional call-site overrides, and **`getCombatantHideEligibilityExtensionOptions`** from **`stats.skillRuntime.hideEligibilityFeatureFlags`**. See [Stealth — Hide attempt eligibility](./stealth.md#hide-attempt-eligibility).
 
 ### Stealth / hidden runtime (layer on top)
 
-**Hidden state** is **not** the same as “not currently visible”: perception answers sight; **`CombatantInstance.stealth`** (`CombatantStealthRuntime` wrapper) stores **who the subject is hidden from**. Rules and mutations are centralized in **`stealth-rules.ts`**; reconciliation helpers keep hidden-from lists aligned when perception or concealment changes. See [Stealth and hidden state](./stealth.md).
+**Hidden state** is **not** the same as “not currently visible”: perception answers sight; **`CombatantInstance.stealth`** (`CombatantStealthRuntime` wrapper) stores **who the subject is hidden from**. Rules and mutations are centralized in **`stealth/stealth-rules.ts`**; reconciliation helpers keep hidden-from lists aligned when perception or concealment changes. See [Stealth and hidden state](./stealth.md).
 
-**Attack rolls and targeting** still use **`resolveCombatantPairVisibilityForAttackRoll`** / **`canSeeForTargeting`** only — they do **not** read `hiddenFromObserverIds`. That avoids a second visibility engine and double-stacked advantage: when heavy obscurement (or similar) already makes a defender unable to perceive the attacker’s occupant, unseen-attacker advantage applies through the shared seam; **`breakStealthOnAttack`** clears stealth **after** the attack d20 is rolled. Details: **`stealth-attack-integration.ts`**, [Stealth — combat section](./stealth.md#combat-attacks-targeting-and-hidden-state).
+**Attack rolls and targeting** still use **`resolveCombatantPairVisibilityForAttackRoll`** / **`canSeeForTargeting`** only — they do **not** read `hiddenFromObserverIds`. That avoids a second visibility engine and double-stacked advantage: when heavy obscurement (or similar) already makes a defender unable to perceive the attacker’s occupant, unseen-attacker advantage applies through the shared seam; **`breakStealthOnAttack`** clears stealth **after** the attack d20 is rolled. Details: **`stealth/stealth-attack-integration.ts`**, [Stealth — combat section](./stealth.md#combat-attacks-targeting-and-hidden-state).
 
 ### Guessed position / sound awareness (not sight)
 
-**`CombatantInstance.awareness`** (`CombatantAwarenessRuntime`) holds **observer-relative** **`guessedCellByObserverId`** — a last attributed **grid cell** for observers who **do not** currently **`canPerceiveTargetOccupantForCombat`** the subject’s occupant. Rules live in **`awareness-rules.ts`**.
+**`CombatantInstance.awareness`** (`CombatantAwarenessRuntime`) holds **observer-relative** **`guessedCellByObserverId`** — a last attributed **grid cell** for observers who **do not** currently **`canPerceiveTargetOccupantForCombat`** the subject’s occupant. Rules live in **`awareness/awareness-rules.ts`**.
 
 - **Does not** satisfy **`canSeeForTargeting`** or requires-sight checks.
 - **Creature targeting** (`isValidActionTarget` in **`action-targeting.ts`**): for actions **without** **`requiresSight`**, a valid target needs **visible occupant** **or** (by default) a **guessed cell** — not **fully unknown**. **`requiresSight: true`** still uses only the visibility seam.
@@ -89,8 +89,8 @@ Full detail: [Awareness and guessed position](./awareness-and-guessed-position.m
 ## Current rules supported
 
 - **Blinded** — `canSee` / condition consequences block perception before grid-specific checks.
-- **Invisibility / See Invisibility** — invisible target not perceived unless observer has See Invisibility state (`combatant-pair-visibility.ts`).
-- **LOS / LoE** — `lineOfSightClear`, `lineOfEffectClear` (`visibility-los.ts`); binary geometry when space + placements exist.
+- **Invisibility / See Invisibility** — invisible target not perceived unless observer has See Invisibility state (`visibility/combatant-pair-visibility.ts`).
+- **LOS / LoE** — `lineOfSightClear`, `lineOfEffectClear` (`visibility/visibility-los.ts`); binary geometry when space + placements exist.
 - **Heavy obscurement** — merged world + `resolveViewerPerceptionForCell` → `canPerceiveOccupants` false when appropriate.
 - **Darkness / magical darkness** — lighting and magical flags in world merge; perception resolution applies viewer **capabilities** (darkvision, Devil’s Sight, truesight, bypass flags) per `EncounterViewerPerceptionCapabilities`.
 

@@ -10,9 +10,9 @@ import type { CombatantSide } from '@/features/mechanics/domain/encounter/state/
 import {
   hasBattlefieldPresence,
   isDefeatedCombatant,
-} from '@/features/mechanics/domain/encounter/state/combatant-participation'
-import type { BattlefieldSpellContext } from '@/features/mechanics/domain/encounter/state/battlefield-spatial-movement-modifiers'
-import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state/battlefield-spatial-movement-modifiers'
+} from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
+import type { BattlefieldSpellContext } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-spatial-movement-modifiers'
+import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-spatial-movement-modifiers'
 import { createEmptyTurnContext } from '@/features/mechanics/domain/encounter/state/shared'
 import { isAreaGridAction } from '../helpers/area-grid-action'
 import {

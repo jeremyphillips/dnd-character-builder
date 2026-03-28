@@ -21,7 +21,7 @@ import {
   DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
 } from '@/features/mechanics/domain/encounter/environment'
 import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state'
-import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/encounter/state/battlefield-effect-anchor'
+import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-effect-anchor'
 import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'
 import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
 import { getSingleCellPlacementRequirement } from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'

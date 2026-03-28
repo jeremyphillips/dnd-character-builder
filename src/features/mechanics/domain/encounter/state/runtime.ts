@@ -22,7 +22,7 @@ import {
   createEmptyTurnContext,
   rollRechargeDie,
 } from './shared'
-import type { BattlefieldSpellContext } from './battlefield-spatial-movement-modifiers'
+import type { BattlefieldSpellContext } from './battlefield/battlefield-spatial-movement-modifiers'
 import {
   collectMonsterTraitAttachedAuras,
   DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER,
@@ -35,21 +35,21 @@ import {
   createTurnEndedLog,
   createTurnStartedLog,
   getCombatantLabel,
-} from './logging'
+} from './effects/logging'
 import {
   processMarkerBoundary,
   processRuntimeEffectBoundary,
   processTrackedPartTurnEnd,
-} from './marker-lifecycle'
-import { executeTurnHooks } from './turn-hooks'
-import { tickConcentrationDuration } from './concentration-mutations'
+} from './effects/marker-lifecycle'
+import { executeTurnHooks } from './effects/turn-hooks'
+import { tickConcentrationDuration } from './effects/concentration-mutations'
 import { formatRuntimeEffectLabel } from './shared'
-import { shouldAutoSkipCombatantTurn } from './combatant-participation'
+import { shouldAutoSkipCombatantTurn } from './combatants/combatant-participation'
 import {
   resolveIntervalEffectsForCombatantAtTurnBoundary,
   type BattlefieldIntervalResolutionOptions,
-} from './battlefield-interval-resolution'
-import { reconcileBattlefieldEffectAnchors } from './battlefield-effect-anchor-reconciliation'
+} from './battlefield/battlefield-interval-resolution'
+import { reconcileBattlefieldEffectAnchors } from './auras/battlefield-effect-anchor-reconciliation'
 
 function resetCombatantTurnState(
   state: EncounterState,

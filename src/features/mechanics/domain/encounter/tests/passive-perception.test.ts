@@ -8,7 +8,7 @@ import {
   getCombatantAbilityScore,
   getPassivePerceptionScore,
   getStealthCheckModifier,
-} from '@/features/mechanics/domain/encounter/state/passive-perception'
+} from '@/features/mechanics/domain/encounter/state/awareness/passive-perception'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
 
 function baseStats(): CombatantInstance['stats'] {

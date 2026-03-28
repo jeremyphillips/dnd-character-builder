@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
 import type { GridObstacle } from '@/features/encounter/space/space.types'
-import { removeAttachedAurasForSpell } from '../state/attached-aura-mutations'
+import { removeAttachedAurasForSpell } from '../state/auras/attached-aura-mutations'
 import {
   moveGridObstacleInEncounterState,
   reconcileBattlefieldEffectAnchors,
-} from '../state/battlefield-effect-anchor-reconciliation'
+} from '../state/auras/battlefield-effect-anchor-reconciliation'
 import { resolveWorldEnvironmentFromEncounterState } from './environment.resolve'
 import {
   environmentZoneIdForAttachedAuraInstance,

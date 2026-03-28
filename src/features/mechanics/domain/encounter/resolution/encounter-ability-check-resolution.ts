@@ -2,7 +2,7 @@ import type { EncounterViewerPerceptionCapabilities } from '../environment/perce
 import {
   getSightBasedCheckLegalityDenialReason,
   type SightBasedCheckDenialReason,
-} from '../state/sight-hide-rules'
+} from '../state/stealth/sight-hide-rules'
 import type { EncounterState } from '../state/types'
 
 /**

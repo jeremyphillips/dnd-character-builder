@@ -17,6 +17,7 @@ function world(partial: Partial<EncounterWorldCellEnvironment>): EncounterWorldC
     magicalDarkness: false,
     blocksDarkvision: false,
     magical: false,
+    terrainCover: 'none',
     appliedZoneIds: [],
     ...partial,
   }

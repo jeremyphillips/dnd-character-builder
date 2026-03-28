@@ -8,6 +8,7 @@ import {
   createEncounterState,
   getHideAttemptEligibilityDenialReason,
   getSightBasedCheckLegalityDenialReason,
+  getStealthHideAttemptDenialReason,
 } from '@/features/mechanics/domain/encounter/state'
 
 import { encounterAttackerOutsideDefenderHeavilyObscured, testEnemy, testPc } from './encounter-visibility-test-fixtures'
@@ -136,6 +137,7 @@ describe('hide attempt eligibility', () => {
         magicalDarkness: false,
         blocksDarkvision: false,
         magical: false,
+        terrainCover: 'none',
         appliedZoneIds: [],
       }),
     ).toBe(true)
@@ -149,6 +151,7 @@ describe('hide attempt eligibility', () => {
         magicalDarkness: false,
         blocksDarkvision: false,
         magical: false,
+        terrainCover: 'none',
         appliedZoneIds: [],
       }),
     ).toBe(true)
@@ -162,8 +165,110 @@ describe('hide attempt eligibility', () => {
         magicalDarkness: false,
         blocksDarkvision: false,
         magical: false,
+        terrainCover: 'none',
         appliedZoneIds: [],
       }),
     ).toBe(false)
+  })
+
+  it('allows hide with three-quarters cover when observer sees occupant in bright open (baseline)', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-cover',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'three-quarters' },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe(null)
+  })
+
+  it('allows hide with full (total) cover when observer sees occupant', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-full',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'full' },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe(null)
+  })
+
+  it('denies hide with half cover only when observer sees occupant (baseline)', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-half',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'half' },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
+  })
+
+  it('extension seam: allowHalfCoverForHide permits half cover when set', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-half',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'half' },
+        },
+      ],
+    }
+    expect(
+      getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz', {
+        hideEligibility: { featureFlags: { allowHalfCoverForHide: true } },
+      }),
+    ).toBe(null)
+    expect(getStealthHideAttemptDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
   })
 })

@@ -10,6 +10,7 @@ Domain contract for **baseline** encounter defaults, **localized environment zon
    - `lightingLevel` — bright / dim / darkness (illumination)  
    - `terrainMovement` — default movement cost class for the encounter  
    - `visibilityObscured` — none / light / heavy (obscurement from fog, foliage, etc.)  
+   - `terrainCover` (optional) — none / half / three-quarters / full — **cell-local** cover grade for rules such as hide eligibility (not ray-traced cover from a specific observer; see [Stealth](./stealth.md)). Omitted baseline values resolve to **none** in `resolveWorldEnvironmentForCell`.
    - `atmosphereTags` — **additive** tags from `ATMOSPHERE_TAGS` (wind, underwater, anti-magic, …)
 
    **Lighting and visibility stay separate.** Valid combinations include bright light + heavy obscurement, darkness + clear visibility, dim + light obscurement.
@@ -40,7 +41,7 @@ Use `cellIdInEnvironmentArea(space, area, cellId)` for membership (requires `Enc
 
 1. **Applicable zones** — zones whose area contains `cellId`.  
 2. **Sort** — `sortZonesForMerge`: ascending `priority` (default `0`), then ascending `id` (stable tie-break).  
-3. **Scalars** (`setting`, `lightingLevel`, `terrainMovement`, `visibilityObscured`) — start from baseline; each sorted applicable zone may override; **last in sorted order wins** (higher numeric `priority` wins when both set a field).  
+3. **Scalars** (`setting`, `lightingLevel`, `terrainMovement`, `visibilityObscured`, `terrainCover`) — start from baseline; each sorted applicable zone may override; **last in sorted order wins** (higher numeric `priority` wins when both set a field).  
 4. **`atmosphereTags`** — start from baseline; for each zone in sorted order: **replace** (if set) → **remove** → **add**.  
 5. **Magical flags** — `magicalDarkness`, `blocksDarkvision`, `magical`: **OR** across applicable zones (any zone sets true → true).
 
@@ -64,7 +65,7 @@ No event log, history, or undo — callers append combat log notes if needed.
 
 ## Defaults
 
-`DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE` matches the runtime default (outdoors, bright, normal terrain, no obscurement, no atmosphere tags).
+`DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE` matches the runtime default (outdoors, bright, normal terrain, no obscurement, `terrainCover: 'none'`, no atmosphere tags).
 
 ## Viewer perception API (see `perception.resolve.ts`)
 

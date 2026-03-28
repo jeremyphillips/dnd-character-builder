@@ -100,10 +100,15 @@ export {
 export {
   canVisuallyPerceiveSubjectForRules,
   getSightBasedCheckLegalityDenialReason,
+  cellTerrainCoverSupportsHideBaseline,
+  cellWorldSupportsHideAttemptWorldBasis,
   cellWorldSupportsHideConcealment,
   getHideAttemptEligibilityDenialReason,
+  type GetHideAttemptEligibilityDenialReasonOptions,
   type SightBasedCheckDenialReason,
   type HideAttemptEligibilityDenialReason,
+  type HideEligibilityExtensionOptions,
+  type HideEligibilityFeatureFlags,
 } from './sight-hide-rules'
 export {
   applyStealthHideSuccess,

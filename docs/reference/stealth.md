@@ -28,9 +28,20 @@ Other modules (**`action-resolver.ts`**, **`useEncounterState`**) call exported 
 
 ## Hide attempt eligibility
 
-**`getStealthHideAttemptDenialReason`** delegates to **`getHideAttemptEligibilityDenialReason`** in [`sight-hide-rules.ts`](../../src/features/mechanics/domain/encounter/state/sight-hide-rules.ts) (occupant perception + merged **world** concealment at the hider’s cell). Dim light / light obscurement behavior follows that helper — not a new universal “always hide in dim” rule.
+**`getStealthHideAttemptDenialReason`** delegates to **`getHideAttemptEligibilityDenialReason`** in [`sight-hide-rules.ts`](../../src/features/mechanics/domain/encounter/state/sight-hide-rules.ts): **occupant** perception (`canPerceiveTargetOccupantForCombat`) plus a **single** merged-world rules layer, **`cellWorldSupportsHideAttemptWorldBasis`**, at the hider’s cell.
+
+That world basis includes:
+
+- **Concealment** — same as before: dim/darkness lighting, light/heavy obscurement, magical darkness (`cellWorldSupportsHideConcealment`).
+- **Terrain cover (baseline)** — merged **`terrainCover`** on [`EncounterWorldCellEnvironment`](../../src/features/mechanics/domain/encounter/environment/environment.types.ts): **three-quarters** or **full** (total cover) counts toward eligibility; **half cover does not** by itself. Cover here is **cell-local** (baseline + environment zones), not per-observer line-of-sight geometry.
+
+**Extension seam:** optional **`hideEligibility`** on **`StealthRulesOptions`** / **`GetHideAttemptEligibilityDenialReasonOptions`** — today supports **`featureFlags.allowHalfCoverForHide`** so future feat/class wiring can treat half cover as sufficient without changing default behavior. Additional flags for Skulker-style rules, dim-shadow exceptions, or magical concealment can be added alongside **`cellWorldSupportsHideAttemptWorldBasis`** later.
+
+Dim light / light obscurement behavior still follows **`cellWorldSupportsHideConcealment`** — not a table-wide “always hide in dim for everyone” rule beyond that helper.
 
 Eligibility answers **whether a hide attempt may be attempted** vs a given observer. It does **not** roll Stealth or compare to passive Perception.
+
+**Not implemented:** observer-specific cover (cover relative to each enemy’s token), dim-light hiding without meeting concealment or cover rules, Skulker, subclass-specific permissions, or magical concealment exceptions — see [TODO / future work](#todo--future-work).
 
 ---
 
@@ -63,7 +74,7 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 |--------|---------|
 | **`reconcileStealthAfterMovementOrEnvironmentChange`** | **Authoritative sequence:** (1) for **each** combatant with `stealth`, **`reconcileStealthBreakWhenNoConcealmentInCell`**; (2) **`reconcileStealthHiddenForPerceivedObservers`**. Use after movement, placement, zone, or baseline changes. |
 | **`reconcileStealthHiddenForPerceivedObservers`** | Drop an observer from the subject’s list when that observer **can** perceive the subject’s occupant (observer-relative; partial lists preserved). |
-| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear **that** subject’s stealth when their merged-world cell **no longer** supports hide concealment (`cellWorldSupportsHideConcealment`). |
+| **`reconcileStealthBreakWhenNoConcealmentInCell`** | Clear **that** subject’s stealth when their merged-world cell **no longer** supports hide **world basis** (concealment **or** baseline terrain cover ≥ three-quarters — same as `cellTerrainCoverSupportsHideBaseline` + `cellWorldSupportsHideConcealment`). Half-cover feat flags are **not** applied in reconcile (documented limitation until combatant-scoped hooks exist). |
 | **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`** | **`updateEncounterEnvironmentBaseline`** + full reconcile (baseline-only callers; avoids circular imports). |
 
 **Runtime integration (deterministic order):**
@@ -74,7 +85,7 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 
 **Pure baseline patch:** **`updateEncounterEnvironmentBaseline`** does **not** run stealth (keeps tests and imports simple). For runtime lighting/obscurement changes that should affect hidden state, use **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`**.
 
-**TODO:** cover/feature/sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
+**TODO:** observer-relative cover rays; sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
 
 ---
 
@@ -131,7 +142,8 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth-attack
 - **Observer-relative or partial break** on attack (vs global `breakStealthOnAttack`).
 - **Guessed location / sound** awareness for unseen targets (not occupant perception).
 - **Active opposed** Stealth vs **rolled** Perception (contested check path; keep passive baseline as fallback).
-- **Cover / light obscurement / three-quarters cover** and feature exceptions (e.g. Skulker, magical concealment) in eligibility or observer filtering.
+- **Cell-local cover** is merged on the world cell; **per-observer** cover from geometry is still TODO.
+- **Skulker / dim-shadow / magical concealment** exceptions — plug in via **`hideEligibility`** / **`HideEligibilityFeatureFlags`** and `cellWorldSupportsHideAttemptWorldBasis` when modeled.
 - **Sense-specific** break and bypass threading consistent with **`EncounterViewerPerceptionCapabilities`** (blindsight vs hidden, etc.).
 - **Richer observer sets** — e.g. allies in range, line-of-sight, or “aware” subsets instead of only all opposing combatants passing eligibility.
 - Further **skill/item** bonuses on snapshots if not already covered by **`CombatantSkillRuntimeSnapshot`**.

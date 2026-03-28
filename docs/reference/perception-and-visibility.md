@@ -64,7 +64,7 @@ Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modi
 | **OA visibility gating** | `canReactorPerceiveDepartingOccupantForOpportunityAttack`, `getOpportunityAttackLegalityDenialReason` | `opportunity-attack.ts`; sight uses pre-move state and the same occupant seam. |
 | **Sight-based check legality** | `getSightBasedCheckLegalityDenialReason`, `getEncounterAbilityCheckSightDenialReason` | `sight-hide-rules.ts` / `encounter-ability-check-resolution.ts`; check effects with `requiresSight` gate in `applyActionEffects`. Denial id: **`cannot-perceive-subject`**. |
 
-Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`sight-hide-rules.ts`): occupant seam plus **world** concealment at the hider’s cell.
+Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`sight-hide-rules.ts`): occupant seam plus merged **world** hide support at the hider’s cell — **concealment** (lighting/obscurement/magical darkness) **and/or** baseline **terrain cover** (three-quarters or full on `terrainCover`; half does not count unless a future **`hideEligibility`** flag opts in). See [Stealth — Hide attempt eligibility](./stealth.md#hide-attempt-eligibility).
 
 ### Stealth / hidden runtime (layer on top)
 

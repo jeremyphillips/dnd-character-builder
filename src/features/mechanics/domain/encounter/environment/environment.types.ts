@@ -13,6 +13,12 @@ export type EncounterVisibilityObscured = (typeof VISIBILITY_OBSCURED_LEVELS)[nu
 export type EncounterAtmosphereTag = (typeof ATMOSPHERE_TAGS)[number]['id']
 
 /**
+ * Terrain cover grade at a grid cell after baseline + zone merge (see `resolveWorldEnvironmentForCell`).
+ * Used for hide eligibility and other rules — not viewer-relative ray-traced cover from a token.
+ */
+export type TerrainCoverGrade = 'none' | 'half' | 'three-quarters' | 'full'
+
+/**
  * Global default encounter environment: setup seeds it, and `EncounterState.environmentBaseline`
  * holds the **current runtime** values for the fight (day/night, weather, DM edits, etc.).
  * Localized zones apply on top via {@link EncounterEnvironmentZone} and resolve to
@@ -25,6 +31,11 @@ export type EncounterEnvironmentBaseline = {
   lightingLevel: EncounterLightingLevel
   terrainMovement: EncounterTerrainMovement
   visibilityObscured: EncounterVisibilityObscured
+  /**
+   * Cell-local cover from terrain / authored zones (not per-observer geometry).
+   * Default in resolvers when omitted: `'none'`.
+   */
+  terrainCover?: TerrainCoverGrade
   /** Additive domain tags; combined with baseline lighting/visibility, not a replacement for them. */
   atmosphereTags: EncounterAtmosphereTag[]
 }
@@ -122,6 +133,7 @@ export type EncounterEnvironmentZoneOverrides = {
   lightingLevel?: EncounterLightingLevel
   terrainMovement?: EncounterTerrainMovement
   visibilityObscured?: EncounterVisibilityObscured
+  terrainCover?: TerrainCoverGrade
   atmosphereTagsAdd?: EncounterAtmosphereTag[]
   atmosphereTagsRemove?: EncounterAtmosphereTag[]
   /** When set, replaces accumulated tags for subsequent merge steps in that zone’s application order. */
@@ -171,6 +183,8 @@ export type EncounterWorldCellEnvironment = {
   blocksDarkvision: boolean
   /** True if any applicable zone set `magical.magical`. */
   magical: boolean
+  /** Merged terrain cover at this cell (baseline + zone overrides; last applicable zone wins). */
+  terrainCover: TerrainCoverGrade
   /** Zones that covered this cell, sorted by merge order (priority asc, then id asc). */
   appliedZoneIds: string[]
 }

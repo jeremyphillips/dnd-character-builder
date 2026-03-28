@@ -52,7 +52,32 @@ describe('resolveWorldEnvironmentForCell', () => {
     expect(r.magicalDarkness).toBe(false)
     expect(r.blocksDarkvision).toBe(false)
     expect(r.magical).toBe(false)
+    expect(r.terrainCover).toBe('none')
     expect(r.appliedZoneIds).toEqual([])
+  })
+
+  it('merges terrainCover like other scalars (last applicable zone wins)', () => {
+    const baseline: EncounterEnvironmentBaseline = {
+      ...DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
+      terrainCover: 'none',
+    }
+    const zones: EncounterEnvironmentZone[] = [
+      zone({
+        id: 'a',
+        priority: 0,
+        area: { kind: 'grid-cell-ids', cellIds: ['c-0-0'] },
+        overrides: { terrainCover: 'half' },
+      }),
+      zone({
+        id: 'b',
+        priority: 1,
+        area: { kind: 'grid-cell-ids', cellIds: ['c-0-0'] },
+        overrides: { terrainCover: 'three-quarters' },
+      }),
+    ]
+    const r = resolveWorldEnvironmentForCell(baseline, zones, tinySpace, 'c-0-0')
+    expect(r.terrainCover).toBe('three-quarters')
+    expect(r.appliedZoneIds).toEqual(['a', 'b'])
   })
 
   it('applies scalar overrides: higher priority wins', () => {

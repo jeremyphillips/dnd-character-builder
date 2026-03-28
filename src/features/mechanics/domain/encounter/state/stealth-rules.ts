@@ -19,16 +19,23 @@ import { canPerceiveTargetOccupantForCombat } from './combatant-pair-visibility'
 import { updateEncounterEnvironmentBaseline } from './environment-baseline-mutations'
 import { updateEncounterCombatant } from './mutations'
 import {
+  cellTerrainCoverSupportsHideBaseline,
   cellWorldSupportsHideConcealment,
   getHideAttemptEligibilityDenialReason,
   type HideAttemptEligibilityDenialReason,
+  type HideEligibilityExtensionOptions,
+  type HideEligibilityFeatureFlags,
 } from './sight-hide-rules'
+
+export type { HideEligibilityExtensionOptions, HideEligibilityFeatureFlags }
 import type { CombatantStealthRuntime } from './types/combatant.types'
 import type { EncounterState } from './types'
 import type { EncounterViewerPerceptionCapabilities } from '../environment/perception.types'
 
 export type StealthRulesOptions = {
   perceptionCapabilities?: EncounterViewerPerceptionCapabilities
+  /** Future feat/subclass hooks for hide eligibility — see `HideEligibilityExtensionOptions`. */
+  hideEligibility?: HideEligibilityExtensionOptions
 }
 
 /**
@@ -50,7 +57,17 @@ export type HideResolutionOutcome =
       failedObserverIds: string[]
     }
 
-function perceptionOpts(options?: StealthRulesOptions): { capabilities?: EncounterViewerPerceptionCapabilities } | undefined {
+function hideEligibilityOpts(options?: StealthRulesOptions): Parameters<typeof getHideAttemptEligibilityDenialReason>[3] {
+  if (!options?.perceptionCapabilities && !options?.hideEligibility) return undefined
+  return {
+    ...(options.perceptionCapabilities != null ? { capabilities: options.perceptionCapabilities } : {}),
+    ...(options.hideEligibility != null ? { hideEligibility: options.hideEligibility } : {}),
+  }
+}
+
+function perceptionCapabilitiesOnly(
+  options?: StealthRulesOptions,
+): { capabilities?: EncounterViewerPerceptionCapabilities } | undefined {
   return options?.perceptionCapabilities != null ? { capabilities: options.perceptionCapabilities } : undefined
 }
 
@@ -64,7 +81,7 @@ export function getStealthHideAttemptDenialReason(
   observerId: string,
   options?: StealthRulesOptions,
 ): HideAttemptEligibilityDenialReason | null {
-  return getHideAttemptEligibilityDenialReason(state, hiderId, observerId, perceptionOpts(options))
+  return getHideAttemptEligibilityDenialReason(state, hiderId, observerId, hideEligibilityOpts(options))
 }
 
 /**
@@ -188,7 +205,7 @@ export function reconcileStealthHiddenForPerceivedObservers(
   state: EncounterState,
   options?: StealthRulesOptions,
 ): EncounterState {
-  const cap = perceptionOpts(options)
+  const cap = perceptionCapabilitiesOnly(options)
   let next = state
 
   for (const combatant of Object.values(state.combatantsById)) {
@@ -219,8 +236,8 @@ export function reconcileStealthHiddenForPerceivedObservers(
 /**
  * **Authoritative stealth reconciliation** after movement, placement, environment baseline, or
  * environment-zone changes (including attached-aura zone projection). Call this (or code paths that
- * delegate to it) so hidden state stays aligned with the shared perception + merged-world concealment
- * model — not ad hoc checks in movement code.
+ * delegate to it) so hidden state stays aligned with the shared perception + merged-world hide support
+ * (concealment + baseline terrain cover) — not ad hoc checks in movement code.
  *
  * **Deterministic order:**
  * 1. For each combatant that currently has `stealth`, {@link reconcileStealthBreakWhenNoConcealmentInCell}
@@ -261,8 +278,9 @@ export function applyEncounterEnvironmentBaselinePatchAndReconcileStealth(
 }
 
 /**
- * **Reconciliation:** if the hider’s cell no longer supports hide concealment (merged world), clear
- * stealth — leaving cover/obscurity that enabled hiding is treated as ending hidden state for this pass.
+ * **Reconciliation:** if the hider’s cell no longer supports hide **world basis** (concealment or
+ * baseline-sufficient terrain cover — see `cellTerrainCoverSupportsHideBaseline` in `sight-hide-rules.ts`),
+ * clear stealth. Feature-flag half-cover eligibility is **not** applied here (reconcile uses baseline only).
  *
  * Used inside {@link reconcileStealthAfterMovementOrEnvironmentChange} and when you need a single
  * combatant only. Primary move path uses the full sequence above — see docs/reference/stealth.md.
@@ -276,7 +294,7 @@ export function reconcileStealthBreakWhenNoConcealmentInCell(
   if (!cellId) return state
   const world = resolveWorldEnvironmentFromEncounterState(state, cellId)
   if (world == null) return state
-  if (cellWorldSupportsHideConcealment(world)) return state
+  if (cellWorldSupportsHideConcealment(world) || cellTerrainCoverSupportsHideBaseline(world)) return state
   return clearStealthForCombatant(state, hiderId)
 }
 

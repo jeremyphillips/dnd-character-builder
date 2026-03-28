@@ -15,6 +15,7 @@ export const DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE: EncounterEnvironmentBaselin
   lightingLevel: 'bright',
   terrainMovement: 'normal',
   visibilityObscured: 'none',
+  terrainCover: 'none',
   atmosphereTags: [],
 }
 
@@ -134,6 +135,7 @@ export function resolveWorldEnvironmentForCell(
   let lightingLevel = baseline.lightingLevel
   let terrainMovement = baseline.terrainMovement
   let visibilityObscured = baseline.visibilityObscured
+  let terrainCover = baseline.terrainCover ?? 'none'
   const appliedZoneIds: string[] = []
 
   for (const z of applicableSorted) {
@@ -143,6 +145,7 @@ export function resolveWorldEnvironmentForCell(
     if (o.lightingLevel !== undefined) lightingLevel = o.lightingLevel
     if (o.terrainMovement !== undefined) terrainMovement = o.terrainMovement
     if (o.visibilityObscured !== undefined) visibilityObscured = o.visibilityObscured
+    if (o.terrainCover !== undefined) terrainCover = o.terrainCover
   }
 
   const atmosphereTags = mergeAtmosphereForZones(baseline.atmosphereTags, applicableSorted)
@@ -157,6 +160,7 @@ export function resolveWorldEnvironmentForCell(
     magicalDarkness,
     blocksDarkvision,
     magical,
+    terrainCover,
     appliedZoneIds,
   }
 }
@@ -206,6 +210,7 @@ export function resolveCellEnvironment(
   let lightingLevel = baseline.lightingLevel
   let terrainMovement = baseline.terrainMovement
   let visibilityObscured = baseline.visibilityObscured
+  let terrainCover = baseline.terrainCover ?? 'none'
   const appliedZoneIds: string[] = []
 
   for (const z of applicableSorted) {
@@ -215,6 +220,7 @@ export function resolveCellEnvironment(
     if (o.lightingLevel !== undefined) lightingLevel = o.lightingLevel
     if (o.terrainMovement !== undefined) terrainMovement = o.terrainMovement
     if (o.visibilityObscured !== undefined) visibilityObscured = o.visibilityObscured
+    if (o.terrainCover !== undefined) terrainCover = o.terrainCover
   }
 
   const atmosphereTags = mergeAtmosphereForZones(baseline.atmosphereTags, applicableSorted)
@@ -229,6 +235,7 @@ export function resolveCellEnvironment(
     magicalDarkness,
     blocksDarkvision,
     magical,
+    terrainCover,
     appliedZoneIds,
   }
 }

@@ -16,6 +16,7 @@ export type {
   ActionBadgeKind,
 } from './badges/action/combat-action-badges.types'
 export { deriveActionPresentation } from './actions/action-presentation'
+export { deriveRecommendedActionsForTarget } from './actions/derive-recommended-actions-for-target'
 export type {
   ActionPresentationViewModel,
   ActionSemanticCategory,

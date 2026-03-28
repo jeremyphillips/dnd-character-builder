@@ -44,6 +44,10 @@ export {
   formatDice,
   toSavingThrowModifier,
 } from './combatant-builders'
+export {
+  buildCombatActionForSkillAffordance,
+  buildSkillAffordanceCombatActions,
+} from './skill-affordance-combat-actions'
 export { buildSummonAllyMonsterCombatant } from './summon-ally-combatant'
 
 export function getCharacterSpellcastingStats(

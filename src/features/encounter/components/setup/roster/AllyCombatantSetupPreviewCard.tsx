@@ -16,6 +16,7 @@ import type { CombatantInstance, CombatantSide } from '@/features/mechanics/doma
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import {
   buildCharacterCombatantInstance,
+  buildSkillAffordanceCombatActions,
   buildSpellCombatActions,
   buildTurnHooksFromEffects,
   formatSigned,
@@ -150,6 +151,14 @@ function LoadedAllyCombatantSetupPreviewCard({
       }),
     [catalog.spellsById, character, runtimeId, spellStats],
   )
+  const skillAffordanceActions = useMemo(
+    () =>
+      buildSkillAffordanceCombatActions({
+        proficientSkillIds: character.proficiencies.map((p) => p.id),
+        skillProficienciesById: catalog.skillProficienciesById,
+      }),
+    [catalog.skillProficienciesById, character.proficiencies],
+  )
   const combatant = useMemo(
     () =>
       buildCharacterCombatantInstance({
@@ -159,10 +168,10 @@ function LoadedAllyCombatantSetupPreviewCard({
         character,
         combatStats,
         attacks,
-        extraActions: spellActions,
+        extraActions: [...spellActions, ...skillAffordanceActions],
         turnHooks,
       }),
-    [attacks, character, combatStats, runtimeId, side, sourceKind, spellActions, turnHooks],
+    [attacks, character, combatStats, runtimeId, side, sourceKind, skillAffordanceActions, spellActions, turnHooks],
   )
 
   const onResolvedRef = useRef(onResolved)

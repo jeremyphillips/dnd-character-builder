@@ -183,6 +183,19 @@ describe('deriveActionPresentation', () => {
       expect(vm.category).toBe('utility')
     })
 
+    it('categorizes skill-derived Hide (combat-effect, hide resolution) as utility', () => {
+      const vm = deriveActionPresentation(
+        minimalAction({
+          id: 'hide',
+          kind: 'combat-effect',
+          resolutionMode: 'hide',
+          targeting: { kind: 'self' },
+          label: 'Hide',
+        }),
+      )
+      expect(vm.category).toBe('utility')
+    })
+
     it('categorizes multiattack (monster-action with sequence) as attack', () => {
       const vm = deriveActionPresentation(
         minimalAction({

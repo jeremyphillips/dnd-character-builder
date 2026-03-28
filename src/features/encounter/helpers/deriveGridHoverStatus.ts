@@ -60,6 +60,8 @@ export function deriveGridHoverStatusMessage(params: {
   activeCombatant: CombatantInstance | null
   hoveredCellId: string | null
   selectedAction: CombatActionDefinition | null
+  /** For {@link CombatActionDefinition.attachedEmanation} `place-or-object`. */
+  selectedCasterOptions?: Record<string, string>
   aoeStep: AoeStep
   /** Same condition as movement reach highlights on the grid (off during AoE placement). */
   movementHighlightActive: boolean
@@ -71,6 +73,7 @@ export function deriveGridHoverStatusMessage(params: {
     activeCombatant,
     hoveredCellId,
     selectedAction,
+    selectedCasterOptions,
     aoeStep,
     movementHighlightActive,
     interactionMode,
@@ -113,8 +116,8 @@ export function deriveGridHoverStatusMessage(params: {
   if (
     (aoeStep === 'placing' || aoeStep === 'confirm') &&
     selectedAction &&
-    isAreaGridAction(selectedAction) &&
-    !isSelfCenteredAreaAction(selectedAction)
+    isAreaGridAction(selectedAction, selectedCasterOptions) &&
+    !isSelfCenteredAreaAction(selectedAction, selectedCasterOptions)
   ) {
     const casterCell = getCellForCombatant(placements, activeCombatantId)
     const castRangeFt = selectedAction.targeting?.rangeFt ?? 0

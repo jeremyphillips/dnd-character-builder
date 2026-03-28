@@ -278,12 +278,10 @@ function useEncounterRuntimeValue() {
 
   useEffect(() => {
     if (aoeStep === 'none') return
-    const ae = selectedAction?.attachedEmanation
-    /** Caster emanations skip grid origin; place-anchored emanations reuse the AoE origin interaction. */
-    if (!ae || ae.anchorMode === 'place') {
+    if (isAreaGridAction(selectedAction, selectedCasterOptions)) {
       setInteractionMode('aoe-place')
     }
-  }, [aoeStep, selectedAction?.attachedEmanation])
+  }, [aoeStep, selectedAction, selectedCasterOptions])
 
   const selectedActionRangeFt = useMemo(() => {
     return selectedAction?.targeting?.rangeFt ?? null
@@ -307,7 +305,8 @@ function useEncounterRuntimeValue() {
 
   const aoeGridOverlay = useMemo(() => {
     if (!encounterState?.space || !encounterState.placements || !activeCombatantId) return null
-    if (!selectedAction || !isAreaGridAction(selectedAction) || aoeStep === 'none') return null
+    if (!selectedAction || !isAreaGridAction(selectedAction, selectedCasterOptions) || aoeStep === 'none')
+      return null
     const casterCellId = getCellForCombatant(encounterState.placements, activeCombatantId)
     if (!casterCellId || !selectedAction.areaTemplate) return null
     const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
@@ -324,6 +323,7 @@ function useEncounterRuntimeValue() {
     encounterState,
     activeCombatantId,
     selectedAction,
+    selectedCasterOptions,
     aoeStep,
     aoeHoverCellId,
     aoeOriginCellId,
@@ -505,10 +505,11 @@ function useEncounterRuntimeValue() {
         interactionMode,
         selectedActionId,
         selectedAction,
+        selectedCasterOptions,
         aoeStep,
         canResolveAction: canResolveActionForHeader,
         selectedActionRequiresCreatureTarget: selectedAction
-          ? actionRequiresCreatureTargetForResolve(selectedAction)
+          ? actionRequiresCreatureTargetForResolve(selectedAction, selectedCasterOptions)
           : undefined,
       },
       display: {
@@ -530,6 +531,7 @@ function useEncounterRuntimeValue() {
     canResolveActionForHeader,
     encounterState,
     encounterCombatantRoster,
+    selectedCasterOptions,
   ])
 
   /** Matches {@link getCombatantAvailableActions}: empty means no action/bonus costs left to spend on real options (bonus slot can read “available” while bonus list is empty). */

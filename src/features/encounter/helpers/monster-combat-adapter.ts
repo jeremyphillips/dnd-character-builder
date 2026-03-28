@@ -219,6 +219,9 @@ function deriveMonsterAttachedEmanation(
     radiusFt: em.area.size,
     selectUnaffectedAtCast: em.selectUnaffectedAtCast ?? false,
     anchorMode,
+    ...(anchorMode === 'place-or-object' && em.anchorChoiceFieldId
+      ? { anchorChoiceFieldId: em.anchorChoiceFieldId }
+      : {}),
   }
 }
 

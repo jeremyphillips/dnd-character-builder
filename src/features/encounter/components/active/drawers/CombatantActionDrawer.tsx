@@ -18,7 +18,11 @@ import {
   buildInitialCasterOptionsForAction,
   formatCasterOptionSummary,
 } from '@/features/mechanics/domain/spells/caster-options'
-import { isAreaGridAction, type AoeStep } from '../../../helpers/area-grid-action'
+import {
+  isAreaGridAction,
+  resolveAttachedEmanationAnchorModeFromSelection,
+  type AoeStep,
+} from '../../../helpers/area-grid-action'
 import { AoePlacementPanel } from './drawer-modes/AoePlacementPanel'
 import { CasterOptionsDrawerPanel } from './drawer-modes/CasterOptionsDrawerPanel'
 import {
@@ -403,6 +407,7 @@ function deriveCtaLabel(
   canResolveAction: boolean | undefined,
   primaryResolutionMissingMessage: string | null | undefined,
   effectiveView: CombatantActionDrawerView,
+  selectedCasterOptions?: Record<string, string>,
 ): string {
   if (effectiveView === 'singleCellPlacement') {
     return selectedActionLabel ? `Resolve ${selectedActionLabel}` : 'Resolve'
@@ -412,7 +417,7 @@ function deriveCtaLabel(
     if (!targetLabel) return 'Choose an action or target'
     return 'Choose an Action'
   }
-  const needsTarget = actionRequiresCreatureTargetForResolve(selectedAction)
+  const needsTarget = actionRequiresCreatureTargetForResolve(selectedAction, selectedCasterOptions)
   if (needsTarget && !targetLabel) return 'Select a Target'
   if (canResolveAction) return `Resolve ${selectedActionLabel}`
   if (primaryResolutionMissingMessage) {
@@ -540,7 +545,9 @@ export function CombatantActionDrawer({
   )
 
   const aoeAction =
-    selectedActionDefinition && isAreaGridAction(selectedActionDefinition) ? selectedActionDefinition : null
+    selectedActionDefinition && isAreaGridAction(selectedActionDefinition, resolvedCasterOptions)
+      ? selectedActionDefinition
+      : null
 
   const singleCellPlacementRequirement = useMemo(
     () =>
@@ -549,15 +556,22 @@ export function CombatantActionDrawer({
   )
 
   const effectiveView: CombatantActionDrawerView = useMemo(() => {
-    /** Only `place` anchored emanations use the AoE placement panel; caster/creature use main + target flow. */
+    /** All-enemies area + place / place-or-object (resolved to place) use the AoE placement panel. */
+    const ae = selectedActionDefinition?.attachedEmanation
     const useAoePlacementForAttachedEmanation =
-      selectedActionDefinition?.attachedEmanation?.anchorMode === 'place'
+      Boolean(aoeAction) &&
+      (!ae || ae.anchorMode === 'place' || ae.anchorMode === 'place-or-object')
     if (aoeStep !== 'none' && aoeAction?.areaTemplate && useAoePlacementForAttachedEmanation) {
       return 'aoePlacement'
     }
     if (localSubView === 'singleCellPlacement') return 'singleCellPlacement'
     return localSubView === 'casterOptions' ? 'casterOptions' : 'main'
-  }, [aoeStep, aoeAction?.areaTemplate, selectedActionDefinition?.attachedEmanation?.anchorMode, localSubView])
+  }, [
+    aoeStep,
+    aoeAction,
+    selectedActionDefinition?.attachedEmanation,
+    localSubView,
+  ])
 
   const isMain = effectiveView === 'main'
 
@@ -569,6 +583,7 @@ export function CombatantActionDrawer({
     canResolveAction,
     primaryResolutionMissingMessage,
     effectiveView,
+    resolvedCasterOptions,
   )
 
   /** Footer reused the same copy as spell options but stayed disabled; open the options subview instead of resolve. */
@@ -646,9 +661,14 @@ export function CombatantActionDrawer({
           <Stack spacing={2}>
             {effectiveView === 'aoePlacement' && aoeAction?.areaTemplate && aoeStep !== 'none' && (
               <>
-                {selectedActionDefinition?.attachedEmanation?.anchorMode === 'place' &&
-                  attachedEmanationSetup &&
-                  selectedActionDefinition.attachedEmanation.selectUnaffectedAtCast && (
+                {attachedEmanationSetup &&
+                  selectedActionDefinition?.attachedEmanation?.selectUnaffectedAtCast &&
+                  resolveAttachedEmanationAnchorModeFromSelection(
+                    selectedActionDefinition,
+                    resolvedCasterOptions,
+                  ) === 'place' &&
+                  (selectedActionDefinition.attachedEmanation.anchorMode === 'place' ||
+                    selectedActionDefinition.attachedEmanation.anchorMode === 'place-or-object') && (
                     <AttachedEmanationSetupPanel
                       actionLabel={selectedActionDefinition.label}
                       activeCombatantId={attachedEmanationSetup.activeCombatantId}

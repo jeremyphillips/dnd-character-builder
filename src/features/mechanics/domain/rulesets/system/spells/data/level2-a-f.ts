@@ -349,9 +349,20 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     duration: { kind: 'timed', value: 10, unit: 'minute', concentration: true, upTo: true },
     components: { verbal: true, material: { description: 'bat fur and a piece of coal' } },
     resolution: {
+      casterOptions: [
+        {
+          kind: 'enum',
+          id: 'darkness-anchor',
+          label: 'Center the darkness on',
+          options: [
+            { value: 'place', label: 'A point within range (AoE origin)' },
+            { value: 'object', label: 'A map object / obstacle (15 ft sphere from that object)' },
+          ],
+        },
+      ],
       caveats: [
         'Magical Darkness vs. light/darkvision and dispel interactions are not fully modeled.',
-        'Authored as a place-anchored attached emanation (`anchorMode: place`): pick a grid point within range; the sphere persists as a shared battlefield aura. Casting on an object for a 15-foot emanation from that object (SRD alternate) is not authored here — use `anchorMode: object` as a follow-up.',
+        'Authored as **place-or-object** emanation: choose **point within range** (place anchor + `aoe-place`) or **grid obstacle** (object anchor). Touching a carried token not on the map is not modeled — use a grid obstacle id.',
         'Encounter sphere-at-point uses AoE origin placement for area spells (`aoe-place`), not `SingleCellPlacementPanel`—that panel is for spawn (and similar) single-cell requirements from `getActionRequirements`.',
         'Encounter may map area effects to creatures only; geometry and allies differ at the table.',
       ],
@@ -361,7 +372,8 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 15 },
-        anchorMode: 'place',
+        anchorMode: 'place-or-object',
+        anchorChoiceFieldId: 'darkness-anchor',
       },
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
       {
@@ -372,11 +384,6 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       {
         kind: 'note',
         text: 'Darkvision cannot see through it. Nonmagical light cannot illuminate it. Overlaps with level 2 or lower light spells dispels them.',
-        category: 'under-modeled' as const,
-      },
-      {
-        kind: 'note',
-        text: 'SRD alternate: cast on an object for a 15-foot emanation from that object — not implemented in authored data yet.',
         category: 'under-modeled' as const,
       },
     ],

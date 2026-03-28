@@ -497,8 +497,13 @@ export type EmanationEffect = EffectBase<'emanation'> & {
   /**
    * When set, spell/monster combat adapters copy this to the adapted action’s `attachedEmanation.anchorMode`.
    * Omit for legacy caster-centered attached emanations (adapter defaults to `caster`).
+   * **`place-or-object`:** SRD “point within range” vs “cast on object” — pair with {@link anchorChoiceFieldId} and `resolution.casterOptions`.
    */
-  anchorMode?: 'caster' | 'place' | 'creature' | 'object';
+  anchorMode?: 'caster' | 'place' | 'creature' | 'object' | 'place-or-object';
+  /**
+   * Required when `anchorMode === 'place-or-object'`: enum `casterOptions` field id (`value` `place` | `object`).
+   */
+  anchorChoiceFieldId?: string;
 };
 
 export type NoteEffect = EffectBase<'note'> & {

@@ -138,6 +138,9 @@ function deriveAttachedEmanation(spell: Spell): CombatActionDefinition['attached
     radiusFt: em.area.size,
     selectUnaffectedAtCast: em.selectUnaffectedAtCast ?? false,
     anchorMode,
+    ...(anchorMode === 'place-or-object' && em.anchorChoiceFieldId
+      ? { anchorChoiceFieldId: em.anchorChoiceFieldId }
+      : {}),
   }
 }
 
@@ -203,6 +206,10 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   /** Sphere anchored to a grid obstacle; selection uses `objectId` on the resolve payload. */
   if (emanationAnchor?.anchorMode === 'object') {
     return { kind: 'none', ...sight }
+  }
+  /** SRD “point or object” — cast-time enum picks place (AoE) vs object anchor; no creature target. */
+  if (emanationAnchor?.anchorMode === 'place-or-object') {
+    return { kind: 'self', ...sight, ...rangeField }
   }
   /** Place-anchored persistent sphere: pick origin via shared AoE flow; no creature target for resolve. */
   if (emanationAnchor?.anchorMode === 'place') {
@@ -439,7 +446,7 @@ function buildSpellEffectsAction(
   const attachedEmanation = deriveAttachedEmanation(spell)
   let areaTemplate = deriveCombatAreaTemplate(spell)
   let areaPlacement = deriveAreaPlacement(spell, Boolean(areaTemplate))
-  if (attachedEmanation?.anchorMode === 'place') {
+  if (attachedEmanation?.anchorMode === 'place' || attachedEmanation?.anchorMode === 'place-or-object') {
     /** Emanation is always a sphere; origin placement reuses AoE overlay radius from the same authored size. */
     areaTemplate = { kind: 'sphere', radiusFt: attachedEmanation.radiusFt }
     areaPlacement = 'remote'

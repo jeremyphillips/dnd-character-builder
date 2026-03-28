@@ -1,3 +1,7 @@
+import {
+  isAreaGridAction,
+  resolveAttachedEmanationAnchorModeFromSelection,
+} from '@/features/encounter/helpers/area-grid-action'
 import { getCellForCombatant } from '@/features/encounter/space/space.helpers'
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
@@ -9,6 +13,8 @@ import {
   getSingleCellPlacementRequirement,
   isSingleCellPlacementSatisfied,
 } from './action-requirement-model'
+
+export { resolveAttachedEmanationAnchorModeFromSelection } from '@/features/encounter/helpers/area-grid-action'
 
 /** Phase-1 resolution gates derived from action metadata only (no map execution). */
 export type ActionResolutionRequirementKind =
@@ -30,17 +36,26 @@ export type ActionResolutionReadiness = {
 }
 
 /**
- * Same predicate as `isAreaGridAction` in encounter helpers (kept local to avoid mechanics→encounter import).
- * Includes place-anchored attached emanations that carry `areaTemplate` for the shared AoE origin flow.
+ * Same predicate as {@link isAreaGridAction} in encounter helpers.
+ * Pass **`selectedCasterOptions`** when the action has **`place-or-object`** emanation anchoring.
  */
-export function isAreaGridCombatAction(action: CombatActionDefinition | undefined | null): boolean {
-  if (action?.targeting?.kind === 'all-enemies' && action.areaTemplate) return true
-  return Boolean(action?.attachedEmanation?.anchorMode === 'place' && action.areaTemplate)
+export function isAreaGridCombatAction(
+  action: CombatActionDefinition | undefined | null,
+  selectedCasterOptions?: Record<string, string>,
+): boolean {
+  return isAreaGridAction(action, selectedCasterOptions)
 }
 
 /** True when the action needs a grid obstacle id (`EncounterSpace.obstacles`) for resolve. */
-export function actionRequiresObjectAnchorForResolve(action: CombatActionDefinition | undefined | null): boolean {
-  return Boolean(action?.attachedEmanation?.anchorMode === 'object')
+export function actionRequiresObjectAnchorForResolve(
+  action: CombatActionDefinition | undefined | null,
+  selectedCasterOptions?: Record<string, string>,
+): boolean {
+  if (action?.attachedEmanation?.anchorMode === 'object') return true
+  if (action?.attachedEmanation?.anchorMode === 'place-or-object') {
+    return resolveAttachedEmanationAnchorModeFromSelection(action, selectedCasterOptions) === 'object'
+  }
+  return false
 }
 
 /**
@@ -48,10 +63,15 @@ export function actionRequiresObjectAnchorForResolve(action: CombatActionDefinit
  * (map/sidebar), matching `getActionTargets` / grid creature targeting.
  * Includes attached emanations with `anchorMode === 'creature'` (anchor follows selected target).
  */
-export function actionRequiresCreatureTargetForResolve(action: CombatActionDefinition | undefined | null): boolean {
+export function actionRequiresCreatureTargetForResolve(
+  action: CombatActionDefinition | undefined | null,
+  selectedCasterOptions?: Record<string, string>,
+): boolean {
   if (!action) return false
   if (action.attachedEmanation?.anchorMode === 'creature') return true
-  if (isAreaGridCombatAction(action)) return false
+  if (action.attachedEmanation?.anchorMode === 'place-or-object') return false
+  if (isAreaGridCombatAction(action, selectedCasterOptions)) return false
+  if (action.attachedEmanation?.anchorMode === 'object') return false
   const kind = action.targeting?.kind
   if (kind === 'none' || kind === 'self' || kind === 'all-enemies') return false
   return (
@@ -67,6 +87,9 @@ export function actionRequiresCreatureTargetForResolve(action: CombatActionDefin
  * Does not execute resolution — metadata only.
  */
 export function getActionResolutionRequirements(action: CombatActionDefinition): ActionResolutionRequirementKind[] {
+  if (action.attachedEmanation?.anchorMode === 'place-or-object') {
+    return ['caster-option', 'area-selection', 'object-anchor']
+  }
   if (action.attachedEmanation?.anchorMode === 'object') {
     const out: ActionResolutionRequirementKind[] = ['object-anchor']
     if (action.casterOptions?.length) out.push('caster-option')
@@ -121,7 +144,7 @@ function creatureTargetSatisfied(
   action: CombatActionDefinition,
   ctx: ActionResolutionReadinessContext,
 ): boolean {
-  if (!actionRequiresCreatureTargetForResolve(action)) return true
+  if (!actionRequiresCreatureTargetForResolve(action, ctx.selectedCasterOptions)) return true
   if (!ctx.selectedActionTargetId) return false
   const { encounterState, activeCombatant } = ctx
   if (!encounterState || !activeCombatant) return false
@@ -134,7 +157,7 @@ function areaSelectionSatisfied(
   action: CombatActionDefinition,
   ctx: ActionResolutionReadinessContext,
 ): boolean {
-  if (!isAreaGridCombatAction(action)) return true
+  if (!isAreaGridCombatAction(action, ctx.selectedCasterOptions)) return true
   if (action.attachedEmanation && action.areaPlacement === 'self') {
     const placements = ctx.encounterState?.placements
     const activeId = ctx.activeCombatant?.instanceId
@@ -154,6 +177,40 @@ export function getActionResolutionReadiness(
   const missingRequirements: ActionResolutionMissing[] = []
   if (!action) {
     return { canResolve: false, missingRequirements: [] }
+  }
+
+  if (action.attachedEmanation?.anchorMode === 'place-or-object') {
+    const missingRequirements: ActionResolutionMissing[] = []
+    if (!casterOptionsSatisfied(action, ctx.selectedCasterOptions)) {
+      missingRequirements.push({ kind: 'caster-option', message: 'Choose spell options' })
+    }
+    const mode = resolveAttachedEmanationAnchorModeFromSelection(action, ctx.selectedCasterOptions)
+    if (mode === 'object') {
+      const oid = ctx.selectedObjectAnchorId?.trim()
+      const obstacleOk = Boolean(
+        oid && ctx.encounterState?.space?.obstacles?.some((o) => o.id === oid),
+      )
+      if (!obstacleOk) {
+        missingRequirements.push({
+          kind: 'object-anchor',
+          message: 'Select a battlefield object',
+        })
+      }
+    } else {
+      if (!areaSelectionSatisfied(action, ctx)) {
+        missingRequirements.push({
+          kind: 'area-selection',
+          message:
+            ctx.aoeStep === 'placing'
+              ? 'Place the area on the grid'
+              : 'Confirm area placement',
+        })
+      }
+    }
+    return {
+      canResolve: missingRequirements.length === 0,
+      missingRequirements,
+    }
   }
 
   if (action.attachedEmanation?.anchorMode === 'object') {
@@ -177,7 +234,7 @@ export function getActionResolutionReadiness(
     }
   }
 
-  if (isAreaGridCombatAction(action)) {
+  if (isAreaGridCombatAction(action, ctx.selectedCasterOptions)) {
     if (!areaSelectionSatisfied(action, ctx)) {
       missingRequirements.push({
         kind: 'area-selection',

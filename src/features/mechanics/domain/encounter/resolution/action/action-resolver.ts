@@ -26,6 +26,7 @@ import {
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
+import { resolveAttachedEmanationAnchorModeFromSelection } from '@/features/encounter/helpers/area-grid-action'
 import { findGridObstacleById } from '@/features/encounter/space/space.helpers'
 import { formatCasterOptionSummary } from '../../../spells/caster-options'
 import {
@@ -527,13 +528,18 @@ function resolveCombatActionInternal(
       allMarkerIds.push(...saveEffectResult.createdMarkerIds)
     }
   } else if (action.resolutionMode === 'effects') {
+    const em = action.attachedEmanation
+    const emMode =
+      em?.anchorMode === 'place-or-object'
+        ? resolveAttachedEmanationAnchorModeFromSelection(action, selection.casterOptions)
+        : em?.anchorMode
     const effectTargets =
-      action.attachedEmanation && action.effects?.length
-        ? action.attachedEmanation.anchorMode === 'creature'
+      em && action.effects?.length
+        ? emMode === 'creature'
           ? targets.length > 0
             ? targets
             : []
-          : action.attachedEmanation.anchorMode === 'object'
+          : emMode === 'object'
             ? [actor]
             : [actor]
         : targets.length > 0
@@ -610,7 +616,10 @@ function resolveCombatActionInternal(
       }))
   let finalReturnState = finalState
   if (action.attachedEmanation && !behavior.skipCost) {
-    const mode = action.attachedEmanation.anchorMode
+    const mode =
+      action.attachedEmanation.anchorMode === 'place-or-object'
+        ? resolveAttachedEmanationAnchorModeFromSelection(action, selection.casterOptions)
+        : action.attachedEmanation.anchorMode
     const ids = selection.unaffectedCombatantIds ?? []
     let anchor:
       | { kind: 'place'; cellId: string }

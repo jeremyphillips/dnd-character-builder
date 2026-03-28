@@ -111,7 +111,7 @@ export type CombatActionAreaTemplate =
  * Where a persistent attached emanation should be anchored in space (action-level intent).
  * Distinct from {@link AttachedBattlefieldEffectSource}, which identifies authored rules.
  */
-export type EmanationAnchorMode = 'caster' | 'place' | 'creature' | 'object'
+export type EmanationAnchorMode = 'caster' | 'place' | 'creature' | 'object' | 'place-or-object'
 
 export interface CombatActionDefinition {
   id: string
@@ -168,5 +168,10 @@ export interface CombatActionDefinition {
     /** Always set by spell/monster adapters (`false` when omitted on authored `emanation`). */
     selectUnaffectedAtCast: boolean
     anchorMode: EmanationAnchorMode
+    /**
+     * When `anchorMode === 'place-or-object'`, the `casterOptions` field id (enum) whose value is `place` or
+     * `object`, selecting between point-in-space vs grid obstacle anchor at cast time.
+     */
+    anchorChoiceFieldId?: string
   }
 }

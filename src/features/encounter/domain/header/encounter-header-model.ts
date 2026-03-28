@@ -22,6 +22,8 @@ export type EncounterHeaderInteractionArgs = {
   interactionMode: GridInteractionMode
   selectedActionId: string
   selectedAction: CombatActionDefinition | null
+  /** Resolves {@link CombatActionDefinition.attachedEmanation} `place-or-object` vs pure place/all-enemies. */
+  selectedCasterOptions?: Record<string, string>
   aoeStep: AoeStep
   canResolveAction: boolean
   /**
@@ -55,6 +57,7 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     interactionMode,
     selectedActionId,
     selectedAction,
+    selectedCasterOptions,
     aoeStep,
     canResolveAction,
     selectedActionRequiresCreatureTarget,
@@ -92,9 +95,12 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     }
   }
 
-  const areaAction = selectedAction && isAreaGridAction(selectedAction) ? selectedAction : null
+  const areaAction =
+    selectedAction && isAreaGridAction(selectedAction, selectedCasterOptions) ? selectedAction : null
   const inAoeFlow = Boolean(areaAction && aoeStep !== 'none')
-  const selfCentered = Boolean(areaAction && isSelfCenteredAreaAction(areaAction))
+  const selfCentered = Boolean(
+    areaAction && isSelfCenteredAreaAction(areaAction, selectedCasterOptions),
+  )
 
   if (inAoeFlow && areaAction) {
     const label = selectedActionLabel ?? 'this area effect'
@@ -138,7 +144,12 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     }
   }
 
-  if (hasActionPick && !hasTargetPick && selectedAction && !isAreaGridAction(selectedAction)) {
+  if (
+    hasActionPick &&
+    !hasTargetPick &&
+    selectedAction &&
+    !isAreaGridAction(selectedAction, selectedCasterOptions)
+  ) {
     const requiresCreatureTarget =
       selectedActionRequiresCreatureTarget !== undefined
         ? selectedActionRequiresCreatureTarget
@@ -155,7 +166,12 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     }
   }
 
-  if (hasActionPick && hasTargetPick && canResolveAction && !isAreaGridAction(selectedAction)) {
+  if (
+    hasActionPick &&
+    hasTargetPick &&
+    canResolveAction &&
+    !isAreaGridAction(selectedAction, selectedCasterOptions)
+  ) {
     return {
       directive: `Ready — ${selectedActionLabel ?? 'Action'} → ${selectedTargetLabel}`,
       endTurnEmphasis: subtle,

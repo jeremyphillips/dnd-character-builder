@@ -29,7 +29,7 @@ describe('Darkness — place-anchored emanation (shared anchor pipeline)', () =>
     expect(classifySpellResolutionMode(darkness)).toBe('effects')
   })
 
-  it('buildSpellCombatActions maps explicit anchorMode place + remote AoE template', () => {
+  it('buildSpellCombatActions maps place-or-object emanation + remote AoE template', () => {
     const [action] = buildSpellCombatActions({
       ...baseAdapterArgs,
       spellIds: ['darkness'],
@@ -41,14 +41,15 @@ describe('Darkness — place-anchored emanation (shared anchor pipeline)', () =>
       source: { kind: 'spell', spellId: 'darkness' },
       radiusFt: 15,
       selectUnaffectedAtCast: false,
-      anchorMode: 'place',
+      anchorMode: 'place-or-object',
+      anchorChoiceFieldId: 'darkness-anchor',
     })
     expect(action?.areaTemplate).toEqual({ kind: 'sphere', radiusFt: 15 })
     expect(action?.areaPlacement).toBe('remote')
     expect(action?.targeting).toEqual({ kind: 'self', rangeFt: 60 })
   })
 
-  it('readiness metadata treats Darkness as an area-grid action (aoe-place)', () => {
+  it('readiness metadata lists caster, area, and object-anchor gates for place-or-object', () => {
     const [action] = buildSpellCombatActions({
       ...baseAdapterArgs,
       spellIds: ['darkness'],
@@ -56,7 +57,12 @@ describe('Darkness — place-anchored emanation (shared anchor pipeline)', () =>
     })
     expect(action).toBeDefined()
     expect(isAreaGridCombatAction(action)).toBe(true)
-    expect(getActionResolutionRequirements(action!)).toEqual(['area-selection'])
+    expect(isAreaGridCombatAction(action, { 'darkness-anchor': 'object' })).toBe(false)
+    expect(getActionResolutionRequirements(action!)).toEqual([
+      'caster-option',
+      'area-selection',
+      'object-anchor',
+    ])
   })
 
   it('resolveCombatAction creates a place-anchored attached aura and resolves origin from anchor', () => {

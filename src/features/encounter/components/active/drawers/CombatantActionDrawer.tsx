@@ -265,7 +265,8 @@ function GroupedActionList({
   function isActionAvailable(action: CombatActionDefinition): boolean {
     const resourceAvailable = allTreatAsAvailable || availableActionIds!.has(action.id)
     const validForTarget = validActionIdsForTarget == null || validActionIdsForTarget.has(action.id)
-    return resourceAvailable && validForTarget
+    const noBlockingReason = !invalidActionReasons?.has(action.id)
+    return resourceAvailable && validForTarget && noBlockingReason
   }
 
   if (actions.length === 0) {

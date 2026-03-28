@@ -1,4 +1,5 @@
 import {
+  getHideActionUnavailableReason,
   isValidActionTarget,
   getActionTargetInvalidReason,
   getActionResolutionReadiness,
@@ -53,6 +54,15 @@ export function selectValidActionIdsForTarget(
         action,
       )
       if (reason) invalidReasons.set(action.id, reason)
+    }
+  }
+
+  for (const action of availableActions) {
+    if (action.resolutionMode !== 'hide') continue
+    const hideReason = getHideActionUnavailableReason(encounterState, activeCombatant.instanceId)
+    if (hideReason) {
+      validIds.delete(action.id)
+      invalidReasons.set(action.id, hideReason)
     }
   }
 

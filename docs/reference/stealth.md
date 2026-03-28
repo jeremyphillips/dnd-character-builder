@@ -85,6 +85,16 @@ Eligibility answers **whether a hide attempt may be attempted** vs a given obser
 
 **Not implemented:** active **opposed** Stealth vs **rolled** Perception (passive-only baseline). **`applyStealthHideSuccess`** remains for tests/manual/DM tooling and future active-contest output.
 
+### Encounter UI: Hide from the current cell (no extra grid steps)
+
+Hide is a normal **`CombatActionDefinition`** on the combatant’s action list (e.g. skill affordance → `id: 'hide'`, `resolutionMode: 'hide'`, `targeting: self`, `cost: { action: true }`). Execution uses **only** the hider’s **current** placement and merged environment — there is **no** destination cell, cover object, or move-and-hide step in this baseline.
+
+- **Eligibility (disabled rows / Resolve):** **`getHideActionUnavailableReason`** in [`stealth-rules.ts`](../../src/features/mechanics/domain/encounter/state/stealth/stealth-rules.ts) mirrors whether **`resolveDefaultHideObservers`** would be non-empty. If it returns a string, the Hide row is treated as invalid with that reason (`invalidActionReasons` in the action drawer), and **`getActionResolutionReadiness`** adds a **`hide-eligibility`** gate so Resolve stays off until the situation changes (e.g. concealment/cover). Same rules as the resolver — no duplicate stealth math in React.
+- **Action economy:** Hide consumes the **standard Action** via **`spendActionCost`** in **`resolveCombatActionInternal`** (same path as other actions). Bonus-action Hide is not implemented.
+- **Feedback:** Outcomes appear in the combat log (and encounter toast pipeline) via existing **`action-resolved`** entries; no separate stealth-only feedback channel.
+
+**TODO (not in current UI baseline):** move then hide as one flow; bonus-action Hide (e.g. Cunning Action); choosing a **different** cell or **object** anchor to hide behind; richer “already hidden” / sound-driven UX.
+
 ---
 
 ## Reconciliation helpers (consistency with perception)
@@ -143,6 +153,7 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth/stealt
 |--------|------|
 | `getCombatantHideEligibilityExtensionOptions` | Derive hide flags from **snapshot + `activeEffects` + markers** (OR merge; see [`hide-eligibility-runtime-sources.ts`](../../src/features/mechanics/domain/encounter/state/stealth/hide-eligibility-runtime-sources.ts)). |
 | `getStealthHideAttemptDenialReason` | Hide **attempt** eligibility (delegates). |
+| `getHideActionUnavailableReason` | UI/readiness: short reason when a Hide attempt is not allowed from the current cell (same basis as `resolveDefaultHideObservers`); `null` when allowed. |
 | `getPassivePerceptionScore` | Passive Perception for hide comparison. |
 | `getStealthCheckModifier` | Dex-based Stealth modifier for the Hide action roll. |
 | `resolveHideWithPassivePerception` | Apply hide outcome vs passive Perception (after total is known). |
@@ -162,6 +173,7 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth/stealt
 
 ## TODO / future work
 
+- **Move-and-hide**, **bonus-action Hide** (e.g. Cunning Action), **grid/object selection** for hiding in a chosen cell or behind a cover object — not implemented; current Hide is a single **Action** from the **current** cell only.
 - **Finer cover than merged `terrainCover` per cell** — e.g. edge/corner rules, size, true 3D LOS.
 - **Observer-relative or partial break** on attack (vs global `breakStealthOnAttack`).
 - **Narrow guessed-cell / noise seam** — implemented in **`awareness/awareness-rules.ts`** (see [Awareness and guessed position](./awareness-and-guessed-position.md)); full hearing propagation and attack-at-square remain TODO.

@@ -133,6 +133,7 @@ export {
 export {
   applyStealthHideSuccess,
   breakStealthOnAttack,
+  getHideActionUnavailableReason,
   getStealthHideAttemptDenialReason,
   isHiddenFromObserver,
   applyEncounterEnvironmentBaselinePatchAndReconcileStealth,

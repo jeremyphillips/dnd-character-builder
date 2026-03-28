@@ -5,6 +5,7 @@ import {
   applyStealthHideSuccess,
   breakStealthOnAttack,
   createEncounterState,
+  getHideActionUnavailableReason,
   getPassivePerceptionScore,
   getStealthHideAttemptDenialReason,
   isHiddenFromObserver,
@@ -39,6 +40,26 @@ describe('stealth-rules', () => {
       ],
     }
     expect(getStealthHideAttemptDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
+  })
+
+  it('getHideActionUnavailableReason is null when hide attempts are allowed (heavy obscurement)', () => {
+    const heavy = encounterAttackerOutsideDefenderHeavilyObscured()
+    expect(getHideActionUnavailableReason(heavy, 'orc')).toBe(null)
+  })
+
+  it('getHideActionUnavailableReason explains when no eligible observers (open ground)', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+    }
+    expect(getHideActionUnavailableReason(state, 'orc')).toBe('Need concealment or cover from observers.')
   })
 
   it('applyStealthHideSuccess records observer-relative hidden state', () => {

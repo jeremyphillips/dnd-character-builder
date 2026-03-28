@@ -25,6 +25,7 @@ import {
   type HideEligibilityExtensionOptions,
   type HideEligibilityFeatureFlags,
 } from './sight-hide-rules'
+import { getCellForCombatant } from '@/features/encounter/space/space.helpers'
 import type { CombatantStealthRuntime } from '../types/combatant.types'
 import type { EncounterState } from '../types'
 import type { EncounterViewerPerceptionCapabilities } from '../../environment/perception.types'
@@ -131,6 +132,64 @@ export function resolveDefaultHideObservers(
     if (oid === hiderId) return false
     return getStealthHideAttemptDenialReason(state, hiderId, oid, options) === null
   })
+}
+
+function hideAttemptDenialReasonToMessage(reason: HideAttemptEligibilityDenialReason): string {
+  switch (reason) {
+    case 'self':
+      return 'Invalid hide context.'
+    case 'missing-hider-placement':
+      return 'Not placed on the grid.'
+    case 'observer-sees-without-concealment':
+      return 'Need concealment or cover from observers.'
+    default: {
+      const _exhaustive: never = reason
+      return _exhaustive
+    }
+  }
+}
+
+/**
+ * When the Hide combat action cannot be attempted from the hider’s **current** cell/position
+ * (same basis as {@link resolveDefaultHideObservers} / the hide resolver). Returns `null` when a hide
+ * attempt is allowed (at least one eligible observer). UI and {@link getActionResolutionReadiness} use this;
+ * do not reimplement eligibility in components.
+ */
+export function getHideActionUnavailableReason(
+  state: EncounterState,
+  hiderId: string,
+  options?: StealthRulesOptions,
+): string | null {
+  if (resolveDefaultHideObservers(state, hiderId, options).length > 0) {
+    return null
+  }
+
+  const hider = state.combatantsById[hiderId]
+  if (!hider) {
+    return 'Cannot hide.'
+  }
+
+  const opposingIds = hider.side === 'party' ? state.enemyCombatantIds : state.partyCombatantIds
+  const otherSide = opposingIds.filter((id) => id !== hiderId)
+  if (otherSide.length === 0) {
+    return 'No opponents to hide from.'
+  }
+
+  if (state.space && state.placements) {
+    const cell = getCellForCombatant(state.placements, hiderId)
+    if (!cell) {
+      return 'Not placed on the grid.'
+    }
+  }
+
+  for (const observerId of otherSide) {
+    const denial = getStealthHideAttemptDenialReason(state, hiderId, observerId, options)
+    if (denial != null) {
+      return hideAttemptDenialReasonToMessage(denial)
+    }
+  }
+
+  return 'Cannot hide from any observer (concealment / cover).'
 }
 
 /**

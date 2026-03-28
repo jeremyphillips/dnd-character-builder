@@ -1,0 +1,112 @@
+# Perception and Visibility
+
+## Purpose
+
+This layer answers **who can see what** on the tactical battlefield for **rules resolution** and **presentation**. It separates:
+
+- **Objective** environment at a grid cell (`EncounterWorldCellEnvironment`)
+- **Derived** viewer-relative perception at a cell (`EncounterViewerPerceptionCell`)
+- **UI** mapping from perception to grid fills, token visibility, and veils (`perception.render.projection.ts`)
+
+Combat mechanics that care about “seeing” a creature (targeting, attack modifiers, opportunity attacks, sight-gated checks, Hide attempt eligibility) should use **shared helpers** built on **`canPerceiveTargetOccupantForCombat`**, not ad hoc cell checks or a second visibility engine.
+
+---
+
+## Layer model
+
+### Environment / world state
+
+Baseline encounter defaults, environment zones, and **merged per-cell world** live on `EncounterState` and resolve to `EncounterWorldCellEnvironment` (lighting, obscurement, magical darkness flags, etc.). This is **not** “what the PC sees”; it is input to perception.
+
+See [Encounter environment (layered model)](./environments.md) for baseline, zones, merge rules, and `resolveWorldEnvironmentFromEncounterState`.
+
+### Pair visibility / perception
+
+For **two combatants**, the domain asks whether an **observer** can perceive the **target’s occupant** for combat rules. The core function is **`canPerceiveTargetOccupantForCombat`** (`combatant-pair-visibility.ts`), which composes:
+
+- Condition-based **can the observer see at all** (`canSee` / blinded, etc.)
+- **Invisible** vs **See Invisibility** on the observer
+- **Line of sight** and **line of effect** when space and placements exist
+- **Battlefield perception** at the target cell via `resolveViewerPerceptionForCellFromState` (`perception.resolve.ts`)
+
+Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modifiers (unseen attacker / unseen target). Targeting uses **`canSeeForTargeting`** (same underlying seam).
+
+### Render projection
+
+**`perception.render.projection.ts`** maps domain perception types into **presentation-only** structures (`EncounterGridCellRenderState`, occupant token visibility, fill kinds). Rules live in `perception.resolve.ts`; the projection module does not duplicate combat logic.
+
+---
+
+## Key distinctions
+
+### Cell visible vs occupant perceivable
+
+`EncounterViewerPerceptionCell` distinguishes **`canPerceiveCell`** (there is a tactical location / outline) from **`canPerceiveOccupants`** (tokens / creatures in that cell). In **heavy obscurement** or some **darkness** cases, the cell may still be “there” for the viewer while **occupants** are not perceivable. Combat that must match “you can see the creature” must use **occupant** perception, not cell outline alone.
+
+### Targeting legality vs attack roll visibility
+
+- **Targeting** (`isValidActionTarget`, `requiresSight` on actions): can you **select** this creature for a sight-required effect? Uses **`canSeeForTargeting`** → `canPerceiveTargetOccupantForCombat`.
+- **Attack roll**: after a valid target, **advantage/disadvantage** from unseen attacker/target uses **`resolveCombatantPairVisibilityForAttackRoll`** and `getAttackVisibilityRollModifiersFromPair`. Legality and roll modifiers both ultimately depend on the same occupant seam but serve different steps.
+
+### Blinded condition vs heavy obscurement
+
+- **Blinded** (and similar **cannot-see** consequences): enforced early via **`canSee(observer)`** in `canPerceiveTargetOccupantForCombat` — the observer fails all “see target” checks regardless of grid.
+- **Heavy obscurement / darkness / magical darkness**: applied when resolving **per-cell** viewer perception at the **target cell** (after LoS/LoE when the grid exists). A blinded creature does not bypass blindness because a cell is bright; conversely, a sighted creature may fail occupant perception because the target cell is heavily obscured or magically dark.
+
+---
+
+## Shared helpers / seams
+
+| Concern | Entry point | Notes |
+|--------|-------------|--------|
+| **Attack visibility relation** | `resolveCombatantPairVisibilityForAttackRoll`, `getAttackVisibilityRollModifiersFromPair` | `combatant-pair-visibility.ts`; feeds `resolveRollModifier` in action resolution. |
+| **Can select sight-required target** | `canSeeForTargeting` | Alias of `canPerceiveTargetOccupantForCombat`; used with action targeting profiles. |
+| **OA visibility gating** | `canReactorPerceiveDepartingOccupantForOpportunityAttack`, `getOpportunityAttackLegalityDenialReason` | `opportunity-attack.ts`; sight uses pre-move state and the same occupant seam. |
+| **Sight-based check legality** | `getSightBasedCheckLegalityDenialReason`, `getEncounterAbilityCheckSightDenialReason` | `sight-hide-rules.ts` / `encounter-ability-check-resolution.ts`; check effects with `requiresSight` gate in `applyActionEffects`. Denial id: **`cannot-perceive-subject`**. |
+
+Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`sight-hide-rules.ts`): occupant seam plus **world** concealment at the hider’s cell.
+
+---
+
+## Current rules supported
+
+- **Blinded** — `canSee` / condition consequences block perception before grid-specific checks.
+- **Invisibility / See Invisibility** — invisible target not perceived unless observer has See Invisibility state (`combatant-pair-visibility.ts`).
+- **LOS / LoE** — `lineOfSightClear`, `lineOfEffectClear` (`visibility-los.ts`); binary geometry when space + placements exist.
+- **Heavy obscurement** — merged world + `resolveViewerPerceptionForCell` → `canPerceiveOccupants` false when appropriate.
+- **Darkness / magical darkness** — lighting and magical flags in world merge; perception resolution applies viewer **capabilities** (darkvision, Devil’s Sight, truesight, bypass flags) per `EncounterViewerPerceptionCapabilities`.
+
+---
+
+## Current fallbacks / assumptions
+
+### Missing tactical data behavior
+
+If **`space`** or **`placements`** is missing, or the target has **no resolved cell**, or battlefield perception **returns null**, **`canPerceiveTargetOccupantForCombat`** treats **occupant** visibility as **permissive (true)** after condition, invisibility, and LoS/LoE gates that still apply. This avoids over-blocking encounters without a full grid; **blinded** and **invisible** still block first.
+
+### DM / debug viewer behavior
+
+Perception resolution accepts **`viewerRole: 'dm' | 'pc'`** (e.g. `ResolveViewerPerceptionForCellParams`). When **`dm`**, perception is **not** restricted (tactical omniscience for that view). PC-facing rules use **`pc`** (combat resolution uses `viewerRole: 'pc'` in the shared seam).
+
+### No full senses engine yet
+
+**`EncounterViewerPerceptionCapabilities`** is optional and partially threaded (e.g. `ResolveCombatActionOptions.perceptionCapabilities` for check effects). Flags include darkvision range, blindsight, truesight, Devil’s Sight, magical darkness bypass. There is **not** a complete per-sense pipeline or automatic derivation from every stat and item.
+
+---
+
+## Known limitations
+
+- **No opposed Stealth vs Perception contest** — passive Perception and contested hiding are not fully modeled.
+- **No observer aggregation** — “who can see this creature” as a set of observers is not a first-class API.
+- **Limited capability threading** — capabilities must be passed where supported; not every call site accepts or forwards them yet.
+
+---
+
+## Future work
+
+- **Stealth / hidden state** — contested rolls, hidden condition, and integration with occupant perception.
+- **Observer sets** — aggregate visibility for “all enemies that can see you” style rules.
+- **Sense-specific bypasses** — consistent threading of blindsight, tremorsense, truesight, and table-specific rulings through all seams.
+- **Rogue-in-shadows / feature hooks** — light obscurement only counts if the observer is in bright light (and similar feature-level rules), once base stealth and observers exist.
+
+For how this ties into action resolution and check effects, see [Combat action resolution](./resolution.md) (LOS/visibility seams, OA, sight-based checks).

@@ -46,6 +46,8 @@ import {
   placeCombatant,
 } from '@/features/encounter/space'
 import { effectiveSpawnPlacement } from './action-requirement-model'
+import type { EncounterViewerPerceptionCapabilities } from '../../environment/perception.types'
+import { getEncounterAbilityCheckSightDenialReason } from '../encounter-ability-check-resolution'
 
 function reviveBlockedReason(
   target: CombatantInstance,
@@ -198,6 +200,11 @@ export type ApplyActionEffectsOptions = {
   casterOptions?: Record<string, string>
   /** When set with `single-cell` spawn placement, places summoned combatants on this grid cell. */
   singleCellPlacementCellId?: string
+  /**
+   * For `check` effects with `requiresSight`, forwarded to the shared occupant perception seam
+   * (`getEncounterAbilityCheckSightDenialReason` → `canPerceiveTargetOccupantForCombat`).
+   */
+  perceptionCapabilities?: EncounterViewerPerceptionCapabilities
 }
 
 /** Spell duration as turn-count fixed duration for `activeEffects` (from `concentrationDurationTurns`). */
@@ -635,6 +642,25 @@ export function applyActionEffects(
     }
 
     if (effect.kind === 'check') {
+      const sightDenial = getEncounterAbilityCheckSightDenialReason(
+        nextState,
+        actor.instanceId,
+        target.instanceId,
+        effect.requiresSight,
+        options.perceptionCapabilities != null ? { capabilities: options.perceptionCapabilities } : undefined,
+      )
+      if (sightDenial != null) {
+        nextState = appendEncounterNote(
+          nextState,
+          `${options.sourceLabel}: Check blocked (${sightDenial}).`,
+          {
+            actorId: actor.instanceId,
+            targetIds: [target.instanceId],
+            details: `Sight-based check requires a visible subject (occupant perception). Denial reason: ${sightDenial}.`,
+          },
+        )
+        return
+      }
       nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Check DC ${effect.check.dc} ${effect.check.ability.toUpperCase()}${effect.check.skill ? ` (${effect.check.skill})` : ''} required.`, {
         actorId: actor.instanceId,
         targetIds: [target.instanceId],

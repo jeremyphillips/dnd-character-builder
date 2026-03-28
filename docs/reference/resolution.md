@@ -160,6 +160,8 @@ Targeting validation is centralized so the resolver and UI share a single source
 
 **Sight-based checks & Hide** (`sight-hide-rules.ts`): `canVisuallyPerceiveSubjectForRules` / `getSightBasedCheckLegalityDenialReason` delegate to `canPerceiveTargetOccupantForCombat`. Hide **attempt** eligibility uses the same occupant seam plus **world** concealment at the hider’s cell (`cellWorldSupportsHideConcealment` from `resolveWorldEnvironmentFromEncounterState`): denied when the observer perceives the hider’s occupant **and** the cell has no concealment (`observer-sees-without-concealment`). No grid → permissive (allow attempt), matching pair-visibility fallback.
 
+**Check effects** (`Effect` `kind: 'check'`): When `requiresSight` is set, `applyActionEffects` calls `getEncounterAbilityCheckSightDenialReason` (wrapper → `getSightBasedCheckLegalityDenialReason`) on **actor → target** before logging the DC; denial id **`cannot-perceive-subject`**. Optional `ResolveCombatActionOptions.perceptionCapabilities` threads into `ApplyActionEffectsOptions.perceptionCapabilities` for the same seam as attack/targeting.
+
 **Encounter UI readiness** (`action-resolution-requirements.ts`, `encounter/domain/interaction/encounter-resolve-selection.ts`):
 
 Pure helpers describe what must be true before the encounter action drawer enables **Resolve**, independent of the resolver pipeline:

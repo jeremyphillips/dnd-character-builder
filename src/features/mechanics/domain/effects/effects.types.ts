@@ -157,6 +157,12 @@ export type CheckEffect = EffectBase<'check'> & {
   actor: 'nearby-creature';
   distanceFeet?: number;
   actionRequired?: boolean;
+  /**
+   * When true, the acting creature must visually perceive the **target combatant’s occupant** (shared
+   * `canPerceiveTargetOccupantForCombat` seam) before the check is applied; otherwise the effect is blocked
+   * with reason `cannot-perceive-subject`. Subject-based, not “cell known” alone.
+   */
+  requiresSight?: boolean;
   check: {
     ability: AbilityRef;
     skill?: string;

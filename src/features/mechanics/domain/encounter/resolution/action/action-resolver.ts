@@ -279,6 +279,7 @@ function resolveCombatActionInternal(
     buildSummonAllyCombatant: options.buildSummonAllyCombatant,
     casterOptions: selection.casterOptions,
     singleCellPlacementCellId: selection.singleCellPlacementCellId,
+    perceptionCapabilities: options.perceptionCapabilities,
   }
   const targetLabel = target ? getEncounterCombatantLabel(state, target.instanceId) : 'no target'
   const casterSummary = formatCasterOptionSummary(action.casterOptions, selection.casterOptions)

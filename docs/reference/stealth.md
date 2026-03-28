@@ -9,6 +9,16 @@
 - **Encounter grid (active viewer):** normal **tokens** are suppressed under strict POV when **`deriveViewerCombatantPresentationKind`** is not **`visible`** (equivalently: need **`canPerceiveTargetOccupantForCombat`** and not **`isHiddenFromObserver`** for a normal token). **Labels** use hidden-before-out-of-sight precedence so Hide stays distinct in UI. DM view (`viewerRole: 'dm'`) still shows all tokens. **Guessed-position** UI on the grid is deferred; see [Perception and visibility — render projection](./perception-and-visibility.md#render-projection).
 - **Initiative sidebar / turn order / header:** the same seam feeds **`buildCombatantViewerPresentationKindById`** (`visible` / `out-of-sight` / `hidden`). **Presentation precedence** checks **`isHiddenFromObserver`** before generic **`!canPerceiveTargetOccupantForCombat`** so **Hidden** can show even when LOS/lighting would also deny perception. Combatants **remain** in the list with distinct chips; not removed from initiative. Presentation-only; reconciliation unchanged.
 
+### Stealth reference facts
+
+These are **rules / UX facts**, not TODOs:
+
+1. **Hidden-from is pruned when observer perception becomes true** — an observer id is removed from **`hiddenFromObserverIds`** when **`canPerceiveTargetOccupantForCombat(observer, subject)`** is true (**`reconcileStealthHiddenForPerceivedObservers`**). That is the **only** automatic “reveal” path from perception; it tracks the shared occupant-perception seam.
+2. **Losing hide basis alone does not remove hidden** — after movement or environment changes, **sustain** does **not** drop **`hiddenFromObserverIds`** just because **`getHideAttemptEligibilityDenialReason`** would now fail for a **new** Hide attempt. Optional combat-log lines (**`hide-basis-lost-context`**) describe that situation **without** mutating stealth.
+3. **Strict POV still suppresses both “hidden” and “out-of-sight” tokens** — under strict point-of-view, the normal occupant token is shown only when presentation resolves to **`visible`**; **`hidden`** and **`out-of-sight`** both suppress it (chips/labels can still distinguish). See [Perception and visibility — render projection](./perception-and-visibility.md#render-projection).
+4. **No guessed-position or sound-driven encounter gameplay yet** — on-grid **guessed-cell** presentation and **sound propagation / hearing** as a play loop are not built out; see [Perception and visibility](./perception-and-visibility.md#render-projection), [Awareness and guessed position](./awareness-and-guessed-position.md), and [Sound and awareness (roadmap)](./sound-and-awareness.md). Narrow **rules** for **`guessedCellByObserverId`** (e.g. noise hooks, some targeting) exist; they are **not** a substitute for full grid/sound UX.
+5. **Viewer and log presentation modes materially affect the UI** — which combatants/tokens “count” as visible on the **grid** depends on **active viewer**, **DM vs PC**, and **strict POV** (see [Perception and visibility — Encounter UI](./perception-and-visibility.md#encounter-ui-presentation-modes)). The **combat log** **Compact / Normal / Debug** filter also changes which entries appear and whether **`debugDetails`** lines show; see [Combat log (stealth)](#combat-log-stealth) below.
+
 ---
 
 ## Runtime shape
@@ -116,6 +126,15 @@ These keep stored **`hiddenFromObserverIds`** aligned with the **shared percepti
 3. **`resolveCombatActionInternal`** — still runs **`reconcileStealthHiddenForPerceivedObservers`** **before** resolving the declared action (unchanged).
 
 **Pure baseline patch:** **`updateEncounterEnvironmentBaseline`** does **not** run stealth (keeps tests and imports simple). For runtime lighting/obscurement changes that should affect hidden state, use **`applyEncounterEnvironmentBaselinePatchAndReconcileStealth`**.
+
+### Combat log (stealth)
+
+Prune/reveal events are logged as **`type: 'stealth-reveal'`** (**`appendStealthPrunedObserverCanPerceiveNote`** in **`stealth-debug-log.ts`**):
+
+- **`summary`** — plain-language sentence(s) per observer–subject pair, derived from the same perception breakdown as **`canPerceiveTargetOccupantForCombat`** (e.g. “clear line of sight … and can perceive the occupant” when grid + LOS/LOE + battlefield perception resolve; alternate wording for permissive / unresolved perception paths). Shown in **Normal** and **Debug** modes (importance **`supporting`**).
+- **`debugDetails`** — semicolon-separated structured trace (**`reason=observer-can-perceive-target`**, **`traceKind=observer-perceive-prune-breakdown`**, compact **`perceive`** / **`perceiveIds`** pipes) for diagnosis. Shown only when the combat log is in **Debug** mode (see **`filterLogByMode`** / **`CombatLogPanel`**).
+
+Hide-success, movement-reconcile headers, hide-basis-lost-context, and attack-break notes remain **`type: 'note'`** (debug importance in the combat-log bridge).
 
 **TODO (still):** feat **display** names from a content catalog (today DTO uses id as name); observer-relative cover rays; sense-specific exceptions; richer “who counts as an observer” than passive hide resolution.
 

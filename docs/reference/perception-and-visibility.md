@@ -39,6 +39,17 @@ Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modi
 
 **Bookkeeping UI (initiative sidebar, turn order modal, next-actor header):** **`buildCombatantViewerPresentationKindById`** uses the same inputs as the grid. Non-grid surfaces **keep** rows in initiative and show **Out of sight** vs **Hidden** chips (and header badges for the next combatant) instead of a single generic “Unseen” label. **DM simulator mode** keeps **`visible`** for all combatants.
 
+### Encounter UI: presentation modes
+
+**What “works” in the encounter UI depends on which presentation layers are active** — this is not a second rules engine; it is how much surface area is shown.
+
+| Layer | Effect |
+|--------|--------|
+| **Grid viewer + strict POV** | Under **strict** point-of-view, a **normal** occupant token is drawn only when pair presentation is **`visible`**. **`hidden`** and **`out-of-sight`** both **suppress** that token (strict POV does not draw a token for “I know they’re hidden” vs “I can’t see them” — both are non-visible tokens on the grid). Chips/labels elsewhere can still distinguish **Hidden** vs **Out of sight**. DM / self-view / non-strict paths behave as implemented in **`grid-occupant-render-visibility.ts`**. |
+| **Combat log: Compact / Normal / Debug** | **`toCombatLogEntry`** assigns each event an **importance** (**`headline`**, **`supporting`**, **`debug`**). **`filterLogByMode`** keeps only certain importances per mode: **Compact** ≈ headlines only; **Normal** headlines + supporting; **Debug** all. Stealth **prune/reveal** uses **`stealth-reveal`** (**supporting**) so the readable **`summary`** appears in **Normal** and **Debug**; structured **`debugDetails`** (e.g. perception trace) appears **only** in **Debug**. Older stealth diagnostics remain **`note`** (**debug** importance) and show only in **Debug**. Implementation: **`combat-log-bridge.ts`**, **`CombatLogPanel`**. |
+
+For stealth bookkeeping vs perception pruning, see [Stealth reference facts](./stealth.md#stealth-reference-facts).
+
 ---
 
 ## Key distinctions

@@ -11,10 +11,12 @@ import { getSystemSpell } from '@/features/mechanics/domain/rulesets/system/spel
 import {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,
+} from './monster-combat-adapter'
+import {
   buildSpellCombatActions,
   deriveSpellHostility,
   getCharacterSpellcastingStats,
-} from './encounter-helpers'
+} from './spells'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 
 const TEST_RULESET = {

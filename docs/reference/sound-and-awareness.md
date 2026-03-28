@@ -1,6 +1,6 @@
 # Sound and awareness (roadmap)
 
-Concise reference for **future** hearing / sound / awareness work. For **current** rules and types, see [Perception and visibility](./perception-and-visibility.md), [Stealth and hidden state](./stealth.md), and [Awareness and guessed position](./awareness-and-guessed-position.md).
+Concise reference for **future** hearing / sound / awareness work. For **current** rules and types, see [Perception and visibility](./perception-and-visibility.md), [Stealth and hidden state](./stealth.md), and [Awareness and guessed position](./awareness-and-guessed-position.md). For **UX caveats** (no grid guessed-position / sound **gameplay** yet, strict POV, combat log modes), see [Stealth reference facts](./stealth.md#stealth-reference-facts).
 
 ---
 

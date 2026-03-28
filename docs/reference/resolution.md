@@ -515,7 +515,7 @@ Healing actions use `targeting: { kind: 'single-creature' }`, which allows any l
 
 ### Spell combat adapter — resolution mode classification
 
-`classifySpellResolutionMode` (in `src/features/encounter/helpers/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
+`classifySpellResolutionMode` (in `src/features/encounter/helpers/spells/spell-resolution-classifier.ts`) decides how `buildSpellCombatActions` builds each spell action:
 
 - **`attack-roll`** — spell has `deliveryMethod` (`melee-spell-attack` or `ranged-spell-attack`); damage and on-hit riders come from the spell’s effects, but the primary hit uses the attack pipeline.
 - **`effects`** — spell has at least one effect kind the adapter treats as mechanically actionable (e.g. `damage`, `save`, `hit-points`, `condition`, `state`, `roll-modifier`, `modifier`, `immunity`, `interval`, `remove-classification`, **`spawn`**), and effects are not **only** `note` and/or `targeting`. Spells with **`spawn`** use **`targeting: { kind: 'none' }`** (see [§8 — Summon spells and spawn](#summon-spells-and-spawn)).
@@ -529,7 +529,7 @@ Multi-instance **auto-hit** spells authored with a single root `damage` effect a
 
 **Spell level vs cantrips:** Authored `spell.level` is **0** for cantrips. For formulas that need a positive spell tier when slot level is not modeled, use `effectiveSpellLevelForScaling` in `spells/shared.ts` (**0 → 1**). Cantrip damage scaling by **character** level uses effect `levelScaling` / `cantripDamageScaling`, not that helper.
 
-Behavioral tests in `encounter-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
+Behavioral tests in `spell-helpers.test.ts` lock in representative routing; catalog-wide stranded counts are for manual or PR reporting, not CI thresholds.
 
 **Equipment snapshot:** `CombatantInstance.equipment` mirrors character loadout (armor, weapons, shield) when built from PCs. **`patchCombatantEquipmentSnapshot`** merges a partial snapshot and removes `statModifiers` whose `eligibility.requiresUnarmored` no longer holds (e.g. Mage Armor after donning armor). Set `armor_class` modifiers with that eligibility store `armorClassBeforeApply` so AC can be restored. Encounter UI must invoke this (or rebuild combatants) when loadout changes—there is no automatic sync from the character sheet yet.
 

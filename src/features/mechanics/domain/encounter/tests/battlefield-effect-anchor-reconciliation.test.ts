@@ -211,7 +211,7 @@ describe('resolveBattlefieldEffectOriginCellId — object anchor', () => {
 
 describe('object-anchored emanation via resolveCombatAction + obstacle move', () => {
   it('keeps spell action resolving with live origin after obstacle moves', async () => {
-    const { buildSpellCombatActions } = await import('@/features/encounter/helpers/spell-combat-adapter')
+    const { buildSpellCombatActions } = await import('@/features/encounter/helpers/spells')
     const { SPELLS_LEVEL_2_A_F } = await import(
       '@/features/mechanics/domain/rulesets/system/spells/data/level2-a-f'
     )

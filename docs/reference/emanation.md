@@ -33,7 +33,7 @@ Author **`EmanationEffect`** with:
 
 **Adapter gate**
 
-- Spells: **`deriveAttachedEmanation`** in [`spell-combat-adapter.ts`](../../src/features/encounter/helpers/spell-combat-adapter.ts)
+- Spells: **`deriveAttachedEmanation`** in [`spells/spell-combat-adapter.ts`](../../src/features/encounter/helpers/spells/spell-combat-adapter.ts)
 - Monster special actions: **`deriveMonsterAttachedEmanation`** in [`monster-combat-adapter.ts`](../../src/features/encounter/helpers/monster-combat-adapter.ts)
 
 If **`attachedTo !== 'self'`** or the area is not a sphere, **`attachedEmanation`** is omitted (no persistent attached row from that path).
@@ -56,7 +56,7 @@ Defined in [`attached-battlefield-source.ts`](../../src/features/mechanics/domai
 
 ## 4. Spells
 
-- **Adapter:** [`buildSpellCombatActions`](../../src/features/encounter/helpers/spell-combat-adapter.ts) attaches **`attachedEmanation`** when **`deriveAttachedEmanation`** succeeds. Root **`targeting`** plus **`deriveSpellHostility`** determine whether combat targeting is **`self`** (non-hostile auras) vs **`all-enemies`** (hostile emanations); see **`buildSpellTargeting`** and [`spell-hostility.ts`](../../src/features/encounter/helpers/spell-hostility.ts).
+- **Adapter:** [`buildSpellCombatActions`](../../src/features/encounter/helpers/spells/spell-combat-adapter.ts) attaches **`attachedEmanation`** when **`deriveAttachedEmanation`** succeeds. Root **`targeting`** plus **`deriveSpellHostility`** determine whether combat targeting is **`self`** (non-hostile auras) vs **`all-enemies`** (hostile emanations); see **`buildSpellTargeting`** and [`spells/spell-hostility.ts`](../../src/features/encounter/helpers/spells/spell-hostility.ts).
 - **Resolvable effects:** `targeting` and `emanation` are stripped from immediate resolution; **`interval`** / **`modifier`** may be deferred for specific spells (e.g. Spirit Guardians) while the grid aura is active.
 - **Resolve:** [`resolveCombatAction`](../../src/features/mechanics/domain/encounter/resolution/action/action-resolver.ts) calls **`addAttachedAuraInstance`** with an **`anchor`** derived from **`attachedEmanation.anchorMode`** and [`ResolveCombatActionSelection`](../../src/features/mechanics/domain/encounter/resolution/action-resolution.types.ts): **`place`** ← **`aoeOriginCellId`**; **`creature`** ← **`targetId`**; **`object`** ← **`objectId`** (+ obstacle lookup / snapshot cell); **`caster`** (default) ← **`{ kind: 'creature', combatantId: selection.actorId }`**. **`unaffectedCombatantIds`** and optional **`saveDc`** are passed through as today.
 - **Concentration:** spell-sourced rows are removed when concentration on that spell ends (same file family as `removeAttachedAurasForSpell`).

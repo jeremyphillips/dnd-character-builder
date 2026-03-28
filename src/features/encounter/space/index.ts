@@ -1,5 +1,6 @@
 export * from './space.types'
 export * from './space.helpers'
+export * from './grid-occupant-render-visibility'
 export * from './space.selectors'
 export * from './createZoneGridSpace'
 export * from './createSquareGridSpace'

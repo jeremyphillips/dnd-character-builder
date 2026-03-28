@@ -6,6 +6,7 @@
 - **Hidden state** (`CombatantInstance.stealth`) records **observer-relative** stealth bookkeeping **on top of** perception. It is **not** a second visibility engine.
 - **Guessed position / sound awareness** (`CombatantInstance.awareness`, **`awareness/awareness-rules.ts`**) stores **observer-relative** last attributed **grid cells** when an observer does **not** see the occupant. It is **not** stealth and **not** sight — see [Awareness and guessed position](./awareness-and-guessed-position.md).
 - **Targeting** continues to use **`canSeeForTargeting`**. **Attack-roll modifiers** continue to use **`resolveCombatantPairVisibilityForAttackRoll`**. Stealth rules live in **`stealth/stealth-rules.ts`** and layer semantics (lifecycle, future advantage hooks) without duplicating LOS/perception math.
+- **Encounter grid (active viewer):** normal **tokens** are suppressed when **`shouldRenderOccupantTokenForEncounterViewer`** is false — it combines **`canPerceiveTargetOccupantForCombat`** with **`isHiddenFromObserver`** so Hide has a visible tactical effect without a parallel UI visibility engine. DM view (`viewerRole: 'dm'`) still shows all tokens. **Guessed-position** UI on the grid is deferred; see [Perception and visibility — render projection](./perception-and-visibility.md#render-projection).
 
 ---
 

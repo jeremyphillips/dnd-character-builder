@@ -35,6 +35,8 @@ Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modi
 
 **`perception.render.projection.ts`** maps domain perception types into **presentation-only** structures (`EncounterGridCellRenderState`, occupant token visibility, fill kinds). Rules live in `perception.resolve.ts`; the projection module does not duplicate combat logic.
 
+**Grid occupant tokens (active viewer):** `selectGridViewModel` (when `GridPerceptionInput` is passed) sets **`viewerPerceivesOccupantToken`** per occupied cell via **`shouldRenderOccupantTokenForEncounterViewer`** (`encounter/space/grid-occupant-render-visibility.ts`). That helper composes **`canPerceiveTargetOccupantForCombat`** with **`isHiddenFromObserver`** (stealth bookkeeping). **`EncounterGrid`** suppresses normal token rendering when **`viewerPerceivesOccupantToken === false`**, after **`occupantRendersToken`** and before cell-level **`occupantTokenVisibility`** (blind veil, darkness, etc.). **DM / `viewerRole: 'dm'`** skips suppression (omniscience). Combatants remain in encounter state, placements, and initiative; only presentation is suppressed. **Guessed-position markers** are not drawn in this pass — only normal tokens; the seam leaves room to show a placeholder later when awareness provides a cell.
+
 ---
 
 ## Key distinctions

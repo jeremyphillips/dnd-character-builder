@@ -18,10 +18,12 @@ import { isAreaGridAction } from '../helpers/area-grid-action'
 import {
   buildCellPerceptionRenderState,
   buildGridPerceptionSlice,
+  mergeGridPerceptionInputCapabilities,
   type EncounterBattlefieldRenderState,
   type EncounterGridCellRenderState,
   type GridPerceptionInput,
 } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
+import { shouldRenderOccupantTokenForEncounterViewer } from './grid-occupant-render-visibility'
 
 // ---------------------------------------------------------------------------
 // State-level selectors
@@ -123,6 +125,12 @@ export type GridCellViewModel = {
   occupantIsDefeated: boolean
   /** False when a placement exists but the creature is absent from the grid (banished, off-grid, …). */
   occupantRendersToken: boolean
+  /**
+   * When set from {@link selectGridViewModel} with `perception` opts, false suppresses the normal token
+   * for this occupant for the active viewer (pair perception + hidden-from-observer bookkeeping).
+   * Undefined when perception is omitted — grid falls back to legacy “always show” for tokens.
+   */
+  viewerPerceivesOccupantToken?: boolean
   /** Viewer-relative render projection (perception layer); undefined when perception opts omitted. */
   perception?: EncounterGridCellRenderState
 }
@@ -353,6 +361,16 @@ export function selectGridViewModel(
       cellPerception = buildCellPerceptionRenderState(state, perceptionSlice, cell.id, opts.perception)
     }
 
+    let viewerPerceivesOccupantToken: boolean | undefined
+    if (opts?.perception && occupantId && combatant && hasBattlefieldPresence(combatant)) {
+      viewerPerceivesOccupantToken = shouldRenderOccupantTokenForEncounterViewer(state, {
+        viewerCombatantId: opts.perception.viewerCombatantId,
+        viewerRole: opts.perception.viewerRole,
+        occupantCombatantId: occupantId,
+        capabilities: mergeGridPerceptionInputCapabilities(opts.perception),
+      })
+    }
+
     return {
       cellId: cell.id,
       x: cell.x,
@@ -366,6 +384,7 @@ export function selectGridViewModel(
       occupantRendersToken: Boolean(
         occupantId && combatant && hasBattlefieldPresence(combatant),
       ),
+      ...(viewerPerceivesOccupantToken !== undefined ? { viewerPerceivesOccupantToken } : {}),
       obstacleKind,
       obstacleLabel,
       isActive: occupantId !== null && occupantId === activeId,

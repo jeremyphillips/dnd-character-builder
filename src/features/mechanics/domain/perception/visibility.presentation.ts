@@ -1,31 +1,39 @@
+/**
+ * **Grid visibility presentation** — semantic resolution → UI tint ids (`VisibilityFillKind`).
+ *
+ * ## Canonical pipeline (preferred)
+ *
+ * 1. **Merged world** — `EncounterWorldCellEnvironment` from `resolveWorldEnvironmentFromEncounterState` /
+ *    `resolveWorldEnvironmentForCell` (baseline + zones; includes `obscurationPresentationCauses` when merge ran).
+ * 2. **Compatibility layer (only if needed)** — {@link inferObscurationPresentationCausesWhenMissing} when
+ *    causes are empty (hand-built / legacy data). See that module’s JSDoc; it is **not** a second semantic model.
+ * 3. **Contributors** — {@link buildVisibilityContributors} (packages lighting + obscuration + hidden for resolution).
+ * 4. **Semantic resolution** — {@link resolveCellVisibility} (lighting vs obscuration cause precedence; `hidden`).
+ * 5. **Presentation mapping** — {@link mapResolvedVisibilityToFillKind} (**only** place: resolved → fill).
+ *
+ * Entry points:
+ * - **`resolvePresentationVisibilityFill`** — perception + target world → fill (production); runs compatibility
+ *   then the canonical chain.
+ * - **`resolvePresentationVisibilityFillFromMergedWorld`** — same chain **without** compatibility inference;
+ *   use when callers already merged causes (tests, tools); same internal steps as production after step 2.
+ *
+ * **Do not** map `maskedByDarkness` or raw world booleans directly to fills in the renderer — combat perception
+ * stays in {@link resolveViewerPerceptionForCell}; presentation consumes this pipeline only.
+ */
+
 import type { EncounterViewerPerceptionCell } from './perception.types'
-import type { EncounterWorldCellEnvironment, WorldObscurationPresentationCause } from '../environment/environment.types'
+import type { EncounterWorldCellEnvironment } from '../environment/environment.types'
 import { buildVisibilityContributors } from './visibility.contributors'
+import { inferObscurationPresentationCausesWhenMissing } from './visibility.presentation.compatibility'
 import { resolveCellVisibility } from './visibility.resolved'
 import type { ResolvedCellVisibility, VisibilityFillKind } from './visibility.types'
 
 /**
- * When world merge did not record causes (e.g. hand-built test worlds), infer from stable combat perception
- * so presentation stays aligned with {@link resolveViewerPerceptionForCell}.
- */
-export function worldWithPresentationCauses(
-  world: EncounterWorldCellEnvironment,
-  perception: EncounterViewerPerceptionCell,
-): EncounterWorldCellEnvironment {
-  if (world.obscurationPresentationCauses.length > 0) return world
-  const causes: WorldObscurationPresentationCause[] = []
-  if (perception.maskedByMagicalDarkness) {
-    causes.push('magical-darkness')
-  } else if (perception.maskedByDarkness) {
-    if (world.lightingLevel === 'darkness') causes.push('darkness')
-    if (world.visibilityObscured === 'heavy') causes.push('environment')
-    if (causes.length === 0) causes.push('darkness')
-  }
-  return { ...world, obscurationPresentationCauses: causes }
-}
-
-/**
- * Single mapping from semantic visibility to grid tint ids. Presentation only.
+ * Semantic `ResolvedCellVisibility` → grid tint id. **Presentation only** — no combat rules.
+ *
+ * Distinct from {@link resolveCellVisibility}: that type holds **meaning** (lighting, obscured grade, winning
+ * cause); this function picks **which CSS/visual bucket** to use. Lighting vs obscuration distinction is
+ * resolved before this step.
  */
 export function mapResolvedVisibilityToFillKind(resolved: ResolvedCellVisibility): VisibilityFillKind | null {
   if (resolved.hidden) return 'hidden'
@@ -52,14 +60,26 @@ export function mapResolvedVisibilityToFillKind(resolved: ResolvedCellVisibility
 }
 
 /**
- * Perception + merged target world → presentation fill (grid). Uses contributor pipeline + {@link mapResolvedVisibilityToFillKind}.
+ * Canonical presentation pipeline when `world` already includes any inferred or merged
+ * `obscurationPresentationCauses` — **does not** run {@link inferObscurationPresentationCausesWhenMissing}.
+ */
+export function resolvePresentationVisibilityFillFromMergedWorld(
+  perception: EncounterViewerPerceptionCell,
+  world: EncounterWorldCellEnvironment,
+): VisibilityFillKind | null {
+  const contributors = buildVisibilityContributors({ targetWorld: world, perception })
+  const resolved = resolveCellVisibility({ world, contributors })
+  return mapResolvedVisibilityToFillKind(resolved)
+}
+
+/**
+ * Production entry: target world from encounter merge + viewer perception → presentation fill.
+ * Applies compatibility inference for empty causes, then {@link resolvePresentationVisibilityFillFromMergedWorld}.
  */
 export function resolvePresentationVisibilityFill(
   perception: EncounterViewerPerceptionCell,
   targetWorld: EncounterWorldCellEnvironment,
 ): VisibilityFillKind | null {
-  const world = worldWithPresentationCauses(targetWorld, perception)
-  const contributors = buildVisibilityContributors({ targetWorld: world, perception })
-  const resolved = resolveCellVisibility({ world, contributors })
-  return mapResolvedVisibilityToFillKind(resolved)
+  const world = inferObscurationPresentationCausesWhenMissing(targetWorld, perception)
+  return resolvePresentationVisibilityFillFromMergedWorld(perception, world)
 }

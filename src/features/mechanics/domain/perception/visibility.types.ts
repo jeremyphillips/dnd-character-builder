@@ -1,3 +1,8 @@
+/**
+ * Types for the **visibility presentation pipeline** (contributors → resolved semantics → `VisibilityFillKind`).
+ * Combat blocking / targeting uses other modules; these types are for grid tint resolution only.
+ */
+
 import type { LightingLevel, ObscuredLevel, WorldObscurationPresentationCause } from '../environment/environment.types'
 
 /**

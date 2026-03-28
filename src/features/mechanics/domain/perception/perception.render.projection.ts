@@ -1,6 +1,10 @@
 /**
  * Render-facing projection from viewer perception → grid/UI inputs.
- * Rules live in `perception.resolve.ts`; this module only maps to presentation flags.
+ *
+ * - **Combat rules** — `perception.resolve.ts` (`EncounterViewerPerceptionCell`, blind veil, etc.).
+ * - **Cell tint / `perceptionBaseFillKind`** — **only** via {@link resolvePresentationVisibilityFill} from
+ *   `visibility.presentation.ts` (merged world → contributors → resolved → fill). No spell ids; no direct
+ *   `maskedByDarkness` → fill mapping here.
  */
 
 import { getCellForCombatant } from '@/features/encounter/space'

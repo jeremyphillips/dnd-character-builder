@@ -1,3 +1,14 @@
+/**
+ * **Semantic cell visibility** — single resolver for presentation-oriented “what wins” at a cell after merge.
+ *
+ * Inputs are {@link EncounterWorldCellEnvironment} (already merged; includes `obscurationPresentationCauses`
+ * when available) plus {@link VisibilityContributor}s from {@link buildVisibilityContributors}. This module does
+ * **not** apply compatibility inference for missing causes; callers use `visibility.presentation` for the full
+ * stack, or run {@link inferObscurationPresentationCausesWhenMissing} first when needed.
+ *
+ * **Not** render fills — use {@link mapResolvedVisibilityToFillKind} after {@link resolveCellVisibility}.
+ */
+
 import type {
   EncounterWorldCellEnvironment,
   WorldObscurationPresentationCause,

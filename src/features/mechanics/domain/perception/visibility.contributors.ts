@@ -1,3 +1,9 @@
+/**
+ * Builds {@link VisibilityContributor}s from merged world + **combat** perception for the target cell.
+ * Separates **lighting** (environment axis) from **obscuration causes** (world merge metadata). Does not
+ * decide grid tints — {@link resolveCellVisibility} + {@link mapResolvedVisibilityToFillKind} do.
+ */
+
 import type { EncounterWorldCellEnvironment, ObscuredLevel, WorldObscurationPresentationCause } from '../environment/environment.types'
 
 import type { EncounterViewerPerceptionCell } from './perception.types'

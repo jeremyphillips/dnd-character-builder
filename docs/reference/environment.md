@@ -28,4 +28,4 @@ Use **`EncounterEnvironmentExtended`** for narrative/campaign-style environment 
 
 ## Visibility presentation
 
-Source-aware obscuration for the grid flows **world merge → contributors → resolved visibility → `VisibilityFillKind`**, documented in [Perception and visibility](./perception-and-visibility.md).
+Source-aware obscuration for the grid flows **world merge → (optional) `inferObscurationPresentationCausesWhenMissing` when causes are empty → contributors → resolved visibility → `VisibilityFillKind`**. Details: [Perception and visibility](./perception-and-visibility.md), `visibility.presentation.ts`, `visibility.presentation.compatibility.ts`.

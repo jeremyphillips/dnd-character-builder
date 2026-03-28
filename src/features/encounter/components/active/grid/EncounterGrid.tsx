@@ -30,6 +30,8 @@ type EncounterGridProps = {
   creatureTargetingActive?: boolean
   /** When selecting a single map cell (placement), not AoE. */
   singleCellPlacementPickActive?: boolean
+  /** When selecting a grid obstacle for object-anchored attached emanations. */
+  objectAnchorPickActive?: boolean
 }
 
 function tokenRingColor(cell: GridCellViewModel, palette: Theme['palette']) {
@@ -45,6 +47,7 @@ function resolveCellCursor(params: {
   hasMovementRemaining: boolean
   creatureTargetingActive: boolean
   singleCellPlacementPickActive: boolean
+  objectAnchorPickActive: boolean
   clickable: boolean
 }): string {
   const {
@@ -54,6 +57,7 @@ function resolveCellCursor(params: {
     hasMovementRemaining,
     creatureTargetingActive,
     singleCellPlacementPickActive,
+    objectAnchorPickActive,
     clickable,
   } = params
   const isHover = Boolean(hoveredCellId && hoveredCellId === cell.cellId)
@@ -65,6 +69,9 @@ function resolveCellCursor(params: {
       if (cell.placementCastRange && !isWall) return 'pointer'
     }
 
+    if (objectAnchorPickActive) {
+      return cell.obstacleKind ? 'pointer' : 'not-allowed'
+    }
 
     const movementIllegal =
       movementHighlightActive &&
@@ -103,6 +110,7 @@ export function EncounterGrid({
   hasMovementRemaining = false,
   creatureTargetingActive = false,
   singleCellPlacementPickActive = false,
+  objectAnchorPickActive = false,
 }: EncounterGridProps) {
   const theme = useTheme()
   const { palette } = theme
@@ -254,6 +262,7 @@ export function EncounterGrid({
               hasMovementRemaining,
               creatureTargetingActive,
               singleCellPlacementPickActive,
+              objectAnchorPickActive,
               clickable,
             })
 

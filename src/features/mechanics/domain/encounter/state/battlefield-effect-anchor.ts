@@ -1,5 +1,5 @@
 import type { EncounterSpace, CombatantPosition } from '@/features/encounter/space'
-import { getCellById, getCellForCombatant } from '@/features/encounter/space'
+import { findGridObstacleById, getCellById, getCellForCombatant } from '@/features/encounter/space'
 
 /**
  * Spatial attachment for a persistent battlefield effect (emanation / aura footprint).
@@ -25,9 +25,13 @@ export function resolveBattlefieldEffectOriginCellId(
       return getCellForCombatant(placements, anchor.combatantId)
     case 'place':
       return getCellById(space, anchor.cellId) ? anchor.cellId : undefined
-    case 'object':
-      if (!anchor.snapshotCellId) return undefined
-      return getCellById(space, anchor.snapshotCellId) ? anchor.snapshotCellId : undefined
+    case 'object': {
+      if (anchor.snapshotCellId && getCellById(space, anchor.snapshotCellId)) {
+        return anchor.snapshotCellId
+      }
+      const live = findGridObstacleById(space, anchor.objectId)
+      return live && getCellById(space, live.cellId) ? live.cellId : undefined
+    }
     default:
       return undefined
   }

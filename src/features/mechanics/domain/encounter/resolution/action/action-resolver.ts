@@ -26,6 +26,7 @@ import {
 import type { CombatActionDefinition } from '../combat-action.types'
 import type { EncounterState } from '../../state/types'
 import type { ResolveCombatActionSelection, ResolveCombatActionOptions } from '../action-resolution.types'
+import { findGridObstacleById } from '@/features/encounter/space/space.helpers'
 import { formatCasterOptionSummary } from '../../../spells/caster-options'
 import {
   rollDamage,
@@ -532,7 +533,9 @@ function resolveCombatActionInternal(
           ? targets.length > 0
             ? targets
             : []
-          : [actor]
+          : action.attachedEmanation.anchorMode === 'object'
+            ? [actor]
+            : [actor]
         : targets.length > 0
           ? targets
           : action.targeting?.kind === 'none'
@@ -608,31 +611,40 @@ function resolveCombatActionInternal(
   let finalReturnState = finalState
   if (action.attachedEmanation && !behavior.skipCost) {
     const mode = action.attachedEmanation.anchorMode
-    if (mode === 'object') {
-      // Deferred: object anchor selection not wired yet.
+    const ids = selection.unaffectedCombatantIds ?? []
+    let anchor:
+      | { kind: 'place'; cellId: string }
+      | { kind: 'creature'; combatantId: string }
+      | { kind: 'object'; objectId: string; snapshotCellId: string }
+      | null = null
+    if (mode === 'place') {
+      anchor = selection.aoeOriginCellId
+        ? { kind: 'place', cellId: selection.aoeOriginCellId }
+        : null
+    } else if (mode === 'creature') {
+      anchor =
+        selection.targetId && finalState.combatantsById[selection.targetId]
+          ? { kind: 'creature', combatantId: selection.targetId }
+          : null
+    } else if (mode === 'object') {
+      const obstacle =
+        selection.objectId != null ? findGridObstacleById(finalState.space, selection.objectId) : undefined
+      anchor = obstacle
+        ? { kind: 'object', objectId: obstacle.id, snapshotCellId: obstacle.cellId }
+        : null
     } else {
-      const ids = selection.unaffectedCombatantIds ?? []
-      const anchor =
-        mode === 'place'
-          ? selection.aoeOriginCellId
-            ? ({ kind: 'place' as const, cellId: selection.aoeOriginCellId })
-            : null
-          : mode === 'creature'
-            ? selection.targetId && finalState.combatantsById[selection.targetId]
-              ? ({ kind: 'creature' as const, combatantId: selection.targetId })
-              : null
-            : { kind: 'creature' as const, combatantId: selection.actorId }
-      if (anchor) {
-        finalReturnState = addAttachedAuraInstance(finalState, {
-          id: attachedAuraInstanceId(action.attachedEmanation.source, selection.actorId),
-          casterCombatantId: selection.actorId,
-          source: action.attachedEmanation.source,
-          anchor,
-          area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
-          unaffectedCombatantIds: [...ids],
-          ...(typeof action.saveDc === 'number' ? { saveDc: action.saveDc } : {}),
-        })
-      }
+      anchor = { kind: 'creature', combatantId: selection.actorId }
+    }
+    if (anchor) {
+      finalReturnState = addAttachedAuraInstance(finalState, {
+        id: attachedAuraInstanceId(action.attachedEmanation.source, selection.actorId),
+        casterCombatantId: selection.actorId,
+        source: action.attachedEmanation.source,
+        anchor,
+        area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
+        unaffectedCombatantIds: [...ids],
+        ...(typeof action.saveDc === 'number' ? { saveDc: action.saveDc } : {}),
+      })
     }
   }
   return { state: finalReturnState, createdMarkerIds: allMarkerIds }

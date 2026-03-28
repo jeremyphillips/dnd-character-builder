@@ -1,4 +1,4 @@
-import type { EncounterSpace, EncounterCell, CombatantPosition } from './space.types'
+import type { EncounterSpace, EncounterCell, CombatantPosition, GridObstacle } from './space.types'
 
 // ---------------------------------------------------------------------------
 // Cell lookups
@@ -100,4 +100,19 @@ export function formatGridCellLabel(space: EncounterSpace, cellId: string): stri
   if (cell.x >= 26) return cellId
   const col = String.fromCharCode(65 + cell.x)
   return `${col}${cell.y + 1}`
+}
+
+/** First obstacle whose footprint is this cell (e.g. tree / pillar from {@link EncounterSpace.obstacles}). */
+export function findGridObstacleAtCell(
+  space: EncounterSpace | undefined,
+  cellId: string,
+): GridObstacle | undefined {
+  return space?.obstacles?.find((o) => o.cellId === cellId)
+}
+
+export function findGridObstacleById(
+  space: EncounterSpace | undefined,
+  objectId: string,
+): GridObstacle | undefined {
+  return space?.obstacles?.find((o) => o.id === objectId)
 }

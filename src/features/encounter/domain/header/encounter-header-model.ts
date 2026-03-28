@@ -85,6 +85,13 @@ export function deriveEncounterHeaderModel(args: DeriveEncounterHeaderModelArgs)
     }
   }
 
+  if (interactionMode === 'object-anchor-select') {
+    return {
+      directive: 'Select a battlefield object on the grid',
+      endTurnEmphasis: subtle,
+    }
+  }
+
   const areaAction = selectedAction && isAreaGridAction(selectedAction) ? selectedAction : null
   const inAoeFlow = Boolean(areaAction && aoeStep !== 'none')
   const selfCentered = Boolean(areaAction && isSelfCenteredAreaAction(areaAction))

@@ -33,7 +33,7 @@ import {
   isAreaGridAction,
   isSelfCenteredAreaAction,
 } from '../helpers/area-grid-action'
-import { formatGridCellLabel, getCellForCombatant } from '../space/space.helpers'
+import { findGridObstacleAtCell, formatGridCellLabel, getCellForCombatant } from '../space/space.helpers'
 import {
   actionUsesGridCreatureTargeting,
   isValidAoeOriginCell,
@@ -115,6 +115,10 @@ export default function EncounterActiveRoute() {
     setSingleCellPlacementHoverCellId,
     unaffectedCombatantIds,
     setUnaffectedCombatantIds,
+    selectedObjectAnchorId,
+    setSelectedObjectAnchorId,
+    objectAnchorHoverCellId,
+    setObjectAnchorHoverCellId,
     suppressSameSideHostile,
     spellsById,
   } = useEncounterRuntime()
@@ -247,6 +251,8 @@ export default function EncounterActiveRoute() {
       const action = availableActions.find((a) => a.id === actionId)
       setSelectedActionId(actionId)
       setPlacementError(null)
+      setSelectedObjectAnchorId(null)
+      setObjectAnchorHoverCellId(null)
 
       if (action?.attachedEmanation) {
         if (suppressSameSideHostile && encounterState && activeCombatantId) {
@@ -256,6 +262,13 @@ export default function EncounterActiveRoute() {
         }
       } else {
         setUnaffectedCombatantIds([])
+      }
+
+      if (action?.attachedEmanation?.anchorMode === 'object') {
+        setSelectedActionTargetId('')
+        resetAoePlacement()
+        setInteractionMode('object-anchor-select')
+        return
       }
 
       if (isAreaGridAction(action)) {
@@ -297,6 +310,8 @@ export default function EncounterActiveRoute() {
       setInteractionMode,
       setSingleCellPlacementHoverCellId,
       setSingleCellPlacementError,
+      setSelectedObjectAnchorId,
+      setObjectAnchorHoverCellId,
     ],
   )
 
@@ -351,6 +366,7 @@ export default function EncounterActiveRoute() {
         selectedActionTargetId,
         selectedCasterOptions,
         selectedSingleCellPlacementCellId,
+        selectedObjectAnchorId,
         encounterState,
         activeCombatant,
       }),
@@ -363,6 +379,7 @@ export default function EncounterActiveRoute() {
       selectedActionTargetId,
       selectedCasterOptions,
       selectedSingleCellPlacementCellId,
+      selectedObjectAnchorId,
       encounterState,
       activeCombatant,
     ],
@@ -376,6 +393,7 @@ export default function EncounterActiveRoute() {
         aoeOriginCellId,
         selectedCasterOptions,
         selectedSingleCellPlacementCellId,
+        selectedObjectAnchorId,
         encounterState,
         activeCombatant,
       }),
@@ -386,6 +404,7 @@ export default function EncounterActiveRoute() {
       aoeOriginCellId,
       selectedCasterOptions,
       selectedSingleCellPlacementCellId,
+      selectedObjectAnchorId,
       encounterState,
       activeCombatant,
     ],
@@ -396,6 +415,8 @@ export default function EncounterActiveRoute() {
     setInteractionMode('select-target')
     setSingleCellPlacementHoverCellId(null)
     setSingleCellPlacementError(null)
+    setSelectedObjectAnchorId(null)
+    setObjectAnchorHoverCellId(null)
     setUnaffectedCombatantIds([])
     setSelectedActionId('')
     setActionDrawerOpen(false)
@@ -403,6 +424,8 @@ export default function EncounterActiveRoute() {
     resetAoePlacement,
     setInteractionMode,
     setSingleCellPlacementHoverCellId,
+    setSelectedObjectAnchorId,
+    setObjectAnchorHoverCellId,
     setUnaffectedCombatantIds,
     setSelectedActionId,
     setActionDrawerOpen,
@@ -411,7 +434,9 @@ export default function EncounterActiveRoute() {
   const handleCloseDrawerOnTurnChange = useCallback(() => {
     handleCloseDrawer()
     setSelectedActionTargetId('')
-  }, [handleCloseDrawer, setSelectedActionTargetId])
+    setSelectedObjectAnchorId(null)
+    setObjectAnchorHoverCellId(null)
+  }, [handleCloseDrawer, setSelectedActionTargetId, setSelectedObjectAnchorId, setObjectAnchorHoverCellId])
 
   useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawerOnTurnChange)
 
@@ -484,6 +509,17 @@ export default function EncounterActiveRoute() {
         return
       }
 
+      if (interactionMode === 'object-anchor-select') {
+        const space = encounterState.space
+        if (!space) return
+        const obstacle = findGridObstacleAtCell(space, cellId)
+        if (obstacle) {
+          setPlacementError(null)
+          setSelectedObjectAnchorId(obstacle.id)
+        }
+        return
+      }
+
       if (
         (aoeStep === 'placing' || aoeStep === 'confirm') &&
         selectedAction &&
@@ -536,6 +572,8 @@ export default function EncounterActiveRoute() {
       setActionDrawerOpen,
       setSelectedSingleCellPlacementCellId,
       setSingleCellPlacementError,
+      setSelectedObjectAnchorId,
+      interactionMode,
     ],
   )
 
@@ -543,23 +581,26 @@ export default function EncounterActiveRoute() {
     (cellId: string | null) => {
       if (interactionMode === 'single-cell-place') {
         setSingleCellPlacementHoverCellId(cellId)
+      } else if (interactionMode === 'object-anchor-select') {
+        setObjectAnchorHoverCellId(cellId)
       } else {
         setAoeHoverCellId(cellId)
       }
     },
-    [interactionMode, setAoeHoverCellId, setSingleCellPlacementHoverCellId],
+    [interactionMode, setAoeHoverCellId, setSingleCellPlacementHoverCellId, setObjectAnchorHoverCellId],
   )
 
   const movementHighlightActive = useMemo(
     () =>
       (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 &&
       interactionMode !== 'aoe-place' &&
-      interactionMode !== 'single-cell-place',
+      interactionMode !== 'single-cell-place' &&
+      interactionMode !== 'object-anchor-select',
     [activeCombatant, interactionMode],
   )
 
   const creatureTargetingActive = useMemo(() => {
-    if (interactionMode === 'single-cell-place') return false
+    if (interactionMode === 'single-cell-place' || interactionMode === 'object-anchor-select') return false
     if (!selectedAction) return false
     if (
       aoeStep !== 'none' &&
@@ -578,7 +619,11 @@ export default function EncounterActiveRoute() {
         activeCombatantId,
         activeCombatant,
         hoveredCellId:
-          interactionMode === 'single-cell-place' ? singleCellPlacementHoverCellId : aoeHoverCellId,
+          interactionMode === 'single-cell-place'
+            ? singleCellPlacementHoverCellId
+            : interactionMode === 'object-anchor-select'
+              ? objectAnchorHoverCellId
+              : aoeHoverCellId,
         selectedAction,
         aoeStep,
         movementHighlightActive,
@@ -590,6 +635,7 @@ export default function EncounterActiveRoute() {
       activeCombatant,
       aoeHoverCellId,
       singleCellPlacementHoverCellId,
+      objectAnchorHoverCellId,
       selectedAction,
       aoeStep,
       movementHighlightActive,
@@ -724,12 +770,17 @@ export default function EncounterActiveRoute() {
             onCellClick={handleCellClick}
             onCellHover={handleCellHover}
             hoveredCellId={
-              interactionMode === 'single-cell-place' ? singleCellPlacementHoverCellId : aoeHoverCellId
+              interactionMode === 'single-cell-place'
+                ? singleCellPlacementHoverCellId
+                : interactionMode === 'object-anchor-select'
+                  ? objectAnchorHoverCellId
+                  : aoeHoverCellId
             }
             movementHighlightActive={movementHighlightActive}
             hasMovementRemaining={(activeCombatant?.turnResources?.movementRemaining ?? 0) > 0}
             creatureTargetingActive={creatureTargetingActive}
             singleCellPlacementPickActive={interactionMode === 'single-cell-place'}
+            objectAnchorPickActive={interactionMode === 'object-anchor-select'}
           />
         )}
 

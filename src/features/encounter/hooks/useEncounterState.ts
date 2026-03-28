@@ -84,6 +84,9 @@ export function useEncounterState({
   /** Grid cell id for summon / single-cell placement readiness (when required by spawn metadata). */
   const [selectedSingleCellPlacementCellId, setSelectedSingleCellPlacementCellId] = useState<string | null>(null)
   const [singleCellPlacementHoverCellId, setSingleCellPlacementHoverCellId] = useState<string | null>(null)
+  /** `EncounterSpace.obstacles[].id` for attached emanation `anchorMode === 'object'`. */
+  const [selectedObjectAnchorId, setSelectedObjectAnchorId] = useState<string | null>(null)
+  const [objectAnchorHoverCellId, setObjectAnchorHoverCellId] = useState<string | null>(null)
 
   const resetAoePlacement = useCallback(() => {
     setAoeStep('none')
@@ -166,6 +169,13 @@ export function useEncounterState({
     )
     setEncounterState(null)
   }, [selectedCombatantIds])
+
+  useEffect(() => {
+    if (!encounterState) {
+      setSelectedObjectAnchorId(null)
+      setObjectAnchorHoverCellId(null)
+    }
+  }, [encounterState])
 
   useEffect(() => {
     const validMonsterIds = new Set(
@@ -312,6 +322,7 @@ export function useEncounterState({
           aoeOriginCellId: aoeOriginCellId || undefined,
           singleCellPlacementCellId: selectedSingleCellPlacementCellId || undefined,
           unaffectedCombatantIds,
+          objectId: selectedObjectAnchorId?.trim() || undefined,
         },
         { monstersById, buildSummonAllyCombatant },
       )
@@ -325,6 +336,8 @@ export function useEncounterState({
     setSelectedActionId('')
     setSelectedActionTargetId('')
     setSelectedSingleCellPlacementCellId(null)
+    setSelectedObjectAnchorId(null)
+    setObjectAnchorHoverCellId(null)
     setUnaffectedCombatantIds([])
   }, [
     selectedActionId,
@@ -332,6 +345,7 @@ export function useEncounterState({
     selectedCasterOptions,
     aoeOriginCellId,
     selectedSingleCellPlacementCellId,
+    selectedObjectAnchorId,
     unaffectedCombatantIds,
     monstersById,
     buildSummonAllyCombatant,
@@ -495,6 +509,10 @@ export function useEncounterState({
     resetAoePlacement,
     unaffectedCombatantIds,
     setUnaffectedCombatantIds,
+    selectedObjectAnchorId,
+    setSelectedObjectAnchorId,
+    objectAnchorHoverCellId,
+    setObjectAnchorHoverCellId,
     unresolvedCombatantCount,
     selectedCombatants,
     controlTargetId,

@@ -21,6 +21,10 @@ export interface ResolveCombatActionSelection {
   singleCellPlacementCellId?: string
   /** Spirit Guardians–style: combatants designated unaffected at cast (stored on attached aura). */
   unaffectedCombatantIds?: string[]
+  /**
+   * Grid obstacle id (`EncounterSpace.obstacles[].id`) when {@link CombatActionDefinition.attachedEmanation}.`anchorMode === 'object'`.
+   */
+  objectId?: string
 }
 
 export interface ResolveCombatActionOptions {

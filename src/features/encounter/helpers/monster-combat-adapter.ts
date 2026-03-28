@@ -333,7 +333,9 @@ function buildMonsterActionDefinition(
       ? { kind: 'self', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
       : attachedEmanation?.anchorMode === 'creature'
         ? { kind: 'single-target', rangeFt: action.reach ?? 5 }
-        : action.target === 'creatures-in-area'
+        : attachedEmanation?.anchorMode === 'object'
+          ? { kind: 'none' }
+          : action.target === 'creatures-in-area'
           ? { kind: 'all-enemies', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
           : action.target === 'creatures-entered-during-move'
             ? { kind: 'entered-during-move' }

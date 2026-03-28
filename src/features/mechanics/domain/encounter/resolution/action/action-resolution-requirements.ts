@@ -16,7 +16,7 @@ export type ActionResolutionRequirementKind =
   | 'area-selection'
   | 'single-cell-placement'
   | 'caster-option'
-  | 'emanation-anchor-deferred'
+  | 'object-anchor'
   | 'none'
 
 export type ActionResolutionMissing = {
@@ -36,6 +36,11 @@ export type ActionResolutionReadiness = {
 export function isAreaGridCombatAction(action: CombatActionDefinition | undefined | null): boolean {
   if (action?.targeting?.kind === 'all-enemies' && action.areaTemplate) return true
   return Boolean(action?.attachedEmanation?.anchorMode === 'place' && action.areaTemplate)
+}
+
+/** True when the action needs a grid obstacle id (`EncounterSpace.obstacles`) for resolve. */
+export function actionRequiresObjectAnchorForResolve(action: CombatActionDefinition | undefined | null): boolean {
+  return Boolean(action?.attachedEmanation?.anchorMode === 'object')
 }
 
 /**
@@ -63,7 +68,9 @@ export function actionRequiresCreatureTargetForResolve(action: CombatActionDefin
  */
 export function getActionResolutionRequirements(action: CombatActionDefinition): ActionResolutionRequirementKind[] {
   if (action.attachedEmanation?.anchorMode === 'object') {
-    return ['emanation-anchor-deferred']
+    const out: ActionResolutionRequirementKind[] = ['object-anchor']
+    if (action.casterOptions?.length) out.push('caster-option')
+    return out
   }
   if (isAreaGridCombatAction(action)) {
     const out: ActionResolutionRequirementKind[] = ['area-selection']
@@ -92,6 +99,8 @@ export type ActionResolutionReadinessContext = {
   selectedCasterOptions: Record<string, string>
   /** Grid cell when the action requires single-cell map placement. */
   selectedSingleCellPlacementCellId?: string | null
+  /** Obstacle id from {@link EncounterSpace.obstacles} when attached emanation `anchorMode === 'object'`. */
+  selectedObjectAnchorId?: string | null
   encounterState: EncounterState | null | undefined
   activeCombatant: CombatantInstance | null | undefined
 }
@@ -148,14 +157,23 @@ export function getActionResolutionReadiness(
   }
 
   if (action.attachedEmanation?.anchorMode === 'object') {
+    const missingRequirements: ActionResolutionMissing[] = []
+    const oid = ctx.selectedObjectAnchorId?.trim()
+    const obstacleOk = Boolean(
+      oid && ctx.encounterState?.space?.obstacles?.some((o) => o.id === oid),
+    )
+    if (!obstacleOk) {
+      missingRequirements.push({
+        kind: 'object-anchor',
+        message: 'Select a battlefield object',
+      })
+    }
+    if (!casterOptionsSatisfied(action, ctx.selectedCasterOptions)) {
+      missingRequirements.push({ kind: 'caster-option', message: 'Choose spell options' })
+    }
     return {
-      canResolve: false,
-      missingRequirements: [
-        {
-          kind: 'emanation-anchor-deferred',
-          message: 'Object anchoring is not supported yet.',
-        },
-      ],
+      canResolve: missingRequirements.length === 0,
+      missingRequirements,
     }
   }
 

@@ -102,6 +102,14 @@ export function deriveGridHoverStatusMessage(params: {
     return null
   }
 
+  if (interactionMode === 'object-anchor-select') {
+    const obstacles = encounterState.space?.obstacles
+    if (!obstacles?.length) return 'No obstacles on this map'
+    const obs = obstacles.find((o) => o.cellId === hoveredCellId)
+    if (!obs) return 'Select a tree or pillar'
+    return null
+  }
+
   if (
     (aoeStep === 'placing' || aoeStep === 'confirm') &&
     selectedAction &&

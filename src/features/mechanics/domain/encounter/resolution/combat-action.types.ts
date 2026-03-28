@@ -159,8 +159,8 @@ export interface CombatActionDefinition {
    * Persistent emanation metadata for encounter setup (e.g. Spirit Guardians): cast-time unaffected setup + battlefield aura.
    * Does not replace `areaTemplate` / `all-enemies` for targeting metadata.
    *
-   * **`anchorMode`:** `caster` → creature-on-caster anchor; `place` → `aoeOriginCellId` → place anchor;
-   * `creature` → `targetId` → creature anchor; `object` → not supported yet.
+   * **`anchorMode`:** `caster` → creature-on-caster; `place` → `aoeOriginCellId`; `creature` → `targetId`;
+   * `object` → `objectId` (grid obstacle id).
    */
   attachedEmanation?: {
     source: AttachedBattlefieldEffectSource

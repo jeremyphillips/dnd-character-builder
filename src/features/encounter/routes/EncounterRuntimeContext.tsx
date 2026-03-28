@@ -412,7 +412,7 @@ function useEncounterRuntimeValue() {
           rows: preset.rows,
         })
         const space = placeRandomGridObstacle(base, environmentSetup.setting)
-        handleStartEncounter({ space })
+        handleStartEncounter({ space, environmentBaseline: environmentSetup })
       }}
     />
   )

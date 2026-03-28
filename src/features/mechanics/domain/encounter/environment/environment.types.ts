@@ -14,8 +14,8 @@ export type EncounterAtmosphereTag = (typeof ATMOSPHERE_TAGS)[number]['id']
 
 /**
  * Global/default encounter environment edited in setup (baseline layer).
- * Localized effects (spells, hazards, patches) apply on top via {@link EncounterEnvironmentZoneOverride}
- * and resolve to {@link EncounterCellEnvironmentResolved}.
+ * Localized zones apply on top via {@link EncounterEnvironmentZone} and resolve to
+ * {@link EncounterWorldCellEnvironment}.
  *
  * Lighting and visibility/obscuration stay independent axes (e.g. bright light + heavy obscurement).
  */
@@ -78,57 +78,88 @@ export type EncounterEnvironmentExtended = {
 /** @deprecated Prefer {@link EncounterEnvironmentExtended}; name retained briefly for any stray imports. */
 export type EncounterEnvironment = EncounterEnvironmentExtended
 
-/** What ties a zone override to the battle (spell instance, effect id, etc.). */
+/** What ties a zone to the battle (spell instance, effect id, etc.). */
 export type EncounterEnvironmentOverrideSourceKind =
   | 'battlefield-effect'
   | 'spell'
   | 'manual'
   | 'terrain-feature'
 
+/** Domain category for a localized environment zone (distinct from {@link EncounterEnvironmentOverrideSourceKind}). */
+export type EncounterEnvironmentZoneKind = 'patch' | 'emanation' | 'hazard'
+
 /**
- * Geometry link for localized environment overrides. Phase 0: typed only;
- * radius and some kinds are resolved in later phases when grid integration exists.
+ * Geometry for zone coverage. Prefer `sphere-ft` (matches battlefield AoE: Chebyshev distance in feet).
+ * @deprecated `grid-cell-radius` — prefer `sphere-ft` with an explicit radius in feet.
  */
 export type EncounterEnvironmentAreaLink =
   | { kind: 'grid-cell-ids'; cellIds: string[] }
   | {
+      /** @deprecated Prefer `sphere-ft`. */
       kind: 'grid-cell-radius'
       centerCellId: string
-      /** Chebyshev / square radius in cells — exact metric TBD in grid layer. */
       radiusCells: number
     }
+  | { kind: 'sphere-ft'; originCellId: string; radiusFt: number }
   | { kind: 'unattached'; note?: string }
 
-export type EncounterEnvironmentZoneOverride = {
-  id: string
-  sourceKind: EncounterEnvironmentOverrideSourceKind
-  sourceId?: string
-  area: EncounterEnvironmentAreaLink
-  overrides: {
-    lightingLevel?: EncounterLightingLevel
-    terrainMovement?: EncounterTerrainMovement
-    visibilityObscured?: EncounterVisibilityObscured
-    atmosphereTagsAdd?: EncounterAtmosphereTag[]
-    atmosphereTagsRemove?: EncounterAtmosphereTag[]
-    /** When set, replaces accumulated tags for subsequent merge steps in that zone’s application order. */
-    atmosphereTagsReplace?: EncounterAtmosphereTag[]
-  }
-  /** Reserved for magical darkness / AM field / perception — not interpreted in Phase 0. */
-  magical?: {
-    magicalDarkness?: boolean
-    suppressesDarkvision?: boolean
-  }
+export type EncounterEnvironmentZoneOverrides = {
+  setting?: EncounterEnvironmentSetting
+  lightingLevel?: EncounterLightingLevel
+  terrainMovement?: EncounterTerrainMovement
+  visibilityObscured?: EncounterVisibilityObscured
+  atmosphereTagsAdd?: EncounterAtmosphereTag[]
+  atmosphereTagsRemove?: EncounterAtmosphereTag[]
+  /** When set, replaces accumulated tags for subsequent merge steps in that zone’s application order. */
+  atmosphereTagsReplace?: EncounterAtmosphereTag[]
 }
 
 /**
- * Resolved environment at a single grid cell after baseline + ordered zone overrides.
- * Pure domain view; rendering should consume this (or a projection), not invent semantics in the grid.
+ * Localized environment layer (spell patch, emanation, hazard region).
+ * Merge order: {@link sortZonesForMerge}, then per-field rules in {@link resolveWorldEnvironmentForCell}.
  */
-export type EncounterCellEnvironmentResolved = {
+export type EncounterEnvironmentZone = {
+  id: string
+  kind: EncounterEnvironmentZoneKind
+  /**
+   * Lower value = earlier in merge order. For scalar fields, **later** zones win (higher priority number wins).
+   * Default `0` in resolvers.
+   */
+  priority?: number
+  sourceKind: EncounterEnvironmentOverrideSourceKind
+  sourceId?: string
+  area: EncounterEnvironmentAreaLink
+  overrides: EncounterEnvironmentZoneOverrides
+  /** World-state flags; merged with OR across applicable zones (see resolver). */
+  magical?: {
+    magical?: boolean
+    magicalDarkness?: boolean
+    blocksDarkvision?: boolean
+  }
+}
+
+/** @deprecated Use {@link EncounterEnvironmentZone}. */
+export type EncounterEnvironmentZoneOverride = EncounterEnvironmentZone
+
+/**
+ * **World / environment state** at one grid cell after baseline + zone layering.
+ * Not viewer perception and not UI render state — consumers project for display/senses later.
+ */
+export type EncounterWorldCellEnvironment = {
+  setting: EncounterEnvironmentSetting
   lightingLevel: EncounterLightingLevel
   terrainMovement: EncounterTerrainMovement
   visibilityObscured: EncounterVisibilityObscured
   atmosphereTags: EncounterAtmosphereTag[]
-  /** Zones that applied to this cell, in application order. */
+  /** True if any applicable zone set `magical.magicalDarkness`. */
+  magicalDarkness: boolean
+  /** True if any applicable zone set `magical.blocksDarkvision`. */
+  blocksDarkvision: boolean
+  /** True if any applicable zone set `magical.magical`. */
+  magical: boolean
+  /** Zones that covered this cell, sorted by merge order (priority asc, then id asc). */
   appliedZoneIds: string[]
 }
+
+/** @deprecated Use {@link EncounterWorldCellEnvironment}. */
+export type EncounterCellEnvironmentResolved = EncounterWorldCellEnvironment

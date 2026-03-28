@@ -1,6 +1,6 @@
 # Encounter environment (layered model)
 
-This document describes the **Phase 0** encounter environment architecture: baseline defaults, future localized overrides, and resolved per-cell state. It is the contract for later work on magical darkness, perception, and grid rendering.
+Domain contract for **baseline** encounter defaults, **localized environment zones**, and **resolved world state per grid cell**. Viewer perception and UI rendering are separate layers that may project from this data later.
 
 ## Layers
 
@@ -14,37 +14,57 @@ This document describes the **Phase 0** encounter environment architecture: base
 
    **Lighting and visibility stay separate.** Valid combinations include bright light + heavy obscurement, darkness + clear visibility, dim + light obscurement.
 
-2. **Localized overrides — `EncounterEnvironmentZoneOverride[]`** (typed scaffold)  
-   Future sources: spells (e.g. *Darkness*), hazards, manual zones, terrain features. Each override has:
-   - `id`, `sourceKind`, optional `sourceId`  
-   - `area` — `EncounterEnvironmentAreaLink` (e.g. explicit cell ids; radius and other kinds filled in when grid integration exists)  
-   - `overrides` — partial `lightingLevel`, `terrainMovement`, `visibilityObscured`, and atmosphere merge/replace fields  
-   - optional `magical` flags reserved for magical darkness / darkvision suppression (not interpreted in Phase 0)
+2. **Localized zones — `EncounterEnvironmentZone[]`**  
+   Patches, emanations, hazards (see `kind`). Each zone has `id`, optional `priority`, `sourceKind` / `sourceId`, `area` (`EncounterEnvironmentAreaLink`), partial `overrides` (including optional `setting`), and optional `magical` flags (`magical`, `magicalDarkness`, `blocksDarkvision`).
 
-3. **Resolved cell — `EncounterCellEnvironmentResolved`**  
-   Result of `resolveCellEnvironment(baseline, zones, cellId)` in `environment.resolve.ts`. Per-cell fields only (baseline `setting` stays encounter-wide and is not duplicated here):
-   - Scalar fields: baseline, then each applicable zone in order; **last zone wins** per field.  
-   - `atmosphereTags`: baseline, then per-zone merge (replace → remove → add within each zone’s application).  
-   - `appliedZoneIds`: zones that affected the cell, in order.
+3. **Encounter state**  
+   `EncounterState.environmentBaseline` and `EncounterState.environmentZones` (optional on older snapshots; `createEncounterState` sets defaults). Baseline is copied from setup when the encounter starts.
 
-Constants for labels and ids live in `environment.constants.ts` (`LIGHTING_LEVELS`, `VISIBILITY_OBSCURED_LEVELS`, `ATMOSPHERE_TAGS`, …).
+4. **Resolved world cell — `EncounterWorldCellEnvironment`**  
+   Pure **world/environment** state at a cell — not viewer perception, not render state. Produced by `resolveWorldEnvironmentForCell` / `buildResolvedWorldEnvironmentCellMap` / `resolveWorldEnvironmentFromEncounterState`.
+
+## Area linkage (`EncounterEnvironmentAreaLink`)
+
+- **`grid-cell-ids`** — explicit membership.  
+- **`sphere-ft`** — preferred; matches battlefield AoE: Chebyshev distance in feet vs `originCellId` (`gridDistanceFt` ≤ `radiusFt`).  
+- **`grid-cell-radius`** — deprecated; converted to feet via `radiusCells × cellFeet` when `space` is provided.  
+- **`unattached`** — covers no cells.
+
+Use `cellIdInEnvironmentArea(space, area, cellId)` for membership (requires `EncounterSpace` for sphere-like shapes).
+
+## Merge and precedence
+
+1. **Applicable zones** — zones whose area contains `cellId`.  
+2. **Sort** — `sortZonesForMerge`: ascending `priority` (default `0`), then ascending `id` (stable tie-break).  
+3. **Scalars** (`setting`, `lightingLevel`, `terrainMovement`, `visibilityObscured`) — start from baseline; each sorted applicable zone may override; **last in sorted order wins** (higher numeric `priority` wins when both set a field).  
+4. **`atmosphereTags`** — start from baseline; for each zone in sorted order: **replace** (if set) → **remove** → **add**.  
+5. **Magical flags** — `magicalDarkness`, `blocksDarkvision`, `magical`: **OR** across applicable zones (any zone sets true → true).
+
+## API (see `environment.resolve.ts`)
+
+| Function | Purpose |
+|----------|---------|
+| `resolveWorldEnvironmentForCell(baseline, zones, space, cellId)` | Resolve one cell |
+| `buildResolvedWorldEnvironmentCellMap(baseline, zones, space)` | Map every `space.cells` id → resolved |
+| `resolveWorldEnvironmentFromEncounterState(state, cellId)` | Uses `state.environmentBaseline` / `environmentZones` with defaults |
+| `resolveCellEnvironment(baseline, zones, cellId, space?)` | Legacy; without `space`, only `grid-cell-ids` areas match |
 
 ## Defaults
 
-`DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE` matches the previous runtime default (outdoors, bright, normal terrain, no obscurement, no atmosphere tags).
+`DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE` matches the runtime default (outdoors, bright, normal terrain, no obscurement, no atmosphere tags).
 
-## Non-goals (Phase 0)
+## Non-goals
 
-- No spell-specific darkness behavior in the setup panel.  
-- Grid UI (`EncounterGrid`) does not define environment semantics; it should consume resolved domain state or projections in later phases.  
-- `EncounterEnvironmentAreaLink` kinds `grid-cell-radius` and `unattached` are not fully resolved yet (`cellIdInEnvironmentAreaLink` returns `false` for those until geometry exists).
+- No viewer perception or token hiding in this module.  
+- Grid UI (`EncounterGrid`) must not define environment semantics; use resolved world state or projections.  
+- Spell/action resolution does not yet create `environmentZones` rows (see TODO in `attached-aura-mutations.ts`).
 
 ## Related types
 
-- **Extended narrative schema:** `EncounterEnvironmentExtended` (nested lighting/terrain/visibility notes) is separate from the baseline and kept for optional future campaign/doc use.
+- **`EncounterEnvironmentExtended`** — optional narrative/campaign schema; not the tactical baseline.
 
-## Phase 1 pointers
+## Next phases
 
-- Wire battlefield effects / spells into `EncounterEnvironmentZoneOverride` with real `area` resolution.  
-- Implement `grid-cell-radius` (and any templates) using the encounter grid model.  
-- Drive perception and cell styling from `EncounterCellEnvironmentResolved` (or a viewer-specific projection), not ad hoc grid state.
+- **Viewer perception** — project from `EncounterWorldCellEnvironment` + creature senses.  
+- **Darkness / veil rendering** — separate render projection; do not use `CellBaseFillKind` as environment source of truth.  
+- **Spell integration** — spawn `EncounterEnvironmentZone` with `sphere-ft` from cast placement / `resolveBattlefieldEffectOriginCellId` patterns where appropriate.

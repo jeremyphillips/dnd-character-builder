@@ -1,3 +1,8 @@
+/**
+ * TODO(environment): When spells like *Darkness* need world-state coverage, add or sync
+ * `EncounterState.environmentZones` (see `resolveWorldEnvironmentForCell`) alongside
+ * `attachedAuraInstances` / `resolveBattlefieldEffectOriginCellId` as appropriate.
+ */
 import type { AttachedBattlefieldEffectSource } from './attached-battlefield-source'
 import { attachedBattlefieldSourceEquals } from './attached-battlefield-source'
 import type { BattlefieldEffectInstance, EncounterState } from './types'

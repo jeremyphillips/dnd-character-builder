@@ -2,6 +2,10 @@ import type { InitiativeRoll } from '../../resolution'
 import type { CombatantInstance } from './combatant.types'
 import type { CombatLogEvent } from './combat-log.types'
 import type { EncounterSpace, CombatantPosition } from '@/features/encounter/space'
+import type {
+  EncounterEnvironmentBaseline,
+  EncounterEnvironmentZone,
+} from '../../environment/environment.types'
 import type { AttachedBattlefieldEffectSource } from '../attached-battlefield-source'
 import type { BattlefieldEffectAnchor } from '../battlefield-effect-anchor'
 
@@ -38,4 +42,11 @@ export interface EncounterState {
   placements?: CombatantPosition[]
   /** Persistent battlefield effects (e.g. emanation auras). */
   attachedAuraInstances?: BattlefieldEffectInstance[]
+  /**
+   * Global encounter environment snapshot (from setup). Layer with `environmentZones` via
+   * `resolveWorldEnvironmentForCell` / `resolveWorldEnvironmentFromEncounterState`.
+   */
+  environmentBaseline?: EncounterEnvironmentBaseline
+  /** Localized environment overrides (magical darkness patches, fog, etc.). */
+  environmentZones?: EncounterEnvironmentZone[]
 }

@@ -12,6 +12,8 @@ import type { SpawnSummonInitiativeMode } from '../../effects/effects.types'
 import type { EncounterState } from './types'
 import type { EncounterSpace, InitialPlacementOptions } from '@/features/encounter/space'
 import { generateInitialPlacements } from '@/features/encounter/space'
+import type { EncounterEnvironmentBaseline, EncounterEnvironmentZone } from '@/features/mechanics/domain/encounter/environment'
+import { DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE } from '@/features/mechanics/domain/encounter/environment'
 import {
   createCombatantTurnResources,
   indexCombatants,
@@ -337,6 +339,9 @@ export function createEncounterState(
     monsterRuntimeContext?: MonsterRuntimeContext
     /** Monster catalog lookup for trait attached auras; falls back to `battlefieldSpell.monstersById`. */
     monstersById?: Record<string, Monster>
+    /** Snapshot from encounter setup; defaults to `DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE`. */
+    environmentBaseline?: EncounterEnvironmentBaseline
+    environmentZones?: EncounterEnvironmentZone[]
   } = {},
 ): EncounterState {
   const seededCombatants = combatants.map(seedRuntimeEffects)
@@ -383,6 +388,8 @@ export function createEncounterState(
     space: options.space,
     placements,
     attachedAuraInstances: traitAuras,
+    environmentBaseline: options.environmentBaseline ?? DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
+    environmentZones: options.environmentZones ?? [],
   }
 
   state.log = [createEncounterStartedLog(state)]

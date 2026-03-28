@@ -4,6 +4,12 @@
  *
  * Does not implement stealth or perception rules — only chooses which combatant id feeds the viewer seam.
  * Action ownership / turn resolution remain tied to {@link EncounterState.activeCombatantId}.
+ *
+ * **Canonical active encounter path:** `simulatorViewerMode === 'active-combatant'` yields a PC viewer id
+ * matching the active combatant — this is what `EncounterRuntimeContext` passes into `selectGridViewModel`
+ * so immersed-obscuration overlay suppression applies during the active turn. Callers that omit
+ * `opts.perception` on the grid selector do not get viewer-relative immersion (legacy / outside-observer
+ * fallback — see `selectGridViewModel` JSDoc).
  */
 import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { EncounterState } from '@/features/mechanics/domain/encounter'

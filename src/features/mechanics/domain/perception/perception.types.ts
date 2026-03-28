@@ -47,18 +47,34 @@ export type EncounterViewerPerceptionCell = {
 }
 
 /**
- * Viewer-wide perception mode for battlefield UI (veils, boundary drawing). Derived only.
+ * Viewer-wide perception mode for battlefield UI (veils, boundary drawing). Derived only from the
+ * viewer’s cell {@link EncounterWorldCellEnvironment} — not spell ids.
+ *
+ * **Immersed-obscuration rule (PC):** When the viewer stands in **heavy obscurement** (e.g. opaque cloud
+ * profile) or **magical darkness** (no bypass), {@link suppressDarknessBoundaryFromInside} is true.
+ * Downstream projection exposes `suppressAoeTemplateOverlay` on the battlefield render state (historical
+ * name) so the grid selector can strip **world-space tactical overlays** that would trace the
+ * same obscuring footprint (synced persistent aura fill, AoE placement template tint). **Per-cell** visibility
+ * tints still come only from the canonical visibility / perception pipeline — this flag does not replace
+ * that system.
+ *
+ * **DM:** Omniscient tactical view — both immersion flags are reported as false here so overlays stay visible;
+ * see `resolveViewerBattlefieldPerception` / `projectBattlefieldRenderState`.
  */
 export type EncounterViewerBattlefieldPerception = {
   viewerCellId: string | null
   viewerInsideMagicalDarkness: boolean
   viewerInsideHeavyObscurement: boolean
   /**
-   * Full-grid dim over the tactical map when the viewer’s cell is in magical darkness **or** heavy
-   * obscurement (e.g. Fog Cloud) — same presentation overlay; not only MD.
+   * Full-grid black veil when the viewer’s cell is in magical darkness (no bypass). Heavy obscurement
+   * (e.g. Fog Cloud) uses per-cell fog fill only — no second full-grid layer.
    */
   useBattlefieldBlindVeil: boolean
-  /** Suppress AoE / darkness boundary drawing when inside MD or heavy obscurement. */
+  /**
+   * True when the PC viewer is **immersed** in heavy obscurement or magical darkness (no bypass): hide
+   * world-space overlays that reveal the obscuring volume footprint from the inside. Drives grid stripping of
+   * `persistentAttachedAura` / `aoeInTemplate` (see `selectGridViewModel`). Distinct from per-cell fills.
+   */
   suppressDarknessBoundaryFromInside: boolean
 }
 

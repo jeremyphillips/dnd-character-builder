@@ -5,6 +5,13 @@
  * - **Cell tint / `perceptionBaseFillKind`** — **only** via {@link resolvePresentationVisibilityFill} from
  *   `visibility.presentation.ts` (merged world → contributors → resolved → fill). No spell ids; no direct
  *   `maskedByDarkness` → fill mapping here.
+ *
+ * **Immersed obscuration vs overlays:** {@link EncounterBattlefieldRenderState.suppressAoeTemplateOverlay}
+ * mirrors `EncounterViewerBattlefieldPerception.suppressDarknessBoundaryFromInside` for PCs. When true,
+ * {@link buildGridPerceptionSlice} consumers (e.g. `selectGridViewModel`) should strip **world-space**
+ * footprint overlays (`persistentAttachedAura`, `aoeInTemplate`) so the viewer inside fog/MD does not see a
+ * crisp tactical ring around the same volume. **Does not** disable per-cell visibility fills — those stay on
+ * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
 import { getCellForCombatant } from '@/features/encounter/space'
@@ -35,8 +42,8 @@ export type EncounterGridCellRenderState = {
   occupantTokenVisibility: OccupantTokenVisibility
   showObstacleGlyph: boolean
   /**
-   * When set, may replace tactical `paper` / `persistent-attached-aura` base fills (see `mergePerceptionIntoCellVisualState`).
-   * Presentation-only; does not change encounter state.
+   * When set, may replace tactical base fills (see `mergePerceptionIntoCellVisualState` in `cellVisualState.ts`;
+   * immersed PCs may also replace `aoe-cast-range` / `placement-cast-range` band fills). Presentation-only.
    */
   perceptionBaseFillKind: VisibilityFillKind | null
   /** Echo of domain flag — AoE/darkness template edge may be hidden when true. */
@@ -44,12 +51,18 @@ export type EncounterGridCellRenderState = {
 }
 
 /**
- * Battlefield-level presentation for veils and global template suppression.
+ * Battlefield-level presentation for veils and global **footprint overlay** suppression (PC only for the
+ * latter — DM sees all tactical overlays).
  */
 export type EncounterBattlefieldRenderState = {
   useBlindVeil: boolean
   suppressDarknessBoundaryFromInside: boolean
-  /** Hide AoE / emanation template fill when viewer cannot see the boundary from inside MD. */
+  /**
+   * PC: when true, viewer is immersed in MD or heavy obscurement — **strip world-space footprint overlays**
+   * in the grid selector (`aoeInTemplate`, `persistentAttachedAura`), not per-cell visibility fills.
+   * Named for the AoE placement channel; also gates synced emanation footprint tint.
+   * DM: always false (omniscient).
+   */
   suppressAoeTemplateOverlay: boolean
   /** 0–1 opacity for full-grid blind veil (presentation). */
   blindVeilOpacity: number
@@ -82,13 +95,19 @@ export function mergeGridPerceptionInputCapabilities(
   return { ...base, magicalDarknessBypass: true }
 }
 
+/**
+ * One viewer’s projected perception for the grid. `suppressAoeTemplateOverlay` duplicates
+ * `battlefieldRender.suppressAoeTemplateOverlay` for call sites that only need the immersion / overlay rule.
+ */
 export type GridPerceptionSlice = {
   viewerCellId: string
   viewerCombatantId: string
   battlefieldRender: EncounterBattlefieldRenderState
+  /** Same as `battlefieldRender.suppressAoeTemplateOverlay` — see {@link EncounterBattlefieldRenderState}. */
   suppressAoeTemplateOverlay: boolean
 }
 
+/** Maps domain battlefield perception to grid render flags. DM branch keeps all overlay-suppression off. */
 export function projectBattlefieldRenderState(
   bp: EncounterViewerBattlefieldPerception,
   viewerRole: 'dm' | 'pc',
@@ -163,6 +182,7 @@ function resolveOccupantTokenVisibility(
 
 /**
  * Builds viewer-relative perception slice for the grid selector (one battlefield projection + per-cell in selector).
+ * Returns null when `input` is missing, placements/space are missing, or the viewer combatant has no cell.
  */
 export function buildGridPerceptionSlice(
   state: EncounterState,

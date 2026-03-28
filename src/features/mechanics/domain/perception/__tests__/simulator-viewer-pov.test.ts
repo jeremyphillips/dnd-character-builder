@@ -120,7 +120,7 @@ describe('buildGridPerceptionSlice — viewer POV', () => {
     expect(outside?.battlefieldRender.useBlindVeil).toBe(false)
   })
 
-  it('heavy obscurement without MD still enables blind veil when viewer is inside fog', () => {
+  it('heavy obscurement without MD suppresses AoE boundary but does not use full-grid blind veil', () => {
     const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
     const state: EncounterState = {
       combatantsById: {},
@@ -149,7 +149,9 @@ describe('buildGridPerceptionSlice — viewer POV', () => {
       viewerCombatantId: 'wiz',
       viewerRole: 'pc',
     })
-    expect(slice?.battlefieldRender.useBlindVeil).toBe(true)
+    expect(slice?.battlefieldRender.useBlindVeil).toBe(false)
+    expect(slice?.battlefieldRender.blindVeilOpacity).toBe(0)
     expect(slice?.battlefieldRender.suppressDarknessBoundaryFromInside).toBe(true)
+    expect(slice?.battlefieldRender.suppressAoeTemplateOverlay).toBe(true)
   })
 })

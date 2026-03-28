@@ -112,7 +112,7 @@ describe('resolveViewerPerceptionForCell', () => {
     expect(p.maskedByMagicalDarkness).toBe(false)
   })
 
-  it('viewer inside heavy obscurement (fog) cannot perceive occupants in other cells', () => {
+  it('viewer inside heavy obscurement (fog) — outside cells match MD other-cell presentation (unrevealed)', () => {
     const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
     const outside = world({ visibilityObscured: 'none', lightingLevel: 'bright' })
     const p = resolveViewerPerceptionForCell({
@@ -122,10 +122,25 @@ describe('resolveViewerPerceptionForCell', () => {
       targetCellId: 'out',
       viewerRole: 'pc',
     })
-    expect(p.canPerceiveCell).toBe(true)
+    expect(p.canPerceiveCell).toBe(false)
     expect(p.canPerceiveOccupants).toBe(false)
     expect(p.canPerceiveObjects).toBe(false)
+    expect(p.suppressTemplateBoundary).toBe(true)
     expect(p.maskedByDarkness).toBe(false)
+  })
+
+  it('viewer inside fog-class volume still perceives another heavy non-MD cell (shared obscuration class)', () => {
+    const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: fog,
+      targetWorld: fog,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+    })
+    expect(p.canPerceiveCell).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.suppressTemplateBoundary).toBe(true)
   })
 
   it('viewer inside heavy obscurement — own cell still perceivable for scaffolding', () => {
@@ -140,6 +155,7 @@ describe('resolveViewerPerceptionForCell', () => {
     expect(p.canPerceiveCell).toBe(true)
     expect(p.maskedByDarkness).toBe(true)
     expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.suppressTemplateBoundary).toBe(true)
   })
 
   it('magical darkness takes precedence over heavy obscuration on same cell', () => {
@@ -191,7 +207,7 @@ describe('resolveViewerBattlefieldPerception', () => {
     expect(b.suppressDarknessBoundaryFromInside).toBe(true)
   })
 
-  it('inside heavy obscurement (fog, no MD) enables same battlefield blind veil as MD', () => {
+  it('inside heavy obscurement (fog, no MD) suppresses boundary but does not use full-grid blind veil', () => {
     const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
     const b = resolveViewerBattlefieldPerception({
       viewerWorld: fog,
@@ -200,7 +216,7 @@ describe('resolveViewerBattlefieldPerception', () => {
     })
     expect(b.viewerInsideMagicalDarkness).toBe(false)
     expect(b.viewerInsideHeavyObscurement).toBe(true)
-    expect(b.useBattlefieldBlindVeil).toBe(true)
+    expect(b.useBattlefieldBlindVeil).toBe(false)
     expect(b.suppressDarknessBoundaryFromInside).toBe(true)
   })
 

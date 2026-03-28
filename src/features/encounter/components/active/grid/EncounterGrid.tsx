@@ -302,7 +302,11 @@ export function EncounterGrid({
               movementHighlightActive,
               hasMovementRemaining,
             })
-            const visual = mergePerceptionIntoCellVisualState(tacticalVisual, cell.perception)
+            const visual = mergePerceptionIntoCellVisualState(tacticalVisual, cell.perception, {
+              immersionAllowsPerceptionOverCastRangeBands: Boolean(
+                battlefieldRender?.suppressAoeTemplateOverlay,
+              ),
+            })
             const liftAboveBlindVeil =
               Boolean(battlefieldRender?.useBlindVeil) && viewerCellId != null && cell.cellId === viewerCellId
             const cellVisualSx = getCellVisualSx(theme, visual)

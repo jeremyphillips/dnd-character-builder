@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { EncounterWorldCellEnvironment } from '../../environment/environment.types'
 import { inferObscurationPresentationCausesWhenMissing } from '../visibility.presentation.compatibility'
+import { resolveViewerPerceptionForCell } from '../perception.resolve'
 import {
   mapResolvedVisibilityToFillKind,
   resolvePresentationVisibilityFill,
@@ -127,6 +128,34 @@ describe('canonical visibility presentation pipeline', () => {
       visibilityObscured: 'heavy',
     })
     expect(resolvePresentationVisibilityFillFromMergedWorld(p, w)).toBe('magical-darkness')
+  })
+
+  it('immersed fog vs magical darkness: outside bright cell uses same hidden fill (parity)', () => {
+    const fogViewer = baseWorld({ visibilityObscured: 'heavy', magicalDarkness: false })
+    const mdViewer = baseWorld({
+      magicalDarkness: true,
+      lightingLevel: 'darkness',
+      visibilityObscured: 'heavy',
+    })
+    const outside = baseWorld({ visibilityObscured: 'none', lightingLevel: 'bright' })
+    const pFog = resolveViewerPerceptionForCell({
+      viewerWorld: fogViewer,
+      targetWorld: outside,
+      viewerCellId: 'in',
+      targetCellId: 'out',
+      viewerRole: 'pc',
+    })
+    const pMd = resolveViewerPerceptionForCell({
+      viewerWorld: mdViewer,
+      targetWorld: outside,
+      viewerCellId: 'in',
+      targetCellId: 'out',
+      viewerRole: 'pc',
+    })
+    expect(pFog.canPerceiveCell).toBe(false)
+    expect(pMd.canPerceiveCell).toBe(false)
+    expect(resolvePresentationVisibilityFill(pFog, outside)).toBe('hidden')
+    expect(resolvePresentationVisibilityFill(pMd, outside)).toBe('hidden')
   })
 })
 

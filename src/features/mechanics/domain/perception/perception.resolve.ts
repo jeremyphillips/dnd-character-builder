@@ -31,13 +31,24 @@ export function effectiveMagicalDarknessBypass(
  * Rules (baseline, no special senses): DM view is unrestricted. Otherwise:
  * - Viewer in magical darkness (no bypass): cannot perceive other cells’ contents; only own cell is partially
  *   perceivable (occupants scaffold true; objects false; suppress template boundary).
- * - Viewer in **heavy obscurement** (e.g. Fog Cloud) without MD: cannot perceive **occupants** in **other**
- *   cells (cannot see “out” of the cloud for creature tokens; own cell still resolved below; self-token uses
- *   presentation self shortcut). Mirrors blinded-style sight for the tactical grid.
+ * - Viewer in **heavy obscurement** (fog-class, non-MD) without MD: cannot perceive **occupants** in **other**
+ *   cells. Targets **outside** that obscuration class use the same unrevealed presentation as magical darkness
+ *   “other cells” (`canPerceiveCell: false`); targets **inside** heavy non-MD obscuration still resolve per-cell
+ *   fog-style fills. Own cell: masked darkness branch with `suppressTemplateBoundary` aligned with immersion.
  * - Viewer outside, target in magical darkness: can perceive the cell as a dark region, not occupants/objects.
  * - Heavy obscuration or non-magical darkness **on the target cell**: occupants/objects masked from outside.
  * - Magical darkness on target takes precedence over heavy obscuration for masking.
  */
+/**
+ * Heavy obscurement **without** magical darkness — same mechanical class as {@link AttachedEnvironmentZoneProfile}
+ * `fog` (opaque cloud) and manual patches that set heavy + non-MD only. Used so immersed viewers in fog-class
+ * volumes follow the same **presentation** path as MD for cells **outside** that volume (unrevealed / hidden fill),
+ * while cells that share this profile still resolve per-cell fog-style fills.
+ */
+function isHeavyNonMdObscuredCloudClass(world: EncounterWorldCellEnvironment): boolean {
+  return world.visibilityObscured === 'heavy' && !world.magicalDarkness
+}
+
 export function resolveViewerPerceptionForCell(
   params: ResolveViewerPerceptionForCellParams,
 ): EncounterViewerPerceptionCell {
@@ -85,18 +96,35 @@ export function resolveViewerPerceptionForCell(
     }
   }
 
-  /** Heavy obscured viewer (fog, etc.) — not MD; cannot see occupant tokens in other cells. */
-  const viewerInHeavyObscured =
-    !viewerInMd && viewerWorld.visibilityObscured === 'heavy'
+  /**
+   * Heavy non-MD viewer (fog-class cloud, etc.). For cells **outside** that obscuration class, match magical
+   * darkness “other cell” presentation (`canPerceiveCell: false` → unrevealed fill) so immersed fog does not
+   * show a crisp bright world ring; for cells **inside** the same class, keep per-cell fog-style resolution.
+   */
+  const viewerInHeavyNonMdFog = !viewerInMd && isHeavyNonMdObscuredCloudClass(viewerWorld)
 
-  if (viewerInHeavyObscured && !sameCell) {
+  if (viewerInHeavyNonMdFog && !sameCell) {
+    const targetSharesHeavyNonMdFog = isHeavyNonMdObscuredCloudClass(targetWorld)
+    if (!targetSharesHeavyNonMdFog) {
+      return {
+        canPerceiveCell: false,
+        canPerceiveOccupants: false,
+        canPerceiveObjects: false,
+        maskedByDarkness: false,
+        maskedByMagicalDarkness: false,
+        suppressTemplateBoundary: true,
+        worldLightingLevel: targetWorld.lightingLevel,
+        worldVisibilityObscured: targetWorld.visibilityObscured,
+        appliedZoneIds: targetWorld.appliedZoneIds,
+      }
+    }
     return {
       canPerceiveCell: true,
       canPerceiveOccupants: false,
       canPerceiveObjects: false,
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
-      suppressTemplateBoundary: false,
+      suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
       appliedZoneIds: targetWorld.appliedZoneIds,
@@ -124,7 +152,7 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: true,
       maskedByMagicalDarkness: false,
-      suppressTemplateBoundary: false,
+      suppressTemplateBoundary: viewerInHeavyNonMdFog,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
       appliedZoneIds: targetWorld.appliedZoneIds,
@@ -159,7 +187,16 @@ function dmOmniscientCell(targetWorld: EncounterWorldCellEnvironment): Encounter
 }
 
 /**
- * Battlefield-wide flags for veils and boundary rendering. Derived from the viewer’s cell world state only.
+ * Battlefield-wide flags for veils and boundary rendering. Derived from the viewer’s cell world state only
+ * (`viewerWorld` at `viewerCellId`).
+ *
+ * **Immersed obscuration (PC):** If the viewer’s cell has heavy obscurement (non-MD) or magical darkness
+ * (no bypass), `suppressDarknessBoundaryFromInside` is set so presentation can hide **tactical overlays**
+ * that trace the obscuring footprint (see `projectBattlefieldRenderState`, `selectGridViewModel`). **Per-cell**
+ * tints (fog, magical darkness, dim, …) still come from `resolveViewerPerceptionForCell` + visibility
+ * presentation — not from this flag alone.
+ *
+ * **DM:** Returns immersion flags false so omniscient grid overlays remain; `viewerRole === 'dm'`.
  */
 export function resolveViewerBattlefieldPerception(
   params: ResolveViewerBattlefieldPerceptionParams,
@@ -190,9 +227,9 @@ export function resolveViewerBattlefieldPerception(
   const inMd = viewerWorld.magicalDarkness && !bypass
   const heavy = viewerWorld.visibilityObscured === 'heavy' && !inMd
 
-  /** Full-grid dim when MD or heavy fog; debug bypass clears both for simulator tooling. */
-  const useBattlefieldBlindVeil = (inMd || heavy) && !bypass
-  /** Hide AoE / darkness boundary hints when inside MD or fog (unless debug bypass). */
+  /** Full-grid black veil only in magical darkness (not heavy fog — fog uses per-cell tint). */
+  const useBattlefieldBlindVeil = inMd
+  /** Hide AoE / emanation boundary hints when inside MD or heavy obscurement (unless debug bypass). */
   const suppressBoundaryFromInside = (inMd || heavy) && !bypass
 
   return {

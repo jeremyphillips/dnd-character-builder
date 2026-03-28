@@ -113,20 +113,44 @@ export function getCellVisualState(cell: GridCellViewModel, ctx: CellVisualConte
   }
 }
 
+export type MergePerceptionIntoCellVisualOptions = {
+  /**
+   * When true (PC viewer immersed in heavy obscurement / MD — same condition as
+   * `EncounterBattlefieldRenderState.suppressAoeTemplateOverlay`), allow canonical visibility fills to
+   * replace **cast-range band** bases (`aoe-cast-range`, `placement-cast-range`). Without this, those
+   * bands use paper-equivalent fills and block perception merge, producing a visible “hole” or ring in fog
+   * during AoE / placement picking. DM / outside-immersion: leave false so tactical bands stay readable.
+   */
+  immersionAllowsPerceptionOverCastRangeBands?: boolean
+}
+
 /** When true, viewer perception tint may replace the tactical base fill (see {@link mergePerceptionIntoCellVisualState}). */
-export function tacticalBaseFillAllowsPerceptionTint(baseFillKind: CellBaseFillKind): boolean {
-  return baseFillKind === 'paper' || baseFillKind === 'persistent-attached-aura'
+export function tacticalBaseFillAllowsPerceptionTint(
+  baseFillKind: CellBaseFillKind,
+  opts?: MergePerceptionIntoCellVisualOptions,
+): boolean {
+  if (baseFillKind === 'paper' || baseFillKind === 'persistent-attached-aura') return true
+  if (
+    opts?.immersionAllowsPerceptionOverCastRangeBands &&
+    (baseFillKind === 'aoe-cast-range' || baseFillKind === 'placement-cast-range')
+  ) {
+    return true
+  }
+  return false
 }
 
 /**
- * Layers perception presentation onto tactical cell visuals. World/encounter state is unchanged — display only.
+ * Layers **canonical** per-cell visibility presentation onto tactical cell visuals. Distinct from
+ * world-space footprint overlays (`persistentAttachedAura` / AoE template), which are gated in
+ * `selectGridViewModel` for immersed PC viewers before this runs.
  */
 export function mergePerceptionIntoCellVisualState(
   tactical: CellVisualState,
   perception: EncounterGridCellRenderState | undefined,
+  mergeOpts?: MergePerceptionIntoCellVisualOptions,
 ): CellVisualState {
   if (!perception?.perceptionBaseFillKind) return tactical
-  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind)) return tactical
+  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind, mergeOpts)) return tactical
   return {
     ...tactical,
     baseFillKind: perception.perceptionBaseFillKind,

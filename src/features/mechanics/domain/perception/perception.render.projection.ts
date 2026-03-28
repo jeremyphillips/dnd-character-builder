@@ -152,7 +152,10 @@ function resolveOccupantTokenVisibility(
   blindVeil: boolean,
   isViewerCell: boolean,
 ): OccupantTokenVisibility {
-  if (!perception.canPerceiveOccupants) return 'none'
+  /** Own cell: still show the viewer’s token when domain masks occupants (fog, MD cell, etc.). */
+  if (!perception.canPerceiveOccupants) {
+    return isViewerCell ? 'self-only' : 'none'
+  }
   if (blindVeil && isViewerCell) return 'self-only'
   if (blindVeil) return 'none'
   return 'all'

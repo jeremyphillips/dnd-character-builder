@@ -31,8 +31,11 @@ export function effectiveMagicalDarknessBypass(
  * Rules (baseline, no special senses): DM view is unrestricted. Otherwise:
  * - Viewer in magical darkness (no bypass): cannot perceive other cells’ contents; only own cell is partially
  *   perceivable (occupants scaffold true; objects false; suppress template boundary).
+ * - Viewer in **heavy obscurement** (e.g. Fog Cloud) without MD: cannot perceive **occupants** in **other**
+ *   cells (cannot see “out” of the cloud for creature tokens; own cell still resolved below; self-token uses
+ *   presentation self shortcut). Mirrors blinded-style sight for the tactical grid.
  * - Viewer outside, target in magical darkness: can perceive the cell as a dark region, not occupants/objects.
- * - Heavy obscuration or non-magical darkness lighting: occupants/objects masked (non-magical darkness).
+ * - Heavy obscuration or non-magical darkness **on the target cell**: occupants/objects masked from outside.
  * - Magical darkness on target takes precedence over heavy obscuration for masking.
  */
 export function resolveViewerPerceptionForCell(
@@ -76,6 +79,24 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
       suppressTemplateBoundary: true,
+      worldLightingLevel: targetWorld.lightingLevel,
+      worldVisibilityObscured: targetWorld.visibilityObscured,
+      appliedZoneIds: targetWorld.appliedZoneIds,
+    }
+  }
+
+  /** Heavy obscured viewer (fog, etc.) — not MD; cannot see occupant tokens in other cells. */
+  const viewerInHeavyObscured =
+    !viewerInMd && viewerWorld.visibilityObscured === 'heavy'
+
+  if (viewerInHeavyObscured && !sameCell) {
+    return {
+      canPerceiveCell: true,
+      canPerceiveOccupants: false,
+      canPerceiveObjects: false,
+      maskedByDarkness: false,
+      maskedByMagicalDarkness: false,
+      suppressTemplateBoundary: false,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
       appliedZoneIds: targetWorld.appliedZoneIds,
@@ -169,12 +190,17 @@ export function resolveViewerBattlefieldPerception(
   const inMd = viewerWorld.magicalDarkness && !bypass
   const heavy = viewerWorld.visibilityObscured === 'heavy' && !inMd
 
+  /** Full-grid dim when MD or heavy fog; debug bypass clears both for simulator tooling. */
+  const useBattlefieldBlindVeil = (inMd || heavy) && !bypass
+  /** Hide AoE / darkness boundary hints when inside MD or fog (unless debug bypass). */
+  const suppressBoundaryFromInside = (inMd || heavy) && !bypass
+
   return {
     viewerCellId,
     viewerInsideMagicalDarkness: inMd,
     viewerInsideHeavyObscurement: heavy,
-    useBattlefieldBlindVeil: inMd,
-    suppressDarknessBoundaryFromInside: inMd,
+    useBattlefieldBlindVeil,
+    suppressDarknessBoundaryFromInside: suppressBoundaryFromInside,
   }
 }
 

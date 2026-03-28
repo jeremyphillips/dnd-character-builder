@@ -53,9 +53,12 @@ export type EncounterViewerBattlefieldPerception = {
   viewerCellId: string | null
   viewerInsideMagicalDarkness: boolean
   viewerInsideHeavyObscurement: boolean
-  /** Full-screen or heavy dim over non-local UI when viewer cannot see the field. */
+  /**
+   * Full-grid dim over the tactical map when the viewer’s cell is in magical darkness **or** heavy
+   * obscurement (e.g. Fog Cloud) — same presentation overlay; not only MD.
+   */
   useBattlefieldBlindVeil: boolean
-  /** Hide darkness sphere edge when the viewer is inside that darkness. */
+  /** Suppress AoE / darkness boundary drawing when inside MD or heavy obscurement. */
   suppressDarknessBoundaryFromInside: boolean
 }
 

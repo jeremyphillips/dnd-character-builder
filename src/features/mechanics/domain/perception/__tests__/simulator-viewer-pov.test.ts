@@ -119,4 +119,37 @@ describe('buildGridPerceptionSlice — viewer POV', () => {
     expect(outside?.viewerCellId).toBe('c-7-7')
     expect(outside?.battlefieldRender.useBlindVeil).toBe(false)
   })
+
+  it('heavy obscurement without MD still enables blind veil when viewer is inside fog', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const state: EncounterState = {
+      combatantsById: {},
+      partyCombatantIds: [],
+      enemyCombatantIds: [],
+      initiative: [],
+      initiativeOrder: [],
+      activeCombatantId: 'wiz',
+      turnIndex: 0,
+      roundNumber: 1,
+      started: true,
+      log: [],
+      space,
+      placements: [{ combatantId: 'wiz', cellId: 'c-2-2' }],
+      environmentZones: [
+        {
+          id: 'z-fog',
+          kind: 'patch',
+          sourceKind: 'manual',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-2-2'] },
+          overrides: { visibilityObscured: 'heavy' },
+        },
+      ],
+    }
+    const slice = buildGridPerceptionSlice(state, {
+      viewerCombatantId: 'wiz',
+      viewerRole: 'pc',
+    })
+    expect(slice?.battlefieldRender.useBlindVeil).toBe(true)
+    expect(slice?.battlefieldRender.suppressDarknessBoundaryFromInside).toBe(true)
+  })
 })

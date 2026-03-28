@@ -81,18 +81,18 @@ describe('combatant pair visibility (occupant)', () => {
     expect(canPerceiveTargetOccupantForCombat(state, 'w', 'g')).toBe(false)
   })
 
-  it('heavy obscurement on defender: perceives cell but not occupant; unseen-target disadvantage on attack roll', () => {
+  it('heavy obscurement on defender: outside cannot see in; inside fog cannot see out — attack roll adv/dis cancel', () => {
     const state = encounterAttackerOutsideDefenderHeavilyObscured()
     const cell = resolveViewerPerceptionForCellFromState(state, 'wiz', 'c-2-2', { viewerRole: 'pc' })
     expect(cell?.canPerceiveCell).toBe(true)
     expect(cell?.canPerceiveOccupants).toBe(false)
 
     expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
-    expect(canPerceiveTargetOccupantForCombat(state, 'orc', 'wiz')).toBe(true)
+    expect(canPerceiveTargetOccupantForCombat(state, 'orc', 'wiz')).toBe(false)
 
     const pair = resolveCombatantPairVisibilityForAttackRoll(state, 'wiz', 'orc')
     expect(pair.attackerCanSeeDefenderOccupant).toBe(false)
-    expect(pair.defenderCanSeeAttackerOccupant).toBe(true)
+    expect(pair.defenderCanSeeAttackerOccupant).toBe(false)
 
     const { rollMod, pairVisibility } = resolveRollModifier(
       state.combatantsById.wiz!,
@@ -100,9 +100,9 @@ describe('combatant pair visibility (occupant)', () => {
       'melee',
       state,
     )
-    expect(rollMod).toBe('disadvantage')
+    expect(rollMod).toBe('normal')
     expect(pairVisibility?.attackerCanSeeDefenderOccupant).toBe(false)
-    expect(pairVisibility?.defenderCanSeeAttackerOccupant).toBe(true)
+    expect(pairVisibility?.defenderCanSeeAttackerOccupant).toBe(false)
   })
 
   it('attack roll pair visibility ignores stealth hidden state (no double-stacked modifiers)', () => {

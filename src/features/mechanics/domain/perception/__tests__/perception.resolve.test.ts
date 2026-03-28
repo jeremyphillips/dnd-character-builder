@@ -112,6 +112,36 @@ describe('resolveViewerPerceptionForCell', () => {
     expect(p.maskedByMagicalDarkness).toBe(false)
   })
 
+  it('viewer inside heavy obscurement (fog) cannot perceive occupants in other cells', () => {
+    const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
+    const outside = world({ visibilityObscured: 'none', lightingLevel: 'bright' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: fog,
+      targetWorld: outside,
+      viewerCellId: 'in-fog',
+      targetCellId: 'out',
+      viewerRole: 'pc',
+    })
+    expect(p.canPerceiveCell).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.canPerceiveObjects).toBe(false)
+    expect(p.maskedByDarkness).toBe(false)
+  })
+
+  it('viewer inside heavy obscurement — own cell still perceivable for scaffolding', () => {
+    const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: fog,
+      targetWorld: fog,
+      viewerCellId: 'in-fog',
+      targetCellId: 'in-fog',
+      viewerRole: 'pc',
+    })
+    expect(p.canPerceiveCell).toBe(true)
+    expect(p.maskedByDarkness).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+  })
+
   it('magical darkness takes precedence over heavy obscuration on same cell', () => {
     const both = world({
       magicalDarkness: true,
@@ -157,6 +187,19 @@ describe('resolveViewerBattlefieldPerception', () => {
       viewerRole: 'pc',
     })
     expect(b.viewerInsideMagicalDarkness).toBe(true)
+    expect(b.useBattlefieldBlindVeil).toBe(true)
+    expect(b.suppressDarknessBoundaryFromInside).toBe(true)
+  })
+
+  it('inside heavy obscurement (fog, no MD) enables same battlefield blind veil as MD', () => {
+    const fog = world({ visibilityObscured: 'heavy', magicalDarkness: false })
+    const b = resolveViewerBattlefieldPerception({
+      viewerWorld: fog,
+      viewerCellId: 'x',
+      viewerRole: 'pc',
+    })
+    expect(b.viewerInsideMagicalDarkness).toBe(false)
+    expect(b.viewerInsideHeavyObscurement).toBe(true)
     expect(b.useBattlefieldBlindVeil).toBe(true)
     expect(b.suppressDarknessBoundaryFromInside).toBe(true)
   })

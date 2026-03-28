@@ -146,6 +146,23 @@ describe('projectGridCellRenderState', () => {
     expect(r.occupantTokenVisibility).toBe('none')
   })
 
+  it('viewer own cell: occupant masking still allows self token (self-only)', () => {
+    const p = basePerception({
+      canPerceiveOccupants: false,
+      canPerceiveObjects: false,
+      maskedByDarkness: true,
+      worldVisibilityObscured: 'heavy',
+    })
+    const r = projectGridCellRenderState({
+      perception: p,
+      targetWorld: targetWorldFromPerception(p),
+      battlefield: battlefieldNormal,
+      viewerRole: 'pc',
+      isViewerCell: true,
+    })
+    expect(r.occupantTokenVisibility).toBe('self-only')
+  })
+
   it('fog cause with heavy obscurement maps to fog fill, not darkness', () => {
     const p = basePerception({
       canPerceiveOccupants: false,

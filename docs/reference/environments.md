@@ -77,6 +77,14 @@ No event log, history, or undo — callers append combat log notes if needed.
 
 Baseline rules: no special senses unless `EncounterViewerPerceptionCapabilities` sets flags; DM role skips restrictions.
 
+## Simulator viewer POV (active combatant)
+
+The encounter simulator uses **`GridPerceptionInput`** with **`viewerCombatantId`** = the **active combatant** and **`viewerRole`** = **`pc`** (rules apply) by default. **`EncounterViewerContext.simulatorViewerMode`** (`active-combatant` | `dm`) maps to that: `active-combatant` → PC POV; `dm` → omniscient grid (debug). Session **`viewerRole`** on the same context remains for DM tools / capabilities, separate from grid perception.
+
+**No active combatant:** when `activeCombatantId` is null, **perception is omitted** from `selectGridViewModel` — the grid renders without viewer-relative masking (safest fallback until turn order resumes).
+
+**Debug:** optional **`debugPerceptionOverrides`** on viewer context merges into perception capabilities in `mergeGridPerceptionInputCapabilities` (e.g. `ignoreMagicalDarkness` / `forceMagicalDarknessBypass` as temporary bypass flags).
+
 ## Render projection (Phase 3)
 
 **Rules stay in perception; UI consumes projection only.**

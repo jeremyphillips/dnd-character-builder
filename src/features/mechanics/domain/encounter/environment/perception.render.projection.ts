@@ -57,10 +57,31 @@ export type EncounterBattlefieldRenderState = {
   blindVeilOpacity: number
 }
 
+/**
+ * Debug-only flags at the grid perception input boundary (simulator / POV tooling).
+ * Merged into {@link EncounterViewerPerceptionCapabilities} as `magicalDarknessBypass` — not a full senses layer.
+ */
+export type GridPerceptionDebugOverrides = {
+  forceMagicalDarknessBypass?: boolean
+  /** Same net effect as `forceMagicalDarknessBypass` for sight through magical darkness (scaffold). */
+  ignoreMagicalDarkness?: boolean
+}
+
 export type GridPerceptionInput = {
   viewerCombatantId: string
   viewerRole: 'dm' | 'pc'
   capabilities?: EncounterViewerPerceptionCapabilities
+  debugOverrides?: GridPerceptionDebugOverrides
+}
+
+/** Merges optional debug overrides into capabilities for resolveViewer* calls. Exported for tests. */
+export function mergeGridPerceptionInputCapabilities(
+  input: GridPerceptionInput,
+): EncounterViewerPerceptionCapabilities | undefined {
+  const base = input.capabilities
+  const d = input.debugOverrides
+  if (!d?.forceMagicalDarknessBypass && !d?.ignoreMagicalDarkness) return base
+  return { ...base, magicalDarknessBypass: true }
 }
 
 export type GridPerceptionSlice = {
@@ -161,10 +182,12 @@ export function buildGridPerceptionSlice(
   const viewerWorld = resolveWorldEnvironmentFromEncounterState(state, viewerCellId)
   if (!viewerWorld) return null
 
+  const mergedCaps = mergeGridPerceptionInputCapabilities(input)
+
   const bp: EncounterViewerBattlefieldPerception = resolveViewerBattlefieldPerception({
     viewerWorld,
     viewerCellId,
-    capabilities: input.capabilities,
+    capabilities: mergedCaps,
     viewerRole: input.viewerRole,
   })
   const battlefieldRender = projectBattlefieldRenderState(bp, input.viewerRole)
@@ -191,7 +214,7 @@ export function buildCellPerceptionRenderState(
     targetWorld,
     viewerCellId: slice.viewerCellId,
     targetCellId,
-    capabilities: input.capabilities,
+    capabilities: mergeGridPerceptionInputCapabilities(input),
     viewerRole: input.viewerRole,
   })
 

@@ -105,6 +105,7 @@ export {
 } from './capabilities/encounter-capabilities.types'
 export type {
   EncounterCapabilities,
+  EncounterSimulatorViewerMode,
   EncounterViewerContext,
   EncounterViewerRole,
 } from './capabilities/encounter-capabilities.types'

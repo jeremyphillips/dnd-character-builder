@@ -165,7 +165,12 @@ function useEncounterRuntimeValue() {
   })
 
   const viewerContext: EncounterViewerContext = useMemo(
-    () => ({ viewerRole: 'dm' as const, controlledCombatantIds: [] }),
+    () => ({
+      viewerRole: 'dm' as const,
+      /** Simulator: grid perception follows the active combatant unless switched to DM omniscience. */
+      simulatorViewerMode: 'active-combatant' as const,
+      controlledCombatantIds: [],
+    }),
     [],
   )
 
@@ -362,6 +367,9 @@ function useEncounterRuntimeValue() {
     if (!encounterState) return undefined
     const rangeForRing =
       aoeGridOverlay || singleCellPlacementGridOverlay ? null : selectedActionRangeFt
+    /** `pc` = apply visibility rules; `dm` = omniscient grid (debug). */
+    const perceptionViewerRole =
+      viewerContext.simulatorViewerMode === 'dm' ? ('dm' as const) : ('pc' as const)
     return selectGridViewModel(encounterState, {
       selectedTargetId: selectedActionTargetId || null,
       selectedActionRangeFt: rangeForRing,
@@ -375,7 +383,11 @@ function useEncounterRuntimeValue() {
       persistentAttachedAuras,
       perception:
         activeCombatantId != null
-          ? { viewerCombatantId: activeCombatantId, viewerRole: viewerContext.viewerRole }
+          ? {
+              viewerCombatantId: activeCombatantId,
+              viewerRole: perceptionViewerRole,
+              debugOverrides: viewerContext.debugPerceptionOverrides,
+            }
           : undefined,
     })
   }, [
@@ -389,7 +401,8 @@ function useEncounterRuntimeValue() {
     interactionMode,
     persistentAttachedAuras,
     activeCombatantId,
-    viewerContext.viewerRole,
+    viewerContext.simulatorViewerMode,
+    viewerContext.debugPerceptionOverrides,
   ])
 
   // turnResources was consumed by the now-commented-out footer.

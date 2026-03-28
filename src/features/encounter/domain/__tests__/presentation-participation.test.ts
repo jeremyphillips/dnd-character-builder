@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getCombatantPreviewCardOpacity, getTurnOrderRowOpacity } from './presentation-participation'
+import { getCombatantPreviewCardOpacity, getTurnOrderRowOpacity } from '../presentation-participation'
 
 describe('getCombatantPreviewCardOpacity', () => {
   it('dims further when unseen from active viewer', () => {

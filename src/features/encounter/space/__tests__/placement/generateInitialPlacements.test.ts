@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createSquareGridSpace } from '../createSquareGridSpace'
-import { generateInitialPlacements } from '../generateInitialPlacements'
+import { createSquareGridSpace } from '../../creation/createSquareGridSpace'
+import { generateInitialPlacements } from '../../placement/generateInitialPlacements'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state'
 
 function pc(id: string): CombatantInstance {

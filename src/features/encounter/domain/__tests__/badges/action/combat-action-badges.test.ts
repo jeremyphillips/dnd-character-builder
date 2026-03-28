@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import type { ActionBadgeDescriptor } from './combat-action-badges.types'
-import { deriveCombatActionBadges } from './combat-action-badges'
+import type { ActionBadgeDescriptor } from '../../../badges/action/combat-action-badges.types'
+import { deriveCombatActionBadges } from '../../../badges/action/combat-action-badges'
 
 function minimalAction(overrides: Partial<CombatActionDefinition> = {}): CombatActionDefinition {
   return {

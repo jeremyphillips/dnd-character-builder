@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 
-import { deriveRecommendedActionsForTarget } from './derive-recommended-actions-for-target'
+import { deriveRecommendedActionsForTarget } from '../../actions/derive-recommended-actions-for-target'
 
 function act(partial: Partial<CombatActionDefinition>): CombatActionDefinition {
   return {

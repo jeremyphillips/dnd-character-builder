@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { createEncounterState } from '../state'
 import {
   actionRequiresCreatureTargetForResolve,

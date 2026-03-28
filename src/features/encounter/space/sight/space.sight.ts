@@ -1,5 +1,5 @@
-import { getCellAt, getCellById } from './space.helpers'
-import type { EncounterSpace } from './space.types'
+import { getCellAt, getCellById } from '../space.helpers'
+import type { EncounterSpace } from '../space.types'
 
 /**
  * Single resolver for “does this cell block line of sight?” — use this everywhere (targeting, UI, future weapons).

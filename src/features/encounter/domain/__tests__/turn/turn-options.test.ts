@@ -9,7 +9,7 @@ import {
   deriveTurnResourceBucketState,
   partitionCombatantActionBuckets,
   turnResourceBucketHeaderBadge,
-} from '../turn-options'
+} from '../../turn/turn-options'
 
 describe('deriveBucketState', () => {
   const defs = [{ id: 'a' }, { id: 'b' }]

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { buildSpellCombatActions, classifySpellResolutionMode } from '@/features/encounter/helpers/spells'
 import { SPELLS_LEVEL_2_A_F } from '@/features/mechanics/domain/rulesets/system/spells/data/level2-a-f'
 import { resolveCombatAction } from '../resolution'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
-import { placeCombatant } from '@/features/encounter/space/space.selectors'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
+import { placeCombatant } from '@/features/encounter/space/selectors/space.selectors'
 import type { GridObstacle } from '@/features/encounter/space/space.types'
 
 import { resolveCombatAction } from '../resolution'

@@ -14,7 +14,7 @@ import {
   actionUsesGridCreatureTargeting,
   getMoveRejectionReason,
   isValidAoeOriginCell,
-} from '../../space/space.selectors'
+} from '../../space/selectors/space.selectors'
 
 export type AoeStep = 'none' | 'placing' | 'confirm'
 

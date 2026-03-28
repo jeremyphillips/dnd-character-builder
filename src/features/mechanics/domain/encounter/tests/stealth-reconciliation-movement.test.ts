@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
-import { moveCombatant } from '@/features/encounter/space/space.selectors'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
+import { moveCombatant } from '@/features/encounter/space/selectors/space.selectors'
 import {
   createEncounterState,
   reconcileBattlefieldEffectAnchors,

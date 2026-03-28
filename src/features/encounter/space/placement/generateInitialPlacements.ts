@@ -1,6 +1,6 @@
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state'
-import type { EncounterSpace, CombatantPosition, InitialPlacementOptions } from './space.types'
-import { getCellAt, isCellOccupied } from './space.helpers'
+import type { EncounterSpace, CombatantPosition, InitialPlacementOptions } from '../space.types'
+import { getCellAt, isCellOccupied } from '../space.helpers'
 
 type Side = NonNullable<InitialPlacementOptions['allySide']>
 

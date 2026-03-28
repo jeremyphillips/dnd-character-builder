@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { buildCharacterCombatantInstance } from '@/features/encounter/helpers/combatants'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { useCombatStats } from '@/features/character/hooks'

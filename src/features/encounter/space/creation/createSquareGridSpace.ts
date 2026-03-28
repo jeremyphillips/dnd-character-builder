@@ -1,4 +1,4 @@
-import type { EncounterSpace, EncounterCell } from './space.types'
+import type { EncounterSpace, EncounterCell } from '../space.types'
 
 export function createSquareGridSpace(opts: {
   id: string

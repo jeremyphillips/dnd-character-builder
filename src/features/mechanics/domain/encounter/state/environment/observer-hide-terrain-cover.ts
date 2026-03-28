@@ -1,5 +1,5 @@
 import { getCellForCombatant } from '@/features/encounter/space'
-import { traceLineOfSightCells } from '@/features/encounter/space/space.sight'
+import { traceLineOfSightCells } from '@/features/encounter/space/sight/space.sight'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../../environment/environment.resolve'
 import type { TerrainCoverGrade } from '../../environment/environment.types'

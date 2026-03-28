@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
 import { createCombatant } from '@/features/mechanics/domain/encounter/tests/action-resolution.test-helpers'
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 
-import { deriveEncounterPresentationGridPerceptionInput } from './derive-encounter-presentation-grid-perception'
+import { deriveEncounterPresentationGridPerceptionInput } from '../../perception/derive-encounter-presentation-grid-perception'
 
 function twoCombatantEncounter() {
   const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })

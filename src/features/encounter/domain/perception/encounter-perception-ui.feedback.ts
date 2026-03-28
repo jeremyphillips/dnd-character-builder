@@ -1,5 +1,5 @@
 import type { EncounterSimulatorViewerMode } from '../capabilities/encounter-capabilities.types'
-import type { GridViewModel } from '../../space/space.selectors'
+import type { GridViewModel } from '../../space/selectors/space.selectors'
 
 /**
  * Lightweight copy for the encounter header — derived from grid perception + simulator mode only.

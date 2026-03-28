@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { getCombatantTurnResources } from '../resolution/action/action-cost'
 import { DEFAULT_HIDE_COMBAT_ACTION, resolveCombatAction } from '../resolution'
 import { createEncounterState } from '../state'

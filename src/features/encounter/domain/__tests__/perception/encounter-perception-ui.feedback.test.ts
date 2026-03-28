@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveEncounterPerceptionUiFeedback } from './encounter-perception-ui.feedback'
+import { deriveEncounterPerceptionUiFeedback } from '../../perception/encounter-perception-ui.feedback'
 
 describe('deriveEncounterPerceptionUiFeedback', () => {
   it('selected-combatant mode uses same POV copy as active-combatant (not DM overview)', () => {

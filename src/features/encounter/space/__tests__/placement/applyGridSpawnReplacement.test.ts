@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
-import { applyGridSpawnReplacementFromTarget } from '../applyGridSpawnReplacement'
-import { createSquareGridSpace } from '../createSquareGridSpace'
-import { getOccupant } from '../space.helpers'
+import { applyGridSpawnReplacementFromTarget } from '../../placement/applyGridSpawnReplacement'
+import { createSquareGridSpace } from '../../creation/createSquareGridSpace'
+import { getOccupant } from '../../space.helpers'
 
 function minimalState(
   placements: EncounterState['placements'],

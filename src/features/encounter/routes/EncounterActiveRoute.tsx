@@ -40,7 +40,7 @@ import {
   actionUsesGridCreatureTargeting,
   isValidAoeOriginCell,
   selectCombatantIdsInAoeFootprint,
-} from '../space/space.selectors'
+} from '../space/selectors/space.selectors'
 import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,

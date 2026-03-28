@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '../createSquareGridSpace'
-import { generateInitialPlacements } from '../generateInitialPlacements'
+import { createSquareGridSpace } from '../../creation/createSquareGridSpace'
+import { generateInitialPlacements } from '../../placement/generateInitialPlacements'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
-import { placeRandomGridObstacle } from '../placeRandomGridObstacle'
+import { placeRandomGridObstacle } from '../../placement/placeRandomGridObstacle'
 
 function makeCombatant(id: string, side: 'party' | 'enemies'): CombatantInstance {
   return {

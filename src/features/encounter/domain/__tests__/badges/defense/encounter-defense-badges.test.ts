@@ -6,8 +6,8 @@ import {
   deriveEncounterDefenseBadges,
   describeConditionScopeForDefenseTooltip,
   formatDamageDefenseLabel,
-} from './encounter-defense-badges'
-import { collectPresentableEffects, enrichPresentableEffects } from '../../effects/presentable-effects'
+} from '../../../badges/defense/encounter-defense-badges'
+import { collectPresentableEffects, enrichPresentableEffects } from '../../../effects/presentable-effects'
 
 function minimalCombatant(overrides: Partial<CombatantInstance> = {}): CombatantInstance {
   return {

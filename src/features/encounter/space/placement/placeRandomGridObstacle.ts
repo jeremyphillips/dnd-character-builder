@@ -1,6 +1,6 @@
 import type { EncounterEnvironmentSetting } from '@/features/mechanics/domain/encounter/environment'
 
-import type { EncounterSpace, GridObstacle, GridObstacleKind } from './space.types'
+import type { EncounterSpace, GridObstacle, GridObstacleKind } from '../space.types'
 
 /**
  * Maps encounter environment to obstacle art / semantics for procedural placement.

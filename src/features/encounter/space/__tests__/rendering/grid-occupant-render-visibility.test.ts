@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
 import { createCombatant } from '@/features/mechanics/domain/encounter/tests/action-resolution.test-helpers'
 
@@ -8,7 +8,7 @@ import {
   buildCombatantViewerPresentationKindById,
   deriveViewerCombatantPresentationKind,
   shouldRenderOccupantTokenForEncounterViewer,
-} from './grid-occupant-render-visibility'
+} from '../../rendering/grid-occupant-render-visibility'
 
 function baseGridState() {
   const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })

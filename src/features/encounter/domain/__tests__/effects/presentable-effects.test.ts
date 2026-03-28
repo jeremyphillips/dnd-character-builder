@@ -6,7 +6,7 @@ import {
   getUserFacingEffectLabel,
   groupBySection,
   sortByPriority,
-} from './presentable-effects'
+} from '../../effects/presentable-effects'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 
 function minimalCombatant(overrides: Partial<CombatantInstance> = {}): CombatantInstance {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import type { GridObstacle } from '@/features/encounter/space/space.types'
 import { removeAttachedAurasForSpell } from '../state/auras/attached-aura-mutations'
 import {

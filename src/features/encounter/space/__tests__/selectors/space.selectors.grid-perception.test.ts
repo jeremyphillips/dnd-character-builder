@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
 import { createCombatant } from '@/features/mechanics/domain/encounter/tests/action-resolution.test-helpers'
 
-import { selectGridViewModel } from './space.selectors'
+import { selectGridViewModel } from '../../selectors/space.selectors'
 
 describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
   it('sets viewerPerceivesOccupantToken false on occupant cell when viewer cannot perceive (invisible)', () => {

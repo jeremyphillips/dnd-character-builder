@@ -9,8 +9,8 @@ import {
   CORE_COMBAT_STATE_MAP,
   SPECIALIZED_EFFECT_KEYS,
   SPECIALIZED_EFFECT_PRESENTATION_MAP,
-} from './combat-state-ui-map'
-import { enrichWithPresentation } from './presentable-effects'
+} from '../../effects/combat-state-ui-map'
+import { enrichWithPresentation } from '../../effects/presentable-effects'
 
 /**
  * Keys that intentionally never have a core or specialized row (e.g. dynamic hook instance ids).

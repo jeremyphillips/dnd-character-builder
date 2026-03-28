@@ -1,6 +1,6 @@
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
-import type { CombatantPosition, EncounterCell, EncounterSpace } from './space.types'
-import { getCellById, getCellForCombatant, gridDistanceFt } from './space.helpers'
+import type { CombatantPosition, EncounterCell, EncounterSpace } from '../space.types'
+import { getCellById, getCellForCombatant, gridDistanceFt } from '../space.helpers'
 
 function isCellPassable(cell: EncounterCell): boolean {
   return cell.kind !== 'wall' && cell.kind !== 'blocking'

@@ -54,10 +54,10 @@ import {
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import { isAreaGridAction } from '../helpers/actions'
 import { getCellForCombatant } from '../space/space.helpers'
-import { buildCombatantViewerPresentationKindById } from '../space/grid-occupant-render-visibility'
-import { selectGridViewModel } from '../space/space.selectors'
-import { createSquareGridSpace } from '../space/createSquareGridSpace'
-import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
+import { buildCombatantViewerPresentationKindById } from '../space/rendering/grid-occupant-render-visibility'
+import { selectGridViewModel } from '../space/selectors/space.selectors'
+import { createSquareGridSpace } from '../space/creation/createSquareGridSpace'
+import { placeRandomGridObstacle } from '../space/placement/placeRandomGridObstacle'
 
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 

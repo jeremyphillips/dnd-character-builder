@@ -2,10 +2,10 @@ import type { CombatActionDefinition } from '@/features/mechanics/domain/encount
 import { isHostileAction, isValidActionTarget } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
 import { getCombatantDisplayLabel, reconcileBattlefieldEffectAnchors } from '@/features/mechanics/domain/encounter/state'
-import type { CombatantPosition, EncounterCell, EncounterSpace, GridObstacleKind } from './space.types'
-import { gridObstacleDisplayName } from './placeRandomGridObstacle'
-import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from './space.helpers'
-import { hasLineOfSight } from './space.sight'
+import type { CombatantPosition, EncounterCell, EncounterSpace, GridObstacleKind } from '../space.types'
+import { gridObstacleDisplayName } from '../placement/placeRandomGridObstacle'
+import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from '../space.helpers'
+import { hasLineOfSight } from '../sight/space.sight'
 import type { CombatantSide } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
 import {
   hasBattlefieldPresence,
@@ -14,7 +14,7 @@ import {
 import type { BattlefieldSpellContext } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-spatial-movement-modifiers'
 import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-spatial-movement-modifiers'
 import { createEmptyTurnContext } from '@/features/mechanics/domain/encounter/state/shared'
-import { isAreaGridAction } from '../helpers/actions'
+import { isAreaGridAction } from '../../helpers/actions'
 import type { ViewerCombatantPresentationKind } from '@/features/encounter/domain'
 import {
   buildCellPerceptionRenderState,
@@ -24,7 +24,7 @@ import {
   type EncounterGridCellRenderState,
   type GridPerceptionInput,
 } from '@/features/mechanics/domain/encounter/environment/perception.render.projection'
-import { deriveViewerCombatantPresentationKind } from './grid-occupant-render-visibility'
+import { deriveViewerCombatantPresentationKind } from '../rendering/grid-occupant-render-visibility'
 
 // ---------------------------------------------------------------------------
 // State-level selectors

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '../createSquareGridSpace'
+import { createSquareGridSpace } from '../../creation/createSquareGridSpace'
 import {
   cellBlocksSight,
   gridCellsAlongSupercoverLine,
   hasLineOfSight,
   traceLineOfSightCells,
-} from '../space.sight'
+} from '../../sight/space.sight'
 
 describe('gridCellsAlongSupercoverLine', () => {
   it('returns a single cell when endpoints coincide', () => {

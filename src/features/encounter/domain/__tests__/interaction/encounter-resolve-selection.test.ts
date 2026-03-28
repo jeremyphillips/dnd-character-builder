@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import { DEFAULT_HIDE_COMBAT_ACTION } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
 import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
 
 import { testEnemy, testPc } from '@/features/mechanics/domain/encounter/tests/encounter-visibility-test-fixtures'
 
-import { selectValidActionIdsForTarget } from './encounter-resolve-selection'
+import { selectValidActionIdsForTarget } from '../../interaction/encounter-resolve-selection'
 
 describe('selectValidActionIdsForTarget', () => {
   it('marks Hide invalid with eligibility reason on open ground', () => {

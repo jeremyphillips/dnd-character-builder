@@ -12,7 +12,10 @@ import {
   type CombatantInstance,
   type RollModifierMarker,
   addAttachedAuraInstance,
+  getAttackVisibilityRollModifiersFromPair,
+  resolveCombatantPairVisibilityForAttackRoll,
 } from '../../state'
+import type { EncounterViewerPerceptionCapabilities } from '../../environment/perception.types'
 import {
   attachedAuraInstanceId,
   concentrationLinkedMarkerIdForSpellAttachedEmanation,
@@ -53,6 +56,11 @@ type RollModifierResult = {
   rollMod: D20RollMode
   attackerMarkers: RollModifierMarker[]
   defenderMarkers: RollModifierMarker[]
+  /** Present when `encounterState` was passed; drives unseen-target / unseen-attacker from occupant perception. */
+  pairVisibility?: {
+    attackerCanSeeDefenderOccupant: boolean
+    defenderCanSeeAttackerOccupant: boolean
+  }
 }
 
 /** Canonical tokens for `RollModifierMarker.appliesTo` (hyphenated). */
@@ -82,11 +90,13 @@ function rollModifierConditionApplies(
   })
 }
 
-/** Exported for tests — combines spell `RollModifierMarker`s with condition-based attack mods. */
+/** Exported for tests — combines spell `RollModifierMarker`s with condition-based attack mods and optional pair visibility. */
 export function resolveRollModifier(
   attacker: CombatantInstance,
   defender: CombatantInstance,
   attackRange: 'melee' | 'ranged' = 'melee',
+  encounterState?: EncounterState,
+  visibilityOptions?: { capabilities?: EncounterViewerPerceptionCapabilities },
 ): RollModifierResult {
   const rawAttacker = (attacker.rollModifiers ?? []).filter((m) =>
     matchesRollContext(m, ROLL_CONTEXT_ATTACK_ROLLS),
@@ -109,9 +119,22 @@ export function resolveRollModifier(
     ...getIncomingAttackModifiersForAttack(attacker, defender, attackRange),
   ]
 
-  const rollMod = resolveD20RollMode([...markerModifiers, ...conditionModifiers])
+  const pairVisibility =
+    encounterState != null
+      ? resolveCombatantPairVisibilityForAttackRoll(
+          encounterState,
+          attacker.instanceId,
+          defender.instanceId,
+          visibilityOptions,
+        )
+      : undefined
 
-  return { rollMod, attackerMarkers, defenderMarkers }
+  const visibilityModifiers =
+    pairVisibility != null ? getAttackVisibilityRollModifiersFromPair(pairVisibility) : []
+
+  const rollMod = resolveD20RollMode([...markerModifiers, ...conditionModifiers, ...visibilityModifiers])
+
+  return { rollMod, attackerMarkers, defenderMarkers, pairVisibility }
 }
 
 function matchesRollContext(marker: RollModifierMarker, context: string): boolean {
@@ -342,7 +365,12 @@ function resolveCombatActionInternal(
     if (target == null || attackBonus == null) return { state: nextState, createdMarkerIds: [] }
 
     const attackRange = deriveAttackRange(action)
-    const { rollMod, attackerMarkers, defenderMarkers } = resolveRollModifier(actor, target, attackRange)
+    const { rollMod, attackerMarkers, defenderMarkers, pairVisibility } = resolveRollModifier(
+      actor,
+      target,
+      attackRange,
+      state,
+    )
     const { rawRoll, detail: rollDetail } = rollD20WithRollMode(rollMod, rng)
     const totalRoll = rawRoll + attackBonus
     const isNaturalTwenty = rawRoll === 20
@@ -352,7 +380,15 @@ function resolveCombatActionInternal(
 
     const hitSuffix = isCritical ? ' (critical hit)' : ''
     const missSuffix = isNaturalOne ? ' (natural 1)' : ''
-    const attackDebug = formatAttackRollDebug(actor, target, attackerMarkers, defenderMarkers, attackRange, rollMod)
+    const attackDebug = formatAttackRollDebug(
+      actor,
+      target,
+      attackerMarkers,
+      defenderMarkers,
+      attackRange,
+      rollMod,
+      pairVisibility,
+    )
     nextState = appendEncounterLogEvent(nextState, {
       type: hit ? 'attack-hit' : 'attack-missed',
       actorId: actor.instanceId,

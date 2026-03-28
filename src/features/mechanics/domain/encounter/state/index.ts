@@ -83,6 +83,9 @@ export {
   lineOfSightClear,
   lineOfEffectClear,
   canSeeForTargeting,
+  canPerceiveTargetOccupantForCombat,
+  resolveCombatantPairVisibilityForAttackRoll,
+  getAttackVisibilityRollModifiersFromPair,
 } from './visibility-seams'
 export {
   combatantHasBattlefieldAbsenceEngineState,

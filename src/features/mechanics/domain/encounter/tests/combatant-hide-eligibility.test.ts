@@ -98,4 +98,21 @@ describe('getCombatantHideEligibilityExtensionOptions', () => {
       featureFlags: { allowDimLightHide: true },
     })
   })
+
+  it('OR-merges hide-eligibility-grant for difficult terrain and high wind', () => {
+    const c = testEnemy('o', 'Orc', 20)
+    const withGrants = {
+      ...c,
+      activeEffects: [
+        {
+          kind: 'hide-eligibility-grant' as const,
+          featureFlags: { allowDifficultTerrainHide: true, allowHighWindHide: true },
+        },
+      ],
+    }
+    expect(getCombatantHideEligibilityExtensionOptions(withGrants)?.featureFlags).toEqual({
+      allowDifficultTerrainHide: true,
+      allowHighWindHide: true,
+    })
+  })
 })

@@ -34,7 +34,7 @@ Other modules (**`action-resolver.ts`**, **`useEncounterState`**) call exported 
 **Concealment and feature-flag branches** still use the **hider’s merged cell** only (same as before):
 
 - **Baseline concealment** — [`cellWorldSupportsHideConcealment`](../../src/features/mechanics/domain/encounter/state/sight-hide-rules.ts): heavy obscurement; **non-magical** light obscurement; darkness lighting; **magical darkness**. Dim-only and magical light obscurement need the feat/runtime flags below.
-- **Feature-flag branches** (OR-merge): **`allowDimLightHide`**, **`allowMagicalConcealmentHide`** — see [`environment.resolve.ts`](../../src/features/mechanics/domain/encounter/environment/environment.resolve.ts) for `world.magical`.
+- **Feature-flag branches** (OR-merge, **hider cell only** — entry + sustain): **`allowDimLightHide`**, **`allowMagicalConcealmentHide`**, **`allowDifficultTerrainHide`** (merged **`terrainMovement`** **`difficult`** or **`greater-difficult`**), **`allowHighWindHide`** (merged **`atmosphereTags`** includes **`high-wind`**). See [`environment.resolve.ts`](../../src/features/mechanics/domain/encounter/environment/environment.resolve.ts) for `world.magical` and atmosphere merge.
 
 **Terrain cover for hide** (when concealment/flags do not already allow the attempt):
 
@@ -49,7 +49,7 @@ Other modules (**`action-resolver.ts`**, **`useEncounterState`**) call exported 
 
 2. **Temporary runtime** — same flags, **union (OR)** with the snapshot (see below), from [`hide-eligibility-runtime-sources.ts`](../../src/features/mechanics/domain/encounter/state/hide-eligibility-runtime-sources.ts):
    - **`activeEffects`:** structured **`kind: 'hide-eligibility-grant'`** effects ([`HideEligibilityGrantEffect`](../../src/features/mechanics/domain/effects/effects.types.ts)) on the combatant stack, including nested payloads (e.g. **`aura.effects`**, **`state.ongoingEffects`**). Spell application can attach these via **`applyActionEffects`** in [`action-effects.ts`](../../src/features/mechanics/domain/encounter/resolution/action/action-effects.ts).
-   - **`conditions` / `states`:** **`RuntimeMarker`** ids/classifications: `hide-eligibility:allow-half-cover`, `hide-eligibility:allow-dim-light`, `hide-eligibility:allow-magical-concealment` (see exports in [`hide-eligibility-runtime-sources.ts`](../../src/features/mechanics/domain/encounter/state/hide-eligibility-runtime-sources.ts)).
+   - **`conditions` / `states`:** **`RuntimeMarker`** ids/classifications (see [`hide-eligibility-runtime-sources.ts`](../../src/features/mechanics/domain/encounter/state/hide-eligibility-runtime-sources.ts)): `hide-eligibility:allow-half-cover`, `hide-eligibility:allow-dim-light`, `hide-eligibility:allow-magical-concealment`, `hide-eligibility:allow-difficult-terrain`, `hide-eligibility:allow-high-wind`.
 
 **Merge rule:** for each boolean, **true if any** source is true — authored snapshot **or** any qualifying active effect **or** marker.
 
@@ -61,7 +61,7 @@ That output feeds **`resolveHideEligibilityForCombatant`** after call-site / per
 
 Eligibility answers **whether a hide attempt may be attempted** vs a given observer. It does **not** roll Stealth or compare to passive Perception.
 
-**Remaining gaps:** richer feat catalog wiring; deeper magical concealment than **`world.magical` + light obscurement** — see [TODO / future work](#todo--future-work).
+**Remaining gaps:** richer **content** wiring (feats → new flags); deeper magical concealment than **`world.magical` + light obscurement**; underwater / extreme-cold atmosphere tags as hide bases; hearing and guessed-position — see [TODO / future work](#todo--future-work).
 
 ---
 
@@ -166,7 +166,7 @@ Contract constant: **`ATTACK_ROLL_READS_STEALTH_HIDDEN_STATE`** (`stealth-attack
 - **Guessed location / sound** awareness for unseen targets (not occupant perception).
 - **Active opposed** Stealth vs **rolled** Perception (contested check path; keep passive baseline as fallback).
 - **Cell-local cover** is merged on the world cell; **per-observer** cover from geometry is still TODO.
-- **Broader stealth feature catalog** — more **`CombatantHideEligibilityFeatureFlagsRuntime`** booleans and content wiring beyond dim / magical / half-cover.
+- **Broader stealth feature catalog** — additional flags (e.g. other **`EncounterAtmosphereTag`** ids, slip-only terrain), content/feat wiring for **`allowDifficultTerrainHide`** / **`allowHighWindHide`**, subclass-specific rules.
 - **Deeper magical concealment** — e.g. per-spell nuance not captured by **`world.magical` + visibilityObscured** alone.
 - **Sense-specific** break and bypass threading consistent with **`EncounterViewerPerceptionCapabilities`** (blindsight vs hidden, etc.).
 - **Richer observer sets** — e.g. allies in range, line-of-sight, or “aware” subsets instead of only all opposing combatants passing eligibility.

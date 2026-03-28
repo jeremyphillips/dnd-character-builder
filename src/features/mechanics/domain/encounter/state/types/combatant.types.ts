@@ -52,6 +52,16 @@ export type CombatantHideEligibilityFeatureFlagsRuntime = {
    * Natural (non-magical) light obscurement remains baseline for everyone; see `sight-hide-rules.ts`.
    */
   allowMagicalConcealmentHide?: boolean
+  /**
+   * **Difficult terrain** on the hider’s merged cell (`terrainMovement` **`difficult`** or **`greater-difficult`**)
+   * counts as hide world basis (brush, rubble). Entry + sustain; hider cell only, not observer-relative.
+   */
+  allowDifficultTerrainHide?: boolean
+  /**
+   * **High wind** on the hider’s merged cell (`atmosphereTags` includes **`high-wind`**) counts as hide
+   * world basis (dust, noise). Entry + sustain; hider cell only.
+   */
+  allowHighWindHide?: boolean
 }
 
 export type CombatantSkillRuntimeSnapshot = {
@@ -333,6 +343,8 @@ export type CombatantHideEligibilityExtension = {
     allowHalfCoverForHide?: boolean
     allowDimLightHide?: boolean
     allowMagicalConcealmentHide?: boolean
+    allowDifficultTerrainHide?: boolean
+    allowHighWindHide?: boolean
   }
 }
 

@@ -492,4 +492,62 @@ describe('hide attempt eligibility', () => {
     expect(resolveTerrainCoverGradeForHideFromObserver(state, 'wiz', 'orc')).toBe('three-quarters')
     expect(resolveTerrainCoverGradeForHideFromObserver(state, 'bard', 'orc')).toBe('none')
   })
+
+  it('denies hide on difficult terrain alone without allowDifficultTerrainHide', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-diff',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainMovement: 'difficult' },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
+    expect(
+      getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz', {
+        hideEligibility: { featureFlags: { allowDifficultTerrainHide: true } },
+      }),
+    ).toBe(null)
+  })
+
+  it('denies hide in high wind alone without allowHighWindHide', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-wind',
+          kind: 'patch',
+          sourceKind: 'manual',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { atmosphereTagsAdd: ['high-wind'] },
+        },
+      ],
+    }
+    expect(getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz')).toBe('observer-sees-without-concealment')
+    expect(
+      getHideAttemptEligibilityDenialReason(state, 'orc', 'wiz', {
+        hideEligibility: { featureFlags: { allowHighWindHide: true } },
+      }),
+    ).toBe(null)
+  })
 })

@@ -17,8 +17,9 @@ import {
  * Single resolver for feat/trait **and** spell/marker-driven flags; entry and sustain both consume
  * the output via {@link resolveHideEligibilityForCombatant} in `sight-hide-rules.ts`.
  *
- * **Merge:** union (OR) for each boolean — e.g. `allowHalfCoverForHide` is true if the snapshot
- * or any temporary source sets it.
+ * **Merge:** union (OR) for each boolean — snapshot or any temporary source can set any of the
+ * `CombatantHideEligibilityFeatureFlagsRuntime` fields (half cover, dim light, magical concealment,
+ * difficult terrain, high wind, etc.).
  */
 export function getCombatantHideEligibilityExtensionOptions(
   combatant: CombatantInstance,

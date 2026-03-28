@@ -291,6 +291,41 @@ describe('stealth-rules', () => {
     expect(out.combatantsById.orc?.stealth?.hiddenFromObserverIds).toEqual(['wiz'])
   })
 
+  it('reconcileStealthBreakWhenNoConcealmentInCell keeps difficult-terrain stealth when allowDifficultTerrainHide was persisted', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const w = testPc('wiz', 'Wizard', 20)
+    const o = testEnemy('orc', 'Orc', 20)
+    const base = createEncounterState([w, o], { rng: () => 0.5, space })
+    const state = {
+      ...base,
+      placements: [
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+        { combatantId: 'orc', cellId: 'c-1-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-diff',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainMovement: 'difficult' },
+        },
+      ],
+      combatantsById: {
+        ...base.combatantsById,
+        orc: {
+          ...base.combatantsById.orc!,
+          stealth: {
+            hiddenFromObserverIds: ['wiz'],
+            hideEligibility: { featureFlags: { allowDifficultTerrainHide: true } },
+          },
+        },
+      },
+    }
+    const out = reconcileStealthBreakWhenNoConcealmentInCell(state, 'orc')
+    expect(out.combatantsById.orc?.stealth?.hiddenFromObserverIds).toEqual(['wiz'])
+  })
+
   it('resolveHideWithPassivePerception persists hideEligibility so reconcile does not drop half-cover hidden state', () => {
     const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
     const w = testPc('wiz', 'Wizard', 20)

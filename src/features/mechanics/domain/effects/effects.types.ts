@@ -545,6 +545,8 @@ export type HideEligibilityGrantEffect = EffectBase<'hide-eligibility-grant'> & 
     allowHalfCoverForHide?: boolean;
     allowDimLightHide?: boolean;
     allowMagicalConcealmentHide?: boolean;
+    allowDifficultTerrainHide?: boolean;
+    allowHighWindHide?: boolean;
   };
 };
 

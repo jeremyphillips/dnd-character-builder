@@ -82,6 +82,16 @@ export function cellTerrainCoverSupportsHideBaseline(world: EncounterWorldCellEn
   return g === 'three-quarters' || g === 'full'
 }
 
+/** Merged hider cell: difficult / greater-difficult movement — not baseline without a feature flag. */
+export function cellWorldSupportsDifficultTerrainHideBasis(world: EncounterWorldCellEnvironment): boolean {
+  return world.terrainMovement === 'difficult' || world.terrainMovement === 'greater-difficult'
+}
+
+/** Merged hider cell: `high-wind` in `atmosphereTags` — not baseline without a feature flag. */
+export function cellWorldSupportsHighWindHideBasis(world: EncounterWorldCellEnvironment): boolean {
+  return world.atmosphereTags.includes('high-wind')
+}
+
 /** Same document shape as {@link CombatantHideEligibilityExtension} on `CombatantStealthRuntime`. */
 export type HideEligibilityExtensionOptions = CombatantHideEligibilityExtension
 
@@ -114,6 +124,12 @@ export function cellWorldSupportsHideAttemptWorldBasis(
   ) {
     return true
   }
+  if (flags?.allowDifficultTerrainHide === true && cellWorldSupportsDifficultTerrainHideBasis(world)) {
+    return true
+  }
+  if (flags?.allowHighWindHide === true && cellWorldSupportsHighWindHideBasis(world)) {
+    return true
+  }
   return false
 }
 
@@ -144,6 +160,12 @@ export function pairSupportsHideWorldBasisFromObserver(
     world.magical &&
     world.visibilityObscured === 'light'
   ) {
+    return true
+  }
+  if (flags?.allowDifficultTerrainHide === true && cellWorldSupportsDifficultTerrainHideBasis(world)) {
+    return true
+  }
+  if (flags?.allowHighWindHide === true && cellWorldSupportsHighWindHideBasis(world)) {
     return true
   }
 

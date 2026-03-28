@@ -103,6 +103,8 @@ export {
   RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_HALF_COVER_ID,
   RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIM_LIGHT_ID,
   RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_MAGICAL_CONCEALMENT_ID,
+  RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIFFICULT_TERRAIN_ID,
+  RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_HIGH_WIND_ID,
   mergeHideEligibilityFeatureFlagsOr,
   resolveTemporaryHideEligibilityFeatureFlagsFromCombatantRuntime,
 } from './hide-eligibility-runtime-sources'
@@ -110,6 +112,8 @@ export {
   canVisuallyPerceiveSubjectForRules,
   getSightBasedCheckLegalityDenialReason,
   cellTerrainCoverSupportsHideBaseline,
+  cellWorldSupportsDifficultTerrainHideBasis,
+  cellWorldSupportsHighWindHideBasis,
   cellWorldSupportsHideAttemptWorldBasis,
   cellWorldSupportsHideConcealment,
   getHideAttemptEligibilityDenialReason,

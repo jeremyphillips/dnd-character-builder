@@ -17,6 +17,13 @@ export const RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIM_LIGHT_ID = 'hide-eligibil
 export const RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_MAGICAL_CONCEALMENT_ID =
   'hide-eligibility:allow-magical-concealment'
 
+/** OR-merges **`allowDifficultTerrainHide`** (difficult / greater-difficult movement on hider cell). */
+export const RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIFFICULT_TERRAIN_ID =
+  'hide-eligibility:allow-difficult-terrain'
+
+/** OR-merges **`allowHighWindHide`** (`high-wind` atmosphere on hider cell). */
+export const RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_HIGH_WIND_ID = 'hide-eligibility:allow-high-wind'
+
 /**
  * Boolean hide-eligibility flags combine with **union (OR)** semantics across:
  * - `stats.skillRuntime.hideEligibilityFeatureFlags` (authored / builder snapshot)
@@ -34,6 +41,8 @@ export function mergeHideEligibilityFeatureFlagsOr(
     if (p.allowHalfCoverForHide === true) merged.allowHalfCoverForHide = true
     if (p.allowDimLightHide === true) merged.allowDimLightHide = true
     if (p.allowMagicalConcealmentHide === true) merged.allowMagicalConcealmentHide = true
+    if (p.allowDifficultTerrainHide === true) merged.allowDifficultTerrainHide = true
+    if (p.allowHighWindHide === true) merged.allowHighWindHide = true
   }
   if (!hasAnyHideEligibilityFeatureFlags(merged)) return undefined
   return merged
@@ -46,7 +55,9 @@ export function hasAnyHideEligibilityFeatureFlags(
   return (
     flags.allowHalfCoverForHide === true ||
     flags.allowDimLightHide === true ||
-    flags.allowMagicalConcealmentHide === true
+    flags.allowMagicalConcealmentHide === true ||
+    flags.allowDifficultTerrainHide === true ||
+    flags.allowHighWindHide === true
   )
 }
 
@@ -98,6 +109,8 @@ export function extractHideEligibilityFeatureFlagsFromEffects(
     if (f.allowHalfCoverForHide === true) merged.allowHalfCoverForHide = true
     if (f.allowDimLightHide === true) merged.allowDimLightHide = true
     if (f.allowMagicalConcealmentHide === true) merged.allowMagicalConcealmentHide = true
+    if (f.allowDifficultTerrainHide === true) merged.allowDifficultTerrainHide = true
+    if (f.allowHighWindHide === true) merged.allowHighWindHide = true
   }
   return merged
 }
@@ -116,10 +129,14 @@ export function extractHideEligibilityFeatureFlagsFromRuntimeMarkers(
   const half = RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_HALF_COVER_ID
   const dim = RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIM_LIGHT_ID
   const mag = RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_MAGICAL_CONCEALMENT_ID
+  const diff = RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_DIFFICULT_TERRAIN_ID
+  const wind = RUNTIME_MARKER_HIDE_ELIGIBILITY_ALLOW_HIGH_WIND_ID
   for (const m of markers) {
     if (markerGrantsFlag(m, half)) merged.allowHalfCoverForHide = true
     if (markerGrantsFlag(m, dim)) merged.allowDimLightHide = true
     if (markerGrantsFlag(m, mag)) merged.allowMagicalConcealmentHide = true
+    if (markerGrantsFlag(m, diff)) merged.allowDifficultTerrainHide = true
+    if (markerGrantsFlag(m, wind)) merged.allowHighWindHide = true
   }
   return merged
 }

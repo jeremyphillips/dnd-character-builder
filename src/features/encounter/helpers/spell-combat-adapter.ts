@@ -136,7 +136,7 @@ function deriveAttachedEmanation(spell: Spell): CombatActionDefinition['attached
   return {
     source: { kind: 'spell', spellId: spell.id },
     radiusFt: em.area.size,
-    selectUnaffectedAtCast: em.selectUnaffectedAtCast,
+    selectUnaffectedAtCast: em.selectUnaffectedAtCast ?? false,
     anchorMode,
   }
 }

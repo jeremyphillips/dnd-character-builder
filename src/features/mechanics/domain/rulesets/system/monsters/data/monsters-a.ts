@@ -705,7 +705,6 @@ export const MONSTERS_A: readonly MonsterCatalogEntry[] = [
               kind: 'emanation',
               attachedTo: 'self',
               area: { kind: 'sphere', size: 5 },
-              selectUnaffectedAtCast: false,
             },
             {
               kind: 'interval',

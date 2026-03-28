@@ -54,7 +54,6 @@ export const SPELLS_LEVEL_8_A_L: readonly SpellEntry[] = [
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 10 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'targeting',
@@ -336,7 +335,6 @@ export const SPELLS_LEVEL_8_A_L: readonly SpellEntry[] = [
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 30 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'targeting',

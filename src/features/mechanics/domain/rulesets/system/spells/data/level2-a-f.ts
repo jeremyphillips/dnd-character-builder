@@ -351,14 +351,24 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
     resolution: {
       caveats: [
         'Magical Darkness vs. light/darkvision and dispel interactions are not fully modeled.',
-        'Point- or object-centered Darkness is not caster-centered. Do not author `emanation` with `attachedTo: self` in spell data—that primitive is only for Spirit Guardians–style self-centered auras. Runtime can represent `place`/`object` anchors on `BattlefieldEffectInstance`, but wiring a Darkness cast to those anchors (and persisting the effect) is still adapter/UI follow-up.',
+        'Authored as a place-anchored attached emanation (`anchorMode: place`): pick a grid point within range; the sphere persists as a shared battlefield aura. Casting on an object for a 15-foot emanation from that object (SRD alternate) is not authored here — use `anchorMode: object` as a follow-up.',
         'Encounter sphere-at-point uses AoE origin placement for area spells (`aoe-place`), not `SingleCellPlacementPanel`—that panel is for spawn (and similar) single-cell requirements from `getActionRequirements`.',
         'Encounter may map area effects to creatures only; geometry and allies differ at the table.',
       ],
     },
     effects: [
+      {
+        kind: 'emanation',
+        attachedTo: 'self',
+        area: { kind: 'sphere', size: 15 },
+        anchorMode: 'place',
+      },
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
-      { kind: 'state', stateId: 'heavily-obscured', notes: 'The sphere is Heavily Obscured magical Darkness.' },
+      {
+        kind: 'note',
+        text: 'The sphere is Heavily Obscured magical Darkness — grid presence is the attached battlefield aura; applying `heavily-obscured` to creatures is not modeled here.',
+        category: 'under-modeled' as const,
+      },
       {
         kind: 'note',
         text: 'Darkvision cannot see through it. Nonmagical light cannot illuminate it. Overlaps with level 2 or lower light spells dispels them.',
@@ -366,7 +376,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       },
       {
         kind: 'note',
-        text: 'SRD modes: (1) 15-foot-radius sphere from a point within range; (2) cast on an object for a 15-foot emanation from that object.',
+        text: 'SRD alternate: cast on an object for a 15-foot emanation from that object — not implemented in authored data yet.',
         category: 'under-modeled' as const,
       },
     ],

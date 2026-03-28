@@ -797,7 +797,6 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
               kind: 'emanation',
               attachedTo: 'self',
               area: { kind: 'sphere', size: 10 },
-              selectUnaffectedAtCast: false,
             },
             {
               kind: 'note',

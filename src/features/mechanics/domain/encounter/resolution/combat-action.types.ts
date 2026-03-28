@@ -165,6 +165,7 @@ export interface CombatActionDefinition {
   attachedEmanation?: {
     source: AttachedBattlefieldEffectSource
     radiusFt: number
+    /** Always set by spell/monster adapters (`false` when omitted on authored `emanation`). */
     selectUnaffectedAtCast: boolean
     anchorMode: EmanationAnchorMode
   }

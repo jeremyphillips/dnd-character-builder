@@ -305,7 +305,6 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 30 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'targeting',

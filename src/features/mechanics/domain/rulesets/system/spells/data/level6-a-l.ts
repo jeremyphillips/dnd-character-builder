@@ -403,7 +403,6 @@ export const SPELLS_LEVEL_6_A_L: readonly SpellEntry[] = [
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 10 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'targeting',

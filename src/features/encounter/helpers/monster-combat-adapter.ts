@@ -217,7 +217,7 @@ function deriveMonsterAttachedEmanation(
       actionId: buildMonsterActionRuntimeId(monster, action, index, cost),
     },
     radiusFt: em.area.size,
-    selectUnaffectedAtCast: em.selectUnaffectedAtCast,
+    selectUnaffectedAtCast: em.selectUnaffectedAtCast ?? false,
     anchorMode,
   }
 }

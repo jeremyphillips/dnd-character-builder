@@ -39,7 +39,6 @@ describe('monster trait attached battlefield auras', () => {
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 5 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'interval',
@@ -67,7 +66,6 @@ describe('monster trait attached battlefield auras', () => {
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 15 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'interval',
@@ -124,7 +122,6 @@ describe('monster trait attached battlefield auras', () => {
                 kind: 'emanation',
                 attachedTo: 'self',
                 area: { kind: 'sphere', size: 10 },
-                selectUnaffectedAtCast: false,
               },
             ],
           },
@@ -151,7 +148,6 @@ describe('monster trait attached battlefield auras', () => {
         kind: 'emanation',
         attachedTo: 'self',
         area: { kind: 'sphere', size: 10 },
-        selectUnaffectedAtCast: false,
       },
       {
         kind: 'interval',
@@ -215,7 +211,6 @@ describe('monster trait attached battlefield auras', () => {
                   kind: 'emanation',
                   attachedTo: 'self',
                   area: { kind: 'sphere', size: 5 },
-                  selectUnaffectedAtCast: false,
                 },
               ],
             },

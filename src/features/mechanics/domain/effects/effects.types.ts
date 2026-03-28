@@ -492,7 +492,8 @@ export type AuraEffect = EffectBase<'aura'> & {
 export type EmanationEffect = EffectBase<'emanation'> & {
   attachedTo: 'self';
   area: { kind: 'sphere'; size: number };
-  selectUnaffectedAtCast: boolean;
+  /** When omitted, combat adapters treat this as `false` (no Spirit Guardians–style unaffected selection). */
+  selectUnaffectedAtCast?: boolean;
   /**
    * When set, spell/monster combat adapters copy this to the adapted action’s `attachedEmanation.anchorMode`.
    * Omit for legacy caster-centered attached emanations (adapter defaults to `caster`).

@@ -535,6 +535,17 @@ export type RegenerationEffect = EffectBase<'regeneration'> & {
   disabledAtZeroHp?: boolean;
 };
 
+/**
+ * Grants temporary hide-eligibility feature flags while the effect remains on `activeEffects`.
+ * OR-merged with `skillRuntime.hideEligibilityFeatureFlags` in encounter hide resolution (see
+ * `getCombatantHideEligibilityExtensionOptions`). Not a second permission system — same boolean seam.
+ */
+export type HideEligibilityGrantEffect = EffectBase<'hide-eligibility-grant'> & {
+  featureFlags: {
+    allowHalfCoverForHide?: boolean;
+  };
+};
+
 export type Effect =
   | ModifierEffect
   | FormulaEffect
@@ -567,4 +578,5 @@ export type Effect =
   | NoteEffect
   | RemoveClassificationEffect
   | RegenerationEffect
+  | HideEligibilityGrantEffect
   | CustomEffect;

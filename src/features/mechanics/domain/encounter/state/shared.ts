@@ -94,6 +94,8 @@ export function formatEffectLabel(effect: Effect): string {
         return `Immunity: ${effect.value}`
       }
       return effect.text ?? 'Grant'
+    case 'hide-eligibility-grant':
+      return effect.text ?? 'Hide eligibility grant'
     default:
       return effect.text ?? effect.kind.replaceAll('_', ' ')
   }

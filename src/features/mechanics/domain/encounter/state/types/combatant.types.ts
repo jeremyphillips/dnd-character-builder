@@ -59,9 +59,9 @@ export type CombatantSkillRuntimeSnapshot = {
   /** When set, Stealth check uses this total modifier instead of Dex + proficiency contribution. */
   stealthCheckModifierOverride?: number
   /**
-   * Runtime hide-eligibility feature permissions (feats/traits from builders). Consumed by
-   * `getCombatantHideEligibilityExtensionOptions` — not persisted stealth snapshot (see `stealth.hideEligibility`).
-   * **TODO:** drive from active effects / `RuntimeMarker` when grants are modeled dynamically.
+   * Authoring-time hide-eligibility flags (feats/traits from builders). OR-merged in
+   * `getCombatantHideEligibilityExtensionOptions` with temporary `activeEffects` / marker grants — not
+   * the persisted stealth snapshot (see `stealth.hideEligibility`).
    */
   hideEligibilityFeatureFlags?: CombatantHideEligibilityFeatureFlagsRuntime
 }

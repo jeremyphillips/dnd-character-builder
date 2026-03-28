@@ -4,6 +4,7 @@ import { createSquareGridSpace } from '@/features/encounter/space/createSquareGr
 import { buildCharacterCombatantInstance } from '@/features/encounter/helpers/combatant-builders'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { useCombatStats } from '@/features/character/hooks'
+import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types'
 import {
   createEncounterState,
   getCombatantHideEligibilityExtensionOptions,
@@ -12,7 +13,16 @@ import {
   resolveHideWithPassivePerception,
 } from '@/features/mechanics/domain/encounter/state'
 
-import { testEnemy } from './encounter-visibility-test-fixtures'
+import {
+  encounterAttackerOutsideDefenderHeavilyObscured,
+  encounterAttackerOutsideDefenderMagicalDarknessCell,
+  testEnemy,
+} from './encounter-visibility-test-fixtures'
+
+const hideEligibilityGrantHalfCover = {
+  kind: 'hide-eligibility-grant' as const,
+  featureFlags: { allowHalfCoverForHide: true },
+}
 
 function minimalCharacter(overrides: Partial<CharacterDetailDto> = {}): CharacterDetailDto {
   return {
@@ -119,5 +129,85 @@ describe('hide eligibility from authored character feats (runtime)', () => {
     expect(beat.state.combatantsById.rogue?.stealth?.hideEligibility?.featureFlags?.allowHalfCoverForHide).toBe(true)
     const after = reconcileStealthBreakWhenNoConcealmentInCell(beat.state, 'rogue')
     expect(after.combatantsById.rogue?.stealth?.hiddenFromObserverIds).toContain('wiz')
+  })
+})
+
+describe('temporary runtime hide permissions (same resolver seam)', () => {
+  function halfCoverEncounter(rogueOverrides: Partial<CombatantInstance>) {
+    const wiz = testEnemy('wiz', 'Wizard', 20)
+    const rogueBase = buildCharacterCombatantInstance({
+      runtimeId: 'rogue',
+      side: 'party',
+      sourceKind: 'pc',
+      character: minimalCharacter({ feats: [] }),
+      combatStats: mockCombatStats(3),
+      attacks: [],
+      turnHooks: [],
+    })
+    const rogue = { ...rogueBase, ...rogueOverrides }
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const base = createEncounterState([rogue, wiz], { rng: () => 0.5, space })
+    return {
+      ...base,
+      placements: [
+        { combatantId: 'rogue', cellId: 'c-1-0' },
+        { combatantId: 'wiz', cellId: 'c-0-0' },
+      ],
+      environmentZones: [
+        {
+          id: 'z-half',
+          kind: 'patch',
+          sourceKind: 'terrain-feature',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-1-0'] },
+          overrides: { terrainCover: 'half' },
+        },
+      ],
+      combatantsById: {
+        ...base.combatantsById,
+        wiz: {
+          ...base.combatantsById.wiz!,
+          stats: { ...base.combatantsById.wiz!.stats, passivePerception: 10 },
+        },
+        rogue,
+      },
+    }
+  }
+
+  it('half-cover only: no feat and no temporary grant denies hide attempt', () => {
+    const state = halfCoverEncounter({})
+    expect(getHideAttemptEligibilityDenialReason(state, 'rogue', 'wiz')).toBe('observer-sees-without-concealment')
+  })
+
+  it('half-cover: hide-eligibility-grant on activeEffects allows entry and sustain like authored feat', () => {
+    const state = halfCoverEncounter({ activeEffects: [hideEligibilityGrantHalfCover] })
+    expect(getHideAttemptEligibilityDenialReason(state, 'rogue', 'wiz')).toBe(null)
+    expect(getCombatantHideEligibilityExtensionOptions(state.combatantsById.rogue!)?.featureFlags?.allowHalfCoverForHide).toBe(
+      true,
+    )
+    const beat = resolveHideWithPassivePerception(state, 'rogue', 11)
+    expect(beat.state.combatantsById.rogue?.stealth?.hideEligibility?.featureFlags?.allowHalfCoverForHide).toBe(true)
+    const after = reconcileStealthBreakWhenNoConcealmentInCell(beat.state, 'rogue')
+    expect(after.combatantsById.rogue?.stealth?.hiddenFromObserverIds).toContain('wiz')
+  })
+
+  it('authored skulker OR-merges with temporary grant (both true)', () => {
+    const rogueBase = buildCharacterCombatantInstance({
+      runtimeId: 'rogue',
+      side: 'party',
+      sourceKind: 'pc',
+      character: minimalCharacter({ feats: [{ id: 'skulker', name: 'Skulker' }] }),
+      combatStats: mockCombatStats(3),
+      attacks: [],
+      turnHooks: [],
+    })
+    const rogue = { ...rogueBase, activeEffects: [hideEligibilityGrantHalfCover] }
+    expect(getCombatantHideEligibilityExtensionOptions(rogue)?.featureFlags?.allowHalfCoverForHide).toBe(true)
+  })
+
+  it('baseline: heavy obscurement and magical darkness hide eligibility unchanged (no regression)', () => {
+    expect(getHideAttemptEligibilityDenialReason(encounterAttackerOutsideDefenderHeavilyObscured(), 'orc', 'wiz')).toBe(null)
+    expect(
+      getHideAttemptEligibilityDenialReason(encounterAttackerOutsideDefenderMagicalDarknessCell(), 'orc', 'wiz'),
+    ).toBe(null)
   })
 })

@@ -2,28 +2,34 @@ import type {
   CombatantHideEligibilityExtension,
   CombatantInstance,
 } from './types/combatant.types'
-
-function hasAnyHideEligibilityFeatureFlags(
-  flags: CombatantHideEligibilityExtension['featureFlags'] | undefined,
-): boolean {
-  if (flags == null) return false
-  return flags.allowHalfCoverForHide === true
-}
+import {
+  hasAnyHideEligibilityFeatureFlags,
+  mergeHideEligibilityFeatureFlagsOr,
+  resolveTemporaryHideEligibilityFeatureFlagsFromCombatantRuntime,
+} from './hide-eligibility-runtime-sources'
 
 /**
- * Derives hide-extension options from the combatant’s **runtime** stat snapshot (`stats.skillRuntime`).
- * Single seam for feat/trait-driven hide rules; entry and sustain both consume the output via
- * {@link resolveHideEligibilityForCombatant} in `sight-hide-rules.ts`.
+ * Derives hide-extension options from the combatant’s **runtime**: authored snapshot
+ * (`stats.skillRuntime.hideEligibilityFeatureFlags`) **OR-merged** with temporary grants from
+ * **`activeEffects`** (including nested auras / state payloads — see
+ * `hide-eligibility-runtime-sources.ts`) and **`conditions` / `states`** markers.
  *
- * **Source of truth:** `skillRuntime.hideEligibilityFeatureFlags` from combatant builders —
- * characters: authored **`CharacterDetailDto.feats`** → `deriveHideEligibilityFeatureFlagsFromCharacterDetail`;
- * monsters: optional **`mechanics.hideEligibilityFeatureFlags`** on stat blocks.
- * **TODO:** merge in effect/marker-driven grants when those paths exist.
+ * Single resolver for feat/trait **and** spell/marker-driven flags; entry and sustain both consume
+ * the output via {@link resolveHideEligibilityForCombatant} in `sight-hide-rules.ts`.
+ *
+ * **Merge:** union (OR) for each boolean — e.g. `allowHalfCoverForHide` is true if the snapshot
+ * or any temporary source sets it.
  */
 export function getCombatantHideEligibilityExtensionOptions(
   combatant: CombatantInstance,
 ): CombatantHideEligibilityExtension | undefined {
-  const flags = combatant.stats.skillRuntime?.hideEligibilityFeatureFlags
-  if (flags == null || !hasAnyHideEligibilityFeatureFlags(flags)) return undefined
-  return { featureFlags: { ...flags } }
+  const snapshot = combatant.stats.skillRuntime?.hideEligibilityFeatureFlags
+  const temporary = resolveTemporaryHideEligibilityFeatureFlagsFromCombatantRuntime({
+    activeEffects: combatant.activeEffects,
+    conditions: combatant.conditions,
+    states: combatant.states,
+  })
+  const merged = mergeHideEligibilityFeatureFlagsOr(snapshot, temporary)
+  if (merged == null || !hasAnyHideEligibilityFeatureFlags(merged)) return undefined
+  return { featureFlags: { ...merged } }
 }

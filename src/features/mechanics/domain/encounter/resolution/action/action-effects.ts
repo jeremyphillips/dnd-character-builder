@@ -19,7 +19,10 @@ import {
   type CombatantInstance,
 } from '../../state'
 import type { EffectDuration } from '../../../effects/timing.types'
-import type { ConditionImmunityGrantEffect } from '../../../effects/effects.types'
+import type {
+  ConditionImmunityGrantEffect,
+  HideEligibilityGrantEffect,
+} from '../../../effects/effects.types'
 import { getAbilityModifier } from '../../../abilities/getAbilityModifier'
 import { abilityIdToKey, type AbilityRef } from '../../../character'
 import type { Condition } from '../../../conditions/condition.types'
@@ -818,6 +821,24 @@ export function applyActionEffects(
         `${options.sourceLabel}: Regeneration effect noted — runtime adapter handles turn hook seeding.`,
         { actorId: actor.instanceId, targetIds: [target.instanceId] },
       )
+      return
+    }
+
+    if (effect.kind === 'hide-eligibility-grant') {
+      const duration = effect.duration ?? spellTurnDurationFromAction(action)
+      const payload: HideEligibilityGrantEffect = {
+        ...effect,
+        ...(duration ? { duration } : {}),
+        source: effect.source ?? options.sourceLabel,
+      }
+      nextState = updateEncounterCombatant(nextState, target.instanceId, (c) => ({
+        ...c,
+        activeEffects: [...c.activeEffects, payload],
+      }))
+      nextState = appendEncounterNote(nextState, `${options.sourceLabel}: Hide eligibility flags granted (active effect).`, {
+        actorId: actor.instanceId,
+        targetIds: [target.instanceId],
+      })
       return
     }
 

@@ -1,2 +1,3 @@
 export * from './environment.types'
 export * from './environment.constants'
+export * from './environment.resolve'

@@ -16,6 +16,10 @@ import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import { buildMonsterModalStats } from '../helpers/combatant-modal-stats'
+import {
+  ATMOSPHERE_TAGS,
+  DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
+} from '@/features/mechanics/domain/encounter/environment'
 import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state'
 import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/encounter/state/battlefield-effect-anchor'
 import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'
@@ -54,13 +58,6 @@ import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
 import type { CombatantPortraitEntry } from '../helpers/resolveCombatantAvatarSrc'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
-
-const DEFAULT_ENVIRONMENT: EnvironmentSetupValues = {
-  setting: 'outdoors',
-  lightingLevel: 'bright',
-  terrainMovement: 'normal',
-  visibilityObscured: 'none',
-}
 
 function useEncounterRuntimeValue() {
   useActiveCampaign()
@@ -180,7 +177,9 @@ function useEncounterRuntimeValue() {
     if (campaignId) navigate(campaignEncounterSetupPath(campaignId), { replace: true })
   }, [handleResetEncounterBase, navigate, campaignId])
 
-  const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(DEFAULT_ENVIRONMENT)
+  const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(
+    DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
+  )
   const [gridSizePreset, setGridSizePreset] = useState<GridSizePreset>('medium')
   const [interactionMode, setInteractionMode] = useState<GridInteractionMode>('select-target')
   const [allyModalOpen, setAllyModalOpen] = useState(false)
@@ -390,6 +389,11 @@ function useEncounterRuntimeValue() {
     environmentSetup.lightingLevel !== 'bright' ? environmentSetup.lightingLevel : null,
     environmentSetup.terrainMovement !== 'normal' ? environmentSetup.terrainMovement : null,
     environmentSetup.visibilityObscured !== 'none' ? environmentSetup.visibilityObscured : null,
+    environmentSetup.atmosphereTags.length > 0
+      ? environmentSetup.atmosphereTags
+          .map((id) => ATMOSPHERE_TAGS.find((t) => t.id === id)?.name ?? id)
+          .join(', ')
+      : null,
   ].filter(Boolean)
   const environmentSummary = environmentSummaryParts.length > 0 ? environmentSummaryParts.join(', ') : undefined
 

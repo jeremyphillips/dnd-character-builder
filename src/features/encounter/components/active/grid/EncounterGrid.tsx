@@ -1,3 +1,7 @@
+/**
+ * Grid presentation only. Encounter environment semantics (lighting, visibility, atmosphere) are defined
+ * in `features/mechanics/domain/encounter/environment` and resolved per cell — not re-derived here.
+ */
 import { Fragment, type ReactNode, useCallback, useMemo, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'

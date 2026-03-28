@@ -91,11 +91,17 @@ function useEncounterRuntimeValue() {
   }
 
   const monstersById = catalog.monstersById
-  const { allyOptions, opponentOptions, opponentOptionsByKey } = useEncounterOptions({
-    allies: party,
-    npcs,
-    monstersById,
-  })
+  const { allyOptions, npcAllyOptions, opponentOptions, opponentOptionsByKey } =
+    useEncounterOptions({
+      allies: party,
+      npcs,
+      monstersById,
+    })
+
+  const allAllyOptions = useMemo(
+    () => [...allyOptions, ...npcAllyOptions],
+    [allyOptions, npcAllyOptions],
+  )
 
   const {
     selectedAllyIds,
@@ -109,7 +115,7 @@ function useEncounterRuntimeValue() {
     removeOpponentCombatant,
     addOpponentCopy,
   } = useEncounterRoster({
-    allyOptions,
+    allyOptions: allAllyOptions,
     opponentOptionsByKey,
     nextRuntimeId,
   })
@@ -199,7 +205,7 @@ function useEncounterRuntimeValue() {
   const [turnOrderModalOpen, setTurnOrderModalOpen] = useState(false)
   const [actionDrawerOpen, setActionDrawerOpen] = useState(false)
 
-  const allyModalOptions = useMemo(
+  const partyAllyModalOptions = useMemo(
     () =>
       allyOptions.map((a) => ({
         id: a.id,
@@ -209,6 +215,18 @@ function useEncounterRuntimeValue() {
         imageUrl: a.imageUrl,
       })),
     [allyOptions],
+  )
+
+  const npcAllyModalOptions = useMemo(
+    () =>
+      npcAllyOptions.map((a) => ({
+        id: a.id,
+        label: a.label,
+        subtitle: a.subtitle,
+        imageKey: a.imageKey,
+        imageUrl: a.imageUrl,
+      })),
+    [npcAllyOptions],
   )
 
   const { monsterModalOptions, npcModalOptions } = useMemo(() => {
@@ -681,7 +699,8 @@ function useEncounterRuntimeValue() {
     setEditModalOpen,
     turnOrderModalOpen,
     setTurnOrderModalOpen,
-    allyModalOptions,
+    partyAllyModalOptions,
+    npcAllyModalOptions,
     monsterModalOptions,
     npcModalOptions,
     selectedOpponentKeys,
@@ -724,7 +743,8 @@ function EncounterRuntimeModals() {
     setEditModalOpen,
     turnOrderModalOpen,
     setTurnOrderModalOpen,
-    allyModalOptions,
+    partyAllyModalOptions,
+    npcAllyModalOptions,
     monsterModalOptions,
     npcModalOptions,
     selectedOpponentKeys,
@@ -753,7 +773,8 @@ function EncounterRuntimeModals() {
       <SelectEncounterAllyModal
         open={allyModalOpen}
         onClose={() => setAllyModalOpen(false)}
-        options={allyModalOptions}
+        partyOptions={partyAllyModalOptions}
+        npcOptions={npcAllyModalOptions}
         selectedAllyIds={selectedAllyIds}
         onApply={handleAllyModalApply}
       />

@@ -278,6 +278,19 @@ export type CombatantTurnStatus = {
   remainsInInitiative: boolean
 }
 
+/**
+ * Observer-relative stealth bookkeeping on the **subject** (hider). Not a substitute for perception
+ * (`canPerceiveTargetOccupantForCombat` remains the sight seam); stealth layers rules that need
+ * hidden-state semantics. Extend with metadata later without reshaping `CombatantInstance`.
+ */
+export interface CombatantStealthRuntime {
+  /**
+   * Observers for whom this combatant is treated as **hidden** (runtime stealth), subject to
+   * reconciliation with perception in `stealth-rules.ts`.
+   */
+  hiddenFromObserverIds: string[]
+}
+
 export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
@@ -336,6 +349,11 @@ export interface CombatantInstance {
    * (e.g. banished, off-grid). Set when placement is cleared; cleared after a successful restore placement.
    */
   battlefieldReturnCellId?: string
+  /**
+   * Stealth / hidden-from-observers state (wrapper for future round/source/debug fields).
+   * Owned and mutated only via `stealth-rules.ts`.
+   */
+  stealth?: CombatantStealthRuntime
   conditions: RuntimeMarker[]
   states: RuntimeMarker[]
 }

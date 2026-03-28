@@ -14,6 +14,8 @@ import {
   getActionTargetCandidates,
   getCombatantAvailableActions,
   removeConditionFromCombatant,
+  reconcileStealthBreakWhenNoConcealmentInCell,
+  reconcileStealthHiddenForPerceivedObservers,
   resolveCombatAction,
   removeStateFromCombatant,
   triggerManualHook,
@@ -461,9 +463,10 @@ export function useEncounterState({
       )
       if (afterMove === prev) return prev
       const startLen = prev.log.length
-      let next = afterMove
+      let next = reconcileStealthBreakWhenNoConcealmentInCell(afterMove, activeCombatantId)
+      next = reconcileStealthHiddenForPerceivedObservers(next)
       if (spellsById != null) {
-        next = resolveAttachedAuraSpatialEntryAfterMovement(prev, afterMove, {
+        next = resolveAttachedAuraSpatialEntryAfterMovement(prev, next, {
           spellLookup: (id) => spellsById[id],
           suppressSameSideHostile,
           monstersById,

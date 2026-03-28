@@ -14,6 +14,8 @@ import {
   addAttachedAuraInstance,
   getAttackVisibilityRollModifiersFromPair,
   resolveCombatantPairVisibilityForAttackRoll,
+  breakStealthOnAttack,
+  reconcileStealthHiddenForPerceivedObservers,
 } from '../../state'
 import type { EncounterViewerPerceptionCapabilities } from '../../environment/perception.types'
 import {
@@ -232,14 +234,14 @@ function resolveTargetingOptions(options: ResolveCombatActionOptions): ActionTar
 }
 
 function resolveCombatActionInternal(
-  state: EncounterState,
+  initialState: EncounterState,
   selection: ResolveCombatActionSelection,
   options: ResolveCombatActionOptions,
   behavior: { skipCost: boolean },
 ): InternalResolutionResult {
-  const noOp: InternalResolutionResult = { state, createdMarkerIds: [] }
-  const actor = state.combatantsById[selection.actorId]
-  if (!actor || state.activeCombatantId !== selection.actorId) return noOp
+  const noOp: InternalResolutionResult = { state: initialState, createdMarkerIds: [] }
+  let actor = initialState.combatantsById[selection.actorId]
+  if (!actor || initialState.activeCombatantId !== selection.actorId) return noOp
 
   const action = getCombatantActions(actor).find((candidate) => candidate.id === selection.actionId)
   if (!action) return noOp
@@ -251,7 +253,7 @@ function resolveCombatActionInternal(
     const resourceDebug = formatTurnResourceDebug(actor, action.cost)
     if (resourceDebug.length > 0) {
       return {
-        state: appendEncounterNote(state, `${action.label || action.id} blocked: insufficient turn resources.`, {
+        state: appendEncounterNote(initialState, `${action.label || action.id} blocked: insufficient turn resources.`, {
           actorId: actor.instanceId,
           debugDetails: resourceDebug,
         }),
@@ -261,6 +263,11 @@ function resolveCombatActionInternal(
     return noOp
   }
   if (!behavior.skipCost && !canUseCombatAction(action)) return noOp
+
+  const state = reconcileStealthHiddenForPerceivedObservers(initialState, {
+    perceptionCapabilities: options.perceptionCapabilities,
+  })
+  actor = state.combatantsById[selection.actorId]!
 
   const targets = getActionTargets(state, actor, selection, action, targetingOptions)
   const target = targets[0]
@@ -365,12 +372,14 @@ function resolveCombatActionInternal(
     const attackBonus = action.attackProfile?.attackBonus
     if (target == null || attackBonus == null) return { state: nextState, createdMarkerIds: [] }
 
+    nextState = breakStealthOnAttack(nextState, actor.instanceId)
+
     const attackRange = deriveAttackRange(action)
     const { rollMod, attackerMarkers, defenderMarkers, pairVisibility } = resolveRollModifier(
       actor,
       target,
       attackRange,
-      state,
+      nextState,
     )
     const { rawRoll, detail: rollDetail } = rollD20WithRollMode(rollMod, rng)
     const totalRoll = rawRoll + attackBonus

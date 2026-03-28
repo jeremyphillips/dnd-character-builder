@@ -106,6 +106,16 @@ export {
   type HideAttemptEligibilityDenialReason,
 } from './sight-hide-rules'
 export {
+  applyStealthHideSuccess,
+  breakStealthOnAttack,
+  getStealthHideAttemptDenialReason,
+  isHiddenFromObserver,
+  reconcileStealthBreakWhenNoConcealmentInCell,
+  reconcileStealthHiddenForPerceivedObservers,
+  resolveDefaultHideObservers,
+  type StealthRulesOptions,
+} from './stealth-rules'
+export {
   combatantHasBattlefieldAbsenceEngineState,
   findNearestUnoccupiedPassableCell,
   markerCausesBattlefieldAbsence,

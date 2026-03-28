@@ -66,6 +66,10 @@ Attack rolls use **`resolveCombatantPairVisibilityForAttackRoll`** → roll modi
 
 Hide **attempt** eligibility (not a full Stealth contest) is in **`getHideAttemptEligibilityDenialReason`** (`sight-hide-rules.ts`): occupant seam plus **world** concealment at the hider’s cell.
 
+### Stealth / hidden runtime (layer on top)
+
+**Hidden state** is **not** the same as “not currently visible”: perception answers sight; **`CombatantInstance.stealth`** (`CombatantStealthRuntime` wrapper) stores **who the subject is hidden from**. Rules and mutations are centralized in **`stealth-rules.ts`**; reconciliation helpers keep hidden-from lists aligned when perception or concealment changes. See [Stealth and hidden state](./stealth.md).
+
 ---
 
 ## Current rules supported
@@ -96,16 +100,16 @@ Perception resolution accepts **`viewerRole: 'dm' | 'pc'`** (e.g. `ResolveViewer
 
 ## Known limitations
 
-- **No opposed Stealth vs Perception contest** — passive Perception and contested hiding are not fully modeled.
-- **No observer aggregation** — “who can see this creature” as a set of observers is not a first-class API.
+- **Opposed Stealth vs Perception** — not fully modeled; **`applyStealthHideSuccess`** accepts explicit observer ids for a future contest seam (see [stealth.md](./stealth.md)).
+- **No observer aggregation API** — “who can see this creature” as a derived set is not a first-class helper yet (hidden-from is stored per subject).
 - **Limited capability threading** — capabilities must be passed where supported; not every call site accepts or forwards them yet.
 
 ---
 
 ## Future work
 
-- **Stealth / hidden state** — contested rolls, hidden condition, and integration with occupant perception.
-- **Observer sets** — aggregate visibility for “all enemies that can see you” style rules.
+- **Stealth contests** — opposed rolls and passive Perception feeding **`applyStealthHideSuccess`**.
+- **Observer sets** — aggregate helpers for “all enemies that can see you” style rules.
 - **Sense-specific bypasses** — consistent threading of blindsight, tremorsense, truesight, and table-specific rulings through all seams.
 - **Rogue-in-shadows / feature hooks** — light obscurement only counts if the observer is in bright light (and similar feature-level rules), once base stealth and observers exist.
 

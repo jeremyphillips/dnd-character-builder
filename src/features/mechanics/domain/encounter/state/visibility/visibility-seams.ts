@@ -9,6 +9,7 @@ export {
   canPerceiveTargetOccupantForCombat,
   evaluatePerceiveTargetOccupantForCombat,
   formatPerceiveTargetOccupantBreakdownCompact,
+  formatStealthRevealHumanReadable,
   resolveCombatantPairVisibilityForAttackRoll,
   getAttackVisibilityRollModifiersFromPair,
   type PerceiveTargetOccupantBreakdown,

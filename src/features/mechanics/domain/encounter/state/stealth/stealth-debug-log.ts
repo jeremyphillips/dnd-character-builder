@@ -2,10 +2,11 @@
  * Diagnostic combat-log lines for stealth / `hiddenFromObserverIds` bookkeeping only.
  * Does not change stealth or perception rules — append-only notes on {@link EncounterState.log}.
  */
-import { appendEncounterNote, getEncounterCombatantLabel } from '../effects/logging'
+import { appendEncounterLogEvent, appendEncounterNote, getEncounterCombatantLabel } from '../effects/logging'
 import type { EncounterState } from '../types'
 import {
   formatPerceiveTargetOccupantBreakdownCompact,
+  formatStealthRevealHumanReadable,
   type PerceiveTargetOccupantEvaluation,
 } from '../visibility/combatant-pair-visibility'
 
@@ -63,15 +64,16 @@ export function appendStealthPrunedObserverCanPerceiveNote(
   const subject = getEncounterCombatantLabel(state, subjectId)
   const names = rosterLabels(state, removedObserverIds)
 
-  let summary = `${subject} revealed to ${names} (observer can perceive target — hidden-from list pruned).`
-  if (perceiveByObserverId) {
-    const traceParts = removedObserverIds.map((oid) => {
-      const ev = perceiveByObserverId[oid]
-      const obs = getEncounterCombatantLabel(state, oid)
-      return `${obs}: ${formatPerceiveTargetOccupantBreakdownCompact(ev.breakdown)}`
-    })
-    summary += ` Perception trace: ${traceParts.join(' · ')}`
-  }
+  const summary = perceiveByObserverId
+    ? removedObserverIds
+        .map((oid) => {
+          const ev = perceiveByObserverId[oid]
+          const obs = getEncounterCombatantLabel(state, oid)
+          if (!ev) return `${obs} can now perceive ${subject} (hidden-from removed).`
+          return formatStealthRevealHumanReadable(obs, subject, ev.breakdown)
+        })
+        .join(' ')
+    : `${names} can now perceive ${subject} (hidden-from removed).`
 
   const detailFields: Record<string, string> = {
     subject: getEncounterCombatantLabel(state, subjectId),
@@ -96,10 +98,18 @@ export function appendStealthPrunedObserverCanPerceiveNote(
       .join('||')
   }
 
-  return appendEncounterNote(state, summary, {
+  const structured = stealthNoteDetails(STEALTH_DEBUG_REASON.observerCanPerceiveTarget, detailFields)
+
+  return appendEncounterLogEvent(state, {
+    type: 'stealth-reveal',
     actorId: subjectId,
     targetIds: removedObserverIds,
-    details: stealthNoteDetails(STEALTH_DEBUG_REASON.observerCanPerceiveTarget, detailFields),
+    round: state.roundNumber,
+    turn: state.turnIndex + 1,
+    summary,
+    /** User-facing modes: readable `summary` only; dense trace lives in {@link debugDetails}. */
+    details: undefined,
+    debugDetails: [structured],
   })
 }
 

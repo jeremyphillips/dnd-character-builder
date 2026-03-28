@@ -227,6 +227,30 @@ export function evaluatePerceiveTargetOccupantForCombat(
   }
 }
 
+/**
+ * Plain-language line for combat log when hidden-from is pruned (same cases as successful
+ * {@link canPerceiveTargetOccupantForCombat}; wording only).
+ */
+export function formatStealthRevealHumanReadable(
+  observerLabel: string,
+  subjectLabel: string,
+  b: PerceiveTargetOccupantBreakdown,
+): string {
+  if (b.missingCombatant) {
+    return `${observerLabel} can now perceive ${subjectLabel} (hidden-from no longer applies).`
+  }
+  if (b.noGridPermissive) {
+    return `${observerLabel} can now perceive ${subjectLabel} as an occupant and no longer treats them as hidden.`
+  }
+  if (b.lineOfSightClear === false || b.lineOfEffectClear === false) {
+    return `${observerLabel} can now perceive ${subjectLabel}'s occupant (hidden-from removed).`
+  }
+  if (!b.viewerPerceptionResolved) {
+    return `${observerLabel} can now perceive ${subjectLabel} as an occupant and no longer treats them as hidden.`
+  }
+  return `${observerLabel} now has clear line of sight to ${subjectLabel} and can perceive the occupant.`
+}
+
 /** Compact pipe-separated fragment for stealth prune diagnostics (stable token shape for log search). */
 export function formatPerceiveTargetOccupantBreakdownCompact(b: PerceiveTargetOccupantBreakdown): string {
   if (b.missingCombatant) return 'missingCombatant=true'

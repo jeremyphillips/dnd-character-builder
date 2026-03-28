@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { filterLogByMode } from '@/features/encounter/domain'
+import { toCombatLogEntry } from '@/features/encounter/helpers/combat-log-bridge'
 import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
 import {
   appendStealthMovementRecheckHeaderNote,
@@ -108,12 +110,22 @@ describe('stealth-rules', () => {
     expect(pruned.combatantsById.orc?.stealth).toBeUndefined()
     expect(pruned.log.length).toBeGreaterThan(logLenBefore)
     const pruneNote = pruned.log.find(
-      (e) => e.type === 'note' && e.details?.includes(STEALTH_DEBUG_REASON.observerCanPerceiveTarget),
+      (e) =>
+        e.type === 'stealth-reveal' &&
+        e.debugDetails?.some((d) => d.includes(STEALTH_DEBUG_REASON.observerCanPerceiveTarget)),
     )
-    expect(pruneNote?.summary).toMatch(/Perception trace|revealed to|pruned/i)
-    expect(pruneNote?.details).toContain(`traceKind=${STEALTH_DEBUG_REASON.observerPerceivePruneBreakdown}`)
-    expect(pruneNote?.details).toContain('intrinsicSee=true')
-    expect(pruneNote?.details).toContain('worldOccupants=true')
+    expect(pruneNote?.summary).toBe(
+      'Wizard now has clear line of sight to Orc and can perceive the occupant.',
+    )
+    expect(pruneNote?.details).toBeUndefined()
+    const dbg = pruneNote?.debugDetails?.join('\n') ?? ''
+    expect(dbg).toContain(`traceKind=${STEALTH_DEBUG_REASON.observerPerceivePruneBreakdown}`)
+    expect(dbg).toContain('intrinsicSee=true')
+    expect(dbg).toContain('worldOccupants=true')
+
+    const asEntry = toCombatLogEntry(pruneNote!)
+    expect(filterLogByMode([asEntry], 'normal').some((x) => x.id === asEntry.id)).toBe(true)
+    expect(filterLogByMode([asEntry], 'debug').some((x) => x.id === asEntry.id)).toBe(true)
   })
 
   it('reconcileStealthHiddenForPerceivedObservers does not append a note when hidden state is unchanged', () => {
@@ -174,8 +186,9 @@ describe('stealth-rules', () => {
     expect(state.combatantsById.orc?.stealth?.hiddenFromObserverIds).toEqual(['wiz'])
     const pruned = reconcileStealthHiddenForPerceivedObservers(state)
     expect(pruned.combatantsById.orc?.stealth).toBeUndefined()
-    const pruneNote = pruned.log.find((e) => e.details?.includes(STEALTH_DEBUG_REASON.observerCanPerceiveTarget))
-    expect(pruneNote?.summary).toMatch(/revealed to|pruned|perceive/i)
+    const pruneNote = pruned.log.find((e) => e.type === 'stealth-reveal')
+    expect(pruneNote?.summary).toContain('clear line of sight')
+    expect(pruneNote?.debugDetails?.join('')).toContain(STEALTH_DEBUG_REASON.observerPerceivePruneBreakdown)
   })
 
   it('resolveHideWithPassivePerception appends hide-success note when beating at least one observer', () => {

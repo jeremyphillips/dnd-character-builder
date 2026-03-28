@@ -20,6 +20,7 @@ const TYPE_TO_CATEGORY: Record<CombatLogEventType, CombatLogEntry['category']> =
   'state-applied': 'effect',
   'state-removed': 'effect',
   'note': 'system',
+  'stealth-reveal': 'system',
 }
 
 const HEADLINE_TYPES = new Set<CombatLogEventType>([

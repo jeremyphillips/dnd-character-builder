@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 import type {
   CombatantInstance,
   SpatialBattlefieldPresentationOptions,

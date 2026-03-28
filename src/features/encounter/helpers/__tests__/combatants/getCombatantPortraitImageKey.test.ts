@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getCombatantPortraitImageKey } from './getCombatantPortraitImageKey'
+import { getCombatantPortraitImageKey } from '../../combatants'
 
 describe('getCombatantPortraitImageKey', () => {
   it('returns character imageKey when present', () => {

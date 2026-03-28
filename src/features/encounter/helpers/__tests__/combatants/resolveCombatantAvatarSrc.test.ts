@@ -6,7 +6,7 @@ import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
 import {
   resolveCombatantAvatarSrc,
   type CombatantAvatarResolutionContext,
-} from './resolveCombatantAvatarSrc'
+} from '../../combatants'
 
 function minimalCombatant(
   source: CombatantInstance['source'],

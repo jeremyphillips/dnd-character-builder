@@ -13,7 +13,7 @@ import {
 import {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,
-} from './monster-combat-adapter'
+} from '../monster-combat-adapter'
 import { buildMonsterCombatantInstance } from './combatant-builders'
 
 const DEFAULT_SUMMON_CONTEXT = {

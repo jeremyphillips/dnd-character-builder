@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
-import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 import { calculateMonsterArmorClass } from '@/features/content/monsters/domain/mechanics/calculateMonsterArmorClass'
 import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import type { Monster } from '@/features/content/monsters/domain/types'

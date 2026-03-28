@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createSquareGridSpace } from '@/features/encounter/space/createSquareGridSpace'
-import { buildCharacterCombatantInstance } from '@/features/encounter/helpers/combatant-builders'
+import { buildCharacterCombatantInstance } from '@/features/encounter/helpers/combatants'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { useCombatStats } from '@/features/character/hooks'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types'

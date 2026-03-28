@@ -59,7 +59,7 @@ import { selectGridViewModel } from '../space/space.selectors'
 import { createSquareGridSpace } from '../space/createSquareGridSpace'
 import { placeRandomGridObstacle } from '../space/placeRandomGridObstacle'
 
-import type { CombatantPortraitEntry } from '../helpers/resolveCombatantAvatarSrc'
+import type { CombatantPortraitEntry } from '../helpers/combatants'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
 

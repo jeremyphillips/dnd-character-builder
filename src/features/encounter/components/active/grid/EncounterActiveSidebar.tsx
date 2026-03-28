@@ -12,7 +12,7 @@ import {
 } from '@/ui/primitives'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
-import type { CombatantPortraitEntry } from '@/features/encounter/helpers/resolveCombatantAvatarSrc'
+import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 import type { ViewerCombatantPresentationKind } from '@/features/encounter/domain'
 import type { CombatantInstance, EncounterState } from '@/features/mechanics/domain/encounter'
 import { isDefeatedCombatant } from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'

@@ -549,17 +549,15 @@ export function CombatantActionDrawer({
   )
 
   const effectiveView: CombatantActionDrawerView = useMemo(() => {
-    // Attached emanations (e.g. Spirit Guardians) use main + AttachedEmanationSetupPanel, not point-and-place AoE UI.
-    if (
-      aoeStep !== 'none' &&
-      aoeAction?.areaTemplate &&
-      !selectedActionDefinition?.attachedEmanation
-    ) {
+    /** Caster anchored: main + AttachedEmanationSetupPanel only. Place anchored: shared AoE origin UI (+ unaffected when authored). */
+    const skipAoeForCasterEmanation =
+      selectedActionDefinition?.attachedEmanation?.anchorMode === 'caster'
+    if (aoeStep !== 'none' && aoeAction?.areaTemplate && !skipAoeForCasterEmanation) {
       return 'aoePlacement'
     }
     if (localSubView === 'singleCellPlacement') return 'singleCellPlacement'
     return localSubView === 'casterOptions' ? 'casterOptions' : 'main'
-  }, [aoeStep, aoeAction?.areaTemplate, selectedActionDefinition?.attachedEmanation, localSubView])
+  }, [aoeStep, aoeAction?.areaTemplate, selectedActionDefinition?.attachedEmanation?.anchorMode, localSubView])
 
   const isMain = effectiveView === 'main'
 
@@ -647,17 +645,33 @@ export function CombatantActionDrawer({
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
           <Stack spacing={2}>
             {effectiveView === 'aoePlacement' && aoeAction?.areaTemplate && aoeStep !== 'none' && (
-              <AoePlacementPanel
-                action={aoeAction}
-                aoeStep={aoeStep}
-                aoePlacementError={aoePlacementError}
-                onDismissAoeError={onDismissAoeError}
-                aoeAffectedNames={aoeAffectedNames}
-                aoeAffectedTotal={aoeAffectedTotal}
-                aoeAffectedOverflow={aoeAffectedOverflow}
-                onCancelAoe={onCancelAoe}
-                onUndoAoeSelection={onUndoAoeSelection}
-              />
+              <>
+                {selectedActionDefinition?.attachedEmanation?.anchorMode === 'place' &&
+                  attachedEmanationSetup &&
+                  selectedActionDefinition.attachedEmanation.selectUnaffectedAtCast && (
+                    <AttachedEmanationSetupPanel
+                      actionLabel={selectedActionDefinition.label}
+                      activeCombatantId={attachedEmanationSetup.activeCombatantId}
+                      allCombatants={attachedEmanationSetup.allCombatants}
+                      combatantOptions={attachedEmanationSetup.combatantOptions}
+                      unaffectedCombatantIds={attachedEmanationSetup.unaffectedCombatantIds}
+                      onUnaffectedChange={attachedEmanationSetup.onUnaffectedChange}
+                      suppressSameSideHostile={attachedEmanationSetup.suppressSameSideHostile}
+                      partyCombatantIds={attachedEmanationSetup.partyCombatantIds}
+                    />
+                  )}
+                <AoePlacementPanel
+                  action={aoeAction}
+                  aoeStep={aoeStep}
+                  aoePlacementError={aoePlacementError}
+                  onDismissAoeError={onDismissAoeError}
+                  aoeAffectedNames={aoeAffectedNames}
+                  aoeAffectedTotal={aoeAffectedTotal}
+                  aoeAffectedOverflow={aoeAffectedOverflow}
+                  onCancelAoe={onCancelAoe}
+                  onUndoAoeSelection={onUndoAoeSelection}
+                />
+              </>
             )}
 
             {effectiveView === 'casterOptions' && showSpellOptionsSection && (

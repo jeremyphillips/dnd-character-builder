@@ -16,6 +16,7 @@ export type ActionResolutionRequirementKind =
   | 'area-selection'
   | 'single-cell-placement'
   | 'caster-option'
+  | 'emanation-anchor-deferred'
   | 'none'
 
 export type ActionResolutionMissing = {
@@ -28,9 +29,13 @@ export type ActionResolutionReadiness = {
   missingRequirements: ActionResolutionMissing[]
 }
 
-/** Same predicate as `isAreaGridAction` in encounter helpers (kept local to avoid mechanics→encounter import). */
+/**
+ * Same predicate as `isAreaGridAction` in encounter helpers (kept local to avoid mechanics→encounter import).
+ * Includes place-anchored attached emanations that carry `areaTemplate` for the shared AoE origin flow.
+ */
 export function isAreaGridCombatAction(action: CombatActionDefinition | undefined | null): boolean {
-  return Boolean(action?.targeting?.kind === 'all-enemies' && action.areaTemplate)
+  if (action?.targeting?.kind === 'all-enemies' && action.areaTemplate) return true
+  return Boolean(action?.attachedEmanation?.anchorMode === 'place' && action.areaTemplate)
 }
 
 /**
@@ -55,6 +60,12 @@ export function actionRequiresCreatureTargetForResolve(action: CombatActionDefin
  * Does not execute resolution — metadata only.
  */
 export function getActionResolutionRequirements(action: CombatActionDefinition): ActionResolutionRequirementKind[] {
+  if (
+    action.attachedEmanation?.anchorMode === 'creature' ||
+    action.attachedEmanation?.anchorMode === 'object'
+  ) {
+    return ['emanation-anchor-deferred']
+  }
   if (isAreaGridCombatAction(action)) {
     const out: ActionResolutionRequirementKind[] = ['area-selection']
     if (action.casterOptions?.length) out.push('caster-option')
@@ -135,6 +146,21 @@ export function getActionResolutionReadiness(
   const missingRequirements: ActionResolutionMissing[] = []
   if (!action) {
     return { canResolve: false, missingRequirements: [] }
+  }
+
+  if (
+    action.attachedEmanation?.anchorMode === 'creature' ||
+    action.attachedEmanation?.anchorMode === 'object'
+  ) {
+    return {
+      canResolve: false,
+      missingRequirements: [
+        {
+          kind: 'emanation-anchor-deferred',
+          message: 'This emanation anchor is not supported yet.',
+        },
+      ],
+    }
   }
 
   if (isAreaGridCombatAction(action)) {

@@ -88,7 +88,8 @@ export function getPlacementCtaLabel(req: SingleCellPlacementRequirement): strin
 }
 
 function isAreaGridCombatAction(action: CombatActionDefinition | undefined | null): boolean {
-  return Boolean(action?.targeting?.kind === 'all-enemies' && action.areaTemplate)
+  if (action?.targeting?.kind === 'all-enemies' && action.areaTemplate) return true
+  return Boolean(action?.attachedEmanation?.anchorMode === 'place' && action.areaTemplate)
 }
 
 function actionRequiresCreatureTargetForResolveLocal(action: CombatActionDefinition | undefined | null): boolean {

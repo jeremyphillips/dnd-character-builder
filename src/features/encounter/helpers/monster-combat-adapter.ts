@@ -209,6 +209,7 @@ function deriveMonsterAttachedEmanation(
 ): CombatActionDefinition['attachedEmanation'] | undefined {
   const em = action.effects?.find((e): e is Extract<Effect, { kind: 'emanation' }> => e.kind === 'emanation')
   if (!em || em.attachedTo !== 'self' || em.area.kind !== 'sphere') return undefined
+  const anchorMode = em.anchorMode ?? 'caster'
   return {
     source: {
       kind: 'monster-action',
@@ -217,6 +218,7 @@ function deriveMonsterAttachedEmanation(
     },
     radiusFt: em.area.size,
     selectUnaffectedAtCast: em.selectUnaffectedAtCast,
+    anchorMode,
   }
 }
 
@@ -324,6 +326,16 @@ function buildMonsterActionDefinition(
 
   const damageWithBonus = formatAuthoredDamage(action.damage, action.damageBonus)
   const special = action
+  const attachedEmanation = deriveMonsterAttachedEmanation(monster, special, index, cost)
+
+  const targeting: CombatActionDefinition['targeting'] =
+    attachedEmanation?.anchorMode === 'place'
+      ? { kind: 'self', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
+      : action.target === 'creatures-in-area'
+        ? { kind: 'all-enemies', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
+        : action.target === 'creatures-entered-during-move'
+          ? { kind: 'entered-during-move' }
+          : { kind: 'single-target', rangeFt: action.reach ?? 5 }
 
   return {
     id: `${monster.id}-special-${index}-${cost.bonusAction ? 'bonus' : 'action'}`,
@@ -356,16 +368,17 @@ function buildMonsterActionDefinition(
             halfDamageOnSave: action.halfDamageOnSave,
           }
         : undefined,
-    targeting:
-      action.target === 'creatures-in-area'
-        ? { kind: 'all-enemies', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
-        : action.target === 'creatures-entered-during-move'
-          ? { kind: 'entered-during-move' }
-          : { kind: 'single-target', rangeFt: action.reach ?? 5 },
+    targeting,
     movement: action.movement,
     usage: buildMonsterActionUsage(action),
     effects: monsterSpecialResolvableEffects(special),
-    attachedEmanation: deriveMonsterAttachedEmanation(monster, special, index, cost),
+    attachedEmanation,
+    ...(attachedEmanation?.anchorMode === 'place'
+      ? {
+          areaTemplate: { kind: 'sphere' as const, radiusFt: attachedEmanation.radiusFt },
+          areaPlacement: 'remote' as const,
+        }
+      : {}),
     saveDc: typeof action.save?.dc === 'number' ? action.save.dc : undefined,
     onHitEffects: action.attackBonus != null ? action.onSuccess : undefined,
     onFailEffects: action.onFail,

@@ -603,16 +603,29 @@ function resolveCombatActionInternal(
       }))
   let finalReturnState = finalState
   if (action.attachedEmanation && !behavior.skipCost) {
-    const ids = selection.unaffectedCombatantIds ?? []
-    finalReturnState = addAttachedAuraInstance(finalState, {
-      id: attachedAuraInstanceId(action.attachedEmanation.source, selection.actorId),
-      casterCombatantId: selection.actorId,
-      source: action.attachedEmanation.source,
-      anchor: { kind: 'creature', combatantId: selection.actorId },
-      area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
-      unaffectedCombatantIds: [...ids],
-      ...(typeof action.saveDc === 'number' ? { saveDc: action.saveDc } : {}),
-    })
+    const mode = action.attachedEmanation.anchorMode
+    if (mode === 'creature' || mode === 'object') {
+      // Deferred: creature/object anchor selection — do not create a misleading instance.
+    } else {
+      const ids = selection.unaffectedCombatantIds ?? []
+      const anchor =
+        mode === 'place'
+          ? selection.aoeOriginCellId
+            ? ({ kind: 'place' as const, cellId: selection.aoeOriginCellId })
+            : null
+          : { kind: 'creature' as const, combatantId: selection.actorId }
+      if (anchor) {
+        finalReturnState = addAttachedAuraInstance(finalState, {
+          id: attachedAuraInstanceId(action.attachedEmanation.source, selection.actorId),
+          casterCombatantId: selection.actorId,
+          source: action.attachedEmanation.source,
+          anchor,
+          area: { kind: 'sphere', size: action.attachedEmanation.radiusFt },
+          unaffectedCombatantIds: [...ids],
+          ...(typeof action.saveDc === 'number' ? { saveDc: action.saveDc } : {}),
+        })
+      }
+    }
   }
   return { state: finalReturnState, createdMarkerIds: allMarkerIds }
 }

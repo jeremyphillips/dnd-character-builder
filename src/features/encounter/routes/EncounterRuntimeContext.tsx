@@ -273,7 +273,10 @@ function useEncounterRuntimeValue() {
   )
 
   useEffect(() => {
-    if (aoeStep !== 'none' && !selectedAction?.attachedEmanation) {
+    if (aoeStep === 'none') return
+    const ae = selectedAction?.attachedEmanation
+    /** Caster emanations skip grid origin; place-anchored emanations reuse the AoE origin interaction. */
+    if (!ae || ae.anchorMode === 'place') {
       setInteractionMode('aoe-place')
     }
   }, [aoeStep, selectedAction?.attachedEmanation])

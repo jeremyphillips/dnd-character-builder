@@ -7,7 +7,11 @@ export interface ResolveCombatActionSelection {
   actionId: string
   /** Values for {@link CombatActionDefinition.casterOptions}, keyed by field `id`. */
   casterOptions?: Record<string, string>
-  /** Grid cell id for the center of an AoE when {@link CombatActionDefinition.areaTemplate} is set. */
+  /**
+   * Grid cell id for the center of an AoE when {@link CombatActionDefinition.areaTemplate} is set, and for
+   * **place-anchored** attached emanations (`attachedEmanation.anchorMode === 'place'`) as the persistent
+   * sphere center (maps to `BattlefieldEffectAnchor` `{ kind: 'place', cellId }`).
+   */
   aoeOriginCellId?: string
   /** Grid cell id for summon placement when the action requires single-cell placement (spawn `single-cell`). */
   singleCellPlacementCellId?: string

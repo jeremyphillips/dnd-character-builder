@@ -493,6 +493,11 @@ export type EmanationEffect = EffectBase<'emanation'> & {
   attachedTo: 'self';
   area: { kind: 'sphere'; size: number };
   selectUnaffectedAtCast: boolean;
+  /**
+   * When set, spell/monster combat adapters copy this to the adapted action’s `attachedEmanation.anchorMode`.
+   * Omit for legacy caster-centered attached emanations (adapter defaults to `caster`).
+   */
+  anchorMode?: 'caster' | 'place' | 'creature' | 'object';
 };
 
 export type NoteEffect = EffectBase<'note'> & {

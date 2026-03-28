@@ -132,10 +132,12 @@ function getSpellEmanationEffect(spell: Spell): Extract<Effect, { kind: 'emanati
 function deriveAttachedEmanation(spell: Spell): CombatActionDefinition['attachedEmanation'] | undefined {
   const em = getSpellEmanationEffect(spell)
   if (!em || em.attachedTo !== 'self' || em.area.kind !== 'sphere') return undefined
+  const anchorMode = em.anchorMode ?? 'caster'
   return {
     source: { kind: 'spell', spellId: spell.id },
     radiusFt: em.area.size,
     selectUnaffectedAtCast: em.selectUnaffectedAtCast,
+    anchorMode,
   }
 }
 
@@ -187,6 +189,12 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   if (hasHealing) return { kind: 'single-creature', ...sight, ...rangeField }
   const hasSpawn = effects.some((e) => e.kind === 'spawn')
   if (hasSpawn) return { kind: 'none', ...sight }
+
+  const emanationAnchor = getSpellEmanationEffect(spell)
+  /** Place-anchored persistent sphere: pick origin via shared AoE flow; no creature target for resolve. */
+  if (emanationAnchor?.anchorMode === 'place') {
+    return { kind: 'self', ...sight, ...rangeField }
+  }
 
   const primaryTargeting = getSpellTargetingEffect(spell)
   if (
@@ -415,9 +423,14 @@ function buildSpellEffectsAction(
       )
     : undefined
 
-  const areaTemplate = deriveCombatAreaTemplate(spell)
-  const areaPlacement = deriveAreaPlacement(spell, Boolean(areaTemplate))
   const attachedEmanation = deriveAttachedEmanation(spell)
+  let areaTemplate = deriveCombatAreaTemplate(spell)
+  let areaPlacement = deriveAreaPlacement(spell, Boolean(areaTemplate))
+  if (attachedEmanation?.anchorMode === 'place') {
+    /** Emanation is always a sphere; origin placement reuses AoE overlay radius from the same authored size. */
+    areaTemplate = { kind: 'sphere', radiusFt: attachedEmanation.radiusFt }
+    areaPlacement = 'remote'
+  }
 
   return {
     id: `${runtimeId}-spell-${spell.id}`,

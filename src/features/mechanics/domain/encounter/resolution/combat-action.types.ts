@@ -107,6 +107,12 @@ export type CombatActionAreaTemplate =
   | { kind: 'sphere'; radiusFt: number }
   | { kind: 'cube'; edgeFt: number }
 
+/**
+ * Where a persistent attached emanation should be anchored in space (action-level intent).
+ * Distinct from {@link AttachedBattlefieldEffectSource}, which identifies authored rules.
+ */
+export type EmanationAnchorMode = 'caster' | 'place' | 'creature' | 'object'
+
 export interface CombatActionDefinition {
   id: string
   label: string
@@ -153,13 +159,13 @@ export interface CombatActionDefinition {
    * Persistent emanation metadata for encounter setup (e.g. Spirit Guardians): cast-time unaffected setup + battlefield aura.
    * Does not replace `areaTemplate` / `all-enemies` for targeting metadata.
    *
-   * **Anchor placement:** this shape does not carry spatial anchor hints. The resolver builds a
-   * `BattlefieldEffectInstance` with `anchor: { kind: 'creature', combatantId: caster }` by default.
-   * Optional authoring/adapters for other anchors (target creature, chosen place, object) are a follow-up.
+   * **`anchorMode`:** `caster` → resolver uses creature-on-caster anchor; `place` → shared AoE origin
+   * selection (`aoeOriginCellId`) maps to a place anchor. `creature` / `object` are modeled but not wired yet.
    */
   attachedEmanation?: {
     source: AttachedBattlefieldEffectSource
     radiusFt: number
     selectUnaffectedAtCast: boolean
+    anchorMode: EmanationAnchorMode
   }
 }

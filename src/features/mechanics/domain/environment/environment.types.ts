@@ -12,6 +12,13 @@ export type EncounterTerrainMovement = (typeof TERRAIN_MOVEMENT_TYPES)[number]['
 export type EncounterVisibilityObscured = (typeof VISIBILITY_OBSCURED_LEVELS)[number]['id']
 export type EncounterAtmosphereTag = (typeof ATMOSPHERE_TAGS)[number]['id']
 
+/** Shorter aliases for perception / docs; same ids as {@link EncounterLightingLevel}, etc. */
+export type LightingLevel = EncounterLightingLevel
+export type ObscuredLevel = EncounterVisibilityObscured
+export type EnvironmentSetting = EncounterEnvironmentSetting
+export type TerrainMovementType = EncounterTerrainMovement
+export type AtmosphereTag = EncounterAtmosphereTag
+
 /**
  * Terrain cover grade at a grid cell after baseline + zone merge (see `resolveWorldEnvironmentForCell`).
  * For **hide**, gridded encounters also use observer-relative max cover along the LoS segment
@@ -40,6 +47,9 @@ export type EncounterEnvironmentBaseline = {
   /** Additive domain tags; combined with baseline lighting/visibility, not a replacement for them. */
   atmosphereTags: EncounterAtmosphereTag[]
 }
+
+/** Alias for authored encounter baseline — same shape as {@link EncounterEnvironmentBaseline}. */
+export type EnvironmentBaseline = EncounterEnvironmentBaseline
 
 /**
  * Partial update for {@link EncounterEnvironmentBaseline}. Omitted keys are unchanged.

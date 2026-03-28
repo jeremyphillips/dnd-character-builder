@@ -779,7 +779,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
       summary: '3-foot force disk holds 500 lb, follows within 20ft. Ends if 100ft away.',
     },
   },
-{
+  {
     id: 'fog-cloud',
     name: 'Fog Cloud',
     school: 'conjuration',

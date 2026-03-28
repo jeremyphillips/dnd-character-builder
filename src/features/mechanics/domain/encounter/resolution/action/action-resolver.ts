@@ -2,7 +2,7 @@ import {
   stealthHiddenSnapshot,
   isStealthRuntimeTraceEnabled,
   stealthTraceLog,
-} from '../../debug/stealth-runtime-trace'
+} from '../../state/stealth/stealth-runtime-trace'
 import {
   applyDamageToCombatant,
   appendEncounterLogEvent,

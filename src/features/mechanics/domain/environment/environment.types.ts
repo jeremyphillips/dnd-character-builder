@@ -121,6 +121,18 @@ export type EncounterEnvironmentOverrideSourceKind =
  */
 export type AttachedEnvironmentZoneProfile = 'magical-darkness'
 
+/**
+ * Presentation-only obscuration causes collected at world merge (baseline + zones).
+ * Not combat rules — feeds visibility presentation resolution.
+ */
+export type WorldObscurationPresentationCause =
+  | 'environment'
+  | 'fog'
+  | 'smoke'
+  | 'dust'
+  | 'darkness'
+  | 'magical-darkness'
+
 /** Domain category for a localized environment zone (distinct from {@link EncounterEnvironmentOverrideSourceKind}). */
 export type EncounterEnvironmentZoneKind = 'patch' | 'emanation' | 'hazard'
 
@@ -173,6 +185,11 @@ export type EncounterEnvironmentZone = {
     magicalDarkness?: boolean
     blocksDarkvision?: boolean
   }
+  /**
+   * When set, merged into {@link EncounterWorldCellEnvironment.obscurationPresentationCauses} for this zone’s area.
+   * Spell-driven zones can omit this and rely on inference from `magical` / `overrides`.
+   */
+  visibilityObscurationCause?: WorldObscurationPresentationCause
 }
 
 /** @deprecated Use {@link EncounterEnvironmentZone}. */
@@ -198,6 +215,11 @@ export type EncounterWorldCellEnvironment = {
   terrainCover: TerrainCoverGrade
   /** Zones that covered this cell, sorted by merge order (priority asc, then id asc). */
   appliedZoneIds: string[]
+  /**
+   * Ordered obscuration causes for presentation (baseline + each applicable zone in merge order).
+   * Does not replace {@link visibilityObscured} or {@link lightingLevel}; used for source-aware UI resolution.
+   */
+  obscurationPresentationCauses: readonly WorldObscurationPresentationCause[]
 }
 
 /** @deprecated Use {@link EncounterWorldCellEnvironment}. */

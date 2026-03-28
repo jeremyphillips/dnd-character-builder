@@ -1,4 +1,6 @@
 export * from './perception.types'
 export * from './visibility.types'
+export * from './visibility.contributors'
+export * from './visibility.resolved'
 export * from './perception.resolve'
 export * from './perception.render.projection'

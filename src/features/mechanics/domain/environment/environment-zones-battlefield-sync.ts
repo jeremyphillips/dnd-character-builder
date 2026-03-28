@@ -38,6 +38,7 @@ function buildZoneForProfile(
         visibilityObscured: 'heavy',
       },
       magical: { magical: true, magicalDarkness: true, blocksDarkvision: true },
+      visibilityObscurationCause: 'magical-darkness',
     }
   }
   const _exhaustive: never = instance.environmentZoneProfile
@@ -51,7 +52,8 @@ function zoneProjectionEqual(a: EncounterEnvironmentZone, b: EncounterEnvironmen
     a.sourceId === b.sourceId &&
     JSON.stringify(a.area) === JSON.stringify(b.area) &&
     JSON.stringify(a.overrides) === JSON.stringify(b.overrides) &&
-    JSON.stringify(a.magical) === JSON.stringify(b.magical)
+    JSON.stringify(a.magical) === JSON.stringify(b.magical) &&
+    a.visibilityObscurationCause === b.visibilityObscurationCause
   )
 }
 

@@ -1,4 +1,4 @@
-import type { LightingLevel, ObscuredLevel } from '../environment/environment.types'
+import type { LightingLevel, ObscuredLevel, WorldObscurationPresentationCause } from '../environment/environment.types'
 
 /**
  * Inputs to visibility resolution — baseline environment, effects, or hidden state.
@@ -9,27 +9,14 @@ export type VisibilityContributor =
   | {
       kind: 'obscuration'
       level: Exclude<ObscuredLevel, 'none'>
-      cause:
-        | 'environment'
-        | 'fog'
-        | 'smoke'
-        | 'dust'
-        | 'darkness'
-        | 'magical-darkness'
+      cause: WorldObscurationPresentationCause
     }
   | { kind: 'hidden'; cause: 'unrevealed' }
 
 /**
  * Semantic visibility at a cell after merging contributors (lighting and obscuration stay separate).
  */
-export type VisibilityPrimaryCause =
-  | 'environment'
-  | 'fog'
-  | 'smoke'
-  | 'dust'
-  | 'darkness'
-  | 'magical-darkness'
-  | 'unrevealed'
+export type VisibilityPrimaryCause = WorldObscurationPresentationCause | 'unrevealed'
 
 export type ResolvedCellVisibility = {
   lighting: LightingLevel

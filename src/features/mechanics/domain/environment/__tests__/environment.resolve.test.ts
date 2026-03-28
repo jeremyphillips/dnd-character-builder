@@ -54,6 +54,7 @@ describe('resolveWorldEnvironmentForCell', () => {
     expect(r.magical).toBe(false)
     expect(r.terrainCover).toBe('none')
     expect(r.appliedZoneIds).toEqual([])
+    expect(r.obscurationPresentationCauses).toEqual([])
   })
 
   it('merges terrainCover like other scalars (last applicable zone wins)', () => {
@@ -104,6 +105,7 @@ describe('resolveWorldEnvironmentForCell', () => {
     expect(r.visibilityObscured).toBe('heavy')
     expect(r.lightingLevel).toBe('darkness')
     expect(r.appliedZoneIds).toEqual(['low', 'high'])
+    expect(r.obscurationPresentationCauses).toEqual(['environment', 'darkness'])
   })
 
   it('tie-breaks equal priority by id (last writer wins: z2 after z1)', () => {
@@ -168,6 +170,7 @@ describe('resolveWorldEnvironmentForCell', () => {
     expect(r.magicalDarkness).toBe(true)
     expect(r.blocksDarkvision).toBe(true)
     expect(r.magical).toBe(true)
+    expect(r.obscurationPresentationCauses).toEqual(['magical-darkness'])
   })
 
   it('includes cells within sphere-ft using Chebyshev feet', () => {
@@ -196,5 +199,6 @@ describe('resolveCellEnvironment (legacy, no space)', () => {
   it('matches grid-cell-ids only', () => {
     const r = resolveCellEnvironment(DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE, [], 'c1')
     expect(r.appliedZoneIds).toEqual([])
+    expect(r.obscurationPresentationCauses).toEqual([])
   })
 })

@@ -60,7 +60,7 @@ export type FieldSpec<
   /** For kind: 'optionPicker' */
   noResultsMessage?: string;
   /** For kind: 'optionPicker' */
-  renderSelectedAs?: 'chip' | 'mini-card';
+  renderSelectedAs?: 'chip' | 'card';
   /** For kind: 'json' — min rows for textarea. */
   minRows?: number;
   /** For kind: 'json' — max rows for textarea. */

@@ -23,6 +23,7 @@ export {
   isAllowedParentLocation,
   isAllowedParentScale,
   isLocationScaleFieldEditable,
+  isLocationScaleSelected,
   shouldShowLocationCategoryField,
   shouldShowParentLocationField,
   type LocationFormUiMode,

@@ -18,6 +18,7 @@ import {
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
   getAllowedCellUnitOptionsForScale,
+  isLocationScaleSelected,
   useLocationFormCampaignData,
   useLocationFormDefaultWorldScale,
   useLocationFormDependentFieldEffects,
@@ -116,6 +117,8 @@ export default function LocationCreateRoute() {
     [policyCharacters, parentLocationOptions, gridCellUnitOptions, locationUiPolicy],
   );
 
+  const showMapGridAuthoring = isLocationScaleSelected(scale);
+
   const handleSubmit = useCallback(
     async (values: LocationFormValues) => {
       if (!campaignId) return;
@@ -190,17 +193,19 @@ export default function LocationCreateRoute() {
           >
             <ConditionalFormRenderer fields={fieldConfigs} />
           </form>
-          <LocationGridAuthoringSection
-            key="location-grid-authoring"
-            gridColumns={gridColumns}
-            gridRows={gridRows}
-            draft={gridDraft}
-            setDraft={setGridDraft}
-            locations={locations}
-            campaignId={campaignId ?? undefined}
-            hostScale={scale}
-            hostName={String(locationNameDraft ?? '').trim() || undefined}
-          />
+          {showMapGridAuthoring ? (
+            <LocationGridAuthoringSection
+              key="location-grid-authoring"
+              gridColumns={gridColumns}
+              gridRows={gridRows}
+              draft={gridDraft}
+              setDraft={setGridDraft}
+              locations={locations}
+              campaignId={campaignId ?? undefined}
+              hostScale={scale}
+              hostName={String(locationNameDraft ?? '').trim() || undefined}
+            />
+          ) : null}
         </Stack>
       </EntryEditorLayout>
     </FormProvider>

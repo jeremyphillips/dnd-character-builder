@@ -12,9 +12,13 @@ import {
 } from '@/shared/domain/grid/gridPresets';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationInput } from '@/features/content/locations/domain/types';
+import { when } from '@/ui/patterns';
 import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
 import type { FieldSpec } from '@/features/content/shared/forms/registry';
 import type { LocationFormValues } from '../types/locationForm.types';
+
+/** Dependent fields use ConditionalFormRenderer `visibleWhen` — shown after user picks a valid scale. */
+const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...LOCATION_SCALE_ORDER]);
 
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
@@ -61,8 +65,8 @@ export const LOCATION_FORM_FIELDS = [
     kind: 'select' as const,
     required: true,
     options: SCALE_OPTIONS,
-    defaultFromOptions: 'first' as const,
-    defaultValue: SCALE_OPTIONS[0]?.value ?? '',
+    placeholder: 'Select scale',
+    defaultValue: '' as LocationFormValues['scale'],
     parse: (v) => (trim(v) || undefined) as LocationInput['scale'],
     format: (v) => strOrEmpty(v) as LocationFormValues['scale'],
   },
@@ -73,6 +77,7 @@ export const LOCATION_FORM_FIELDS = [
     options: CATEGORY_OPTIONS,
     placeholder: 'Optional — choose a category',
     defaultValue: '' as LocationFormValues['category'],
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     parse: (v) => (trim(v) || undefined) as LocationInput['category'],
     format: (v) => strOrEmpty(v) as LocationFormValues['category'],
   },
@@ -84,6 +89,8 @@ export const LOCATION_FORM_FIELDS = [
     defaultValue: '' as LocationFormValues['parentId'],
     maxItems: 1,
     valueMode: 'scalar' as const,
+    renderSelectedAs: 'card',
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     parse: (v) => (trim(v) || undefined) as LocationInput['parentId'],
     format: (v) => strOrEmpty(v) as LocationFormValues['parentId'],
   },
@@ -96,6 +103,7 @@ export const LOCATION_FORM_FIELDS = [
     defaultValue: '' as LocationFormValues['gridPreset'],
     parse: () => undefined,
     format: () => '' as LocationFormValues['gridPreset'],
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
       label: 'Map grid',
@@ -112,6 +120,7 @@ export const LOCATION_FORM_FIELDS = [
     parse: () => undefined,
     format: () => '' as LocationFormValues['gridColumns'],
     validation: { rules: [{ kind: 'min', value: 1, message: 'Must be at least 1' }] },
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
       label: 'Map grid',
@@ -127,6 +136,7 @@ export const LOCATION_FORM_FIELDS = [
     parse: () => undefined,
     format: () => '' as LocationFormValues['gridRows'],
     validation: { rules: [{ kind: 'min', value: 1, message: 'Must be at least 1' }] },
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
       label: 'Map grid',
@@ -143,6 +153,7 @@ export const LOCATION_FORM_FIELDS = [
     defaultValue: '5ft' as LocationFormValues['gridCellUnit'],
     parse: () => undefined,
     format: () => '5ft' as LocationFormValues['gridCellUnit'],
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
       label: 'Map grid',
@@ -150,35 +161,36 @@ export const LOCATION_FORM_FIELDS = [
       spacing: 2,
     },
   },
-  {
-    name: 'labelShort',
-    label: 'Label (short)',
-    kind: 'text' as const,
-    defaultValue: '' as LocationFormValues['labelShort'],
-    parse: () => undefined,
-    format: () => '' as LocationFormValues['labelShort'],
-  },
-  {
-    name: 'labelNumber',
-    label: 'Label (number)',
-    kind: 'text' as const,
-    defaultValue: '' as LocationFormValues['labelNumber'],
-    parse: () => undefined,
-    format: () => '' as LocationFormValues['labelNumber'],
-  },
-  {
-    name: 'sortOrder',
-    label: 'Sort order',
-    kind: 'numberText' as const,
-    defaultValue: '' as LocationFormValues['sortOrder'],
-    parse: (v) => {
-      const t = trim(v);
-      if (!t) return undefined;
-      const n = Number(t);
-      return Number.isFinite(n) ? (n as LocationInput['sortOrder']) : undefined;
-    },
-    format: (v) => (v != null && v !== '' ? String(v) : '') as LocationFormValues['sortOrder'],
-  },
+  // TODO: determine how to surface in UI
+  // {
+  //   name: 'labelShort',
+  //   label: 'Label (short)',
+  //   kind: 'text' as const,
+  //   defaultValue: '' as LocationFormValues['labelShort'],
+  //   parse: () => undefined,
+  //   format: () => '' as LocationFormValues['labelShort'],
+  // },
+  // {
+  //   name: 'labelNumber',
+  //   label: 'Label (number)',
+  //   kind: 'text' as const,
+  //   defaultValue: '' as LocationFormValues['labelNumber'],
+  //   parse: () => undefined,
+  //   format: () => '' as LocationFormValues['labelNumber'],
+  // },
+  // {
+  //   name: 'sortOrder',
+  //   label: 'Sort order',
+  //   kind: 'numberText' as const,
+  //   defaultValue: '' as LocationFormValues['sortOrder'],
+  //   parse: (v) => {
+  //     const t = trim(v);
+  //     if (!t) return undefined;
+  //     const n = Number(t);
+  //     return Number.isFinite(n) ? (n as LocationInput['sortOrder']) : undefined;
+  //   },
+  //   format: (v) => (v != null && v !== '' ? String(v) : '') as LocationFormValues['sortOrder'],
+  // },
   {
     name: 'aliases',
     label: 'Aliases',

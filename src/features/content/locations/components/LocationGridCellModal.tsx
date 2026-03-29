@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -8,17 +9,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { Location } from '@/features/content/locations/domain/types';
+import FormSelectField from '@/ui/patterns/form/FormSelectField';
 import OptionPickerField from '@/ui/patterns/form/OptionPickerField';
 import type { PickerOption } from '@/ui/patterns/form/OptionPickerField';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
@@ -164,6 +162,15 @@ export function LocationGridCellModal({
 
   const [addObjectSelectKey, setAddObjectSelectKey] = useState(0);
 
+  const addObjectForm = useForm<{ addObjectKind: string }>({
+    defaultValues: { addObjectKind: '' },
+  });
+
+  const addObjectKindOptions = useMemo(
+    () => kindsAvailableToAdd.map((k) => ({ value: k, label: k })),
+    [kindsAvailableToAdd],
+  );
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
       <DialogTitle sx={{ pr: 5 }}>
@@ -219,7 +226,7 @@ export function LocationGridCellModal({
               onChange={handleLinkedChange}
               maxItems={1}
               emptyMessage="No locations can be linked from this map (policy)."
-              renderSelectedAs="mini-card"
+              renderSelectedAs="card"
             />
           </Box>
 
@@ -276,32 +283,24 @@ export function LocationGridCellModal({
               </Typography>
             )}
 
-            <FormControl size="small" fullWidth sx={{ maxWidth: 280 }}>
-              <InputLabel id="add-object-kind-label">Add object</InputLabel>
-              <Select
-                key={addObjectSelectKey}
-                labelId="add-object-kind-label"
-                label="Add object"
-                value=""
-                displayEmpty
-                onChange={(e) => {
-                  const k = e.target.value as LocationMapObjectKindId;
-                  if (k) {
-                    handleAddObject(k);
+            <Box sx={{ maxWidth: 280 }}>
+              <FormProvider {...addObjectForm}>
+                <FormSelectField
+                  key={addObjectSelectKey}
+                  name="addObjectKind"
+                  label="Add object"
+                  options={addObjectKindOptions}
+                  placeholder="Choose kind…"
+                  size="small"
+                  onAfterChange={(v) => {
+                    if (!v) return;
+                    handleAddObject(v as LocationMapObjectKindId);
+                    addObjectForm.reset({ addObjectKind: '' });
                     setAddObjectSelectKey((x) => x + 1);
-                  }
-                }}
-              >
-                <MenuItem value="">
-                  <em>Choose kind…</em>
-                </MenuItem>
-                {kindsAvailableToAdd.map((k) => (
-                  <MenuItem key={k} value={k}>
-                    {k}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  }}
+                />
+              </FormProvider>
+            </Box>
           </Box>
         </Stack>
       </DialogContent>

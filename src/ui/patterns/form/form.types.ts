@@ -114,7 +114,7 @@ export type FieldConfig =
       placeholder?: string
       emptyMessage?: string
       noResultsMessage?: string
-      renderSelectedAs?: 'chip' | 'mini-card'
+      renderSelectedAs?: 'chip' | 'card'
       /** 'scalar' = string in form values; 'array' = string[] */
       valueMode?: 'scalar' | 'array'
     }

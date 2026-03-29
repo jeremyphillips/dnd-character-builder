@@ -36,7 +36,7 @@ export type OptionPickerFieldProps = {
   disabled?: boolean
   emptyMessage?: string
   noResultsMessage?: string
-  renderSelectedAs?: 'chip' | 'mini-card'
+  renderSelectedAs?: 'chip' | 'card'
   /** Shown below the filter input (not inside the dropdown panel) */
   helperText?: string
   className?: string
@@ -218,7 +218,7 @@ export default function OptionPickerField({
           ) : null}
 
           <Stack
-            direction={renderSelectedAs === 'mini-card' ? 'column' : 'row'}
+            direction={renderSelectedAs === 'card' ? 'column' : 'row'}
             flexWrap={renderSelectedAs === 'chip' ? 'wrap' : undefined}
             gap={1}
             sx={{ mt: 1.5 }}

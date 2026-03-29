@@ -37,6 +37,12 @@ export function canSelectWorldScale(campaignHasWorldLocation: boolean): boolean 
   return !campaignHasWorldLocation;
 }
 
+/** True when `scale` is a non-empty member of {@link LOCATION_SCALE_ORDER} (form + grid authoring gate). */
+export function isLocationScaleSelected(scale: string | undefined | null): boolean {
+  if (scale == null || scale === '') return false;
+  return (LOCATION_SCALE_ORDER as readonly string[]).includes(scale);
+}
+
 export function shouldShowLocationCategoryField(scale: string): boolean {
   return scale !== 'world';
 }

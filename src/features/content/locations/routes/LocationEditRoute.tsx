@@ -28,6 +28,7 @@ import {
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
   getAllowedCellUnitOptionsForScale,
+  isLocationScaleSelected,
   useLocationFormCampaignData,
   useLocationFormDependentFieldEffects,
 } from '@/features/content/locations/domain';
@@ -200,6 +201,8 @@ export default function LocationEditRoute() {
     [policyCharacters, parentLocationOptions, gridCellUnitOptions, loc, locationUiPolicy],
   );
 
+  const showMapGridAuthoring = isLocationScaleSelected(watchedScale);
+
   const { policyValue, handlePolicyChange } = useAccessPolicyField<LocationFormValues>(watch, setValue);
 
   const driver = usePatchDriverState(
@@ -308,6 +311,7 @@ export default function LocationEditRoute() {
   if (isSystem && driver) {
     return (
       <EntryEditorLayout
+        title={loc.name}
         typeLabel="Location patch"
         isNew={false}
         saving={saving}
@@ -356,6 +360,7 @@ export default function LocationEditRoute() {
   return (
     <FormProvider {...methods}>
       <EntryEditorLayout
+        title={loc.name}
         typeLabel="Location"
         isNew={false}
         saving={saving}
@@ -381,18 +386,20 @@ export default function LocationEditRoute() {
           >
             <ConditionalFormRenderer fields={fieldConfigs} />
           </form>
-          <LocationGridAuthoringSection
-            key="location-grid-authoring"
-            gridColumns={gridColumns}
-            gridRows={gridRows}
-            draft={gridDraft}
-            setDraft={setGridDraft}
-            locations={locations}
-            campaignId={campaignId ?? undefined}
-            hostLocationId={locationId}
-            hostScale={scaleForFormRules}
-            hostName={loc.name}
-          />
+          {showMapGridAuthoring ? (
+            <LocationGridAuthoringSection
+              key="location-grid-authoring"
+              gridColumns={gridColumns}
+              gridRows={gridRows}
+              draft={gridDraft}
+              setDraft={setGridDraft}
+              locations={locations}
+              campaignId={campaignId ?? undefined}
+              hostLocationId={locationId}
+              hostScale={scaleForFormRules}
+              hostName={loc.name}
+            />
+          ) : null}
         </Stack>
       </EntryEditorLayout>
     </FormProvider>

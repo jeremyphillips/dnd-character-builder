@@ -16,7 +16,7 @@ type FormOptionPickerFieldProps = {
   disabled?: boolean
   emptyMessage?: string
   noResultsMessage?: string
-  renderSelectedAs?: 'chip' | 'mini-card'
+  renderSelectedAs?: 'chip' | 'card'
   helperText?: string
   rules?: RegisterOptions
 }

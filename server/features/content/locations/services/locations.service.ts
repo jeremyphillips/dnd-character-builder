@@ -1,7 +1,10 @@
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import type { AccessPolicy } from '../../../../../shared/domain/accessPolicy';
-import { LOCATION_CATEGORY_IDS } from '../../../../../shared/domain/locations/location.constants';
 import type { LocationConnection } from '../../../../../shared/domain/locations';
+import {
+  isCategoryAllowedForScale,
+  normalizeCategoryForScale,
+} from '../../../../../shared/domain/locations/locationScaleField.policy';
 import { isValidLocationScaleId } from '../../../../../shared/domain/locations/locationScale.rules';
 import {
   buildAncestorIdsFromParentRow,
@@ -263,8 +266,9 @@ function validateUpdate(body: Record<string, unknown>): ValidationError[] {
   return errors;
 }
 
-function validateCategoryField(category: unknown): ValidationError | null {
-  if (category === undefined || category === null || category === '') return null;
+/** Validates category string against centralized scale policy. */
+function validateCategoryForLocation(scale: string, category: unknown): ValidationError | null {
+  if (category === undefined || category === null) return null;
   if (typeof category !== 'string') {
     return { path: 'category', code: 'INVALID', message: 'category must be a string' };
   }
@@ -273,11 +277,11 @@ function validateCategoryField(category: unknown): ValidationError | null {
   if (t === 'world') {
     return { path: 'category', code: 'INVALID', message: 'category cannot be "world"' };
   }
-  if (!(LOCATION_CATEGORY_IDS as readonly string[]).includes(t)) {
+  if (!isCategoryAllowedForScale(t, scale)) {
     return {
       path: 'category',
       code: 'INVALID',
-      message: `category must be one of: ${LOCATION_CATEGORY_IDS.join(', ')}`,
+      message: `category "${t}" is not allowed for scale "${scale}"`,
     };
   }
   return null;
@@ -331,19 +335,8 @@ export async function createLocation(
     };
   }
 
-  const catErr = validateCategoryField(body.category);
+  const catErr = validateCategoryForLocation(scale, body.category);
   if (catErr) return { errors: [catErr] };
-
-  if (
-    scale === 'world' &&
-    body.category !== undefined &&
-    body.category !== null &&
-    String(body.category).trim() !== ''
-  ) {
-    return {
-      errors: [{ path: 'category', code: 'INVALID', message: 'World locations cannot have a category' }],
-    };
-  }
 
   const resolvedParentId = resolveParentIdForCreate(body);
 
@@ -373,12 +366,20 @@ export async function createLocation(
 
   const accessPolicy = body.accessPolicy as AccessPolicy | undefined;
 
+  const normalizedCategory =
+    scale === 'world'
+      ? undefined
+      : (() => {
+          const c = normalizeCategoryForScale(String(body.category ?? ''), scale);
+          return c === '' ? undefined : c;
+        })();
+
   const doc = await CampaignLocation.create({
     campaignId,
     locationId,
     name,
     scale,
-    category: scale === 'world' ? undefined : (body.category as string | undefined),
+    category: normalizedCategory,
     description: body.description as string | undefined,
     imageKey: body.imageKey as string | undefined,
     accessPolicy,
@@ -424,18 +425,14 @@ export async function updateLocation(
     }
   }
 
+  const existingScale = existingRow.scale as string;
+
   if (body.category !== undefined) {
-    const cErr = validateCategoryField(body.category);
+    const cErr = validateCategoryForLocation(existingScale, body.category);
     if (cErr) return { errors: [cErr] };
   }
 
-  const existingScale = existingRow.scale as string;
   if (existingScale === 'world') {
-    if (body.category !== undefined && body.category !== null && String(body.category).trim() !== '') {
-      return {
-        errors: [{ path: 'category', code: 'INVALID', message: 'World locations cannot have a category' }],
-      };
-    }
     if (body.parentId !== undefined && body.parentId !== null && String(body.parentId).trim() !== '') {
       return {
         errors: [{ path: 'parentId', code: 'INVALID', message: 'World locations cannot have a parent' }],
@@ -480,7 +477,10 @@ export async function updateLocation(
 
   if (body.name !== undefined) $set.name = (body.name as string).trim();
   if (body.scale !== undefined) $set.scale = (body.scale as string).trim();
-  if (body.category !== undefined) $set.category = body.category;
+  if (body.category !== undefined) {
+    const c = normalizeCategoryForScale(String(body.category ?? ''), nextScale);
+    $set.category = c === '' ? undefined : c;
+  }
   if (body.description !== undefined) $set.description = body.description;
   if (body.imageKey !== undefined) $set.imageKey = body.imageKey;
   if (body.accessPolicy !== undefined) $set.accessPolicy = body.accessPolicy;

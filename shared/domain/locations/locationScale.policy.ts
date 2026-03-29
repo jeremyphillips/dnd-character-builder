@@ -15,8 +15,8 @@ export const ALLOWED_PARENT_SCALES_BY_SCALE: Record<
   world: [],
   region: ['world'],
   subregion: ['region'],
-  /** Macro place: anchored under regional geography, not world root. */
-  city: ['region', 'subregion'],
+  /** Macro place: may sit under world (single-world campaigns) or regional geography. */
+  city: ['world', 'region', 'subregion'],
   district: ['city'],
   /** Sites can sit under macro area, urban fabric, or district. */
   site: ['region', 'subregion', 'city', 'district'],

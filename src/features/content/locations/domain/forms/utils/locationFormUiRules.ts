@@ -1,18 +1,25 @@
 /**
  * Shared UI enforcement for location create/edit — drives both routes (no duplicated conditionals).
+ * Field visibility and options derive from `LOCATION_SCALE_FIELD_POLICY` (shared).
  */
+import {
+  getAllowedCategoryOptionsForScale,
+  getAllowedCellUnitOptionsForScale,
+  isCategoryFieldReadOnlyForScale,
+  isGridCellUnitFieldReadOnlyForScale,
+  isLocationScaleEditableOnEdit,
+  LOCATION_SCALE_ORDER,
+  shouldShowCategoryFieldForScale,
+  shouldShowGridCellUnitFieldForScale,
+  shouldShowParentFieldForScale,
+} from '@/shared/domain/locations';
 import {
   getAllowedParentLocationOptions,
   getAllowedParentScalesForScale,
   isAllowedParentLocation,
   isAllowedParentScale,
-  LOCATION_CATEGORY_IDS,
-  LOCATION_SCALE_ORDER,
 } from '@/shared/domain/locations';
-import {
-  getAllowedCellUnitOptionsForScale,
-  getFilteredParentLocationsForChildScale,
-} from '@/features/content/locations/domain/forms/utils/locationDependentFieldsPolicy';
+import { getFilteredParentLocationsForChildScale } from './locationDependentFieldsPolicy';
 
 export type LocationFormUiMode = 'create' | 'edit';
 
@@ -43,20 +50,18 @@ export function isLocationScaleSelected(scale: string | undefined | null): boole
   return (LOCATION_SCALE_ORDER as readonly string[]).includes(scale);
 }
 
+/** @deprecated use {@link shouldShowCategoryFieldForScale} from shared policy */
 export function shouldShowLocationCategoryField(scale: string): boolean {
-  return scale !== 'world';
+  return shouldShowCategoryFieldForScale(scale);
 }
 
 export function getAllowedLocationCategoryOptions(scale: string) {
-  if (scale === 'world') return [];
-  return LOCATION_CATEGORY_IDS.map((c) => ({
-    value: c,
-    label: c.slice(0, 1).toUpperCase() + c.slice(1),
-  }));
+  return getAllowedCategoryOptionsForScale(scale);
 }
 
+/** @deprecated use {@link shouldShowParentFieldForScale} from shared policy */
 export function shouldShowParentLocationField(scale: string): boolean {
-  return scale !== 'world';
+  return shouldShowParentFieldForScale(scale);
 }
 
 export {
@@ -78,11 +83,22 @@ export type LocationFormUiPolicy = {
   scaleFieldDisabled: boolean;
   showCategoryField: boolean;
   showParentField: boolean;
+  showGridCellUnitField: boolean;
+  categorySelectOptions: { value: string; label: string }[];
+  /** When true, category `<Select>` is display-only (fixed category scales). */
+  categoryFieldDisabled: boolean;
+  /** When true, cell unit `<Select>` is display-only (fixed or single unit). */
+  gridCellUnitFieldDisabled: boolean;
 };
 
 export type LocationFormUiPolicyBase = Omit<
   LocationFormUiPolicy,
-  'showCategoryField' | 'showParentField'
+  | 'showCategoryField'
+  | 'showParentField'
+  | 'showGridCellUnitField'
+  | 'categorySelectOptions'
+  | 'categoryFieldDisabled'
+  | 'gridCellUnitFieldDisabled'
 >;
 
 export function buildLocationFormUiPolicy(
@@ -99,14 +115,26 @@ export function buildLocationFormUiPolicy(
   };
 }
 
-/** Apply scale-specific visibility (category/parent hidden for world). */
+/** Apply scale-specific visibility and option lists from centralized policy. */
 export function applyScaleToLocationFormUiPolicy(
   base: LocationFormUiPolicyBase,
   scale: string,
 ): LocationFormUiPolicy {
   return {
     ...base,
-    showCategoryField: shouldShowLocationCategoryField(scale),
-    showParentField: shouldShowParentLocationField(scale),
+    showCategoryField: shouldShowCategoryFieldForScale(scale),
+    showParentField: shouldShowParentFieldForScale(scale),
+    showGridCellUnitField: shouldShowGridCellUnitFieldForScale(scale),
+    categorySelectOptions: getAllowedCategoryOptionsForScale(scale),
+    categoryFieldDisabled: isCategoryFieldReadOnlyForScale(scale),
+    gridCellUnitFieldDisabled: isGridCellUnitFieldReadOnlyForScale(scale),
+    scaleFieldDisabled:
+      base.mode === 'edit' ? !isLocationScaleEditableOnEdit(scale) : false,
   };
 }
+
+export {
+  shouldShowCategoryFieldForScale,
+  shouldShowGridCellUnitFieldForScale,
+  shouldShowParentFieldForScale,
+} from '@/shared/domain/locations';

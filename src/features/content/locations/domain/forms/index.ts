@@ -9,6 +9,12 @@ export {
   type BuildParentLocationPickerOptionsArgs,
 } from './utils/parentLocationPickerOptions';
 export {
+  isCategoryAllowedForScale,
+  isCellUnitAllowedForScale,
+  normalizeCategoryForScale,
+  normalizeGridCellUnitForScale,
+} from '@/shared/domain/locations';
+export {
   ALL_LOCATION_SCALE_OPTIONS,
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
@@ -24,7 +30,10 @@ export {
   isAllowedParentScale,
   isLocationScaleFieldEditable,
   isLocationScaleSelected,
+  shouldShowCategoryFieldForScale,
+  shouldShowGridCellUnitFieldForScale,
   shouldShowLocationCategoryField,
+  shouldShowParentFieldForScale,
   shouldShowParentLocationField,
   type LocationFormUiMode,
   type LocationFormUiPolicy,

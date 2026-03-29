@@ -1,10 +1,7 @@
 /**
  * Creates or updates the default LocationMap from location form bootstrap fields.
  */
-import {
-  CELL_UNITS_BY_KIND,
-  mapKindForLocationScale,
-} from '@/shared/domain/locations';
+import { isCellUnitAllowedForScale, mapKindForLocationScale } from '@/shared/domain/locations';
 import type { LocationScaleId } from '@/shared/domain/locations';
 import type { LocationFormValues } from '@/features/content/locations/domain/forms/types/locationForm.types';
 import {
@@ -48,10 +45,9 @@ export async function bootstrapDefaultLocationMap(
   const cols = Number(values.gridColumns);
   const rows = Number(values.gridRows);
   const cellUnit = String(values.gridCellUnit).trim();
-  const kind = mapKindForLocationScale(scale);
-  const allowed = CELL_UNITS_BY_KIND[kind];
-  if (!(allowed as readonly string[]).includes(cellUnit)) {
-    throw new Error(`Cell unit must be one of: ${allowed.join(', ')} for this location scale`);
+  if (!isCellUnitAllowedForScale(cellUnit, scale)) {
+    const kind = mapKindForLocationScale(scale);
+    throw new Error(`Cell unit must be allowed for scale "${scale}" (map kind "${kind}")`);
   }
 
   const maps = await listLocationMaps(campaignId, locationId);

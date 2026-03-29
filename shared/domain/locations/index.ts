@@ -1,6 +1,7 @@
 export * from './location.constants';
 export * from './location.types';
 export * from './locationScale.policy';
+export * from './locationScaleField.policy';
 export * from './locationScale.rules';
 export * from './locationMap.constants';
 export * from './locationMap.helpers';

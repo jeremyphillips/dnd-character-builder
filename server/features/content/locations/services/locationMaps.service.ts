@@ -8,6 +8,7 @@ import {
   canPlaceObjectKindOnHostScale,
 } from '../../../../../shared/domain/locations/locationMapPlacement.policy';
 import { mapKindForLocationScale } from '../../../../../shared/domain/locations/locationMap.helpers';
+import { isCellUnitAllowedForScale } from '../../../../../shared/domain/locations/locationScaleField.policy';
 import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import { type MapValidationError, validateLocationMapInput } from './locationValidation';
@@ -29,6 +30,24 @@ export type LocationMapDoc = {
 };
 
 type ValidationError = MapValidationError;
+
+function validateGridCellUnitForLocationScale(
+  locationScale: string,
+  cellUnit: unknown,
+): ValidationError | null {
+  const u = String(cellUnit ?? '').trim();
+  if (!u) {
+    return { path: 'grid.cellUnit', code: 'INVALID', message: 'grid.cellUnit is required' };
+  }
+  if (!isCellUnitAllowedForScale(u, locationScale)) {
+    return {
+      path: 'grid.cellUnit',
+      code: 'INVALID',
+      message: `Cell unit "${u}" is not allowed for location scale "${locationScale}"`,
+    };
+  }
+  return null;
+}
 
 function toDoc(doc: Record<string, unknown>): LocationMapDoc {
   return {
@@ -230,6 +249,9 @@ export async function createLocationMap(
   const vErr = validateLocationMapInput(validationPayload);
   if (vErr.length > 0) return { errors: vErr };
 
+  const unitPol = validateGridCellUnitForLocationScale(locationScale, grid.cellUnit);
+  if (unitPol) return { errors: [unitPol] };
+
   const cellEntriesPayload = Array.isArray(body.cellEntries)
     ? (body.cellEntries as LocationMapCellAuthoringEntry[])
     : undefined;
@@ -382,6 +404,9 @@ export async function updateLocationMap(
 
   const vErr = validateLocationMapInput(merged);
   if (vErr.length > 0) return { errors: vErr };
+
+  const unitPol = validateGridCellUnitForLocationScale(locationScale, merged.grid.cellUnit);
+  if (unitPol) return { errors: [unitPol] };
 
   const mergedCellEntries = Array.isArray(merged.cellEntries)
     ? (merged.cellEntries as LocationMapCellAuthoringEntry[])

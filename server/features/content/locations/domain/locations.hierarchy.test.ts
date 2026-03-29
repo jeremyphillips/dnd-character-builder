@@ -28,9 +28,7 @@ describe('locations.hierarchy', () => {
     expect(same?.code).toBe('INVALID_NESTING');
     const narrower = validateParentChildScales('room', 'city');
     expect(narrower?.code).toBe('INVALID_NESTING');
-    /** Ordering alone would allow world → city; policy does not. */
-    const noWorldToCity = validateParentChildScales('world', 'city');
-    expect(noWorldToCity?.code).toBe('INVALID_NESTING');
+    expect(validateParentChildScales('world', 'city')).toBeNull();
     expect(validateParentChildScales('region', 'city')).toBeNull();
     expect(validateParentChildScales('subregion', 'city')).toBeNull();
   });

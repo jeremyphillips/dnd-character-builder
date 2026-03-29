@@ -50,6 +50,9 @@ export const getLocationFieldConfigs = (
     if (!locationUiPolicy.showParentField) {
       specs = specs.filter((f) => f.name !== 'parentId');
     }
+    if (locationUiPolicy.showGridCellUnitField === false) {
+      specs = specs.filter((f) => f.name !== 'gridCellUnit');
+    }
   }
 
   const configs = buildFieldConfigs(specs, {
@@ -60,6 +63,13 @@ export const getLocationFieldConfigs = (
   });
 
   return configs.map((f) => {
+    if (f.name === 'category' && f.type === 'select' && locationUiPolicy) {
+      return {
+        ...f,
+        options: locationUiPolicy.categorySelectOptions,
+        disabled: locationUiPolicy.categoryFieldDisabled,
+      };
+    }
     if (f.name === 'gridCellUnit' && f.type === 'select') {
       return {
         ...f,
@@ -67,6 +77,7 @@ export const getLocationFieldConfigs = (
           gridCellUnitOptions && gridCellUnitOptions.length > 0
             ? gridCellUnitOptions
             : f.options,
+        ...(locationUiPolicy ? { disabled: locationUiPolicy.gridCellUnitFieldDisabled } : {}),
       };
     }
     if (f.name === 'scale' && f.type === 'select' && locationUiPolicy) {

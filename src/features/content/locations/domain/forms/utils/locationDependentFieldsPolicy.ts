@@ -1,12 +1,18 @@
 /**
  * Centralized dependent-field policy for location forms (client + mapper).
- * Server enforces the same invariants; keep helpers pure and small.
+ * Source of truth: `locationScaleField.policy` in shared domain.
+ * Server enforces the same invariants.
  */
 import {
-  CELL_UNITS_BY_KIND,
+  getAllowedCellUnitOptionsForScale,
+  getAllowedCategoryOptionsForScale,
   getAllowedMapKindsForScale,
-  LOCATION_CATEGORY_IDS,
-  mapKindForLocationScale,
+  getDefaultCellUnitForScalePolicy,
+  getLocationScaleFieldPolicy,
+  isCategoryAllowedForScale,
+  isCellUnitAllowedForScale,
+  normalizeCategoryForScale,
+  normalizeGridCellUnitForScale,
 } from '@/shared/domain/locations';
 import type { LocationMapKindId } from '@/shared/domain/locations';
 import { getAllowedParentLocationOptions } from '@/shared/domain/locations';
@@ -14,25 +20,22 @@ import { isWorldScale } from '@/shared/domain/locations/locationScale.rules';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationFormValues } from '../types/locationForm.types';
 
+export { getAllowedCellUnitOptionsForScale, getAllowedCategoryOptionsForScale };
+
 export function shouldClearCategoryForScale(scale: string): boolean {
-  return isWorldScale(scale);
+  return getLocationScaleFieldPolicy(scale).allowedCategories.length === 0;
 }
 
 export function shouldClearParentForScale(scale: string): boolean {
-  return isWorldScale(scale);
+  return getLocationScaleFieldPolicy(scale).hideParent === true || isWorldScale(scale);
 }
 
-/** Empty category is always allowed (optional field). */
+/** Empty category is allowed when optional; otherwise must satisfy scale policy. */
 export function isCategoryValueAllowedForScale(categoryTrimmed: string, scale: string): boolean {
   if (categoryTrimmed === '') return true;
-  if (isWorldScale(scale)) return false;
-  return (LOCATION_CATEGORY_IDS as readonly string[]).includes(categoryTrimmed);
+  return isCategoryAllowedForScale(categoryTrimmed, scale);
 }
 
-/**
- * When `locations` is omitted/empty, parent cannot be validated — treat as permitted
- * (server remains authoritative). When locations are loaded, parent must be in the eligible set.
- */
 export function isParentIdAllowedForScale(
   parentIdTrimmed: string,
   childScale: string,
@@ -40,28 +43,22 @@ export function isParentIdAllowedForScale(
   excludeLocationId?: string,
 ): boolean {
   if (parentIdTrimmed === '') return true;
+  if (getLocationScaleFieldPolicy(childScale).hideParent) return false;
   if (isWorldScale(childScale)) return false;
   if (!locations || locations.length === 0) return true;
   const eligible = getAllowedParentLocationOptions(locations, childScale, excludeLocationId);
   return eligible.some((l) => l.id === parentIdTrimmed);
 }
 
-export function getAllowedCellUnitOptionsForScale(scale: string): { value: string; label: string }[] {
-  const kind = mapKindForLocationScale(scale);
-  return CELL_UNITS_BY_KIND[kind].map((u) => ({ value: u, label: u }));
-}
-
 export function getDefaultCellUnitForScale(scale: string): string {
-  const opts = getAllowedCellUnitOptionsForScale(scale);
-  return opts[0]?.value ?? '5ft';
+  return getDefaultCellUnitForScalePolicy(scale);
 }
 
 /** Returns current unit if allowed, otherwise the default for the scale. */
 export function getSanitizedCellUnitForScale(currentUnit: string, scale: string): string {
   const trimmed = currentUnit.trim();
-  const allowed = getAllowedCellUnitOptionsForScale(scale);
-  if (trimmed && allowed.some((o) => o.value === trimmed)) return trimmed;
-  return getDefaultCellUnitForScale(scale);
+  if (trimmed && isCellUnitAllowedForScale(trimmed, scale)) return trimmed;
+  return normalizeGridCellUnitForScale('', scale);
 }
 
 export { getDefaultMapKindForScale } from '@/shared/domain/locations';
@@ -94,9 +91,10 @@ export function sanitizeLocationFormValues(
   const patch: Partial<LocationFormValues> = {};
   const scale = ctx.scale;
 
-  const cat = String(values.category ?? '').trim();
-  if (!isCategoryValueAllowedForScale(cat, scale)) {
-    patch.category = '';
+  const prevCat = String(values.category ?? '').trim();
+  const nextCat = normalizeCategoryForScale(prevCat, scale);
+  if (nextCat !== prevCat) {
+    patch.category = nextCat;
   }
 
   const pid = String(values.parentId ?? '').trim();
@@ -105,7 +103,7 @@ export function sanitizeLocationFormValues(
   }
 
   const curUnit = String(values.gridCellUnit ?? '').trim();
-  const nextUnit = getSanitizedCellUnitForScale(curUnit, scale);
+  const nextUnit = normalizeGridCellUnitForScale(curUnit, scale);
   if (nextUnit !== curUnit) {
     patch.gridCellUnit = nextUnit;
   }

@@ -1,7 +1,7 @@
 import type { LocationMapCell, LocationMapKindId } from '../../../../../shared/domain/locations';
 import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
-import { validateLocationMapInput, type MapValidationError } from '../domain/locationMaps.validation';
+import { type MapValidationError, validateLocationMapInput } from './locationValidation';
 import { countTransitionsReferencingMap } from './locationTransitions.queries';
 
 export type LocationMapDoc = {
@@ -57,7 +57,8 @@ export async function validateLocationForMap(
   return { ok: true };
 }
 
-async function normalizeDefaultMapForLocation(
+/** Ensures at most one default map per location when setting `isDefault`. */
+export async function normalizeDefaultMapForLocation(
   campaignId: string,
   locationId: string,
   defaultMapId: string,

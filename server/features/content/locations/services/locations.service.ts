@@ -1,10 +1,12 @@
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import type { AccessPolicy } from '../../../../../shared/domain/accessPolicy';
+import type { LocationConnection } from '../../../../../shared/domain/locations';
 import {
   buildAncestorIdsFromParentRow,
-  validateParentChildScales,
   type HierarchyValidationError,
-} from '../domain/locations.hierarchy';
+  type LocationScaleId,
+  validateLocationScaleNesting,
+} from './locationValidation';
 import { countMapsForLocation } from './locationMaps.service';
 import { countTransitionsReferencingLocation } from './locationTransitions.queries';
 
@@ -12,7 +14,7 @@ export type LocationDoc = {
   id: string;
   campaignId: string;
   name: string;
-  scale: string;
+  scale: LocationScaleId;
   category?: string;
   description?: string;
   imageKey?: string;
@@ -23,14 +25,7 @@ export type LocationDoc = {
   label?: { short?: string; number?: string };
   aliases?: string[];
   tags?: string[];
-  connections?: Array<{
-    toId: string;
-    kind: 'road' | 'river' | 'door' | 'stairs' | 'hall' | 'secret' | 'portal';
-    bidirectional?: boolean;
-    locked?: boolean;
-    dc?: number;
-    keyItemId?: string;
-  }>;
+  connections?: LocationConnection[];
   createdAt: string;
   updatedAt: string;
 };
@@ -42,7 +37,7 @@ function toDoc(doc: Record<string, unknown>): LocationDoc {
     id: doc.locationId as string,
     campaignId: doc.campaignId as string,
     name: doc.name as string,
-    scale: doc.scale as string,
+    scale: doc.scale as LocationScaleId,
     category: doc.category as string | undefined,
     description: doc.description as string | undefined,
     imageKey: doc.imageKey as string | undefined,
@@ -185,7 +180,7 @@ export async function validateParentAssignment(
     });
   }
 
-  const scaleErr = validateParentChildScales(parentScale, childScale);
+  const scaleErr = validateLocationScaleNesting(parentScale, childScale);
   if (scaleErr) errors.push(scaleErr);
 
   return errors;

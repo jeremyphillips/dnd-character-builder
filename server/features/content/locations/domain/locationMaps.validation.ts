@@ -2,7 +2,7 @@ import {
   CELL_UNITS_BY_KIND,
   LOCATION_MAP_GRID_MAX_HEIGHT,
   LOCATION_MAP_GRID_MAX_WIDTH,
-  LOCATION_MAP_KINDS,
+  LOCATION_MAP_KIND_IDS,
   type LocationMapKindId,
 } from '../../../../../shared/domain/locations';
 
@@ -48,12 +48,12 @@ export function validateGridDimensions(width: unknown, height: unknown): MapVali
 }
 
 export function validateMapKind(kind: unknown): MapValidationError[] {
-  if (typeof kind !== 'string' || !LOCATION_MAP_KINDS.includes(kind as LocationMapKindId)) {
+  if (typeof kind !== 'string' || !LOCATION_MAP_KIND_IDS.includes(kind as LocationMapKindId)) {
     return [
       {
         path: 'kind',
         code: 'INVALID_KIND',
-        message: `kind must be one of: ${LOCATION_MAP_KINDS.join(', ')}`,
+        message: `kind must be one of: ${LOCATION_MAP_KIND_IDS.join(', ')}`,
       },
     ];
   }

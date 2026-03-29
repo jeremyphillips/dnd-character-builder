@@ -132,11 +132,18 @@ export function projectGridCellRenderState(params: {
   perception: EncounterViewerPerceptionCell
   /** Merged world at the target cell — drives source-aware visibility presentation. */
   targetWorld: EncounterWorldCellEnvironment
+  /**
+   * Merged world at the viewer’s cell. Forwarded to {@link resolvePresentationVisibilityFill} so hidden cells
+   * can use immersed obscuration **presentation** fills; it does **not** drive target-cell visibility (that is
+   * `targetWorld` + `perception`). See `viewerMergedWorldForImmersedHiddenPresentation` on
+   * {@link mapResolvedVisibilityToFillKind}.
+   */
+  viewerWorld: EncounterWorldCellEnvironment
   battlefield: EncounterBattlefieldRenderState
   viewerRole: 'dm' | 'pc'
   isViewerCell: boolean
 }): EncounterGridCellRenderState {
-  const { perception, targetWorld, battlefield, viewerRole, isViewerCell } = params
+  const { perception, targetWorld, viewerWorld, battlefield, viewerRole, isViewerCell } = params
 
   if (viewerRole === 'dm') {
     return {
@@ -156,7 +163,7 @@ export function projectGridCellRenderState(params: {
   const showObstacleGlyph =
     perception.canPerceiveObjects && !(battlefield.useBlindVeil && !isViewerCell)
 
-  const perceptionBaseFillKind = resolvePresentationVisibilityFill(perception, targetWorld)
+  const perceptionBaseFillKind = resolvePresentationVisibilityFill(perception, targetWorld, viewerWorld)
 
   return {
     occupantTokenVisibility,
@@ -233,6 +240,7 @@ export function buildCellPerceptionRenderState(
   return projectGridCellRenderState({
     perception,
     targetWorld,
+    viewerWorld,
     battlefield: slice.battlefieldRender,
     viewerRole: input.viewerRole,
     isViewerCell: targetCellId === slice.viewerCellId,

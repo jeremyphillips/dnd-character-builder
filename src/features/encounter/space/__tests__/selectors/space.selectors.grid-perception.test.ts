@@ -353,6 +353,7 @@ describe('selectGridViewModel — immersed obscuration footprint suppression (ha
     sourceKind: 'manual' as const,
     area: { kind: 'sphere-ft' as const, originCellId: 'c-2-2', radiusFt: 20 },
     overrides: { visibilityObscured: 'heavy' as const },
+    visibilityObscurationCause: 'fog' as const,
   }
 
   const mdZoneAtWizard = {
@@ -477,7 +478,7 @@ describe('selectGridViewModel — immersed obscuration footprint suppression (ha
     expect(grid?.cells.find((c) => c.cellId === 'c-2-2')?.persistentAttachedAura).toBe(true)
   })
 
-  it('hybrid: immersed PC gets per-cell fill inside volume; distant clear cell differs (not one flat blanket)', () => {
+  it('hybrid: immersed PC — unrevealed outside cells inherit viewer fog tint (not generic hidden black)', () => {
     const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
     const s = createEncounterState(
       [
@@ -506,8 +507,9 @@ describe('selectGridViewModel — immersed obscuration footprint suppression (ha
     const outsideClear = grid?.cells.find((c) => c.cellId === 'c-7-7')
     const insideFill = inside?.perception?.perceptionBaseFillKind
     const outsideFill = outsideClear?.perception?.perceptionBaseFillKind
-    expect(insideFill).toBeTruthy()
-    expect(outsideFill).not.toBe(insideFill)
+    expect(insideFill).toBe('fog')
+    expect(outsideFill).toBe('fog')
+    expect(outsideFill).not.toBe('hidden')
   })
 
   it('active-combatant POV via deriveEncounterPresentationGridPerceptionInput: immersed footprint suppressed in fog', () => {

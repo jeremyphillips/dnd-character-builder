@@ -91,9 +91,11 @@ describe('projectGridCellRenderState', () => {
 
   it('DM always shows all tokens and obstacles', () => {
     const p = basePerception({ canPerceiveOccupants: false })
+    const tw = targetWorldFromPerception(p)
     const r = projectGridCellRenderState({
       perception: p,
-      targetWorld: targetWorldFromPerception(p),
+      targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldBlind,
       viewerRole: 'dm',
       isViewerCell: false,
@@ -105,9 +107,11 @@ describe('projectGridCellRenderState', () => {
 
   it('blind veil: viewer cell keeps self-only token visibility', () => {
     const p = basePerception()
+    const tw = targetWorldFromPerception(p)
     const r = projectGridCellRenderState({
       perception: p,
-      targetWorld: targetWorldFromPerception(p),
+      targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldBlind,
       viewerRole: 'pc',
       isViewerCell: true,
@@ -118,9 +122,11 @@ describe('projectGridCellRenderState', () => {
 
   it('blind veil: other cells hide tokens and obstacle glyphs', () => {
     const p = basePerception()
+    const tw = targetWorldFromPerception(p)
     const r = projectGridCellRenderState({
       perception: p,
-      targetWorld: targetWorldFromPerception(p),
+      targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldBlind,
       viewerRole: 'pc',
       isViewerCell: false,
@@ -135,9 +141,11 @@ describe('projectGridCellRenderState', () => {
       canPerceiveObjects: false,
       maskedByMagicalDarkness: true,
     })
+    const tw = targetWorldFromPerception(p)
     const r = projectGridCellRenderState({
       perception: p,
-      targetWorld: targetWorldFromPerception(p),
+      targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldNormal,
       viewerRole: 'pc',
       isViewerCell: false,
@@ -153,9 +161,11 @@ describe('projectGridCellRenderState', () => {
       maskedByDarkness: true,
       worldVisibilityObscured: 'heavy',
     })
+    const tw = targetWorldFromPerception(p)
     const r = projectGridCellRenderState({
       perception: p,
-      targetWorld: targetWorldFromPerception(p),
+      targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldNormal,
       viewerRole: 'pc',
       isViewerCell: true,
@@ -180,6 +190,7 @@ describe('projectGridCellRenderState', () => {
     const r = projectGridCellRenderState({
       perception: p,
       targetWorld: tw,
+      viewerWorld: tw,
       battlefield: battlefieldNormal,
       viewerRole: 'pc',
       isViewerCell: false,
@@ -189,12 +200,30 @@ describe('projectGridCellRenderState', () => {
 })
 
 describe('resolvePresentationVisibilityFill', () => {
-  it('maps obscured cell to hidden before other masks', () => {
+  it('maps unrevealed cell to generic hidden when no viewer world is provided', () => {
     const p = basePerception({
       canPerceiveCell: false,
       maskedByMagicalDarkness: true,
     })
     expect(resolvePresentationVisibilityFill(p, targetWorldFromPerception(p))).toBe('hidden')
+  })
+
+  it('maps unrevealed cell to viewer obscuration fill when viewerWorld is passed (immersed parity)', () => {
+    const p = basePerception({ canPerceiveCell: false })
+    const outside = targetWorldFromPerception(p, { visibilityObscured: 'none', lightingLevel: 'bright' })
+    const fogViewer = targetWorldFromPerception(p, {
+      obscurationPresentationCauses: ['fog'],
+      visibilityObscured: 'heavy',
+      lightingLevel: 'bright',
+    })
+    expect(resolvePresentationVisibilityFill(p, outside, fogViewer)).toBe('fog')
+    const mdViewer = targetWorldFromPerception(p, {
+      magicalDarkness: true,
+      lightingLevel: 'darkness',
+      visibilityObscured: 'heavy',
+      obscurationPresentationCauses: ['magical-darkness'],
+    })
+    expect(resolvePresentationVisibilityFill(p, outside, mdViewer)).toBe('magical-darkness')
   })
 
   it('maps magical darkness tint when cell is perceivable', () => {

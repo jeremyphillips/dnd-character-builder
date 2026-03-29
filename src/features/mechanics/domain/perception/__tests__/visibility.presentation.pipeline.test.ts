@@ -130,12 +130,17 @@ describe('canonical visibility presentation pipeline', () => {
     expect(resolvePresentationVisibilityFillFromMergedWorld(p, w)).toBe('magical-darkness')
   })
 
-  it('immersed fog vs magical darkness: outside bright cell uses same hidden fill (parity)', () => {
-    const fogViewer = baseWorld({ visibilityObscured: 'heavy', magicalDarkness: false })
+  it('immersed fog vs magical darkness: unrevealed outside cells inherit viewer obscuration tint (not generic hidden)', () => {
+    const fogViewer = baseWorld({
+      visibilityObscured: 'heavy',
+      magicalDarkness: false,
+      obscurationPresentationCauses: ['fog'],
+    })
     const mdViewer = baseWorld({
       magicalDarkness: true,
       lightingLevel: 'darkness',
       visibilityObscured: 'heavy',
+      obscurationPresentationCauses: ['magical-darkness'],
     })
     const outside = baseWorld({ visibilityObscured: 'none', lightingLevel: 'bright' })
     const pFog = resolveViewerPerceptionForCell({
@@ -154,8 +159,8 @@ describe('canonical visibility presentation pipeline', () => {
     })
     expect(pFog.canPerceiveCell).toBe(false)
     expect(pMd.canPerceiveCell).toBe(false)
-    expect(resolvePresentationVisibilityFill(pFog, outside)).toBe('hidden')
-    expect(resolvePresentationVisibilityFill(pMd, outside)).toBe('hidden')
+    expect(resolvePresentationVisibilityFill(pFog, outside, fogViewer)).toBe('fog')
+    expect(resolvePresentationVisibilityFill(pMd, outside, mdViewer)).toBe('magical-darkness')
   })
 })
 
@@ -184,6 +189,7 @@ describe('renderer uses canonical presentation helper only', () => {
     const projected = projectGridCellRenderState({
       perception: p,
       targetWorld: tw,
+      viewerWorld: tw,
       battlefield,
       viewerRole: 'pc',
       isViewerCell: false,

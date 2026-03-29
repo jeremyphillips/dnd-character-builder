@@ -26,7 +26,13 @@ type EncounterGridProps = {
   grid: GridViewModel
   zoom: number
   pan: { x: number; y: number }
-  onPanChange: (pan: { x: number; y: number }) => void
+  panPointerHandlers: {
+    onPointerDown: (e: React.PointerEvent) => void
+    onPointerMove: (e: React.PointerEvent) => void
+    onPointerUp: () => void
+  }
+  isDragging: boolean
+  hasDragMoved: () => boolean
   onCellClick?: (cellId: string) => void
   onCellHover?: (cellId: string | null) => void
   renderTokenPopover?: (occupantId: string) => ReactNode
@@ -128,7 +134,9 @@ export function EncounterGrid({
   grid,
   zoom,
   pan,
-  onPanChange,
+  panPointerHandlers,
+  isDragging,
+  hasDragMoved,
   onCellClick,
   onCellHover,
   renderTokenPopover,
@@ -177,10 +185,6 @@ export function EncounterGrid({
     [palette.error.main],
   )
 
-  const dragState = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const dragMoved = useRef(false)
-
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null)
   const [hoveredOccupantId, setHoveredOccupantId] = useState<string | null>(null)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -206,36 +210,6 @@ export function EncounterGrid({
     setHoveredOccupantId(null)
   }, [])
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (e.button !== 0) return
-      handleTokenMouseLeave()
-      dragState.current = { startX: e.clientX, startY: e.clientY, startPanX: pan.x, startPanY: pan.y }
-      dragMoved.current = false
-      setIsDragging(true)
-    },
-    [pan.x, pan.y, handleTokenMouseLeave],
-  )
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragState.current) return
-      const dx = e.clientX - dragState.current.startX
-      const dy = e.clientY - dragState.current.startY
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved.current = true
-      onPanChange({
-        x: dragState.current.startPanX + dx,
-        y: dragState.current.startPanY + dy,
-      })
-    },
-    [onPanChange],
-  )
-
-  const handlePointerUp = useCallback(() => {
-    dragState.current = null
-    setIsDragging(false)
-  }, [])
-
   const popoverOpen = Boolean(popoverAnchor) && Boolean(hoveredOccupantId)
 
   const battlefieldRender = grid.perception?.battlefieldRender
@@ -244,9 +218,7 @@ export function EncounterGrid({
 
   return (
     <Box
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
+      {...panPointerHandlers}
       onPointerLeave={() => onCellHover?.(null)}
       sx={{
         position: 'absolute',
@@ -325,7 +297,7 @@ export function EncounterGrid({
                 onClick={
                   clickable
                     ? () => {
-                        if (!dragMoved.current) onCellClick?.(cell.cellId)
+                        if (!hasDragMoved()) onCellClick?.(cell.cellId)
                       }
                     : undefined
                 }

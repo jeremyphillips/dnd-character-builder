@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
+import Stack from '@mui/material/Stack';
+
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { EntryEditorLayout } from '@/features/content/shared/components';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
@@ -25,11 +26,15 @@ import {
 } from '@/features/content/locations/domain';
 import {
   LocationGridAuthoringSection,
+  LocationEditorWorkspace,
+  LocationEditorHeader,
+  LocationEditorCanvas,
+  LocationEditorRightRail,
   INITIAL_LOCATION_GRID_DRAFT,
   type LocationGridDraftState,
 } from '@/features/content/locations/components';
-import { ConditionalFormRenderer } from '@/ui/patterns';
-import Stack from '@mui/material/Stack';
+import { ConditionalFormRenderer, VisibilityField } from '@/ui/patterns';
+import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
@@ -52,6 +57,11 @@ export default function LocationCreateRoute() {
   const [gridDraft, setGridDraft] = useState<LocationGridDraftState>(
     INITIAL_LOCATION_GRID_DRAFT,
   );
+  const [rightRailOpen, setRightRailOpen] = useState(true);
+
+  const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
+  const { pan, isDragging, pointerHandlers, resetPan } = useCanvasPan();
+  useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan]);
 
   const { policyValue, handlePolicyChange } =
     useAccessPolicyField<LocationFormValues>(watch, setValue);
@@ -170,44 +180,66 @@ export default function LocationCreateRoute() {
 
   return (
     <FormProvider {...methods}>
-      <EntryEditorLayout
-        typeLabel="Location"
-        isNew
-        saving={saving}
-        dirty={isDirty}
-        success={false}
-        errors={errors}
-        formId={FORM_ID}
-        onBack={handleBack}
-        showPolicyField
-        policyValue={policyValue}
-        onPolicyChange={handlePolicyChange}
-        policyCharacters={policyCharacters}
-      >
-        <Stack spacing={2}>
-          <form
-            key="location-form"
-            id={FORM_ID}
-            onSubmit={methods.handleSubmit(handleSubmit)}
-            noValidate
+      <LocationEditorWorkspace
+        header={
+          <LocationEditorHeader
+            title="New Location"
+            saving={saving}
+            dirty={isDirty}
+            isNew
+            formId={FORM_ID}
+            onBack={handleBack}
+            errors={errors}
+            success={false}
+            rightRailOpen={rightRailOpen}
+            onToggleRightRail={() => setRightRailOpen((o) => !o)}
+          />
+        }
+        canvas={
+          <LocationEditorCanvas
+            zoom={zoom}
+            pan={pan}
+            panHandlers={pointerHandlers}
+            isDragging={isDragging}
+            wheelContainerRef={wheelContainerRef}
+            zoomControlProps={zoomControlProps}
           >
-            <ConditionalFormRenderer fields={fieldConfigs} />
-          </form>
-          {showMapGridAuthoring ? (
-            <LocationGridAuthoringSection
-              key="location-grid-authoring"
-              gridColumns={gridColumns}
-              gridRows={gridRows}
-              draft={gridDraft}
-              setDraft={setGridDraft}
-              locations={locations}
-              campaignId={campaignId ?? undefined}
-              hostScale={scale}
-              hostName={String(locationNameDraft ?? '').trim() || undefined}
-            />
-          ) : null}
-        </Stack>
-      </EntryEditorLayout>
+            {showMapGridAuthoring ? (
+              <LocationGridAuthoringSection
+                gridColumns={gridColumns}
+                gridRows={gridRows}
+                draft={gridDraft}
+                setDraft={setGridDraft}
+                locations={locations}
+                campaignId={campaignId ?? undefined}
+                hostScale={scale}
+                hostName={String(locationNameDraft ?? '').trim() || undefined}
+              />
+            ) : null}
+          </LocationEditorCanvas>
+        }
+        rightRail={
+          <LocationEditorRightRail open={rightRailOpen}>
+            <Stack spacing={2}>
+              <form
+                key="location-form"
+                id={FORM_ID}
+                onSubmit={methods.handleSubmit(handleSubmit)}
+                noValidate
+              >
+                <ConditionalFormRenderer fields={fieldConfigs} />
+              </form>
+              {policyValue && (
+                <VisibilityField
+                  value={policyValue}
+                  onChange={handlePolicyChange}
+                  characters={policyCharacters}
+                />
+              )}
+            </Stack>
+          </LocationEditorRightRail>
+        }
+      />
     </FormProvider>
   );
 }

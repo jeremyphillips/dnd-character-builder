@@ -32,7 +32,7 @@ Persistence models live under `server/shared/models/`: `CampaignLocation`, `Camp
 | Folder | Responsibility |
 |--------|----------------|
 | `scale/` | Scale **business policy** (who may parent whom), **field policy** (categories, cell units, which form fields apply per scale), **rules** (valid scale id, rank, world check), **parent validation** (`validateParentChildScales` for hierarchy). |
-| `map/` | Map **constants** (kinds, cell units, object kinds), **types** (`LocationMapBase`, grid, cells, cell authoring), **helpers** (e.g. `mapKindForLocationScale`), **placement policy** (what can be placed / linked on cells by scale), **validation** (grid, cells, map input, cell authoring structure). |
+| `map/` | Map **constants** (kinds, cell units by kind, object kinds), **types** (`LocationMapBase`, grid, cells, cell authoring), **helpers** (`mapKindForLocationScale`, `getDefaultMapKindForScale` — derives map kind during save/bootstrap, `isCellUnitAllowedForScale`), **placement policy** (what can be placed / linked on cells by scale), **validation** (grid, cells, map input, cell authoring structure). |
 | `transitions/` | Transition **kinds** (`LOCATION_TRANSITION_KIND_IDS`) and **shared types** (`LocationTransitionBase`, `from` / `to` shapes). |
 
 ### Tests
@@ -84,11 +84,38 @@ Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/sc
 
 | Area | Purpose |
 |------|---------|
-| `routes/` | List, create, edit, detail routes. |
+| `routes/` | List, create, edit, detail routes. Create and edit use the full-width workspace shell (see below); detail stays content-width for now. |
 | `domain/forms/` | Form types, registry (`locationForm.registry.ts`), mappers, sanitize, dependent-field policy / UI rules. |
 | `domain/repo/` | `locationRepo`, `locationMapRepo` — API/data access for lists and maps. |
-| `components/` | e.g. `LocationGridAuthoringSection`, cell modal, cards. |
+| `domain/maps/` | `bootstrapDefaultLocationMap` (client-side default map creation/update), grid layout draft helpers, cell entry mappers. Uses `getDefaultMapKindForScale` from shared domain to derive map kind. |
+| `components/` | `LocationGridAuthoringSection` (interactive grid preview with computed cell sizing for canvas fit), cell modal, cards. |
+| `components/workspace/` | Map-first editor workspace shell — see section below. |
 | `hooks/` | Campaign data, parent picker options, default world scale, dependent field effects. |
+
+### Workspace shell (`components/workspace/`)
+
+Location create and edit routes render inside a full-width workspace (via `AuthMainFocus` layout mode, triggered by `isAuthMainFocusPath` in `src/app/layouts/auth/auth-main-path.ts`). The workspace is composed of feature-owned components:
+
+| Component | Role |
+|-----------|------|
+| `LocationEditorWorkspace` | Outer flex column: header slot + body row (canvas + right rail). Body row capped at `calc(100vh - headerHeight)`. |
+| `LocationEditorHeader` | Sticky header: title, ancestry breadcrumbs, global save button, right-rail toggle, optional actions (e.g. delete). |
+| `LocationEditorCanvas` | Flex-filling canvas region with zoom/pan transform wrapper. Hosts `LocationGridAuthoringSection` as child content and renders `ZoomControl` (fixed positioned). |
+| `LocationEditorRightRail` | Collapsible right rail (default open) containing all form fields. Uses CSS width transition with `overflow: hidden` outer and scrollable inner. |
+| `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
+| `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`. |
+
+### Shared canvas hooks (`src/ui/hooks/`)
+
+Zoom and pan behavior is shared between the location editor and encounter active route via reusable hooks:
+
+| Export | Role |
+|--------|------|
+| `useCanvasZoom` | Zoom state, `zoomIn`/`zoomOut`/`zoomReset`, `zoomControlProps` spread for `ZoomControl`, `wheelContainerRef` (non-passive listener for Ctrl/Cmd + scroll / trackpad pinch). `bindResetPan` coordinates pan reset with zoom reset. |
+| `useCanvasPan` | Pan state, pointer drag handlers (`pointerHandlers` spread), `isDragging`, `hasDragMoved()` (distinguishes click from drag), `resetPan`. |
+| `CanvasPoint` | Shared type `{ x: number; y: number }`. |
+
+Both hooks are used at the route level; derived values are passed down to canvas/grid components as props.
 
 Imports of shared vocabulary should prefer **`@/shared/domain/locations`** for scale constants, map constants, and policies.
 
@@ -109,5 +136,8 @@ Imports of shared vocabulary should prefer **`@/shared/domain/locations`** for s
 1. **Extend scale rules:** edit `scale/locationScale.policy.ts` and `scale/locationParent.validation.ts`; keep `locationScaleField.policy.ts` in sync for categories/cell units/UI.
 2. **Extend map rules:** prefer `map/locationMap.validation.ts` / `locationMapCellAuthoring.validation.ts` for structural checks; `locationMapPlacement.policy.ts` for “what may appear on a cell” by scale.
 3. **New transition kinds:** add to `LOCATION_TRANSITION_KIND_IDS` and any server checks; shared types in `transitions/`.
-4. **Imports:** use the **barrel** `shared/domain/locations` unless you have a reason to deep-import a subfolder.
+4. **Imports:** use the **barrel** `shared/domain/locations` unless you have a reason to deep-import a subfolder. Canvas hooks: `@/ui/hooks`.
 5. **Tests:** add shared tests under `__tests__/scale/` or `__tests__/map/`; server tests next to services/domain in `server/features/content/locations/`.
+6. **Workspace layout changes:** modify components under `components/workspace/`; constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
+7. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
+8. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.

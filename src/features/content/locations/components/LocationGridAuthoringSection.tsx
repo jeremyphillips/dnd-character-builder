@@ -1,10 +1,8 @@
 import { createElement, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
+// import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import Typography from '@mui/material/Typography';
 
 import GridEditor, { type GridCell } from '@/ui/patterns/grid/GridEditor';
 import {
@@ -17,16 +15,23 @@ import {
   pruneExcludedCellIdsForGrid,
 } from '@/features/content/locations/domain/maps/gridLayoutDraft';
 import type { Location } from '@/features/content/locations/domain/types';
+import {
+  LOCATION_EDITOR_HEADER_HEIGHT_PX,
+  LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX,
+} from './workspace/locationEditor.constants';
 
 import { LocationGridCellModal } from './LocationGridCellModal';
 import type { LocationCellObjectDraft, LocationGridDraftState } from './locationGridDraft.types';
+
+const GRID_GAP_PX = 4 // MUI spacing(0.5) — matches GridEditor gap
+const MIN_CELL_PX = 24
+const CANVAS_INSET_PX = 48 // breathing room so grid doesn't touch canvas edges
 
 type LocationGridAuthoringSectionProps = {
   gridColumns: string;
   gridRows: string;
   draft: LocationGridDraftState;
   setDraft: Dispatch<SetStateAction<LocationGridDraftState>>;
-  maxHeight?: number | 'none';
   /** Campaign locations (for cell modal link picker). */
   locations: Location[];
   campaignId?: string;
@@ -41,7 +46,6 @@ export function LocationGridAuthoringSection({
   gridRows,
   draft,
   setDraft,
-  maxHeight,
   locations,
   campaignId,
   hostLocationId,
@@ -106,6 +110,20 @@ export function LocationGridAuthoringSection({
     });
   }, [validPreview, cols, rows, setDraft]);
 
+  const gridWidthPx = useMemo(() => {
+    if (!validPreview) return 0
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+    const canvasH = vh - LOCATION_EDITOR_HEADER_HEIGHT_PX - CANVAS_INSET_PX * 2
+    const canvasW = vw - LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX - CANVAS_INSET_PX * 2
+    const vertGaps = Math.max(0, rows - 1) * GRID_GAP_PX
+    const horzGaps = Math.max(0, cols - 1) * GRID_GAP_PX
+    const cellFromH = (canvasH - vertGaps) / rows
+    const cellFromW = (canvasW - horzGaps) / cols
+    const cellSize = Math.max(MIN_CELL_PX, Math.floor(Math.min(cellFromH, cellFromW)))
+    return cellSize * cols + horzGaps
+  }, [validPreview, cols, rows]);
+
   const locationById = useMemo(
     () => new Map(locations.map((l) => [l.id, l])),
     [locations],
@@ -153,13 +171,6 @@ export function LocationGridAuthoringSection({
     });
   };
 
-  const selectedParsed = draft.selectedCellId
-    ? parseGridCellId(draft.selectedCellId)
-    : null;
-  const selectedExcluded = draft.selectedCellId
-    ? draft.excludedCellIds.includes(draft.selectedCellId)
-    : false;
-  const excludedCount = draft.excludedCellIds.length;
 
   const renderMapCellIcons = (cell: GridCell) => {
     const linkId = draft.linkedLocationByCellId[cell.cellId];
@@ -201,46 +212,19 @@ export function LocationGridAuthoringSection({
   };
 
   return (
-    <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Layout preview — {cols} × {rows}
-        {excludedCount > 0 ? ` · ${excludedCount} excluded` : ''}
-      </Typography>
-      <Box sx={{ maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : 'none', overflow: 'auto' }}>
-        <GridEditor
-          columns={cols}
-          rows={rows}
-          selectedCellId={draft.selectedCellId}
-          excludedCellIds={draft.excludedCellIds}
-          onCellClick={onCellClick}
-          renderCellContent={renderMapCellIcons}
-        />
-      </Box>
-      <Stack spacing={1} sx={{ mt: 1.5 }}>
-        {draft.selectedCellId && selectedParsed ? (
-          <>
-            <Typography variant="caption" color="text.secondary" component="div">
-              Cell <strong>{draft.selectedCellId}</strong> — x {selectedParsed.x}, y{' '}
-              {selectedParsed.y}
-            </Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={selectedExcluded}
-                  onChange={toggleExcludedForSelected}
-                  inputProps={{ 'aria-label': 'Exclude cell from layout' }}
-                />
-              }
-              label="Excluded from layout"
-            />
-          </>
-        ) : (
-          <Typography variant="caption" color="text.secondary">
-            Click a cell to edit links and objects, or mark cells excluded from the walkable layout.
-          </Typography>
-        )}
-      </Stack>
+    <>
+      <Paper variant="outlined" sx={{ p: 1 }}>
+        <Box sx={{ width: gridWidthPx }}>
+          <GridEditor
+            columns={cols}
+            rows={rows}
+            selectedCellId={draft.selectedCellId}
+            excludedCellIds={draft.excludedCellIds}
+            onCellClick={onCellClick}
+            renderCellContent={renderMapCellIcons}
+          />
+        </Box>
+      </Paper>
 
       <LocationGridCellModal
         open={draft.cellModalCellId != null}
@@ -256,6 +240,6 @@ export function LocationGridAuthoringSection({
         onUpdateLinkedLocation={onUpdateLinkedLocation}
         onUpdateCellObjects={onUpdateCellObjects}
       />
-    </Paper>
+    </>
   );
 }

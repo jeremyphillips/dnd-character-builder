@@ -18,6 +18,8 @@ export type ZoomControlProps = {
   onZoomOut: () => void
   onReset: () => void
   onLocateToken?: () => void
+  /** 'fixed' (default, viewport-anchored) or 'absolute' (relative to nearest positioned ancestor). */
+  positioning?: 'fixed' | 'absolute'
 }
 
 export function ZoomControl({
@@ -29,6 +31,7 @@ export function ZoomControl({
   onZoomOut,
   onReset,
   onLocateToken,
+  positioning = 'fixed',
 }: ZoomControlProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -60,7 +63,7 @@ export function ZoomControl({
     <Paper
       elevation={4}
       sx={{
-        position: 'fixed',
+        position: positioning,
         bottom: 24,
         left: 24,
         zIndex: 'speedDial',

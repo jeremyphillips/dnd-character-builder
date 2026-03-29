@@ -1,7 +1,10 @@
 /**
  * Location form field registry — config + mapping for create/edit.
  */
-import { LOCATION_SCALE_ORDER } from '@/shared/domain/locations/location.constants';
+import {
+  LOCATION_CATEGORY_IDS,
+  LOCATION_SCALE_ORDER,
+} from '@/shared/domain/locations/location.constants';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationInput } from '@/features/content/locations/domain/types';
 import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
@@ -12,6 +15,11 @@ const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
 
 const SCALE_OPTIONS = LOCATION_SCALE_ORDER.map((s) => ({ value: s, label: s }));
+
+const CATEGORY_OPTIONS = LOCATION_CATEGORY_IDS.map((c) => ({
+  value: c,
+  label: c.slice(0, 1).toUpperCase() + c.slice(1),
+}));
 
 const splitList = (v: unknown): string[] => {
   if (typeof v !== 'string' || !trim(v)) return [];
@@ -41,8 +49,9 @@ export const LOCATION_FORM_FIELDS = [
   {
     name: 'category',
     label: 'Category',
-    kind: 'text' as const,
-    placeholder: 'e.g. settlement, dungeon',
+    kind: 'select' as const,
+    options: CATEGORY_OPTIONS,
+    placeholder: 'Optional — choose a category',
     defaultValue: '' as LocationFormValues['category'],
     parse: (v) => (trim(v) || undefined) as LocationInput['category'],
     format: (v) => strOrEmpty(v) as LocationFormValues['category'],

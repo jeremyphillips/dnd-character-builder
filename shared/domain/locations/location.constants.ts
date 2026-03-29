@@ -16,19 +16,13 @@ export const LOCATION_SCALE_ORDER = [
 ] as const;
 
 export const LOCATION_CATEGORY_IDS = [
-  'world',
-  'region',
-  'subregion',
+  'wilderness',
   'settlement',
-  'site',
-  'structure',
-  'dungeon',
-  'city',
   'district',
-  'building',
-  'floor',
-  'room',
-  'other',
+  'landmark',
+  'structure',
+  'interior',
+  'dungeon',
 ] as const;
 
 /** Matches persisted connection `kind` enum (CampaignLocation). */

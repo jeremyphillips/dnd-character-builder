@@ -27,6 +27,7 @@ function basePerception(overrides: Partial<EncounterViewerPerceptionCell> = {}):
     canPerceiveObjects: true,
     maskedByDarkness: false,
     environmentalDarknessMitigatedByDarkvision: false,
+    perceivedByBlindsight: false,
     maskedByMagicalDarkness: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: 'bright',

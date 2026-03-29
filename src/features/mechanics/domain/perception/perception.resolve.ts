@@ -40,6 +40,36 @@ export function darkvisionMitigatesOrdinaryEnvironmentalDarkness(
 }
 
 /**
+ * Blindsight applies within its radius (Chebyshev grid distance when known). Unknown distance is permissive,
+ * matching {@link darkvisionMitigatesOrdinaryEnvironmentalDarkness}.
+ */
+export function blindsightMitigatesWithinRange(
+  capabilities: EncounterViewerPerceptionCapabilities | undefined,
+  distanceViewerToTargetFt: number | undefined,
+): boolean {
+  const r = capabilities?.blindsightRangeFt
+  if (r == null || r <= 0) return false
+  if (distanceViewerToTargetFt === undefined) return true
+  return distanceViewerToTargetFt <= r
+}
+
+function fullPerceptionBlindsight(targetWorld: EncounterWorldCellEnvironment): EncounterViewerPerceptionCell {
+  return {
+    canPerceiveCell: true,
+    canPerceiveOccupants: true,
+    canPerceiveObjects: true,
+    maskedByDarkness: false,
+    maskedByMagicalDarkness: false,
+    environmentalDarknessMitigatedByDarkvision: false,
+    perceivedByBlindsight: true,
+    suppressTemplateBoundary: false,
+    worldLightingLevel: targetWorld.lightingLevel,
+    worldVisibilityObscured: targetWorld.visibilityObscured,
+    appliedZoneIds: targetWorld.appliedZoneIds,
+  }
+}
+
+/**
  * Per-cell perception for a viewer from resolved world state at viewer and target cells.
  *
  * Rules (baseline, no special senses): DM view is unrestricted. Otherwise:
@@ -84,6 +114,11 @@ export function resolveViewerPerceptionForCell(
     return dmOmniscientCell(targetWorld)
   }
 
+  /** Blindsight (non-visual) wins over darkvision vs ordinary darkness; bypasses heavy obscurement and MD within range. */
+  if (blindsightMitigatesWithinRange(capabilities, distanceViewerToTargetFt)) {
+    return fullPerceptionBlindsight(targetWorld)
+  }
+
   const targetMd = targetWorld.magicalDarkness && !bypass
   const viewerInMd = viewerWorld.magicalDarkness && !bypass
 
@@ -95,6 +130,7 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
       environmentalDarknessMitigatedByDarkvision: false,
+      perceivedByBlindsight: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -110,6 +146,7 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
       environmentalDarknessMitigatedByDarkvision: false,
+      perceivedByBlindsight: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -134,6 +171,7 @@ export function resolveViewerPerceptionForCell(
         maskedByDarkness: false,
         maskedByMagicalDarkness: false,
         environmentalDarknessMitigatedByDarkvision: false,
+        perceivedByBlindsight: false,
         suppressTemplateBoundary: true,
         worldLightingLevel: targetWorld.lightingLevel,
         worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -147,6 +185,7 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
       environmentalDarknessMitigatedByDarkvision: false,
+      perceivedByBlindsight: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -162,6 +201,7 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: false,
       maskedByMagicalDarkness: true,
       environmentalDarknessMitigatedByDarkvision: false,
+      perceivedByBlindsight: false,
       suppressTemplateBoundary: false,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -192,6 +232,7 @@ export function resolveViewerPerceptionForCell(
       maskedByDarkness: true,
       maskedByMagicalDarkness: false,
       environmentalDarknessMitigatedByDarkvision: false,
+      perceivedByBlindsight: false,
       suppressTemplateBoundary: viewerInHeavyNonMdFog,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -206,6 +247,7 @@ export function resolveViewerPerceptionForCell(
     maskedByDarkness: false,
     maskedByMagicalDarkness: false,
     environmentalDarknessMitigatedByDarkvision,
+    perceivedByBlindsight: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: targetWorld.lightingLevel,
     worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -221,6 +263,7 @@ function dmOmniscientCell(targetWorld: EncounterWorldCellEnvironment): Encounter
     maskedByDarkness: false,
     maskedByMagicalDarkness: false,
     environmentalDarknessMitigatedByDarkvision: false,
+    perceivedByBlindsight: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: targetWorld.lightingLevel,
     worldVisibilityObscured: targetWorld.visibilityObscured,

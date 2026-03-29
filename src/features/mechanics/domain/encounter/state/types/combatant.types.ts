@@ -65,8 +65,8 @@ export type CombatantHideEligibilityFeatureFlagsRuntime = {
 }
 
 /**
- * Snapshot of authored senses on a combatant (e.g. from monster stat block). Used for darkvision range and
- * future sense rules; optional on PCs until character/race wiring exists.
+ * Snapshot of authored senses on a combatant (e.g. from monster stat block). Used for darkvision / blindsight
+ * range in viewer perception; optional on PCs until character/race wiring exists.
  */
 export type CombatantSensesSnapshot = {
   special?: Array<{ type: string; range?: number; notes?: string }>

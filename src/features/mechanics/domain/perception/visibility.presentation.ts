@@ -34,11 +34,25 @@ import type { ResolvedCellVisibility, VisibilityFillKind } from './visibility.ty
 /**
  * Viewer-relative presentation copy when darkvision mitigates ordinary environmental darkness.
  * Does **not** mutate encounter merged world; shallow copy only.
+ *
+ * **Blindsight:** when {@link EncounterViewerPerceptionCell.perceivedByBlindsight} is true, strip concealment
+ * that sight-based presentation would show (darkness, fog, magical darkness) — rules layer already marked the
+ * cell as fully perceivable within blindsight range.
  */
 export function buildViewerAdjustedPresentationWorld(
   mergedWorld: EncounterWorldCellEnvironment,
   perception: EncounterViewerPerceptionCell,
 ): EncounterWorldCellEnvironment {
+  if (perception.perceivedByBlindsight) {
+    return {
+      ...mergedWorld,
+      lightingLevel: 'bright',
+      visibilityObscured: 'none',
+      magicalDarkness: false,
+      blocksDarkvision: false,
+      obscurationPresentationCauses: [],
+    }
+  }
   if (!perception.environmentalDarknessMitigatedByDarkvision) return mergedWorld
   return {
     ...mergedWorld,

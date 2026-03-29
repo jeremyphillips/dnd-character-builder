@@ -14,9 +14,14 @@ import {
 
 import {
   encounterAttackerOutsideDefenderHeavilyObscured,
+  encounterBlindsightOrdinaryDarkness10ftFromOrc,
+  encounterBlindsightOutOfRangeDarknessInDarkvisionRange,
+  encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange,
   encounterDarknessWizard10ftFromOrc,
   encounterDarknessWizardOutOfDarkvisionRange,
+  encounterHeavyObscuredWithBlindsightViewer,
   encounterHeavyObscuredWithDarkvisionViewer,
+  encounterMagicalDarknessWithBlindsightViewer,
   encounterMagicalDarknessWithDarkvisionViewer,
   testEnemy,
   testPc,
@@ -102,6 +107,31 @@ describe('combatant pair visibility (occupant)', () => {
 
   it('darkvision does not mitigate magical darkness within range', () => {
     const state = encounterMagicalDarknessWithDarkvisionViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
+  })
+
+  it('blindsight from senses: ordinary darkness within range — occupant perceivable', () => {
+    const state = encounterBlindsightOrdinaryDarkness10ftFromOrc()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('blindsight: heavy obscurement within range — occupant perceivable', () => {
+    const state = encounterHeavyObscuredWithBlindsightViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('blindsight: magical darkness within range — occupant perceivable', () => {
+    const state = encounterMagicalDarknessWithBlindsightViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('out of blindsight, in darkvision: ordinary darkness mitigated — occupant perceivable', () => {
+    const state = encounterBlindsightOutOfRangeDarknessInDarkvisionRange()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('out of blindsight, in darkvision: heavy obscurement still blocks', () => {
+    const state = encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange()
     expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
   })
 

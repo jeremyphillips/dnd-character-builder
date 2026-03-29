@@ -29,6 +29,7 @@ function perception(partial: Partial<EncounterViewerPerceptionCell> = {}): Encou
     canPerceiveObjects: true,
     maskedByDarkness: false,
     environmentalDarknessMitigatedByDarkvision: false,
+    perceivedByBlindsight: false,
     maskedByMagicalDarkness: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: 'bright',

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { deriveEncounterPresentationGridPerceptionInput } from '@/features/encounter/domain/perception/derive-encounter-presentation-grid-perception'
 import {
+  encounterBlindsightOrdinaryDarkness10ftFromOrc,
+  encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange,
   encounterDarknessWizard10ftFromOrc,
   encounterDarknessWizardOutOfDarkvisionRange,
+  encounterHeavyObscuredWithBlindsightViewer,
 } from '@/features/mechanics/domain/encounter/tests/encounter-visibility-test-fixtures'
 import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
 import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
@@ -581,6 +584,52 @@ describe('selectGridViewModel — immersed obscuration footprint suppression (ha
       presentationSelectedCombatantId: null,
     })
     expect(perception?.capabilities).toEqual({ darkvisionRangeFt: 120 })
+    const grid = selectGridViewModel(state, { perception })
+    const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
+    expect(orcCell?.viewerPerceivesOccupantToken).toBe(false)
+  })
+
+  it('active-combatant POV: blindsight + darkvision from viewer senses; token visible in ordinary darkness within blindsight', () => {
+    const base = encounterBlindsightOrdinaryDarkness10ftFromOrc()
+    const state = { ...base, activeCombatantId: 'wiz', initiativeOrder: ['wiz', 'orc'] }
+    const perception = deriveEncounterPresentationGridPerceptionInput({
+      encounterState: state,
+      simulatorViewerMode: 'active-combatant',
+      activeCombatantId: 'wiz',
+      presentationSelectedCombatantId: null,
+    })
+    expect(perception?.capabilities).toEqual({
+      blindsightRangeFt: 60,
+      darkvisionRangeFt: 120,
+    })
+    const grid = selectGridViewModel(state, { perception })
+    const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
+    expect(orcCell?.viewerPerceivesOccupantToken).toBe(true)
+  })
+
+  it('active-combatant POV: blindsight within range — occupant visible in heavy obscurement', () => {
+    const base = encounterHeavyObscuredWithBlindsightViewer()
+    const state = { ...base, activeCombatantId: 'wiz', initiativeOrder: ['wiz', 'orc'] }
+    const perception = deriveEncounterPresentationGridPerceptionInput({
+      encounterState: state,
+      simulatorViewerMode: 'active-combatant',
+      activeCombatantId: 'wiz',
+      presentationSelectedCombatantId: null,
+    })
+    const grid = selectGridViewModel(state, { perception })
+    const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
+    expect(orcCell?.viewerPerceivesOccupantToken).toBe(true)
+  })
+
+  it('active-combatant POV: out of blindsight, in darkvision — heavy obscurement still hides token', () => {
+    const base = encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange()
+    const state = { ...base, activeCombatantId: 'wiz', initiativeOrder: ['wiz', 'orc'] }
+    const perception = deriveEncounterPresentationGridPerceptionInput({
+      encounterState: state,
+      simulatorViewerMode: 'active-combatant',
+      activeCombatantId: 'wiz',
+      presentationSelectedCombatantId: null,
+    })
     const grid = selectGridViewModel(state, { perception })
     const orcCell = grid?.cells.find((c) => c.occupantId === 'orc')
     expect(orcCell?.viewerPerceivesOccupantToken).toBe(false)

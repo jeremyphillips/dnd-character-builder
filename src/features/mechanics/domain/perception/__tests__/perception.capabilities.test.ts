@@ -5,7 +5,9 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types'
 
 import {
+  getCombatantBlindsightRangeFt,
   getCombatantDarkvisionRangeFt,
+  getCombatantVisionSenseRanges,
   getEncounterViewerPerceptionCapabilitiesFromCombatant,
 } from '../perception.capabilities'
 
@@ -114,7 +116,97 @@ describe('getEncounterViewerPerceptionCapabilitiesFromCombatant', () => {
     expect(getCombatantDarkvisionRangeFt(c)).toBe(120)
   })
 
-  it('returns undefined when no darkvision on combatant', () => {
+  it('reads max blindsight range from senses.special', () => {
+    const c: CombatantInstance = {
+      instanceId: 'x',
+      side: 'party',
+      source: { kind: 'pc', sourceId: 'x', label: 'X' },
+      stats: {
+        armorClass: 10,
+        maxHitPoints: 10,
+        currentHitPoints: 10,
+        initiativeModifier: 0,
+      },
+      attacks: [],
+      activeEffects: [],
+      runtimeEffects: [],
+      turnHooks: [],
+      conditions: [],
+      states: [],
+      senses: {
+        special: [
+          { type: 'blindsight', range: 30 },
+          { type: 'blindsight', range: 60 },
+        ],
+      },
+    }
+    expect(getCombatantBlindsightRangeFt(c)).toBe(60)
+  })
+
+  it('getCombatantVisionSenseRanges returns both senses when present', () => {
+    const c: CombatantInstance = {
+      instanceId: 'x',
+      side: 'party',
+      source: { kind: 'pc', sourceId: 'x', label: 'X' },
+      stats: {
+        armorClass: 10,
+        maxHitPoints: 10,
+        currentHitPoints: 10,
+        initiativeModifier: 0,
+      },
+      attacks: [],
+      activeEffects: [],
+      runtimeEffects: [],
+      turnHooks: [],
+      conditions: [],
+      states: [],
+      senses: {
+        special: [
+          { type: 'blindsight', range: 60 },
+          { type: 'darkvision', range: 120 },
+        ],
+      },
+    }
+    expect(getCombatantVisionSenseRanges(c)).toEqual({
+      blindsightRangeFt: 60,
+      darkvisionRangeFt: 120,
+    })
+    expect(getEncounterViewerPerceptionCapabilitiesFromCombatant(c)).toEqual({
+      blindsightRangeFt: 60,
+      darkvisionRangeFt: 120,
+    })
+  })
+
+  it('returns blindsight-only when monster has blindsight but no darkvision', () => {
+    const monster = {
+      id: 'test-bs',
+      name: 'Test',
+      type: 'humanoid',
+      mechanics: {
+        hitPoints: { count: 1, die: 8, modifier: 0 },
+        armorClass: { value: 10 },
+        movement: { ground: 30 },
+        abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+        proficiencyBonus: 2,
+        senses: { special: [{ type: 'blindsight' as const, range: 60 }], passivePerception: 10 },
+      },
+      lore: { alignment: 'neutral', xpValue: 0, challengeRating: 0 },
+    } as Monster
+
+    const c = buildMonsterCombatantInstance({
+      runtimeId: 'm-bs',
+      monster,
+      attacks: [],
+      initiativeModifier: 0,
+      armorClass: 10,
+      currentHitPoints: 5,
+      activeEffects: [],
+      turnHooks: [],
+    })
+    expect(getEncounterViewerPerceptionCapabilitiesFromCombatant(c)).toEqual({ blindsightRangeFt: 60 })
+  })
+
+  it('returns undefined when no darkvision or blindsight on combatant', () => {
     const monster = {
       id: 'test',
       name: 'Test',

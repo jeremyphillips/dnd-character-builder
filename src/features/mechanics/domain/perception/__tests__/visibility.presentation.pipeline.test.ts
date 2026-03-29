@@ -27,6 +27,7 @@ function basePerception(overrides: Partial<EncounterViewerPerceptionCell> = {}):
     canPerceiveObjects: true,
     maskedByDarkness: false,
     environmentalDarknessMitigatedByDarkvision: false,
+    perceivedByBlindsight: false,
     maskedByMagicalDarkness: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: 'bright',
@@ -135,6 +136,28 @@ describe('canonical visibility presentation pipeline', () => {
     })
     expect(p.environmentalDarknessMitigatedByDarkvision).toBe(true)
     expect(resolvePresentationVisibilityFillFromMergedWorld(p, darkWorld)).not.toBe('darkness')
+  })
+
+  it('blindsight within range — presentation does not keep fog / darkness tints on target cell', () => {
+    const fogWorld = baseWorld({
+      lightingLevel: 'bright',
+      visibilityObscured: 'heavy',
+      obscurationPresentationCauses: ['fog'],
+    })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: baseWorld({}),
+      targetWorld: fogWorld,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { blindsightRangeFt: 60 },
+      distanceViewerToTargetFt: 10,
+    })
+    expect(p.perceivedByBlindsight).toBe(true)
+    const fill = resolvePresentationVisibilityFillFromMergedWorld(p, fogWorld)
+    expect(fill).not.toBe('fog')
+    expect(fill).not.toBe('darkness')
+    expect(fill).not.toBe('magical-darkness')
   })
 
   it('buildViewerAdjustedPresentationWorld is a shallow copy and strips darkness causes when mitigated', () => {

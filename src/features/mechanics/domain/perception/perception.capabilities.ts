@@ -21,12 +21,42 @@ export function getCombatantDarkvisionRangeFt(combatant: CombatantInstance): num
 }
 
 /**
+ * Max blindsight range (ft) from `senses.special` entries with `type: 'blindsight'`.
+ */
+export function getCombatantBlindsightRangeFt(combatant: CombatantInstance): number | undefined {
+  const special = combatant.senses?.special
+  if (!special?.length) return undefined
+  let max = 0
+  for (const s of special) {
+    if (s.type === 'blindsight' && typeof s.range === 'number' && s.range > max) max = s.range
+  }
+  return max > 0 ? max : undefined
+}
+
+export type CombatantVisionSenseRanges = {
+  darkvisionRangeFt?: number
+  blindsightRangeFt?: number
+}
+
+/**
+ * Darkvision and blindsight ranges from combatant senses (and darkvision skillRuntime fallback).
+ */
+export function getCombatantVisionSenseRanges(combatant: CombatantInstance): CombatantVisionSenseRanges {
+  const darkvisionRangeFt = getCombatantDarkvisionRangeFt(combatant)
+  const blindsightRangeFt = getCombatantBlindsightRangeFt(combatant)
+  return {
+    ...(darkvisionRangeFt != null && darkvisionRangeFt > 0 ? { darkvisionRangeFt } : {}),
+    ...(blindsightRangeFt != null && blindsightRangeFt > 0 ? { blindsightRangeFt } : {}),
+  }
+}
+
+/**
  * Derives viewer perception capabilities from combatant runtime data (senses + skillRuntime fallback).
  */
 export function getEncounterViewerPerceptionCapabilitiesFromCombatant(
   combatant: CombatantInstance,
 ): EncounterViewerPerceptionCapabilities | undefined {
-  const r = getCombatantDarkvisionRangeFt(combatant)
-  if (r == null || r <= 0) return undefined
-  return { darkvisionRangeFt: r }
+  const ranges = getCombatantVisionSenseRanges(combatant)
+  if (Object.keys(ranges).length === 0) return undefined
+  return ranges
 }

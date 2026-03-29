@@ -41,6 +41,12 @@ export type EncounterViewerPerceptionCell = {
    * not blocked by `blocksDarkvision`). Drives viewer-relative presentation world adjustment — not world truth.
    */
   environmentalDarknessMitigatedByDarkvision: boolean
+  /**
+   * True when this cell’s contents are resolved as fully perceivable because **blindsight** applies (within
+   * `blindsightRangeFt`). Drives viewer-relative presentation adjustment (clears fog/darkness/MD tints for that
+   * cell) — not world truth.
+   */
+  perceivedByBlindsight: boolean
   /** Magical darkness blocks sight into this cell (when viewer has no bypass). */
   maskedByMagicalDarkness: boolean
   /**

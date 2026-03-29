@@ -1,6 +1,6 @@
 import { LOCATION_SCALE_ORDER } from '@/shared/domain/locations'
 
-import type { Location } from './types'
+import type { Location } from '@/features/content/locations/domain/types'
 
 /**
  * Sort locations by structural scale, then name. Uses `scale` for ordering.

@@ -2,6 +2,10 @@
  * Shared UI enforcement for location create/edit — drives both routes (no duplicated conditionals).
  */
 import {
+  getAllowedParentLocationOptions,
+  getAllowedParentScalesForScale,
+  isAllowedParentLocation,
+  isAllowedParentScale,
   LOCATION_CATEGORY_IDS,
   LOCATION_SCALE_ORDER,
 } from '@/shared/domain/locations';
@@ -9,7 +13,6 @@ import {
   getAllowedCellUnitOptionsForScale,
   getFilteredParentLocationsForChildScale,
 } from '@/features/content/locations/domain/forms/utils/locationDependentFieldsPolicy';
-import type { Location } from '@/features/content/locations/domain/types';
 
 export type LocationFormUiMode = 'create' | 'edit';
 
@@ -50,7 +53,14 @@ export function shouldShowParentLocationField(scale: string): boolean {
   return scale !== 'world';
 }
 
-export { getFilteredParentLocationsForChildScale, getAllowedCellUnitOptionsForScale };
+export {
+  getAllowedParentLocationOptions,
+  getAllowedParentScalesForScale,
+  isAllowedParentLocation,
+  isAllowedParentScale,
+  getFilteredParentLocationsForChildScale,
+  getAllowedCellUnitOptionsForScale,
+};
 
 export function isLocationScaleFieldEditable(mode: LocationFormUiMode): boolean {
   return mode === 'create';

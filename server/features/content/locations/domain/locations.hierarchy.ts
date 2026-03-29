@@ -1,5 +1,7 @@
 /**
  * Pure hierarchy rules for locations (scale ordering + ancestor id construction).
+ * Parent/child *scale pairing* is enforced via explicit policy in shared `locationScale.policy.ts`
+ * (`isAllowedParentScale`), not by rank comparison alone.
  * Async DB validation lives in locations.service.ts.
  */
 
@@ -7,6 +9,8 @@ import {
   LOCATION_SCALE_ORDER,
   type LocationScaleId,
 } from '../../../../../shared/domain/locations';
+import { isAllowedParentScale } from '../../../../../shared/domain/locations/locationScale.policy';
+import { isValidLocationScaleId } from '../../../../../shared/domain/locations/locationScale.rules';
 
 export { LOCATION_SCALE_ORDER, type LocationScaleId };
 
@@ -22,34 +26,31 @@ export function scaleRank(scale: string): number {
 }
 
 /**
- * Parent must be strictly broader than child (smaller rank index).
- * Same-scale parenting is rejected for this first-pass rule.
+ * Parent scale must be allowed for the child scale (explicit policy map).
  */
 export function validateParentChildScales(
   parentScale: string,
   childScale: string,
 ): HierarchyValidationError | null {
-  const pi = scaleRank(parentScale);
-  const ci = scaleRank(childScale);
-  if (pi === -1) {
+  if (!isValidLocationScaleId(parentScale)) {
     return {
       path: 'parentId',
       code: 'INVALID_SCALE',
       message: `Parent has unknown scale "${parentScale}"`,
     };
   }
-  if (ci === -1) {
+  if (!isValidLocationScaleId(childScale)) {
     return {
       path: 'scale',
       code: 'INVALID_SCALE',
       message: `Unknown scale "${childScale}"`,
     };
   }
-  if (pi >= ci) {
+  if (!isAllowedParentScale(parentScale, childScale)) {
     return {
       path: 'parentId',
       code: 'INVALID_NESTING',
-      message: 'Parent scale must be broader than child scale (same-scale parenting is not allowed)',
+      message: 'Parent scale is not allowed for this location scale',
     };
   }
   return null;

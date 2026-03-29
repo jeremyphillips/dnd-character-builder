@@ -22,12 +22,17 @@ describe('locations.hierarchy', () => {
     expect(buildAncestorIdsFromParentRow({ locationId: 'root', ancestorIds: [] })).toEqual(['root']);
   });
 
-  it('validateParentChildScales rejects same or narrower parent', () => {
+  it('validateParentChildScales uses explicit allowed-parent policy', () => {
     expect(validateParentChildScales('city', 'district')).toBeNull();
     const same = validateParentChildScales('city', 'city');
     expect(same?.code).toBe('INVALID_NESTING');
     const narrower = validateParentChildScales('room', 'city');
     expect(narrower?.code).toBe('INVALID_NESTING');
+    /** Ordering alone would allow world → city; policy does not. */
+    const noWorldToCity = validateParentChildScales('world', 'city');
+    expect(noWorldToCity?.code).toBe('INVALID_NESTING');
+    expect(validateParentChildScales('region', 'city')).toBeNull();
+    expect(validateParentChildScales('subregion', 'city')).toBeNull();
   });
 
   it('validateParentChildScales rejects unknown scales', () => {

@@ -9,10 +9,8 @@ import {
   mapKindForLocationScale,
 } from '@/shared/domain/locations';
 import type { LocationMapKindId } from '@/shared/domain/locations';
-import {
-  filterLocationsEligibleAsParent,
-  isWorldScale,
-} from '@/shared/domain/locations/locationScale.rules';
+import { getAllowedParentLocationOptions } from '@/shared/domain/locations';
+import { isWorldScale } from '@/shared/domain/locations/locationScale.rules';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationFormValues } from '../types/locationForm.types';
 
@@ -44,9 +42,7 @@ export function isParentIdAllowedForScale(
   if (parentIdTrimmed === '') return true;
   if (isWorldScale(childScale)) return false;
   if (!locations || locations.length === 0) return true;
-  const eligible = filterLocationsEligibleAsParent(locations, childScale).filter(
-    (l) => l.id !== excludeLocationId,
-  );
+  const eligible = getAllowedParentLocationOptions(locations, childScale, excludeLocationId);
   return eligible.some((l) => l.id === parentIdTrimmed);
 }
 
@@ -79,9 +75,7 @@ export function getFilteredParentLocationsForChildScale(
   childScale: string,
   excludeLocationId?: string,
 ): Location[] {
-  const eligible = filterLocationsEligibleAsParent(locations, childScale);
-  if (!excludeLocationId) return eligible;
-  return eligible.filter((l) => l.id !== excludeLocationId);
+  return getAllowedParentLocationOptions(locations, childScale, excludeLocationId);
 }
 
 export type LocationFormSanitizeContext = {

@@ -1,8 +1,12 @@
 /**
  * Location domain vocabulary: scale ordering, categories, connection kinds.
+ *
+ * `LOCATION_SCALE_ORDER` is the generic ranking (broader ↔ finer). Explicit parent rules
+ * live in `locationScale.policy.ts` (`ALLOWED_PARENT_SCALES_BY_SCALE`); do not infer allowed
+ * parents from order alone.
  */
 
-/** Coarsest → finest; used for parent/child validation. */
+/** Coarsest → finest; structural ordering for generic comparisons (`locationScale.rules.ts`). */
 export const LOCATION_SCALE_ORDER = [
   'world',
   'region',

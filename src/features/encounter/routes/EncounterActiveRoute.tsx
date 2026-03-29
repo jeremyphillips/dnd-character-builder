@@ -11,6 +11,7 @@ import {
   type AppAlertTone,
 } from '@/ui/primitives'
 import { ZoomControl } from '@/ui/patterns'
+import { useCanvasZoom, useCanvasPan } from '@/ui/hooks'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
 import {
@@ -69,11 +70,6 @@ function placementReasonMessage(reason: PlacementValidationReason): string {
       return 'Invalid placement'
   }
 }
-
-const DEFAULT_ZOOM = 1
-const MIN_ZOOM = 0.25
-const MAX_ZOOM = 3
-const ZOOM_STEP = 0.25
 
 const AFFECTED_NAME_MAX = 40
 
@@ -162,15 +158,9 @@ export default function EncounterActiveRoute() {
     return () => registerCombatLogAppended(undefined)
   }, [registerCombatLogAppended])
 
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-
-  const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + ZOOM_STEP, MAX_ZOOM)), [])
-  const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - ZOOM_STEP, MIN_ZOOM)), [])
-  const handleZoomReset = useCallback(() => {
-    setZoom(DEFAULT_ZOOM)
-    setPan({ x: 0, y: 0 })
-  }, [])
+  const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom()
+  const { pan, isDragging, hasDragMoved, pointerHandlers, resetPan } = useCanvasPan()
+  useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan])
 
   const combatantRoster = useMemo(
     () => (encounterState ? Object.values(encounterState.combatantsById) : []),
@@ -828,13 +818,15 @@ export default function EncounterActiveRoute() {
         {toastPayload?.narrative || undefined}
       </AppToast>
 
-      <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <Box ref={wheelContainerRef} sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {gridViewModel && (
           <EncounterGrid
             grid={gridViewModel}
             zoom={zoom}
             pan={pan}
-            onPanChange={setPan}
+            panPointerHandlers={pointerHandlers}
+            isDragging={isDragging}
+            hasDragMoved={hasDragMoved}
             renderTokenPopover={renderTokenPopover}
             onCellClick={handleCellClick}
             onCellHover={handleCellHover}
@@ -853,15 +845,7 @@ export default function EncounterActiveRoute() {
           />
         )}
 
-        <ZoomControl
-          zoom={zoom}
-          min={MIN_ZOOM}
-          max={MAX_ZOOM}
-          step={ZOOM_STEP}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onReset={handleZoomReset}
-        />
+        <ZoomControl {...zoomControlProps} />
 
         <EncounterActiveSidebar
           encounterState={encounterState}

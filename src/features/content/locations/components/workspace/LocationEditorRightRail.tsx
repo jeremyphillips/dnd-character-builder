@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Box from '@mui/material/Box'
-import { LOCATION_EDITOR_HEADER_HEIGHT_PX, LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX } from './locationEditor.constants'
+import { LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX } from './locationEditor.constants'
 
 type LocationEditorRightRailProps = {
   children: ReactNode
@@ -23,13 +23,15 @@ export function LocationEditorRightRail({
         borderLeft: open ? 1 : 0,
         borderColor: 'divider',
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box
         sx={{
           width,
-          height: (theme) =>
-            `calc(100vh - ${LOCATION_EDITOR_HEADER_HEIGHT_PX}px - ${theme.spacing(4)})`,
+          flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           p: 2.5,
           boxSizing: 'border-box',

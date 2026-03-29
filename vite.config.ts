@@ -67,6 +67,7 @@ export default defineConfig({
       "@/shared": path.resolve(__dirname, "shared/types"),
       "@/shared/permissions": path.resolve(__dirname, "shared/permissions"),
       "@/steps": path.resolve(__dirname, "src/steps"),
+      "@/ui/hooks": path.resolve(__dirname, "src/ui/hooks"),
       "@/ui/patterns": path.resolve(__dirname, "src/ui/patterns"),
       "@/ui/primitives": path.resolve(__dirname, "src/ui/primitives"),
       "@/ui/types": path.resolve(__dirname, "src/ui/types"),

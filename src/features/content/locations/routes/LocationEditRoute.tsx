@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useCampaignMembers } from '@/features/campaign/hooks';
+import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
 import {
   locationRepo,
   validateLocationChange,
@@ -97,6 +98,10 @@ export default function LocationEditRoute() {
   const [rightRailOpen, setRightRailOpen] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
+  const { pan, isDragging, pointerHandlers, resetPan } = useCanvasPan();
+  useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan]);
 
   const isSystem = loc?.source === 'system';
   const isCampaign = loc?.source === 'campaign';
@@ -343,7 +348,14 @@ export default function LocationEditRoute() {
           />
         }
         canvas={
-          <LocationEditorCanvas>
+          <LocationEditorCanvas
+            zoom={zoom}
+            pan={pan}
+            panHandlers={pointerHandlers}
+            isDragging={isDragging}
+            wheelContainerRef={wheelContainerRef}
+            zoomControlProps={zoomControlProps}
+          >
             {showMapGridAuthoring ? (
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}
@@ -434,7 +446,14 @@ export default function LocationEditRoute() {
           />
         }
         canvas={
-          <LocationEditorCanvas>
+          <LocationEditorCanvas
+            zoom={zoom}
+            pan={pan}
+            panHandlers={pointerHandlers}
+            isDragging={isDragging}
+            wheelContainerRef={wheelContainerRef}
+            zoomControlProps={zoomControlProps}
+          >
             {showMapGridAuthoring ? (
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}

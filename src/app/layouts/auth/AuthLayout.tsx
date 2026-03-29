@@ -111,7 +111,7 @@ export default function AuthLayout() {
   const isFocus = isAuthMainFocusPath(location.pathname)
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', ...(isFocus ? { height: '100vh', overflow: 'hidden' } : { minHeight: '100vh' }) }}>
       {!isFocus && (
         <AuthDrawer
           username={user.username}

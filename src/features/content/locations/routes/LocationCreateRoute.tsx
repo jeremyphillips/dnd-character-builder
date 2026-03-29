@@ -34,6 +34,7 @@ import {
   type LocationGridDraftState,
 } from '@/features/content/locations/components';
 import { ConditionalFormRenderer, VisibilityField } from '@/ui/patterns';
+import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
@@ -57,6 +58,10 @@ export default function LocationCreateRoute() {
     INITIAL_LOCATION_GRID_DRAFT,
   );
   const [rightRailOpen, setRightRailOpen] = useState(true);
+
+  const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
+  const { pan, isDragging, pointerHandlers, resetPan } = useCanvasPan();
+  useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan]);
 
   const { policyValue, handlePolicyChange } =
     useAccessPolicyField<LocationFormValues>(watch, setValue);
@@ -191,7 +196,14 @@ export default function LocationCreateRoute() {
           />
         }
         canvas={
-          <LocationEditorCanvas>
+          <LocationEditorCanvas
+            zoom={zoom}
+            pan={pan}
+            panHandlers={pointerHandlers}
+            isDragging={isDragging}
+            wheelContainerRef={wheelContainerRef}
+            zoomControlProps={zoomControlProps}
+          >
             {showMapGridAuthoring ? (
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}

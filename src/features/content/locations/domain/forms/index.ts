@@ -32,6 +32,7 @@ export {
   isLocationScaleSelected,
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
+  shouldShowGridGeometryFieldForScale,
   shouldShowLocationCategoryField,
   shouldShowParentFieldForScale,
   shouldShowParentLocationField,
@@ -39,6 +40,11 @@ export {
   type LocationFormUiPolicy,
   type LocationFormUiPolicyBase,
 } from './utils/locationFormUiRules';
+export {
+  getAllowedGeometryOptionsForScale,
+  getDefaultGeometryForScale,
+  normalizeGridGeometryForScale,
+} from '@/shared/domain/locations';
 export {
   getLocationFormPatchForScaleChange,
   sanitizeLocationDraftForScale,

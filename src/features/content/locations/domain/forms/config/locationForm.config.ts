@@ -16,6 +16,8 @@ export type GetLocationFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];
   /** Populated client-side for the parent location option picker */
   parentLocationOptions?: PickerOption[];
+  /** Grid geometries allowed for the current location scale. */
+  gridGeometryOptions?: { value: string; label: string }[];
   /** Cell units allowed for the current location scale (maps to map kind). */
   gridCellUnitOptions?: { value: string; label: string }[];
   /** When false, omits optional default-map grid bootstrap fields (system patch flow). */
@@ -33,6 +35,7 @@ export const getLocationFieldConfigs = (
   const {
     policyCharacters,
     parentLocationOptions,
+    gridGeometryOptions,
     gridCellUnitOptions,
     includeGridBootstrap = true,
     locationUiPolicy,
@@ -53,6 +56,9 @@ export const getLocationFieldConfigs = (
     if (locationUiPolicy.showGridCellUnitField === false) {
       specs = specs.filter((f) => f.name !== 'gridCellUnit');
     }
+    if (locationUiPolicy.showGridGeometryField === false) {
+      specs = specs.filter((f) => f.name !== 'gridGeometry');
+    }
   }
 
   const configs = buildFieldConfigs(specs, {
@@ -68,6 +74,16 @@ export const getLocationFieldConfigs = (
         ...f,
         options: locationUiPolicy.categorySelectOptions,
         disabled: locationUiPolicy.categoryFieldDisabled,
+      };
+    }
+    if (f.name === 'gridGeometry' && f.type === 'select') {
+      return {
+        ...f,
+        options:
+          gridGeometryOptions && gridGeometryOptions.length > 0
+            ? gridGeometryOptions
+            : f.options,
+        ...(locationUiPolicy ? { disabled: locationUiPolicy.gridGeometryFieldDisabled } : {}),
       };
     }
     if (f.name === 'gridCellUnit' && f.type === 'select') {

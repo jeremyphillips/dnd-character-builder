@@ -19,11 +19,13 @@ import {
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
   getAllowedCellUnitOptionsForScale,
+  getAllowedGeometryOptionsForScale,
   isLocationScaleSelected,
   useLocationFormCampaignData,
   useLocationFormDefaultWorldScale,
   useLocationFormDependentFieldEffects,
 } from '@/features/content/locations/domain';
+import type { GridGeometryId } from '@/shared/domain/grid/gridGeometry';
 import {
   LocationGridAuthoringSection,
   LocationEditorWorkspace,
@@ -84,6 +86,7 @@ export default function LocationCreateRoute() {
   );
 
   const gridCellUnitOptions = useMemo(() => getAllowedCellUnitOptionsForScale(scale), [scale]);
+  const gridGeometryOptions = useMemo(() => getAllowedGeometryOptionsForScale(scale), [scale]);
 
   useLocationFormDependentFieldEffects(scale, locations, undefined, getValues, setValue);
   useLocationFormDefaultWorldScale(
@@ -97,6 +100,7 @@ export default function LocationCreateRoute() {
   const gridPreset = watch('gridPreset');
   const gridColumns = watch('gridColumns');
   const gridRows = watch('gridRows');
+  const gridGeometry = watch('gridGeometry');
   const locationNameDraft = watch('name');
 
   useEffect(() => {
@@ -121,10 +125,11 @@ export default function LocationCreateRoute() {
       getLocationFieldConfigs({
         policyCharacters,
         parentLocationOptions,
+        gridGeometryOptions,
         gridCellUnitOptions,
         locationUiPolicy,
       }),
-    [policyCharacters, parentLocationOptions, gridCellUnitOptions, locationUiPolicy],
+    [policyCharacters, parentLocationOptions, gridGeometryOptions, gridCellUnitOptions, locationUiPolicy],
   );
 
   const showMapGridAuthoring = isLocationScaleSelected(scale);
@@ -208,6 +213,7 @@ export default function LocationCreateRoute() {
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}
                 gridRows={gridRows}
+                gridGeometry={(gridGeometry || 'square') as GridGeometryId}
                 draft={gridDraft}
                 setDraft={setGridDraft}
                 locations={locations}

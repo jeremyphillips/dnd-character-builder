@@ -28,10 +28,12 @@ import {
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
   getAllowedCellUnitOptionsForScale,
+  getAllowedGeometryOptionsForScale,
   isLocationScaleSelected,
   useLocationFormCampaignData,
   useLocationFormDependentFieldEffects,
 } from '@/features/content/locations/domain';
+import type { GridGeometryId } from '@/shared/domain/grid/gridGeometry';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { ConditionalFormRenderer, ConfirmModal, VisibilityField } from '@/ui/patterns';
 import { AppAlert, AppBadge } from '@/ui/primitives';
@@ -145,6 +147,10 @@ export default function LocationEditRoute() {
     () => getAllowedCellUnitOptionsForScale(scaleForFormRules),
     [scaleForFormRules],
   );
+  const gridGeometryOptions = useMemo(
+    () => getAllowedGeometryOptionsForScale(scaleForFormRules),
+    [scaleForFormRules],
+  );
 
   useLocationFormDependentFieldEffects(
     scaleForFormRules,
@@ -157,6 +163,7 @@ export default function LocationEditRoute() {
   const gridPreset = watch('gridPreset');
   const gridColumns = watch('gridColumns');
   const gridRows = watch('gridRows');
+  const gridGeometry = watch('gridGeometry');
 
   useEffect(() => {
     const cols = Number(gridColumns);
@@ -186,6 +193,7 @@ export default function LocationEditRoute() {
         setValue('gridColumns', String(def.grid.width));
         setValue('gridRows', String(def.grid.height));
         setValue('gridCellUnit', String(def.grid.cellUnit));
+        setValue('gridGeometry', def.grid.geometry ?? 'square');
         setGridDraft({
           selectedCellId: null,
           excludedCellIds: def.layout?.excludedCellIds ?? [],
@@ -206,11 +214,12 @@ export default function LocationEditRoute() {
       getLocationFieldConfigs({
         policyCharacters,
         parentLocationOptions,
+        gridGeometryOptions,
         gridCellUnitOptions,
         includeGridBootstrap: Boolean(loc && loc.source === 'campaign'),
         locationUiPolicy,
       }),
-    [policyCharacters, parentLocationOptions, gridCellUnitOptions, loc, locationUiPolicy],
+    [policyCharacters, parentLocationOptions, gridGeometryOptions, gridCellUnitOptions, loc, locationUiPolicy],
   );
 
   const showMapGridAuthoring = isLocationScaleSelected(watchedScale);
@@ -360,6 +369,7 @@ export default function LocationEditRoute() {
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}
                 gridRows={gridRows}
+                gridGeometry={(gridGeometry || 'square') as GridGeometryId}
                 draft={gridDraft}
                 setDraft={setGridDraft}
                 locations={locations}
@@ -458,6 +468,7 @@ export default function LocationEditRoute() {
               <LocationGridAuthoringSection
                 gridColumns={gridColumns}
                 gridRows={gridRows}
+                gridGeometry={(gridGeometry || 'square') as GridGeometryId}
                 draft={gridDraft}
                 setDraft={setGridDraft}
                 locations={locations}

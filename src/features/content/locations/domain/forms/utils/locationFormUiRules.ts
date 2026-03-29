@@ -7,10 +7,12 @@ import {
   getAllowedCellUnitOptionsForScale,
   isCategoryFieldReadOnlyForScale,
   isGridCellUnitFieldReadOnlyForScale,
+  isGridGeometryFieldReadOnlyForScale,
   isLocationScaleEditableOnEdit,
   LOCATION_SCALE_ORDER,
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
+  shouldShowGridGeometryFieldForScale,
   shouldShowParentFieldForScale,
 } from '@/shared/domain/locations';
 import {
@@ -84,11 +86,14 @@ export type LocationFormUiPolicy = {
   showCategoryField: boolean;
   showParentField: boolean;
   showGridCellUnitField: boolean;
+  showGridGeometryField: boolean;
   categorySelectOptions: { value: string; label: string }[];
   /** When true, category `<Select>` is display-only (fixed category scales). */
   categoryFieldDisabled: boolean;
   /** When true, cell unit `<Select>` is display-only (fixed or single unit). */
   gridCellUnitFieldDisabled: boolean;
+  /** When true, geometry `<Select>` is display-only (single allowed geometry). */
+  gridGeometryFieldDisabled: boolean;
 };
 
 export type LocationFormUiPolicyBase = Omit<
@@ -96,9 +101,11 @@ export type LocationFormUiPolicyBase = Omit<
   | 'showCategoryField'
   | 'showParentField'
   | 'showGridCellUnitField'
+  | 'showGridGeometryField'
   | 'categorySelectOptions'
   | 'categoryFieldDisabled'
   | 'gridCellUnitFieldDisabled'
+  | 'gridGeometryFieldDisabled'
 >;
 
 export function buildLocationFormUiPolicy(
@@ -125,9 +132,11 @@ export function applyScaleToLocationFormUiPolicy(
     showCategoryField: shouldShowCategoryFieldForScale(scale),
     showParentField: shouldShowParentFieldForScale(scale),
     showGridCellUnitField: shouldShowGridCellUnitFieldForScale(scale),
+    showGridGeometryField: shouldShowGridGeometryFieldForScale(scale),
     categorySelectOptions: getAllowedCategoryOptionsForScale(scale),
     categoryFieldDisabled: isCategoryFieldReadOnlyForScale(scale),
     gridCellUnitFieldDisabled: isGridCellUnitFieldReadOnlyForScale(scale),
+    gridGeometryFieldDisabled: isGridGeometryFieldReadOnlyForScale(scale),
     scaleFieldDisabled:
       base.mode === 'edit' ? !isLocationScaleEditableOnEdit(scale) : false,
   };
@@ -136,5 +145,6 @@ export function applyScaleToLocationFormUiPolicy(
 export {
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
+  shouldShowGridGeometryFieldForScale,
   shouldShowParentFieldForScale,
 } from '@/shared/domain/locations';

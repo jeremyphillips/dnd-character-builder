@@ -1,39 +1,40 @@
 import type { Location } from './types'
 
 /**
- * Maps the new `scale` field back to legacy location type strings
- * used by the existing filter UI. Temporary bridge during migration.
+ * Sort locations by structural scale, then name. Uses `scale` for ordering.
  */
-
-const SCALE_ORDER = [
+const SCALE_ORDER: Array<Location['scale']> = [
   'world',
   'region',
-  'settlement',
+  'subregion',
+  'city',
   'district',
   'site',
   'building',
+  'floor',
   'room',
 ]
 
 export function sortLocations(a: Location, b: Location): number {
-  const scaleDiff =
-    SCALE_ORDER.indexOf(a.scale ?? '') - SCALE_ORDER.indexOf(b.scale ?? '')
+  const scaleDiff = SCALE_ORDER.indexOf(a.scale) - SCALE_ORDER.indexOf(b.scale)
 
   if (scaleDiff !== 0) return scaleDiff
 
   return a.name.localeCompare(b.name)
 }
 
-const INDENT_MAP: Record<string, number> = {
+const INDENT_MAP: Partial<Record<Location['scale'], number>> = {
   world: 0,
   region: 1,
-  settlement: 2,
-  district: 3,
-  site: 4,
-  building: 5,
-  room: 6,
+  subregion: 2,
+  city: 3,
+  district: 4,
+  site: 5,
+  building: 6,
+  floor: 7,
+  room: 8,
 }
 
-export function getIndentLevel(location: { scale?: string }): number {
-  return INDENT_MAP[location.scale ?? ''] ?? 0
+export function getIndentLevel(location: { scale: Location['scale'] }): number {
+  return INDENT_MAP[location.scale] ?? 0
 }

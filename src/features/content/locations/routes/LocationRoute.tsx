@@ -43,13 +43,18 @@ const LOCATION_TYPE_OPTIONS: { id: string; label: string }[] = [
 ]
 
 const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
+  world: 'primary',
   region: 'primary',
+  subregion: 'primary',
+  settlement: 'secondary',
   city: 'secondary',
   town: 'success',
-  building: 'warning',
-  room: 'warning',
-  // dungeon: 'error',
   site: 'warning',
+  structure: 'warning',
+  building: 'warning',
+  floor: 'warning',
+  room: 'warning',
+  dungeon: 'error',
   other: 'info',
 }
 
@@ -127,8 +132,8 @@ const LocationRoute = () => {
     )
   }
 
-  // const locationType = getLegacyType(location)
-  const locationVisibility: Visibility = location.visibility ?? { scope: 'public' }
+  const displayCategory = location.category ?? location.scale
+  const locationVisibility: Visibility = (location.accessPolicy ?? { scope: 'public' }) as Visibility
 
   return (
     <Box>
@@ -137,16 +142,16 @@ const LocationRoute = () => {
       {/* Hero — location image */}
       <AppHero
         headline={location.name}
-        subheadline={location.kind.charAt(0).toUpperCase() + location.kind.slice(1)}
+        subheadline={displayCategory.charAt(0).toUpperCase() + displayCategory.slice(1)}
         image={resolveImageUrl(location.imageKey ?? undefined)}
       />
 
       {/* Badges */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2, mb: 3 }}>
         <Chip
-          label={location.kind}
+          label={displayCategory}
           size="small"
-          color={TYPE_COLORS[location.kind] ?? 'primary'}
+          color={TYPE_COLORS[displayCategory] ?? 'primary'}
           variant="outlined"
           sx={{ textTransform: 'capitalize' }}
         />
@@ -168,9 +173,9 @@ const LocationRoute = () => {
 
         <EditableSelect
           label="Type"
-          value={location.kind}
+          value={location.category ?? location.scale}
           options={LOCATION_TYPE_OPTIONS}
-          onSave={(v) => saveField('type', v)}
+          onSave={(v) => saveField('category', v)}
           disabled={!canEdit}
         />
 
@@ -198,7 +203,7 @@ const LocationRoute = () => {
           </Typography>
           <VisibilityField
             value={locationVisibility}
-            onChange={(v) => saveField('visibility', v)}
+            onChange={(v) => saveField('accessPolicy', v)}
             disabled={!canEdit}
             characters={approvedCharacters}
           />

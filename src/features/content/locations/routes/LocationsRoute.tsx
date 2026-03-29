@@ -16,10 +16,12 @@ import Divider from '@mui/material/Divider'
 const LOCATION_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'world', label: 'World' },
   { value: 'region', label: 'Region' },
-  { value: 'city', label: 'City / Settlement' },
+  { value: 'subregion', label: 'Subregion' },
+  { value: 'city', label: 'City' },
   { value: 'district', label: 'District' },
-  { value: 'landmark', label: 'Landmark / Site' },
+  { value: 'site', label: 'Site' },
   { value: 'building', label: 'Building' },
+  { value: 'floor', label: 'Floor' },
   { value: 'room', label: 'Room' },
   { value: 'other', label: 'Other' },
 ]
@@ -58,7 +60,7 @@ const LocationsRoute = () => {
       <FilterableCardGroup<Location>
         items={sortedLocations}
         getSearchValue={(loc) => loc.name}
-        getFilterValue={(loc) => loc.kind}
+        getFilterValue={(loc) => loc.scale}
         filterOptions={FILTER_OPTIONS as FilterOption[]}
         searchPlaceholder="Search locations…"
         emptyMessage="No locations found."
@@ -75,7 +77,7 @@ const LocationsRoute = () => {
                 key={loc.id}
                 link={locationLink}
                 name={loc.name}
-                type={loc.kind}
+                type={loc.category ?? loc.scale}
                 description={loc.description}
                 parentName={parentName}
               />

@@ -12,6 +12,13 @@ export type EncounterTerrainMovement = (typeof TERRAIN_MOVEMENT_TYPES)[number]['
 export type EncounterVisibilityObscured = (typeof VISIBILITY_OBSCURED_LEVELS)[number]['id']
 export type EncounterAtmosphereTag = (typeof ATMOSPHERE_TAGS)[number]['id']
 
+/** Shorter aliases for perception / docs; same ids as {@link EncounterLightingLevel}, etc. */
+export type LightingLevel = EncounterLightingLevel
+export type ObscuredLevel = EncounterVisibilityObscured
+export type EnvironmentSetting = EncounterEnvironmentSetting
+export type TerrainMovementType = EncounterTerrainMovement
+export type AtmosphereTag = EncounterAtmosphereTag
+
 /**
  * Terrain cover grade at a grid cell after baseline + zone merge (see `resolveWorldEnvironmentForCell`).
  * For **hide**, gridded encounters also use observer-relative max cover along the LoS segment
@@ -40,6 +47,9 @@ export type EncounterEnvironmentBaseline = {
   /** Additive domain tags; combined with baseline lighting/visibility, not a replacement for them. */
   atmosphereTags: EncounterAtmosphereTag[]
 }
+
+/** Alias for authored encounter baseline — same shape as {@link EncounterEnvironmentBaseline}. */
+export type EnvironmentBaseline = EncounterEnvironmentBaseline
 
 /**
  * Partial update for {@link EncounterEnvironmentBaseline}. Omitted keys are unchanged.
@@ -94,9 +104,6 @@ export type EncounterEnvironmentExtended = {
   notes?: string
 }
 
-/** @deprecated Prefer {@link EncounterEnvironmentExtended}; name retained briefly for any stray imports. */
-export type EncounterEnvironment = EncounterEnvironmentExtended
-
 /** What ties a zone to the battle (spell instance, effect id, etc.). */
 export type EncounterEnvironmentOverrideSourceKind =
   | 'battlefield-effect'
@@ -108,24 +115,44 @@ export type EncounterEnvironmentOverrideSourceKind =
 /**
  * When set on a persistent `BattlefieldEffectInstance`, reconciliation builds/updates a matching
  * {@link EncounterEnvironmentZone} from that row. Extend with new literals as more world projections ship.
+ *
+ * - **`magical-darkness`** — Zone merge sets darkness lighting, heavy obscured, and magical darkness flags
+ *   (see `buildZoneForProfile`).
+ *
+ * - **`fog`** — Shared profile for **opaque, non-darkness cloud obscurement**: heavy obscured, no forced
+ *   darkness lighting, no magical-darkness behavior. The identifier is **not** a claim that every effect is
+ *   literal fog; it names one mechanical + presentation path (shared smoky / non-black cloud tint). Examples:
+ *   Fog Cloud, Stinking Cloud.
+ *
+ *   **Revisit** adding a separate profile (e.g. a different id or merge branch) only if an effect needs
+ *   different environment merge rules, different precedence in visibility resolution, a distinct grid tint, or
+ *   profile-specific side effects that belong in zone/profile code rather than spell-specific logic.
  */
-export type AttachedEnvironmentZoneProfile = 'magical-darkness'
+export type AttachedEnvironmentZoneProfile = 'magical-darkness' | 'fog'
+
+/**
+ * Presentation-only obscuration causes collected at world merge (baseline + zones).
+ * Not combat rules — feeds visibility presentation resolution.
+ *
+ * - **`fog`** — Aligns with {@link AttachedEnvironmentZoneProfile} `'fog'`: opaque non-darkness cloud
+ *   obscurement (same semantics as that profile id — not literal fog only).
+ */
+export type WorldObscurationPresentationCause =
+  | 'environment'
+  | 'fog'
+  | 'smoke'
+  | 'dust'
+  | 'darkness'
+  | 'magical-darkness'
 
 /** Domain category for a localized environment zone (distinct from {@link EncounterEnvironmentOverrideSourceKind}). */
 export type EncounterEnvironmentZoneKind = 'patch' | 'emanation' | 'hazard'
 
 /**
- * Geometry for zone coverage. Prefer `sphere-ft` (matches battlefield AoE: Chebyshev distance in feet).
- * @deprecated `grid-cell-radius` — prefer `sphere-ft` with an explicit radius in feet.
+ * Geometry for zone coverage. Prefer **`sphere-ft`** (matches battlefield AoE: Chebyshev distance in feet).
  */
 export type EncounterEnvironmentAreaLink =
   | { kind: 'grid-cell-ids'; cellIds: string[] }
-  | {
-      /** @deprecated Prefer `sphere-ft`. */
-      kind: 'grid-cell-radius'
-      centerCellId: string
-      radiusCells: number
-    }
   | { kind: 'sphere-ft'; originCellId: string; radiusFt: number }
   | { kind: 'unattached'; note?: string }
 
@@ -163,10 +190,12 @@ export type EncounterEnvironmentZone = {
     magicalDarkness?: boolean
     blocksDarkvision?: boolean
   }
+  /**
+   * When set, merged into {@link EncounterWorldCellEnvironment.obscurationPresentationCauses} for this zone’s area.
+   * Spell-driven zones can omit this and rely on inference from `magical` / `overrides`.
+   */
+  visibilityObscurationCause?: WorldObscurationPresentationCause
 }
-
-/** @deprecated Use {@link EncounterEnvironmentZone}. */
-export type EncounterEnvironmentZoneOverride = EncounterEnvironmentZone
 
 /**
  * **World / environment state** at one grid cell after baseline + zone layering.
@@ -188,7 +217,9 @@ export type EncounterWorldCellEnvironment = {
   terrainCover: TerrainCoverGrade
   /** Zones that covered this cell, sorted by merge order (priority asc, then id asc). */
   appliedZoneIds: string[]
+  /**
+   * Ordered obscuration causes for presentation (baseline + each applicable zone in merge order).
+   * Does not replace {@link visibilityObscured} or {@link lightingLevel}; used for source-aware UI resolution.
+   */
+  obscurationPresentationCauses: readonly WorldObscurationPresentationCause[]
 }
-
-/** @deprecated Use {@link EncounterWorldCellEnvironment}. */
-export type EncounterCellEnvironmentResolved = EncounterWorldCellEnvironment

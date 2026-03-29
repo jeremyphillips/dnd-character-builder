@@ -4,7 +4,14 @@
  *
  * Does not implement stealth or perception rules — only chooses which combatant id feeds the viewer seam.
  * Action ownership / turn resolution remain tied to {@link EncounterState.activeCombatantId}.
+ *
+ * **Canonical active encounter path:** `simulatorViewerMode === 'active-combatant'` yields a PC viewer id
+ * matching the active combatant — this is what `EncounterRuntimeContext` passes into `selectGridViewModel`
+ * so immersed-obscuration overlay suppression applies during the active turn. Callers that omit
+ * `opts.perception` on the grid selector do not get viewer-relative immersion (legacy / outside-observer
+ * fallback — see `selectGridViewModel` JSDoc).
  */
+import { getEncounterViewerPerceptionCapabilitiesFromCombatant } from '@/features/mechanics/domain/perception/perception.capabilities'
 import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { EncounterState } from '@/features/mechanics/domain/encounter'
 
@@ -25,6 +32,14 @@ export type DeriveEncounterPresentationGridPerceptionInputArgs = {
 
 function combatantExists(state: EncounterState, id: string | null | undefined): id is string {
   return Boolean(id && state.combatantsById[id])
+}
+
+function capabilitiesForViewer(
+  encounterState: EncounterState,
+  viewerCombatantId: string,
+): GridPerceptionInput['capabilities'] {
+  const c = encounterState.combatantsById[viewerCombatantId]
+  return c ? getEncounterViewerPerceptionCapabilitiesFromCombatant(c) : undefined
 }
 
 /**
@@ -70,12 +85,19 @@ export function deriveEncounterPresentationGridPerceptionInput(
       presentationSelectedCombatantId,
     )
     if (!viewerCombatantId) return undefined
-    return { viewerCombatantId, viewerRole: 'dm', debugOverrides: debug }
+    const caps = capabilitiesForViewer(encounterState, viewerCombatantId)
+    return { viewerCombatantId, viewerRole: 'dm', ...(caps ? { capabilities: caps } : {}), debugOverrides: debug }
   }
 
   if (simulatorViewerMode === 'active-combatant') {
     if (!combatantExists(encounterState, activeCombatantId)) return undefined
-    return { viewerCombatantId: activeCombatantId, viewerRole: 'pc', debugOverrides: debug }
+    const caps = capabilitiesForViewer(encounterState, activeCombatantId)
+    return {
+      viewerCombatantId: activeCombatantId,
+      viewerRole: 'pc',
+      ...(caps ? { capabilities: caps } : {}),
+      debugOverrides: debug,
+    }
   }
 
   // selected-combatant
@@ -85,5 +107,6 @@ export function deriveEncounterPresentationGridPerceptionInput(
   const viewerCombatantId =
     fromSelection ?? (combatantExists(encounterState, activeCombatantId) ? activeCombatantId : null)
   if (!viewerCombatantId) return undefined
-  return { viewerCombatantId, viewerRole: 'pc', debugOverrides: debug }
+  const caps = capabilitiesForViewer(encounterState, viewerCombatantId)
+  return { viewerCombatantId, viewerRole: 'pc', ...(caps ? { capabilities: caps } : {}), debugOverrides: debug }
 }

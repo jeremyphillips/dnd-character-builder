@@ -64,6 +64,15 @@ export type CombatantHideEligibilityFeatureFlagsRuntime = {
   allowHighWindHide?: boolean
 }
 
+/**
+ * Snapshot of authored senses on a combatant (e.g. from monster stat block). Used for darkvision / blindsight
+ * range in viewer perception; optional on PCs until character/race wiring exists.
+ */
+export type CombatantSensesSnapshot = {
+  special?: Array<{ type: string; range?: number; notes?: string }>
+  passivePerception?: number
+}
+
 export type CombatantSkillRuntimeSnapshot = {
   /** Ruleset or creature proficiency bonus; used as `bonus × proficiencyLevel` for skills when deriving modifiers. */
   proficiencyBonus?: number
@@ -73,6 +82,8 @@ export type CombatantSkillRuntimeSnapshot = {
   stealthProficiencyLevel?: CombatantSkillProficiencyLevel
   /** Authoritative passive Perception when authored (e.g. monster senses). Takes precedence over derivation. */
   passivePerception?: number
+  /** From authored senses (e.g. monster `darkvision` range); feeds encounter viewer perception only. */
+  darkvisionRangeFt?: number
   /** When set, Stealth check uses this total modifier instead of Dex + proficiency contribution. */
   stealthCheckModifierOverride?: number
   /**
@@ -383,6 +394,8 @@ export interface CombatantInstance {
   instanceId: string
   side: CombatantSide
   source: CombatantSourceRef
+  /** Optional authored senses (e.g. monster `senses.special`); preferred source for darkvision range in perception. */
+  senses?: CombatantSensesSnapshot
   /**
    * Portrait media key at roster/build time (storage key or `/…` path). Not a resolved CDN URL.
    * Presentation uses `resolveImageUrl`; keeps encounter state stable across URL strategy changes.

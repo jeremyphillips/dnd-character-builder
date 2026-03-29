@@ -1,9 +1,20 @@
 /**
  * Render-facing projection from viewer perception → grid/UI inputs.
- * Rules live in `perception.resolve.ts`; this module only maps to presentation flags.
+ *
+ * - **Combat rules** — `perception.resolve.ts` (`EncounterViewerPerceptionCell`, blind veil, etc.).
+ * - **Cell tint / `perceptionBaseFillKind`** — **only** via {@link resolvePresentationVisibilityFill} from
+ *   `visibility.presentation.ts` (merged world → contributors → resolved → fill). No spell ids; no direct
+ *   `maskedByDarkness` → fill mapping here.
+ *
+ * **Immersed obscuration vs overlays:** {@link EncounterBattlefieldRenderState.suppressAoeTemplateOverlay}
+ * mirrors `EncounterViewerBattlefieldPerception.suppressDarknessBoundaryFromInside` for PCs. When true,
+ * {@link buildGridPerceptionSlice} consumers (e.g. `selectGridViewModel`) should strip **world-space**
+ * footprint overlays (`persistentAttachedAura`, `aoeInTemplate`) so the viewer inside fog/MD does not see a
+ * crisp tactical ring around the same volume. **Does not** disable per-cell visibility fills — those stay on
+ * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
-import { getCellForCombatant } from '@/features/encounter/space'
+import { getCellForCombatant, gridDistanceFt } from '@/features/encounter/space'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
@@ -16,18 +27,12 @@ import type {
   EncounterViewerPerceptionCapabilities,
   EncounterViewerPerceptionCell,
 } from './perception.types'
+import type { EncounterWorldCellEnvironment } from '../environment/environment.types'
+import { resolvePresentationVisibilityFill } from './visibility.presentation'
+import type { VisibilityFillKind } from './visibility.types'
 
 /** Who can see token(s) in a cell from the current viewer’s perspective. */
 export type OccupantTokenVisibility = 'all' | 'none' | 'self-only'
-
-/**
- * Presentation-only cell tints — mirrored into `CellBaseFillKind` in the grid layer (not rules).
- */
-export type PerceptionPresentationFillKind =
-  | 'visibility-dim'
-  | 'visibility-darkness'
-  | 'visibility-magical-darkness'
-  | 'visibility-hidden'
 
 /**
  * Per-cell presentation derived from perception — not world state, not domain perception types.
@@ -37,21 +42,27 @@ export type EncounterGridCellRenderState = {
   occupantTokenVisibility: OccupantTokenVisibility
   showObstacleGlyph: boolean
   /**
-   * When set, may replace tactical `paper` / `persistent-attached-aura` base fills (see `mergePerceptionIntoCellVisualState`).
-   * Presentation-only; does not change encounter state.
+   * When set, may replace tactical base fills (see `mergePerceptionIntoCellVisualState` in `cellVisualState.ts`;
+   * immersed PCs may also replace `aoe-cast-range` / `placement-cast-range` band fills). Presentation-only.
    */
-  perceptionBaseFillKind: PerceptionPresentationFillKind | null
+  perceptionBaseFillKind: VisibilityFillKind | null
   /** Echo of domain flag — AoE/darkness template edge may be hidden when true. */
   suppressTemplateBoundary: boolean
 }
 
 /**
- * Battlefield-level presentation for veils and global template suppression.
+ * Battlefield-level presentation for veils and global **footprint overlay** suppression (PC only for the
+ * latter — DM sees all tactical overlays).
  */
 export type EncounterBattlefieldRenderState = {
   useBlindVeil: boolean
   suppressDarknessBoundaryFromInside: boolean
-  /** Hide AoE / emanation template fill when viewer cannot see the boundary from inside MD. */
+  /**
+   * PC: when true, viewer is immersed in MD or heavy obscurement — **strip world-space footprint overlays**
+   * in the grid selector (`aoeInTemplate`, `persistentAttachedAura`), not per-cell visibility fills.
+   * Named for the AoE placement channel; also gates synced emanation footprint tint.
+   * DM: always false (omniscient).
+   */
   suppressAoeTemplateOverlay: boolean
   /** 0–1 opacity for full-grid blind veil (presentation). */
   blindVeilOpacity: number
@@ -84,13 +95,19 @@ export function mergeGridPerceptionInputCapabilities(
   return { ...base, magicalDarknessBypass: true }
 }
 
+/**
+ * One viewer’s projected perception for the grid. `suppressAoeTemplateOverlay` duplicates
+ * `battlefieldRender.suppressAoeTemplateOverlay` for call sites that only need the immersion / overlay rule.
+ */
 export type GridPerceptionSlice = {
   viewerCellId: string
   viewerCombatantId: string
   battlefieldRender: EncounterBattlefieldRenderState
+  /** Same as `battlefieldRender.suppressAoeTemplateOverlay` — see {@link EncounterBattlefieldRenderState}. */
   suppressAoeTemplateOverlay: boolean
 }
 
+/** Maps domain battlefield perception to grid render flags. DM branch keeps all overlay-suppression off. */
 export function projectBattlefieldRenderState(
   bp: EncounterViewerBattlefieldPerception,
   viewerRole: 'dm' | 'pc',
@@ -113,11 +130,20 @@ export function projectBattlefieldRenderState(
 
 export function projectGridCellRenderState(params: {
   perception: EncounterViewerPerceptionCell
+  /** Merged world at the target cell — drives source-aware visibility presentation. */
+  targetWorld: EncounterWorldCellEnvironment
+  /**
+   * Merged world at the viewer’s cell. Forwarded to {@link resolvePresentationVisibilityFill} so hidden cells
+   * can use immersed obscuration **presentation** fills; it does **not** drive target-cell visibility (that is
+   * `targetWorld` + `perception`). See `viewerMergedWorldForImmersedHiddenPresentation` on
+   * {@link mapResolvedVisibilityToFillKind}.
+   */
+  viewerWorld: EncounterWorldCellEnvironment
   battlefield: EncounterBattlefieldRenderState
   viewerRole: 'dm' | 'pc'
   isViewerCell: boolean
 }): EncounterGridCellRenderState {
-  const { perception, battlefield, viewerRole, isViewerCell } = params
+  const { perception, targetWorld, viewerWorld, battlefield, viewerRole, isViewerCell } = params
 
   if (viewerRole === 'dm') {
     return {
@@ -137,7 +163,7 @@ export function projectGridCellRenderState(params: {
   const showObstacleGlyph =
     perception.canPerceiveObjects && !(battlefield.useBlindVeil && !isViewerCell)
 
-  const perceptionBaseFillKind = resolvePerceptionPresentationFill(perception)
+  const perceptionBaseFillKind = resolvePresentationVisibilityFill(perception, targetWorld, viewerWorld)
 
   return {
     occupantTokenVisibility,
@@ -152,25 +178,18 @@ function resolveOccupantTokenVisibility(
   blindVeil: boolean,
   isViewerCell: boolean,
 ): OccupantTokenVisibility {
-  if (!perception.canPerceiveOccupants) return 'none'
+  /** Own cell: still show the viewer’s token when domain masks occupants (fog, MD cell, etc.). */
+  if (!perception.canPerceiveOccupants) {
+    return isViewerCell ? 'self-only' : 'none'
+  }
   if (blindVeil && isViewerCell) return 'self-only'
   if (blindVeil) return 'none'
   return 'all'
 }
 
-/** Maps world + perception to presentation fills (grid maps these to `CellBaseFillKind`). */
-export function resolvePerceptionPresentationFill(
-  perception: EncounterViewerPerceptionCell,
-): PerceptionPresentationFillKind | null {
-  if (!perception.canPerceiveCell) return 'visibility-hidden'
-  if (perception.maskedByMagicalDarkness) return 'visibility-magical-darkness'
-  if (perception.maskedByDarkness) return 'visibility-darkness'
-  if (perception.worldVisibilityObscured === 'light') return 'visibility-dim'
-  return null
-}
-
 /**
  * Builds viewer-relative perception slice for the grid selector (one battlefield projection + per-cell in selector).
+ * Returns null when `input` is missing, placements/space are missing, or the viewer combatant has no cell.
  */
 export function buildGridPerceptionSlice(
   state: EncounterState,
@@ -209,6 +228,11 @@ export function buildCellPerceptionRenderState(
   const targetWorld = resolveWorldEnvironmentFromEncounterState(state, targetCellId)
   if (!viewerWorld || !targetWorld) return undefined
 
+  const distanceViewerToTargetFt =
+    state.space && slice.viewerCellId
+      ? gridDistanceFt(state.space, slice.viewerCellId, targetCellId)
+      : undefined
+
   const perception = resolveViewerPerceptionForCell({
     viewerWorld,
     targetWorld,
@@ -216,10 +240,13 @@ export function buildCellPerceptionRenderState(
     targetCellId,
     capabilities: mergeGridPerceptionInputCapabilities(input),
     viewerRole: input.viewerRole,
+    distanceViewerToTargetFt,
   })
 
   return projectGridCellRenderState({
     perception,
+    targetWorld,
+    viewerWorld,
     battlefield: slice.battlefieldRender,
     viewerRole: input.viewerRole,
     isViewerCell: targetCellId === slice.viewerCellId,

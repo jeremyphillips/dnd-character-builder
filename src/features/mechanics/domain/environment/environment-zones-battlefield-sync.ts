@@ -38,6 +38,25 @@ function buildZoneForProfile(
         visibilityObscured: 'heavy',
       },
       magical: { magical: true, magicalDarkness: true, blocksDarkvision: true },
+      visibilityObscurationCause: 'magical-darkness',
+    }
+  }
+  /**
+   * `fog` profile: opaque non-darkness cloud obscurement — see {@link AttachedEnvironmentZoneProfile}.
+   * Heavy obscured only; no lighting override; no magical darkness flags.
+   */
+  if (instance.environmentZoneProfile === 'fog') {
+    return {
+      id: environmentZoneIdForAttachedAuraInstance(instance.id),
+      kind: 'patch',
+      priority: 0,
+      sourceKind: 'attached-aura',
+      sourceId: instance.id,
+      area: { kind: 'sphere-ft', originCellId, radiusFt: instance.area.size },
+      overrides: {
+        visibilityObscured: 'heavy',
+      },
+      visibilityObscurationCause: 'fog',
     }
   }
   const _exhaustive: never = instance.environmentZoneProfile
@@ -51,7 +70,8 @@ function zoneProjectionEqual(a: EncounterEnvironmentZone, b: EncounterEnvironmen
     a.sourceId === b.sourceId &&
     JSON.stringify(a.area) === JSON.stringify(b.area) &&
     JSON.stringify(a.overrides) === JSON.stringify(b.overrides) &&
-    JSON.stringify(a.magical) === JSON.stringify(b.magical)
+    JSON.stringify(a.magical) === JSON.stringify(b.magical) &&
+    a.visibilityObscurationCause === b.visibilityObscurationCause
   )
 }
 

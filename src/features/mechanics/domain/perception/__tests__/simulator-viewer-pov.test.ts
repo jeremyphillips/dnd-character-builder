@@ -119,4 +119,39 @@ describe('buildGridPerceptionSlice — viewer POV', () => {
     expect(outside?.viewerCellId).toBe('c-7-7')
     expect(outside?.battlefieldRender.useBlindVeil).toBe(false)
   })
+
+  it('heavy obscurement without MD suppresses AoE boundary but does not use full-grid blind veil', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const state: EncounterState = {
+      combatantsById: {},
+      partyCombatantIds: [],
+      enemyCombatantIds: [],
+      initiative: [],
+      initiativeOrder: [],
+      activeCombatantId: 'wiz',
+      turnIndex: 0,
+      roundNumber: 1,
+      started: true,
+      log: [],
+      space,
+      placements: [{ combatantId: 'wiz', cellId: 'c-2-2' }],
+      environmentZones: [
+        {
+          id: 'z-fog',
+          kind: 'patch',
+          sourceKind: 'manual',
+          area: { kind: 'grid-cell-ids', cellIds: ['c-2-2'] },
+          overrides: { visibilityObscured: 'heavy' },
+        },
+      ],
+    }
+    const slice = buildGridPerceptionSlice(state, {
+      viewerCombatantId: 'wiz',
+      viewerRole: 'pc',
+    })
+    expect(slice?.battlefieldRender.useBlindVeil).toBe(false)
+    expect(slice?.battlefieldRender.blindVeilOpacity).toBe(0)
+    expect(slice?.battlefieldRender.suppressDarknessBoundaryFromInside).toBe(true)
+    expect(slice?.battlefieldRender.suppressAoeTemplateOverlay).toBe(true)
+  })
 })

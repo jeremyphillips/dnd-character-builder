@@ -76,7 +76,9 @@ function resolveCellCursor(params: {
     }
 
     if (objectAnchorPickActive) {
-      return cell.obstacleKind ? 'pointer' : 'not-allowed'
+      const obstaclePerceivable =
+        Boolean(cell.obstacleKind) && cell.perception?.showObstacleGlyph !== false
+      return obstaclePerceivable ? 'pointer' : 'not-allowed'
     }
 
     const movementIllegal =
@@ -302,7 +304,11 @@ export function EncounterGrid({
               movementHighlightActive,
               hasMovementRemaining,
             })
-            const visual = mergePerceptionIntoCellVisualState(tacticalVisual, cell.perception)
+            const visual = mergePerceptionIntoCellVisualState(tacticalVisual, cell.perception, {
+              immersionAllowsPerceptionOverCastRangeBands: Boolean(
+                battlefieldRender?.suppressAoeTemplateOverlay,
+              ),
+            })
             const liftAboveBlindVeil =
               Boolean(battlefieldRender?.useBlindVeil) && viewerCellId != null && cell.cellId === viewerCellId
             const cellVisualSx = getCellVisualSx(theme, visual)
@@ -393,7 +399,7 @@ export function EncounterGrid({
               </Box>
             )
 
-            if (cell.obstacleLabel) {
+            if (cell.obstacleLabel && cell.perception?.showObstacleGlyph !== false) {
               return (
                 <Tooltip key={cell.cellId} title={cell.obstacleLabel} placement="top" arrow>
                   {cellBox}

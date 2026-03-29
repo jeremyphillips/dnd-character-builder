@@ -223,6 +223,7 @@ describe('hide attempt eligibility', () => {
         magical: false,
         terrainCover: 'none',
         appliedZoneIds: [],
+        obscurationPresentationCauses: [],
       }),
     ).toBe(false)
   })
@@ -240,6 +241,7 @@ describe('hide attempt eligibility', () => {
         magical: false,
         terrainCover: 'none',
         appliedZoneIds: [],
+        obscurationPresentationCauses: [],
       }),
     ).toBe(true)
     expect(
@@ -254,6 +256,7 @@ describe('hide attempt eligibility', () => {
         magical: false,
         terrainCover: 'none',
         appliedZoneIds: [],
+        obscurationPresentationCauses: [],
       }),
     ).toBe(true)
     expect(
@@ -268,6 +271,7 @@ describe('hide attempt eligibility', () => {
         magical: false,
         terrainCover: 'none',
         appliedZoneIds: [],
+        obscurationPresentationCauses: [],
       }),
     ).toBe(false)
   })

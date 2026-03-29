@@ -779,7 +779,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
       summary: '3-foot force disk holds 500 lb, follows within 20ft. Ends if 100ft away.',
     },
   },
-{
+  {
     id: 'fog-cloud',
     name: 'Fog Cloud',
     school: 'conjuration',
@@ -795,6 +795,13 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
       ],
     },
     effects: [
+      {
+        kind: 'emanation',
+        attachedTo: 'self',
+        area: { kind: 'sphere', size: 20 },
+        anchorMode: 'place',
+        environmentZoneProfile: 'fog',
+      },
       { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
       { kind: 'state', stateId: 'heavily-obscured', notes: 'The sphere is Heavily Obscured.' },
       {

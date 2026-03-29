@@ -31,8 +31,22 @@ export type EncounterViewerPerceptionCell = {
   canPerceiveOccupants: boolean
   /** Whether grid objects/obstacles in this cell can be perceived. */
   canPerceiveObjects: boolean
-  /** Non-magical heavy obscuration or darkness lighting (when not masked as magical darkness). */
+  /**
+   * Combined masking from **heavy obscurement** (fog-class) or **ordinary environmental darkness** that was
+   * not mitigated by darkvision. Legacy name — internal resolution splits heavy vs ordinary darkness.
+   */
   maskedByDarkness: boolean
+  /**
+   * True only when ordinary environmental darkness was mitigated for this viewer by darkvision (within range,
+   * not blocked by `blocksDarkvision`). Drives viewer-relative presentation world adjustment — not world truth.
+   */
+  environmentalDarknessMitigatedByDarkvision: boolean
+  /**
+   * True when this cell’s contents are resolved as fully perceivable because **blindsight** applies (within
+   * `blindsightRangeFt`). Drives viewer-relative presentation adjustment (clears fog/darkness/MD tints for that
+   * cell) — not world truth.
+   */
+  perceivedByBlindsight: boolean
   /** Magical darkness blocks sight into this cell (when viewer has no bypass). */
   maskedByMagicalDarkness: boolean
   /**
@@ -47,15 +61,34 @@ export type EncounterViewerPerceptionCell = {
 }
 
 /**
- * Viewer-wide perception mode for battlefield UI (veils, boundary drawing). Derived only.
+ * Viewer-wide perception mode for battlefield UI (veils, boundary drawing). Derived only from the
+ * viewer’s cell {@link EncounterWorldCellEnvironment} — not spell ids.
+ *
+ * **Immersed-obscuration rule (PC):** When the viewer stands in **heavy obscurement** (e.g. opaque cloud
+ * profile) or **magical darkness** (no bypass), {@link suppressDarknessBoundaryFromInside} is true.
+ * Downstream projection exposes `suppressAoeTemplateOverlay` on the battlefield render state (historical
+ * name) so the grid selector can strip **world-space tactical overlays** that would trace the
+ * same obscuring footprint (synced persistent aura fill, AoE placement template tint). **Per-cell** visibility
+ * tints still come only from the canonical visibility / perception pipeline — this flag does not replace
+ * that system.
+ *
+ * **DM:** Omniscient tactical view — both immersion flags are reported as false here so overlays stay visible;
+ * see `resolveViewerBattlefieldPerception` / `projectBattlefieldRenderState`.
  */
 export type EncounterViewerBattlefieldPerception = {
   viewerCellId: string | null
   viewerInsideMagicalDarkness: boolean
   viewerInsideHeavyObscurement: boolean
-  /** Full-screen or heavy dim over non-local UI when viewer cannot see the field. */
+  /**
+   * Full-grid black veil when the viewer’s cell is in magical darkness (no bypass). Heavy obscurement
+   * (e.g. Fog Cloud) uses per-cell fog fill only — no second full-grid layer.
+   */
   useBattlefieldBlindVeil: boolean
-  /** Hide darkness sphere edge when the viewer is inside that darkness. */
+  /**
+   * True when the PC viewer is **immersed** in heavy obscurement or magical darkness (no bypass): hide
+   * world-space overlays that reveal the obscuring volume footprint from the inside. Drives grid stripping of
+   * `persistentAttachedAura` / `aoeInTemplate` (see `selectGridViewModel`). Distinct from per-cell fills.
+   */
   suppressDarknessBoundaryFromInside: boolean
 }
 
@@ -65,6 +98,11 @@ export type ResolveViewerPerceptionForCellParams = {
   viewerCellId: string
   targetCellId: string
   capabilities?: EncounterViewerPerceptionCapabilities
+  /**
+   * Grid distance (ft) from viewer cell to target cell. When omitted, darkvision range check is permissive
+   * (treated in range if darkvision applies) — matches no-grid / permissive call sites.
+   */
+  distanceViewerToTargetFt?: number
   /** When `'dm'`, perception is not restricted (tactical omniscience for the view). */
   viewerRole?: 'dm' | 'pc'
 }

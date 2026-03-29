@@ -1,4 +1,5 @@
 import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/perception/perception.render.projection'
+import type { VisibilityFillKind } from '@/features/mechanics/domain/perception/visibility.types'
 
 import type { GridCellViewModel } from '../../../space/selectors/space.selectors'
 
@@ -6,7 +7,7 @@ import type { GridCellViewModel } from '../../../space/selectors/space.selectors
  * Resolved base fill / overlay intent (top-down precedence). Used by {@link getCellVisualSx}.
  * `aoe-cast-range` is first-class: cast-range band when no higher-priority tint applies (style map may use paper-equivalent fill).
  *
- * `visibility-*` kinds are **presentation-only** tints from viewer perception projection — not tactical rules.
+ * {@link VisibilityFillKind} values are **presentation-only** tints from viewer perception projection — not tactical rules.
  */
 export type CellBaseFillKind =
   | 'blocked'
@@ -19,10 +20,7 @@ export type CellBaseFillKind =
   | 'aoe-cast-range'
   | 'persistent-attached-aura'
   | 'paper'
-  | 'visibility-dim'
-  | 'visibility-darkness'
-  | 'visibility-magical-darkness'
-  | 'visibility-hidden'
+  | VisibilityFillKind
 
 /**
  * Movement emphasis on top of base fill. Mutually exclusive branches match legacy EncounterGrid behavior.
@@ -115,20 +113,50 @@ export function getCellVisualState(cell: GridCellViewModel, ctx: CellVisualConte
   }
 }
 
-/** When true, viewer perception tint may replace the tactical base fill (see {@link mergePerceptionIntoCellVisualState}). */
-export function tacticalBaseFillAllowsPerceptionTint(baseFillKind: CellBaseFillKind): boolean {
-  return baseFillKind === 'paper' || baseFillKind === 'persistent-attached-aura'
+export type MergePerceptionIntoCellVisualOptions = {
+  /**
+   * When true (PC viewer immersed in heavy obscurement / MD — same condition as
+   * `EncounterBattlefieldRenderState.suppressAoeTemplateOverlay`), allow canonical visibility fills to
+   * replace **cast-range band** bases (`aoe-cast-range`, `placement-cast-range`). Without this, those
+   * bands use paper-equivalent fills and block perception merge, producing a visible “hole” or ring in fog
+   * during AoE / placement picking. DM / outside-immersion: leave false so tactical bands stay readable.
+   */
+  immersionAllowsPerceptionOverCastRangeBands?: boolean
 }
 
 /**
- * Layers perception presentation onto tactical cell visuals. World/encounter state is unchanged — display only.
+ * When true, viewer perception tint may replace the tactical base fill (see {@link mergePerceptionIntoCellVisualState}).
+ * @param perception When `showObstacleGlyph === false`, obstacle `blocking` cells still receive canonical visibility
+ *   tints (fog/darkness) instead of the gray obstacle footprint — same concealment as occupant tokens.
+ */
+export function tacticalBaseFillAllowsPerceptionTint(
+  baseFillKind: CellBaseFillKind,
+  opts?: MergePerceptionIntoCellVisualOptions,
+  perception?: EncounterGridCellRenderState,
+): boolean {
+  if (baseFillKind === 'paper' || baseFillKind === 'persistent-attached-aura') return true
+  if (
+    opts?.immersionAllowsPerceptionOverCastRangeBands &&
+    (baseFillKind === 'aoe-cast-range' || baseFillKind === 'placement-cast-range')
+  ) {
+    return true
+  }
+  if (baseFillKind === 'blocked' && perception?.showObstacleGlyph === false) return true
+  return false
+}
+
+/**
+ * Layers **canonical** per-cell visibility presentation onto tactical cell visuals. Distinct from
+ * world-space footprint overlays (`persistentAttachedAura` / AoE template), which are gated in
+ * `selectGridViewModel` for immersed PC viewers before this runs.
  */
 export function mergePerceptionIntoCellVisualState(
   tactical: CellVisualState,
   perception: EncounterGridCellRenderState | undefined,
+  mergeOpts?: MergePerceptionIntoCellVisualOptions,
 ): CellVisualState {
   if (!perception?.perceptionBaseFillKind) return tactical
-  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind)) return tactical
+  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind, mergeOpts, perception)) return tactical
   return {
     ...tactical,
     baseFillKind: perception.perceptionBaseFillKind,

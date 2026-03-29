@@ -32,8 +32,9 @@ Domain contract for **baseline** encounter defaults, **localized environment zon
 
 - **`grid-cell-ids`** — explicit membership.  
 - **`sphere-ft`** — preferred; matches battlefield AoE: Chebyshev distance in feet vs `originCellId` (`gridDistanceFt` ≤ `radiusFt`).  
-- **`grid-cell-radius`** — deprecated; converted to feet via `radiusCells × cellFeet` when `space` is provided.  
 - **`unattached`** — covers no cells.
+
+The old **`grid-cell-radius`** variant has been removed; use **`sphere-ft`** with an explicit radius in feet.
 
 Use `cellIdInEnvironmentArea(space, area, cellId)` for membership (requires `EncounterSpace` for sphere-like shapes).
 
@@ -94,7 +95,7 @@ The encounter simulator uses **`GridPerceptionInput`** with **`viewerCombatantId
 |--------|------|
 | `perception.render.projection.ts` | Maps `EncounterViewerPerceptionCell` + `EncounterViewerBattlefieldPerception` → `EncounterGridCellRenderState` / `EncounterBattlefieldRenderState` (presentation flags, not domain merge). |
 | [`selectors/space.selectors.ts`](../../src/features/encounter/space/selectors/space.selectors.ts) (`selectGridViewModel`) | When `perception` input is passed, attaches per-cell render state and battlefield veil flags to the grid view model. |
-| `cellVisualState.ts` / `cellVisualStyles.ts` | Maps `PerceptionPresentationFillKind` → `CellBaseFillKind` (`visibility-*`) and `baseFillSx` — **presentation only**; not a rules source. |
+| `cellVisualState.ts` / `cellVisualStyles.ts` | Maps `VisibilityFillKind` → `CellBaseFillKind` and `baseFillSx` — **presentation only**; not a rules source. |
 | `EncounterGrid.tsx` | Applies merged cell visuals, blind veil overlay (viewer cell lifted above veil), token visibility from `occupantTokenVisibility`, obstacle glyphs from `showObstacleGlyph`. |
 
 DM role continues to bypass veils and masking in projection (`viewerRole: 'dm'`).
@@ -105,7 +106,7 @@ DM role continues to bypass veils and masking in projection (`viewerRole: 'dm'`)
 
 | Piece | Role |
 |--------|------|
-| `BattlefieldEffectInstance.environmentZoneProfile` | Optional profile (e.g. `magical-darkness`) copied from spell `emanation.environmentZoneProfile` → `CombatActionDefinition.attachedEmanation` → persisted instance on cast. |
+| `BattlefieldEffectInstance.environmentZoneProfile` | Optional profile (e.g. `magical-darkness`, `fog`) copied from spell `emanation.environmentZoneProfile` → `CombatActionDefinition.attachedEmanation` → persisted instance on cast. |
 | `environmentZoneIdForAttachedAuraInstance(instanceId)` | Stable zone id: `attached-aura-env:${instanceId}` — upsert replaces the row; no duplicate zones per aura. |
 | `reconcileEnvironmentZonesFromAttachedAuras(state)` | Rebuilds **only** `sourceKind === 'attached-aura'` zones from current `attachedAuraInstances` + `resolveBattlefieldEffectOriginCellId`; preserves unrelated zones (`manual`, etc.). |
 | `reconcileBattlefieldEffectAnchors` | Ends with environment zone reconciliation so anchor moves (creature, place, object) and removals stay in sync with coverage. |

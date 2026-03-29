@@ -23,6 +23,7 @@ import {
   type EncounterBattlefieldRenderState,
   type EncounterGridCellRenderState,
   type GridPerceptionInput,
+  type GridPerceptionSlice,
 } from '@/features/mechanics/domain/perception/perception.render.projection'
 import { deriveViewerCombatantPresentationKind } from '../rendering/grid-occupant-render-visibility'
 
@@ -120,7 +121,11 @@ export type GridCellViewModel = {
   placementInvalidHover?: boolean
   /** Single-cell placement: confirmed chosen cell. */
   placementSelected?: boolean
-  /** Persistent attached emanation (e.g. Spirit Guardians) — cell inside the moving aura footprint. */
+  /**
+   * World-space tactical tint for synced attached-emanation footprint (secondary color in `cellVisualStyles`).
+   * Stripped for **PC** viewers immersed in heavy obscurement / MD (see immersed rule in
+   * `selectGridViewModel` / `resolveViewerBattlefieldPerception`) — distinct from per-cell visibility fills.
+   */
   persistentAttachedAura?: boolean
   /** Token dimming — `isDefeatedCombatant` when an occupant is present. */
   occupantIsDefeated: boolean
@@ -192,6 +197,30 @@ export function actionUsesGridCreatureTargeting(action: CombatActionDefinition |
   return kind === 'single-target' || kind === 'single-creature' || kind === 'dead-creature'
 }
 
+/**
+ * PC viewer immersed in heavy obscurement or magical darkness: hide **world-space** footprint overlays that
+ * would trace the obscuring volume from the inside (`aoeInTemplate`, `persistentAttachedAura`). Always false
+ * for DM; false when {@link buildGridPerceptionSlice} returns null (no `opts.perception`, invalid viewer, …).
+ *
+ * Does **not** strip **`aoeCastRange`** flags on the view model (placement affordance). Immersed viewers
+ * still avoid a cast-range **fill** “hole” in fog via `mergePerceptionIntoCellVisualState` +
+ * `immersionAllowsPerceptionOverCastRangeBands` in `EncounterGrid`. Does **not** remove movement /
+ * reachability outlines.
+ */
+function immersedFootprintOverlaysSuppressed(perceptionSlice: GridPerceptionSlice | null): boolean {
+  return Boolean(perceptionSlice?.suppressAoeTemplateOverlay)
+}
+
+/**
+ * Grid cells + tactical overlays for the encounter UI. World-space overlay fields (`aoeInTemplate`,
+ * `persistentAttachedAura`) are stripped for **immersed PC** viewers via {@link immersedFootprintOverlaysSuppressed}
+ * so fog/MD footprints are not drawn as a crisp tactical ring; per-cell tints still come from the perception
+ * pipeline when `opts.perception` is provided.
+ *
+ * **Without `opts.perception`:** No viewer anchor — {@link buildGridPerceptionSlice} is not run, immersion
+ * is unknown, overlays remain **fully visible** (outside-observer / legacy behavior). `GridViewModel.perception`
+ * is omitted. Prefer passing perception from `deriveEncounterPresentationGridPerceptionInput` for the active route.
+ */
 export function selectGridViewModel(
   state: EncounterState,
   opts?: {
@@ -321,7 +350,7 @@ export function selectGridViewModel(
       }
     }
 
-    if (perceptionSlice?.suppressAoeTemplateOverlay && aoeInTemplate) {
+    if (immersedFootprintOverlaysSuppressed(perceptionSlice) && aoeInTemplate) {
       aoeInTemplate = false
     }
 
@@ -357,6 +386,10 @@ export function selectGridViewModel(
           break
         }
       }
+    }
+    /** Immersed PC: hide synced emanation footprint tint (same rule as `aoeInTemplate` above). */
+    if (immersedFootprintOverlaysSuppressed(perceptionSlice) && persistentAttachedAura) {
+      persistentAttachedAura = false
     }
 
     let cellPerception: EncounterGridCellRenderState | undefined

@@ -14,6 +14,15 @@ import {
 
 import {
   encounterAttackerOutsideDefenderHeavilyObscured,
+  encounterBlindsightOrdinaryDarkness10ftFromOrc,
+  encounterBlindsightOutOfRangeDarknessInDarkvisionRange,
+  encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange,
+  encounterDarknessWizard10ftFromOrc,
+  encounterDarknessWizardOutOfDarkvisionRange,
+  encounterHeavyObscuredWithBlindsightViewer,
+  encounterHeavyObscuredWithDarkvisionViewer,
+  encounterMagicalDarknessWithBlindsightViewer,
+  encounterMagicalDarknessWithDarkvisionViewer,
   testEnemy,
   testPc,
 } from './encounter-visibility-test-fixtures'
@@ -81,18 +90,63 @@ describe('combatant pair visibility (occupant)', () => {
     expect(canPerceiveTargetOccupantForCombat(state, 'w', 'g')).toBe(false)
   })
 
-  it('heavy obscurement on defender: perceives cell but not occupant; unseen-target disadvantage on attack roll', () => {
+  it('darkvision from senses: ordinary darkness mitigated within range (occupant perceivable)', () => {
+    const state = encounterDarknessWizard10ftFromOrc()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('darkvision from senses: beyond range ordinary darkness still blocks', () => {
+    const state = encounterDarknessWizardOutOfDarkvisionRange()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
+  })
+
+  it('darkvision does not mitigate heavy obscurement within range', () => {
+    const state = encounterHeavyObscuredWithDarkvisionViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
+  })
+
+  it('darkvision does not mitigate magical darkness within range', () => {
+    const state = encounterMagicalDarknessWithDarkvisionViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
+  })
+
+  it('blindsight from senses: ordinary darkness within range — occupant perceivable', () => {
+    const state = encounterBlindsightOrdinaryDarkness10ftFromOrc()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('blindsight: heavy obscurement within range — occupant perceivable', () => {
+    const state = encounterHeavyObscuredWithBlindsightViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('blindsight: magical darkness within range — occupant perceivable', () => {
+    const state = encounterMagicalDarknessWithBlindsightViewer()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('out of blindsight, in darkvision: ordinary darkness mitigated — occupant perceivable', () => {
+    const state = encounterBlindsightOutOfRangeDarknessInDarkvisionRange()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(true)
+  })
+
+  it('out of blindsight, in darkvision: heavy obscurement still blocks', () => {
+    const state = encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange()
+    expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
+  })
+
+  it('heavy obscurement on defender: outside cannot see in; inside fog cannot see out — attack roll adv/dis cancel', () => {
     const state = encounterAttackerOutsideDefenderHeavilyObscured()
     const cell = resolveViewerPerceptionForCellFromState(state, 'wiz', 'c-2-2', { viewerRole: 'pc' })
     expect(cell?.canPerceiveCell).toBe(true)
     expect(cell?.canPerceiveOccupants).toBe(false)
 
     expect(canPerceiveTargetOccupantForCombat(state, 'wiz', 'orc')).toBe(false)
-    expect(canPerceiveTargetOccupantForCombat(state, 'orc', 'wiz')).toBe(true)
+    expect(canPerceiveTargetOccupantForCombat(state, 'orc', 'wiz')).toBe(false)
 
     const pair = resolveCombatantPairVisibilityForAttackRoll(state, 'wiz', 'orc')
     expect(pair.attackerCanSeeDefenderOccupant).toBe(false)
-    expect(pair.defenderCanSeeAttackerOccupant).toBe(true)
+    expect(pair.defenderCanSeeAttackerOccupant).toBe(false)
 
     const { rollMod, pairVisibility } = resolveRollModifier(
       state.combatantsById.wiz!,
@@ -100,9 +154,9 @@ describe('combatant pair visibility (occupant)', () => {
       'melee',
       state,
     )
-    expect(rollMod).toBe('disadvantage')
+    expect(rollMod).toBe('normal')
     expect(pairVisibility?.attackerCanSeeDefenderOccupant).toBe(false)
-    expect(pairVisibility?.defenderCanSeeAttackerOccupant).toBe(true)
+    expect(pairVisibility?.defenderCanSeeAttackerOccupant).toBe(false)
   })
 
   it('attack roll pair visibility ignores stealth hidden state (no double-stacked modifiers)', () => {

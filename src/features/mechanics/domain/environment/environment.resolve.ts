@@ -8,6 +8,7 @@ import type {
   EncounterEnvironmentBaseline,
   EncounterEnvironmentZone,
   EncounterWorldCellEnvironment,
+  WorldObscurationPresentationCause,
 } from './environment.types'
 
 export const DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE: EncounterEnvironmentBaseline = {
@@ -17,10 +18,6 @@ export const DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE: EncounterEnvironmentBaselin
   visibilityObscured: 'none',
   terrainCover: 'none',
   atmosphereTags: [],
-}
-
-function cellFeet(space: EncounterSpace): number {
-  return space.scale.kind === 'grid' ? space.scale.cellFeet : 5
 }
 
 /**
@@ -53,13 +50,6 @@ export function cellIdInEnvironmentArea(
       if (dist === undefined) return false
       return dist <= area.radiusFt
     }
-    case 'grid-cell-radius': {
-      if (!space) return false
-      const dist = gridDistanceFt(space, area.centerCellId, cellId)
-      if (dist === undefined) return false
-      const radiusFt = area.radiusCells * cellFeet(space)
-      return dist <= radiusFt
-    }
     case 'unattached':
       return false
   }
@@ -73,7 +63,6 @@ export function cellIdInEnvironmentAreaLink(area: EncounterEnvironmentAreaLink, 
     case 'grid-cell-ids':
       return area.cellIds.includes(cellId)
     case 'sphere-ft':
-    case 'grid-cell-radius':
       return false
     case 'unattached':
       return false
@@ -120,6 +109,40 @@ function mergeMagicalFlags(applicableSorted: EncounterEnvironmentZone[]): {
 }
 
 /**
+ * Baseline first, then each applicable zone in merge order — presentation-only causes for visibility resolution.
+ */
+export function collectObscurationPresentationCauses(
+  baseline: EncounterEnvironmentBaseline,
+  applicableSorted: EncounterEnvironmentZone[],
+): WorldObscurationPresentationCause[] {
+  const causes: WorldObscurationPresentationCause[] = []
+  if (baseline.lightingLevel === 'darkness') {
+    causes.push('darkness')
+  }
+  if (baseline.visibilityObscured !== 'none') {
+    causes.push('environment')
+  }
+  for (const z of applicableSorted) {
+    if (z.visibilityObscurationCause) {
+      causes.push(z.visibilityObscurationCause)
+      continue
+    }
+    if (z.magical?.magicalDarkness) {
+      causes.push('magical-darkness')
+      continue
+    }
+    if (z.overrides.lightingLevel === 'darkness') {
+      causes.push('darkness')
+      continue
+    }
+    if (z.overrides.visibilityObscured !== undefined && z.overrides.visibilityObscured !== 'none') {
+      causes.push('environment')
+    }
+  }
+  return causes
+}
+
+/**
  * Resolve **world** environment at a cell: baseline + applicable zones (sorted), with deterministic precedence.
  */
 export function resolveWorldEnvironmentForCell(
@@ -150,6 +173,7 @@ export function resolveWorldEnvironmentForCell(
 
   const atmosphereTags = mergeAtmosphereForZones(baseline.atmosphereTags, applicableSorted)
   const { magicalDarkness, blocksDarkvision, magical } = mergeMagicalFlags(applicableSorted)
+  const obscurationPresentationCauses = collectObscurationPresentationCauses(baseline, applicableSorted)
 
   return {
     setting,
@@ -162,6 +186,7 @@ export function resolveWorldEnvironmentForCell(
     magical,
     terrainCover,
     appliedZoneIds,
+    obscurationPresentationCauses,
   }
 }
 
@@ -225,6 +250,7 @@ export function resolveCellEnvironment(
 
   const atmosphereTags = mergeAtmosphereForZones(baseline.atmosphereTags, applicableSorted)
   const { magicalDarkness, blocksDarkvision, magical } = mergeMagicalFlags(applicableSorted)
+  const obscurationPresentationCauses = collectObscurationPresentationCauses(baseline, applicableSorted)
 
   return {
     setting,
@@ -237,5 +263,6 @@ export function resolveCellEnvironment(
     magical,
     terrainCover,
     appliedZoneIds,
+    obscurationPresentationCauses,
   }
 }

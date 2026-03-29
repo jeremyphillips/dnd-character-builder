@@ -16,7 +16,7 @@ import {
 } from '@/shared/domain/locations';
 import type { LocationMapKindId } from '@/shared/domain/locations';
 import { getAllowedParentLocationOptions } from '@/shared/domain/locations';
-import { isWorldScale } from '@/shared/domain/locations/locationScale.rules';
+import { isWorldScale } from '@/shared/domain/locations';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationFormValues } from '../types/locationForm.types';
 

@@ -2,7 +2,7 @@
  * Pure structural validation for map `cellEntries` (links + simple objects).
  * Shared by server API validation and optionally client-side checks.
  */
-import { parseGridCellId } from '../grid/gridCellIds';
+import { parseGridCellId } from '../../grid/gridCellIds';
 import { LOCATION_MAP_OBJECT_KIND_IDS } from './locationMap.constants';
 
 const OBJECT_KIND_SET = new Set(LOCATION_MAP_OBJECT_KIND_IDS as readonly string[]);

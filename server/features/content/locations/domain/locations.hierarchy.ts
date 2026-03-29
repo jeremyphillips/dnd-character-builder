@@ -15,7 +15,7 @@ export { LOCATION_SCALE_ORDER, type LocationScaleId };
 export {
   validateParentChildScales,
   type HierarchyValidationError,
-} from '../../../../../shared/domain/locations/locationParent.validation';
+} from '../../../../../shared/domain/locations';
 
 /** Lower index = broader geographic scope. Returns -1 if scale is unknown. */
 export function scaleRank(scale: string): number {

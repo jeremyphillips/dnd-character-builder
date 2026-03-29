@@ -4,8 +4,8 @@
  * For generic structural comparisons (rank, broader/finer), use `locationScale.rules.ts`
  * and `LOCATION_SCALE_ORDER` — ordering alone does not encode which parent scales are valid.
  */
-import { LOCATION_SCALE_ORDER } from './location.constants';
-import type { LocationScaleId } from './location.types';
+import { LOCATION_SCALE_ORDER } from '../location.constants';
+import type { LocationScaleId } from '../location.types';
 
 /** Child scale → parent scales that may be assigned (empty = root only, e.g. world). */
 export const ALLOWED_PARENT_SCALES_BY_SCALE: Record<

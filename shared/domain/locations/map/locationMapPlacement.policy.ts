@@ -9,9 +9,9 @@
  * Future extensions (max links per cell, map-kind overrides, category exceptions) should live
  * here or in adjacent `locationMap*.policy.ts` files — keep maps explicit.
  */
-import type { LocationScaleId } from './location.types';
+import type { LocationScaleId } from '../location.types';
 import type { LocationMapObjectKindId } from './locationMap.types';
-import { isValidLocationScaleId } from './locationScale.rules';
+import { isValidLocationScaleId } from '../scale/locationScale.rules';
 
 // --- A. Linked location from a cell (target scale allowed for this host scale) ---
 

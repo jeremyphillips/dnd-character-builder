@@ -3,9 +3,9 @@ import type { AccessPolicy } from '../../../../../shared/domain/accessPolicy';
 import type { LocationConnection } from '../../../../../shared/domain/locations';
 import {
   isCategoryAllowedForScale,
+  isValidLocationScaleId,
   normalizeCategoryForScale,
-} from '../../../../../shared/domain/locations/locationScaleField.policy';
-import { isValidLocationScaleId } from '../../../../../shared/domain/locations/locationScale.rules';
+} from '../../../../../shared/domain/locations';
 import {
   buildAncestorIdsFromParentRow,
   type HierarchyValidationError,

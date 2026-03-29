@@ -4,9 +4,9 @@
  * Parent-scale eligibility stays in `locationScale.policy.ts`.
  * Map kind / placement hooks can extend this module later (`allowedMapKinds`, etc.).
  */
-import { LOCATION_SCALE_ORDER } from './location.constants';
-import type { LocationCategoryId, LocationScaleId } from './location.types';
-import { LOCATION_CELL_UNIT_IDS } from './locationMap.constants';
+import { LOCATION_SCALE_ORDER } from '../location.constants';
+import type { LocationCategoryId, LocationScaleId } from '../location.types';
+import { LOCATION_CELL_UNIT_IDS } from '../map/locationMap.constants';
 import { isValidLocationScaleId, isWorldScale } from './locationScale.rules';
 
 export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];

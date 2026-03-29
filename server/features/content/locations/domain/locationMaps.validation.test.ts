@@ -5,7 +5,7 @@ import {
   validateGridDimensions,
   validateLocationMapCells,
   validateLocationMapInput,
-} from '../../../../../shared/domain/locations/locationMap.validation';
+} from '../../../../../shared/domain/locations';
 import { LOCATION_MAP_GRID_MAX_WIDTH } from '../../../../../shared/domain/locations';
 
 describe('locationMaps.validation', () => {

@@ -6,7 +6,7 @@ import {
   getAllowedParentScalesForScale,
   isAllowedParentLocation,
   isAllowedParentScale,
-} from './locationScale.policy';
+} from '../../scale/locationScale.policy';
 
 describe('locationScale.policy', () => {
   it('world has no parent scales', () => {

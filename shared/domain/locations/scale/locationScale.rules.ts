@@ -2,8 +2,8 @@
  * Generic scale ordering helpers — structural only (`LOCATION_SCALE_ORDER`).
  * Parent *eligibility* uses explicit policy in `locationScale.policy.ts`, not rank alone.
  */
-import { LOCATION_SCALE_ORDER } from './location.constants';
-import type { LocationScaleId } from './location.types';
+import { LOCATION_SCALE_ORDER } from '../location.constants';
+import type { LocationScaleId } from '../location.types';
 import { isAllowedParentScale } from './locationScale.policy';
 
 export function locationScaleRank(scale: string): number {

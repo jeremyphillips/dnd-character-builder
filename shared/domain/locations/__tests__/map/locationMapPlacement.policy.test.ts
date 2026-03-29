@@ -9,7 +9,7 @@ import {
   getAllowedLinkedLocationScalesForHostScale,
   getAllowedObjectKindsForHostScale,
   isAllowedLinkedLocation,
-} from './locationMapPlacement.policy';
+} from '../../map/locationMapPlacement.policy';
 
 describe('locationMapPlacement.policy — linked locations', () => {
   it('exposes explicit host → target scale lists (not inferred from order alone)', () => {

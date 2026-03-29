@@ -6,7 +6,7 @@ import {
   isCellUnitAllowedForScale,
   normalizeCategoryForScale,
   normalizeGridCellUnitForScale,
-} from './locationScaleField.policy';
+} from '../../scale/locationScaleField.policy';
 
 describe('locationScaleField.policy', () => {
   it('world: mile only, no category', () => {

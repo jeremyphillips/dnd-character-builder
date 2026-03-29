@@ -1,4 +1,4 @@
-import { LOCATION_SCALE_ORDER } from './location.constants';
+import { LOCATION_SCALE_ORDER } from '../location.constants';
 import type { LocationMapKindId } from './locationMap.types';
 
 type LocationScaleId = (typeof LOCATION_SCALE_ORDER)[number];

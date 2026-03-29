@@ -5,7 +5,7 @@ import {
   isBroaderLocationScale,
   isSameOrBroaderLocationScale,
   locationScaleRank,
-} from './locationScale.rules';
+} from '../../scale/locationScale.rules';
 
 describe('locationScale.rules (generic ordering)', () => {
   it('getLocationScaleRank matches locationScaleRank', () => {

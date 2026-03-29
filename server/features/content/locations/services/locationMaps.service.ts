@@ -6,9 +6,9 @@ import type {
 import {
   canLinkLocationScaleFromHostScale,
   canPlaceObjectKindOnHostScale,
-} from '../../../../../shared/domain/locations/locationMapPlacement.policy';
-import { mapKindForLocationScale } from '../../../../../shared/domain/locations/locationMap.helpers';
-import { isCellUnitAllowedForScale } from '../../../../../shared/domain/locations/locationScaleField.policy';
+  isCellUnitAllowedForScale,
+  mapKindForLocationScale,
+} from '../../../../../shared/domain/locations';
 import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import { type MapValidationError, validateLocationMapInput } from './locationValidation';

@@ -4,8 +4,8 @@
 import {
   LOCATION_CATEGORY_IDS,
   LOCATION_SCALE_ORDER,
-} from '@/shared/domain/locations/location.constants';
-import { LOCATION_CELL_UNIT_IDS } from '@/shared/domain/locations/locationMap.constants';
+  LOCATION_CELL_UNIT_IDS,
+} from '@/shared/domain/locations';
 import {
   GRID_SIZE_PRESETS,
   type GridSizePreset,

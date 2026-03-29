@@ -14,17 +14,17 @@ export type { HierarchyValidationError, LocationScaleId } from '../domain/locati
 export {
   cellIdExistsOnMap,
   cellIdsOnMap,
+  validateCellEntriesStructure,
   validateCellUnitForKind,
   validateGridDimensions,
   validateLocationMapCells,
   validateLocationMapInput,
   validateMapKind,
-} from '../../../../../shared/domain/locations/locationMap.validation';
-export { validateCellEntriesStructure } from '../../../../../shared/domain/locations/locationMapCellAuthoring.validation';
+} from '../../../../../shared/domain/locations';
 
-export type { LocationMapValidationError } from '../../../../../shared/domain/locations/locationMap.validation';
+export type { LocationMapValidationError } from '../../../../../shared/domain/locations';
 export type MapValidationError =
-  import('../../../../../shared/domain/locations/locationMap.validation').LocationMapValidationError;
+  import('../../../../../shared/domain/locations').LocationMapValidationError;
 
 export {
   validateLocationTransitionInput,

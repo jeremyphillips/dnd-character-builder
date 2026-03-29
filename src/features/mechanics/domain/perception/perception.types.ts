@@ -31,8 +31,16 @@ export type EncounterViewerPerceptionCell = {
   canPerceiveOccupants: boolean
   /** Whether grid objects/obstacles in this cell can be perceived. */
   canPerceiveObjects: boolean
-  /** Non-magical heavy obscuration or darkness lighting (when not masked as magical darkness). */
+  /**
+   * Combined masking from **heavy obscurement** (fog-class) or **ordinary environmental darkness** that was
+   * not mitigated by darkvision. Legacy name — internal resolution splits heavy vs ordinary darkness.
+   */
   maskedByDarkness: boolean
+  /**
+   * True only when ordinary environmental darkness was mitigated for this viewer by darkvision (within range,
+   * not blocked by `blocksDarkvision`). Drives viewer-relative presentation world adjustment — not world truth.
+   */
+  environmentalDarknessMitigatedByDarkvision: boolean
   /** Magical darkness blocks sight into this cell (when viewer has no bypass). */
   maskedByMagicalDarkness: boolean
   /**
@@ -84,6 +92,11 @@ export type ResolveViewerPerceptionForCellParams = {
   viewerCellId: string
   targetCellId: string
   capabilities?: EncounterViewerPerceptionCapabilities
+  /**
+   * Grid distance (ft) from viewer cell to target cell. When omitted, darkvision range check is permissive
+   * (treated in range if darkvision applies) — matches no-grid / permissive call sites.
+   */
+  distanceViewerToTargetFt?: number
   /** When `'dm'`, perception is not restricted (tactical omniscience for the view). */
   viewerRole?: 'dm' | 'pc'
 }

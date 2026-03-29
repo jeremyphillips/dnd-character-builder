@@ -76,6 +76,16 @@ function normalizeMonsterSkillProficiencyLevel(level: unknown): CombatantSkillPr
   return 0
 }
 
+function maxDarkvisionRangeFtFromMonsterSenses(monster: Monster): number | undefined {
+  const special = monster.mechanics.senses?.special
+  if (!special?.length) return undefined
+  let max = 0
+  for (const s of special) {
+    if (s.type === 'darkvision' && typeof s.range === 'number' && s.range > max) max = s.range
+  }
+  return max > 0 ? max : undefined
+}
+
 /** Detail DTO lists skill ids only; expertise (level 2) is not represented until the API carries it. */
 function skillProficiencyLevelFromCharacterDetail(
   character: CharacterDetailDto,
@@ -243,6 +253,8 @@ export function buildMonsterCombatantInstance(args: {
     }),
   )
 
+  const darkvisionRangeFt = maxDarkvisionRangeFtFromMonsterSenses(monster)
+
   return {
     instanceId: runtimeId,
     side,
@@ -321,6 +333,7 @@ export function buildMonsterCombatantInstance(args: {
         ...(monster.mechanics.hideEligibilityFeatureFlags != null
           ? { hideEligibilityFeatureFlags: monster.mechanics.hideEligibilityFeatureFlags }
           : {}),
+        ...(darkvisionRangeFt != null ? { darkvisionRangeFt } : {}),
       },
     },
     attacks,

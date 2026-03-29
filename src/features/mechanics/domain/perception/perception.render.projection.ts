@@ -14,7 +14,7 @@
  * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
-import { getCellForCombatant } from '@/features/encounter/space'
+import { getCellForCombatant, gridDistanceFt } from '@/features/encounter/space'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
@@ -228,6 +228,11 @@ export function buildCellPerceptionRenderState(
   const targetWorld = resolveWorldEnvironmentFromEncounterState(state, targetCellId)
   if (!viewerWorld || !targetWorld) return undefined
 
+  const distanceViewerToTargetFt =
+    state.space && slice.viewerCellId
+      ? gridDistanceFt(state.space, slice.viewerCellId, targetCellId)
+      : undefined
+
   const perception = resolveViewerPerceptionForCell({
     viewerWorld,
     targetWorld,
@@ -235,6 +240,7 @@ export function buildCellPerceptionRenderState(
     targetCellId,
     capabilities: mergeGridPerceptionInputCapabilities(input),
     viewerRole: input.viewerRole,
+    distanceViewerToTargetFt,
   })
 
   return projectGridCellRenderState({

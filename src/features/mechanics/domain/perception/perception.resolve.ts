@@ -1,4 +1,4 @@
-import { getCellForCombatant } from '@/features/encounter/space'
+import { getCellForCombatant, gridDistanceFt } from '@/features/encounter/space'
 import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
@@ -26,6 +26,20 @@ export function effectiveMagicalDarknessBypass(
 }
 
 /**
+ * Ordinary environmental darkness is mitigated for sight when the viewer has darkvision in range.
+ * Unknown distance is permissive (in range) for no-grid / legacy call sites.
+ */
+export function darkvisionMitigatesOrdinaryEnvironmentalDarkness(
+  capabilities: EncounterViewerPerceptionCapabilities | undefined,
+  distanceViewerToTargetFt: number | undefined,
+): boolean {
+  const r = capabilities?.darkvisionRangeFt
+  if (r == null || r <= 0) return false
+  if (distanceViewerToTargetFt === undefined) return true
+  return distanceViewerToTargetFt <= r
+}
+
+/**
  * Per-cell perception for a viewer from resolved world state at viewer and target cells.
  *
  * Rules (baseline, no special senses): DM view is unrestricted. Otherwise:
@@ -36,7 +50,9 @@ export function effectiveMagicalDarknessBypass(
  *   “other cells” (`canPerceiveCell: false`); targets **inside** heavy non-MD obscuration still resolve per-cell
  *   fog-style fills. Own cell: masked darkness branch with `suppressTemplateBoundary` aligned with immersion.
  * - Viewer outside, target in magical darkness: can perceive the cell as a dark region, not occupants/objects.
- * - Heavy obscuration or non-magical darkness **on the target cell**: occupants/objects masked from outside.
+ * - Heavy obscurement or non-magical darkness **on the target cell**: occupants/objects masked from outside
+ *   unless ordinary environmental darkness is mitigated by darkvision (not heavy obscurement; not magical darkness;
+ *   not `blocksDarkvision`).
  * - Magical darkness on target takes precedence over heavy obscuration for masking.
  */
 /**
@@ -52,7 +68,15 @@ function isHeavyNonMdObscuredCloudClass(world: EncounterWorldCellEnvironment): b
 export function resolveViewerPerceptionForCell(
   params: ResolveViewerPerceptionForCellParams,
 ): EncounterViewerPerceptionCell {
-  const { viewerWorld, targetWorld, viewerCellId, targetCellId, capabilities, viewerRole } = params
+  const {
+    viewerWorld,
+    targetWorld,
+    viewerCellId,
+    targetCellId,
+    capabilities,
+    viewerRole,
+    distanceViewerToTargetFt,
+  } = params
   const sameCell = viewerCellId === targetCellId
   const bypass = effectiveMagicalDarknessBypass(capabilities)
 
@@ -63,11 +87,6 @@ export function resolveViewerPerceptionForCell(
   const targetMd = targetWorld.magicalDarkness && !bypass
   const viewerInMd = viewerWorld.magicalDarkness && !bypass
 
-  const maskedByMagicalDarkness = targetMd
-  const maskedByDarkness =
-    !maskedByMagicalDarkness &&
-    (targetWorld.visibilityObscured === 'heavy' || targetWorld.lightingLevel === 'darkness')
-
   if (viewerInMd && !sameCell) {
     return {
       canPerceiveCell: false,
@@ -75,6 +94,7 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
+      environmentalDarknessMitigatedByDarkvision: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -89,6 +109,7 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
+      environmentalDarknessMitigatedByDarkvision: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -112,6 +133,7 @@ export function resolveViewerPerceptionForCell(
         canPerceiveObjects: false,
         maskedByDarkness: false,
         maskedByMagicalDarkness: false,
+        environmentalDarknessMitigatedByDarkvision: false,
         suppressTemplateBoundary: true,
         worldLightingLevel: targetWorld.lightingLevel,
         worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -124,6 +146,7 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: false,
       maskedByMagicalDarkness: false,
+      environmentalDarknessMitigatedByDarkvision: false,
       suppressTemplateBoundary: true,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -138,12 +161,28 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: false,
       maskedByMagicalDarkness: true,
+      environmentalDarknessMitigatedByDarkvision: false,
       suppressTemplateBoundary: false,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
       appliedZoneIds: targetWorld.appliedZoneIds,
     }
   }
+
+  const maskedByHeavyObscurement = targetWorld.visibilityObscured === 'heavy'
+
+  const environmentalDarknessMitigatedByDarkvision =
+    !maskedByHeavyObscurement &&
+    targetWorld.lightingLevel === 'darkness' &&
+    !targetWorld.blocksDarkvision &&
+    darkvisionMitigatesOrdinaryEnvironmentalDarkness(capabilities, distanceViewerToTargetFt)
+
+  const maskedByOrdinaryDarkness =
+    !maskedByHeavyObscurement &&
+    targetWorld.lightingLevel === 'darkness' &&
+    !environmentalDarknessMitigatedByDarkvision
+
+  const maskedByDarkness = maskedByHeavyObscurement || maskedByOrdinaryDarkness
 
   if (maskedByDarkness) {
     return {
@@ -152,6 +191,7 @@ export function resolveViewerPerceptionForCell(
       canPerceiveObjects: false,
       maskedByDarkness: true,
       maskedByMagicalDarkness: false,
+      environmentalDarknessMitigatedByDarkvision: false,
       suppressTemplateBoundary: viewerInHeavyNonMdFog,
       worldLightingLevel: targetWorld.lightingLevel,
       worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -165,6 +205,7 @@ export function resolveViewerPerceptionForCell(
     canPerceiveObjects: true,
     maskedByDarkness: false,
     maskedByMagicalDarkness: false,
+    environmentalDarknessMitigatedByDarkvision,
     suppressTemplateBoundary: false,
     worldLightingLevel: targetWorld.lightingLevel,
     worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -179,6 +220,7 @@ function dmOmniscientCell(targetWorld: EncounterWorldCellEnvironment): Encounter
     canPerceiveObjects: true,
     maskedByDarkness: false,
     maskedByMagicalDarkness: false,
+    environmentalDarknessMitigatedByDarkvision: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: targetWorld.lightingLevel,
     worldVisibilityObscured: targetWorld.visibilityObscured,
@@ -261,6 +303,8 @@ export function resolveViewerPerceptionForCellFromState(
   const targetWorld = resolveWorldEnvironmentFromEncounterState(state, targetCellId)
   if (!viewerWorld || !targetWorld) return undefined
 
+  const distanceViewerToTargetFt = gridDistanceFt(state.space, viewerCellId, targetCellId)
+
   return resolveViewerPerceptionForCell({
     viewerWorld,
     targetWorld,
@@ -268,6 +312,7 @@ export function resolveViewerPerceptionForCellFromState(
     targetCellId,
     capabilities: options?.capabilities,
     viewerRole: options?.viewerRole,
+    distanceViewerToTargetFt,
   })
 }
 

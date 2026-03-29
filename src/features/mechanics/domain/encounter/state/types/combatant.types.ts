@@ -73,6 +73,8 @@ export type CombatantSkillRuntimeSnapshot = {
   stealthProficiencyLevel?: CombatantSkillProficiencyLevel
   /** Authoritative passive Perception when authored (e.g. monster senses). Takes precedence over derivation. */
   passivePerception?: number
+  /** From authored senses (e.g. monster `darkvision` range); feeds encounter viewer perception only. */
+  darkvisionRangeFt?: number
   /** When set, Stealth check uses this total modifier instead of Dex + proficiency contribution. */
   stealthCheckModifierOverride?: number
   /**

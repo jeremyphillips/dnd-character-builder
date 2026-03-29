@@ -1,4 +1,5 @@
 export * from './perception.types'
+export * from './perception.capabilities'
 export * from './visibility.types'
 export * from './visibility.contributors'
 export * from './visibility.resolved'

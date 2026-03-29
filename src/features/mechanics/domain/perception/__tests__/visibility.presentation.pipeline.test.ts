@@ -7,6 +7,7 @@ import type { EncounterWorldCellEnvironment } from '../../environment/environmen
 import { inferObscurationPresentationCausesWhenMissing } from '../visibility.presentation.compatibility'
 import { resolveViewerPerceptionForCell } from '../perception.resolve'
 import {
+  buildViewerAdjustedPresentationWorld,
   mapResolvedVisibilityToFillKind,
   resolvePresentationVisibilityFill,
   resolvePresentationVisibilityFillFromMergedWorld,
@@ -25,6 +26,7 @@ function basePerception(overrides: Partial<EncounterViewerPerceptionCell> = {}):
     canPerceiveOccupants: true,
     canPerceiveObjects: true,
     maskedByDarkness: false,
+    environmentalDarknessMitigatedByDarkvision: false,
     maskedByMagicalDarkness: false,
     suppressTemplateBoundary: false,
     worldLightingLevel: 'bright',
@@ -115,6 +117,36 @@ describe('canonical visibility presentation pipeline', () => {
       lightingLevel: 'bright',
     })
     expect(resolvePresentationVisibilityFillFromMergedWorld(p, w)).toBe('fog')
+  })
+
+  it('darkvision-mitigated ordinary darkness does not resolve to darkness presentation fill', () => {
+    const darkWorld = baseWorld({
+      lightingLevel: 'darkness',
+      obscurationPresentationCauses: ['darkness'],
+      visibilityObscured: 'none',
+    })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: baseWorld({}),
+      targetWorld: darkWorld,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+    })
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(true)
+    expect(resolvePresentationVisibilityFillFromMergedWorld(p, darkWorld)).not.toBe('darkness')
+  })
+
+  it('buildViewerAdjustedPresentationWorld is a shallow copy and strips darkness causes when mitigated', () => {
+    const w = baseWorld({
+      lightingLevel: 'darkness',
+      obscurationPresentationCauses: ['darkness', 'fog'],
+    })
+    const p = basePerception({ environmentalDarknessMitigatedByDarkvision: true })
+    const adj = buildViewerAdjustedPresentationWorld(w, p)
+    expect(adj).not.toBe(w)
+    expect(adj.lightingLevel).toBe('dim')
+    expect(adj.obscurationPresentationCauses).toEqual(['fog'])
   })
 
   it('magical darkness still wins precedence over fog cause in merged world', () => {

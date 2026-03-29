@@ -32,6 +32,22 @@ import { pickPrimaryObscurationCause, resolveCellVisibility } from './visibility
 import type { ResolvedCellVisibility, VisibilityFillKind } from './visibility.types'
 
 /**
+ * Viewer-relative presentation copy when darkvision mitigates ordinary environmental darkness.
+ * Does **not** mutate encounter merged world; shallow copy only.
+ */
+export function buildViewerAdjustedPresentationWorld(
+  mergedWorld: EncounterWorldCellEnvironment,
+  perception: EncounterViewerPerceptionCell,
+): EncounterWorldCellEnvironment {
+  if (!perception.environmentalDarknessMitigatedByDarkvision) return mergedWorld
+  return {
+    ...mergedWorld,
+    lightingLevel: 'dim',
+    obscurationPresentationCauses: mergedWorld.obscurationPresentationCauses.filter((c) => c !== 'darkness'),
+  }
+}
+
+/**
  * Builds a **presentation-only** non-`hidden` resolved snapshot from the viewer’s merged world so
  * {@link mapNonHiddenResolvedVisibilityToFillKind} can yield fog / darkness / magical-darkness tints.
  * Does **not** participate in combat visibility rules — target semantics are already in `resolved`.
@@ -129,8 +145,9 @@ export function resolvePresentationVisibilityFillFromMergedWorld(
    */
   viewerWorld?: EncounterWorldCellEnvironment | null,
 ): VisibilityFillKind | null {
-  const contributors = buildVisibilityContributors({ targetWorld: world, perception })
-  const resolved = resolveCellVisibility({ world, contributors })
+  const worldForPresentation = buildViewerAdjustedPresentationWorld(world, perception)
+  const contributors = buildVisibilityContributors({ targetWorld: worldForPresentation, perception })
+  const resolved = resolveCellVisibility({ world: worldForPresentation, contributors })
   return mapResolvedVisibilityToFillKind(resolved, viewerWorld)
 }
 

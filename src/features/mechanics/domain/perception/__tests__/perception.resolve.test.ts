@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  darkvisionMitigatesOrdinaryEnvironmentalDarkness,
   effectiveMagicalDarknessBypass,
   resolveViewerBattlefieldPerception,
   resolveViewerPerceptionForCell,
@@ -191,6 +192,114 @@ describe('resolveViewerPerceptionForCell', () => {
   it('default capabilities: no bypass', () => {
     expect(effectiveMagicalDarknessBypass(undefined)).toBe(false)
     expect(effectiveMagicalDarknessBypass({ darkvisionRangeFt: 60 })).toBe(false)
+  })
+
+  it('ordinary environmental darkness masks occupants without darkvision', () => {
+    const dark = world({ lightingLevel: 'darkness', visibilityObscured: 'none' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+    })
+    expect(p.maskedByDarkness).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(false)
+  })
+
+  it('darkvision mitigates ordinary environmental darkness (permissive distance)', () => {
+    const dark = world({ lightingLevel: 'darkness', visibilityObscured: 'none' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+    })
+    expect(p.maskedByDarkness).toBe(false)
+    expect(p.canPerceiveOccupants).toBe(true)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(true)
+  })
+
+  it('darkvision does not mitigate heavy obscurement', () => {
+    const w = world({ lightingLevel: 'darkness', visibilityObscured: 'heavy', magicalDarkness: false })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: w,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+    })
+    expect(p.maskedByDarkness).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(false)
+  })
+
+  it('darkvision does not bypass magical darkness', () => {
+    const dark = world({ magicalDarkness: true, lightingLevel: 'darkness' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+    })
+    expect(p.maskedByMagicalDarkness).toBe(true)
+    expect(p.canPerceiveOccupants).toBe(false)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(false)
+  })
+
+  it('blocksDarkvision on target prevents mitigation', () => {
+    const dark = world({ lightingLevel: 'darkness', blocksDarkvision: true })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+    })
+    expect(p.maskedByDarkness).toBe(true)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(false)
+  })
+
+  it('darkvision out of range does not mitigate', () => {
+    const dark = world({ lightingLevel: 'darkness', visibilityObscured: 'none' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+      distanceViewerToTargetFt: 65,
+    })
+    expect(p.maskedByDarkness).toBe(true)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(false)
+  })
+
+  it('darkvision in range mitigates', () => {
+    const dark = world({ lightingLevel: 'darkness', visibilityObscured: 'none' })
+    const p = resolveViewerPerceptionForCell({
+      viewerWorld: world({}),
+      targetWorld: dark,
+      viewerCellId: 'a',
+      targetCellId: 'b',
+      viewerRole: 'pc',
+      capabilities: { darkvisionRangeFt: 60 },
+      distanceViewerToTargetFt: 60,
+    })
+    expect(p.maskedByDarkness).toBe(false)
+    expect(p.environmentalDarknessMitigatedByDarkvision).toBe(true)
+  })
+
+  it('darkvisionMitigatesOrdinaryEnvironmentalDarkness: unknown distance is permissive', () => {
+    expect(darkvisionMitigatesOrdinaryEnvironmentalDarkness({ darkvisionRangeFt: 60 }, undefined)).toBe(true)
+    expect(darkvisionMitigatesOrdinaryEnvironmentalDarkness(undefined, undefined)).toBe(false)
   })
 })
 

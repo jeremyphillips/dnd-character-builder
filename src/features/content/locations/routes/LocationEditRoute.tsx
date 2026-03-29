@@ -41,7 +41,7 @@ import {
   mapKindForLocationScale,
   type LocationScaleId,
 } from '@/shared/domain/locations';
-import { LOCATION_GRID_SIZE_PRESETS } from '@/shared/domain/locations/locationGridPresets';
+import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 
 const FORM_ID = 'location-edit-form';
 
@@ -113,7 +113,7 @@ export default function LocationEditRoute() {
   const createGridWatch = watch('createGrid');
   useEffect(() => {
     if (!createGridWatch || !gridPreset) return;
-    const p = LOCATION_GRID_SIZE_PRESETS[gridPreset as keyof typeof LOCATION_GRID_SIZE_PRESETS];
+    const p = GRID_SIZE_PRESETS[gridPreset as keyof typeof GRID_SIZE_PRESETS];
     if (p) {
       setValue('gridColumns', String(p.columns));
       setValue('gridRows', String(p.rows));

@@ -18,7 +18,7 @@ import {
 } from '@/features/content/locations/domain';
 import { ConditionalFormRenderer } from '@/ui/patterns';
 import { CELL_UNITS_BY_KIND, mapKindForLocationScale } from '@/shared/domain/locations';
-import { LOCATION_GRID_SIZE_PRESETS } from '@/shared/domain/locations/locationGridPresets';
+import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
 const FORM_ID = 'location-create-form';
@@ -53,7 +53,7 @@ export default function LocationCreateRoute() {
   const createGrid = watch('createGrid');
   useEffect(() => {
     if (!createGrid || !gridPreset) return;
-    const p = LOCATION_GRID_SIZE_PRESETS[gridPreset as keyof typeof LOCATION_GRID_SIZE_PRESETS];
+    const p = GRID_SIZE_PRESETS[gridPreset as keyof typeof GRID_SIZE_PRESETS];
     if (p) {
       setValue('gridColumns', String(p.columns));
       setValue('gridRows', String(p.rows));

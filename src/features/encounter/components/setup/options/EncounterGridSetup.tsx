@@ -10,14 +10,14 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
 import {
-  LOCATION_GRID_SIZE_PRESETS,
-  type LocationGridSizePresetId,
-} from '@/shared/domain/locations/locationGridPresets'
+  GRID_SIZE_PRESETS,
+  type GridSizePreset,
+} from '@/shared/domain/grid/gridPresets'
+import GridEditor from '@/ui/patterns/grid/GridEditor'
 
-export type GridSizePreset = LocationGridSizePresetId
-
-/** @deprecated Prefer importing from `@/shared/domain/locations/locationGridPresets` */
-export const GRID_SIZE_PRESETS = LOCATION_GRID_SIZE_PRESETS
+function capitalizePreset(key: string) {
+  return key.slice(0, 1).toUpperCase() + key.slice(1)
+}
 
 type EncounterGridSetupProps = {
   value: GridSizePreset
@@ -26,6 +26,7 @@ type EncounterGridSetupProps = {
 
 export function EncounterGridSetup({ value, onChange }: EncounterGridSetupProps) {
   const [expanded, setExpanded] = useState(false)
+  const [previewSelectedId, setPreviewSelectedId] = useState<string | null>(null)
   const current = GRID_SIZE_PRESETS[value]
 
   return (
@@ -37,7 +38,7 @@ export function EncounterGridSetup({ value, onChange }: EncounterGridSetupProps)
           </Typography>
           {!expanded && (
             <Typography variant="body2" color="text.secondary">
-              {current.label} &mdash; {current.description}
+              {capitalizePreset(value)} — {current.columns} × {current.rows}
             </Typography>
           )}
         </Box>
@@ -51,18 +52,34 @@ export function EncounterGridSetup({ value, onChange }: EncounterGridSetupProps)
           <ToggleButtonGroup
             exclusive
             value={value}
-            onChange={(_, next) => { if (next) onChange(next) }}
+            onChange={(_, next) => {
+              if (next) onChange(next)
+            }}
             size="small"
           >
-            {(Object.entries(GRID_SIZE_PRESETS) as [GridSizePreset, typeof current][]).map(([key, preset]) => (
-              <ToggleButton key={key} value={key} sx={{ textTransform: 'none', px: 3 }}>
-                <Stack alignItems="center" spacing={0.25}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{preset.label}</Typography>
-                  <Typography variant="caption" color="text.secondary">{preset.description}</Typography>
-                </Stack>
-              </ToggleButton>
-            ))}
+            {(Object.entries(GRID_SIZE_PRESETS) as [GridSizePreset, (typeof GRID_SIZE_PRESETS)['small']][]).map(
+              ([key, def]) => (
+                <ToggleButton key={key} value={key} sx={{ textTransform: 'none', px: 3 }}>
+                  <Stack alignItems="center" spacing={0.25}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {capitalizePreset(key)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {def.columns} × {def.rows}
+                    </Typography>
+                  </Stack>
+                </ToggleButton>
+              ),
+            )}
           </ToggleButtonGroup>
+          <Box sx={{ maxHeight: 220, overflow: 'auto' }}>
+            <GridEditor
+              columns={current.columns}
+              rows={current.rows}
+              selectedCellId={previewSelectedId}
+              onCellClick={(cell) => setPreviewSelectedId(cell.cellId)}
+            />
+          </Box>
         </Stack>
       </Collapse>
     </Paper>

@@ -6,7 +6,10 @@ import {
   LOCATION_SCALE_ORDER,
 } from '@/shared/domain/locations/location.constants';
 import { LOCATION_CELL_UNIT_IDS } from '@/shared/domain/locations/locationMap.constants';
-import { LOCATION_GRID_SIZE_PRESETS } from '@/shared/domain/locations/locationGridPresets';
+import {
+  GRID_SIZE_PRESETS,
+  type GridSizePreset,
+} from '@/shared/domain/grid/gridPresets';
 import { when } from '@/ui/patterns';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationInput } from '@/features/content/locations/domain/types';
@@ -27,13 +30,10 @@ const CATEGORY_OPTIONS = LOCATION_CATEGORY_IDS.map((c) => ({
 const GRID_PRESET_OPTIONS = [
   { value: '', label: 'Custom size' },
   ...(
-    Object.entries(LOCATION_GRID_SIZE_PRESETS) as [
-      keyof typeof LOCATION_GRID_SIZE_PRESETS,
-      (typeof LOCATION_GRID_SIZE_PRESETS)['small'],
-    ][]
+    Object.entries(GRID_SIZE_PRESETS) as [GridSizePreset, (typeof GRID_SIZE_PRESETS)[GridSizePreset]][]
   ).map(([key, v]) => ({
     value: key,
-    label: `${v.label} (${v.description})`,
+    label: `${key} (${v.columns}×${v.rows})`,
   })),
 ];
 

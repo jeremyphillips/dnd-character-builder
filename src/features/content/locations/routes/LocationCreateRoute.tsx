@@ -85,6 +85,7 @@ export default function LocationCreateRoute() {
   const gridPreset = watch('gridPreset');
   const gridColumns = watch('gridColumns');
   const gridRows = watch('gridRows');
+  const locationNameDraft = watch('name');
 
   useEffect(() => {
     const cols = Number(gridColumns);
@@ -182,6 +183,10 @@ export default function LocationCreateRoute() {
             gridRows={gridRows}
             draft={gridDraft}
             setDraft={setGridDraft}
+            locations={locations}
+            campaignId={campaignId ?? undefined}
+            hostScale={scale}
+            hostName={String(locationNameDraft ?? '').trim() || undefined}
           />
         </Stack>
       </EntryEditorLayout>

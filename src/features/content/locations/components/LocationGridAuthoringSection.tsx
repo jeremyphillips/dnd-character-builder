@@ -8,9 +8,14 @@ import Typography from '@mui/material/Typography';
 
 import GridEditor, { type GridCell } from '@/ui/patterns/grid/GridEditor';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
-import { pruneExcludedCellIdsForGrid } from '@/features/content/locations/domain/maps/gridLayoutDraft';
+import {
+  pruneCellKeyedRecordForGrid,
+  pruneExcludedCellIdsForGrid,
+} from '@/features/content/locations/domain/maps/gridLayoutDraft';
+import type { Location } from '@/features/content/locations/domain/types';
 
-import type { LocationGridDraftState } from './locationGridDraft.types';
+import { LocationGridCellModal } from './LocationGridCellModal';
+import type { LocationCellObjectDraft, LocationGridDraftState } from './locationGridDraft.types';
 
 type LocationGridAuthoringSectionProps = {
   gridColumns: string;
@@ -18,6 +23,13 @@ type LocationGridAuthoringSectionProps = {
   draft: LocationGridDraftState;
   setDraft: Dispatch<SetStateAction<LocationGridDraftState>>;
   maxHeight?: number | 'none';
+  /** Campaign locations (for cell modal link picker). */
+  locations: Location[];
+  campaignId?: string;
+  /** Current location being edited; omit on create. */
+  hostLocationId?: string;
+  hostScale: string;
+  hostName?: string;
 };
 
 export function LocationGridAuthoringSection({
@@ -26,6 +38,11 @@ export function LocationGridAuthoringSection({
   draft,
   setDraft,
   maxHeight,
+  locations,
+  campaignId,
+  hostLocationId,
+  hostScale,
+  hostName,
 }: LocationGridAuthoringSectionProps) {
   const cols = Number(gridColumns);
   const rows = Number(gridRows);
@@ -41,7 +58,9 @@ export function LocationGridAuthoringSection({
   useEffect(() => {
     if (!validPreview) return;
     setDraft((prev) => {
-      const pruned = pruneExcludedCellIdsForGrid(prev.excludedCellIds, cols, rows);
+      const prunedExcluded = pruneExcludedCellIdsForGrid(prev.excludedCellIds, cols, rows);
+      const prunedLinks = pruneCellKeyedRecordForGrid(prev.linkedLocationByCellId, cols, rows);
+      const prunedObjs = pruneCellKeyedRecordForGrid(prev.objectsByCellId, cols, rows);
       let nextSel = prev.selectedCellId;
       if (nextSel) {
         const p = parseGridCellId(nextSel);
@@ -49,18 +68,48 @@ export function LocationGridAuthoringSection({
           nextSel = null;
         }
       }
-      const sameLen = pruned.length === prev.excludedCellIds.length;
+      let nextModal = prev.cellModalCellId;
+      if (nextModal) {
+        const p = parseGridCellId(nextModal);
+        if (!p || p.x < 0 || p.y < 0 || p.x >= cols || p.y >= rows) {
+          nextModal = null;
+        }
+      }
+      const sameLen = prunedExcluded.length === prev.excludedCellIds.length;
       const sameIds =
-        sameLen && pruned.every((id, i) => id === prev.excludedCellIds[i]);
-      if (sameIds && nextSel === prev.selectedCellId) return prev;
-      return { ...prev, excludedCellIds: pruned, selectedCellId: nextSel };
+        sameLen && prunedExcluded.every((id, i) => id === prev.excludedCellIds[i]);
+      const linksSame =
+        JSON.stringify(prunedLinks) === JSON.stringify(prev.linkedLocationByCellId);
+      const objsSame =
+        JSON.stringify(prunedObjs) === JSON.stringify(prev.objectsByCellId);
+      if (
+        sameIds &&
+        nextSel === prev.selectedCellId &&
+        nextModal === prev.cellModalCellId &&
+        linksSame &&
+        objsSame
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        excludedCellIds: prunedExcluded,
+        selectedCellId: nextSel,
+        cellModalCellId: nextModal,
+        linkedLocationByCellId: prunedLinks,
+        objectsByCellId: prunedObjs,
+      };
     });
   }, [validPreview, cols, rows, setDraft]);
 
   if (!validPreview) return null;
 
   const onCellClick = (cell: GridCell) => {
-    setDraft((d) => ({ ...d, selectedCellId: cell.cellId }));
+    setDraft((d) => ({
+      ...d,
+      selectedCellId: cell.cellId,
+      cellModalCellId: cell.cellId,
+    }));
   };
 
   const toggleExcludedForSelected = () => {
@@ -74,6 +123,24 @@ export function LocationGridAuthoringSection({
         ...d,
         excludedCellIds: [...next].sort(),
       };
+    });
+  };
+
+  const onUpdateLinkedLocation = (cellId: string, locationId: string | undefined) => {
+    setDraft((prev) => {
+      const nextLinks = { ...prev.linkedLocationByCellId };
+      if (locationId) nextLinks[cellId] = locationId;
+      else delete nextLinks[cellId];
+      return { ...prev, linkedLocationByCellId: nextLinks };
+    });
+  };
+
+  const onUpdateCellObjects = (cellId: string, objects: LocationCellObjectDraft[]) => {
+    setDraft((prev) => {
+      const next = { ...prev.objectsByCellId };
+      if (objects.length === 0) delete next[cellId];
+      else next[cellId] = objects;
+      return { ...prev, objectsByCellId: next };
     });
   };
 
@@ -98,6 +165,14 @@ export function LocationGridAuthoringSection({
           selectedCellId={draft.selectedCellId}
           excludedCellIds={draft.excludedCellIds}
           onCellClick={onCellClick}
+          getCellLabel={(cell) => {
+            const link = draft.linkedLocationByCellId[cell.cellId];
+            const objs = draft.objectsByCellId[cell.cellId];
+            const bits: string[] = [];
+            if (link) bits.push('L');
+            if (objs && objs.length > 0) bits.push(String(objs.length));
+            return bits.length ? bits.join('·') : undefined;
+          }}
         />
       </Box>
       <Stack spacing={1} sx={{ mt: 1.5 }}>
@@ -121,10 +196,25 @@ export function LocationGridAuthoringSection({
           </>
         ) : (
           <Typography variant="caption" color="text.secondary">
-            Click a cell to select it and mark cells excluded from the walkable layout.
+            Click a cell to edit links and objects, or mark cells excluded from the walkable layout.
           </Typography>
         )}
       </Stack>
+
+      <LocationGridCellModal
+        open={draft.cellModalCellId != null}
+        cellId={draft.cellModalCellId}
+        hostLocationId={hostLocationId}
+        hostScale={hostScale}
+        hostName={hostName}
+        campaignId={campaignId}
+        locations={locations}
+        linkedLocationByCellId={draft.linkedLocationByCellId}
+        objectsByCellId={draft.objectsByCellId}
+        onClose={() => setDraft((d) => ({ ...d, cellModalCellId: null }))}
+        onUpdateLinkedLocation={onUpdateLinkedLocation}
+        onUpdateCellObjects={onUpdateCellObjects}
+      />
     </Paper>
   );
 }

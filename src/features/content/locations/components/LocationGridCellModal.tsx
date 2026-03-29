@@ -1,0 +1,367 @@
+import { useCallback, useMemo, useState } from 'react';
+
+import BlockIcon from '@mui/icons-material/Block';
+import CategoryIcon from '@mui/icons-material/Category';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DoorFrontIcon from '@mui/icons-material/DoorFront';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
+import LinkIcon from '@mui/icons-material/Link';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import StairsIcon from '@mui/icons-material/Stairs';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+
+import type { Location } from '@/features/content/locations/domain/types';
+import OptionPickerField from '@/ui/patterns/form/OptionPickerField';
+import type { PickerOption } from '@/ui/patterns/form/OptionPickerField';
+import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
+import {
+  getAllowedLinkedLocationOptions,
+  getAllowedObjectKindsForHostScale,
+} from '@/shared/domain/locations';
+import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
+
+import type { LocationCellObjectDraft } from './locationGridDraft.types';
+
+function buildLocationByIdMap(locations: Location[]): Map<string, Location> {
+  return new Map(locations.map((l) => [l.id, l]));
+}
+
+function formatAncestryDescription(loc: Location, byId: Map<string, Location>): string | undefined {
+  const segments: string[] = [];
+  let pid = loc.parentId;
+  let guard = 0;
+  while (pid && guard++ < 24) {
+    const p = byId.get(pid);
+    if (!p) break;
+    segments.unshift(p.name);
+    pid = p.parentId;
+  }
+  return segments.length ? segments.join(' → ') : undefined;
+}
+
+function objectKindIcon(kind: LocationMapObjectKindId) {
+  switch (kind) {
+    case 'marker':
+      return <RadioButtonUncheckedIcon fontSize="small" />;
+    case 'obstacle':
+      return <BlockIcon fontSize="small" />;
+    case 'treasure':
+      return <Inventory2Icon fontSize="small" />;
+    case 'door':
+      return <DoorFrontIcon fontSize="small" />;
+    case 'stairs':
+      return <StairsIcon fontSize="small" />;
+    default:
+      return <CategoryIcon fontSize="small" />;
+  }
+}
+
+export type LocationGridCellModalProps = {
+  open: boolean;
+  cellId: string | null;
+  /** Host campaign location id; omit on create flow (draft location). */
+  hostLocationId?: string;
+  hostScale: string;
+  hostName?: string;
+  campaignId?: string;
+  locations: Location[];
+  linkedLocationByCellId: Record<string, string | undefined>;
+  objectsByCellId: Record<string, LocationCellObjectDraft[]>;
+  onClose: () => void;
+  onUpdateLinkedLocation: (cellId: string, locationId: string | undefined) => void;
+  onUpdateCellObjects: (cellId: string, objects: LocationCellObjectDraft[]) => void;
+};
+
+export function LocationGridCellModal({
+  open,
+  cellId,
+  hostLocationId,
+  hostScale,
+  hostName,
+  campaignId,
+  locations,
+  linkedLocationByCellId,
+  objectsByCellId,
+  onClose,
+  onUpdateLinkedLocation,
+  onUpdateCellObjects,
+}: LocationGridCellModalProps) {
+  const byId = useMemo(() => buildLocationByIdMap(locations), [locations]);
+
+  const hostForPolicy = useMemo(
+    (): Pick<Location, 'id' | 'scale' | 'name' | 'source' | 'campaignId'> => ({
+      id: hostLocationId ?? '__draft_location__',
+      scale: hostScale as LocationScaleId,
+      name: hostName ?? '',
+      source: 'campaign',
+      campaignId: campaignId ?? '',
+    }),
+    [hostLocationId, hostScale, hostName, campaignId],
+  );
+
+  const linkPickerOptions: PickerOption[] = useMemo(() => {
+    const allowed = getAllowedLinkedLocationOptions(hostForPolicy, locations, {
+      campaignId,
+      excludeLocationId: hostLocationId,
+    }) as Location[];
+    return allowed.map((loc) => ({
+      value: loc.id,
+      label: `${loc.name} (${loc.scale})`,
+      description: formatAncestryDescription(loc, byId),
+      keywords: [loc.name, loc.scale],
+    }));
+  }, [hostForPolicy, locations, campaignId, hostLocationId, byId]);
+
+  const parsed = cellId ? parseGridCellId(cellId) : null;
+  const linkedId = cellId ? linkedLocationByCellId[cellId] : undefined;
+  const linkedLoc = linkedId ? byId.get(linkedId) : undefined;
+  const cellObjects = cellId ? objectsByCellId[cellId] ?? [] : [];
+
+  const allowedObjectKinds = useMemo(
+    () => getAllowedObjectKindsForHostScale(hostScale),
+    [hostScale],
+  );
+
+  const handleLinkedChange = useCallback(
+    (next: string[]) => {
+      if (!cellId) return;
+      const v = next[0];
+      onUpdateLinkedLocation(cellId, v);
+    },
+    [cellId, onUpdateLinkedLocation],
+  );
+
+  const handleAddObject = useCallback(
+    (kind: LocationMapObjectKindId) => {
+      if (!cellId) return;
+      const next: LocationCellObjectDraft = {
+        id: crypto.randomUUID(),
+        kind,
+        label: '',
+      };
+      onUpdateCellObjects(cellId, [...cellObjects, next]);
+    },
+    [cellId, cellObjects, onUpdateCellObjects],
+  );
+
+  const handleRemoveObject = useCallback(
+    (objectId: string) => {
+      if (!cellId) return;
+      onUpdateCellObjects(
+        cellId,
+        cellObjects.filter((o) => o.id !== objectId),
+      );
+    },
+    [cellId, cellObjects, onUpdateCellObjects],
+  );
+
+  const handleLabelChange = useCallback(
+    (objectId: string, label: string) => {
+      if (!cellId) return;
+      onUpdateCellObjects(
+        cellId,
+        cellObjects.map((o) => (o.id === objectId ? { ...o, label } : o)),
+      );
+    },
+    [cellId, cellObjects, onUpdateCellObjects],
+  );
+
+  const kindsAvailableToAdd = useMemo(
+    () => [...allowedObjectKinds],
+    [allowedObjectKinds],
+  );
+
+  const [addObjectSelectKey, setAddObjectSelectKey] = useState(0);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
+      <DialogTitle sx={{ pr: 5 }}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
+          <Box>
+            <Typography variant="h6" component="span">
+              Cell
+            </Typography>
+            {cellId && parsed ? (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <Box component="span" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                  {cellId}
+                </Box>
+                {' · '}
+                x {parsed.x}, y {parsed.y}
+              </Typography>
+            ) : null}
+            {(hostName || hostScale) && (
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
+                <LocationOnIcon fontSize="inherit" color="action" sx={{ fontSize: 16 }} />
+                <Typography variant="caption" color="text.secondary">
+                  {hostName ? `${hostName} · ` : ''}
+                  {hostScale} map
+                </Typography>
+              </Stack>
+            )}
+          </Box>
+          <IconButton aria-label="Close" onClick={onClose} size="small" sx={{ mt: -0.5 }}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={0.5} sx={{ mb: 2 }}>
+          <Stack direction="row" alignItems="center" gap={0.5}>
+            <InfoOutlinedIcon color="action" fontSize="small" />
+            <Typography variant="caption" color="text.secondary">
+              {linkedLoc
+                ? `Linked: ${linkedLoc.name}`
+                : 'No location linked'}
+              {cellObjects.length > 0
+                ? ` · ${cellObjects.length} object${cellObjects.length === 1 ? '' : 's'}`
+                : ''}
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <Stack spacing={2}>
+          <Box>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
+              <LinkIcon color="primary" fontSize="small" />
+              <Typography variant="subtitle2" fontWeight={600}>
+                Linked location
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Choose an existing location allowed for this map. One link per cell.
+            </Typography>
+            <OptionPickerField
+              label="Link location"
+              placeholder="Search locations…"
+              options={linkPickerOptions}
+              value={linkedId ? [linkedId] : []}
+              onChange={handleLinkedChange}
+              maxItems={1}
+              emptyMessage="No locations can be linked from this map (policy)."
+              renderSelectedAs="mini-card"
+            />
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
+              <CategoryIcon color="primary" fontSize="small" />
+              <Typography variant="subtitle2" fontWeight={600}>
+                Cell objects
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Simple markers and props allowed on this scale.
+            </Typography>
+
+            {cellObjects.length > 0 ? (
+              <List dense disablePadding sx={{ mb: 1 }}>
+                {cellObjects.map((obj) => (
+                  <ListItem
+                    key={obj.id}
+                    disableGutters
+                    sx={{
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      gap: 0.75,
+                      py: 1,
+                      borderBottom: 1,
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Chip
+                        size="small"
+                        icon={objectKindIcon(obj.kind)}
+                        label={obj.kind}
+                        variant="outlined"
+                      />
+                      <Box sx={{ flex: 1 }} />
+                      <IconButton
+                        size="small"
+                        aria-label={`Remove ${obj.kind}`}
+                        onClick={() => handleRemoveObject(obj.id)}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label="Label (optional)"
+                      value={obj.label ?? ''}
+                      onChange={(e) => handleLabelChange(obj.id, e.target.value)}
+                      placeholder="Short note"
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                No objects yet.
+              </Typography>
+            )}
+
+            <FormControl size="small" fullWidth sx={{ maxWidth: 280 }}>
+              <InputLabel id="add-object-kind-label">Add object</InputLabel>
+              <Select
+                key={addObjectSelectKey}
+                labelId="add-object-kind-label"
+                label="Add object"
+                value=""
+                displayEmpty
+                onChange={(e) => {
+                  const k = e.target.value as LocationMapObjectKindId;
+                  if (k) {
+                    handleAddObject(k);
+                    setAddObjectSelectKey((x) => x + 1);
+                  }
+                }}
+              >
+                <MenuItem value="">
+                  <em>Choose kind…</em>
+                </MenuItem>
+                {kindsAvailableToAdd.map((k) => (
+                  <MenuItem key={k} value={k}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      {objectKindIcon(k)}
+                      {k}
+                    </Stack>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button variant="contained" onClick={onClose} startIcon={<CheckIcon />}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}

@@ -174,6 +174,9 @@ export default function LocationEditRoute() {
         setGridDraft({
           selectedCellId: null,
           excludedCellIds: def.layout?.excludedCellIds ?? [],
+          linkedLocationByCellId: {},
+          objectsByCellId: {},
+          cellModalCellId: null,
         });
       } else {
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
@@ -367,6 +370,11 @@ export default function LocationEditRoute() {
             gridRows={gridRows}
             draft={gridDraft}
             setDraft={setGridDraft}
+            locations={locations}
+            campaignId={campaignId ?? undefined}
+            hostLocationId={locationId}
+            hostScale={scaleForFormRules}
+            hostName={loc.name}
           />
         </Stack>
       </EntryEditorLayout>

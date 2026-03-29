@@ -6,6 +6,7 @@ import {
   getLocation,
   createLocation,
   updateLocation,
+  deleteLocation,
   listLocationMaps,
   createLocationMap,
   listMapTransitions,
@@ -18,6 +19,7 @@ locationsRouter.get('/', asyncHandler(listLocations));
 locationsRouter.post('/', requireCampaignOwner(), asyncHandler(createLocation));
 locationsRouter.get('/:locationId', asyncHandler(getLocation));
 locationsRouter.patch('/:locationId', requireCampaignOwner(), asyncHandler(updateLocation));
+locationsRouter.delete('/:locationId', requireCampaignOwner(), asyncHandler(deleteLocation));
 
 locationsRouter.get('/:locationId/maps', asyncHandler(listLocationMaps));
 locationsRouter.post('/:locationId/maps', requireCampaignOwner(), asyncHandler(createLocationMap));

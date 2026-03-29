@@ -85,6 +85,10 @@ export async function listMapsForLocation(campaignId: string, locationId: string
   return docs.map((d) => toDoc(d as Record<string, unknown>));
 }
 
+export async function countMapsForLocation(campaignId: string, locationId: string): Promise<number> {
+  return CampaignLocationMap.countDocuments({ campaignId, locationId });
+}
+
 export async function getLocationMapById(campaignId: string, mapId: string): Promise<LocationMapDoc | null> {
   const doc = await CampaignLocationMap.findOne({ campaignId, mapId }).lean();
   return doc ? toDoc(doc as Record<string, unknown>) : null;

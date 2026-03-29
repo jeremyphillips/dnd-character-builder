@@ -1,7 +1,11 @@
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
-import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
-import { CampaignLocationTransition } from '../../../../shared/models/CampaignLocationTransition.model';
 import type { AccessPolicy } from '../../../../../shared/domain/accessPolicy';
+import {
+  buildAncestorIdsFromParentRow,
+  validateParentChildScales,
+  type HierarchyValidationError,
+} from '../domain/locations.hierarchy';
+import { countMapsForLocation } from './locationMaps.service';
 
 export type LocationDoc = {
   id: string;
@@ -30,11 +34,7 @@ export type LocationDoc = {
   updatedAt: string;
 };
 
-type ValidationError = {
-  path: string;
-  code: string;
-  message: string;
-};
+type ValidationError = HierarchyValidationError;
 
 function toDoc(doc: Record<string, unknown>): LocationDoc {
   return {
@@ -66,31 +66,172 @@ function generateLocationId(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export async function computeAncestorIdsForParent(
+function stripClientHierarchyFields(body: Record<string, unknown>): void {
+  delete body.ancestorIds;
+}
+
+/** Resolve parent for create: omit key = no parent; null/'' = root. */
+function resolveParentIdForCreate(body: Record<string, unknown>): string | undefined {
+  if (!('parentId' in body)) return undefined;
+  const v = body.parentId;
+  if (v === null || v === '') return undefined;
+  if (typeof v === 'string') {
+    const t = v.trim();
+    return t === '' ? undefined : t;
+  }
+  return undefined;
+}
+
+/** All strict descendants (by parentId chain), BFS. Does not include `rootLocationId`. */
+export async function listDescendantLocationIds(
   campaignId: string,
-  parentId: string | undefined,
+  rootLocationId: string,
+): Promise<string[]> {
+  const out: string[] = [];
+  const queue = [rootLocationId];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    const children = await CampaignLocation.find({ campaignId, parentId: id }).lean();
+    for (const raw of children) {
+      const cid = (raw as Record<string, unknown>).locationId as string;
+      out.push(cid);
+      queue.push(cid);
+    }
+  }
+  return out;
+}
+
+/**
+ * ancestorIds for a node whose parent is `parentId` (omit or null = root).
+ * Derived only from stored parent linkage — never from client input.
+ */
+export async function buildAncestorIdsForParent(
+  campaignId: string,
+  parentId: string | null | undefined,
 ): Promise<string[]> {
   if (!parentId) return [];
   const parent = await CampaignLocation.findOne({ campaignId, locationId: parentId }).lean();
-  if (!parent) {
-    return [];
-  }
-  const parentAncestors = ((parent as Record<string, unknown>).ancestorIds as string[]) ?? [];
-  return [...parentAncestors, parentId];
+  if (!parent) return [];
+  const row = parent as Record<string, unknown>;
+  return buildAncestorIdsFromParentRow({
+    locationId: row.locationId as string,
+    ancestorIds: (row.ancestorIds as string[]) ?? [],
+  });
 }
 
-async function refreshDescendantAncestorIds(campaignId: string, parentLocationId: string): Promise<void> {
-  const children = await CampaignLocation.find({ campaignId, parentId: parentLocationId }).lean();
+export async function getLocationByIdOrThrow(
+  campaignId: string,
+  locationId: string,
+): Promise<{ location: LocationDoc } | { errors: ValidationError[] }> {
+  const doc = await CampaignLocation.findOne({ campaignId, locationId }).lean();
+  if (!doc) {
+    return { errors: [{ path: 'locationId', code: 'NOT_FOUND', message: 'Location not found' }] };
+  }
+  return { location: toDoc(doc as Record<string, unknown>) };
+}
+
+export async function getParentLocationOrThrow(
+  campaignId: string,
+  parentId: string,
+): Promise<{ parent: Record<string, unknown> } | { errors: ValidationError[] }> {
+  const parent = await CampaignLocation.findOne({ campaignId, locationId: parentId }).lean();
+  if (!parent) {
+    return { errors: [{ path: 'parentId', code: 'NOT_FOUND', message: 'Parent location not found' }] };
+  }
+  const row = parent as Record<string, unknown>;
+  if (row.campaignId !== campaignId) {
+    return {
+      errors: [{ path: 'parentId', code: 'NOT_FOUND', message: 'Parent location not found' }],
+    };
+  }
+  return { parent: row };
+}
+
+/**
+ * Validates parent assignment: exists in campaign, self, cycle, scale nesting.
+ */
+export async function validateParentAssignment(
+  campaignId: string,
+  childLocationId: string,
+  childScale: string,
+  newParentId: string | null | undefined,
+): Promise<ValidationError[]> {
+  const errors: ValidationError[] = [];
+
+  if (newParentId === undefined || newParentId === null || newParentId === '') {
+    return errors;
+  }
+
+  if (newParentId === childLocationId) {
+    errors.push({ path: 'parentId', code: 'SELF_PARENT', message: 'A location cannot be its own parent' });
+    return errors;
+  }
+
+  const parentResult = await getParentLocationOrThrow(campaignId, newParentId);
+  if ('errors' in parentResult) {
+    return parentResult.errors;
+  }
+
+  const parent = parentResult.parent;
+  const parentScale = parent.scale as string;
+
+  const descendants = await listDescendantLocationIds(campaignId, childLocationId);
+  if (descendants.includes(newParentId)) {
+    errors.push({
+      path: 'parentId',
+      code: 'CYCLE',
+      message: 'Cannot set parent: would create a cycle',
+    });
+  }
+
+  const scaleErr = validateParentChildScales(parentScale, childScale);
+  if (scaleErr) errors.push(scaleErr);
+
+  return errors;
+}
+
+/**
+ * After a node’s `ancestorIds` is updated, recompute every descendant’s `ancestorIds`.
+ */
+export async function reparentLocationSubtree(campaignId: string, rootLocationId: string): Promise<void> {
+  const children = await CampaignLocation.find({ campaignId, parentId: rootLocationId }).lean();
   for (const raw of children) {
     const child = raw as Record<string, unknown>;
     const childLocationId = child.locationId as string;
-    const nextAncestors = await computeAncestorIdsForParent(campaignId, parentLocationId);
+    const nextAncestors = await buildAncestorIdsForParent(campaignId, rootLocationId);
     await CampaignLocation.updateOne(
       { campaignId, locationId: childLocationId },
       { $set: { ancestorIds: nextAncestors } },
     );
-    await refreshDescendantAncestorIds(campaignId, childLocationId);
+    await reparentLocationSubtree(campaignId, childLocationId);
   }
+}
+
+export async function assertLocationCanDelete(
+  campaignId: string,
+  locationId: string,
+): Promise<ValidationError[]> {
+  const errors: ValidationError[] = [];
+
+  const childCount = await CampaignLocation.countDocuments({ campaignId, parentId: locationId });
+  if (childCount > 0) {
+    errors.push({
+      path: 'locationId',
+      code: 'HAS_CHILDREN',
+      message: 'Cannot delete location while it has child locations',
+    });
+  }
+
+  const mapCount = await countMapsForLocation(campaignId, locationId);
+  if (mapCount > 0) {
+    errors.push({
+      path: 'locationId',
+      code: 'HAS_MAPS',
+      message: 'Cannot delete location while it has maps',
+    });
+  }
+
+  return errors;
 }
 
 function validateCreate(body: Record<string, unknown>): ValidationError[] {
@@ -134,6 +275,8 @@ export async function createLocation(
   campaignId: string,
   body: Record<string, unknown>,
 ): Promise<{ location: LocationDoc } | { errors: ValidationError[] }> {
+  stripClientHierarchyFields(body);
+
   const errors = validateCreate(body);
   if (errors.length > 0) return { errors };
 
@@ -144,15 +287,10 @@ export async function createLocation(
     (body.id as string | undefined)?.trim() ||
     generateLocationId(name);
 
-  const parentId = body.parentId as string | undefined;
-  if (parentId) {
-    const parent = await CampaignLocation.findOne({ campaignId, locationId: parentId }).lean();
-    if (!parent) {
-      return { errors: [{ path: 'parentId', code: 'NOT_FOUND', message: 'Parent location not found' }] };
-    }
-  }
+  const resolvedParentId = resolveParentIdForCreate(body);
 
-  const ancestorIds = await computeAncestorIdsForParent(campaignId, parentId);
+  const assignErrors = await validateParentAssignment(campaignId, locationId, scale, resolvedParentId ?? null);
+  if (assignErrors.length > 0) return { errors: assignErrors };
 
   const existing = await CampaignLocation.findOne({ campaignId, locationId }).lean();
   if (existing) {
@@ -167,6 +305,8 @@ export async function createLocation(
     };
   }
 
+  const ancestorIds = await buildAncestorIdsForParent(campaignId, resolvedParentId);
+
   const accessPolicy = body.accessPolicy as AccessPolicy | undefined;
 
   const doc = await CampaignLocation.create({
@@ -178,7 +318,7 @@ export async function createLocation(
     description: body.description as string | undefined,
     imageKey: body.imageKey as string | undefined,
     accessPolicy,
-    parentId,
+    parentId: resolvedParentId,
     ancestorIds,
     sortOrder: body.sortOrder as number | undefined,
     label: body.label as Record<string, unknown> | undefined,
@@ -195,11 +335,47 @@ export async function updateLocation(
   locationId: string,
   body: Record<string, unknown>,
 ): Promise<{ location: LocationDoc } | { errors: ValidationError[] } | null> {
+  stripClientHierarchyFields(body);
+
   const errors = validateUpdate(body);
   if (errors.length > 0) return { errors };
 
   const existing = await CampaignLocation.findOne({ campaignId, locationId }).lean();
   if (!existing) return null;
+
+  const existingRow = existing as Record<string, unknown>;
+  const existingParentId = existingRow.parentId as string | undefined;
+
+  const parentIdInBody = 'parentId' in body;
+
+  let nextParentId: string | undefined;
+  if (!parentIdInBody) {
+    nextParentId = existingParentId;
+  } else {
+    const v = body.parentId;
+    if (v === null || v === '') nextParentId = undefined;
+    else if (typeof v === 'string') {
+      const t = v.trim();
+      nextParentId = t === '' ? undefined : t;
+    } else {
+      nextParentId = existingParentId;
+    }
+  }
+
+  const nextScale =
+    body.scale !== undefined ? (body.scale as string).trim() : (existingRow.scale as string);
+
+  const scaleChanged =
+    body.scale !== undefined && (body.scale as string).trim() !== (existingRow.scale as string);
+
+  const parentChanged = parentIdInBody && nextParentId !== existingParentId;
+
+  const parentOrScaleChanged = parentIdInBody || scaleChanged;
+
+  if (parentOrScaleChanged) {
+    const assignErrors = await validateParentAssignment(campaignId, locationId, nextScale, nextParentId ?? null);
+    if (assignErrors.length > 0) return { errors: assignErrors };
+  }
 
   const $set: Record<string, unknown> = {};
 
@@ -215,54 +391,44 @@ export async function updateLocation(
   if (body.tags !== undefined) $set.tags = body.tags;
   if (body.connections !== undefined) $set.connections = body.connections;
 
-  if (body.parentId !== undefined) {
-    const newParentId = body.parentId as string | undefined;
-    if (newParentId === locationId) {
-      return { errors: [{ path: 'parentId', code: 'INVALID', message: 'Location cannot be its own parent' }] };
+  if (parentChanged) {
+    if (nextParentId === undefined) {
+      $set.parentId = undefined;
+      $set.ancestorIds = [];
+    } else {
+      $set.parentId = nextParentId;
+      $set.ancestorIds = await buildAncestorIdsForParent(campaignId, nextParentId);
     }
-    if (newParentId) {
-      const parent = await CampaignLocation.findOne({ campaignId, locationId: newParentId }).lean();
-      if (!parent) {
-        return { errors: [{ path: 'parentId', code: 'NOT_FOUND', message: 'Parent location not found' }] };
-      }
-      const parentAncestors = ((parent as Record<string, unknown>).ancestorIds as string[]) ?? [];
-      if (parentAncestors.includes(locationId)) {
-        return {
-          errors: [{ path: 'parentId', code: 'INVALID', message: 'Cannot set parent: would create a cycle' }],
-        };
-      }
-    }
-    $set.parentId = newParentId;
-    $set.ancestorIds = await computeAncestorIdsForParent(campaignId, newParentId);
   }
+
 
   const doc = await CampaignLocation.findOneAndUpdate({ campaignId, locationId }, { $set }, { new: true, lean: true });
 
   if (!doc) return null;
 
-  if (body.parentId !== undefined) {
-    await refreshDescendantAncestorIds(campaignId, locationId);
+  if (parentChanged) {
+    await reparentLocationSubtree(campaignId, locationId);
   }
 
   const fresh = await CampaignLocation.findOne({ campaignId, locationId }).lean();
   return { location: toDoc((fresh ?? doc) as Record<string, unknown>) };
 }
 
-export async function deleteLocation(campaignId: string, locationId: string): Promise<boolean> {
-  const childCount = await CampaignLocation.countDocuments({ campaignId, parentId: locationId });
-  if (childCount > 0) {
-    return false;
+export async function deleteLocation(
+  campaignId: string,
+  locationId: string,
+): Promise<{ ok: true } | { errors: ValidationError[] }> {
+  const existing = await CampaignLocation.findOne({ campaignId, locationId }).lean();
+  if (!existing) {
+    return { errors: [{ path: 'locationId', code: 'NOT_FOUND', message: 'Location not found' }] };
   }
 
-  const maps = await CampaignLocationMap.find({ campaignId, locationId }).lean();
-  for (const raw of maps) {
-    const m = raw as Record<string, unknown>;
-    const mapId = m.mapId as string;
-    await CampaignLocationTransition.deleteMany({ campaignId, fromMapId: mapId });
-    await CampaignLocationTransition.deleteMany({ campaignId, toMapId: mapId });
-  }
-  await CampaignLocationMap.deleteMany({ campaignId, locationId });
+  const blockers = await assertLocationCanDelete(campaignId, locationId);
+  if (blockers.length > 0) return { errors: blockers };
 
   const result = await CampaignLocation.deleteOne({ campaignId, locationId });
-  return result.deletedCount > 0;
+  if (result.deletedCount === 0) {
+    return { errors: [{ path: 'locationId', code: 'NOT_FOUND', message: 'Location not found' }] };
+  }
+  return { ok: true };
 }

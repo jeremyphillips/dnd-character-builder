@@ -59,6 +59,18 @@ export async function updateLocation(req: CampaignScopedRequest, res: Response) 
   res.json({ location: result.location });
 }
 
+export async function deleteLocation(req: CampaignScopedRequest, res: Response) {
+  const campaignId = pid(req, 'id');
+  const locationId = pid(req, 'locationId');
+  const result = await locationsService.deleteLocation(campaignId, locationId);
+  if ('errors' in result) {
+    const isNotFound = result.errors.some((e) => e.code === 'NOT_FOUND');
+    res.status(isNotFound ? 404 : 400).json({ errors: result.errors });
+    return;
+  }
+  res.json({ ok: true });
+}
+
 export async function listLocationMaps(req: CampaignScopedRequest, res: Response) {
   const campaignId = pid(req, 'id');
   const locationId = pid(req, 'locationId');

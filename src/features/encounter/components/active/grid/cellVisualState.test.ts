@@ -210,3 +210,49 @@ describe('mergePerceptionIntoCellVisualState — immersed cast-range band leak',
     ).toBe(false)
   })
 })
+
+describe('mergePerceptionIntoCellVisualState — concealed obstacle blocking cell', () => {
+  it('does not replace blocked tactical fill when obstacle is perceivable (glyph shown)', () => {
+    expect(tacticalBaseFillAllowsPerceptionTint('blocked')).toBe(false)
+    expect(
+      tacticalBaseFillAllowsPerceptionTint('blocked', undefined, {
+        ...fogPerception,
+        showObstacleGlyph: true,
+        perceptionBaseFillKind: 'fog',
+      } as EncounterGridCellRenderState),
+    ).toBe(false)
+    const tactical = {
+      baseFillKind: 'blocked' as const,
+      movementFillSuppressedByOverlay: false,
+      movementVisual: 'none' as const,
+    }
+    const out = mergePerceptionIntoCellVisualState(tactical, {
+      ...fogPerception,
+      showObstacleGlyph: true,
+    } as EncounterGridCellRenderState)
+    expect(out.baseFillKind).toBe('blocked')
+  })
+
+  it('replaces blocked fill with perception tint when obstacle glyph is hidden (same signal as no object affordance)', () => {
+    expect(
+      tacticalBaseFillAllowsPerceptionTint('blocked', undefined, fogPerception as EncounterGridCellRenderState),
+    ).toBe(true)
+    const tactical = {
+      baseFillKind: 'blocked' as const,
+      movementFillSuppressedByOverlay: false,
+      movementVisual: 'none' as const,
+    }
+    const out = mergePerceptionIntoCellVisualState(tactical, fogPerception as EncounterGridCellRenderState)
+    expect(out.baseFillKind).toBe('fog')
+  })
+
+  it('blocked cell without perception merge opts in leaves gray obstacle footprint (legacy no slice)', () => {
+    const tactical = {
+      baseFillKind: 'blocked' as const,
+      movementFillSuppressedByOverlay: false,
+      movementVisual: 'none' as const,
+    }
+    const out = mergePerceptionIntoCellVisualState(tactical, undefined)
+    expect(out.baseFillKind).toBe('blocked')
+  })
+})

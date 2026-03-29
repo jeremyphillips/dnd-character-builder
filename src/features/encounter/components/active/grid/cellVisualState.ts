@@ -124,10 +124,15 @@ export type MergePerceptionIntoCellVisualOptions = {
   immersionAllowsPerceptionOverCastRangeBands?: boolean
 }
 
-/** When true, viewer perception tint may replace the tactical base fill (see {@link mergePerceptionIntoCellVisualState}). */
+/**
+ * When true, viewer perception tint may replace the tactical base fill (see {@link mergePerceptionIntoCellVisualState}).
+ * @param perception When `showObstacleGlyph === false`, obstacle `blocking` cells still receive canonical visibility
+ *   tints (fog/darkness) instead of the gray obstacle footprint — same concealment as occupant tokens.
+ */
 export function tacticalBaseFillAllowsPerceptionTint(
   baseFillKind: CellBaseFillKind,
   opts?: MergePerceptionIntoCellVisualOptions,
+  perception?: EncounterGridCellRenderState,
 ): boolean {
   if (baseFillKind === 'paper' || baseFillKind === 'persistent-attached-aura') return true
   if (
@@ -136,6 +141,7 @@ export function tacticalBaseFillAllowsPerceptionTint(
   ) {
     return true
   }
+  if (baseFillKind === 'blocked' && perception?.showObstacleGlyph === false) return true
   return false
 }
 
@@ -150,7 +156,7 @@ export function mergePerceptionIntoCellVisualState(
   mergeOpts?: MergePerceptionIntoCellVisualOptions,
 ): CellVisualState {
   if (!perception?.perceptionBaseFillKind) return tactical
-  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind, mergeOpts)) return tactical
+  if (!tacticalBaseFillAllowsPerceptionTint(tactical.baseFillKind, mergeOpts, perception)) return tactical
   return {
     ...tactical,
     baseFillKind: perception.perceptionBaseFillKind,

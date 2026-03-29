@@ -197,6 +197,7 @@ describe('projectGridCellRenderState', () => {
       isViewerCell: false,
     })
     expect(r.perceptionBaseFillKind).toBe('fog')
+    expect(r.showObstacleGlyph).toBe(false)
   })
 })
 

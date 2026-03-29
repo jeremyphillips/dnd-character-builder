@@ -35,9 +35,9 @@ function baseFillSx(theme: Theme, kind: CellBaseFillKind): SystemStyleObject<The
     case 'fog':
       return { bgcolor: alpha(palette.grey[700], 0.42) }
     case 'darkness':
-      return { bgcolor: alpha(palette.common.black, 0.45) }
+      return { bgcolor: alpha(palette.common.black, 0.78) }
     case 'magical-darkness':
-      return { bgcolor: alpha(palette.common.black, 0.62) }
+      return { bgcolor: alpha(palette.common.black, 0.78) }
     case 'hidden':
       return { bgcolor: alpha(palette.common.black, 0.88) }
     default: {

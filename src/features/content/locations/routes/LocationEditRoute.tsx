@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
@@ -20,6 +20,10 @@ import {
   locationToFormValues,
   toLocationInput,
   useParentLocationPickerOptions,
+  listLocationMaps,
+  validateGridBootstrap,
+  bootstrapDefaultLocationMap,
+  pickMapGridFormValues,
 } from '@/features/content/locations/domain';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { ConditionalFormRenderer } from '@/ui/patterns';
@@ -30,9 +34,14 @@ import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCa
 import { useSystemEntryPatchState } from '@/features/content/shared/hooks/useSystemEntryPatchState';
 import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
 import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
-import { useCampaignEntrySubmit } from '@/features/content/shared/hooks/useCampaignEntrySubmit';
 import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystemPatchActions';
 import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDeleteAction';
+import {
+  CELL_UNITS_BY_KIND,
+  mapKindForLocationScale,
+  type LocationScaleId,
+} from '@/shared/domain/locations';
+import { LOCATION_GRID_SIZE_PRESETS } from '@/shared/domain/locations/locationGridPresets';
 
 const FORM_ID = 'location-edit-form';
 
@@ -94,6 +103,55 @@ export default function LocationEditRoute() {
   useCampaignEntryFormReset(loc, isCampaign ?? false, reset, locationToFormValues);
   useResetEditFeedbackOnChange(watch, clearFeedback);
 
+  const scale = watch('scale');
+  const gridCellUnitOptions = useMemo(() => {
+    const kind = mapKindForLocationScale(scale);
+    return CELL_UNITS_BY_KIND[kind].map((u) => ({ value: u, label: u }));
+  }, [scale]);
+
+  const gridPreset = watch('gridPreset');
+  const createGridWatch = watch('createGrid');
+  useEffect(() => {
+    if (!createGridWatch || !gridPreset) return;
+    const p = LOCATION_GRID_SIZE_PRESETS[gridPreset as keyof typeof LOCATION_GRID_SIZE_PRESETS];
+    if (p) {
+      setValue('gridColumns', String(p.columns));
+      setValue('gridRows', String(p.rows));
+    }
+  }, [createGridWatch, gridPreset, setValue]);
+
+  useEffect(() => {
+    if (!campaignId || !locationId || !loc || loc.source !== 'campaign') return;
+    let cancelled = false;
+    listLocationMaps(campaignId, locationId).then((maps) => {
+      if (cancelled) return;
+      const def = maps.find((m) => m.isDefault) ?? maps[0];
+      if (def) {
+        setValue('createGrid', true);
+        setValue('gridPreset', '');
+        setValue('gridColumns', String(def.grid.width));
+        setValue('gridRows', String(def.grid.height));
+        setValue('gridCellUnit', String(def.grid.cellUnit));
+      } else {
+        setValue('createGrid', false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, locationId, loc, setValue]);
+
+  const fieldConfigs = useMemo(
+    () =>
+      getLocationFieldConfigs({
+        policyCharacters,
+        parentLocationOptions,
+        gridCellUnitOptions,
+        includeGridBootstrap: Boolean(loc && loc.source === 'campaign'),
+      }),
+    [policyCharacters, parentLocationOptions, gridCellUnitOptions, loc],
+  );
+
   const { policyValue, handlePolicyChange } = useAccessPolicyField<LocationFormValues>(watch, setValue);
 
   const driver = usePatchDriverState(
@@ -105,15 +163,44 @@ export default function LocationEditRoute() {
 
   const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
-  const handleCampaignSubmit = useCampaignEntrySubmit({
-    campaignId: campaignId ?? undefined,
-    entryId: locationId,
-    updateEntry: locationRepo.updateEntry,
-    reset,
-    toFormValues: locationToFormValues,
-    toInput: toLocationInput,
-    feedback: { setSaving, setSuccess, setErrors },
-  });
+  const handleCampaignSubmit = useCallback(
+    async (values: LocationFormValues) => {
+      if (!campaignId || !locationId) return;
+      const err = validateGridBootstrap(values);
+      if (err) {
+        setErrors([{ path: '', code: 'VALIDATION', message: err }]);
+        return;
+      }
+      setSaving(true);
+      setSuccess(false);
+      setErrors([]);
+      try {
+        const input = toLocationInput(values);
+        const updated = await locationRepo.updateEntry(campaignId, locationId, input);
+        if (values.createGrid) {
+          await bootstrapDefaultLocationMap(
+            campaignId,
+            locationId,
+            updated.name,
+            updated.scale as LocationScaleId,
+            values,
+          );
+        }
+        reset({
+          ...locationToFormValues(updated),
+          ...pickMapGridFormValues(values),
+        });
+        setSuccess(true);
+      } catch (e) {
+        setErrors([
+          { path: '', code: 'SAVE_FAILED', message: (e as Error).message },
+        ]);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [campaignId, locationId, reset, setSaving, setSuccess, setErrors],
+  );
 
   const { savePatch: handlePatchSave, removePatch: handleRemovePatch } =
     useSystemPatchActions({
@@ -154,11 +241,6 @@ export default function LocationEditRoute() {
   if (error || notFound || !loc) {
     return <AppAlert tone="danger">{error ?? 'Location not found.'}</AppAlert>;
   }
-
-  const fieldConfigs = getLocationFieldConfigs({
-    policyCharacters,
-    parentLocationOptions,
-  });
 
   if (isSystem && driver) {
     return (

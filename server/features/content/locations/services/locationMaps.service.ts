@@ -11,6 +11,7 @@ export type LocationMapDoc = {
   name: string;
   kind: LocationMapKindId;
   grid: { width: number; height: number; cellUnit: string | number };
+  layout?: { excludedCellIds?: string[] };
   isDefault?: boolean;
   cells?: LocationMapCell[];
   createdAt: string;
@@ -27,6 +28,7 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     name: doc.name as string,
     kind: doc.kind as LocationMapDoc['kind'],
     grid: doc.grid as LocationMapDoc['grid'],
+    layout: doc.layout as LocationMapDoc['layout'],
     isDefault: doc.isDefault as boolean | undefined,
     cells: doc.cells as LocationMapDoc['cells'],
     createdAt: String(doc.createdAt),
@@ -124,6 +126,7 @@ export async function createLocationMap(
       cellUnit: grid.cellUnit,
     },
     cells: body.cells,
+    layout: body.layout,
   };
   const vErr = validateLocationMapInput(validationPayload);
   if (vErr.length > 0) return { errors: vErr };
@@ -159,6 +162,9 @@ export async function createLocationMap(
     name,
     kind: body.kind as LocationMapDoc['kind'],
     grid: body.grid as LocationMapDoc['grid'],
+    ...(body.layout !== undefined && body.layout !== null
+      ? { layout: body.layout as LocationMapDoc['layout'] }
+      : {}),
     isDefault,
     cells: (body.cells as LocationMapDoc['cells']) ?? [],
   });
@@ -177,7 +183,13 @@ export async function createLocationMap(
 function mergeMapPayload(
   existing: Record<string, unknown>,
   body: Record<string, unknown>,
-): { name: string; kind: string; grid: { width: number; height: number; cellUnit: unknown }; cells?: unknown } {
+): {
+  name: string;
+  kind: string;
+  grid: { width: number; height: number; cellUnit: unknown };
+  cells?: unknown;
+  layout?: unknown;
+} {
   const eg = existing.grid as Record<string, unknown>;
   let grid: { width: number; height: number; cellUnit: unknown };
   if (body.grid && typeof body.grid === 'object') {
@@ -194,11 +206,18 @@ function mergeMapPayload(
       cellUnit: eg.cellUnit,
     };
   }
+  let layout: unknown;
+  if (body.layout !== undefined) {
+    layout = body.layout;
+  } else if (existing.layout !== undefined) {
+    layout = existing.layout;
+  }
   return {
     name: body.name !== undefined ? String(body.name).trim() : (existing.name as string),
     kind: body.kind !== undefined ? String(body.kind) : (existing.kind as string),
     grid,
     cells: body.cells !== undefined ? body.cells : existing.cells,
+    layout,
   };
 }
 
@@ -235,6 +254,7 @@ export async function updateLocationMap(
   if (body.kind !== undefined) $set.kind = merged.kind;
   if (body.grid !== undefined) $set.grid = merged.grid;
   if (body.cells !== undefined) $set.cells = body.cells ?? [];
+  if (body.layout !== undefined) $set.layout = body.layout;
   if (body.isDefault !== undefined) $set.isDefault = body.isDefault;
 
   if (Object.keys($set).length === 0) {

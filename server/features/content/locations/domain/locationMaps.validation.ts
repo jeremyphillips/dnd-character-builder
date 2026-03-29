@@ -154,12 +154,43 @@ export function validateLocationMapCells(
   return errors;
 }
 
+export function validateLocationMapLayout(layout: unknown): MapValidationError[] {
+  const errors: MapValidationError[] = [];
+  if (layout === undefined || layout === null) return errors;
+  if (typeof layout !== 'object') {
+    return [{ path: 'layout', code: 'INVALID', message: 'layout must be an object' }];
+  }
+  const row = layout as Record<string, unknown>;
+  if (row.excludedCellIds !== undefined) {
+    if (!Array.isArray(row.excludedCellIds)) {
+      errors.push({
+        path: 'layout.excludedCellIds',
+        code: 'INVALID',
+        message: 'excludedCellIds must be an array',
+      });
+    } else {
+      for (let i = 0; i < row.excludedCellIds.length; i++) {
+        const id = row.excludedCellIds[i];
+        if (typeof id !== 'string' || id.trim() === '') {
+          errors.push({
+            path: `layout.excludedCellIds[${i}]`,
+            code: 'INVALID',
+            message: 'Each excluded cell id must be a non-empty string',
+          });
+        }
+      }
+    }
+  }
+  return errors;
+}
+
 /** Full map payload validation (create or merged update). */
 export function validateLocationMapInput(payload: {
   name: string;
   kind: string;
   grid: { width: number; height: number; cellUnit: unknown };
   cells?: unknown;
+  layout?: unknown;
 }): MapValidationError[] {
   const errors: MapValidationError[] = [];
   if (typeof payload.name !== 'string' || payload.name.trim().length === 0) {
@@ -184,6 +215,8 @@ export function validateLocationMapInput(payload: {
   const w = g.width as number;
   const h = g.height as number;
   errors.push(...validateLocationMapCells(payload.cells, w, h));
+
+  errors.push(...validateLocationMapLayout(payload.layout));
 
   return errors;
 }

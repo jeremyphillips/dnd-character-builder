@@ -9,13 +9,15 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
-export type GridSizePreset = 'small' | 'medium' | 'large'
+import {
+  LOCATION_GRID_SIZE_PRESETS,
+  type LocationGridSizePresetId,
+} from '@/shared/domain/locations/locationGridPresets'
 
-export const GRID_SIZE_PRESETS: Record<GridSizePreset, { columns: number; rows: number; label: string; description: string }> = {
-  small: { columns: 8, rows: 6, label: 'Small', description: '8 \u00d7 6 (40 \u00d7 30 ft)' },
-  medium: { columns: 12, rows: 10, label: 'Medium', description: '12 \u00d7 10 (60 \u00d7 50 ft)' },
-  large: { columns: 16, rows: 12, label: 'Large', description: '16 \u00d7 12 (80 \u00d7 60 ft)' },
-}
+export type GridSizePreset = LocationGridSizePresetId
+
+/** @deprecated Prefer importing from `@/shared/domain/locations/locationGridPresets` */
+export const GRID_SIZE_PRESETS = LOCATION_GRID_SIZE_PRESETS
 
 type EncounterGridSetupProps = {
   value: GridSizePreset

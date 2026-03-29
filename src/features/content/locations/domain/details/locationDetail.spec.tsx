@@ -3,7 +3,10 @@ import type { DetailSpec } from '@/features/content/shared/forms/registry';
 import { AppBadge } from '@/ui/primitives';
 import { VisibilityBadge } from '@/ui/patterns';
 
-export type LocationDetailCtx = Record<string, never>;
+export type LocationDetailCtx = {
+  /** e.g. "16 × 12, 5ft" when a default map exists */
+  mapGridSummary?: string | null;
+};
 
 const formatList = (v: string[] | undefined): string =>
   v?.length ? v.join(', ') : '—';
@@ -39,6 +42,12 @@ export const LOCATION_DETAIL_SPECS: DetailSpec<Location, LocationDetailCtx>[] = 
     label: 'Category',
     order: 25,
     render: (loc) => loc.category ?? '—',
+  },
+  {
+    key: 'mapGrid',
+    label: 'Grid',
+    order: 26,
+    render: (_loc, ctx) => ctx.mapGridSummary ?? '—',
   },
   {
     key: 'parentId',

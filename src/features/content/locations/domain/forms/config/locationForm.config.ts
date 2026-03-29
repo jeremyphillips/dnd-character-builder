@@ -5,24 +5,57 @@ import type { FieldConfig } from '@/ui/patterns';
 import type { PickerOption } from '@/ui/patterns/form/OptionPickerField';
 import { buildDefaultValues, DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { buildFieldConfigs } from '@/features/content/shared/forms/registry';
-import { LOCATION_FORM_FIELDS } from '../registry/locationForm.registry';
+import {
+  LOCATION_FORM_FIELDS,
+  LOCATION_GRID_BOOTSTRAP_FIELD_NAMES,
+} from '../registry/locationForm.registry';
 import type { LocationFormValues } from '../types/locationForm.types';
 
 export type GetLocationFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];
   /** Populated client-side for the parent location option picker */
   parentLocationOptions?: PickerOption[];
+  /** Cell units allowed for the current location scale (maps to map kind). */
+  gridCellUnitOptions?: { value: string; label: string }[];
+  /** When false, omits optional default-map grid bootstrap fields (system patch flow). */
+  includeGridBootstrap?: boolean;
 };
 
 export const getLocationFieldConfigs = (
   options: GetLocationFieldConfigsOptions = {},
-): FieldConfig[] =>
-  buildFieldConfigs(LOCATION_FORM_FIELDS, {
-    policyCharacters: options.policyCharacters,
+): FieldConfig[] => {
+  const {
+    policyCharacters,
+    parentLocationOptions,
+    gridCellUnitOptions,
+    includeGridBootstrap = true,
+  } = options;
+
+  const specs =
+    includeGridBootstrap === false
+      ? LOCATION_FORM_FIELDS.filter((f) => !LOCATION_GRID_BOOTSTRAP_FIELD_NAMES.has(f.name))
+      : LOCATION_FORM_FIELDS;
+
+  const configs = buildFieldConfigs(specs, {
+    policyCharacters,
     optionPickerOptionsByField: {
-      parentId: options.parentLocationOptions ?? [],
+      parentId: parentLocationOptions ?? [],
     },
   });
+
+  return configs.map((f) => {
+    if (f.name === 'gridCellUnit' && f.type === 'select') {
+      return {
+        ...f,
+        options:
+          gridCellUnitOptions && gridCellUnitOptions.length > 0
+            ? gridCellUnitOptions
+            : f.options,
+      };
+    }
+    return f;
+  });
+};
 
 export const LOCATION_FORM_DEFAULTS: LocationFormValues = buildDefaultValues<LocationFormValues>(
   getLocationFieldConfigs(),

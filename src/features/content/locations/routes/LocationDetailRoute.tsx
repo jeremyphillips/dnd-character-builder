@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -13,7 +14,7 @@ import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
 import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
-import { locationRepo, LOCATION_DETAIL_SPECS } from '@/features/content/locations/domain';
+import { locationRepo, listLocationMaps, LOCATION_DETAIL_SPECS } from '@/features/content/locations/domain';
 
 export default function LocationDetailRoute() {
   const { campaignId, campaign } = useActiveCampaign();
@@ -28,6 +29,32 @@ export default function LocationDetailRoute() {
     entryId: locationId,
     fetchEntry: locationRepo.getEntry,
   });
+
+  const [campaignMapSummary, setCampaignMapSummary] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!campaignId || !locationId || !loc || loc.source !== 'campaign') {
+      return;
+    }
+    let cancelled = false;
+    listLocationMaps(campaignId, locationId).then((maps) => {
+      if (cancelled) return;
+      const def = maps.find((m) => m.isDefault) ?? maps[0];
+      setCampaignMapSummary(
+        def
+          ? `Grid: ${def.grid.width} × ${def.grid.height}, ${def.grid.cellUnit}`
+          : null,
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, locationId, loc]);
+
+  const mapGridSummary =
+    campaignId && locationId && loc && loc.source === 'campaign'
+      ? campaignMapSummary
+      : null;
 
   if (loading) {
     return (
@@ -44,7 +71,9 @@ export default function LocationDetailRoute() {
   const listPath = `/campaigns/${campaignId}/world/locations`;
   const editPath = `${listPath}/${locationId}/edit`;
 
-  const items = buildDetailItemsFromSpecs(LOCATION_DETAIL_SPECS, loc, {});
+  const items = buildDetailItemsFromSpecs(LOCATION_DETAIL_SPECS, loc, {
+    mapGridSummary,
+  });
 
   return (
     <ContentDetailScaffold

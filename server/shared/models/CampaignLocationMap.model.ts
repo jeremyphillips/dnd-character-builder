@@ -20,6 +20,13 @@ const mapCellSchema = new Schema(
   { _id: false },
 );
 
+const layoutSchema = new Schema(
+  {
+    excludedCellIds: { type: [String], default: undefined },
+  },
+  { _id: false },
+);
+
 const campaignLocationMapSchema = new Schema(
   {
     campaignId: { type: String, required: true, index: true },
@@ -32,6 +39,7 @@ const campaignLocationMapSchema = new Schema(
       required: true,
     },
     grid: { type: gridSchema, required: true },
+    layout: { type: layoutSchema },
     isDefault: { type: Boolean },
     cells: { type: [mapCellSchema], default: [] },
   },

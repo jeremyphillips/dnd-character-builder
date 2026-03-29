@@ -7,6 +7,13 @@ export type LocationFormValues = ContentFormValues & {
   scale: string;
   category: string;
   parentId: string;
+  /** When true, bootstrap a default LocationMap with grid columns/rows/cell unit */
+  createGrid: boolean;
+  /** Preset key — fills columns/rows when set */
+  gridPreset: string;
+  gridColumns: string;
+  gridRows: string;
+  gridCellUnit: string;
   labelShort: string;
   labelNumber: string;
   sortOrder: string;

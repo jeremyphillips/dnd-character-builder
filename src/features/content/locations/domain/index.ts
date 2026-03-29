@@ -4,6 +4,16 @@ export {
   type LocationContentItem,
 } from './repo/locationRepo';
 export {
+  listLocationMaps,
+  createLocationMap,
+  updateLocationMap,
+} from './repo/locationMapRepo';
+export {
+  validateGridBootstrap,
+  bootstrapDefaultLocationMap,
+  pickMapGridFormValues,
+} from './maps/bootstrapDefaultLocationMap';
+export {
   validateLocationChange,
   type LocationValidationMode,
 } from './validation/validateLocationChange';

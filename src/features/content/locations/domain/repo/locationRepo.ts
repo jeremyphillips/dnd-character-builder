@@ -5,6 +5,7 @@ import { apiFetch, ApiError } from '@/app/api';
 import type { Visibility } from '@/shared/types/visibility';
 import type { CampaignContentRepo, ListOptions } from '@/features/content/shared/domain/repo/contentRepo.types';
 import { isCampaignLocationListScale } from '@/shared/domain/locations';
+import type { LocationBuildingProfile } from '@/shared/domain/locations';
 import type {
   Location,
   LocationBaseFields,
@@ -33,6 +34,7 @@ type CampaignLocationDto = {
   aliases?: string[];
   tags?: string[];
   connections?: LocationBaseFields['connections'];
+  buildingProfile?: LocationBuildingProfile;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -63,6 +65,7 @@ function toCampaignLocation(
     aliases: dto.aliases,
     tags: dto.tags,
     connections: dto.connections,
+    buildingProfile: dto.buildingProfile,
   };
 }
 
@@ -174,6 +177,7 @@ function toSummary(loc: Location, allowedInCampaign: boolean): LocationSummary {
     aliases: loc.aliases,
     tags: loc.tags,
     connections: loc.connections,
+    buildingProfile: loc.buildingProfile,
     accessPolicy: loc.accessPolicy,
     patched: loc.patched,
     allowedInCampaign,
@@ -203,6 +207,12 @@ function locationInputToBody(input: LocationInput): Record<string, unknown> {
     connections: input.connections,
   };
   if (input.id) body.locationId = input.id;
+
+  const scale = String(input.scale ?? '').trim();
+  if (scale === 'building') {
+    body.buildingProfile = input.buildingProfile ?? null;
+  }
+
   return body;
 }
 

@@ -6,8 +6,10 @@ import type { LocationFormValues } from '@/features/content/locations/domain/for
 import { sanitizeLocationFormValues } from '@/features/content/locations/domain/forms/utils/locationDependentFieldsPolicy';
 
 /**
- * Keeps category, parent, and grid cell unit aligned with scale and campaign parent list.
- * Dirty only when the user changes scale (not when campaign locations load to fix stale parent).
+ * Keeps category, parent, grid cell unit, and building profile fields aligned with scale,
+ * parent list, and Building Type (subtype invalidation).
+ * Dirty only when the user changes scale (not when campaign locations load to fix stale parent,
+ * nor when Building Type change auto-clears subtype).
  */
 export function useLocationFormDependentFieldEffects(
   scale: string,
@@ -16,6 +18,7 @@ export function useLocationFormDependentFieldEffects(
   getValues: UseFormGetValues<LocationFormValues>,
   setValue: UseFormSetValue<LocationFormValues>,
   enabled = true,
+  buildingPrimaryType?: string,
 ) {
   const prevScaleRef = useRef<string | null>(null);
 
@@ -38,5 +41,5 @@ export function useLocationFormDependentFieldEffects(
     for (const [key, val] of Object.entries(patch)) {
       setValue(key as keyof LocationFormValues, val as never, { shouldDirty: scaleChanged });
     }
-  }, [scale, locations, excludeLocationId, getValues, setValue, enabled]);
+  }, [scale, locations, excludeLocationId, getValues, setValue, enabled, buildingPrimaryType]);
 }

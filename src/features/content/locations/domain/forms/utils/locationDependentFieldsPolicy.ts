@@ -18,7 +18,9 @@ import {
 import type { LocationMapKindId } from '@/shared/domain/locations';
 import { getAllowedParentLocationOptions } from '@/shared/domain/locations';
 import { isWorldScale } from '@/shared/domain/locations';
+import type { LocationBuildingPrimarySubtypeId } from '@/shared/domain/locations';
 import type { Location } from '@/features/content/locations/domain/types';
+import { getAllowedLocationBuildingPrimarySubtypesForType } from '@/features/content/locations/domain/building/locationBuilding.policy';
 import type { LocationFormValues } from '../types/locationForm.types';
 
 export { getAllowedCellUnitOptionsForScale, getAllowedCategoryOptionsForScale };
@@ -82,6 +84,66 @@ export type LocationFormSanitizeContext = {
   excludeLocationId?: string;
 };
 
+const EMPTY_BUILDING_FORM: Pick<
+  LocationFormValues,
+  | 'buildingPrimaryType'
+  | 'buildingPrimarySubtype'
+  | 'buildingFunctions'
+  | 'buildingIsPublicStorefront'
+  | 'buildingOwnerRefs'
+  | 'buildingStaffRefs'
+> = {
+  buildingPrimaryType: '',
+  buildingPrimarySubtype: '',
+  buildingFunctions: [],
+  buildingIsPublicStorefront: false,
+  buildingOwnerRefs: [],
+  buildingStaffRefs: [],
+};
+
+/**
+ * Clears or corrects building profile form fields when scale is not `building`,
+ * when Building Type is cleared, or when Building Subtype is not allowed for the type.
+ */
+export function sanitizeBuildingProfileFormFields(
+  values: LocationFormValues,
+  ctxScale: string,
+): Partial<LocationFormValues> {
+  const patch: Partial<LocationFormValues> = {};
+  const scale = String(ctxScale ?? '').trim();
+
+  if (scale !== 'building') {
+    if (
+      values.buildingPrimaryType ||
+      values.buildingPrimarySubtype ||
+      (values.buildingFunctions?.length ?? 0) > 0 ||
+      values.buildingIsPublicStorefront ||
+      (values.buildingOwnerRefs?.length ?? 0) > 0 ||
+      (values.buildingStaffRefs?.length ?? 0) > 0
+    ) {
+      return { ...EMPTY_BUILDING_FORM };
+    }
+    return patch;
+  }
+
+  const t = String(values.buildingPrimaryType ?? '').trim();
+  const st = String(values.buildingPrimarySubtype ?? '').trim();
+
+  if (!t) {
+    if (st) patch.buildingPrimarySubtype = '';
+    if ((values.buildingFunctions?.length ?? 0) > 0) {
+      patch.buildingFunctions = [];
+    }
+    return patch;
+  }
+
+  const allowed = getAllowedLocationBuildingPrimarySubtypesForType(t);
+  if (st && !allowed.includes(st as LocationBuildingPrimarySubtypeId)) {
+    patch.buildingPrimarySubtype = '';
+  }
+  return patch;
+}
+
 /**
  * Returns a minimal patch to bring form values in line with scale + optional parent list.
  */
@@ -115,7 +177,8 @@ export function sanitizeLocationFormValues(
     patch.gridGeometry = nextGeometry;
   }
 
-  return patch;
+  const buildingPatch = sanitizeBuildingProfileFormFields(values, scale);
+  return { ...patch, ...buildingPatch };
 }
 
 /** When scale changes (user or programmatic), apply the same rules with optional campaign locations. */

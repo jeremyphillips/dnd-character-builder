@@ -19,6 +19,13 @@ export type GetLocationFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];
   /** Populated client-side for the parent location option picker */
   parentLocationOptions?: PickerOption[];
+  /**
+   * Building Subtype options for the selected Building Type (from
+   * `buildBuildingSubtypeSelectOptions(watch('buildingPrimaryType'))`).
+   */
+  buildingSubtypeSelectOptions?: { value: string; label: string }[];
+  /** PC + NPC picker options for building Owners / Staff (same list for both fields). */
+  buildingProfileEntityPickerOptions?: PickerOption[];
   /** Cell units allowed for the current location scale (maps to map kind). */
   gridCellUnitOptions?: { value: string; label: string }[];
   /** When false, omits optional default-map grid bootstrap fields (system patch flow). */
@@ -42,6 +49,8 @@ export const getLocationFieldConfigs = (
   const {
     policyCharacters,
     parentLocationOptions,
+    buildingSubtypeSelectOptions,
+    buildingProfileEntityPickerOptions,
     gridCellUnitOptions,
     includeGridBootstrap = true,
     locationUiPolicy,
@@ -90,10 +99,23 @@ export const getLocationFieldConfigs = (
     policyCharacters,
     optionPickerOptionsByField: {
       parentId: parentLocationOptions ?? [],
+      buildingOwnerRefs: buildingProfileEntityPickerOptions ?? [],
+      buildingStaffRefs: buildingProfileEntityPickerOptions ?? [],
     },
   });
 
   const withPolicyOptions = configs.map((f) => {
+    if (
+      f.name === 'buildingPrimarySubtype' &&
+      f.type === 'select' &&
+      buildingSubtypeSelectOptions &&
+      buildingSubtypeSelectOptions.length > 0
+    ) {
+      return {
+        ...f,
+        options: buildingSubtypeSelectOptions,
+      };
+    }
     if (f.name === 'category' && f.type === 'select' && locationUiPolicy) {
       return {
         ...f,
@@ -142,6 +164,66 @@ export const getLocationFieldConfigs = (
         },
       };
     }
+    /**
+     * Map grid bootstrap fields are read-only in the metadata rail.
+     *
+     * @todo Support changing default map columns, rows, and cell unit for **published**
+     *   locations (e.g. migration, versioning, or explicit “apply map shape” flow). Today,
+     *   cell/grid edits on the canvas do not imply a persisted default-map shape change for
+     *   the location record in all cases.
+     */
+    if (f.name === 'gridColumns' && f.type === 'text') {
+      return {
+        type: 'staticLabelValue' as const,
+        name: f.name,
+        label: f.label,
+        visibleWhen: f.visibleWhen,
+        group: f.group,
+        width: f.width,
+        fieldDescription: f.fieldDescription,
+        helperText: f.helperText,
+        defaultValue: f.defaultValue,
+        required: f.required,
+        disabled: f.disabled,
+        formatDisplay: (raw: string) => (String(raw).trim() ? String(raw) : '—'),
+      };
+    }
+    if (f.name === 'gridRows' && f.type === 'text') {
+      return {
+        type: 'staticLabelValue' as const,
+        name: f.name,
+        label: f.label,
+        visibleWhen: f.visibleWhen,
+        group: f.group,
+        width: f.width,
+        fieldDescription: f.fieldDescription,
+        helperText: f.helperText,
+        defaultValue: f.defaultValue,
+        required: f.required,
+        disabled: f.disabled,
+        formatDisplay: (raw: string) => (String(raw).trim() ? String(raw) : '—'),
+      };
+    }
+    if (f.name === 'gridCellUnit' && f.type === 'select') {
+      const opts = f.options;
+      return {
+        type: 'staticLabelValue' as const,
+        name: f.name,
+        label: f.label,
+        visibleWhen: f.visibleWhen,
+        group: f.group,
+        width: f.width,
+        fieldDescription: f.fieldDescription,
+        helperText: f.helperText,
+        defaultValue: f.defaultValue,
+        required: f.required,
+        disabled: f.disabled,
+        formatDisplay: (raw: string) => {
+          const hit = opts.find((o) => o.value === raw);
+          return hit?.label ?? (raw || '—');
+        },
+      };
+    }
     if (!locationUiPolicy) return f;
     if (f.name === 'category' && f.type === 'select' && f.options.length <= 1) {
       const opts = f.options;
@@ -169,5 +251,14 @@ export const getLocationFieldConfigs = (
 
 export const LOCATION_FORM_DEFAULTS: LocationFormValues = buildDefaultValues<LocationFormValues>(
   getLocationFieldConfigs(),
-  { accessPolicy: DEFAULT_VISIBILITY_PUBLIC, imageKey: '' },
+  {
+    accessPolicy: DEFAULT_VISIBILITY_PUBLIC,
+    imageKey: '',
+    buildingPrimaryType: '',
+    buildingPrimarySubtype: '',
+    buildingFunctions: [],
+    buildingIsPublicStorefront: false,
+    buildingOwnerRefs: [],
+    buildingStaffRefs: [],
+  },
 );

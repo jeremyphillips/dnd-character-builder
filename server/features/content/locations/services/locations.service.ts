@@ -43,6 +43,7 @@ function toDoc(doc: Record<string, unknown>): LocationDoc {
     aliases: doc.aliases as string[] | undefined,
     tags: doc.tags as string[] | undefined,
     connections: doc.connections as LocationDoc['connections'],
+    buildingProfile: doc.buildingProfile as LocationDoc['buildingProfile'],
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt),
   };
@@ -379,6 +380,9 @@ export async function createLocation(
     aliases: body.aliases as string[] | undefined,
     tags: body.tags as string[] | undefined,
     connections: body.connections as unknown[] | undefined,
+    ...(body.buildingProfile != null && typeof body.buildingProfile === 'object'
+      ? { buildingProfile: body.buildingProfile }
+      : {}),
   });
 
   return { location: toDoc(doc.toObject() as Record<string, unknown>) };
@@ -463,6 +467,7 @@ export async function updateLocation(
   }
 
   const $set: Record<string, unknown> = {};
+  const $unset: Record<string, ''> = {};
 
   if (body.name !== undefined) $set.name = (body.name as string).trim();
   if (body.scale !== undefined) $set.scale = (body.scale as string).trim();
@@ -479,6 +484,14 @@ export async function updateLocation(
   if (body.tags !== undefined) $set.tags = body.tags;
   if (body.connections !== undefined) $set.connections = body.connections;
 
+  if ('buildingProfile' in body) {
+    if (body.buildingProfile === null) {
+      $unset.buildingProfile = '';
+    } else {
+      $set.buildingProfile = body.buildingProfile;
+    }
+  }
+
   if (parentChanged) {
     if (nextParentId === undefined) {
       $set.parentId = undefined;
@@ -489,8 +502,11 @@ export async function updateLocation(
     }
   }
 
+  const updateOp: Record<string, unknown> = {};
+  if (Object.keys($set).length > 0) updateOp.$set = $set;
+  if (Object.keys($unset).length > 0) updateOp.$unset = $unset;
 
-  const doc = await CampaignLocation.findOneAndUpdate({ campaignId, locationId }, { $set }, { new: true, lean: true });
+  const doc = await CampaignLocation.findOneAndUpdate({ campaignId, locationId }, updateOp, { new: true, lean: true });
 
   if (!doc) return null;
 

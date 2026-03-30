@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
+import { useCharacters } from '@/features/character/hooks/useCharacters';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
 import {
@@ -20,6 +21,8 @@ import {
   LOCATION_FORM_DEFAULTS,
   locationToFormValues,
   toLocationInput,
+  buildBuildingSubtypeSelectOptions,
+  buildCharacterEntityPickerOptions,
   listLocationMaps,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
@@ -72,6 +75,7 @@ export default function LocationEditRoute() {
   const { locationId } = useParams<{ locationId: string }>();
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
+  const { characters: characterPickerSource } = useCharacters({ type: 'all' });
 
   const viewer = campaign?.viewer;
   const canDelete = Boolean(
@@ -140,6 +144,7 @@ export default function LocationEditRoute() {
   useResetEditFeedbackOnChange(watch, clearFeedback);
 
   const watchedScale = watch('scale');
+  const watchedBuildingPrimaryType = watch('buildingPrimaryType');
   /** Avoid empty scale before RHF reset: invalid scale uses FALLBACK_POLICY (hideParent) and sanitize clears parentId. */
   const scaleForFormRules =
     (loc?.source === 'system' && loc ? loc.scale : undefined) ??
@@ -192,12 +197,23 @@ export default function LocationEditRoute() {
     () => getAllowedCellUnitOptionsForScale(mapAuthoringScaleForUi),
     [mapAuthoringScaleForUi],
   );
+  const buildingSubtypeSelectOptions = useMemo(
+    () => buildBuildingSubtypeSelectOptions(watchedBuildingPrimaryType),
+    [watchedBuildingPrimaryType],
+  );
+  const buildingProfileEntityPickerOptions = useMemo(
+    () => buildCharacterEntityPickerOptions(characterPickerSource),
+    [characterPickerSource],
+  );
+
   useLocationFormDependentFieldEffects(
     scaleForFormRules,
     locations,
     locationId,
     getValues,
     setValue,
+    true,
+    watchedBuildingPrimaryType,
   );
 
   const gridPreset = watch('gridPreset');
@@ -286,6 +302,8 @@ export default function LocationEditRoute() {
       getLocationFieldConfigs({
         policyCharacters,
         parentLocationOptions,
+        buildingSubtypeSelectOptions,
+        buildingProfileEntityPickerOptions,
         gridCellUnitOptions,
         includeGridBootstrap: Boolean(
           loc &&
@@ -297,6 +315,8 @@ export default function LocationEditRoute() {
     [
       policyCharacters,
       parentLocationOptions,
+      buildingSubtypeSelectOptions,
+      buildingProfileEntityPickerOptions,
       gridCellUnitOptions,
       loc,
       locationUiPolicy,

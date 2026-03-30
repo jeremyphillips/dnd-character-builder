@@ -1,6 +1,6 @@
 /**
  * Semantic icon tokens for location map presentation. UI maps these to MUI `SvgIcon`
- * components — the shared domain never references React or MUI.
+ * components — this module does not reference React or MUI.
  */
 
 export const LOCATION_MAP_ICON_NAME_IDS = [

@@ -1,4 +1,4 @@
-import type { LocationCellFillKindMeta, LocationMapSwatchColorKey } from '@/shared/domain/locations';
+import type { LocationCellFillKindMeta, LocationMapSwatchColorKey } from '@/features/content/locations/domain/mapContent';
 
 /**
  * Centralized hex values for location map swatches (cell fills, future palettes).

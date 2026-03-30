@@ -3,7 +3,7 @@
  *
  * This vocabulary is for **authored map content** (what the author places on the grid).
  * It is separate from:
- * - `LOCATION_MAP_OBJECT_KIND_IDS` in `map/locationMap.constants.ts` (persisted cell-object
+ * - `LOCATION_MAP_OBJECT_KIND_IDS` in shared `map/locationMap.constants.ts` (persisted cell-object
  *   kinds like marker / obstacle), and
  * - `LOCATION_SCALE_FIELD_POLICY` (form field / setup policy).
  *

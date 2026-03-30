@@ -1,6 +1,6 @@
 /**
- * Maps semantic `LocationMapIconName` tokens (shared domain) to MUI `SvgIcon` components.
- * Shared metadata never imports React or MUI — only this UI module resolves tokens to components.
+ * Maps semantic `LocationMapIconName` tokens (locations `domain/mapContent`) to MUI `SvgIcon` components.
+ * Metadata never imports React or MUI — only this UI module resolves tokens to components.
  */
 import type { ComponentType } from 'react';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
@@ -26,7 +26,7 @@ import WaterDamageIcon from '@mui/icons-material/WaterDamage';
 import WaterIcon from '@mui/icons-material/Water';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 
-import type { LocationMapIconName } from '@/shared/domain/locations';
+import type { LocationMapIconName } from '@/features/content/locations/domain/mapContent';
 
 export type LocationMapDisplayIconComponent = ComponentType<SvgIconProps>;
 

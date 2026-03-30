@@ -1,4 +1,5 @@
-import type { LocationScaleId } from '../location.types';
+import type { LocationScaleId } from '@/shared/domain/locations';
+
 import type { LocationCellFillKindId } from './locationCellFill.types';
 import type { LocationEdgeFeatureKindId } from './locationEdgeFeature.types';
 import type { LocationPathFeatureKindId } from './locationPathFeature.types';

@@ -14,6 +14,7 @@ export {
   pickMapGridFormValues,
 } from './maps/bootstrapDefaultLocationMap';
 export { cellDraftToCellEntries, cellEntriesToDraft } from './maps/cellAuthoringMappers';
+export * from './mapContent';
 export {
   getLocationMapIconByName,
   LOCATION_MAP_ICON_COMPONENT_BY_NAME,

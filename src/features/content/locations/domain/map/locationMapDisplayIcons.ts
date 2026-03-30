@@ -3,11 +3,12 @@
  * Icon components come from `locationMapIconNameMap.tsx` (semantic `LocationMapIconName` → MUI);
  * shared domain stores `iconName` tokens only (`LOCATION_SCALE_MAP_ICON_NAME`, etc.).
  */
-import type { LocationMapIconName, LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
+import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
+import type { LocationMapIconName } from '@/features/content/locations/domain/mapContent';
 import {
   LOCATION_MAP_OBJECT_KIND_ICON_NAME,
   LOCATION_SCALE_MAP_ICON_NAME,
-} from '@/shared/domain/locations';
+} from '@/features/content/locations/domain/mapContent';
 
 import {
   getLocationMapIconByName,

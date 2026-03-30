@@ -1,5 +1,5 @@
-import type { LocationMapObjectKindId } from '../map/locationMap.types';
-import type { LocationScaleId } from '../location.types';
+import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
+
 import type { LocationMapIconName } from './locationMapIconNames';
 
 /**

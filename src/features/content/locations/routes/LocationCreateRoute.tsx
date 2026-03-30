@@ -21,7 +21,7 @@ import {
   LocationEditorHeader,
   LocationEditorCanvas,
   LocationEditorRightRail,
-  LocationCreateSetupModal,
+  LocationCreateSetupFormDialog,
   INITIAL_LOCATION_GRID_DRAFT,
 } from '@/features/content/locations/components';
 import type { LocationCreateSetupDraft } from '@/features/content/locations/domain';
@@ -105,7 +105,7 @@ export default function LocationCreateRoute() {
 
   return (
     <>
-      <LocationCreateSetupModal
+      <LocationCreateSetupFormDialog
         open
         campaignHasWorldLocation={campaignHasWorldLocation}
         locationsLoading={locationsLoading}

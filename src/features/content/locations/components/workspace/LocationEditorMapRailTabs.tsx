@@ -1,22 +1,22 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
 
 import { AppTabs, AppTab } from '@/ui/patterns'
-import { parseGridCellId } from '@/shared/domain/grid'
 
-type LocationEditorMapRailTabsProps = {
+export type LocationEditorMapRailTabsProps = {
   metadata: ReactNode
-  selectedCellId: string | null
+  /** 0 = Metadata, 1 = Cell */
+  tabIndex: number
+  onTabChange: (index: number) => void
+  cellPanel: ReactNode
 }
 
 export function LocationEditorMapRailTabs({
   metadata,
-  selectedCellId,
+  tabIndex,
+  onTabChange,
+  cellPanel,
 }: LocationEditorMapRailTabsProps) {
-  const [tab, setTab] = useState(0)
-
   return (
     <Box
       sx={{
@@ -27,8 +27,8 @@ export function LocationEditorMapRailTabs({
       }}
     >
       <AppTabs
-        value={tab}
-        onChange={(_e, v) => setTab(v as number)}
+        value={tabIndex}
+        onChange={(_e, v) => onTabChange(v as number)}
         variant="fullWidth"
         sx={{ flexShrink: 0 }}
       >
@@ -36,49 +36,8 @@ export function LocationEditorMapRailTabs({
         <AppTab label="Cell" />
       </AppTabs>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2.5 }}>
-        {tab === 0 ? metadata : <CellRailPanel selectedCellId={selectedCellId} />}
+        {tabIndex === 0 ? metadata : cellPanel}
       </Box>
     </Box>
-  )
-}
-
-function CellRailPanel({ selectedCellId }: { selectedCellId: string | null }) {
-  if (selectedCellId == null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Select a cell to inspect
-      </Typography>
-    )
-  }
-
-  const point = parseGridCellId(selectedCellId)
-
-  return (
-    <Stack spacing={1.5}>
-      <Stack spacing={0.5}>
-        <Typography variant="caption" color="text.secondary">
-          Cell ID
-        </Typography>
-        <Typography variant="body2">{selectedCellId}</Typography>
-      </Stack>
-      <Stack direction="row" spacing={3}>
-        <Stack spacing={0.5}>
-          <Typography variant="caption" color="text.secondary">
-            X
-          </Typography>
-          <Typography variant="body2">
-            {point != null ? String(point.x) : '—'}
-          </Typography>
-        </Stack>
-        <Stack spacing={0.5}>
-          <Typography variant="caption" color="text.secondary">
-            Y
-          </Typography>
-          <Typography variant="body2">
-            {point != null ? String(point.y) : '—'}
-          </Typography>
-        </Stack>
-      </Stack>
-    </Stack>
   )
 }

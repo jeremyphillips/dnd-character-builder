@@ -1,6 +1,5 @@
 import { createElement, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import Box from '@mui/material/Box';
-// import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 
@@ -22,8 +21,7 @@ import {
   LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX,
 } from './workspace/locationEditor.constants';
 
-import { LocationGridCellModal } from './LocationGridCellModal';
-import type { LocationCellObjectDraft, LocationGridDraftState } from './locationGridDraft.types';
+import type { LocationGridDraftState } from './locationGridDraft.types';
 
 const GRID_GAP_PX = 4 // MUI spacing(0.5) — matches GridEditor gap
 const MIN_CELL_PX = 24
@@ -35,13 +33,15 @@ type LocationGridAuthoringSectionProps = {
   gridGeometry?: GridGeometryId | string;
   draft: LocationGridDraftState;
   setDraft: Dispatch<SetStateAction<LocationGridDraftState>>;
-  /** Campaign locations (for cell modal link picker). */
+  /** Campaign locations (for cell rail link picker). */
   locations: Location[];
   campaignId?: string;
   /** Current location being edited; omit on create. */
   hostLocationId?: string;
   hostScale: string;
   hostName?: string;
+  /** Switch right rail to Cell tab when user selects a cell. */
+  onCellFocusRail?: () => void;
 };
 
 export function LocationGridAuthoringSection({
@@ -51,10 +51,11 @@ export function LocationGridAuthoringSection({
   draft,
   setDraft,
   locations,
-  campaignId,
-  hostLocationId,
-  hostScale,
-  hostName,
+  campaignId: _campaignId,
+  hostLocationId: _hostLocationId,
+  hostScale: _hostScale,
+  hostName: _hostName,
+  onCellFocusRail,
 }: LocationGridAuthoringSectionProps) {
   const cols = Number(gridColumns);
   const rows = Number(gridRows);
@@ -80,13 +81,6 @@ export function LocationGridAuthoringSection({
           nextSel = null;
         }
       }
-      let nextModal = prev.cellModalCellId;
-      if (nextModal) {
-        const p = parseGridCellId(nextModal);
-        if (!p || p.x < 0 || p.y < 0 || p.x >= cols || p.y >= rows) {
-          nextModal = null;
-        }
-      }
       const sameLen = prunedExcluded.length === prev.excludedCellIds.length;
       const sameIds =
         sameLen && prunedExcluded.every((id, i) => id === prev.excludedCellIds[i]);
@@ -97,7 +91,6 @@ export function LocationGridAuthoringSection({
       if (
         sameIds &&
         nextSel === prev.selectedCellId &&
-        nextModal === prev.cellModalCellId &&
         linksSame &&
         objsSame
       ) {
@@ -107,7 +100,6 @@ export function LocationGridAuthoringSection({
         ...prev,
         excludedCellIds: prunedExcluded,
         selectedCellId: nextSel,
-        cellModalCellId: nextModal,
         linkedLocationByCellId: prunedLinks,
         objectsByCellId: prunedObjs,
       };
@@ -152,42 +144,9 @@ export function LocationGridAuthoringSection({
     setDraft((d) => ({
       ...d,
       selectedCellId: cell.cellId,
-      cellModalCellId: cell.cellId,
     }));
+    onCellFocusRail?.();
   };
-
-  const toggleExcludedForSelected = () => {
-    const id = draft.selectedCellId;
-    if (!id) return;
-    setDraft((d) => {
-      const next = new Set(d.excludedCellIds);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return {
-        ...d,
-        excludedCellIds: [...next].sort(),
-      };
-    });
-  };
-
-  const onUpdateLinkedLocation = (cellId: string, locationId: string | undefined) => {
-    setDraft((prev) => {
-      const nextLinks = { ...prev.linkedLocationByCellId };
-      if (locationId) nextLinks[cellId] = locationId;
-      else delete nextLinks[cellId];
-      return { ...prev, linkedLocationByCellId: nextLinks };
-    });
-  };
-
-  const onUpdateCellObjects = (cellId: string, objects: LocationCellObjectDraft[]) => {
-    setDraft((prev) => {
-      const next = { ...prev.objectsByCellId };
-      if (objects.length === 0) delete next[cellId];
-      else next[cellId] = objects;
-      return { ...prev, objectsByCellId: next };
-    });
-  };
-
 
   const renderMapCellIcons = (cell: GridCell) => {
     const linkId = draft.linkedLocationByCellId[cell.cellId];
@@ -238,34 +197,17 @@ export function LocationGridAuthoringSection({
   }
 
   return (
-    <>
-      <Paper variant="outlined" sx={{ p: 1 }}>
-        <Box sx={{ width: gridSizePx.width }}>
-          {isHex ? (
-            <HexGridEditor
-              {...sharedGridProps}
-              hexSize={gridSizePx.hexCellPx || undefined}
-            />
-          ) : (
-            <GridEditor {...sharedGridProps} />
-          )}
-        </Box>
-      </Paper>
-
-      <LocationGridCellModal
-        open={draft.cellModalCellId != null}
-        cellId={draft.cellModalCellId}
-        hostLocationId={hostLocationId}
-        hostScale={hostScale}
-        hostName={hostName}
-        campaignId={campaignId}
-        locations={locations}
-        linkedLocationByCellId={draft.linkedLocationByCellId}
-        objectsByCellId={draft.objectsByCellId}
-        onClose={() => setDraft((d) => ({ ...d, cellModalCellId: null }))}
-        onUpdateLinkedLocation={onUpdateLinkedLocation}
-        onUpdateCellObjects={onUpdateCellObjects}
-      />
-    </>
+    <Paper variant="outlined" sx={{ p: 1 }}>
+      <Box sx={{ width: gridSizePx.width }}>
+        {isHex ? (
+          <HexGridEditor
+            {...sharedGridProps}
+            hexSize={gridSizePx.hexCellPx || undefined}
+          />
+        ) : (
+          <GridEditor {...sharedGridProps} />
+        )}
+      </Box>
+    </Paper>
   );
 }

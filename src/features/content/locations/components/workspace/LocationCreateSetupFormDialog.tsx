@@ -74,17 +74,14 @@ function draftAfterScaleChange(
   };
 }
 
-export type LocationCreateSetupModalProps = {
+export type LocationCreateSetupFormDialogProps = {
   open: boolean;
   campaignHasWorldLocation: boolean;
   locationsLoading: boolean;
   locations: Location[];
-  /** Persist request in flight (same as create + map bootstrap). */
   saving?: boolean;
-  /** API or validation error message shown in the modal. */
   submitError?: string | null;
   onCancel: () => void;
-  /** Persist location + default map; may be async. */
   onComplete: (draft: LocationCreateSetupDraft) => void | Promise<void>;
 };
 
@@ -98,7 +95,7 @@ type SetupFormFieldsProps = {
   formDisabled: boolean;
 };
 
-function LocationCreateSetupModalFormFields({
+function LocationCreateSetupFormFields({
   methods,
   open,
   campaignHasWorldLocation,
@@ -225,7 +222,7 @@ function LocationCreateSetupModalFormFields({
   );
 }
 
-export function LocationCreateSetupModal({
+export function LocationCreateSetupFormDialog({
   open,
   campaignHasWorldLocation,
   locationsLoading,
@@ -234,7 +231,7 @@ export function LocationCreateSetupModal({
   submitError,
   onCancel,
   onComplete,
-}: LocationCreateSetupModalProps) {
+}: LocationCreateSetupFormDialogProps) {
   const scaleOptions = useMemo(
     () => getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation),
     [campaignHasWorldLocation],
@@ -308,7 +305,7 @@ export function LocationCreateSetupModal({
         spacing={2.5}
       >
         {(methods) => (
-          <LocationCreateSetupModalFormFields
+          <LocationCreateSetupFormFields
             methods={methods}
             open={open}
             campaignHasWorldLocation={campaignHasWorldLocation}

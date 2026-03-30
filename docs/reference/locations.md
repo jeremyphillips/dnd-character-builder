@@ -67,11 +67,12 @@ Shared MUI styling tokens consumed by both `GridEditor` and `HexGridEditor` to k
 |--------|----------------|
 | `scale/` | Scale **business policy** (who may parent whom), **field policy** (categories, cell units, **grid geometries**, which form fields apply per scale), **rules** (valid scale id, rank, world check), **parent validation** (`validateParentChildScales` for hierarchy). |
 | `map/` | Map **constants** (kinds, cell units by kind, object kinds), **types** (`LocationMapBase`, grid, cells, cell authoring), **helpers** (`mapKindForLocationScale`, `getDefaultMapKindForScale` — derives map kind during save/bootstrap, `isCellUnitAllowedForScale`), **placement policy** (what can be placed / linked on cells by scale), **validation** (grid, cells, map input, cell authoring structure). |
+| `mapContent/` | **Authored map content** vocabulary (cell fills, path features, edge features, placed objects) and **`LOCATION_SCALE_MAP_CONTENT_POLICY`** — separate from field/setup policy (`LOCATION_SCALE_FIELD_POLICY`) and from persisted cell-object kinds (`LOCATION_MAP_OBJECT_KIND_IDS`). First pass targets **world**, **city**, and **floor**; helpers: `getAllowedCellFillKindsForScale`, etc. |
 | `transitions/` | Transition **kinds** (`LOCATION_TRANSITION_KIND_IDS`) and **shared types** (`LocationTransitionBase`, `from` / `to` shapes). |
 
 ### Tests
 
-Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/scale/`, `__tests__/map/`.
+Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/scale/`, `__tests__/map/`, `__tests__/mapContent/`.
 
 ---
 
@@ -90,6 +91,12 @@ Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/sc
 - **Shapes:** `map/locationMap.types.ts` (`LocationMapGrid` — includes optional `geometry?: GridGeometryId`, `LocationMapCell`, `LocationMapCellAuthoringEntry`, …).
 - **Pure validation:** `map/locationMap.validation.ts`, `map/locationMapCellAuthoring.validation.ts` — no database; safe for client and server.
 - **Placement rules (gameplay policy):** `map/locationMapPlacement.policy.ts` — e.g. which object kinds / link rules apply on a host scale (complements field policy).
+- **Authored map content (types + per-scale policy):** `mapContent/` — four **categories** of future editor content, each with stable ids and lightweight display metadata (`LOCATION_*_KIND_META`):
+  1. **Cell fills** — whole-cell terrain / surface (`LOCATION_CELL_FILL_KIND_IDS`).
+  2. **Path features** — linear / network strokes (`LOCATION_PATH_FEATURE_KIND_IDS`).
+  3. **Edge features** — boundary features (`LOCATION_EDGE_FEATURE_KIND_IDS`).
+  4. **Placed objects** — anchored / footprint props (`LOCATION_PLACED_OBJECT_KIND_IDS`).
+  **`LOCATION_SCALE_MAP_CONTENT_POLICY`** lists which ids apply at **world**, **city**, and **floor** (other scales are empty until extended). Intended future tools: **paint** (fills + paths), **edge** (edges), **place** (objects). Not wired to persistence or UI in the first pass.
 - **Client:** default map bootstrap, grid drafting, cell authoring mappers under `src/features/content/locations/domain/maps/`; display icons under `domain/map/`; repo helpers `locationMapRepo.ts`.
 
 ### Transition layer
@@ -223,7 +230,7 @@ Both renderers share the same callback shapes (`onCellClick`, `renderCellContent
 ## Pointers for the next agent
 
 1. **Extend scale rules:** edit `scale/locationScale.policy.ts` and `scale/locationParent.validation.ts`; keep `locationScaleField.policy.ts` in sync for categories/cell units/UI.
-2. **Extend map rules:** prefer `map/locationMap.validation.ts` / `locationMapCellAuthoring.validation.ts` for structural checks; `locationMapPlacement.policy.ts` for “what may appear on a cell” by scale.
+2. **Extend map rules:** prefer `map/locationMap.validation.ts` / `locationMapCellAuthoring.validation.ts` for structural checks; `locationMapPlacement.policy.ts` for “what may appear on a cell” by scale. For **authored map content** categories (fills, paths, edges, placed objects), extend `mapContent/` and `LOCATION_SCALE_MAP_CONTENT_POLICY` — keep it separate from `LOCATION_SCALE_FIELD_POLICY`.
 3. **New transition kinds:** add to `LOCATION_TRANSITION_KIND_IDS` and any server checks; shared types in `transitions/`.
 4. **Imports:** use the **barrel** `shared/domain/locations` unless you have a reason to deep-import a subfolder. Canvas hooks: `@/ui/hooks`.
 5. **Tests:** add shared tests under `__tests__/scale/` or `__tests__/map/`; server tests next to services/domain in `server/features/content/locations/`.

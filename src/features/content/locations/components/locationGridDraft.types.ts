@@ -10,8 +10,6 @@ export type LocationGridDraftState = {
   linkedLocationByCellId: Record<string, string | undefined>;
   /** Simple objects placed on each cell (authoring draft). */
   objectsByCellId: Record<string, LocationCellObjectDraft[]>;
-  /** When set, the cell edit modal is open for this cell id. */
-  cellModalCellId: string | null;
 };
 
 export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
@@ -19,5 +17,4 @@ export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
   excludedCellIds: [],
   linkedLocationByCellId: {},
   objectsByCellId: {},
-  cellModalCellId: null,
 };

@@ -52,6 +52,7 @@ import type { LocationScaleId } from '@/shared/domain/locations';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import {
   LocationGridAuthoringSection,
+  LocationCellAuthoringPanel,
   LocationEditorWorkspace,
   LocationEditorHeader,
   LocationEditorCanvas,
@@ -60,6 +61,7 @@ import {
   LocationAncestryBreadcrumbs,
   BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
+  type LocationCellObjectDraft,
   type LocationGridDraftState,
 } from '@/features/content/locations/components';
 
@@ -102,6 +104,8 @@ export default function LocationEditRoute() {
   const [gridDraft, setGridDraft] = useState<LocationGridDraftState>(
     INITIAL_LOCATION_GRID_DRAFT,
   );
+  /** 0 = Metadata, 1 = Cell — switched when user selects a map cell */
+  const [mapRailTab, setMapRailTab] = useState(0);
   const [rightRailOpen, setRightRailOpen] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -236,7 +240,6 @@ export default function LocationEditRoute() {
           selectedCellId: null,
           excludedCellIds: def.layout?.excludedCellIds ?? [],
           ...cellEntriesToDraft(def.cellEntries),
-          cellModalCellId: null,
         });
       } else {
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
@@ -268,7 +271,6 @@ export default function LocationEditRoute() {
           selectedCellId: null,
           excludedCellIds: def.layout?.excludedCellIds ?? [],
           ...cellEntriesToDraft(def.cellEntries),
-          cellModalCellId: null,
         });
       } else {
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
@@ -524,6 +526,32 @@ export default function LocationEditRoute() {
     [navigate, campaignId],
   );
 
+  const handleUpdateLinkedLocation = useCallback(
+    (cellId: string, locationId: string | undefined) => {
+      setGridDraft((prev) => {
+        const nextLinks = { ...prev.linkedLocationByCellId };
+        if (locationId) nextLinks[cellId] = locationId;
+        else delete nextLinks[cellId];
+        return { ...prev, linkedLocationByCellId: nextLinks };
+      });
+    },
+    [],
+  );
+
+  const handleUpdateCellObjects = useCallback(
+    (cellId: string, objects: LocationCellObjectDraft[]) => {
+      setGridDraft((prev) => {
+        const next = { ...prev.objectsByCellId };
+        if (objects.length === 0) delete next[cellId];
+        else next[cellId] = objects;
+        return { ...prev, objectsByCellId: next };
+      });
+    },
+    [],
+  );
+
+  const focusCellRailTab = useCallback(() => setMapRailTab(1), []);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -590,6 +618,7 @@ export default function LocationEditRoute() {
                 hostLocationId={locationId}
                 hostScale={scaleForFormRules}
                 hostName={loc.name}
+                onCellFocusRail={focusCellRailTab}
               />
             ) : null}
           </LocationEditorCanvas>
@@ -597,7 +626,8 @@ export default function LocationEditRoute() {
         rightRail={
           <LocationEditorRightRail open={rightRailOpen}>
             <LocationEditorMapRailTabs
-              selectedCellId={gridDraft.selectedCellId}
+              tabIndex={mapRailTab}
+              onTabChange={setMapRailTab}
               metadata={
                 <Stack spacing={2}>
                   <Typography variant="subtitle1" fontWeight={600}>
@@ -631,6 +661,20 @@ export default function LocationEditRoute() {
                     </Button>
                   )}
                 </Stack>
+              }
+              cellPanel={
+                <LocationCellAuthoringPanel
+                  selectedCellId={gridDraft.selectedCellId}
+                  hostLocationId={locationId}
+                  hostScale={scaleForFormRules}
+                  hostName={loc.name}
+                  campaignId={campaignId ?? undefined}
+                  locations={locations}
+                  linkedLocationByCellId={gridDraft.linkedLocationByCellId}
+                  objectsByCellId={gridDraft.objectsByCellId}
+                  onUpdateLinkedLocation={handleUpdateLinkedLocation}
+                  onUpdateCellObjects={handleUpdateCellObjects}
+                />
               }
             />
           </LocationEditorRightRail>
@@ -736,6 +780,7 @@ export default function LocationEditRoute() {
                       hostLocationId={mapHostLocationId}
                       hostScale={mapHostScale}
                       hostName={mapHostName}
+                      onCellFocusRail={focusCellRailTab}
                     />
                   ) : null}
                 </LocationEditorCanvas>
@@ -762,6 +807,7 @@ export default function LocationEditRoute() {
                   hostLocationId={locationId}
                   hostScale={scaleForFormRules}
                   hostName={loc.name}
+                  onCellFocusRail={focusCellRailTab}
                 />
               ) : null}
             </LocationEditorCanvas>
@@ -770,7 +816,8 @@ export default function LocationEditRoute() {
         rightRail={
           <LocationEditorRightRail open={rightRailOpen}>
             <LocationEditorMapRailTabs
-              selectedCellId={gridDraft.selectedCellId}
+              tabIndex={mapRailTab}
+              onTabChange={setMapRailTab}
               metadata={
                 <Stack spacing={2}>
                   {isBuildingWorkspace && activeFloorId ? (
@@ -794,6 +841,20 @@ export default function LocationEditRoute() {
                     />
                   )}
                 </Stack>
+              }
+              cellPanel={
+                <LocationCellAuthoringPanel
+                  selectedCellId={gridDraft.selectedCellId}
+                  hostLocationId={mapHostLocationId}
+                  hostScale={mapHostScale}
+                  hostName={mapHostName}
+                  campaignId={campaignId ?? undefined}
+                  locations={locations}
+                  linkedLocationByCellId={gridDraft.linkedLocationByCellId}
+                  objectsByCellId={gridDraft.objectsByCellId}
+                  onUpdateLinkedLocation={handleUpdateLinkedLocation}
+                  onUpdateCellObjects={handleUpdateCellObjects}
+                />
               }
             />
           </LocationEditorRightRail>

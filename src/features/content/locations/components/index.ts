@@ -1,8 +1,8 @@
 export { LocationHorizontalCard } from './cards'
 export type { LocationHorizontalCardProps } from './cards'
 export { LocationGridAuthoringSection } from './LocationGridAuthoringSection'
-export { LocationGridCellModal } from './LocationGridCellModal'
-export type { LocationGridCellModalProps } from './LocationGridCellModal'
+export { LocationCellAuthoringPanel } from './LocationCellAuthoringPanel'
+export type { LocationCellAuthoringPanelProps } from './LocationCellAuthoringPanel'
 export {
   INITIAL_LOCATION_GRID_DRAFT,
 } from './locationGridDraft.types'
@@ -16,7 +16,7 @@ export {
   LocationEditorCanvas,
   LocationEditorRightRail,
   LocationEditorMapRailTabs,
-  LocationCreateSetupModal,
+  LocationCreateSetupFormDialog,
   BuildingFloorStrip,
   LocationAncestryBreadcrumbs,
   LOCATION_EDITOR_HEADER_HEIGHT_PX,

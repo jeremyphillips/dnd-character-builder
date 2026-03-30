@@ -1,4 +1,7 @@
-import { LOCATION_SCALE_ORDER } from '@/shared/domain/locations'
+import {
+  getLocationScaleRank,
+  LOCATION_SCALE_RANK_ORDER_LEGACY,
+} from '@/shared/domain/locations';
 
 import type { Location } from '@/features/content/locations/domain/types'
 
@@ -7,7 +10,8 @@ import type { Location } from '@/features/content/locations/domain/types'
  */
 export function sortLocations(a: Location, b: Location): number {
   const scaleDiff =
-    LOCATION_SCALE_ORDER.indexOf(a.scale) - LOCATION_SCALE_ORDER.indexOf(b.scale)
+    LOCATION_SCALE_RANK_ORDER_LEGACY.indexOf(a.scale as (typeof LOCATION_SCALE_RANK_ORDER_LEGACY)[number]) -
+    LOCATION_SCALE_RANK_ORDER_LEGACY.indexOf(b.scale as (typeof LOCATION_SCALE_RANK_ORDER_LEGACY)[number])
 
   if (scaleDiff !== 0) return scaleDiff
 
@@ -15,6 +19,6 @@ export function sortLocations(a: Location, b: Location): number {
 }
 
 export function getIndentLevel(location: { scale: Location['scale'] }): number {
-  const i = LOCATION_SCALE_ORDER.indexOf(location.scale)
-  return i >= 0 ? i : 0
+  const i = getLocationScaleRank(location.scale);
+  return i >= 0 ? i : 0;
 }

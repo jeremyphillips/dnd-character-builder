@@ -1,13 +1,19 @@
 /**
  * Centralized UI + validation policy for location scale — categories, cell units, and field visibility.
  *
+ * **First-class content scales only** in `LOCATION_SCALE_FIELD_POLICY` (world, city, site, building,
+ * floor, room). Legacy region/subregion/district rows use `LEGACY_LOCATION_SCALE_FIELD_POLICY` so
+ * existing records still normalize until data migration.
+ *
  * Parent-scale eligibility stays in `locationScale.policy.ts`.
- * Map kind / placement hooks can extend this module later (`allowedMapKinds`, etc.).
  */
-import { LOCATION_SCALE_ORDER } from '../location.constants';
-import type { LocationCategoryId, LocationScaleId } from '../location.types';
+import type { ContentLocationScaleId, LocationCategoryId, LocationScaleId } from '../location.types';
 import { LOCATION_CELL_UNIT_IDS } from '../map/locationMap.constants';
-import { isValidLocationScaleId, isWorldScale } from './locationScale.rules';
+import {
+  isLegacyMapZoneLocationScaleId,
+  isValidLocationScaleId,
+  isWorldScale,
+} from './locationScale.rules';
 import type { GridGeometryId } from '../../grid/gridGeometry';
 
 export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];
@@ -56,7 +62,7 @@ const squareOnly = ['square'] as const;
 const squareHex = ['square', 'hex'] as const;
 
 /**
- * Single source of truth for scale-specific category + cell-unit rules.
+ * Field/setup policy for **first-class content** location scales only.
  */
 export const LOCATION_SCALE_FIELD_POLICY = {
   world: {
@@ -71,24 +77,6 @@ export const LOCATION_SCALE_FIELD_POLICY = {
     defaultGeometry: 'hex',
     hideGridGeometry: true,
   },
-  region: {
-    allowedCategories: ['wilderness', 'landmark'],
-    allowedCellUnits: mile,
-    fixedCellUnit: 'mile',
-    hideGridCellUnit: true,
-    isScaleEditableOnEdit: false,
-    allowedGeometries: hexOnly,
-    defaultGeometry: 'hex',
-    hideGridGeometry: true,
-  },
-  subregion: {
-    allowedCategories: ['wilderness', 'landmark', 'settlement'],
-    allowedCellUnits: mileBlock,
-    isScaleEditableOnEdit: false,
-    allowedGeometries: hexOnly,
-    defaultGeometry: 'hex',
-    hideGridGeometry: true,
-  },
   city: {
     allowedCategories: ['settlement'],
     fixedCategory: 'settlement',
@@ -98,16 +86,6 @@ export const LOCATION_SCALE_FIELD_POLICY = {
     isScaleEditableOnEdit: false,
     allowedGeometries: squareHex,
     defaultGeometry: 'hex',
-  },
-  district: {
-    allowedCategories: ['district'],
-    fixedCategory: 'district',
-    allowedCellUnits: block,
-    fixedCellUnit: 'block',
-    hideGridCellUnit: true,
-    isScaleEditableOnEdit: false,
-    allowedGeometries: squareHex,
-    defaultGeometry: 'square',
   },
   site: {
     allowedCategories: ['landmark', 'structure', 'dungeon'],
@@ -149,7 +127,45 @@ export const LOCATION_SCALE_FIELD_POLICY = {
     defaultGeometry: 'square',
     hideGridGeometry: true,
   },
-} as const satisfies Record<LocationScaleId, LocationScaleFieldPolicy>;
+} as const satisfies Record<ContentLocationScaleId, LocationScaleFieldPolicy>;
+
+/**
+ * Compatibility only — persisted locations that still use region/subregion/district as `scale`.
+ * Not used for new authoring (MapZone + CONTENT scales instead).
+ */
+export const LEGACY_LOCATION_SCALE_FIELD_POLICY: Record<
+  Extract<LocationScaleId, 'region' | 'subregion' | 'district'>,
+  LocationScaleFieldPolicy
+> = {
+  region: {
+    allowedCategories: ['wilderness', 'landmark'],
+    allowedCellUnits: mile,
+    fixedCellUnit: 'mile',
+    hideGridCellUnit: true,
+    isScaleEditableOnEdit: false,
+    allowedGeometries: hexOnly,
+    defaultGeometry: 'hex',
+    hideGridGeometry: true,
+  },
+  subregion: {
+    allowedCategories: ['wilderness', 'landmark', 'settlement'],
+    allowedCellUnits: mileBlock,
+    isScaleEditableOnEdit: false,
+    allowedGeometries: hexOnly,
+    defaultGeometry: 'hex',
+    hideGridGeometry: true,
+  },
+  district: {
+    allowedCategories: ['district'],
+    fixedCategory: 'district',
+    allowedCellUnits: block,
+    fixedCellUnit: 'block',
+    hideGridCellUnit: true,
+    isScaleEditableOnEdit: false,
+    allowedGeometries: squareHex,
+    defaultGeometry: 'square',
+  },
+};
 
 const FALLBACK_POLICY: LocationScaleFieldPolicy = {
   allowedCategories: [],
@@ -168,7 +184,10 @@ export function getLocationScaleFieldPolicy(scale: string): LocationScaleFieldPo
   if (!isValidLocationScaleId(scale)) {
     return FALLBACK_POLICY;
   }
-  return LOCATION_SCALE_FIELD_POLICY[scale];
+  if (isLegacyMapZoneLocationScaleId(scale)) {
+    return LEGACY_LOCATION_SCALE_FIELD_POLICY[scale];
+  }
+  return LOCATION_SCALE_FIELD_POLICY[scale as ContentLocationScaleId];
 }
 
 export function getAllowedCategoriesForScale(scale: string): readonly LocationCategoryId[] {

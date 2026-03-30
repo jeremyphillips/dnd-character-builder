@@ -1,10 +1,18 @@
 import {
-  LOCATION_CATEGORY_IDS,
+  CONTENT_LOCATION_SCALE_IDS,
+  LEGACY_MAP_ZONE_LOCATION_SCALE_IDS,
   LOCATION_CONNECTION_KIND_IDS,
-  LOCATION_SCALE_ORDER,
+  LOCATION_CATEGORY_IDS,
 } from './location.constants';
 
-export type LocationScaleId = (typeof LOCATION_SCALE_ORDER)[number];
+/** First-class content location scales (authoring + field policy). */
+export type ContentLocationScaleId = (typeof CONTENT_LOCATION_SCALE_IDS)[number];
+
+/** Legacy scales still valid in persisted data; not for new authoring. */
+export type LegacyMapZoneLocationScaleId = (typeof LEGACY_MAP_ZONE_LOCATION_SCALE_IDS)[number];
+
+/** Any campaign location scale (content + legacy). */
+export type LocationScaleId = ContentLocationScaleId | LegacyMapZoneLocationScaleId;
 
 export type LocationCategoryId = (typeof LOCATION_CATEGORY_IDS)[number];
 

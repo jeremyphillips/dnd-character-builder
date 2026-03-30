@@ -2,9 +2,12 @@
  * Explicit location scale *business* policy (parent eligibility, etc.).
  *
  * For generic structural comparisons (rank, broader/finer), use `locationScale.rules.ts`
- * and `LOCATION_SCALE_ORDER` — ordering alone does not encode which parent scales are valid.
+ * and `LOCATION_SCALE_RANK_ORDER_LEGACY` — ordering alone does not encode which parent scales are valid.
+ *
+ * Legacy rows may still use region/subregion/district in parent chains; new authoring should prefer
+ * world → city → site → building → floor → room without inserting those legacy scales.
  */
-import { LOCATION_SCALE_ORDER } from '../location.constants';
+import { LOCATION_SCALE_RANK_ORDER_LEGACY } from '../location.constants';
 import type { LocationScaleId } from '../location.types';
 
 /** Child scale → parent scales that may be assigned (empty = root only, e.g. world). */
@@ -13,20 +16,23 @@ export const ALLOWED_PARENT_SCALES_BY_SCALE: Record<
   readonly LocationScaleId[]
 > = {
   world: [],
+  /** Legacy — prefer MapZones on world map. */
   region: ['world'],
-  subregion: ['region'],
-  /** Macro place: may sit under world (single-world campaigns) or regional geography. */
+  /** Legacy. */
+  subregion: ['world', 'region'],
+  /** Canonical macro place; may sit under world only for new trees; legacy paths may use region/subregion parents. */
   city: ['world', 'region', 'subregion'],
+  /** Legacy urban fabric — prefer MapZones on city map. */
   district: ['city'],
-  /** Sites can sit under macro area, urban fabric, or district. */
-  site: ['region', 'subregion', 'city', 'district'],
-  building: ['site', 'district', 'city'],
+  /** Sites under macro area; legacy rows may reference district/region/subregion parents. */
+  site: ['world', 'region', 'subregion', 'city', 'district'],
+  building: ['site', 'city', 'district'],
   floor: ['building'],
   room: ['floor', 'building'],
 };
 
 function isKnownScale(scale: string): scale is LocationScaleId {
-  return (LOCATION_SCALE_ORDER as readonly string[]).includes(scale);
+  return (LOCATION_SCALE_RANK_ORDER_LEGACY as readonly string[]).includes(scale);
 }
 
 export function getAllowedParentScalesForScale(childScale: string): readonly LocationScaleId[] {

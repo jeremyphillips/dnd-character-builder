@@ -6,6 +6,7 @@
 export {
   buildAncestorIdsFromParentRow,
   LOCATION_SCALE_ORDER,
+  LOCATION_SCALE_RANK_ORDER_LEGACY,
   scaleRank,
   validateParentChildScales as validateLocationScaleNesting,
 } from '../domain/locations.hierarchy';

@@ -1,28 +1,26 @@
-import { LOCATION_SCALE_ORDER } from '../location.constants';
+import type { LocationScaleId } from '../location.types';
 import type { LocationMapKindId } from './locationMap.types';
 
-type LocationScaleId = (typeof LOCATION_SCALE_ORDER)[number];
+const WORLD_GRID_SCALES = new Set<LocationScaleId>(['world']);
 
-const WORLD_SCALES = new Set<LocationScaleId>(['world']);
 /**
- * Scales that use the coarse **area-grid** map kind for campaign maps.
- * TODO(refactor): `region` / `subregion` / `district` remain here for legacy map-kind routing;
- * geographic expression is moving toward **MapZone** (`zones/`) on parent maps — revisit when
- * link-based region/district locations are migrated.
+ * Host scales whose default campaign map uses **area-grid** (macro tactical).
+ * Includes legacy region/subregion/district locations still in the DB; new geographic expression
+ * for those concepts is **MapZone** on parent maps (`zones/mapZone.policy.ts`).
  */
-const AREA_SCALES = new Set<LocationScaleId>([
+const AREA_GRID_MAP_SCALES = new Set<LocationScaleId>([
+  'city',
+  'site',
   'region',
   'subregion',
-  'city',
   'district',
-  'site',
 ]);
 
 /** Picks a default map kind from location scale for authored campaign maps. */
 export function mapKindForLocationScale(scale: string): LocationMapKindId {
   const s = scale as LocationScaleId;
-  if (WORLD_SCALES.has(s)) return 'world-grid';
-  if (AREA_SCALES.has(s)) return 'area-grid';
+  if (WORLD_GRID_SCALES.has(s)) return 'world-grid';
+  if (AREA_GRID_MAP_SCALES.has(s)) return 'area-grid';
   return 'encounter-grid';
 }
 

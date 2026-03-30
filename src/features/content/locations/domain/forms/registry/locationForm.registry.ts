@@ -2,8 +2,9 @@
  * Location form field registry — config + mapping for create/edit.
  */
 import {
+  ALL_LOCATION_SCALE_IDS,
+  CONTENT_LOCATION_SCALE_IDS,
   LOCATION_CATEGORY_IDS,
-  LOCATION_SCALE_ORDER,
   LOCATION_CELL_UNIT_IDS,
 } from '@/shared/domain/locations';
 import {
@@ -17,13 +18,14 @@ import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFi
 import type { FieldSpec } from '@/features/content/shared/forms/registry';
 import type { LocationFormValues } from '../types/locationForm.types';
 
-/** Dependent fields use ConditionalFormRenderer `visibleWhen` — shown after user picks a valid scale. */
-const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...LOCATION_SCALE_ORDER]);
+/** Dependent fields use ConditionalFormRenderer `visibleWhen` — shown after user picks a valid scale (includes legacy scales for edit). */
+const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...ALL_LOCATION_SCALE_IDS]);
 
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
 
-const SCALE_OPTIONS = LOCATION_SCALE_ORDER.map((s) => ({ value: s, label: s }));
+/** Default registry options — create/edit UI typically overrides with `scaleSelectOptions` from policy (content-only create, all scales for edit display). */
+const SCALE_OPTIONS = CONTENT_LOCATION_SCALE_IDS.map((s) => ({ value: s, label: s }));
 
 const CATEGORY_OPTIONS = LOCATION_CATEGORY_IDS.map((c) => ({
   value: c,

@@ -7,19 +7,22 @@
 
 import {
   LOCATION_SCALE_ORDER,
+  LOCATION_SCALE_RANK_ORDER_LEGACY,
   type LocationScaleId,
 } from '../../../../../shared/domain/locations';
 
-export { LOCATION_SCALE_ORDER, type LocationScaleId };
+export { LOCATION_SCALE_ORDER, LOCATION_SCALE_RANK_ORDER_LEGACY, type LocationScaleId };
 
 export {
   validateParentChildScales,
   type HierarchyValidationError,
 } from '../../../../../shared/domain/locations';
 
+const LEGACY_RANK = LOCATION_SCALE_RANK_ORDER_LEGACY as readonly string[];
+
 /** Lower index = broader geographic scope. Returns -1 if scale is unknown. */
 export function scaleRank(scale: string): number {
-  return LOCATION_SCALE_ORDER.indexOf(scale as LocationScaleId);
+  return LEGACY_RANK.indexOf(scale);
 }
 
 /** ancestorIds for a node whose parent is `parentRow` (root has no parent row). */

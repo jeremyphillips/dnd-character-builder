@@ -3,12 +3,14 @@
  * Field visibility and options derive from `LOCATION_SCALE_FIELD_POLICY` (shared).
  */
 import {
+  ALL_LOCATION_SCALE_IDS,
+  CONTENT_LOCATION_SCALE_IDS,
   getAllowedCategoryOptionsForScale,
   getAllowedCellUnitOptionsForScale,
   isCategoryFieldReadOnlyForScale,
   isGridCellUnitFieldReadOnlyForScale,
   isLocationScaleEditableOnEdit,
-  LOCATION_SCALE_ORDER,
+  isValidLocationScaleId,
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
   shouldShowParentFieldForScale,
@@ -23,16 +25,20 @@ import { getFilteredParentLocationsForChildScale } from './locationDependentFiel
 
 export type LocationFormUiMode = 'create' | 'edit';
 
-export const ALL_LOCATION_SCALE_OPTIONS = LOCATION_SCALE_ORDER.map((s) => ({
+/** All scales that may appear on a location (content + legacy) — e.g. edit display. */
+export const ALL_LOCATION_SCALE_OPTIONS = ALL_LOCATION_SCALE_IDS.map((s) => ({
   value: s,
   label: s,
 }));
 
+/** Create flow: first-class content scales only (no region/subregion/district). */
 export function getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation: boolean) {
-  return LOCATION_SCALE_ORDER.filter((s) => s !== 'world' || !campaignHasWorldLocation).map((s) => ({
-    value: s,
-    label: s,
-  }));
+  return CONTENT_LOCATION_SCALE_IDS.filter((s) => s !== 'world' || !campaignHasWorldLocation).map(
+    (s) => ({
+      value: s,
+      label: s,
+    }),
+  );
 }
 
 /** Edit: show full scale list for display; field is disabled so selection cannot change. */
@@ -44,10 +50,10 @@ export function canSelectWorldScale(campaignHasWorldLocation: boolean): boolean 
   return !campaignHasWorldLocation;
 }
 
-/** True when `scale` is a non-empty member of {@link LOCATION_SCALE_ORDER} (form + grid authoring gate). */
+/** True when `scale` is a known location scale (form + grid authoring gate). */
 export function isLocationScaleSelected(scale: string | undefined | null): boolean {
   if (scale == null || scale === '') return false;
-  return (LOCATION_SCALE_ORDER as readonly string[]).includes(scale);
+  return isValidLocationScaleId(scale);
 }
 
 /** Setup modal: show category control only when more than one allowed option exists. */

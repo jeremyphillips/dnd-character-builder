@@ -1,5 +1,5 @@
 import type {
-  LocationMapCell,
+  LocationMapBase,
   LocationMapCellAuthoringEntry,
   LocationMapKindId,
 } from '../../../../../shared/domain/locations';
@@ -14,17 +14,9 @@ import { CampaignLocation } from '../../../../shared/models/CampaignLocation.mod
 import { type MapValidationError, validateLocationMapInput } from './locationValidation';
 import { countTransitionsReferencingMap } from './locationTransitions.queries';
 
-export type LocationMapDoc = {
-  id: string;
+/** Map document stored per campaign — `LocationMapBase` plus persistence scope and timestamps. */
+export type LocationMapDoc = LocationMapBase & {
   campaignId: string;
-  locationId: string;
-  name: string;
-  kind: LocationMapKindId;
-  grid: { width: number; height: number; cellUnit: string | number };
-  layout?: { excludedCellIds?: string[] };
-  isDefault?: boolean;
-  cells?: LocationMapCell[];
-  cellEntries?: LocationMapCellAuthoringEntry[];
   createdAt: string;
   updatedAt: string;
 };

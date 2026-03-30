@@ -5,7 +5,12 @@ import { apiFetch, ApiError } from '@/app/api';
 import type { Visibility } from '@/shared/types/visibility';
 import type { CampaignContentRepo, ListOptions } from '@/features/content/shared/domain/repo/contentRepo.types';
 import { isCampaignLocationListScale } from '@/shared/domain/locations';
-import type { Location, LocationFields, LocationInput, LocationSummary } from '@/features/content/locations/domain/types';
+import type {
+  Location,
+  LocationBaseFields,
+  LocationInput,
+  LocationSummary,
+} from '@/features/content/locations/domain/types';
 import { getSystemLocation, getSystemLocations } from '@/features/mechanics/domain/rulesets/system/locations';
 import { getContentPatch } from '@/features/content/shared/domain/contentPatchRepo';
 import { applyContentPatch } from '@/features/content/shared/domain/patches/applyContentPatch';
@@ -27,7 +32,7 @@ type CampaignLocationDto = {
   label?: { short?: string; number?: string };
   aliases?: string[];
   tags?: string[];
-  connections?: LocationFields['connections'];
+  connections?: LocationBaseFields['connections'];
   createdAt?: string;
   updatedAt?: string;
 };

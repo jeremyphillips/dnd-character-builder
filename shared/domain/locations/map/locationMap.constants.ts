@@ -28,8 +28,10 @@ export const LOCATION_CELL_UNIT_IDS = [
   '5ft',
 ] as const;
 
+export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];
+
 type _MapKind = (typeof LOCATION_MAP_KIND_IDS)[number];
-type _CellUnit = (typeof LOCATION_CELL_UNIT_IDS)[number];
+type _CellUnit = LocationCellUnitId;
 
 /** Cell units allowed per map kind (authoring). Must be a superset of what each scale in that kind allows. */
 export const CELL_UNITS_BY_KIND: Record<_MapKind, readonly _CellUnit[]> = {

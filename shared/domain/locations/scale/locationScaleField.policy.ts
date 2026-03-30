@@ -8,15 +8,13 @@
  * Parent-scale eligibility stays in `locationScale.policy.ts`.
  */
 import type { ContentLocationScaleId, LocationCategoryId, LocationScaleId } from '../location.types';
-import { LOCATION_CELL_UNIT_IDS } from '../map/locationMap.constants';
+import type { LocationCellUnitId } from '../map/locationMap.constants';
 import {
   isLegacyMapZoneLocationScaleId,
   isValidLocationScaleId,
   isWorldScale,
 } from './locationScale.rules';
 import type { GridGeometryId } from '../../grid/gridGeometry';
-
-export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];
 
 /**
  * Per-scale rules for category, default-map cell unit, and which form fields to show.

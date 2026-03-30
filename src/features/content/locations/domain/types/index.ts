@@ -1,8 +1,11 @@
 export type {
   Location,
-  LocationFields,
+  LocationBaseFields,
+  LocationConnection,
   LocationId,
   LocationInput,
+  LocationLabel,
+  LocationScaleId,
   LocationSummary,
 } from './location.types';
 export type {

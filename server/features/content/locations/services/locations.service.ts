@@ -1,6 +1,6 @@
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import type { AccessPolicy } from '../../../../../shared/domain/accessPolicy';
-import type { LocationConnection } from '../../../../../shared/domain/locations';
+import type { LocationBaseFields } from '../../../../../shared/domain/locations';
 import {
   isCategoryAllowedForScale,
   isValidLocationScaleId,
@@ -15,22 +15,11 @@ import {
 import { countMapsForLocation } from './locationMaps.service';
 import { countTransitionsReferencingLocation } from './locationTransitions.queries';
 
-export type LocationDoc = {
-  id: string;
+/** Persistence row for a campaign location — shared domain fields plus campaign scope and timestamps. */
+export type LocationDoc = Omit<LocationBaseFields, 'ancestorIds'> & {
   campaignId: string;
-  name: string;
-  scale: LocationScaleId;
-  category?: string;
-  description?: string;
-  imageKey?: string;
-  accessPolicy?: AccessPolicy;
-  parentId?: string;
   ancestorIds: string[];
-  sortOrder?: number;
-  label?: { short?: string; number?: string };
-  aliases?: string[];
-  tags?: string[];
-  connections?: LocationConnection[];
+  accessPolicy?: AccessPolicy;
   createdAt: string;
   updatedAt: string;
 };

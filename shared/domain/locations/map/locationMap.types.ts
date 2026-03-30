@@ -1,15 +1,15 @@
 import {
-  LOCATION_CELL_UNIT_IDS,
   LOCATION_MAP_KIND_IDS,
   LOCATION_MAP_OBJECT_KIND_IDS,
 } from './locationMap.constants';
+import type { LocationCellUnitId } from './locationMap.constants';
 import type { GridGeometryId } from '../../grid/gridGeometry';
+
+export type { LocationCellUnitId };
 
 export type LocationMapKindId = (typeof LOCATION_MAP_KIND_IDS)[number];
 
 export type LocationMapObjectKindId = (typeof LOCATION_MAP_OBJECT_KIND_IDS)[number];
-
-export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];
 
 /**
  * Rectangular bounding grid for a map. Width/height are column/row counts.

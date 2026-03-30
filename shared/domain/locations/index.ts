@@ -1,5 +1,7 @@
 export * from './location.constants';
 export * from './location.types';
+export * from './building/locationBuilding.types';
+export * from './locationEntity.types';
 export * from './transitions/locationTransition.constants';
 export * from './transitions/locationTransition.types';
 export * from './scale/locationScale.policy';

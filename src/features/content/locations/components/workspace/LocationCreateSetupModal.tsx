@@ -214,8 +214,11 @@ function LocationCreateSetupModalFormFields({
       />
 
       <Box>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" display="block">
           Map geometry follows scale policy (no separate choice in this step).
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }}>
+          Continue creates the location and opens the map editor on the next screen.
         </Typography>
       </Box>
     </>
@@ -238,6 +241,12 @@ export function LocationCreateSetupModal({
   );
 
   const formDisabled = locationsLoading || saving;
+
+  const footerNote = locationsLoading
+    ? 'Loading campaign locations…'
+    : saving
+      ? 'Creating your location and default map. This may take a moment.'
+      : 'Continue saves the location and opens the map editor on the next screen.';
 
   const handleFormSubmit = useCallback(
     async (data: LocationCreateSetupDraft) => {
@@ -262,12 +271,18 @@ export function LocationCreateSetupModal({
       open={open}
       onClose={onCancel}
       headline="Set up location"
-      subheadline="Choose a name, scale, and map size to start editing."
+      subheadline="Choose the initial name, scale, optional parent, and grid size. Continue creates the location and takes you to the editor."
+      description={
+        locationsLoading
+          ? undefined
+          : 'Finish this step first. The map editor opens after your location and default map are saved.'
+      }
       closeOnBackdropClick={false}
       closeOnEsc={false}
       showCloseButton={false}
-      loading={locationsLoading || saving}
+      loading={locationsLoading}
       size="standard"
+      footerNote={footerNote}
       alert={
         submitError
           ? { severity: 'error', message: submitError }
@@ -277,12 +292,13 @@ export function LocationCreateSetupModal({
         label: 'Back',
         onClick: onCancel,
         variant: 'outlined',
-        disabled: saving,
+        disabled: locationsLoading || saving,
       }}
       primaryAction={{
-        label: saving ? 'Creating…' : 'Continue',
+        label: saving ? 'Saving…' : 'Continue',
         onClick: requestSubmit,
         disabled: formDisabled,
+        loading: saving,
       }}
     >
       <AppForm<LocationCreateSetupDraft>

@@ -137,7 +137,17 @@ Location create and edit routes render inside a full-width workspace (via `AuthM
 | `LocationEditorCanvas` | Flex-filling canvas region with zoom/pan transform wrapper. Hosts `LocationGridAuthoringSection` as child content and renders `ZoomControl` (fixed positioned). |
 | `LocationEditorRightRail` | Collapsible right rail (default open) containing all form fields. Uses CSS width transition with `overflow: hidden` outer and scrollable inner. |
 | `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
+| `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
 | `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`. |
+
+### Building scale (special edit workspace)
+
+For **`scale === building`** (campaign edit only), the editor is **building-centric** but **maps live on floor children**, not on the building record:
+
+- **Floors** are separate locations: `scale: floor`, `parentId` = building id. Each floor has its own default map (normal persistence — no merged multi-floor document).
+- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip). Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor’s grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
+- **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor’s** map. If there are no floors yet, save is disabled until at least one floor exists.
+- **Code:** helpers in `domain/building/buildingWorkspaceFloors.ts`; branching in `LocationEditRoute.tsx` (map load/save keyed by `activeFloorId`, `hostScale: 'floor'` for grid authoring). Out of scope for this pass: basement labels, floor reorder/delete UX, stacked canvases.
 
 ### Shared canvas hooks (`src/ui/hooks/`)
 

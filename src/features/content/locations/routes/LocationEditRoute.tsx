@@ -136,8 +136,12 @@ export default function LocationEditRoute() {
   useResetEditFeedbackOnChange(watch, clearFeedback);
 
   const watchedScale = watch('scale');
+  /** Avoid empty scale before RHF reset: invalid scale uses FALLBACK_POLICY (hideParent) and sanitize clears parentId. */
   const scaleForFormRules =
-    (loc?.source === 'system' && loc ? loc.scale : undefined) ?? watchedScale;
+    (loc?.source === 'system' && loc ? loc.scale : undefined) ??
+    (String(watchedScale ?? '').trim() !== '' ? watchedScale : undefined) ??
+    (loc?.source === 'campaign' && loc ? loc.scale : undefined) ??
+    '';
 
   const {
     campaignHasWorldLocation,

@@ -81,9 +81,20 @@ export default function OptionPickerField({
 
   const selectedSet = useMemo(() => new Set(value), [value])
 
+  /** Include options for selected ids missing from `options` (e.g. stale list) so cards/chips resolve labels. */
+  const optionsForPicker = useMemo(() => {
+    const byValue = new Map(options.map((o) => [o.value, o] as const))
+    for (const v of value) {
+      if (v && !byValue.has(v)) {
+        byValue.set(v, { value: v, label: v })
+      }
+    }
+    return [...byValue.values()]
+  }, [options, value])
+
   const availableOptions = useMemo(
-    () => options.filter((o) => !selectedSet.has(o.value)),
-    [options, selectedSet],
+    () => optionsForPicker.filter((o) => !selectedSet.has(o.value)),
+    [optionsForPicker, selectedSet],
   )
 
   const filtered = useMemo(
@@ -121,7 +132,7 @@ export default function OptionPickerField({
     onChange(value.filter((x) => x !== v))
   }
 
-  const resolveOption = (v: string) => options.find((o) => o.value === v)
+  const resolveOption = (v: string) => optionsForPicker.find((o) => o.value === v)
 
   const renderSelectedLabel = (v: string) => resolveOption(v)?.label ?? v
 

@@ -3,10 +3,14 @@ import {
   LEGACY_MAP_ZONE_LOCATION_SCALE_IDS,
   LOCATION_CONNECTION_KIND_IDS,
   LOCATION_CATEGORY_IDS,
+  SURFACE_LOCATION_CONTENT_SCALE_IDS,
 } from './location.constants';
 
 /** First-class content location scales (authoring + field policy). */
 export type ContentLocationScaleId = (typeof CONTENT_LOCATION_SCALE_IDS)[number];
+
+/** Standalone create + top-level campaign list (world, city, site, building). */
+export type SurfaceLocationContentScaleId = (typeof SURFACE_LOCATION_CONTENT_SCALE_IDS)[number];
 
 /** Legacy scales still valid in persisted data; not for new authoring. */
 export type LegacyMapZoneLocationScaleId = (typeof LEGACY_MAP_ZONE_LOCATION_SCALE_IDS)[number];

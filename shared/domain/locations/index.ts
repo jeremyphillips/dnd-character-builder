@@ -5,6 +5,7 @@ export * from './transitions/locationTransition.types';
 export * from './scale/locationScale.policy';
 export * from './scale/locationScaleField.policy';
 export * from './scale/locationScale.rules';
+export * from './scale/locationScaleUi.policy';
 export * from './scale/locationParent.validation';
 export * from './map/locationMap.constants';
 export * from './map/locationMap.helpers';

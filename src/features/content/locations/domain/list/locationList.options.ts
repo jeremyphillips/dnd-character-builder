@@ -1,6 +1,7 @@
-import { LOCATION_SCALE_RANK_ORDER_LEGACY } from '@/shared/domain/locations';
+import { CAMPAIGN_LOCATION_LIST_SCALE_IDS } from '@/shared/domain/locations';
 
-export const LOCATION_SCALE_FILTER_OPTIONS = LOCATION_SCALE_RANK_ORDER_LEGACY.map((s) => ({
+/** List filter: same scales as campaign rows (excludes floor/room). */
+export const LOCATION_SCALE_FILTER_OPTIONS = CAMPAIGN_LOCATION_LIST_SCALE_IDS.map((s) => ({
   value: s,
   label: s,
 }));

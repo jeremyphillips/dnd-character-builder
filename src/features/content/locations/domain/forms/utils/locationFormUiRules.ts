@@ -4,7 +4,6 @@
  */
 import {
   ALL_LOCATION_SCALE_IDS,
-  CONTENT_LOCATION_SCALE_IDS,
   getAllowedCategoryOptionsForScale,
   getAllowedCellUnitOptionsForScale,
   isCategoryFieldReadOnlyForScale,
@@ -14,6 +13,7 @@ import {
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
   shouldShowParentFieldForScale,
+  SURFACE_LOCATION_CONTENT_SCALE_IDS,
 } from '@/shared/domain/locations';
 import {
   getAllowedParentLocationOptions,
@@ -31,14 +31,18 @@ export const ALL_LOCATION_SCALE_OPTIONS = ALL_LOCATION_SCALE_IDS.map((s) => ({
   label: s,
 }));
 
-/** Create flow: first-class content scales only (no region/subregion/district). */
+/**
+ * Create flow: **surface** scales only (world, city, site, building) — no floor/room (building
+ * interior) or legacy map-zone scales. Policy: `SURFACE_LOCATION_CONTENT_SCALE_IDS` +
+ * `locationScaleUi.policy.ts`.
+ */
 export function getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation: boolean) {
-  return CONTENT_LOCATION_SCALE_IDS.filter((s) => s !== 'world' || !campaignHasWorldLocation).map(
-    (s) => ({
-      value: s,
-      label: s,
-    }),
-  );
+  return SURFACE_LOCATION_CONTENT_SCALE_IDS.filter(
+    (s) => s !== 'world' || !campaignHasWorldLocation,
+  ).map((s) => ({
+    value: s,
+    label: s,
+  }));
 }
 
 /** Edit: show full scale list for display; field is disabled so selection cannot change. */

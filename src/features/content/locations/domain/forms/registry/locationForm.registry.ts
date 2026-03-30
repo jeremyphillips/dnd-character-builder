@@ -3,9 +3,9 @@
  */
 import {
   ALL_LOCATION_SCALE_IDS,
-  CONTENT_LOCATION_SCALE_IDS,
   LOCATION_CATEGORY_IDS,
   LOCATION_CELL_UNIT_IDS,
+  SURFACE_LOCATION_CONTENT_SCALE_IDS,
 } from '@/shared/domain/locations';
 import {
   GRID_SIZE_PRESETS,
@@ -24,8 +24,8 @@ const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...ALL_LOCATION_SCALE_IDS]
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
 
-/** Default registry options — create/edit UI typically overrides with `scaleSelectOptions` from policy (content-only create, all scales for edit display). */
-const SCALE_OPTIONS = CONTENT_LOCATION_SCALE_IDS.map((s) => ({ value: s, label: s }));
+/** Default registry options — create uses surface-only via `getAllowedLocationScaleOptionsForCreate`; edit overrides with full scale list. */
+const SCALE_OPTIONS = SURFACE_LOCATION_CONTENT_SCALE_IDS.map((s) => ({ value: s, label: s }));
 
 const CATEGORY_OPTIONS = LOCATION_CATEGORY_IDS.map((c) => ({
   value: c,

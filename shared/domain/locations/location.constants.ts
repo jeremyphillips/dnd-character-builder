@@ -1,8 +1,11 @@
 /**
  * Location domain vocabulary: scale ordering, categories, connection kinds.
  *
- * **First-class content scales** (`CONTENT_LOCATION_SCALE_IDS` / `LOCATION_SCALE_ORDER`):
- * world, city, site, building, floor, room — used for create/edit, field policy, and normal UX.
+ * **Content field policy** (`CONTENT_LOCATION_SCALE_IDS` / `LOCATION_SCALE_ORDER`): world, city, site,
+ * building, floor, room — includes interior for persisted rows and building workspace.
+ *
+ * **Standalone create & top-level list** (`SURFACE_LOCATION_CONTENT_SCALE_IDS`): world, city, site,
+ * building only — floor/room use building UX (`INTERIOR_LOCATION_SCALE_IDS`, `locationScaleUi.policy.ts`).
  *
  * **Legacy map-zone-as-location scales** (`LEGACY_MAP_ZONE_LOCATION_SCALE_IDS`): region, subregion,
  * district — may still appear in persisted data; geographic expression is moving to **MapZone**
@@ -16,7 +19,10 @@
  * authoring: `locationMapPlacement.policy.ts`.
  */
 
-/** Scales that remain first-class **content locations** (create, edit, field policy). */
+/**
+ * Scales that remain first-class **content locations** (field policy, edit display, hierarchy).
+ * Includes interior scales (floor, room) used for persisted records and building workspace.
+ */
 export const CONTENT_LOCATION_SCALE_IDS = [
   'world',
   'city',
@@ -24,6 +30,37 @@ export const CONTENT_LOCATION_SCALE_IDS = [
   'building',
   'floor',
   'room',
+] as const;
+
+/**
+ * **Interior** scales — floors and rooms under a building. Not offered in standalone “new location”
+ * flows and not listed as top-level campaign rows; use building edit + floor strip / interior UX.
+ */
+export const INTERIOR_LOCATION_SCALE_IDS = ['floor', 'room'] as const;
+
+/**
+ * **Surface / campaign** scales — world, city, site, building. Standalone create + main location
+ * list. Excludes interior (floor/room) and legacy map-zone scales (region/subregion/district).
+ */
+export const SURFACE_LOCATION_CONTENT_SCALE_IDS = [
+  'world',
+  'city',
+  'site',
+  'building',
+] as const;
+
+/**
+ * Scales in campaign location **list filters** (excludes interior floor/room).
+ * Same order as {@link LOCATION_SCALE_RANK_ORDER_LEGACY} minus {@link INTERIOR_LOCATION_SCALE_IDS}.
+ */
+export const CAMPAIGN_LOCATION_LIST_SCALE_IDS = [
+  'world',
+  'region',
+  'subregion',
+  'city',
+  'district',
+  'site',
+  'building',
 ] as const;
 
 /**

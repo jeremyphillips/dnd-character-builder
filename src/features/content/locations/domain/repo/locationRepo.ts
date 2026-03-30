@@ -4,6 +4,7 @@
 import { apiFetch, ApiError } from '@/app/api';
 import type { Visibility } from '@/shared/types/visibility';
 import type { CampaignContentRepo, ListOptions } from '@/features/content/shared/domain/repo/contentRepo.types';
+import { isCampaignLocationListScale } from '@/shared/domain/locations';
 import type { Location, LocationFields, LocationInput, LocationSummary } from '@/features/content/locations/domain/types';
 import { getSystemLocation, getSystemLocations } from '@/features/mechanics/domain/rulesets/system/locations';
 import { getContentPatch } from '@/features/content/shared/domain/contentPatchRepo';
@@ -226,7 +227,10 @@ export const locationRepo: CampaignContentRepo<LocationContentItem, LocationSumm
 
     const merged: LocationContentItem[] = [...patchedSystem, ...campaign];
 
-    let results = merged.map((r) => toSummary(r, true));
+    let results = merged
+      .map((r) => toSummary(r, true))
+      /** Campaign list: buildings as first-class; floor/room only via building (see `locationScaleUi.policy`). */
+      .filter((r) => isCampaignLocationListScale(r.scale));
 
     if (opts?.search) {
       results = results.filter((r) => matchesSearch(r.name, opts.search!));

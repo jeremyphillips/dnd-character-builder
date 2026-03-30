@@ -37,4 +37,4 @@ export { useLocationFormDependentFieldEffects } from '../hooks/useLocationFormDe
 export { useLocationFormDefaultWorldScale } from '../hooks/useLocationFormDefaultWorldScale';
 export * from './list';
 export * from './types';
-export * from './building/buildingWorkspaceFloors';
+export * from './building';

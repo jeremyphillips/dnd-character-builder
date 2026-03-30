@@ -230,9 +230,11 @@ export const LOCATION_FORM_FIELDS = [
   },
   {
     name: 'buildingIsPublicStorefront',
-    label: 'Public Storefront',
+    label: 'Open to the Public',
     kind: 'checkbox' as const,
     defaultValue: false as LocationFormValues['buildingIsPublicStorefront'],
+    helperText:
+      'Whether visitors can freely enter or use services here—shops, taverns, temples, guild halls, inns, and similar.',
     visibleWhen: VISIBLE_WHEN_BUILDING,
     group: {
       id: 'buildingProfile',

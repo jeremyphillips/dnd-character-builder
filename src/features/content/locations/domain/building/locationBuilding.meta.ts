@@ -26,7 +26,8 @@ export const LOCATION_BUILDING_PRIMARY_TYPE_META = {
   },
   business: {
     label: 'Business',
-    description: 'Commerce, retail, or services.',
+    description:
+      'Commerce, crafts, retail, services, or patron-facing venues such as taverns, inns, or similar.',
   },
   temple: {
     label: 'Temple',
@@ -43,10 +44,6 @@ export const LOCATION_BUILDING_PRIMARY_TYPE_META = {
   military: {
     label: 'Military',
     description: 'Fortification, barracks, or guard posts.',
-  },
-  hospitality: {
-    label: 'Hospitality',
-    description: 'Lodging, food, drink, or entertainment venues.',
   },
   guild: {
     label: 'Guild',
@@ -68,8 +65,14 @@ export const LOCATION_BUILDING_PRIMARY_SUBTYPE_META = {
   bakery: { label: 'Bakery', description: 'Bread and baked goods.' },
   workshop: { label: 'Workshop', description: 'Craft or repair space.' },
   warehouse: { label: 'Warehouse', description: 'Bulk storage and logistics.' },
-  tavern: { label: 'Tavern', description: 'Drinks and light fare; social hub.' },
-  inn: { label: 'Inn', description: 'Lodging and meals for travelers.' },
+  tavern: {
+    label: 'Tavern',
+    description: 'Drinks and light fare; social hub. Use Additional Functions for mixed roles (e.g. food & drink, lodging).',
+  },
+  inn: {
+    label: 'Inn',
+    description: 'Lodging and meals for travelers. Add lodging or food & drink under Additional Functions as needed.',
+  },
   brothel: { label: 'Brothel', description: 'Adult entertainment establishment.' },
   shrine: { label: 'Shrine', description: 'Small sacred site.' },
   temple: { label: 'Temple', description: 'Dedicated place of worship.' },
@@ -96,8 +99,8 @@ export const LOCATION_BUILDING_FUNCTION_META = {
   healing: { label: 'Healing', description: 'Medical care or divine healing.' },
   education: { label: 'Education', description: 'Teaching, training, or libraries.' },
   'hospitality-service': {
-    label: 'Hospitality service',
-    description: 'Guest-facing service beyond lodging alone.',
+    label: 'Guest services',
+    description: 'Front-of-house or guest-facing service beyond a single function (e.g. reception, concierge).',
   },
   other: { label: 'Other', description: 'Additional or custom function.' },
 } as const satisfies Record<LocationBuildingFunctionId, LocationBuildingFunctionMeta>;

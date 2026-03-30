@@ -2,7 +2,12 @@
  * Location form values ↔ domain input.
  */
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
-import type { LocationBuildingFunctionId, LocationBuildingProfile } from '@/shared/domain/locations';
+import type {
+  LocationBuildingFunctionId,
+  LocationBuildingPrimarySubtypeId,
+  LocationBuildingPrimaryTypeId,
+  LocationBuildingProfile,
+} from '@/shared/domain/locations';
 import type { Location, LocationInput } from '@/features/content/locations/domain/types';
 import {
   characterRefsToPickerValues,
@@ -42,8 +47,8 @@ function buildingProfileFromFormValues(values: LocationFormValues): LocationBuil
     return undefined;
   }
   return {
-    primaryType: primaryType || undefined,
-    primarySubtype: primarySubtype || undefined,
+    primaryType: (primaryType || undefined) as LocationBuildingPrimaryTypeId | undefined,
+    primarySubtype: (primarySubtype || undefined) as LocationBuildingPrimarySubtypeId | undefined,
     functions: functions.length ? (functions as LocationBuildingFunctionId[]) : undefined,
     isPublicStorefront: isPublic || undefined,
     ownerRefs: ownerRefs.length ? ownerRefs : undefined,

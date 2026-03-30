@@ -25,7 +25,6 @@ export const LOCATION_BUILDING_PRIMARY_TYPE_IDS = [
   'civic',
   'industrial',
   'military',
-  'hospitality',
   'guild',
   'other',
 ] as const;

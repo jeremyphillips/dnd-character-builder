@@ -1,26 +1,28 @@
 import type { PaletteOptions } from '@mui/material/styles'
 
+import { colorPrimitives } from './colorPrimitives'
+
 export const lightPalette: PaletteOptions = {
   mode: 'light',
   primary: {
-    main: '#8B0000',       // Deep Red — dragon fire, war banners
-    light: '#B33030',
-    dark: '#5C0000',
-    contrastText: '#FFFFFF',
+    main: colorPrimitives.red[400], // Deep Red — dragon fire, war banners
+    light: colorPrimitives.red[300],
+    dark: colorPrimitives.red[500],
+    contrastText: colorPrimitives.white,
   },
   secondary: {
-    main: '#D4AF37',       // Gold — treasure, divine light
-    light: '#E0C566',
-    dark: '#A68A2B',
-    contrastText: '#1A1A1A',
+    main: colorPrimitives.gold[200], // Gold — treasure, divine light
+    light: colorPrimitives.gold[100],
+    dark: colorPrimitives.gold[300],
+    contrastText: colorPrimitives.gray[400],
   },
   background: {
-    default: '#F5F0E8',    // Parchment
-    paper: '#FFFFFF',
+    default: colorPrimitives.gray[100], // Parchment
+    paper: colorPrimitives.white,
   },
   text: {
-    primary: '#1A1A1A',
-    secondary: '#4A4A4A',
+    primary: colorPrimitives.gray[400],
+    secondary: colorPrimitives.gray[200],
   },
   divider: 'rgba(0, 0, 0, 0.12)',
 }
@@ -28,20 +30,20 @@ export const lightPalette: PaletteOptions = {
 export const darkPalette: PaletteOptions = {
   mode: 'dark',
   primary: {
-    main: '#C04040',       // Ember Red — softer in the dark
-    light: '#E06060',
-    dark: '#8B0000',
-    contrastText: '#FFFFFF',
+    main: colorPrimitives.red[200], // Ember Red — softer in the dark
+    light: colorPrimitives.red[100],
+    dark: colorPrimitives.red[400],
+    contrastText: colorPrimitives.white,
   },
   secondary: {
-    main: '#D4AF37',       // Gold stays consistent
-    light: '#E0C566',
-    dark: '#A68A2B',
-    contrastText: '#1A1A1A',
+    main: colorPrimitives.gold[200], // Gold stays consistent
+    light: colorPrimitives.gold[100],
+    dark: colorPrimitives.gold[300],
+    contrastText: colorPrimitives.gray[400],
   },
   background: {
-    default: '#121212',    // Deep dungeon black
-    paper: '#1E1E1E',
+    default: colorPrimitives.gray[500], // Deep dungeon black
+    paper: colorPrimitives.gray[300],
   },
   text: {
     primary: 'rgba(255, 255, 255, 0.87)',

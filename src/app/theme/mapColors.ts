@@ -1,19 +1,20 @@
 import type { LocationCellFillKindMeta, LocationMapSwatchColorKey } from '@/features/content/locations/domain/mapContent';
 
+import { colorPrimitives } from './colorPrimitives';
+
 /**
- * Centralized hex values for location map swatches (cell fills, future palettes).
- * Light and dark use the same tokens for now; split `lightMapSwatchColors` /
- * `darkMapSwatchColors` when theme-specific tuning is needed.
+ * Location map swatch colors — keyed for cell fills; hex values resolve from
+ * `colorPrimitives` (single source of truth). Split light/dark when needed.
  */
 export const baseMapSwatchColors: Record<LocationMapSwatchColorKey, string> = {
-  cellFillMountains: '#6B7280',
-  cellFillPlains: '#86A35C',
-  cellFillForestLight: '#5A9A5E',
-  cellFillForestHeavy: '#2D4A32',
-  cellFillSwamp: '#5C6B55',
-  cellFillDesert: '#D4A574',
-  cellFillWater: '#3B82C4',
-  cellFillStoneFloor: '#9CA3AF',
+  cellFillMountains: colorPrimitives.mapSlate[300],
+  cellFillPlains: colorPrimitives.mapGreen[100],
+  cellFillForestLight: colorPrimitives.mapGreen[200],
+  cellFillForestHeavy: colorPrimitives.mapGreen[500],
+  cellFillSwamp: colorPrimitives.mapGreen[300],
+  cellFillDesert: colorPrimitives.mapSand[300],
+  cellFillWater: colorPrimitives.mapBlue[300],
+  cellFillStoneFloor: colorPrimitives.mapSlate[100],
 };
 
 export const lightMapSwatchColors = baseMapSwatchColors;

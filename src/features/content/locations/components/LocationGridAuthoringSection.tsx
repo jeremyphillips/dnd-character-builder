@@ -765,6 +765,27 @@ export function LocationGridAuthoringSection({
       }
     }
 
+    // Path before edge on square grids: authored paths run through cell centers and often pass
+    // near boundary edge geometry; edge pick (thick gutter segments) would otherwise steal clicks.
+    const pathPolys = pathEntriesToPolylineGeometry(draft.pathEntries, (cid) =>
+      cellCenterPx(cid),
+    );
+    const pathHit = resolveNearestPathHit(
+      gx,
+      gy,
+      pathPolys,
+      DEFAULT_PATH_PICK_TOLERANCE_PX,
+    );
+    if (pathHit) {
+      setDraft((d) => ({
+        ...d,
+        mapSelection: { type: 'path', pathId: pathHit.pathId },
+        selectedCellId: null,
+      }));
+      onCellFocusRail?.();
+      return;
+    }
+
     if (!isHex && squareGridGeometry) {
       const edgeGeoms = edgeEntriesToSegmentGeometrySquare(
         draft.edgeEntries,
@@ -785,25 +806,6 @@ export function LocationGridAuthoringSection({
         onCellFocusRail?.();
         return;
       }
-    }
-
-    const pathPolys = pathEntriesToPolylineGeometry(draft.pathEntries, (cid) =>
-      cellCenterPx(cid),
-    );
-    const pathHit = resolveNearestPathHit(
-      gx,
-      gy,
-      pathPolys,
-      DEFAULT_PATH_PICK_TOLERANCE_PX,
-    );
-    if (pathHit) {
-      setDraft((d) => ({
-        ...d,
-        mapSelection: { type: 'path', pathId: pathHit.pathId },
-        selectedCellId: null,
-      }));
-      onCellFocusRail?.();
-      return;
     }
 
     setDraft((d) => ({
@@ -1018,6 +1020,13 @@ export function LocationGridAuthoringSection({
           ? {
               '& [role="gridcell"]': {
                 cursor: 'crosshair',
+              },
+            }
+          : {}),
+        ...(mapEditorMode === 'select'
+          ? {
+              '& [role="gridcell"]': {
+                cursor: 'default',
               },
             }
           : {}),

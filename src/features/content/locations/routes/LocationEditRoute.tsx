@@ -108,7 +108,14 @@ export default function LocationEditRoute() {
     mode: 'onBlur',
     reValidateMode: 'onChange',
   });
-  const { reset, setValue, watch, getValues, formState: { isDirty } } = methods;
+  const {
+    reset,
+    setValue,
+    watch,
+    getValues,
+    handleSubmit,
+    formState: { isDirty },
+  } = methods;
 
   const {
     saving,
@@ -124,12 +131,13 @@ export default function LocationEditRoute() {
     INITIAL_LOCATION_GRID_DRAFT,
   );
   /** Last saved / server-hydrated persistable map state (enables Save when only the grid changed). */
-  const [gridDraftBaseline, setGridDraftBaseline] =
-    useState<LocationGridDraftState | null>(null);
-  const isGridDraftDirty = useMemo(() => {
-    if (gridDraftBaseline === null) return false;
-    return !gridDraftPersistableEquals(gridDraft, gridDraftBaseline);
-  }, [gridDraft, gridDraftBaseline]);
+  const [gridDraftBaseline, setGridDraftBaseline] = useState<LocationGridDraftState>(() =>
+    structuredClone(INITIAL_LOCATION_GRID_DRAFT),
+  );
+  const isGridDraftDirty = useMemo(
+    () => !gridDraftPersistableEquals(gridDraft, gridDraftBaseline),
+    [gridDraft, gridDraftBaseline],
+  );
   /** 0 = Metadata, 1 = Cell — switched when user selects a map cell */
   const [mapRailTab, setMapRailTab] = useState(0);
   const [rightRailOpen, setRightRailOpen] = useState(true);
@@ -268,31 +276,37 @@ export default function LocationEditRoute() {
     if (!campaignId || !locationId || !loc || loc.source !== 'campaign') return;
     if (loc.scale === 'building') return;
     let cancelled = false;
-    listLocationMaps(campaignId, locationId).then((maps) => {
-      if (cancelled) return;
-      const def = maps.find((m) => m.isDefault) ?? maps[0];
-      if (def) {
-        setValue('gridPreset', '');
-        setValue('gridColumns', String(def.grid.width));
-        setValue('gridRows', String(def.grid.height));
-        setValue('gridCellUnit', String(def.grid.cellUnit));
-        setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale(loc!.scale));
-        const next = {
-          selectedCellId: null,
-          excludedCellIds: def.layout?.excludedCellIds ?? [],
-          ...cellEntriesToDraft(def.cellEntries),
-        };
-        setGridDraft(next);
-        setGridDraftBaseline(structuredClone(next));
-      } else {
+    listLocationMaps(campaignId, locationId)
+      .then((maps) => {
+        if (cancelled) return;
+        const def = maps.find((m) => m.isDefault) ?? maps[0];
+        if (def) {
+          setValue('gridPreset', '');
+          setValue('gridColumns', String(def.grid.width));
+          setValue('gridRows', String(def.grid.height));
+          setValue('gridCellUnit', String(def.grid.cellUnit));
+          setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale(loc!.scale));
+          const next = {
+            selectedCellId: null,
+            excludedCellIds: def.layout?.excludedCellIds ?? [],
+            ...cellEntriesToDraft(def.cellEntries),
+          };
+          setGridDraft(next);
+          setGridDraftBaseline(structuredClone(next));
+        } else {
+          setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+          setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
         setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
-      }
-    });
+      });
     return () => {
       cancelled = true;
     };
-  }, [campaignId, locationId, loc, setValue]);
+  }, [campaignId, locationId, loc?.scale, loc?.source, setValue]);
 
   useEffect(() => {
     if (!campaignId || !locationId || !loc || loc.source !== 'campaign') return;
@@ -303,31 +317,37 @@ export default function LocationEditRoute() {
       return;
     }
     let cancelled = false;
-    listLocationMaps(campaignId, activeFloorId).then((maps) => {
-      if (cancelled) return;
-      const def = maps.find((m) => m.isDefault) ?? maps[0];
-      if (def) {
-        setValue('gridPreset', '');
-        setValue('gridColumns', String(def.grid.width));
-        setValue('gridRows', String(def.grid.height));
-        setValue('gridCellUnit', String(def.grid.cellUnit));
-        setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale('floor'));
-        const next = {
-          selectedCellId: null,
-          excludedCellIds: def.layout?.excludedCellIds ?? [],
-          ...cellEntriesToDraft(def.cellEntries),
-        };
-        setGridDraft(next);
-        setGridDraftBaseline(structuredClone(next));
-      } else {
+    listLocationMaps(campaignId, activeFloorId)
+      .then((maps) => {
+        if (cancelled) return;
+        const def = maps.find((m) => m.isDefault) ?? maps[0];
+        if (def) {
+          setValue('gridPreset', '');
+          setValue('gridColumns', String(def.grid.width));
+          setValue('gridRows', String(def.grid.height));
+          setValue('gridCellUnit', String(def.grid.cellUnit));
+          setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale('floor'));
+          const next = {
+            selectedCellId: null,
+            excludedCellIds: def.layout?.excludedCellIds ?? [],
+            ...cellEntriesToDraft(def.cellEntries),
+          };
+          setGridDraft(next);
+          setGridDraftBaseline(structuredClone(next));
+        } else {
+          setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+          setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
         setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
-      }
-    });
+      });
     return () => {
       cancelled = true;
     };
-  }, [campaignId, activeFloorId, locationId, loc, setValue]);
+  }, [campaignId, activeFloorId, locationId, loc?.scale, loc?.source, setValue]);
 
   const fieldConfigs = useMemo(
     () =>
@@ -532,6 +552,10 @@ export default function LocationEditRoute() {
       gridDraft.cellFillByCellId,
     ],
   );
+
+  const handleCampaignFormSaveClick = useCallback(() => {
+    void handleSubmit(handleCampaignSubmit)();
+  }, [handleSubmit, handleCampaignSubmit]);
 
   const handleAddFloor = useCallback(async () => {
     if (!campaignId || !locationId || !loc || loc.source !== 'campaign' || loc.scale !== 'building') {
@@ -871,6 +895,7 @@ export default function LocationEditRoute() {
             dirty={isDirty || isGridDraftDirty}
             isNew={false}
             formId={FORM_ID}
+            onSave={handleCampaignFormSaveClick}
             onBack={handleBack}
             errors={errors}
             success={success}

@@ -104,9 +104,17 @@ export function LocationEditorHeader({
             variant="contained"
             size="medium"
             disabled={busy || saveDisabled || (!dirty && !isNew)}
-            {...(formId
-              ? { type: 'submit' as const, form: formId }
-              : { onClick: onSave })}
+            {...(onSave
+              ? { type: 'button' as const, onClick: onSave }
+              : formId
+                ? {
+                    type: 'button' as const,
+                    onClick: () => {
+                      const el = document.getElementById(formId);
+                      if (el instanceof HTMLFormElement) el.requestSubmit();
+                    },
+                  }
+                : {})}
           >
             {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
           </Button>

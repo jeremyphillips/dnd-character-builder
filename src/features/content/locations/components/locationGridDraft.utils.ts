@@ -1,8 +1,14 @@
+import {
+  cellDraftToCellEntries,
+  cellEntriesToDraft,
+} from '@/features/content/locations/domain/maps/cellAuthoringMappers';
+
 import type { LocationGridDraftState } from './locationGridDraft.types';
 
 function stableStringify(value: unknown): string {
+  if (value === undefined) return 'undefined';
   if (value === null || typeof value !== 'object') {
-    return JSON.stringify(value);
+    return JSON.stringify(value) as string;
   }
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(',')}]`;
@@ -12,28 +18,35 @@ function stableStringify(value: unknown): string {
   return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(rec[k])}`).join(',')}}`;
 }
 
+/**
+ * Canonical shape for cell-linked maps (matches server round-trip via cellEntries).
+ * Aligns UI-only fields (e.g. empty object labels) with persisted payloads.
+ */
+export function normalizePersistableCellMaps(d: LocationGridDraftState) {
+  return cellEntriesToDraft(
+    cellDraftToCellEntries(
+      d.linkedLocationByCellId,
+      d.objectsByCellId,
+      d.cellFillByCellId,
+    ),
+  );
+}
+
 /** Compare persisted map fields only (ignores selectedCellId). */
 export function gridDraftPersistableEquals(
   a: LocationGridDraftState,
   b: LocationGridDraftState,
 ): boolean {
-  const pa = {
-    excludedCellIds: [...a.excludedCellIds].sort(),
-    linkedLocationByCellId: a.linkedLocationByCellId,
-    objectsByCellId: a.objectsByCellId,
-    cellFillByCellId: a.cellFillByCellId,
-  };
-  const pb = {
-    excludedCellIds: [...b.excludedCellIds].sort(),
-    linkedLocationByCellId: b.linkedLocationByCellId,
-    objectsByCellId: b.objectsByCellId,
-    cellFillByCellId: b.cellFillByCellId,
-  };
+  const excludedA = [...a.excludedCellIds].sort();
+  const excludedB = [...b.excludedCellIds].sort();
+  if (stableStringify(excludedA) !== stableStringify(excludedB)) return false;
+
+  const na = normalizePersistableCellMaps(a);
+  const nb = normalizePersistableCellMaps(b);
   return (
-    stableStringify(pa.excludedCellIds) === stableStringify(pb.excludedCellIds) &&
-    stableStringify(pa.linkedLocationByCellId) ===
-      stableStringify(pb.linkedLocationByCellId) &&
-    stableStringify(pa.objectsByCellId) === stableStringify(pb.objectsByCellId) &&
-    stableStringify(pa.cellFillByCellId) === stableStringify(pb.cellFillByCellId)
+    stableStringify(na.linkedLocationByCellId) ===
+      stableStringify(nb.linkedLocationByCellId) &&
+    stableStringify(na.objectsByCellId) === stableStringify(nb.objectsByCellId) &&
+    stableStringify(na.cellFillByCellId) === stableStringify(nb.cellFillByCellId)
   );
 }

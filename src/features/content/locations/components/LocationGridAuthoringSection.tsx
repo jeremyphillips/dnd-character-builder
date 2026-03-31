@@ -45,9 +45,11 @@ import {
   resolveEdgeTargetFromGridPosition,
   shouldAcceptStrokeEdge,
   getSquareEdgeOrientation,
+  getSquareEdgeOrientationFromEdgeId,
   type ResolvedEdgeTarget,
   type EdgeOrientation,
 } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
+import { deriveSquareEdgeRunSelection } from '@/features/content/locations/domain/mapEditor/squareEdgeRunSelection';
 
 import type { LocationGridDraftState } from './locationGridDraft.types';
 import {
@@ -237,6 +239,13 @@ export function LocationGridAuthoringSection({
         }
       } else if (ms.type === 'edge') {
         if (!prunedEdges.some((e) => e.edgeId === ms.edgeId)) {
+          nextMapSelection = { type: 'none' };
+        }
+      } else if (ms.type === 'edge-run') {
+        const allPresent = ms.edgeIds.every((id) =>
+          prunedEdges.some((e) => e.edgeId === id),
+        );
+        if (!allPresent) {
           nextMapSelection = { type: 'none' };
         }
       }
@@ -765,8 +774,8 @@ export function LocationGridAuthoringSection({
       }
     }
 
-    // Path before edge on square grids: authored paths run through cell centers and often pass
-    // near boundary edge geometry; edge pick (thick gutter segments) would otherwise steal clicks.
+    // Select-mode hit order (square): object → path → edge → cell. Path before edge: authored paths
+    // run near boundary geometry; edge pick would otherwise steal path clicks.
     const pathPolys = pathEntriesToPolylineGeometry(draft.pathEntries, (cid) =>
       cellCenterPx(cid),
     );
@@ -798,11 +807,34 @@ export function LocationGridAuthoringSection({
         DEFAULT_EDGE_PICK_HALF_WIDTH_PX,
       );
       if (edgeHit) {
-        setDraft((d) => ({
-          ...d,
-          mapSelection: { type: 'edge', edgeId: edgeHit.edgeId },
-          selectedCellId: null,
-        }));
+        const run = deriveSquareEdgeRunSelection(edgeHit.edgeId, draft.edgeEntries);
+        const entry = draft.edgeEntries.find((e) => e.edgeId === edgeHit.edgeId);
+        const axis = entry ? getSquareEdgeOrientationFromEdgeId(edgeHit.edgeId) : null;
+        if (run) {
+          setDraft((d) => ({
+            ...d,
+            mapSelection: {
+              type: 'edge-run',
+              kind: run.kind,
+              edgeIds: run.edgeIds,
+              axis: run.axis,
+              anchorEdgeId: run.anchorEdgeId,
+            },
+            selectedCellId: null,
+          }));
+        } else if (entry && axis) {
+          setDraft((d) => ({
+            ...d,
+            mapSelection: {
+              type: 'edge-run',
+              kind: entry.kind,
+              edgeIds: [edgeHit.edgeId],
+              axis,
+              anchorEdgeId: edgeHit.edgeId,
+            },
+            selectedCellId: null,
+          }));
+        }
         onCellFocusRail?.();
         return;
       }
@@ -1162,8 +1194,10 @@ export function LocationGridAuthoringSection({
               const st = edgeOverlayStrokeProps[g.kind];
               const seg = g.segment;
               const selected =
-                draft.mapSelection.type === 'edge' &&
-                draft.mapSelection.edgeId === g.edgeId;
+                (draft.mapSelection.type === 'edge' &&
+                  draft.mapSelection.edgeId === g.edgeId) ||
+                (draft.mapSelection.type === 'edge-run' &&
+                  draft.mapSelection.edgeIds.includes(g.edgeId));
               return (
                 <line
                   key={g.edgeId}

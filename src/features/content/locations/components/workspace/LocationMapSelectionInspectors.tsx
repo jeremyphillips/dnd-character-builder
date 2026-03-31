@@ -11,6 +11,8 @@ import type {
   LocationMapPathAuthoringEntry,
 } from '@/shared/domain/locations';
 
+import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
+
 import type { LocationCellObjectDraft } from '../locationGridDraft.types';
 
 export type LocationMapObjectInspectorProps = {
@@ -132,6 +134,49 @@ export function LocationMapEdgeInspector({ edgeId, edgeEntries }: LocationMapEdg
       <Chip size="small" label={entry.kind} variant="outlined" />
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
         {edgeId}
+      </Typography>
+    </Stack>
+  );
+}
+
+const EDGE_RUN_AXIS_LABEL: Record<'horizontal' | 'vertical', string> = {
+  horizontal: 'Horizontal',
+  vertical: 'Vertical',
+};
+
+function edgeRunHumanLabel(kind: LocationMapEdgeKindId, axis: 'horizontal' | 'vertical'): string {
+  const axisLabel = EDGE_RUN_AXIS_LABEL[axis];
+  const kindLabel = kind.charAt(0).toUpperCase() + kind.slice(1);
+  return `${axisLabel} ${kindLabel} run`;
+}
+
+export type LocationMapEdgeRunInspectorProps = {
+  kind: LocationMapEdgeKindId;
+  edgeIds: readonly string[];
+  axis: 'horizontal' | 'vertical';
+  anchorEdgeId: string;
+};
+
+export function LocationMapEdgeRunInspector({
+  kind,
+  edgeIds,
+  axis,
+  anchorEdgeId,
+}: LocationMapEdgeRunInspectorProps) {
+  return (
+    <Stack spacing={1.5}>
+      <Typography variant="subtitle2" fontWeight={600}>
+        {edgeRunHumanLabel(kind, axis)}
+      </Typography>
+      <Chip size="small" label={kind} variant="outlined" />
+      <Typography variant="body2" color="text.secondary">
+        {edgeIds.length} segment{edgeIds.length === 1 ? '' : 's'} on this straight run
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        Orientation: {axis} (square grid: {axis === 'horizontal' ? 'row' : 'column'} boundary line)
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+        Anchor: {anchorEdgeId}
       </Typography>
     </Stack>
   );

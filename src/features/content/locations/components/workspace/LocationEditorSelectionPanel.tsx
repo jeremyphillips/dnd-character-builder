@@ -6,6 +6,7 @@ import type { LocationMapEdgeAuthoringEntry, LocationMapPathAuthoringEntry } fro
 import type { LocationMapSelection } from './locationEditorRail.types';
 import {
   LocationMapEdgeInspector,
+  LocationMapEdgeRunInspector,
   LocationMapObjectInspector,
   LocationMapPathInspector,
 } from './LocationMapSelectionInspectors';
@@ -62,6 +63,15 @@ export function LocationEditorSelectionPanel({
       );
     case 'edge':
       return <LocationMapEdgeInspector edgeId={selection.edgeId} edgeEntries={edgeEntries} />;
+    case 'edge-run':
+      return (
+        <LocationMapEdgeRunInspector
+          kind={selection.kind}
+          edgeIds={selection.edgeIds}
+          axis={selection.axis}
+          anchorEdgeId={selection.anchorEdgeId}
+        />
+      );
   }
 }
 

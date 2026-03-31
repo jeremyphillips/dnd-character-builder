@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations/map/locationMap.types';
 
-import { chainToSmoothSvgPath, pathEntriesToSvgPaths } from './pathOverlayRendering';
+import {
+  chainToSmoothSvgPath,
+  pathEntriesToSvgPaths,
+  polylinePoint2DToSmoothSvgPath,
+} from './pathOverlayRendering';
 
 function pathEntry(id: string, kind: 'road' | 'river', cellIds: string[]): LocationMapPathAuthoringEntry {
   return { id, kind, cellIds };
@@ -41,6 +45,21 @@ describe('chainToSmoothSvgPath', () => {
     ]);
     const cCount = (d.match(/C/g) ?? []).length;
     expect(cCount).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('polylinePoint2DToSmoothSvgPath', () => {
+  it('matches chainToSmoothSvgPath for equivalent points', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 100, y: 50 },
+    ];
+    const a = polylinePoint2DToSmoothSvgPath(pts);
+    const b = chainToSmoothSvgPath([
+      { cx: 0, cy: 0 },
+      { cx: 100, cy: 50 },
+    ]);
+    expect(a).toBe(b);
   });
 });
 

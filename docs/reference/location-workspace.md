@@ -6,7 +6,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 **Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). Server `toDoc` normalizes omitted Mongo arrays to empty `[]` so clients always receive arrays.
 
-**Rendering seam (temporary):** `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` bridges authored data to SVG `d` strings; it delegates cell-center polylines to shared `pathEntriesToCenterlinePoints` (`shared/domain/locations/map/locationMapPathCenterline.helpers.ts`) then applies Catmull-Rom smoothing. Reuse the shared centerline step for non-editor map views in a later pass—avoid growing grid or persistence logic inside `pathOverlayRendering.ts`.
+**Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
 ---
 

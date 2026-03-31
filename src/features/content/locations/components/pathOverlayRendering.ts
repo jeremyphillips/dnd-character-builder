@@ -1,31 +1,33 @@
 /**
- * Editor-only bridge from authored `pathEntries` to SVG `<path d="...">` strings.
- *
- * **Temporary seam:** detail views and other consumers should eventually share the same
- * pipeline: authored data → `pathEntriesToCenterlinePoints` in `@/shared/domain/locations/map/locationMapPathCenterline.helpers`
- * (pixel centerlines) → optional smoothing here via `chainToSmoothSvgPath`. Do not add grid
- * math, persistence, or hex policy in this module.
+ * Renderer adapter only: authored `pathEntries` → SVG `<path d="...">` strings.
+ * Canonical geometry lives in `@/shared/domain/locations/map/locationMapPathPolyline.helpers`
+ * (`pathEntriesToPolylineGeometry`); this module applies Catmull-Rom smoothing for display.
+ * Do not add grid math, persistence, or hex policy here.
  */
-import { pathEntriesToCenterlinePoints } from '@/shared/domain/locations/map/locationMapPathCenterline.helpers';
+import type { Point2D } from '@/shared/domain/locations/map/locationMapGeometry.types';
+import { pathEntriesToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
 import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations/map/locationMap.types';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 
 type Point = { cx: number; cy: number };
 type CenterFn = (cellId: string) => Point | null;
 
+/** Map shared polyline points (x/y) to the cx/cy points expected by `chainToSmoothSvgPath`. */
+export function polylinePoint2DToSmoothSvgPath(points: readonly Point2D[]): string {
+  return chainToSmoothSvgPath(points.map((p) => ({ cx: p.x, cy: p.y })));
+}
+
 /**
- * Map authored path chains to SVG path `d` attributes (smooth Catmull-Rom where applicable).
- * Delegates cell-id → centerline points to shared `pathEntriesToCenterlinePoints`, then applies
- * `chainToSmoothSvgPath` per chain.
+ * Non-canonical adapter: polylines from `pathEntriesToPolylineGeometry` → SVG `d` attributes.
  */
 export function pathEntriesToSvgPaths(
   pathEntries: readonly LocationMapPathAuthoringEntry[],
   centerFn: CenterFn,
 ): { kind: LocationMapPathKindId; d: string }[] {
-  const chains = pathEntriesToCenterlinePoints(pathEntries, centerFn);
-  return chains.map(({ kind, points }) => ({
+  const polylines = pathEntriesToPolylineGeometry(pathEntries, centerFn);
+  return polylines.map(({ kind, points }) => ({
     kind,
-    d: chainToSmoothSvgPath(points),
+    d: polylinePoint2DToSmoothSvgPath(points),
   }));
 }
 

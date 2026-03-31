@@ -55,8 +55,10 @@ import {
   squareCellCenterPx,
   squareEdgeSegmentPxFromEdgeId,
 } from './squareGridMapOverlayGeometry';
+import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers';
+import { pathEntryToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
 import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
-import { chainToSmoothSvgPath } from './pathOverlayRendering';
+import { polylinePoint2DToSmoothSvgPath } from './pathOverlayRendering';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 
@@ -308,6 +310,7 @@ export function LocationGridAuthoringSection({
 
   const pathSvgData = useMemo(() => {
     const chains = draft.pathEntries.map((pe) => ({
+      id: pe.id,
       kind: pe.kind,
       cells: [...pe.cellIds],
     }));
@@ -345,6 +348,7 @@ export function LocationGridAuthoringSection({
       }
     }
 
+    const centerFn = (cellId: string) => cellCenterPx(cellId);
     const result: { kind: LocationMapPathKindId; d: string }[] = [];
 
     for (let i = 0; i < chains.length; i++) {
@@ -352,15 +356,28 @@ export function LocationGridAuthoringSection({
       if (i === extendIdx && extendCell) {
         cells = prepend ? [extendCell, ...cells] : [...cells, extendCell];
       }
-      const points = cells.map((id) => cellCenterPx(id)).filter(Boolean) as { cx: number; cy: number }[];
-      if (points.length < 2) continue;
-      result.push({ kind: chains[i].kind, d: chainToSmoothSvgPath(points) });
+      const poly = pathEntryToPolylineGeometry(
+        { id: chains[i].id, kind: chains[i].kind, cellIds: cells },
+        centerFn,
+      );
+      if (!poly) continue;
+      result.push({ kind: poly.kind, d: polylinePoint2DToSmoothSvgPath(poly.points) });
     }
 
     if (extendIdx < 0 && extendCell && placePathAnchorCellId) {
-      const pts = [cellCenterPx(placePathAnchorCellId), cellCenterPx(extendCell)].filter(Boolean) as { cx: number; cy: number }[];
-      if (pts.length >= 2) {
-        result.push({ kind: activePathKind ?? 'road', d: chainToSmoothSvgPath(pts) });
+      const previewPoly = pathEntryToPolylineGeometry(
+        {
+          id: 'preview',
+          kind: activePathKind ?? 'road',
+          cellIds: [placePathAnchorCellId, extendCell],
+        },
+        centerFn,
+      );
+      if (previewPoly) {
+        result.push({
+          kind: previewPoly.kind,
+          d: polylinePoint2DToSmoothSvgPath(previewPoly.points),
+        });
       }
     }
 
@@ -368,6 +385,12 @@ export function LocationGridAuthoringSection({
   }, [draft.pathEntries, placePathAnchorCellId, placeHoverCellId, cellCenterPx, gridGeometry, cols, rows, activePathKind]);
 
   const pathOverlayStroke = theme.palette.info.main;
+
+  /** Committed edge features (square grid only): shared geometry layer → SVG lines below. */
+  const committedEdgeSegmentGeometry = useMemo(() => {
+    if (!squareGridGeometry || isHex) return [];
+    return edgeEntriesToSegmentGeometrySquare(draft.edgeEntries, squareGridGeometry.cellPx);
+  }, [draft.edgeEntries, squareGridGeometry, isHex]);
 
   const edgeOverlayStrokeProps = useMemo(() => {
     const wall = {
@@ -989,13 +1012,12 @@ export function LocationGridAuthoringSection({
                 strokeLinejoin="round"
               />
             ))}
-            {draft.edgeEntries.map((e) => {
-              const seg = squareEdgeSegmentPxFromEdgeId(e.edgeId, squareGridGeometry.cellPx);
-              if (!seg) return null;
-              const st = edgeOverlayStrokeProps[e.kind];
+            {committedEdgeSegmentGeometry.map((g) => {
+              const st = edgeOverlayStrokeProps[g.kind];
+              const seg = g.segment;
               return (
                 <line
-                  key={e.edgeId}
+                  key={g.edgeId}
                   x1={seg.x1}
                   y1={seg.y1}
                   x2={seg.x2}

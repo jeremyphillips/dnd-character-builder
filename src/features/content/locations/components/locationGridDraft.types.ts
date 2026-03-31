@@ -1,4 +1,9 @@
-import type { LocationMapCellObjectEntry } from '@/shared/domain/locations';
+import type {
+  LocationMapCellFillKindId,
+  LocationMapCellObjectEntry,
+  LocationMapEdgeAuthoringEntry,
+  LocationMapPathAuthoringEntry,
+} from '@/shared/domain/locations';
 
 /** Same shape as persisted map cell objects. */
 export type LocationCellObjectDraft = LocationMapCellObjectEntry;
@@ -10,8 +15,12 @@ export type LocationGridDraftState = {
   linkedLocationByCellId: Record<string, string | undefined>;
   /** Simple objects placed on each cell (authoring draft). */
   objectsByCellId: Record<string, LocationCellObjectDraft[]>;
-  /** When set, the cell edit modal is open for this cell id. */
-  cellModalCellId: string | null;
+  /** Whole-cell terrain / surface fill (sparse). */
+  cellFillByCellId: Record<string, LocationMapCellFillKindId | undefined>;
+  /** Map-level path chains (persisted on LocationMap). */
+  pathEntries: LocationMapPathAuthoringEntry[];
+  /** Map-level edge features on boundaries (persisted on LocationMap). */
+  edgeEntries: LocationMapEdgeAuthoringEntry[];
 };
 
 export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
@@ -19,5 +28,7 @@ export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
   excludedCellIds: [],
   linkedLocationByCellId: {},
   objectsByCellId: {},
-  cellModalCellId: null,
+  cellFillByCellId: {},
+  pathEntries: [],
+  edgeEntries: [],
 };

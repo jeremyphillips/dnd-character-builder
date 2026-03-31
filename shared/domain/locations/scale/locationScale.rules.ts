@@ -1,13 +1,35 @@
 /**
- * Generic scale ordering helpers — structural only (`LOCATION_SCALE_ORDER`).
+ * Generic scale ordering helpers.
+ * Rank comparisons use `LOCATION_SCALE_RANK_ORDER_LEGACY` so legacy persisted scales sort correctly.
  * Parent *eligibility* uses explicit policy in `locationScale.policy.ts`, not rank alone.
  */
-import { LOCATION_SCALE_ORDER } from '../location.constants';
-import type { LocationScaleId } from '../location.types';
+import {
+  CONTENT_LOCATION_SCALE_IDS,
+  LEGACY_MAP_ZONE_LOCATION_SCALE_IDS,
+  LOCATION_SCALE_RANK_ORDER_LEGACY,
+} from '../location.constants';
+import type {
+  ContentLocationScaleId,
+  LegacyMapZoneLocationScaleId,
+  LocationScaleId,
+} from '../location.types';
 import { isAllowedParentScale } from './locationScale.policy';
 
+const LEGACY_RANK = LOCATION_SCALE_RANK_ORDER_LEGACY as readonly string[];
+
+const CONTENT_SET = new Set<string>(CONTENT_LOCATION_SCALE_IDS as readonly string[]);
+const LEGACY_ZONE_SET = new Set<string>(LEGACY_MAP_ZONE_LOCATION_SCALE_IDS as readonly string[]);
+
+export function isContentLocationScaleId(scale: string): scale is ContentLocationScaleId {
+  return CONTENT_SET.has(scale);
+}
+
+export function isLegacyMapZoneLocationScaleId(scale: string): scale is LegacyMapZoneLocationScaleId {
+  return LEGACY_ZONE_SET.has(scale);
+}
+
 export function locationScaleRank(scale: string): number {
-  return LOCATION_SCALE_ORDER.indexOf(scale as LocationScaleId);
+  return LEGACY_RANK.indexOf(scale);
 }
 
 /** Alias for callers that prefer `get*` naming. */
@@ -16,14 +38,14 @@ export function getLocationScaleRank(scale: string): number {
 }
 
 export function isValidLocationScaleId(scale: string): scale is LocationScaleId {
-  return LOCATION_SCALE_ORDER.includes(scale as LocationScaleId);
+  return LEGACY_RANK.includes(scale);
 }
 
 export function isWorldScale(scale: string): boolean {
   return scale === 'world';
 }
 
-/** Strictly finer in `LOCATION_SCALE_ORDER` (lower index = broader). */
+/** Strictly finer in legacy rank order (lower index = broader). */
 export function isBroaderLocationScale(parentScale: string, childScale: string): boolean {
   const pi = locationScaleRank(parentScale);
   const ci = locationScaleRank(childScale);

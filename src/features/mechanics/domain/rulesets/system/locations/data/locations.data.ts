@@ -2,11 +2,11 @@
  * System location catalog — code-defined defaults per ruleset (may be empty).
  * Campaign-owned locations are merged at runtime by locationRepo.
  */
-import type { Location, LocationFields } from '@/features/content/locations/domain/types';
+import type { Location, LocationBaseFields } from '@/features/content/locations/domain/types';
 import type { SystemRulesetId } from '../../../types/ruleset.types';
 import { DEFAULT_SYSTEM_RULESET_ID } from '../../../ids/systemIds';
 
-function toSystemLocation(systemId: SystemRulesetId, raw: LocationFields): Location {
+function toSystemLocation(systemId: SystemRulesetId, raw: LocationBaseFields): Location {
   return {
     ...raw,
     source: 'system',
@@ -16,7 +16,7 @@ function toSystemLocation(systemId: SystemRulesetId, raw: LocationFields): Locat
   };
 }
 
-const LOCATIONS_RAW: readonly LocationFields[] = [];
+const LOCATIONS_RAW: readonly LocationBaseFields[] = [];
 
 const SYSTEM_LOCATIONS_SRD: readonly Location[] = LOCATIONS_RAW.map((raw) =>
   toSystemLocation(DEFAULT_SYSTEM_RULESET_ID, raw),

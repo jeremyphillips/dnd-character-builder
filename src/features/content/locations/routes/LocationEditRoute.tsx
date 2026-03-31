@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
+import { useCharacters } from '@/features/character/hooks/useCharacters';
 import { useCampaignMembers } from '@/features/campaign/hooks';
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
 import {
@@ -15,10 +16,13 @@ import {
   validateLocationChange,
   type LocationContentItem,
   type LocationFormValues,
+  type LocationInput,
   getLocationFieldConfigs,
   LOCATION_FORM_DEFAULTS,
   locationToFormValues,
   toLocationInput,
+  buildBuildingSubtypeSelectOptions,
+  buildCharacterEntityPickerOptions,
   listLocationMaps,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
@@ -29,9 +33,17 @@ import {
   buildLocationFormUiPolicy,
   getAllowedCellUnitOptionsForScale,
   getDefaultGeometryForScale,
+  getDefaultCellUnitForScale,
   isLocationScaleSelected,
+  listFloorChildren,
+  nextSortOrder,
   useLocationFormCampaignData,
   useLocationFormDependentFieldEffects,
+  getGroupedPlacePaletteForScale,
+  getPaintPaletteItemsForScale,
+  resolvePlacedKindToAction,
+  resolveEraseTargetAtCell,
+  useLocationMapEditorState,
 } from '@/features/content/locations/domain';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { ConditionalFormRenderer, ConfirmModal, VisibilityField } from '@/ui/patterns';
@@ -44,17 +56,37 @@ import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessP
 import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
 import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystemPatchActions';
 import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDeleteAction';
-import type { LocationScaleId } from '@/shared/domain/locations';
+import {
+  canPlaceObjectKindOnHostScale,
+  getAllowedLinkedLocationOptions,
+  normalizeLocationMapAuthoringFields,
+  removePathChainSegment,
+  type LocationScaleId,
+} from '@/shared/domain/locations';
+import { applyEdgeStrokeToDraft } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
+import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
+import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
+import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import {
   LocationGridAuthoringSection,
+  LocationCellAuthoringPanel,
   LocationEditorWorkspace,
   LocationEditorHeader,
   LocationEditorCanvas,
   LocationEditorRightRail,
   LocationEditorMapRailTabs,
   LocationAncestryBreadcrumbs,
+  BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
+  gridDraftPersistableEquals,
+  LocationMapEditorLinkedLocationModal,
+  LocationMapEditorPaintTray,
+  LocationMapEditorPlacePanel,
+  LocationMapEditorToolbar,
+  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
+  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
+  type LocationCellObjectDraft,
   type LocationGridDraftState,
 } from '@/features/content/locations/components';
 
@@ -65,6 +97,7 @@ export default function LocationEditRoute() {
   const { locationId } = useParams<{ locationId: string }>();
   const navigate = useNavigate();
   const { approvedCharacters: policyCharacters } = useCampaignMembers();
+  const { characters: characterPickerSource } = useCharacters({ type: 'all' });
 
   const viewer = campaign?.viewer;
   const canDelete = Boolean(
@@ -82,7 +115,14 @@ export default function LocationEditRoute() {
     mode: 'onBlur',
     reValidateMode: 'onChange',
   });
-  const { reset, setValue, watch, getValues, formState: { isDirty } } = methods;
+  const {
+    reset,
+    setValue,
+    watch,
+    getValues,
+    handleSubmit,
+    formState: { isDirty },
+  } = methods;
 
   const {
     saving,
@@ -97,16 +137,37 @@ export default function LocationEditRoute() {
   const [gridDraft, setGridDraft] = useState<LocationGridDraftState>(
     INITIAL_LOCATION_GRID_DRAFT,
   );
+  /** Always latest draft — react-hook-form submit can call a stale closure; ref avoids saving without path/edge edits. */
+  const gridDraftRef = useRef(gridDraft);
+  useEffect(() => {
+    gridDraftRef.current = gridDraft;
+  }, [gridDraft]);
+  /** Last saved / server-hydrated persistable map state (enables Save when only the grid changed). */
+  const [gridDraftBaseline, setGridDraftBaseline] = useState<LocationGridDraftState>(() =>
+    structuredClone(INITIAL_LOCATION_GRID_DRAFT),
+  );
+  const isGridDraftDirty = useMemo(
+    () => !gridDraftPersistableEquals(gridDraft, gridDraftBaseline),
+    [gridDraft, gridDraftBaseline],
+  );
+  /** 0 = Metadata, 1 = Cell — switched when user selects a map cell */
+  const [mapRailTab, setMapRailTab] = useState(0);
   const [rightRailOpen, setRightRailOpen] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
+  const [addingFloor, setAddingFloor] = useState(false);
+  const [locationListRefreshKey, setLocationListRefreshKey] = useState(0);
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
-  const { pan, isDragging, pointerHandlers, resetPan } = useCanvasPan();
+  const { pan, isDragging, hasDragMoved, pointerHandlers, resetPan } = useCanvasPan();
   useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan]);
 
   const isSystem = loc?.source === 'system';
   const isCampaign = loc?.source === 'campaign';
+  const isBuildingWorkspace = Boolean(
+    loc && loc.source === 'campaign' && loc.scale === 'building',
+  );
 
   const {
     initialPatch,
@@ -125,14 +186,45 @@ export default function LocationEditRoute() {
   useResetEditFeedbackOnChange(watch, clearFeedback);
 
   const watchedScale = watch('scale');
+  const watchedBuildingPrimaryType = watch('buildingPrimaryType');
+  /** Avoid empty scale before RHF reset: invalid scale uses FALLBACK_POLICY (hideParent) and sanitize clears parentId. */
   const scaleForFormRules =
-    (loc?.source === 'system' && loc ? loc.scale : undefined) ?? watchedScale;
+    (loc?.source === 'system' && loc ? loc.scale : undefined) ??
+    (String(watchedScale ?? '').trim() !== '' ? watchedScale : undefined) ??
+    (loc?.source === 'campaign' && loc ? loc.scale : undefined) ??
+    '';
 
   const {
     campaignHasWorldLocation,
     parentLocationOptions,
     locations,
-  } = useLocationFormCampaignData(campaignId ?? undefined, scaleForFormRules, locationId);
+  } = useLocationFormCampaignData(
+    campaignId ?? undefined,
+    scaleForFormRules,
+    locationId,
+    locationListRefreshKey,
+  );
+
+  const floorChildren = useMemo(() => {
+    if (!locationId || !loc || loc.source !== 'campaign' || loc.scale !== 'building') {
+      return [];
+    }
+    return listFloorChildren(locations, locationId);
+  }, [locations, locationId, loc]);
+
+  useEffect(() => {
+    if (!isBuildingWorkspace) return;
+    if (floorChildren.length === 0) {
+      setActiveFloorId(null);
+      return;
+    }
+    setActiveFloorId((prev) => {
+      if (prev && floorChildren.some((f) => f.id === prev)) return prev;
+      return floorChildren[0].id;
+    });
+  }, [isBuildingWorkspace, floorChildren]);
+
+  const mapAuthoringScaleForUi = isBuildingWorkspace ? 'floor' : scaleForFormRules;
 
   const locationUiPolicy = useMemo(
     () =>
@@ -144,28 +236,43 @@ export default function LocationEditRoute() {
   );
 
   const gridCellUnitOptions = useMemo(
-    () => getAllowedCellUnitOptionsForScale(scaleForFormRules),
-    [scaleForFormRules],
+    () => getAllowedCellUnitOptionsForScale(mapAuthoringScaleForUi),
+    [mapAuthoringScaleForUi],
   );
+  const buildingSubtypeSelectOptions = useMemo(
+    () => buildBuildingSubtypeSelectOptions(watchedBuildingPrimaryType),
+    [watchedBuildingPrimaryType],
+  );
+  const buildingProfileEntityPickerOptions = useMemo(
+    () => buildCharacterEntityPickerOptions(characterPickerSource),
+    [characterPickerSource],
+  );
+
   useLocationFormDependentFieldEffects(
     scaleForFormRules,
     locations,
     locationId,
     getValues,
     setValue,
+    true,
+    watchedBuildingPrimaryType,
   );
 
   const gridPreset = watch('gridPreset');
   const gridColumns = watch('gridColumns');
   const gridRows = watch('gridRows');
-  const gridGeometry = watch('gridGeometry') || getDefaultGeometryForScale(scaleForFormRules);
+  const gridGeometry =
+    watch('gridGeometry') || getDefaultGeometryForScale(mapAuthoringScaleForUi);
 
   useEffect(() => {
     const cols = Number(gridColumns);
     const rows = Number(gridRows);
     const valid =
       Number.isInteger(cols) && cols > 0 && Number.isInteger(rows) && rows > 0;
-    if (!valid) setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+    if (!valid) {
+      setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+      setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+    }
   }, [gridColumns, gridRows]);
 
   useEffect(() => {
@@ -179,44 +286,208 @@ export default function LocationEditRoute() {
 
   useEffect(() => {
     if (!campaignId || !locationId || !loc || loc.source !== 'campaign') return;
+    if (loc.scale === 'building') return;
     let cancelled = false;
-    listLocationMaps(campaignId, locationId).then((maps) => {
-      if (cancelled) return;
-      const def = maps.find((m) => m.isDefault) ?? maps[0];
-      if (def) {
-        setValue('gridPreset', '');
-        setValue('gridColumns', String(def.grid.width));
-        setValue('gridRows', String(def.grid.height));
-        setValue('gridCellUnit', String(def.grid.cellUnit));
-        setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale(loc!.scale));
-        setGridDraft({
-          selectedCellId: null,
-          excludedCellIds: def.layout?.excludedCellIds ?? [],
-          ...cellEntriesToDraft(def.cellEntries),
-          cellModalCellId: null,
-        });
-      } else {
+    listLocationMaps(campaignId, locationId)
+      .then((maps) => {
+        if (cancelled) return;
+        const def = maps.find((m) => m.isDefault) ?? maps[0];
+        if (def) {
+          setValue('gridPreset', '');
+          setValue('gridColumns', String(def.grid.width));
+          setValue('gridRows', String(def.grid.height));
+          setValue('gridCellUnit', String(def.grid.cellUnit));
+          setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale(loc!.scale));
+          const authoring = normalizeLocationMapAuthoringFields(def);
+          const next = {
+            selectedCellId: null,
+            excludedCellIds: def.layout?.excludedCellIds ?? [],
+            ...cellEntriesToDraft(authoring.cellEntries),
+            pathEntries: authoring.pathEntries,
+            edgeEntries: authoring.edgeEntries,
+          };
+          setGridDraft(next);
+          setGridDraftBaseline(structuredClone(next));
+        } else {
+          setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+          setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
         setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
-      }
-    });
+        setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+      });
     return () => {
       cancelled = true;
     };
-  }, [campaignId, locationId, loc, setValue]);
+  }, [campaignId, locationId, loc?.scale, loc?.source, setValue]);
+
+  useEffect(() => {
+    if (!campaignId || !locationId || !loc || loc.source !== 'campaign') return;
+    if (loc.scale !== 'building') return;
+    if (!activeFloorId) {
+      setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+      setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+      return;
+    }
+    let cancelled = false;
+    listLocationMaps(campaignId, activeFloorId)
+      .then((maps) => {
+        if (cancelled) return;
+        const def = maps.find((m) => m.isDefault) ?? maps[0];
+        if (def) {
+          setValue('gridPreset', '');
+          setValue('gridColumns', String(def.grid.width));
+          setValue('gridRows', String(def.grid.height));
+          setValue('gridCellUnit', String(def.grid.cellUnit));
+          setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale('floor'));
+          const authoring = normalizeLocationMapAuthoringFields(def);
+          const next = {
+            selectedCellId: null,
+            excludedCellIds: def.layout?.excludedCellIds ?? [],
+            ...cellEntriesToDraft(authoring.cellEntries),
+            pathEntries: authoring.pathEntries,
+            edgeEntries: authoring.edgeEntries,
+          };
+          setGridDraft(next);
+          setGridDraftBaseline(structuredClone(next));
+        } else {
+          setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+          setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
+        setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, activeFloorId, locationId, loc?.scale, loc?.source, setValue]);
 
   const fieldConfigs = useMemo(
     () =>
       getLocationFieldConfigs({
         policyCharacters,
         parentLocationOptions,
+        buildingSubtypeSelectOptions,
+        buildingProfileEntityPickerOptions,
         gridCellUnitOptions,
-        includeGridBootstrap: Boolean(loc && loc.source === 'campaign'),
+        includeGridBootstrap: Boolean(
+          loc &&
+            loc.source === 'campaign' &&
+            (!isBuildingWorkspace || Boolean(activeFloorId)),
+        ),
         locationUiPolicy,
       }),
-    [policyCharacters, parentLocationOptions, gridCellUnitOptions, loc, locationUiPolicy],
+    [
+      policyCharacters,
+      parentLocationOptions,
+      buildingSubtypeSelectOptions,
+      buildingProfileEntityPickerOptions,
+      gridCellUnitOptions,
+      loc,
+      locationUiPolicy,
+      isBuildingWorkspace,
+      activeFloorId,
+    ],
   );
 
-  const showMapGridAuthoring = isLocationScaleSelected(watchedScale);
+  const showMapGridAuthoring = isBuildingWorkspace
+    ? Boolean(activeFloorId)
+    : isLocationScaleSelected(watchedScale);
+
+  /**
+   * Map vocabulary (paint / place palettes, placement resolver) for the **floor grid**.
+   * Building *locations* use `scale: 'building'` on the entity, but authored map content policy
+   * lives under `floor` (walls, doors, floor objects). `LOCATION_SCALE_MAP_CONTENT_POLICY.building`
+   * is empty — always resolve building maps to `floor` so Place options are not blank.
+   */
+  const mapHostScaleResolved = useMemo((): LocationScaleId => {
+    if (isBuildingWorkspace) return 'floor';
+    if (loc?.scale === 'building') return 'floor';
+    const raw = (String(scaleForFormRules || '').trim() || 'world') as LocationScaleId;
+    if (raw === 'building') return 'floor';
+    return raw;
+  }, [isBuildingWorkspace, loc?.scale, scaleForFormRules]);
+
+  const mapHostLocationIdResolved = useMemo(() => {
+    if (isBuildingWorkspace) return activeFloorId ?? '';
+    return locationId ?? '';
+  }, [isBuildingWorkspace, activeFloorId, locationId]);
+
+  const mapEditor = useLocationMapEditorState();
+
+  const paintPaletteItems = useMemo(
+    () => getPaintPaletteItemsForScale(mapHostScaleResolved),
+    [mapHostScaleResolved],
+  );
+
+  const placePaletteItems = useMemo(() => {
+    const all = getGroupedPlacePaletteForScale(mapHostScaleResolved);
+    if (gridGeometry === 'hex') {
+      return all.filter((i) => i.category === 'object' || i.category === 'path');
+    }
+    return all;
+  }, [mapHostScaleResolved, gridGeometry]);
+
+  /** Path/link/object placement also needs this: otherwise canvas pan steals pointerdown and clicks often miss cells. */
+  const mapPlaceSuppressesCanvasPanOnCells = mapEditor.mode === 'place';
+
+  const mapPlaceObjectDragStrokeEnabled =
+    mapEditor.mode === 'place' && mapEditor.activePlace?.category === 'object';
+
+  useEffect(() => {
+    mapEditor.setPathAnchorCellId(null);
+  }, [gridColumns, gridRows, mapEditor.setPathAnchorCellId]);
+
+  useEffect(() => {
+    if (mapEditor.mode !== 'place') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      mapEditor.setPathAnchorCellId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mapEditor.mode, mapEditor.setPathAnchorCellId]);
+
+  /** Options for the pending linked-location modal (city / building / site per resolver). */
+  const linkModalSelectOptions = useMemo(() => {
+    if (!campaignId || !loc || loc.source !== 'campaign') return [];
+    const p = mapEditor.pendingPlacement;
+    if (!p || p.type !== 'linked-location') return [];
+    const targetScale = p.linkedScale;
+    const campaignLocations = locations.filter((l) => l.source === 'campaign');
+    const host = {
+      id: mapHostLocationIdResolved || '__host__',
+      scale: mapHostScaleResolved,
+      name: loc.name,
+      source: 'campaign' as const,
+      campaignId,
+    };
+    return getAllowedLinkedLocationOptions(host, campaignLocations, {
+      campaignId,
+      excludeLocationId: mapHostLocationIdResolved || undefined,
+    })
+      .filter((l) => l.scale === targetScale)
+      .map((l) => ({ value: l.id, label: l.name }));
+  }, [
+    campaignId,
+    loc,
+    locations,
+    mapHostLocationIdResolved,
+    mapHostScaleResolved,
+    mapEditor.pendingPlacement,
+  ]);
+
+  const showMapEditorChrome = showMapGridAuthoring;
+
+  const leftMapChromeWidthPx = showMapEditorChrome
+    ? LOCATION_EDITOR_TOOLBAR_WIDTH_PX +
+      (mapEditor.mode === 'paint' ? LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX : 0)
+    : 0;
 
   const { policyValue, handlePolicyChange } = useAccessPolicyField<LocationFormValues>(watch, setValue);
 
@@ -231,7 +502,66 @@ export default function LocationEditRoute() {
 
   const handleCampaignSubmit = useCallback(
     async (values: LocationFormValues) => {
-      if (!campaignId || !locationId) return;
+      if (!campaignId || !locationId || !loc) return;
+      if (loc.source === 'campaign' && loc.scale === 'building') {
+        if (!activeFloorId) {
+          setErrors([
+            {
+              path: '',
+              code: 'VALIDATION',
+              message: 'Add a floor before saving.',
+            },
+          ]);
+          return;
+        }
+        const err = validateGridBootstrap(values);
+        if (err) {
+          setErrors([{ path: '', code: 'VALIDATION', message: err }]);
+          return;
+        }
+        setSaving(true);
+        setSuccess(false);
+        setErrors([]);
+        try {
+          const draft = gridDraftRef.current;
+          const input = toLocationInput(values);
+          const updated = await locationRepo.updateEntry(campaignId, locationId, input);
+          const floorName =
+            locations.find((l) => l.id === activeFloorId)?.name ?? 'Floor';
+          await bootstrapDefaultLocationMap(
+            campaignId,
+            activeFloorId,
+            floorName,
+            'floor',
+            values,
+            {
+              excludedCellIds: draft.excludedCellIds,
+              ...normalizeLocationMapAuthoringFields({
+                cellEntries: cellDraftToCellEntries(
+                  draft.linkedLocationByCellId,
+                  draft.objectsByCellId,
+                  draft.cellFillByCellId,
+                ),
+                pathEntries: draft.pathEntries,
+                edgeEntries: draft.edgeEntries,
+              }),
+            },
+          );
+          reset({
+            ...locationToFormValues(updated),
+            ...pickMapGridFormValues(values),
+          });
+          setGridDraftBaseline(structuredClone(gridDraftRef.current));
+          setSuccess(true);
+        } catch (e) {
+          setErrors([
+            { path: '', code: 'SAVE_FAILED', message: (e as Error).message },
+          ]);
+        } finally {
+          setSaving(false);
+        }
+        return;
+      }
       const err = validateGridBootstrap(values);
       if (err) {
         setErrors([{ path: '', code: 'VALIDATION', message: err }]);
@@ -241,6 +571,7 @@ export default function LocationEditRoute() {
       setSuccess(false);
       setErrors([]);
       try {
+        const draft = gridDraftRef.current;
         const input = toLocationInput(values);
         const updated = await locationRepo.updateEntry(campaignId, locationId, input);
         await bootstrapDefaultLocationMap(
@@ -250,17 +581,23 @@ export default function LocationEditRoute() {
           updated.scale as LocationScaleId,
           values,
           {
-            excludedCellIds: gridDraft.excludedCellIds,
-            cellEntries: cellDraftToCellEntries(
-              gridDraft.linkedLocationByCellId,
-              gridDraft.objectsByCellId,
-            ),
+            excludedCellIds: draft.excludedCellIds,
+            ...normalizeLocationMapAuthoringFields({
+              cellEntries: cellDraftToCellEntries(
+                draft.linkedLocationByCellId,
+                draft.objectsByCellId,
+                draft.cellFillByCellId,
+              ),
+              pathEntries: draft.pathEntries,
+              edgeEntries: draft.edgeEntries,
+            }),
           },
         );
         reset({
           ...locationToFormValues(updated),
           ...pickMapGridFormValues(values),
         });
+        setGridDraftBaseline(structuredClone(gridDraftRef.current));
         setSuccess(true);
       } catch (e) {
         setErrors([
@@ -273,15 +610,90 @@ export default function LocationEditRoute() {
     [
       campaignId,
       locationId,
+      loc,
+      activeFloorId,
+      locations,
       reset,
       setSaving,
       setSuccess,
       setErrors,
-      gridDraft.excludedCellIds,
-      gridDraft.linkedLocationByCellId,
-      gridDraft.objectsByCellId,
     ],
   );
+
+  const handleCampaignFormSaveClick = useCallback(() => {
+    void handleSubmit(handleCampaignSubmit)();
+  }, [handleSubmit, handleCampaignSubmit]);
+
+  const handleAddFloor = useCallback(async () => {
+    if (!campaignId || !locationId || !loc || loc.source !== 'campaign' || loc.scale !== 'building') {
+      return;
+    }
+    if (addingFloor) return;
+    setAddingFloor(true);
+    setErrors([]);
+    try {
+      const sort = nextSortOrder(floorChildren);
+      const floorIndex = floorChildren.length + 1;
+      const input: LocationInput = {
+        name: `Floor ${floorIndex}`,
+        scale: 'floor',
+        parentId: locationId,
+        category: 'interior',
+        sortOrder: sort,
+      };
+      const created = await locationRepo.createEntry(campaignId, input);
+      const v = getValues();
+      const hasGrid =
+        Number(v.gridColumns) > 0 && Number(v.gridRows) > 0;
+      const preset = GRID_SIZE_PRESETS.medium;
+      const bootstrapValues: LocationFormValues = {
+        ...LOCATION_FORM_DEFAULTS,
+        ...v,
+        name: created.name,
+        scale: 'floor',
+        parentId: locationId,
+        category: 'interior',
+        gridPreset: hasGrid ? v.gridPreset : '',
+        gridColumns: hasGrid ? v.gridColumns : String(preset.columns),
+        gridRows: hasGrid ? v.gridRows : String(preset.rows),
+        gridCellUnit: v.gridCellUnit || getDefaultCellUnitForScale('floor'),
+        gridGeometry: getDefaultGeometryForScale('floor'),
+      };
+      await bootstrapDefaultLocationMap(
+        campaignId,
+        created.id,
+        created.name,
+        'floor',
+        bootstrapValues,
+        {
+          excludedCellIds: INITIAL_LOCATION_GRID_DRAFT.excludedCellIds,
+          cellEntries: cellDraftToCellEntries(
+            INITIAL_LOCATION_GRID_DRAFT.linkedLocationByCellId,
+            INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
+            INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
+          ),
+          pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
+          edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
+        },
+      );
+      setLocationListRefreshKey((k) => k + 1);
+      setActiveFloorId(created.id);
+    } catch (e) {
+      setErrors([
+        { path: '', code: 'SAVE_FAILED', message: (e as Error).message },
+      ]);
+    } finally {
+      setAddingFloor(false);
+    }
+  }, [
+    campaignId,
+    locationId,
+    loc,
+    addingFloor,
+    floorChildren,
+    getValues,
+    setErrors,
+  ]);
 
   const { savePatch: handlePatchSave, removePatch: handleRemovePatch } =
     useSystemPatchActions({
@@ -312,6 +724,195 @@ export default function LocationEditRoute() {
     [navigate, campaignId],
   );
 
+  const handleUpdateLinkedLocation = useCallback(
+    (cellId: string, locationId: string | undefined) => {
+      setGridDraft((prev) => {
+        const nextLinks = { ...prev.linkedLocationByCellId };
+        if (locationId) nextLinks[cellId] = locationId;
+        else delete nextLinks[cellId];
+        return { ...prev, linkedLocationByCellId: nextLinks };
+      });
+    },
+    [],
+  );
+
+  const handleUpdateCellObjects = useCallback(
+    (cellId: string, objects: LocationCellObjectDraft[]) => {
+      setGridDraft((prev) => {
+        const next = { ...prev.objectsByCellId };
+        if (objects.length === 0) delete next[cellId];
+        else next[cellId] = objects;
+        return { ...prev, objectsByCellId: next };
+      });
+    },
+    [],
+  );
+
+  const handleEraseCell = useCallback(
+    (cellId: string) => {
+      const cols = Number(gridColumns);
+      const rows = Number(gridRows);
+      setGridDraft((prev) => {
+        const target = resolveEraseTargetAtCell(cellId, prev, cols, rows);
+        if (!target) return prev;
+        if (target.type === 'edge') {
+          return {
+            ...prev,
+            edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== target.edgeId),
+          };
+        }
+        if (target.type === 'object') {
+          const objs = prev.objectsByCellId[target.cellId] ?? [];
+          const nextObjs = objs.filter((o) => o.id !== target.objectId);
+          const nextMap = { ...prev.objectsByCellId };
+          if (nextObjs.length === 0) delete nextMap[target.cellId];
+          else nextMap[target.cellId] = nextObjs;
+          return { ...prev, objectsByCellId: nextMap };
+        }
+        if (target.type === 'path') {
+          return {
+            ...prev,
+            pathEntries: removePathChainSegment(
+              prev.pathEntries,
+              target.pathId,
+              cellId,
+              target.neighborCellId,
+              () => crypto.randomUUID(),
+            ),
+          };
+        }
+        const nextLinks = { ...prev.linkedLocationByCellId };
+        delete nextLinks[target.cellId];
+        return { ...prev, linkedLocationByCellId: nextLinks };
+      });
+    },
+    [gridColumns, gridRows],
+  );
+
+  const handlePlaceCell = useCallback(
+    (cellId: string) => {
+      const ap = mapEditor.activePlace;
+      if (!ap) return;
+      const res = resolvePlacedKindToAction(ap, mapHostScaleResolved);
+      if (res.type === 'unsupported') return;
+      if (res.type === 'link') {
+        mapEditor.setPendingPlacement({
+          type: 'linked-location',
+          objectKind: res.objectKind,
+          hostScale: mapHostScaleResolved,
+          linkedScale: res.linkedScale,
+          targetCellId: cellId,
+        });
+        return;
+      }
+      if (res.type === 'object') {
+        if (!canPlaceObjectKindOnHostScale(mapHostScaleResolved, res.objectKind)) return;
+        setGridDraft((prev) => {
+          const existing = prev.objectsByCellId[cellId] ?? [];
+          return {
+            ...prev,
+            objectsByCellId: {
+              ...prev.objectsByCellId,
+              [cellId]: [...existing, { id: crypto.randomUUID(), kind: res.objectKind }],
+            },
+          };
+        });
+        return;
+      }
+      if (res.type === 'path') {
+        const anchor = mapEditor.pathAnchorCellId;
+        if (!anchor) {
+          mapEditor.setPathAnchorCellId(cellId);
+          return;
+        }
+        if (anchor === cellId) {
+          mapEditor.setPathAnchorCellId(null);
+          return;
+        }
+        const pa = parseGridCellId(anchor);
+        const pb = parseGridCellId(cellId);
+        if (!pa || !pb) {
+          mapEditor.setPathAnchorCellId(cellId);
+          return;
+        }
+        const geom = (gridGeometry === 'hex' ? 'hex' : 'square') as 'square' | 'hex';
+        const neighbors = getNeighborPoints(
+          { geometry: geom, columns: Number(gridColumns), rows: Number(gridRows) },
+          pa,
+        );
+        if (!neighbors.some((n) => n.x === pb.x && n.y === pb.y)) {
+          mapEditor.setPathAnchorCellId(cellId);
+          return;
+        }
+        setGridDraft((prev) => {
+          const pathKind = res.pathKind;
+          const candidates = prev.pathEntries.filter((p) => p.kind === pathKind);
+          let extendId: string | undefined;
+          for (let i = candidates.length - 1; i >= 0; i--) {
+            const p = candidates[i];
+            if (p.cellIds[p.cellIds.length - 1]?.trim() === anchor.trim()) {
+              extendId = p.id;
+              break;
+            }
+          }
+          if (extendId) {
+            return {
+              ...prev,
+              pathEntries: prev.pathEntries.map((p) =>
+                p.id === extendId ? { ...p, cellIds: [...p.cellIds, cellId] } : p,
+              ),
+            };
+          }
+          return {
+            ...prev,
+            pathEntries: [
+              ...prev.pathEntries,
+              {
+                id: crypto.randomUUID(),
+                kind: pathKind,
+                cellIds: [anchor, cellId],
+              },
+            ],
+          };
+        });
+        mapEditor.setPathAnchorCellId(cellId);
+        return;
+      }
+      // Edge placement is handled by the boundary-paint stroke system in
+      // LocationGridAuthoringSection, not the cell-click flow.
+    },
+    [
+      mapEditor.activePlace,
+      mapEditor.pathAnchorCellId,
+      mapEditor.setPendingPlacement,
+      mapEditor.setPathAnchorCellId,
+      mapHostScaleResolved,
+      gridGeometry,
+      gridColumns,
+      gridRows,
+    ],
+  );
+
+  const handleEdgeStrokeCommit = useCallback(
+    (edgeIds: string[], edgeKind: LocationEdgeFeatureKindId) => {
+      if (edgeIds.length === 0) return;
+      setGridDraft((prev) => ({
+        ...prev,
+        edgeEntries: applyEdgeStrokeToDraft(prev.edgeEntries, edgeIds, edgeKind),
+      }));
+    },
+    [],
+  );
+
+  const handleEraseEdge = useCallback((edgeId: string) => {
+    setGridDraft((prev) => ({
+      ...prev,
+      edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== edgeId),
+    }));
+  }, []);
+
+  const focusCellRailTab = useCallback(() => setMapRailTab(1), []);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -332,6 +933,13 @@ export default function LocationEditRoute() {
     />
   );
 
+  const activeFloorName =
+    activeFloorId && locations.find((l) => l.id === activeFloorId)?.name;
+  const mapHostLocationId = isBuildingWorkspace ? activeFloorId ?? '' : locationId!;
+  const mapHostScale = isBuildingWorkspace ? 'floor' : scaleForFormRules;
+  const mapHostName = activeFloorName ?? loc.name;
+  const buildingNeedsFloor = isBuildingWorkspace && floorChildren.length === 0;
+
   if (isSystem && driver) {
     return (
       <LocationEditorWorkspace
@@ -340,7 +948,7 @@ export default function LocationEditRoute() {
             title={`Patch: ${loc.name}`}
             ancestryBreadcrumbs={ancestryBreadcrumbs}
             saving={saving}
-            dirty={driver.isDirty()}
+            dirty={driver.isDirty() || isGridDraftDirty}
             isNew={false}
             onSave={handlePatchSave}
             onBack={handleBack}
@@ -351,36 +959,84 @@ export default function LocationEditRoute() {
           />
         }
         canvas={
-          <LocationEditorCanvas
-            zoom={zoom}
-            pan={pan}
-            panHandlers={pointerHandlers}
-            isDragging={isDragging}
-            wheelContainerRef={wheelContainerRef}
-            zoomControlProps={zoomControlProps}
+          <Box
+            sx={{
+              display: 'flex',
+              flex: 1,
+              minHeight: 0,
+              overflow: 'hidden',
+              width: '100%',
+            }}
           >
-            {showMapGridAuthoring ? (
-              <LocationGridAuthoringSection
-                gridColumns={gridColumns}
-                gridRows={gridRows}
-                gridGeometry={gridGeometry}
-                draft={gridDraft}
-                setDraft={setGridDraft}
-                locations={locations}
-                campaignId={campaignId ?? undefined}
-                hostLocationId={locationId}
-                hostScale={scaleForFormRules}
-                hostName={loc.name}
-              />
-            ) : null}
-          </LocationEditorCanvas>
+            {showMapEditorChrome && (
+              <>
+                <LocationMapEditorToolbar
+                  mode={mapEditor.mode}
+                  onModeChange={mapEditor.setMode}
+                />
+                {mapEditor.mode === 'paint' && (
+                  <LocationMapEditorPaintTray
+                    items={paintPaletteItems}
+                    activePaint={mapEditor.activePaint}
+                    onSelectSwatch={mapEditor.setActivePaint}
+                  />
+                )}
+              </>
+            )}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+              <LocationEditorCanvas
+                zoom={zoom}
+                pan={pan}
+                panHandlers={pointerHandlers}
+                isDragging={isDragging}
+                wheelContainerRef={wheelContainerRef}
+                zoomControlProps={zoomControlProps}
+              >
+                {showMapGridAuthoring ? (
+                  <LocationGridAuthoringSection
+                    gridColumns={gridColumns}
+                    gridRows={gridRows}
+                    gridGeometry={gridGeometry}
+                    draft={gridDraft}
+                    setDraft={setGridDraft}
+                    locations={locations}
+                    campaignId={campaignId ?? undefined}
+                    hostLocationId={locationId}
+                    hostScale={scaleForFormRules}
+                    hostName={loc.name}
+                    onCellFocusRail={focusCellRailTab}
+                    mapEditorMode={mapEditor.mode}
+                    activePaint={mapEditor.activePaint}
+                    leftChromeWidthPx={leftMapChromeWidthPx}
+                    onPlaceCellClick={handlePlaceCell}
+                    onEraseCellClick={handleEraseCell}
+                    placePathAnchorCellId={mapEditor.pathAnchorCellId}
+                    activePlace={mapEditor.activePlace}
+                    onEdgeStrokeCommit={handleEdgeStrokeCommit}
+                    onEraseEdge={handleEraseEdge}
+                    suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
+                    placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
+                    hasDragMoved={hasDragMoved}
+                  />
+                ) : null}
+              </LocationEditorCanvas>
+            </Box>
+          </Box>
         }
         rightRail={
           <LocationEditorRightRail open={rightRailOpen}>
             <LocationEditorMapRailTabs
-              selectedCellId={gridDraft.selectedCellId}
+              tabIndex={mapRailTab}
+              onTabChange={setMapRailTab}
               metadata={
                 <Stack spacing={2}>
+                  {mapEditor.mode === 'place' && (
+                    <LocationMapEditorPlacePanel
+                      items={placePaletteItems}
+                      activePlace={mapEditor.activePlace}
+                      onSelectPlace={mapEditor.setActivePlace}
+                    />
+                  )}
                   <Typography variant="subtitle1" fontWeight={600}>
                     Patching: {loc.name}
                   </Typography>
@@ -413,6 +1069,20 @@ export default function LocationEditRoute() {
                   )}
                 </Stack>
               }
+              cellPanel={
+                <LocationCellAuthoringPanel
+                  selectedCellId={gridDraft.selectedCellId}
+                  hostLocationId={locationId}
+                  hostScale={scaleForFormRules}
+                  hostName={loc.name}
+                  campaignId={campaignId ?? undefined}
+                  locations={locations}
+                  linkedLocationByCellId={gridDraft.linkedLocationByCellId}
+                  objectsByCellId={gridDraft.objectsByCellId}
+                  onUpdateLinkedLocation={handleUpdateLinkedLocation}
+                  onUpdateCellObjects={handleUpdateCellObjects}
+                />
+              }
             />
           </LocationEditorRightRail>
         }
@@ -428,14 +1098,16 @@ export default function LocationEditRoute() {
             title={loc.name}
             ancestryBreadcrumbs={ancestryBreadcrumbs}
             saving={saving}
-            dirty={isDirty}
+            dirty={isDirty || isGridDraftDirty}
             isNew={false}
             formId={FORM_ID}
+            onSave={handleCampaignFormSaveClick}
             onBack={handleBack}
             errors={errors}
             success={success}
             rightRailOpen={rightRailOpen}
             onToggleRightRail={() => setRightRailOpen((o) => !o)}
+            saveDisabled={isBuildingWorkspace && !activeFloorId}
             actions={
               canDelete ? (
                 <Button
@@ -455,36 +1127,188 @@ export default function LocationEditRoute() {
           />
         }
         canvas={
-          <LocationEditorCanvas
-            zoom={zoom}
-            pan={pan}
-            panHandlers={pointerHandlers}
-            isDragging={isDragging}
-            wheelContainerRef={wheelContainerRef}
-            zoomControlProps={zoomControlProps}
-          >
-            {showMapGridAuthoring ? (
-              <LocationGridAuthoringSection
-                gridColumns={gridColumns}
-                gridRows={gridRows}
-                gridGeometry={gridGeometry}
-                draft={gridDraft}
-                setDraft={setGridDraft}
-                locations={locations}
-                campaignId={campaignId ?? undefined}
-                hostLocationId={locationId}
-                hostScale={scaleForFormRules}
-                hostName={loc.name}
+          isBuildingWorkspace ? (
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <BuildingFloorStrip
+                floors={floorChildren}
+                activeFloorId={activeFloorId}
+                onSelectFloor={setActiveFloorId}
+                onAddFloor={handleAddFloor}
+                adding={addingFloor}
+                disabled={saving}
               />
-            ) : null}
-          </LocationEditorCanvas>
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  overflow: 'hidden',
+                }}
+              >
+                {showMapEditorChrome && (
+                  <>
+                    <LocationMapEditorToolbar
+                      mode={mapEditor.mode}
+                      onModeChange={mapEditor.setMode}
+                    />
+                    {mapEditor.mode === 'paint' && (
+                      <LocationMapEditorPaintTray
+                        items={paintPaletteItems}
+                        activePaint={mapEditor.activePaint}
+                        onSelectSwatch={mapEditor.setActivePaint}
+                      />
+                    )}
+                  </>
+                )}
+                <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+                  <LocationEditorCanvas
+                    zoom={zoom}
+                    pan={pan}
+                    panHandlers={pointerHandlers}
+                    isDragging={isDragging}
+                    wheelContainerRef={wheelContainerRef}
+                    zoomControlProps={zoomControlProps}
+                  >
+                    {buildingNeedsFloor ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          px: 2,
+                          minHeight: 120,
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary" textAlign="center">
+                          No floors yet. Use &quot;Add floor&quot; above to create the first map.
+                        </Typography>
+                      </Box>
+                    ) : showMapGridAuthoring ? (
+                      <LocationGridAuthoringSection
+                        gridColumns={gridColumns}
+                        gridRows={gridRows}
+                        gridGeometry={gridGeometry}
+                        draft={gridDraft}
+                        setDraft={setGridDraft}
+                        locations={locations}
+                        campaignId={campaignId ?? undefined}
+                        hostLocationId={mapHostLocationId}
+                        hostScale={mapHostScale}
+                        hostName={mapHostName}
+                        onCellFocusRail={focusCellRailTab}
+                        mapEditorMode={mapEditor.mode}
+                        activePaint={mapEditor.activePaint}
+                        leftChromeWidthPx={leftMapChromeWidthPx}
+                        onPlaceCellClick={handlePlaceCell}
+                        onEraseCellClick={handleEraseCell}
+                        placePathAnchorCellId={mapEditor.pathAnchorCellId}
+                        activePlace={mapEditor.activePlace}
+                        onEdgeStrokeCommit={handleEdgeStrokeCommit}
+                        onEraseEdge={handleEraseEdge}
+                        suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
+                        placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
+                        hasDragMoved={hasDragMoved}
+                      />
+                    ) : null}
+                  </LocationEditorCanvas>
+                </Box>
+              </Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                flex: 1,
+                minHeight: 0,
+                overflow: 'hidden',
+                width: '100%',
+              }}
+            >
+              {showMapEditorChrome && (
+                <>
+                  <LocationMapEditorToolbar
+                    mode={mapEditor.mode}
+                    onModeChange={mapEditor.setMode}
+                  />
+                  {mapEditor.mode === 'paint' && (
+                    <LocationMapEditorPaintTray
+                      items={paintPaletteItems}
+                      activePaint={mapEditor.activePaint}
+                      onSelectSwatch={mapEditor.setActivePaint}
+                    />
+                  )}
+                </>
+              )}
+              <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+                <LocationEditorCanvas
+                  zoom={zoom}
+                  pan={pan}
+                  panHandlers={pointerHandlers}
+                  isDragging={isDragging}
+                  wheelContainerRef={wheelContainerRef}
+                  zoomControlProps={zoomControlProps}
+                >
+                  {showMapGridAuthoring ? (
+                    <LocationGridAuthoringSection
+                      gridColumns={gridColumns}
+                      gridRows={gridRows}
+                      gridGeometry={gridGeometry}
+                      draft={gridDraft}
+                      setDraft={setGridDraft}
+                      locations={locations}
+                      campaignId={campaignId ?? undefined}
+                      hostLocationId={locationId}
+                      hostScale={scaleForFormRules}
+                      hostName={loc.name}
+                      onCellFocusRail={focusCellRailTab}
+                      mapEditorMode={mapEditor.mode}
+                      activePaint={mapEditor.activePaint}
+                      leftChromeWidthPx={leftMapChromeWidthPx}
+                      onPlaceCellClick={handlePlaceCell}
+                      onEraseCellClick={handleEraseCell}
+                      placePathAnchorCellId={mapEditor.pathAnchorCellId}
+                      activePlace={mapEditor.activePlace}
+                      onEdgeStrokeCommit={handleEdgeStrokeCommit}
+                      onEraseEdge={handleEraseEdge}
+                      suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
+                      placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
+                      hasDragMoved={hasDragMoved}
+                    />
+                  ) : null}
+                </LocationEditorCanvas>
+              </Box>
+            </Box>
+          )
         }
         rightRail={
           <LocationEditorRightRail open={rightRailOpen}>
             <LocationEditorMapRailTabs
-              selectedCellId={gridDraft.selectedCellId}
+              tabIndex={mapRailTab}
+              onTabChange={setMapRailTab}
               metadata={
                 <Stack spacing={2}>
+                  {mapEditor.mode === 'place' && (
+                    <LocationMapEditorPlacePanel
+                      items={placePaletteItems}
+                      activePlace={mapEditor.activePlace}
+                      onSelectPlace={mapEditor.setActivePlace}
+                    />
+                  )}
+                  {isBuildingWorkspace && activeFloorId ? (
+                    <Typography variant="caption" color="text.secondary">
+                      Map and cells: {activeFloorName ?? 'Floor'} (save updates this floor).
+                    </Typography>
+                  ) : null}
                   <form
                     key="location-form"
                     id={FORM_ID}
@@ -502,9 +1326,43 @@ export default function LocationEditRoute() {
                   )}
                 </Stack>
               }
+              cellPanel={
+                <LocationCellAuthoringPanel
+                  selectedCellId={gridDraft.selectedCellId}
+                  hostLocationId={mapHostLocationId}
+                  hostScale={mapHostScale}
+                  hostName={mapHostName}
+                  campaignId={campaignId ?? undefined}
+                  locations={locations}
+                  linkedLocationByCellId={gridDraft.linkedLocationByCellId}
+                  objectsByCellId={gridDraft.objectsByCellId}
+                  onUpdateLinkedLocation={handleUpdateLinkedLocation}
+                  onUpdateCellObjects={handleUpdateCellObjects}
+                />
+              }
             />
           </LocationEditorRightRail>
         }
+      />
+
+      <LocationMapEditorLinkedLocationModal
+        open={mapEditor.pendingPlacement != null}
+        pending={mapEditor.pendingPlacement}
+        options={linkModalSelectOptions}
+        onConfirm={(linkedLocationId) => {
+          const p = mapEditor.pendingPlacement;
+          if (!p || p.type !== 'linked-location') return;
+          const cellId = p.targetCellId;
+          setGridDraft((prev) => ({
+            ...prev,
+            linkedLocationByCellId: {
+              ...prev.linkedLocationByCellId,
+              [cellId]: linkedLocationId,
+            },
+          }));
+          mapEditor.setPendingPlacement(null);
+        }}
+        onCancel={() => mapEditor.setPendingPlacement(null)}
       />
 
       <ConfirmModal

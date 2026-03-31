@@ -30,6 +30,9 @@ export {
   isAllowedParentScale,
   isLocationScaleFieldEditable,
   isLocationScaleSelected,
+  shouldShowCategoryChoiceInLocationSetup,
+  shouldShowCategoryEditableInCreateRail,
+  shouldShowCellUnitChoiceInLocationSetup,
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
   shouldShowLocationCategoryField,
@@ -39,6 +42,10 @@ export {
   type LocationFormUiPolicy,
   type LocationFormUiPolicyBase,
 } from './utils/locationFormUiRules';
+export {
+  buildLocationFormValuesFromSetup,
+  type LocationCreateSetupDraft,
+} from './utils/locationCreateSetupForm';
 export {
   getDefaultGeometryForScale,
   normalizeGridGeometryForScale,
@@ -60,4 +67,12 @@ export {
   shouldClearParentForScale,
 } from './utils/locationDependentFieldsPolicy';
 export { locationToFormValues, toLocationInput } from './mappers/locationForm.mappers';
+export { buildBuildingSubtypeSelectOptions } from './utils/buildingSubtypeSelectOptions';
+export {
+  buildCharacterEntityPickerOptions,
+  characterRefsToPickerValues,
+  decodeLocationEntityRef,
+  encodeLocationEntityRef,
+  pickerValuesToCharacterRefs,
+} from './utils/locationEntityRefPicker';
 export { LOCATION_DETAIL_SPECS, type LocationDetailCtx } from '../details/locationDetail.spec';

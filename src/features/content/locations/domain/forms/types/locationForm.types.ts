@@ -19,4 +19,16 @@ export type LocationFormValues = ContentFormValues & {
   sortOrder: string;
   aliases: string;
   tags: string;
+  /** Maps to `buildingProfile.primaryType` when scale is `building`. */
+  buildingPrimaryType: string;
+  /** Maps to `buildingProfile.primarySubtype`; options depend on Building Type. */
+  buildingPrimarySubtype: string;
+  /** Maps to `buildingProfile.functions` (multi-select). */
+  buildingFunctions: string[];
+  /** Maps to `buildingProfile.isPublicStorefront`. */
+  buildingIsPublicStorefront: boolean;
+  /** Encoded `LocationEntityRef` values (`character:id` / `npc:id`) → `buildingProfile.ownerRefs`. */
+  buildingOwnerRefs: string[];
+  /** Encoded refs → `buildingProfile.staffRefs`. */
+  buildingStaffRefs: string[];
 };

@@ -13,18 +13,14 @@ import {
 
 describe('locationMapPlacement.policy — linked locations', () => {
   it('exposes explicit host → target scale lists (not inferred from order alone)', () => {
-    expect(ALLOWED_LINKED_LOCATION_SCALES_BY_HOST_SCALE.world).toEqual([
-      'region',
-      'subregion',
-      'city',
-      'site',
-    ]);
+    expect(ALLOWED_LINKED_LOCATION_SCALES_BY_HOST_SCALE.world).toEqual(['city', 'site']);
     expect(getAllowedLinkedLocationScalesForHostScale('room')).toEqual([]);
   });
 
-  it('rejects world as link target from city (ordering would allow broader; policy does not)', () => {
+  it('rejects non-child scales as link targets (e.g. world from city; legacy region/subregion/district)', () => {
     expect(canLinkLocationScaleFromHostScale('city', 'world')).toBe(false);
-    expect(canLinkLocationScaleFromHostScale('city', 'district')).toBe(true);
+    expect(canLinkLocationScaleFromHostScale('city', 'district')).toBe(false);
+    expect(canLinkLocationScaleFromHostScale('city', 'site')).toBe(true);
   });
 
   it('isAllowedLinkedLocation rejects same id', () => {
@@ -45,12 +41,12 @@ describe('locationMapPlacement.policy — linked locations', () => {
   it('getAllowedLinkedLocationOptions excludes self and optional campaignId', () => {
     const host = { id: 'h', scale: 'city', campaignId: 'c1' };
     const candidates = [
-      { id: 'h', scale: 'district', campaignId: 'c1' },
-      { id: 'd1', scale: 'district', campaignId: 'c1' },
-      { id: 'x', scale: 'district', campaignId: 'c2' },
+      { id: 'h', scale: 'site', campaignId: 'c1' },
+      { id: 's1', scale: 'site', campaignId: 'c1' },
+      { id: 'x', scale: 'site', campaignId: 'c2' },
     ];
     const ok = getAllowedLinkedLocationOptions(host, candidates, { campaignId: 'c1' });
-    expect(ok.map((l) => l.id)).toEqual(['d1']);
+    expect(ok.map((l) => l.id)).toEqual(['s1']);
   });
 });
 

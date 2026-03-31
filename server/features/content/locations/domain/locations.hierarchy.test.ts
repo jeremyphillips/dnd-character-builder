@@ -4,12 +4,12 @@ import {
   buildAncestorIdsFromParentRow,
   scaleRank,
   validateParentChildScales,
-  LOCATION_SCALE_ORDER,
+  LOCATION_SCALE_RANK_ORDER_LEGACY,
 } from './locations.hierarchy';
 
 describe('locations.hierarchy', () => {
-  it('scaleRank matches LOCATION_SCALE_ORDER indices', () => {
-    LOCATION_SCALE_ORDER.forEach((s, i) => {
+  it('scaleRank matches LOCATION_SCALE_RANK_ORDER_LEGACY indices', () => {
+    LOCATION_SCALE_RANK_ORDER_LEGACY.forEach((s, i) => {
       expect(scaleRank(s)).toBe(i);
     });
     expect(scaleRank('unknown-scale')).toBe(-1);

@@ -1,30 +1,25 @@
 import type {
-  LocationMapCell,
+  LocationMapBase,
   LocationMapCellAuthoringEntry,
+  LocationMapEdgeAuthoringEntry,
   LocationMapKindId,
+  LocationMapPathAuthoringEntry,
 } from '../../../../../shared/domain/locations';
 import {
   canLinkLocationScaleFromHostScale,
   canPlaceObjectKindOnHostScale,
   isCellUnitAllowedForScale,
   mapKindForLocationScale,
+  normalizeLocationMapAuthoringFields,
 } from '../../../../../shared/domain/locations';
 import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
 import { type MapValidationError, validateLocationMapInput } from './locationValidation';
 import { countTransitionsReferencingMap } from './locationTransitions.queries';
 
-export type LocationMapDoc = {
-  id: string;
+/** Map document stored per campaign — `LocationMapBase` plus persistence scope and timestamps. */
+export type LocationMapDoc = LocationMapBase & {
   campaignId: string;
-  locationId: string;
-  name: string;
-  kind: LocationMapKindId;
-  grid: { width: number; height: number; cellUnit: string | number };
-  layout?: { excludedCellIds?: string[] };
-  isDefault?: boolean;
-  cells?: LocationMapCell[];
-  cellEntries?: LocationMapCellAuthoringEntry[];
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +45,11 @@ function validateGridCellUnitForLocationScale(
 }
 
 function toDoc(doc: Record<string, unknown>): LocationMapDoc {
+  const authoring = normalizeLocationMapAuthoringFields({
+    cellEntries: doc.cellEntries,
+    pathEntries: doc.pathEntries,
+    edgeEntries: doc.edgeEntries,
+  });
   return {
     id: doc.mapId as string,
     campaignId: doc.campaignId as string,
@@ -60,7 +60,9 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     layout: doc.layout as LocationMapDoc['layout'],
     isDefault: doc.isDefault as boolean | undefined,
     cells: doc.cells as LocationMapDoc['cells'],
-    cellEntries: doc.cellEntries as LocationMapDoc['cellEntries'],
+    cellEntries: authoring.cellEntries,
+    pathEntries: authoring.pathEntries,
+    edgeEntries: authoring.edgeEntries,
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt),
   };
@@ -234,6 +236,16 @@ export async function createLocationMap(
     };
   }
 
+  const pathEntriesNorm = Array.isArray(body.pathEntries)
+    ? (body.pathEntries as LocationMapPathAuthoringEntry[])
+    : [];
+  const edgeEntriesNorm = Array.isArray(body.edgeEntries)
+    ? (body.edgeEntries as LocationMapEdgeAuthoringEntry[])
+    : [];
+  const cellEntriesNorm = Array.isArray(body.cellEntries)
+    ? (body.cellEntries as LocationMapCellAuthoringEntry[])
+    : [];
+
   const validationPayload = {
     name,
     kind,
@@ -241,10 +253,15 @@ export async function createLocationMap(
       width: grid.width as number,
       height: grid.height as number,
       cellUnit: grid.cellUnit,
+      ...((grid as Record<string, unknown>).geometry !== undefined
+        ? { geometry: (grid as Record<string, unknown>).geometry }
+        : {}),
     },
     cells: body.cells,
     layout: body.layout,
     cellEntries: body.cellEntries,
+    pathEntries: pathEntriesNorm,
+    edgeEntries: edgeEntriesNorm,
   };
   const vErr = validateLocationMapInput(validationPayload);
   if (vErr.length > 0) return { errors: vErr };
@@ -299,7 +316,9 @@ export async function createLocationMap(
       : {}),
     isDefault,
     cells: (body.cells as LocationMapDoc['cells']) ?? [],
-    ...(Array.isArray(body.cellEntries) ? { cellEntries: body.cellEntries } : {}),
+    cellEntries: cellEntriesNorm,
+    pathEntries: pathEntriesNorm,
+    edgeEntries: edgeEntriesNorm,
   });
 
   if (isDefault) {
@@ -323,21 +342,28 @@ function mergeMapPayload(
   cells?: unknown;
   layout?: unknown;
   cellEntries?: unknown;
+  pathEntries?: unknown;
+  edgeEntries?: unknown;
 } {
   const eg = existing.grid as Record<string, unknown>;
-  let grid: { width: number; height: number; cellUnit: unknown };
+  let grid: { width: number; height: number; cellUnit: unknown; geometry?: unknown };
   if (body.grid && typeof body.grid === 'object') {
     const bg = body.grid as Record<string, unknown>;
+    const geometry =
+      bg.geometry !== undefined ? bg.geometry : eg.geometry !== undefined ? eg.geometry : undefined;
     grid = {
       width: (bg.width !== undefined ? bg.width : eg.width) as number,
       height: (bg.height !== undefined ? bg.height : eg.height) as number,
       cellUnit: bg.cellUnit !== undefined ? bg.cellUnit : eg.cellUnit,
+      ...(geometry !== undefined ? { geometry } : {}),
     };
   } else {
+    const geometry = eg.geometry !== undefined ? eg.geometry : undefined;
     grid = {
       width: eg.width as number,
       height: eg.height as number,
       cellUnit: eg.cellUnit,
+      ...(geometry !== undefined ? { geometry } : {}),
     };
   }
   let layout: unknown;
@@ -352,6 +378,21 @@ function mergeMapPayload(
   } else if (existing.cellEntries !== undefined) {
     cellEntries = existing.cellEntries;
   }
+  let pathEntries: unknown;
+  if (body.pathEntries !== undefined) {
+    pathEntries = body.pathEntries;
+  } else if (existing.pathEntries !== undefined) {
+    pathEntries = existing.pathEntries;
+  }
+  let edgeEntries: unknown;
+  if (body.edgeEntries !== undefined) {
+    edgeEntries = body.edgeEntries;
+  } else if (existing.edgeEntries !== undefined) {
+    edgeEntries = existing.edgeEntries;
+  }
+  const pathEntriesNorm = Array.isArray(pathEntries) ? pathEntries : [];
+  const edgeEntriesNorm = Array.isArray(edgeEntries) ? edgeEntries : [];
+
   return {
     name: body.name !== undefined ? String(body.name).trim() : (existing.name as string),
     kind: body.kind !== undefined ? String(body.kind) : (existing.kind as string),
@@ -359,6 +400,8 @@ function mergeMapPayload(
     cells: body.cells !== undefined ? body.cells : existing.cells,
     layout,
     cellEntries,
+    pathEntries: pathEntriesNorm,
+    edgeEntries: edgeEntriesNorm,
   };
 }
 
@@ -419,6 +462,14 @@ export async function updateLocationMap(
   );
   if (policyErr.length > 0) return { errors: policyErr };
 
+  /** Persist merged path/edge whenever any authoring field is patched so Mongo gets canonical arrays (not only when each key appears on req.body). */
+  const touchesAuthoring =
+    body.grid !== undefined ||
+    body.layout !== undefined ||
+    body.cellEntries !== undefined ||
+    body.pathEntries !== undefined ||
+    body.edgeEntries !== undefined;
+
   const $set: Record<string, unknown> = {};
   if (body.name !== undefined) $set.name = merged.name;
   if (body.kind !== undefined) $set.kind = merged.kind;
@@ -426,13 +477,24 @@ export async function updateLocationMap(
   if (body.cells !== undefined) $set.cells = body.cells ?? [];
   if (body.layout !== undefined) $set.layout = body.layout;
   if (body.cellEntries !== undefined) $set.cellEntries = body.cellEntries ?? [];
+  if (touchesAuthoring) {
+    $set.pathEntries = Array.isArray(merged.pathEntries) ? merged.pathEntries : [];
+    $set.edgeEntries = Array.isArray(merged.edgeEntries) ? merged.edgeEntries : [];
+  }
   if (body.isDefault !== undefined) $set.isDefault = body.isDefault;
 
   if (Object.keys($set).length === 0) {
     return { map: toDoc(existingRow) };
   }
 
-  const doc = await CampaignLocationMap.findOneAndUpdate({ campaignId, mapId }, { $set }, { new: true, lean: true });
+  // Native collection update: Mongoose findOneAndUpdate can drop or mishandle $set on array paths
+  // (pathEntries / edgeEntries); the driver sends the update verbatim to MongoDB.
+  const updateResult = await CampaignLocationMap.collection.updateOne(
+    { campaignId, mapId },
+    { $set: { ...$set, updatedAt: new Date() } },
+  );
+  if (updateResult.matchedCount === 0) return null;
+  const doc = await CampaignLocationMap.findOne({ campaignId, mapId }).lean();
   if (!doc) return null;
 
   const row = doc as Record<string, unknown>;

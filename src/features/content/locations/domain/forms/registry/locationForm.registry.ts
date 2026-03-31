@@ -2,9 +2,13 @@
  * Location form field registry — config + mapping for create/edit.
  */
 import {
+  ALL_LOCATION_SCALE_IDS,
+  LOCATION_BUILDING_FUNCTION_IDS,
+  LOCATION_BUILDING_PRIMARY_SUBTYPE_IDS,
+  LOCATION_BUILDING_PRIMARY_TYPE_IDS,
   LOCATION_CATEGORY_IDS,
-  LOCATION_SCALE_ORDER,
   LOCATION_CELL_UNIT_IDS,
+  SURFACE_LOCATION_CONTENT_SCALE_IDS,
 } from '@/shared/domain/locations';
 import {
   GRID_SIZE_PRESETS,
@@ -12,18 +16,46 @@ import {
 } from '@/shared/domain/grid/gridPresets';
 import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationInput } from '@/features/content/locations/domain/types';
-import { when } from '@/ui/patterns';
-import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
+import {
+  LOCATION_BUILDING_FUNCTION_META,
+  LOCATION_BUILDING_PRIMARY_SUBTYPE_META,
+  LOCATION_BUILDING_PRIMARY_TYPE_META,
+} from '../../building/locationBuilding.meta';
+import { DEFAULT_VISIBILITY_PUBLIC, when } from '@/ui/patterns';
+import { getNameDescriptionFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
 import type { FieldSpec } from '@/features/content/shared/forms/registry';
 import type { LocationFormValues } from '../types/locationForm.types';
 
-/** Dependent fields use ConditionalFormRenderer `visibleWhen` — shown after user picks a valid scale. */
-const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...LOCATION_SCALE_ORDER]);
+/** Dependent fields use ConditionalFormRenderer `visibleWhen` — shown after user picks a valid scale (includes legacy scales for edit). */
+const VISIBLE_WHEN_SCALE_SELECTED = when.in('scale', [...ALL_LOCATION_SCALE_IDS]);
+
+const VISIBLE_WHEN_BUILDING = when.eq('scale', 'building');
+const VISIBLE_WHEN_BUILDING_TYPE_SELECTED = when.and(
+  when.eq('scale', 'building'),
+  when.neq('buildingPrimaryType', ''),
+);
+
+const BUILDING_TYPE_OPTIONS = LOCATION_BUILDING_PRIMARY_TYPE_IDS.map((id) => ({
+  value: id,
+  label: LOCATION_BUILDING_PRIMARY_TYPE_META[id].label,
+}));
+
+/** Full list; `getLocationFieldConfigs` narrows by selected type. */
+const BUILDING_SUBTYPE_OPTIONS = LOCATION_BUILDING_PRIMARY_SUBTYPE_IDS.map((id) => ({
+  value: id,
+  label: LOCATION_BUILDING_PRIMARY_SUBTYPE_META[id].label,
+}));
+
+const BUILDING_FUNCTION_OPTIONS = LOCATION_BUILDING_FUNCTION_IDS.map((id) => ({
+  value: id,
+  label: LOCATION_BUILDING_FUNCTION_META[id].label,
+}));
 
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
 
-const SCALE_OPTIONS = LOCATION_SCALE_ORDER.map((s) => ({ value: s, label: s }));
+/** Default registry options — create uses surface-only via `getAllowedLocationScaleOptionsForCreate`; edit overrides with full scale list. */
+const SCALE_OPTIONS = SURFACE_LOCATION_CONTENT_SCALE_IDS.map((s) => ({ value: s, label: s }));
 
 const CATEGORY_OPTIONS = LOCATION_CATEGORY_IDS.map((c) => ({
   value: c,
@@ -45,20 +77,7 @@ const GRID_CELL_UNIT_OPTIONS = LOCATION_CELL_UNIT_IDS.map((u) => ({
   label: u,
 }));
 
-const splitList = (v: unknown): string[] => {
-  if (typeof v !== 'string' || !trim(v)) return [];
-  return trim(v)
-    .split(/[,;\n]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-};
-
 export const LOCATION_FORM_FIELDS = [
-  ...getBaseContentFieldSpecs<
-    LocationFormValues,
-    LocationInput & Record<string, unknown>,
-    Location & Record<string, unknown>
-  >(),
   {
     name: 'scale',
     label: 'Scale',
@@ -82,37 +101,6 @@ export const LOCATION_FORM_FIELDS = [
     format: (v) => strOrEmpty(v) as LocationFormValues['category'],
   },
   {
-    name: 'parentId',
-    label: 'Parent location',
-    kind: 'optionPicker' as const,
-    placeholder: 'Optional — choose a parent location',
-    defaultValue: '' as LocationFormValues['parentId'],
-    maxItems: 1,
-    valueMode: 'scalar' as const,
-    renderSelectedAs: 'card',
-    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
-    parse: (v) => (trim(v) || undefined) as LocationInput['parentId'],
-    format: (v) => strOrEmpty(v) as LocationFormValues['parentId'],
-  },
-  {
-    name: 'gridPreset',
-    label: 'Size preset',
-    kind: 'select' as const,
-    options: GRID_PRESET_OPTIONS,
-    placeholder: 'Custom or preset',
-    defaultValue: '' as LocationFormValues['gridPreset'],
-    parse: () => undefined,
-    format: () => '' as LocationFormValues['gridPreset'],
-    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
-    group: {
-      id: 'mapGrid',
-      label: 'Map grid',
-      helperText: 'Bounding rectangle only; irregular shapes can use layout masking later.',
-      direction: 'column' as const,
-      spacing: 2,
-    },
-  },
-  {
     name: 'gridColumns',
     label: 'Grid columns',
     kind: 'numberText' as const,
@@ -123,7 +111,8 @@ export const LOCATION_FORM_FIELDS = [
     visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
-      label: 'Map grid',
+      label: '',
+      helperText: '',
       direction: 'column' as const,
       spacing: 2,
     },
@@ -139,7 +128,7 @@ export const LOCATION_FORM_FIELDS = [
     visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
-      label: 'Map grid',
+      label: '',
       direction: 'column' as const,
       spacing: 2,
     },
@@ -156,10 +145,155 @@ export const LOCATION_FORM_FIELDS = [
     visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
     group: {
       id: 'mapGrid',
-      label: 'Map grid',
+      label: '',
       direction: 'column' as const,
       spacing: 2,
     },
+  },
+  ...getNameDescriptionFieldSpecs<
+    LocationFormValues,
+    LocationInput & Record<string, unknown>,
+    Location & Record<string, unknown>
+  >(),
+  {
+    name: 'accessPolicy',
+    label: 'Visibility',
+    kind: 'visibility' as const,
+    skipInForm: true,
+    defaultValue: DEFAULT_VISIBILITY_PUBLIC as LocationFormValues['accessPolicy'],
+    parse: (v) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as LocationInput['accessPolicy'],
+    format: (v) => (v ?? DEFAULT_VISIBILITY_PUBLIC) as LocationFormValues['accessPolicy'],
+  },
+  {
+    name: 'parentId',
+    label: 'Parent location',
+    kind: 'optionPicker' as const,
+    placeholder: 'Optional — choose a parent location',
+    defaultValue: '' as LocationFormValues['parentId'],
+    maxItems: 1,
+    valueMode: 'scalar' as const,
+    renderSelectedAs: 'card',
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
+    parse: (v) => (trim(v) || undefined) as LocationInput['parentId'],
+    format: (v) => strOrEmpty(v) as LocationFormValues['parentId'],
+  },
+  {
+    name: 'buildingPrimaryType',
+    label: 'Building Type',
+    kind: 'select' as const,
+    options: BUILDING_TYPE_OPTIONS,
+    placeholder: 'Select type',
+    defaultValue: '' as LocationFormValues['buildingPrimaryType'],
+    helperText: 'What kind of building is this overall?',
+    visibleWhen: VISIBLE_WHEN_BUILDING,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  {
+    name: 'buildingPrimarySubtype',
+    label: 'Building Subtype',
+    kind: 'select' as const,
+    options: BUILDING_SUBTYPE_OPTIONS,
+    placeholder: 'Select subtype',
+    defaultValue: '' as LocationFormValues['buildingPrimarySubtype'],
+    helperText: 'Choose the specific kind of building within the selected type.',
+    visibleWhen: VISIBLE_WHEN_BUILDING_TYPE_SELECTED,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  {
+    name: 'buildingFunctions',
+    label: 'Additional Functions',
+    kind: 'optionPicker' as const,
+    pickerOptions: BUILDING_FUNCTION_OPTIONS,
+    valueMode: 'array' as const,
+    renderSelectedAs: 'chip' as const,
+    placeholder: 'Add functions…',
+    defaultValue: [] as unknown as LocationFormValues['buildingFunctions'],
+    helperText:
+      'Optional. Add extra roles for mixed-use buildings, such as lodging, food & drink, trade, or guild activity.',
+    visibleWhen: VISIBLE_WHEN_BUILDING_TYPE_SELECTED,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  {
+    name: 'buildingIsPublicStorefront',
+    label: 'Open to the Public',
+    kind: 'checkbox' as const,
+    defaultValue: false as LocationFormValues['buildingIsPublicStorefront'],
+    helperText:
+      'Whether visitors can freely enter or use services here—shops, taverns, temples, guild halls, inns, and similar.',
+    visibleWhen: VISIBLE_WHEN_BUILDING,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  {
+    name: 'buildingOwnerRefs',
+    label: 'Owners',
+    kind: 'optionPicker' as const,
+    pickerOptions: [],
+    valueMode: 'array' as const,
+    renderSelectedAs: 'chip' as const,
+    placeholder: 'Add owners…',
+    defaultValue: [] as unknown as LocationFormValues['buildingOwnerRefs'],
+    helperText: 'PCs or NPCs tied to owning this building.',
+    visibleWhen: VISIBLE_WHEN_BUILDING,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  {
+    name: 'buildingStaffRefs',
+    label: 'Staff',
+    kind: 'optionPicker' as const,
+    pickerOptions: [],
+    valueMode: 'array' as const,
+    renderSelectedAs: 'chip' as const,
+    placeholder: 'Add staff…',
+    defaultValue: [] as unknown as LocationFormValues['buildingStaffRefs'],
+    helperText: 'PCs or NPCs who work here.',
+    visibleWhen: VISIBLE_WHEN_BUILDING,
+    group: {
+      id: 'buildingProfile',
+      label: 'Building profile',
+      direction: 'column' as const,
+      spacing: 2,
+    },
+  },
+  /**
+   * Kept for mappers / effects (e.g. preset-driven column/row sync). Not shown in metadata tab —
+   * use `skipInForm` so the size preset control does not appear next to read-only grid fields.
+   */
+  {
+    name: 'gridPreset',
+    label: 'Size preset',
+    kind: 'select' as const,
+    skipInForm: true,
+    options: GRID_PRESET_OPTIONS,
+    placeholder: 'Custom or preset',
+    defaultValue: '' as LocationFormValues['gridPreset'],
+    parse: () => undefined,
+    format: () => '' as LocationFormValues['gridPreset'],
+    visibleWhen: VISIBLE_WHEN_SCALE_SELECTED,
   },
   // TODO: determine how to surface in UI
   // {
@@ -191,32 +325,34 @@ export const LOCATION_FORM_FIELDS = [
   //   },
   //   format: (v) => (v != null && v !== '' ? String(v) : '') as LocationFormValues['sortOrder'],
   // },
-  {
-    name: 'aliases',
-    label: 'Aliases',
-    kind: 'textarea' as const,
-    placeholder: 'Comma-separated',
-    defaultValue: '' as LocationFormValues['aliases'],
-    parse: (v) => {
-      const arr = splitList(v);
-      return (arr.length ? arr : undefined) as LocationInput['aliases'];
-    },
-    format: (v) =>
-      (Array.isArray(v) ? (v as string[]).join(', ') : strOrEmpty(v)) as LocationFormValues['aliases'],
-  },
-  {
-    name: 'tags',
-    label: 'Tags',
-    kind: 'textarea' as const,
-    placeholder: 'Comma-separated',
-    defaultValue: '' as LocationFormValues['tags'],
-    parse: (v) => {
-      const arr = splitList(v);
-      return (arr.length ? arr : undefined) as LocationInput['tags'];
-    },
-    format: (v) =>
-      (Array.isArray(v) ? (v as string[]).join(', ') : strOrEmpty(v)) as LocationFormValues['tags'],
-  },
+  
+  // TODO: determine how/whether to surface in UI
+  // {
+  //   name: 'aliases',
+  //   label: 'Aliases',
+  //   kind: 'textarea' as const,
+  //   placeholder: 'Comma-separated',
+  //   defaultValue: '' as LocationFormValues['aliases'],
+  //   parse: (v) => {
+  //     const arr = splitList(v);
+  //     return (arr.length ? arr : undefined) as LocationInput['aliases'];
+  //   },
+  //   format: (v) =>
+  //     (Array.isArray(v) ? (v as string[]).join(', ') : strOrEmpty(v)) as LocationFormValues['aliases'],
+  // },
+  // {
+  //   name: 'tags',
+  //   label: 'Tags',
+  //   kind: 'textarea' as const,
+  //   placeholder: 'Comma-separated',
+  //   defaultValue: '' as LocationFormValues['tags'],
+  //   parse: (v) => {
+  //     const arr = splitList(v);
+  //     return (arr.length ? arr : undefined) as LocationInput['tags'];
+  //   },
+  //   format: (v) =>
+  //     (Array.isArray(v) ? (v as string[]).join(', ') : strOrEmpty(v)) as LocationFormValues['tags'],
+  // },
 ] as const satisfies readonly FieldSpec<
   LocationFormValues,
   LocationInput & Record<string, unknown>,

@@ -14,12 +14,18 @@ export {
   pickMapGridFormValues,
 } from './maps/bootstrapDefaultLocationMap';
 export { cellDraftToCellEntries, cellEntriesToDraft } from './maps/cellAuthoringMappers';
+export * from './mapEditor';
+export * from './mapContent';
+export {
+  getLocationMapIconByName,
+  LOCATION_MAP_ICON_COMPONENT_BY_NAME,
+  type LocationMapDisplayIconComponent,
+} from './map/locationMapIconNameMap';
 export {
   getLocationMapObjectKindIcon,
   getLocationScaleMapIcon,
   LOCATION_MAP_OBJECT_KIND_ICON,
   LOCATION_SCALE_MAP_ICON,
-  type LocationMapDisplayIconComponent,
 } from './map/locationMapDisplayIcons';
 export {
   validateLocationChange,
@@ -32,3 +38,4 @@ export { useLocationFormDependentFieldEffects } from '../hooks/useLocationFormDe
 export { useLocationFormDefaultWorldScale } from '../hooks/useLocationFormDefaultWorldScale';
 export * from './list';
 export * from './types';
+export * from './building';

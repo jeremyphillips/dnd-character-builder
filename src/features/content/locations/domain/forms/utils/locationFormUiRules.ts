@@ -3,15 +3,17 @@
  * Field visibility and options derive from `LOCATION_SCALE_FIELD_POLICY` (shared).
  */
 import {
+  ALL_LOCATION_SCALE_IDS,
   getAllowedCategoryOptionsForScale,
   getAllowedCellUnitOptionsForScale,
   isCategoryFieldReadOnlyForScale,
   isGridCellUnitFieldReadOnlyForScale,
   isLocationScaleEditableOnEdit,
-  LOCATION_SCALE_ORDER,
+  isValidLocationScaleId,
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
   shouldShowParentFieldForScale,
+  SURFACE_LOCATION_CONTENT_SCALE_IDS,
 } from '@/shared/domain/locations';
 import {
   getAllowedParentLocationOptions,
@@ -23,13 +25,21 @@ import { getFilteredParentLocationsForChildScale } from './locationDependentFiel
 
 export type LocationFormUiMode = 'create' | 'edit';
 
-export const ALL_LOCATION_SCALE_OPTIONS = LOCATION_SCALE_ORDER.map((s) => ({
+/** All scales that may appear on a location (content + legacy) — e.g. edit display. */
+export const ALL_LOCATION_SCALE_OPTIONS = ALL_LOCATION_SCALE_IDS.map((s) => ({
   value: s,
   label: s,
 }));
 
+/**
+ * Create flow: **surface** scales only (world, city, site, building) — no floor/room (building
+ * interior) or legacy map-zone scales. Policy: `SURFACE_LOCATION_CONTENT_SCALE_IDS` +
+ * `locationScaleUi.policy.ts`.
+ */
 export function getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation: boolean) {
-  return LOCATION_SCALE_ORDER.filter((s) => s !== 'world' || !campaignHasWorldLocation).map((s) => ({
+  return SURFACE_LOCATION_CONTENT_SCALE_IDS.filter(
+    (s) => s !== 'world' || !campaignHasWorldLocation,
+  ).map((s) => ({
     value: s,
     label: s,
   }));
@@ -44,10 +54,29 @@ export function canSelectWorldScale(campaignHasWorldLocation: boolean): boolean 
   return !campaignHasWorldLocation;
 }
 
-/** True when `scale` is a non-empty member of {@link LOCATION_SCALE_ORDER} (form + grid authoring gate). */
+/** True when `scale` is a known location scale (form + grid authoring gate). */
 export function isLocationScaleSelected(scale: string | undefined | null): boolean {
   if (scale == null || scale === '') return false;
-  return (LOCATION_SCALE_ORDER as readonly string[]).includes(scale);
+  return isValidLocationScaleId(scale);
+}
+
+/** Setup modal: show category control only when more than one allowed option exists. */
+export function shouldShowCategoryChoiceInLocationSetup(scale: string): boolean {
+  return getAllowedCategoryOptionsForScale(scale).length > 1;
+}
+
+/** Setup modal: show cell unit control only when more than one allowed option exists. */
+export function shouldShowCellUnitChoiceInLocationSetup(scale: string): boolean {
+  return getAllowedCellUnitOptionsForScale(scale).length > 1;
+}
+
+/** Create rail (post-setup): category `<Select>` only when multiple choices and not policy-fixed. */
+export function shouldShowCategoryEditableInCreateRail(scale: string): boolean {
+  return (
+    shouldShowCategoryFieldForScale(scale) &&
+    getAllowedCategoryOptionsForScale(scale).length > 1 &&
+    !isCategoryFieldReadOnlyForScale(scale)
+  );
 }
 
 /** @deprecated use {@link shouldShowCategoryFieldForScale} from shared policy */

@@ -4,7 +4,14 @@
 import { apiFetch, ApiError } from '@/app/api';
 import type { Visibility } from '@/shared/types/visibility';
 import type { CampaignContentRepo, ListOptions } from '@/features/content/shared/domain/repo/contentRepo.types';
-import type { Location, LocationFields, LocationInput, LocationSummary } from '@/features/content/locations/domain/types';
+import { isCampaignLocationListScale } from '@/shared/domain/locations';
+import type { LocationBuildingProfile } from '@/shared/domain/locations';
+import type {
+  Location,
+  LocationBaseFields,
+  LocationInput,
+  LocationSummary,
+} from '@/features/content/locations/domain/types';
 import { getSystemLocation, getSystemLocations } from '@/features/mechanics/domain/rulesets/system/locations';
 import { getContentPatch } from '@/features/content/shared/domain/contentPatchRepo';
 import { applyContentPatch } from '@/features/content/shared/domain/patches/applyContentPatch';
@@ -26,7 +33,8 @@ type CampaignLocationDto = {
   label?: { short?: string; number?: string };
   aliases?: string[];
   tags?: string[];
-  connections?: LocationFields['connections'];
+  connections?: LocationBaseFields['connections'];
+  buildingProfile?: LocationBuildingProfile;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -57,6 +65,7 @@ function toCampaignLocation(
     aliases: dto.aliases,
     tags: dto.tags,
     connections: dto.connections,
+    buildingProfile: dto.buildingProfile,
   };
 }
 
@@ -168,6 +177,7 @@ function toSummary(loc: Location, allowedInCampaign: boolean): LocationSummary {
     aliases: loc.aliases,
     tags: loc.tags,
     connections: loc.connections,
+    buildingProfile: loc.buildingProfile,
     accessPolicy: loc.accessPolicy,
     patched: loc.patched,
     allowedInCampaign,
@@ -197,6 +207,12 @@ function locationInputToBody(input: LocationInput): Record<string, unknown> {
     connections: input.connections,
   };
   if (input.id) body.locationId = input.id;
+
+  const scale = String(input.scale ?? '').trim();
+  if (scale === 'building') {
+    body.buildingProfile = input.buildingProfile ?? null;
+  }
+
   return body;
 }
 
@@ -226,7 +242,10 @@ export const locationRepo: CampaignContentRepo<LocationContentItem, LocationSumm
 
     const merged: LocationContentItem[] = [...patchedSystem, ...campaign];
 
-    let results = merged.map((r) => toSummary(r, true));
+    let results = merged
+      .map((r) => toSummary(r, true))
+      /** Campaign list: buildings as first-class; floor/room only via building (see `locationScaleUi.policy`). */
+      .filter((r) => isCampaignLocationListScale(r.scale));
 
     if (opts?.search) {
       results = results.filter((r) => matchesSearch(r.name, opts.search!));

@@ -29,6 +29,7 @@ export function LocationEditorWorkspace({
           flex: 1,
           overflow: 'hidden',
           height: '100%',
+          minHeight: `calc(100vh - ${LOCATION_EDITOR_HEADER_HEIGHT_PX}px)`,
         }}
       >
         {canvas}

@@ -1,15 +1,18 @@
 import {
-  LOCATION_CELL_UNIT_IDS,
   LOCATION_MAP_KIND_IDS,
   LOCATION_MAP_OBJECT_KIND_IDS,
 } from './locationMap.constants';
+import type { LocationCellUnitId } from './locationMap.constants';
+import type { LocationMapCellFillKindId } from './locationMapCellFill.constants';
+import type { LocationMapEdgeKindId } from './locationMapEdgeFeature.constants';
+import type { LocationMapPathKindId } from './locationMapPathFeature.constants';
 import type { GridGeometryId } from '../../grid/gridGeometry';
+
+export type { LocationCellUnitId };
 
 export type LocationMapKindId = (typeof LOCATION_MAP_KIND_IDS)[number];
 
 export type LocationMapObjectKindId = (typeof LOCATION_MAP_OBJECT_KIND_IDS)[number];
-
-export type LocationCellUnitId = (typeof LOCATION_CELL_UNIT_IDS)[number];
 
 /**
  * Rectangular bounding grid for a map. Width/height are column/row counts.
@@ -47,6 +50,34 @@ export type LocationMapCellAuthoringEntry = {
   cellId: string;
   linkedLocationId?: string;
   objects?: LocationMapCellObjectEntry[];
+  /** Whole-cell terrain / surface fill (authored map content). */
+  cellFillKind?: LocationMapCellFillKindId;
+};
+
+/**
+ * One authored path chain (road or river). `cellIds` is ordered along the chain;
+ * consecutive cells must be grid-adjacent.
+ */
+export type LocationMapPathAuthoringEntry = {
+  id: string;
+  kind: LocationMapPathKindId;
+  cellIds: string[];
+};
+
+/**
+ * One authored feature on a shared cell boundary. `edgeId` is the canonical
+ * undirected key (see `makeUndirectedSquareEdgeKey` in grid edge helpers).
+ */
+export type LocationMapEdgeAuthoringEntry = {
+  edgeId: string;
+  kind: LocationMapEdgeKindId;
+};
+
+/** Sparse map-level authored content split by primitive. */
+export type LocationMapAuthoringContent = {
+  cellEntries: LocationMapCellAuthoringEntry[];
+  pathEntries: LocationMapPathAuthoringEntry[];
+  edgeEntries: LocationMapEdgeAuthoringEntry[];
 };
 
 /** Map fields shared by client and API (no campaign scope). */
@@ -61,4 +92,8 @@ export type LocationMapBase = {
   cells?: LocationMapCell[];
   /** Sparse cell authoring: links + simple objects (optional). */
   cellEntries?: LocationMapCellAuthoringEntry[];
+  /** Map-level path chains (roads, rivers). Normalized to `[]` at API boundaries when omitted. */
+  pathEntries: LocationMapPathAuthoringEntry[];
+  /** Map-level edges on shared boundaries. Normalized to `[]` at API boundaries when omitted. */
+  edgeEntries: LocationMapEdgeAuthoringEntry[];
 };

@@ -21,6 +21,8 @@ type LocationEditorHeaderProps = {
   isNew: boolean
   formId?: string
   onSave?: () => void
+  /** Hide the primary Save/Create control (e.g. create flow saves from setup modal only). */
+  hideSaveButton?: boolean
   onBack: () => void
   errors: ValidationError[]
   success: boolean
@@ -28,6 +30,8 @@ type LocationEditorHeaderProps = {
   onToggleRightRail: () => void
   /** Extra actions rendered before the save button (e.g. delete). */
   actions?: ReactNode
+  /** When true, Save/Create stays disabled regardless of dirty (e.g. building with no floor yet). */
+  saveDisabled?: boolean
 }
 
 export function LocationEditorHeader({
@@ -38,12 +42,14 @@ export function LocationEditorHeader({
   isNew,
   formId,
   onSave,
+  hideSaveButton = false,
   onBack,
   errors,
   success,
   rightRailOpen,
   onToggleRightRail,
   actions,
+  saveDisabled = false,
 }: LocationEditorHeaderProps) {
   const busy = saving
 
@@ -87,24 +93,34 @@ export function LocationEditorHeader({
       )}
 
       <Stack direction="row" spacing={0.5} alignItems="center">
-        {actions}
-
         <Tooltip title={rightRailOpen ? 'Hide settings' : 'Show settings'}>
           <IconButton size="small" onClick={onToggleRightRail}>
             {rightRailOpen ? <ViewSidebarIcon fontSize="small" /> : <ViewSidebarOutlinedIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
 
-        <Button
-          variant="contained"
-          size="small"
-          disabled={busy || (!dirty && !isNew)}
-          {...(formId
-            ? { type: 'submit' as const, form: formId }
-            : { onClick: onSave })}
-        >
-          {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-        </Button>
+        {!hideSaveButton && (
+          <Button
+            variant="contained"
+            size="medium"
+            disabled={busy || saveDisabled || (!dirty && !isNew)}
+            {...(onSave
+              ? { type: 'button' as const, onClick: onSave }
+              : formId
+                ? {
+                    type: 'button' as const,
+                    onClick: () => {
+                      const el = document.getElementById(formId);
+                      if (el instanceof HTMLFormElement) el.requestSubmit();
+                    },
+                  }
+                : {})}
+          >
+            {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+          </Button>
+        )}
+        {actions}
+        
       </Stack>
     </Box>
   )

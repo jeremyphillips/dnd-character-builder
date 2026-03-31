@@ -1,8 +1,9 @@
 /**
  * Campaign / system location content types.
- * Vocabulary (scale, connections, label shape) comes from shared/domain/locations — not redefined here.
+ * Shared field blocks and scale profiles: `@/shared/domain/locations` — especially `LocationBaseFields`.
  */
 import type {
+  LocationBaseFields,
   LocationConnection,
   LocationLabel,
   LocationScaleId,
@@ -15,25 +16,12 @@ import type {
 
 export type LocationId = ContentId;
 
-export interface LocationFields {
-  id: LocationId;
-  name: string;
-  description?: string;
-  scale: LocationScaleId;
-  category?: string;
-  imageKey?: string | null;
-  parentId?: string;
-  ancestorIds?: string[];
-  sortOrder?: number;
-  label?: LocationLabel;
-  aliases?: string[];
-  tags?: string[];
-  connections?: LocationConnection[];
-}
-
-export type Location = ContentItem & LocationFields;
+/** Client + shared domain fields for a location (content shell + reusable location block). */
+export type Location = ContentItem & LocationBaseFields;
 
 /** List row: resolved location plus optional ruleset allow flag. */
 export type LocationSummary = Location & { allowedInCampaign?: boolean };
 
-export type LocationInput = ContentInput & Partial<LocationFields>;
+export type LocationInput = ContentInput & Partial<LocationBaseFields>;
+
+export type { LocationConnection, LocationLabel, LocationBaseFields, LocationScaleId };

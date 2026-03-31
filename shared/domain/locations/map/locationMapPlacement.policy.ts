@@ -2,9 +2,13 @@
  * Map cell authoring policy (linked locations + simple objects on a cell).
  *
  * Layers (do not conflate):
- * - `LOCATION_SCALE_ORDER` / `locationScale.rules.ts` — generic structural ordering only.
+ * - `LOCATION_SCALE_RANK_ORDER_LEGACY` + `locationScale.rules.ts` — generic structural ranking.
  * - `locationScale.policy.ts` — parent/child assignment when saving a location.
  * - This module — what may be *linked from* or *placed on* a map cell for a *host* location/map.
+ * - `zones/mapZone.policy.ts` — painted **MapZone** kinds per host scale (area tool); not links.
+ *
+ * Linked targets are **navigable child locations only** (world → city/site, etc.). Region/subregion/district
+ * are no longer valid link targets — use MapZones on the parent map instead.
  *
  * Future extensions (max links per cell, map-kind overrides, category exceptions) should live
  * here or in adjacent `locationMap*.policy.ts` files — keep maps explicit.
@@ -20,12 +24,11 @@ export const ALLOWED_LINKED_LOCATION_SCALES_BY_HOST_SCALE: Record<
   LocationScaleId,
   readonly LocationScaleId[]
 > = {
-  world: ['region', 'subregion', 'city', 'site'],
-  region: ['subregion', 'city', 'site'],
-  subregion: ['city', 'district', 'site', 'building'],
-  city: ['district', 'site', 'building'],
-  district: ['site', 'building'],
-  /** Site may link down to interior scales (room for a lair/shop on-site). */
+  world: ['city', 'site'],
+  region: [],
+  subregion: [],
+  city: ['site', 'building'],
+  district: [],
   site: ['building', 'room'],
   building: ['floor', 'room'],
   floor: ['room'],

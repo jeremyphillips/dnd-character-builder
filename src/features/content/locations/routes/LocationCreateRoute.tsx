@@ -1,151 +1,75 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FormProvider, useForm } from 'react-hook-form';
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
-import { useCampaignMembers } from '@/features/campaign/hooks';
-import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessPolicyField';
-import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
 import {
   locationRepo,
   type LocationFormValues,
-  getLocationFieldConfigs,
-  LOCATION_FORM_DEFAULTS,
-  toLocationInput,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
   cellDraftToCellEntries,
-  applyScaleToLocationFormUiPolicy,
-  buildLocationFormUiPolicy,
-  getAllowedCellUnitOptionsForScale,
-  getDefaultGeometryForScale,
-  isLocationScaleSelected,
+  buildLocationFormValuesFromSetup,
+  toLocationInput,
   useLocationFormCampaignData,
-  useLocationFormDefaultWorldScale,
-  useLocationFormDependentFieldEffects,
 } from '@/features/content/locations/domain';
 import {
-  LocationGridAuthoringSection,
   LocationEditorWorkspace,
   LocationEditorHeader,
   LocationEditorCanvas,
   LocationEditorRightRail,
-  LocationEditorMapRailTabs,
+  LocationCreateSetupFormDialog,
   INITIAL_LOCATION_GRID_DRAFT,
-  type LocationGridDraftState,
 } from '@/features/content/locations/components';
-import { ConditionalFormRenderer, VisibilityField } from '@/ui/patterns';
+import type { LocationCreateSetupDraft } from '@/features/content/locations/domain';
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
-import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import type { LocationScaleId } from '@/shared/domain/locations';
-
-const FORM_ID = 'location-create-form';
 
 export default function LocationCreateRoute() {
   const { campaignId } = useActiveCampaign();
   const navigate = useNavigate();
-  const { approvedCharacters: policyCharacters } = useCampaignMembers();
-
-  const methods = useForm<LocationFormValues>({
-    defaultValues: LOCATION_FORM_DEFAULTS,
-    mode: 'onBlur',
-    reValidateMode: 'onChange',
-  });
-  const { setValue, watch, getValues, formState: { isDirty } } = methods;
 
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [gridDraft, setGridDraft] = useState<LocationGridDraftState>(
-    INITIAL_LOCATION_GRID_DRAFT,
-  );
+  const [createError, setCreateError] = useState<string | null>(null);
   const [rightRailOpen, setRightRailOpen] = useState(true);
+  /** Prevents overlapping create/bootstrap if submit fires twice before React re-renders. */
+  const persistInFlightRef = useRef(false);
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
   const { pan, isDragging, pointerHandlers, resetPan } = useCanvasPan();
-  useEffect(() => { bindResetPan(resetPan) }, [bindResetPan, resetPan]);
+  useEffect(() => {
+    bindResetPan(resetPan);
+  }, [bindResetPan, resetPan]);
 
-  const { policyValue, handlePolicyChange } =
-    useAccessPolicyField<LocationFormValues>(watch, setValue);
-
-  const scale = watch('scale');
   const {
     campaignHasWorldLocation,
-    parentLocationOptions,
     loading: locationsLoading,
     locations,
-  } = useLocationFormCampaignData(campaignId ?? undefined, scale);
+  } = useLocationFormCampaignData(campaignId ?? undefined, '');
 
-  const locationUiPolicy = useMemo(
-    () =>
-      applyScaleToLocationFormUiPolicy(
-        buildLocationFormUiPolicy('create', campaignHasWorldLocation),
-        scale,
-      ),
-    [campaignHasWorldLocation, scale],
-  );
+  const handleBack = useCallback(() => {
+    navigate(`/campaigns/${campaignId}/world/locations`);
+  }, [navigate, campaignId]);
 
-  const gridCellUnitOptions = useMemo(() => getAllowedCellUnitOptionsForScale(scale), [scale]);
-
-  useLocationFormDependentFieldEffects(scale, locations, undefined, getValues, setValue);
-  useLocationFormDefaultWorldScale(
-    campaignId,
-    locationsLoading,
-    campaignHasWorldLocation,
-    locations.length,
-    setValue,
-  );
-
-  const gridPreset = watch('gridPreset');
-  const gridColumns = watch('gridColumns');
-  const gridRows = watch('gridRows');
-  const locationNameDraft = watch('name');
-
-  const gridGeometry = useMemo(
-    () => getDefaultGeometryForScale(scale),
-    [scale],
-  );
-
-  useEffect(() => {
-    const cols = Number(gridColumns);
-    const rows = Number(gridRows);
-    const valid =
-      Number.isInteger(cols) && cols > 0 && Number.isInteger(rows) && rows > 0;
-    if (!valid) setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
-  }, [gridColumns, gridRows]);
-
-  useEffect(() => {
-    if (!gridPreset) return;
-    const p = GRID_SIZE_PRESETS[gridPreset as keyof typeof GRID_SIZE_PRESETS];
-    if (p) {
-      setValue('gridColumns', String(p.columns));
-      setValue('gridRows', String(p.rows));
-    }
-  }, [gridPreset, setValue]);
-
-  const fieldConfigs = useMemo(
-    () =>
-      getLocationFieldConfigs({
-        policyCharacters,
-        parentLocationOptions,
-        gridCellUnitOptions,
-        locationUiPolicy,
-      }),
-    [policyCharacters, parentLocationOptions, gridCellUnitOptions, locationUiPolicy],
-  );
-
-  const showMapGridAuthoring = isLocationScaleSelected(scale);
-
-  const handleSubmit = useCallback(
-    async (values: LocationFormValues) => {
+  const handleSetupComplete = useCallback(
+    async (draft: LocationCreateSetupDraft) => {
       if (!campaignId) return;
+      if (persistInFlightRef.current) return;
+      setCreateError(null);
+      const values: LocationFormValues = buildLocationFormValuesFromSetup(
+        draft,
+        locations,
+      );
       const err = validateGridBootstrap(values);
       if (err) {
-        setErrors([{ path: '', code: 'VALIDATION', message: err }]);
+        setCreateError(`Please fix: ${err}`);
         return;
       }
+      persistInFlightRef.current = true;
       setSaving(true);
-      setErrors([]);
       try {
         const input = toLocationInput(values);
         const created = await locationRepo.createEntry(campaignId, input);
@@ -156,103 +80,107 @@ export default function LocationCreateRoute() {
           created.scale as LocationScaleId,
           values,
           {
-            excludedCellIds: gridDraft.excludedCellIds,
+            excludedCellIds: INITIAL_LOCATION_GRID_DRAFT.excludedCellIds,
             cellEntries: cellDraftToCellEntries(
-              gridDraft.linkedLocationByCellId,
-              gridDraft.objectsByCellId,
+              INITIAL_LOCATION_GRID_DRAFT.linkedLocationByCellId,
+              INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
+              INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
             ),
+            pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
+            edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
           },
         );
-        navigate(`/campaigns/${campaignId}/world/locations/${created.id}`, { replace: true });
+        navigate(
+          `/campaigns/${campaignId}/world/locations/${created.id}/edit`,
+          { replace: true },
+        );
       } catch (e) {
-        setErrors([
-          { path: '', code: 'SAVE_FAILED', message: (e as Error).message },
-        ]);
+        setCreateError(
+          `Could not create the location or default map. ${(e as Error).message}`,
+        );
       } finally {
+        persistInFlightRef.current = false;
         setSaving(false);
       }
     },
-    [
-      campaignId,
-      navigate,
-      gridDraft.excludedCellIds,
-      gridDraft.linkedLocationByCellId,
-      gridDraft.objectsByCellId,
-    ],
+    [campaignId, locations, navigate],
   );
 
-  const handleBack = useCallback(() => {
-    navigate(`/campaigns/${campaignId}/world/locations`);
-  }, [navigate, campaignId]);
-
   return (
-    <FormProvider {...methods}>
-      <LocationEditorWorkspace
-        header={
-          <LocationEditorHeader
-            title="New Location"
-            saving={saving}
-            dirty={isDirty}
-            isNew
-            formId={FORM_ID}
-            onBack={handleBack}
-            errors={errors}
-            success={false}
-            rightRailOpen={rightRailOpen}
-            onToggleRightRail={() => setRightRailOpen((o) => !o)}
-          />
-        }
-        canvas={
-          <LocationEditorCanvas
-            zoom={zoom}
-            pan={pan}
-            panHandlers={pointerHandlers}
-            isDragging={isDragging}
-            wheelContainerRef={wheelContainerRef}
-            zoomControlProps={zoomControlProps}
-          >
-            {showMapGridAuthoring ? (
-              <LocationGridAuthoringSection
-                gridColumns={gridColumns}
-                gridRows={gridRows}
-                gridGeometry={gridGeometry}
-                draft={gridDraft}
-                setDraft={setGridDraft}
-                locations={locations}
-                campaignId={campaignId ?? undefined}
-                hostScale={scale}
-                hostName={String(locationNameDraft ?? '').trim() || undefined}
-              />
-            ) : null}
-          </LocationEditorCanvas>
-        }
-        rightRail={
-          <LocationEditorRightRail open={rightRailOpen}>
-            <LocationEditorMapRailTabs
-              selectedCellId={gridDraft.selectedCellId}
-              metadata={
-                <Stack spacing={2}>
-                  <form
-                    key="location-form"
-                    id={FORM_ID}
-                    onSubmit={methods.handleSubmit(handleSubmit)}
-                    noValidate
-                  >
-                    <ConditionalFormRenderer fields={fieldConfigs} />
-                  </form>
-                  {policyValue && (
-                    <VisibilityField
-                      value={policyValue}
-                      onChange={handlePolicyChange}
-                      characters={policyCharacters}
-                    />
-                  )}
-                </Stack>
-              }
-            />
-          </LocationEditorRightRail>
-        }
+    <>
+      <LocationCreateSetupFormDialog
+        open
+        campaignHasWorldLocation={campaignHasWorldLocation}
+        locationsLoading={locationsLoading}
+        locations={locations}
+        saving={saving}
+        submitError={createError}
+        onCancel={handleBack}
+        onComplete={handleSetupComplete}
       />
-    </FormProvider>
+      <Box
+        aria-busy={locationsLoading || saving}
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          opacity: 0.68,
+          pointerEvents: 'none',
+          transition: 'opacity 0.2s ease',
+        }}
+      >
+        <LocationEditorWorkspace
+          header={
+            <LocationEditorHeader
+              title="New Location"
+              saving={saving}
+              dirty={false}
+              isNew
+              hideSaveButton
+              onBack={handleBack}
+              errors={[]}
+              success={false}
+              rightRailOpen={rightRailOpen}
+              onToggleRightRail={() => setRightRailOpen((o) => !o)}
+            />
+          }
+          canvas={
+            <LocationEditorCanvas
+              zoom={zoom}
+              pan={pan}
+              panHandlers={pointerHandlers}
+              isDragging={isDragging}
+              wheelContainerRef={wheelContainerRef}
+              zoomControlProps={zoomControlProps}
+            >
+              <Stack
+                alignItems="center"
+                justifyContent="center"
+                spacing={1.5}
+                sx={{ minHeight: 140, maxWidth: 360, mx: 'auto', px: 2 }}
+              >
+                <LockOutlinedIcon sx={{ fontSize: 28, color: 'text.disabled' }} aria-hidden />
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  {saving
+                    ? 'Saving your location and default map…'
+                    : 'Complete setup in the dialog to create this location. The map editor opens on the next screen after you continue.'}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" textAlign="center">
+                  You cannot edit the map from this screen — this layout previews where the editor will appear.
+                </Typography>
+              </Stack>
+            </LocationEditorCanvas>
+          }
+          rightRail={
+            <LocationEditorRightRail open={rightRailOpen}>
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
+                Metadata and grid tools unlock after setup, on the location editor screen.
+              </Typography>
+            </LocationEditorRightRail>
+          }
+        />
+      </Box>
+    </>
   );
 }

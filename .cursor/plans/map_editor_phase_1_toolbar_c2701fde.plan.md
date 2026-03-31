@@ -4,21 +4,30 @@ overview: Add map editor modes (select / place / paint / clear-fill), a left ver
 todos:
   - id: fix-mapcontent-syntax
     content: Fix unquoted string literals in locationCellFill.types.ts, locationMapIconNames.ts, locationScaleMapContent.policy.test.ts
-    status: pending
+    status: completed
   - id: shared-cell-fill
     content: Add cellFillKind to LocationMapCellAuthoringEntry, Mongoose schema, validateCellEntriesStructure, cellAuthoringMappers + LocationGridDraftState
-    status: pending
+    status: completed
   - id: meta-palette-helpers
     content: Extend LOCATION_PLACED_OBJECT_KIND_META (linkedScale, iconName); add getPaintPaletteItemsForScale / getPlacePaletteItemsForScale + tests
-    status: pending
+    status: completed
   - id: placement-bridge
     content: Add resolvePlacedKindToAction(kind, hostScale) pure resolver + tests; wire city@world modal and object/link branches without scattered linkedScale conditionals
-    status: pending
+    status: completed
   - id: grid-ui-gestures
     content: Extend GridEditor/HexGridEditor + LocationGridAuthoringSection for paint/clear-fill pointer strokes, fill rendering, pan propagation
-    status: pending
+    status: completed
   - id: toolbar-shell
     content: LocationMapEditorToolbar + PaintTray + Place sidebar panel; integrate in LocationEditRoute canvas column with useLocationMapEditorState
+    status: completed
+  - id: path-place-reliability
+    content: "Follow-up: path/edge clicks sometimes miss or skip draft updates (pan vs click); reproduce with instrumentation, consider pointer capture on cell down in place mode or pan guard"
+    status: pending
+  - id: hex-map-overlays
+    content: "Hex maps: path/edge SVG overlay + place preview parity with square (geometry helpers)"
+    status: pending
+  - id: phase2-undo-stroke
+    content: "Optional: batch paint/clear-fill/place strokes for undo; structure refs per plan §9"
     status: pending
 isProject: false
 ---
@@ -155,4 +164,30 @@ In `LocationGridAuthoringSection`, derive background color from `cellFillByCellI
 - `**table` / full building-site modals:** May need shared `LOCATION_MAP_OBJECT_KIND_IDS` extension or explicit `marker` mapping — call out chosen approach in PR.
 - **Undo batching:** Structure stroke state so a future undo stack can treat one pointer gesture as one operation; initial implementation can use per-cell updates with dedupe.
 - **System patch route** (`isSystem && driver`): If map grid is shown, apply the same toolbar for parity **or** explicitly hide tools — product choice (default: **same** components when `showMapGridAuthoring`).
+
+---
+
+## Phase 2 continuation (build order)
+
+Phase 1 scope above is **implemented in tree** (toolbar, paint/clear-fill, place palette + resolver bridge, cell fills persisted, grid gestures, linked-location modal pattern). Use this list when resuming work.
+
+### A. Reliability and polish (highest when unblocked)
+
+1. **Path/place click reliability** — If clicks still fail to persist segments after `suppressCanvasPanOnCells` in place mode, narrow down with: `pointerdown` capture on grid vs canvas order, `click` vs `pointerup` placement, trackpad micro-movement, and whether `useCanvasPan` should ignore `defaultPrevented` or check `event.target` inside grid. Optional **explicit commit on `pointerup`** on the cell (with slop threshold) instead of relying on `click`.
+2. **Pan in place mode** — Document or add **secondary pan** (e.g. middle-mouse or modifier+drag) if full-grid “no pan on cells” feels too tight.
+
+### B. Parity and product gaps from Phase 1 notes
+
+3. **Hex maps** — `LocationGridAuthoringSection` only draws path/edge SVG overlays for **square** geometry; add hex line geometry + same place preview behavior or hide path/edge tools on hex until ready.
+4. **`table` vs `marker`** — Decide per plan §4: extend `LOCATION_MAP_OBJECT_KIND_IDS` with `table` or map to `marker` + label; align validation and icons.
+5. **Building/site link modals** — Same modal pattern as city@world where policy allows; gate behind resolver until implemented.
+
+### C. Editor power
+
+6. **Undo/redo** — Batch stroke updates (`cellFillByCellId`, paint stroke) into one undo step; optional for place-object drag stroke.
+7. **Erase mode refinement** — Already have `resolveEraseTargetAtCell`; ensure ordering matches product (edge → object → path → link) and UX feedback.
+
+### D. System route parity
+
+8. **`LocationEditRoute` system branch** — Mirror map editor chrome when `showMapGridAuthoring` or document intentional omission.
 

@@ -2,6 +2,8 @@
 
 This document describes **where code lives** and **how the three layers** (location, map, transition) relate, plus **validation** boundaries. Use it to onboard quickly when extending authoring, APIs, or shared rules.
 
+For the **location create/edit workspace** (full-width shell, `components/workspace/`, building floors, canvas zoom/pan hooks), see [location-workspace.md](./location-workspace.md).
+
 ## Mental model
 
 | Layer | Role |
@@ -132,50 +134,15 @@ Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/sc
 
 | Area | Purpose |
 |------|---------|
-| `routes/` | List, create, edit, detail routes. Create and edit use the full-width workspace shell (see below); detail stays content-width for now. |
+| `routes/` | List, create, edit, detail routes. Create and edit use the full-width workspace shell ([location-workspace.md](./location-workspace.md)); detail stays content-width for now. |
 | `domain/forms/` | Form types, registry (`locationForm.registry.ts`), mappers, sanitize, dependent-field policy / UI rules. |
 | `domain/repo/` | `locationRepo`, `locationMapRepo` — API/data access for lists and maps. |
 | `domain/maps/` | `bootstrapDefaultLocationMap` (client-side default map creation/update), grid layout draft helpers, cell entry mappers. Uses `getDefaultMapKindForScale` from shared domain to derive map kind. |
 | `domain/mapContent/` | Authored-map vocabulary, per-scale map content policy, presentation tokens (icon names, swatch keys, cell-fill meta). See **Shared vs feature** above. |
 | `domain/map/` | `locationMapIconNameMap`, `locationMapDisplayIcons` — resolves semantic icon names to MUI components. |
 | `components/` | `LocationGridAuthoringSection` (interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` based on scale geometry), cell modal, cards. |
-| `components/workspace/` | Map-first editor workspace shell — see section below. |
+| `components/workspace/` | Map-first editor shell — [location-workspace.md](./location-workspace.md). |
 | `hooks/` | Campaign data, parent picker options, default world scale, dependent field effects. |
-
-### Workspace shell (`components/workspace/`)
-
-Location create and edit routes render inside a full-width workspace (via `AuthMainFocus` layout mode, triggered by `isAuthMainFocusPath` in `src/app/layouts/auth/auth-main-path.ts`). The workspace is composed of feature-owned components:
-
-| Component | Role |
-|-----------|------|
-| `LocationEditorWorkspace` | Outer flex column: header slot + body row (canvas + right rail). Body row capped at `calc(100vh - headerHeight)`. |
-| `LocationEditorHeader` | Sticky header: title, ancestry breadcrumbs, global save button, right-rail toggle, optional actions (e.g. delete). |
-| `LocationEditorCanvas` | Flex-filling canvas region with zoom/pan transform wrapper. Hosts `LocationGridAuthoringSection` as child content and renders `ZoomControl` (fixed positioned). |
-| `LocationEditorRightRail` | Collapsible right rail (default open) containing all form fields. Uses CSS width transition with `overflow: hidden` outer and scrollable inner. |
-| `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
-| `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
-| `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`. |
-
-### Building scale (special edit workspace)
-
-For **`scale === building`** (campaign edit only), the editor is **building-centric** but **maps live on floor children**, not on the building record:
-
-- **Floors** are separate locations: `scale: floor`, `parentId` = building id. Each floor has its own default map (normal persistence — no merged multi-floor document).
-- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip). Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor’s grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
-- **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor’s** map. If there are no floors yet, save is disabled until at least one floor exists.
-- **Code:** helpers in `domain/building/buildingWorkspaceFloors.ts`; branching in `LocationEditRoute.tsx` (map load/save keyed by `activeFloorId`, `hostScale: 'floor'` for grid authoring). Out of scope for this pass: basement labels, floor reorder/delete UX, stacked canvases.
-
-### Shared canvas hooks (`src/ui/hooks/`)
-
-Zoom and pan behavior is shared between the location editor and encounter active route via reusable hooks:
-
-| Export | Role |
-|--------|------|
-| `useCanvasZoom` | Zoom state, `zoomIn`/`zoomOut`/`zoomReset`, `zoomControlProps` spread for `ZoomControl`, `wheelContainerRef` (non-passive listener for Ctrl/Cmd + scroll / trackpad pinch). `bindResetPan` coordinates pan reset with zoom reset. |
-| `useCanvasPan` | Pan state, pointer drag handlers (`pointerHandlers` spread), `isDragging`, `hasDragMoved()` (distinguishes click from drag), `resetPan`. |
-| `CanvasPoint` | Shared type `{ x: number; y: number }`. |
-
-Both hooks are used at the route level; derived values are passed down to canvas/grid components as props.
 
 Imports of shared vocabulary should prefer **`@/shared/domain/locations`** for scale constants, map constants, and policies.
 
@@ -241,10 +208,8 @@ Both renderers share the same callback shapes (`onCellClick`, `renderCellContent
 1. **Extend scale rules:** edit `scale/locationScale.policy.ts` and `scale/locationParent.validation.ts`; keep `locationScaleField.policy.ts` in sync for categories/cell units/UI.
 2. **Extend map rules:** prefer `map/locationMap.validation.ts` / `locationMapCellAuthoring.validation.ts` for structural checks; `locationMapPlacement.policy.ts` for “what may appear on a cell” by scale. For **authored map content** categories (fills, paths, edges, placed objects), extend `src/features/content/locations/domain/mapContent/` and `LOCATION_SCALE_MAP_CONTENT_POLICY` — keep it separate from `LOCATION_SCALE_FIELD_POLICY`. For **painted map zones** (region/subregion/district/hazard/territory/custom), extend `zones/mapZone.policy.ts` and `MAP_ZONE_KIND_IDS` — separate from linked-location lists.
 3. **New transition kinds:** add to `LOCATION_TRANSITION_KIND_IDS` and any server checks; shared types in `transitions/`.
-4. **Imports:** use the **barrel** `@/shared/domain/locations` for shared vocabulary and validation; use `@/features/content/locations/domain` (or `.../domain/mapContent`) for authored map content and presentation tokens. Canvas hooks: `@/ui/hooks`.
+4. **Imports:** use the **barrel** `@/shared/domain/locations` for shared vocabulary and validation; use `@/features/content/locations/domain` (or `.../domain/mapContent`) for authored map content and presentation tokens. Canvas hooks: `@/ui/hooks` (see [location-workspace.md](./location-workspace.md) for how the editor uses them).
 5. **Tests:** add shared tests under `shared/domain/locations/__tests__/scale/` or `__tests__/map/`; **mapContent** tests under `src/features/content/locations/domain/mapContent/`; server tests next to services/domain in `server/features/content/locations/`.
-6. **Workspace layout changes:** modify components under `components/workspace/`; constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
-7. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
-8. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
-9. **Hex geometry extensions:** geometry policy lives in `locationScaleField.policy.ts` (`allowedGeometries`, `defaultGeometry`). Grid math helpers are in `shared/domain/grid/gridHelpers.ts`. Rendering is in `HexGridEditor.tsx`. Do not add hex logic to encounter systems without a dedicated plan.
-10. **Grid styling parity:** both `GridEditor` and `HexGridEditor` import border/shadow tokens from `src/ui/patterns/grid/gridCellStyles.ts`. Keep this file updated when changing cell visuals.
+6. **Hex geometry extensions:** geometry policy lives in `locationScaleField.policy.ts` (`allowedGeometries`, `defaultGeometry`). Grid math helpers are in `shared/domain/grid/gridHelpers.ts`. Rendering is in `HexGridEditor.tsx`. Do not add hex logic to encounter systems without a dedicated plan.
+7. **Grid styling parity:** both `GridEditor` and `HexGridEditor` import border/shadow tokens from `src/ui/patterns/grid/gridCellStyles.ts`. Keep this file updated when changing cell visuals.
+8. **Workspace UI:** layout shell, building floors, zoom/pan route wiring — [location-workspace.md](./location-workspace.md).

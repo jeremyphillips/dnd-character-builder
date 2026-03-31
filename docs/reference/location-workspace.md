@@ -1,0 +1,122 @@
+# Location editor workspace (reference)
+
+This document describes the **full-width create/edit shell** for campaign locations: layout components under `components/workspace/`, **building + floor** editing, and **shared canvas** hooks used by the map editor. For the broader locations domain (mental model, shared `grid/` and `locations/` packages, validation, server layout), see [locations.md](./locations.md).
+
+Location create and edit routes render inside a full-width workspace via `AuthMainFocus` layout mode, triggered by `isAuthMainFocusPath` in `src/app/layouts/auth/auth-main-path.ts`.
+
+---
+
+## Client feature touchpoints
+
+| Area | Purpose |
+|------|---------|
+| `src/features/content/locations/routes/` | Create and edit routes compose the workspace; detail stays content-width. |
+| `components/workspace/` | Map-first editor shell — see below. |
+| `components/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. |
+
+---
+
+## Workspace layout (`components/workspace/`)
+
+The workspace is composed of feature-owned components:
+
+| Component | Role |
+|-----------|------|
+| `LocationEditorWorkspace` | Outer flex column: header slot + body row (canvas + right rail). Body row capped at `calc(100vh - headerHeight)`. |
+| `LocationEditorHeader` | Sticky header: title, ancestry breadcrumbs, global save button, right-rail toggle, optional actions (e.g. delete). |
+| `LocationEditorCanvas` | Flex-filling canvas region with zoom/pan transform wrapper. Hosts `LocationGridAuthoringSection` as child content and renders `ZoomControl` (fixed positioned). |
+| `LocationEditorRightRail` | Collapsible right rail (default open) containing all form fields. Uses CSS width transition with `overflow: hidden` outer and scrollable inner. |
+| `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
+| `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
+| `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`, `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (map toolbar), plus paint-tray width when the paint tool is active. |
+
+---
+
+## Map editor toolbar and related UI
+
+When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEditRoute.tsx`), the canvas column includes **map editor chrome** to the left of `LocationEditorCanvas`: a vertical toolbar and, depending on mode, a slim paint tray.
+
+### `LocationMapEditorToolbar`
+
+| | |
+|---|---|
+| **File** | `src/features/content/locations/components/mapEditor/LocationMapEditorToolbar.tsx` |
+| **Width** | `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (`locationEditor.constants.ts`) |
+| **Control** | MUI vertical `ToggleButtonGroup` (exclusive), icon-only buttons |
+
+**Modes** (`LocationMapEditorMode` in `domain/mapEditor/locationMapEditor.types.ts`):
+
+| Mode | Purpose |
+|------|---------|
+| `select` | Default: click cells to select and focus the cell rail; map pan works from the grid (pointer events not consumed for placement). |
+| `place` | Place **objects**, **paths**, **edges**, or **linked locations** (per scale). Choice of *what* to place comes from the **Place** panel in the right rail (`LocationMapEditorPlacePanel`), driven by `getGroupedPlacePaletteForScale` and `activePlace` in `useLocationMapEditorState`. |
+| `paint` | Paint **cell fills**; **active** swatch from `LocationMapEditorPaintTray` + `activePaint`. Stroke gestures on cells (pointer down / enter / up) update `cellFillByCellId`. |
+| `clear-fill` | Stroke to clear terrain fill on cells without removing links/objects/paths/edges. |
+| `erase` | Click a cell to remove the highest-priority feature there (`resolveEraseTargetAtCell`: edge → object → path → link). |
+
+**State hook:** `useLocationMapEditorState` (`domain/mapEditor/useLocationMapEditorState.ts`) holds `mode`, `activePaint`, `activePlace`, `pathAnchorCellId` / `edgeAnchorCellId` for two-click path and edge segments, and `pendingPlacement` for the linked-location modal. Switching away from **place** clears anchors and pending placement.
+
+**Layout:** `LocationEditRoute` sets `leftMapChromeWidthPx` to `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` plus `LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX` only while `mode === 'paint'`. That value is passed to `LocationGridAuthoringSection` as `leftChromeWidthPx` so the grid width accounts for left chrome.
+
+### Related components
+
+| Component | Role |
+|-----------|------|
+| `LocationMapEditorPaintTray` | Shown when `mode === 'paint'`; swatches from `getPaintPaletteItemsForScale`. |
+| `LocationMapEditorPlacePanel` | Shown when `mode === 'place'`; cards for objects / paths / edges (and link flows resolved by `resolvePlacedKindToAction`). |
+| `LocationGridAuthoringSection` | Renders `GridEditor` or `HexGridEditor`, applies fills, icons, map-editor pointer behavior, and **square-only** path/edge SVG overlay (see **Open issues** below). |
+
+---
+
+## Open issues: edge tool (and path overlay)
+
+These limitations are intentional until follow-up work lands; they affect **edges** (walls, windows, doors on shared cell boundaries) and **paths** the same way.
+
+### 1. Hex maps: no path/edge overlay or placement preview
+
+`LocationGridAuthoringSection` draws persisted path segments, edge features, and the **dashed preview** during two-click placement only when the map is **square** (`squareGridGeometry && !isHex`). On **hex** geometry, that SVG layer is omitted, so:
+
+- Placed edges/paths may still be **stored** in the grid draft / `cellEntries` when the placement logic runs, but they are **not drawn** on the canvas overlay.
+- There is **no** hover preview line for path or edge placement on hex.
+
+**Direction:** Add hex-aware segment geometry (or hide path/edge entries in the place palette on hex until parity exists). See [locations.md](./locations.md) *Grid geometry* and *What is deferred* for hex scope.
+
+### 2. Canvas pan vs reliable clicks (place mode)
+
+Map pan is implemented with `useCanvasPan` on the canvas wrapper. In **place** mode the route passes `suppressCanvasPanOnCells` so grid cells **stop propagation** on pointer down/up and reduce the chance that a click is swallowed by a pan gesture. **Residual issue:** some interactions still report missed clicks or segments not persisting (trackpad micro-movement, browser differences). Further hardening (e.g. placement on `pointerup`, capture, or stricter click-vs-drag thresholds) is **open**.
+
+---
+
+## Building scale (special edit workspace)
+
+For **`scale === building`** (campaign edit only), the editor is **building-centric** but **maps live on floor children**, not on the building record:
+
+- **Floors** are separate locations: `scale: floor`, `parentId` = building id. Each floor has its own default map (normal persistence — no merged multi-floor document).
+- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip). Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor’s grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
+- **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor’s** map. If there are no floors yet, save is disabled until at least one floor exists.
+- **Code:** helpers in `domain/building/buildingWorkspaceFloors.ts`; branching in `LocationEditRoute.tsx` (map load/save keyed by `activeFloorId`, `hostScale: 'floor'` for grid authoring). Out of scope for this pass: basement labels, floor reorder/delete UX, stacked canvases.
+
+---
+
+## Shared canvas hooks (`src/ui/hooks/`)
+
+Zoom and pan behavior is shared between the location editor and encounter active route via reusable hooks:
+
+| Export | Role |
+|--------|------|
+| `useCanvasZoom` | Zoom state, `zoomIn`/`zoomOut`/`zoomReset`, `zoomControlProps` spread for `ZoomControl`, `wheelContainerRef` (non-passive listener for Ctrl/Cmd + scroll / trackpad pinch). `bindResetPan` coordinates pan reset with zoom reset. |
+| `useCanvasPan` | Pan state, pointer drag handlers (`pointerHandlers` spread), `isDragging`, `hasDragMoved()` (distinguishes click from drag), `resetPan`. |
+| `CanvasPoint` | Shared type `{ x: number; y: number }`. |
+
+Both hooks are used at the route level; derived values are passed down to canvas/grid components as props.
+
+---
+
+## Pointers for the next agent (workspace)
+
+1. **Workspace layout changes:** modify components under `components/workspace/`; constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
+2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
+3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
+4. **Map toolbar / path-edge placement:** new tools live under `components/mapEditor/` and `domain/mapEditor/`; grid integration in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Open issues** above (hex overlay gap, pan vs click).
+
+For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

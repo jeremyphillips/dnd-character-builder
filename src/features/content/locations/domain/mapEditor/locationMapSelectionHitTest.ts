@@ -1,4 +1,5 @@
 import type { EdgeSegmentGeometry, LineSegment2D, PathPolylineGeometry, Point2D } from '@/shared/domain/locations/map/locationMapGeometry.types';
+import { sampleSmoothPathCenterlineForPicking } from '@/features/content/locations/components/pathOverlayRendering';
 
 /**
  * Squared distance from P to the closest point on segment AB (clamped to the segment).
@@ -28,13 +29,17 @@ export function distancePointToSegmentSquared(
 }
 
 function distancePointToPolylineSquared(px: number, py: number, points: Point2D[]): number {
-  if (points.length < 2) return Number.POSITIVE_INFINITY;
+  if (points.length < 2) {
+    return Number.POSITIVE_INFINITY;
+  }
   let best = Number.POSITIVE_INFINITY;
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
     const b = points[i + 1];
     const d = distancePointToSegmentSquared(px, py, { x1: a.x, y1: a.y, x2: b.x, y2: b.y });
-    if (d < best) best = d;
+    if (d < best) {
+      best = d;
+    }
   }
   return best;
 }
@@ -42,7 +47,10 @@ function distancePointToPolylineSquared(px: number, py: number, points: Point2D[
 /** Default half-width of committed edge strokes in the map overlay (see LocationGridAuthoringSection). */
 export const DEFAULT_EDGE_PICK_HALF_WIDTH_PX = 10;
 
-/** Default pick tolerance for smooth path curves (polyline sampling in pixel space). */
+/**
+ * Max distance (px) from pointer to the **sampled smooth** stroke used for picking.
+ * Kept moderate: wide enough for the visible stroke, not so wide that it steals object/cell hits.
+ */
 export const DEFAULT_PATH_PICK_TOLERANCE_PX = 12;
 
 /**
@@ -69,7 +77,9 @@ export function resolveNearestEdgeHit(
 }
 
 /**
- * Nearest authored path chain to a pointer (polyline in grid-local pixel space).
+ * Nearest authored path chain to a pointer (grid-local pixel space).
+ * Uses {@link sampleSmoothPathCenterlineForPicking} so distance matches the visible smoothed stroke,
+ * not the raw centerline polyline alone.
  */
 export function resolveNearestPathHit(
   localX: number,
@@ -77,12 +87,15 @@ export function resolveNearestPathHit(
   paths: readonly PathPolylineGeometry[],
   maxDistancePx: number,
 ): { pathId: string } | null {
-  if (paths.length === 0) return null;
+  if (paths.length === 0) {
+    return null;
+  }
   const maxSq = maxDistancePx * maxDistancePx;
   let bestId: string | null = null;
   let bestD = maxSq;
   for (const p of paths) {
-    const d = distancePointToPolylineSquared(localX, localY, p.points);
+    const pickPoints = sampleSmoothPathCenterlineForPicking(p.points);
+    const d = distancePointToPolylineSquared(localX, localY, pickPoints);
     if (d <= bestD) {
       bestD = d;
       bestId = p.id;

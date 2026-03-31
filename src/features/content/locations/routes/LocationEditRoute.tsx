@@ -65,6 +65,7 @@ import {
 import { applyEdgeStrokeToDraft } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
+import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import {
   LocationGridAuthoringSection,
@@ -419,7 +420,7 @@ export default function LocationEditRoute() {
   const placePaletteItems = useMemo(() => {
     const all = getGroupedPlacePaletteForScale(mapHostScaleResolved);
     if (gridGeometry === 'hex') {
-      return all.filter((i) => i.category === 'object');
+      return all.filter((i) => i.category === 'object' || i.category === 'path');
     }
     return all;
   }, [mapHostScaleResolved, gridGeometry]);
@@ -828,11 +829,16 @@ export default function LocationEditRoute() {
         }
         const pa = parseGridCellId(anchor);
         const pb = parseGridCellId(cellId);
-        if (
-          !pa ||
-          !pb ||
-          Math.abs(pa.x - pb.x) + Math.abs(pa.y - pb.y) !== 1
-        ) {
+        if (!pa || !pb) {
+          mapEditor.setPathAnchorCellId(cellId);
+          return;
+        }
+        const geom = (gridGeometry === 'hex' ? 'hex' : 'square') as 'square' | 'hex';
+        const neighbors = getNeighborPoints(
+          { geometry: geom, columns: Number(gridColumns), rows: Number(gridRows) },
+          pa,
+        );
+        if (!neighbors.some((n) => n.x === pb.x && n.y === pb.y)) {
           mapEditor.setPathAnchorCellId(cellId);
           return;
         }
@@ -849,9 +855,7 @@ export default function LocationEditRoute() {
             },
           ],
         }));
-        // Clear anchor after each segment (like edges) so the preview stops; place another
-        // segment with two fresh clicks. Esc also clears a pending first click.
-        mapEditor.setPathAnchorCellId(null);
+        mapEditor.setPathAnchorCellId(cellId);
         return;
       }
       // Edge placement is handled by the boundary-paint stroke system in
@@ -863,6 +867,9 @@ export default function LocationEditRoute() {
       mapEditor.setPendingPlacement,
       mapEditor.setPathAnchorCellId,
       mapHostScaleResolved,
+      gridGeometry,
+      gridColumns,
+      gridRows,
     ],
   );
 

@@ -55,6 +55,10 @@ import {
   squareCellCenterPx,
   squareEdgeSegmentPxFromEdgeId,
 } from './squareGridMapOverlayGeometry';
+import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
+import { buildPathChains, chainToSmoothSvgPath } from './pathOverlayRendering';
+import type { LocationMapPathFeatureKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
+import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 
 const GRID_GAP_PX = SQUARE_GRID_GAP_PX; // MUI spacing(0.5) — matches GridEditor gap
 const MIN_CELL_PX = 24;
@@ -284,6 +288,82 @@ export function LocationGridAuthoringSection({
     return { cellPx, width: gridSizePx.width, height };
   }, [validPreview, isHex, cols, rows, gridSizePx.width]);
 
+  const hexGridGeometry = useMemo(() => {
+    if (!validPreview || !isHex || gridSizePx.hexCellPx <= 0) return null;
+    const dims = hexOverlayDimensions(cols, rows, gridSizePx.hexCellPx);
+    return { hexSize: gridSizePx.hexCellPx, ...dims };
+  }, [validPreview, isHex, cols, rows, gridSizePx.hexCellPx]);
+
+  const cellCenterPx = useCallback(
+    (cellId: string): { cx: number; cy: number } | null => {
+      if (isHex && hexGridGeometry) return hexCellCenterPx(cellId, hexGridGeometry.hexSize);
+      if (squareGridGeometry) return squareCellCenterPx(cellId, squareGridGeometry.cellPx);
+      return null;
+    },
+    [isHex, hexGridGeometry, squareGridGeometry],
+  );
+
+  const activePathKind: LocationMapPathFeatureKindId | null =
+    activePlace?.category === 'path' ? activePlace.kind : null;
+
+  const pathSvgData = useMemo(() => {
+    const chains = buildPathChains(draft.pathSegments);
+    if (chains.length === 0 && !placePathAnchorCellId) return [];
+
+    let extendIdx = -1;
+    let extendCell: string | null = null;
+    let prepend = false;
+
+    if (placePathAnchorCellId && placeHoverCellId && placePathAnchorCellId !== placeHoverCellId) {
+      const pa = parseGridCellId(placePathAnchorCellId);
+      const pb = parseGridCellId(placeHoverCellId);
+      if (pa && pb) {
+        const geom = (gridGeometry === 'hex' ? 'hex' : 'square') as 'square' | 'hex';
+        const neighbors = getNeighborPoints({ geometry: geom, columns: cols, rows }, pa);
+        if (neighbors.some((n) => n.x === pb.x && n.y === pb.y)) {
+          for (let i = 0; i < chains.length; i++) {
+            const c = chains[i];
+            if (c.cells[c.cells.length - 1] === placePathAnchorCellId) {
+              extendIdx = i;
+              extendCell = placeHoverCellId;
+              break;
+            }
+            if (c.cells[0] === placePathAnchorCellId) {
+              extendIdx = i;
+              extendCell = placeHoverCellId;
+              prepend = true;
+              break;
+            }
+          }
+          if (extendIdx < 0) {
+            extendCell = placeHoverCellId;
+          }
+        }
+      }
+    }
+
+    const result: { kind: LocationMapPathFeatureKindId; d: string }[] = [];
+
+    for (let i = 0; i < chains.length; i++) {
+      let cells = chains[i].cells;
+      if (i === extendIdx && extendCell) {
+        cells = prepend ? [extendCell, ...cells] : [...cells, extendCell];
+      }
+      const points = cells.map((id) => cellCenterPx(id)).filter(Boolean) as { cx: number; cy: number }[];
+      if (points.length < 2) continue;
+      result.push({ kind: chains[i].kind, d: chainToSmoothSvgPath(points) });
+    }
+
+    if (extendIdx < 0 && extendCell && placePathAnchorCellId) {
+      const pts = [cellCenterPx(placePathAnchorCellId), cellCenterPx(extendCell)].filter(Boolean) as { cx: number; cy: number }[];
+      if (pts.length >= 2) {
+        result.push({ kind: activePathKind ?? 'road', d: chainToSmoothSvgPath(pts) });
+      }
+    }
+
+    return result;
+  }, [draft.pathSegments, placePathAnchorCellId, placeHoverCellId, cellCenterPx, gridGeometry, cols, rows, activePathKind]);
+
   const pathOverlayStroke = theme.palette.info.main;
 
   const edgeOverlayStrokeProps = useMemo(() => {
@@ -310,18 +390,6 @@ export function LocationGridAuthoringSection({
     >;
   }, [theme.palette.info.main, theme.palette.text.primary, theme.palette.warning.main]);
 
-  const pathPlacementPreview = useMemo(() => {
-    if (!squareGridGeometry || !placePathAnchorCellId || !placeHoverCellId) return null;
-    if (placePathAnchorCellId === placeHoverCellId) return null;
-    const pa = parseGridCellId(placePathAnchorCellId);
-    const pb = parseGridCellId(placeHoverCellId);
-    if (!pa || !pb) return null;
-    const a = squareCellCenterPx(placePathAnchorCellId, squareGridGeometry.cellPx);
-    const b = squareCellCenterPx(placeHoverCellId, squareGridGeometry.cellPx);
-    if (!a || !b) return null;
-    const ortho = Math.abs(pa.x - pb.x) + Math.abs(pa.y - pb.y) === 1;
-    return { x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy, valid: ortho };
-  }, [squareGridGeometry, placePathAnchorCellId, placeHoverCellId]);
 
   const locationById = useMemo(
     () => new Map(locations.map((l) => [l.id, l])),
@@ -495,19 +563,26 @@ export function LocationGridAuthoringSection({
     ],
   );
 
+  const resolveHexCellFromClient = useCallback(
+    (clientX: number, clientY: number): string | null => {
+      if (!isHex || !gridContainerRef.current || !hexGridGeometry) return null;
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const gx = clientX - rect.left;
+      const gy = clientY - rect.top;
+      return resolveNearestHexCell(gx, gy, cols, rows, hexGridGeometry.hexSize);
+    },
+    [isHex, hexGridGeometry, cols, rows],
+  );
+
   const updatePlaceHoverFromPointerClient = useCallback(
     (clientX: number, clientY: number) => {
       const top = document.elementFromPoint(clientX, clientY);
-      if (!top) {
-        setPlaceHoverCellId((prev) => (prev === null ? prev : null));
-        return;
-      }
-      const cellEl = top.closest('[role="gridcell"]');
-      const id = cellEl?.getAttribute('data-cell-id');
-      const next = id ?? null;
+      const cellEl = top?.closest('[role="gridcell"]');
+      const directId = cellEl?.getAttribute('data-cell-id') ?? null;
+      const next = directId ?? resolveHexCellFromClient(clientX, clientY);
       setPlaceHoverCellId((prev) => (prev === next ? prev : next));
     },
-    [],
+    [resolveHexCellFromClient],
   );
 
   const handlePlacePathEdgePointerMove = useCallback(
@@ -595,6 +670,18 @@ export function LocationGridAuthoringSection({
     }));
     onCellFocusRail?.();
   };
+
+  const handleHexFallbackClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (!isHex || mapEditorMode !== 'place' || edgePlaceActive || placeObjectStrokeMode) return;
+      if (hasDragMoved?.()) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('[role="gridcell"]')) return;
+      const cellId = resolveHexCellFromClient(e.clientX, e.clientY);
+      if (cellId) onPlaceCellClick?.(cellId);
+    },
+    [isHex, mapEditorMode, edgePlaceActive, placeObjectStrokeMode, hasDragMoved, resolveHexCellFromClient, onPlaceCellClick],
+  );
 
   const renderMapCellIcons = (cell: GridCell) => {
     const linkId = draft.linkedLocationByCellId[cell.cellId];
@@ -797,6 +884,7 @@ export function LocationGridAuthoringSection({
             '& *': { cursor: 'crosshair !important' },
           } : {}),
         }}
+        onClick={isHex ? handleHexFallbackClick : undefined}
         onPointerDownCapture={
           edgePlaceActive || edgeEraseActive ? handleEdgePointerDown : undefined
         }
@@ -826,9 +914,8 @@ export function LocationGridAuthoringSection({
         </Box>
         {squareGridGeometry &&
         !isHex &&
-        (draft.pathSegments.length > 0 ||
+        (pathSvgData.length > 0 ||
           draft.edgeFeatures.length > 0 ||
-          pathPlacementPreview != null ||
           edgeHoverTarget != null ||
           edgeStrokeSnapshot.length > 0) ? (
           <svg
@@ -844,23 +931,6 @@ export function LocationGridAuthoringSection({
             }}
             aria-hidden
           >
-            {pathPlacementPreview ? (
-              <line
-                x1={pathPlacementPreview.x1}
-                y1={pathPlacementPreview.y1}
-                x2={pathPlacementPreview.x2}
-                y2={pathPlacementPreview.y2}
-                stroke={
-                  pathPlacementPreview.valid
-                    ? theme.palette.primary.main
-                    : theme.palette.error.main
-                }
-                strokeWidth={3}
-                strokeDasharray="6 4"
-                strokeLinecap="round"
-              />
-            ) : null}
-            {/* Edge boundary stroke preview (accumulated during drag) */}
             {edgeStrokeSnapshot.map((eid) => {
               const seg = squareEdgeSegmentPxFromEdgeId(eid, squareGridGeometry.cellPx);
               if (!seg) return null;
@@ -878,7 +948,6 @@ export function LocationGridAuthoringSection({
                 />
               );
             })}
-            {/* Edge boundary hover preview (single edge under pointer) */}
             {edgeHoverTarget &&
               !edgeStrokeSeen.current.has(edgeHoverTarget.edgeId) &&
               (() => {
@@ -905,23 +974,17 @@ export function LocationGridAuthoringSection({
                   />
                 );
               })()}
-            {draft.pathSegments.map((seg) => {
-              const a = squareCellCenterPx(seg.startCellId, squareGridGeometry.cellPx);
-              const b = squareCellCenterPx(seg.endCellId, squareGridGeometry.cellPx);
-              if (!a || !b) return null;
-              return (
-                <line
-                  key={seg.id}
-                  x1={a.cx}
-                  y1={a.cy}
-                  x2={b.cx}
-                  y2={b.cy}
-                  stroke={pathOverlayStroke}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                />
-              );
-            })}
+            {pathSvgData.map((p, i) => (
+              <path
+                key={`path-${p.kind}-${i}`}
+                d={p.d}
+                fill="none"
+                stroke={pathOverlayStroke}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
             {draft.edgeFeatures.map((e) => {
               const seg = squareEdgeSegmentPxFromEdgeId(e.edgeId, squareGridGeometry.cellPx);
               if (!seg) return null;
@@ -942,6 +1005,35 @@ export function LocationGridAuthoringSection({
                 />
               );
             })}
+          </svg>
+        ) : null}
+        {hexGridGeometry &&
+        isHex &&
+        pathSvgData.length > 0 ? (
+          <svg
+            width={hexGridGeometry.width}
+            height={hexGridGeometry.height}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              pointerEvents: 'none',
+              zIndex: 2,
+              display: 'block',
+            }}
+            aria-hidden
+          >
+            {pathSvgData.map((p, i) => (
+              <path
+                key={`path-${p.kind}-${i}`}
+                d={p.d}
+                fill="none"
+                stroke={pathOverlayStroke}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
           </svg>
         ) : null}
       </Box>

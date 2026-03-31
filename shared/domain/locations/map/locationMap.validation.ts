@@ -14,7 +14,7 @@ import {
   validateEdgeFeaturesStructure,
   validatePathSegmentsStructure,
 } from './locationMapFeatures.validation';
-import { GRID_GEOMETRY_IDS } from '../../grid/gridGeometry';
+import { GRID_GEOMETRY_IDS, type GridGeometryId } from '../../grid/gridGeometry';
 
 export type LocationMapValidationError = {
   path: string;
@@ -262,7 +262,8 @@ export function validateLocationMapInput(payload: {
 
   errors.push(...validateCellEntriesStructure(payload.cellEntries, w, h));
 
-  errors.push(...validatePathSegmentsStructure(payload.pathSegments, w, h));
+  const geometry: GridGeometryId = typeof g.geometry === 'string' && (g.geometry === 'hex' || g.geometry === 'square') ? g.geometry : 'square';
+  errors.push(...validatePathSegmentsStructure(payload.pathSegments, w, h, geometry));
   errors.push(...validateEdgeFeaturesStructure(payload.edgeFeatures, w, h));
 
   return errors;

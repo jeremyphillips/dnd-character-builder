@@ -2,6 +2,8 @@
  * Structural validation for map-level path segments and edge features.
  */
 import { parseGridCellId } from '../../grid/gridCellIds';
+import type { GridGeometryId } from '../../grid/gridGeometry';
+import { getNeighborPoints } from '../../grid/gridHelpers';
 import {
   LOCATION_MAP_EDGE_FEATURE_KIND_IDS,
   type LocationMapEdgeFeatureKindId,
@@ -24,6 +26,21 @@ function isOrthogonalAdjacentSquare(a: string, b: string): boolean {
   return dx + dy === 1;
 }
 
+function areCellsAdjacent(
+  a: string,
+  b: string,
+  width: number,
+  height: number,
+  geometry: GridGeometryId,
+): boolean {
+  if (geometry === 'square') return isOrthogonalAdjacentSquare(a, b);
+  const pa = parseGridCellId(a);
+  const pb = parseGridCellId(b);
+  if (!pa || !pb) return false;
+  const neighbors = getNeighborPoints({ geometry, columns: width, rows: height }, pa);
+  return neighbors.some((n) => n.x === pb.x && n.y === pb.y);
+}
+
 function cellInBounds(cellId: string, width: number, height: number): boolean {
   const p = parseGridCellId(cellId);
   if (!p) return false;
@@ -34,6 +51,7 @@ export function validatePathSegmentsStructure(
   pathSegments: unknown,
   width: number,
   height: number,
+  geometry: GridGeometryId = 'square',
 ): LocationMapValidationError[] {
   const errors: LocationMapValidationError[] = [];
   if (pathSegments === undefined || pathSegments === null) return errors;
@@ -84,11 +102,11 @@ export function validatePathSegmentsStructure(
       });
     }
     if (start && end && cellInBounds(start, width, height) && cellInBounds(end, width, height)) {
-      if (!isOrthogonalAdjacentSquare(start, end)) {
+      if (!areCellsAdjacent(start, end, width, height, geometry)) {
         errors.push({
           path: `${prefix}.startCellId`,
           code: 'INVALID',
-          message: 'Path segment endpoints must be orthogonally adjacent cells',
+          message: 'Path segment endpoints must be adjacent cells',
         });
       }
     }

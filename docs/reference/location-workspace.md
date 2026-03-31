@@ -12,7 +12,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 |------|---------|
 | `src/features/content/locations/routes/` | Create and edit routes compose the workspace; detail stays content-width. |
 | `components/workspace/` | Map-first editor shell — see below. |
-| `components/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. |
+| `components/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. Renders SVG overlays for paths (both geometries) and edges (square only). |
 
 ---
 
@@ -52,9 +52,9 @@ When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEd
 | `place` | Place **objects**, **paths**, **edges**, or **linked locations** (per scale). Choice of *what* to place comes from the **Place** panel in the right rail (`LocationMapEditorPlacePanel`), driven by `getGroupedPlacePaletteForScale` and `activePlace` in `useLocationMapEditorState`. |
 | `paint` | Paint **cell fills**; **active** swatch from `LocationMapEditorPaintTray` + `activePaint`. Stroke gestures on cells (pointer down / enter / up) update `cellFillByCellId`. |
 | `clear-fill` | Stroke to clear terrain fill on cells without removing links/objects/paths/edges. |
-| `erase` | Click a cell to remove the highest-priority feature there (`resolveEraseTargetAtCell`: edge → object → path → link). |
+| `erase` | Click a cell to remove the highest-priority feature there (`resolveEraseTargetAtCell`: edge → object → path → link). For **edge features**, pointer resolution targets the nearest boundary directly via `onEraseEdge`, bypassing cell-level priority. |
 
-**State hook:** `useLocationMapEditorState` (`domain/mapEditor/useLocationMapEditorState.ts`) holds `mode`, `activePaint`, `activePlace`, `pathAnchorCellId` for two-click path segments, and `pendingPlacement` for the linked-location modal. Switching away from **place** clears anchors and pending placement. Edge placement no longer uses a two-click anchor; it uses **boundary-paint** (see below).
+**State hook:** `useLocationMapEditorState` (`domain/mapEditor/useLocationMapEditorState.ts`) holds `mode`, `activePaint`, `activePlace`, `pathAnchorCellId` for path chain building, and `pendingPlacement` for the linked-location modal. Switching away from **place** clears anchors and pending placement. Edge placement uses **boundary-paint** with transient stroke state managed in refs inside `LocationGridAuthoringSection` (see **Edge authoring** below) — no persistent editor state hook is needed for edge strokes.
 
 **Layout:** `LocationEditRoute` sets `leftMapChromeWidthPx` to `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` plus `LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX` only while `mode === 'paint'`. That value is passed to `LocationGridAuthoringSection` as `leftChromeWidthPx` so the grid width accounts for left chrome.
 
@@ -64,7 +64,40 @@ When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEd
 |-----------|------|
 | `LocationMapEditorPaintTray` | Shown when `mode === 'paint'`; swatches from `getPaintPaletteItemsForScale`. |
 | `LocationMapEditorPlacePanel` | Shown when `mode === 'place'`; cards for objects / paths / edges (and link flows resolved by `resolvePlacedKindToAction`). |
-| `LocationGridAuthoringSection` | Renders `GridEditor` or `HexGridEditor`, applies fills, icons, map-editor pointer behavior, and **square-only** path/edge SVG overlay (see **Open issues** below). |
+| `LocationGridAuthoringSection` | Renders `GridEditor` or `HexGridEditor`, applies fills, icons, map-editor pointer behavior, and SVG overlays for paths (both geometries) and edges (square only). |
+
+---
+
+## Path authoring (cell-chain model)
+
+Paths (roads, rivers) use a **cell-chain** interaction model that works on both **square** and **hex** grids. The user selects adjacent cells sequentially and a smooth curve is generated through the chain of cell centers.
+
+**Interaction flow:**
+
+1. Select a path tool (road or river) from the Place panel.
+2. **Click first cell** — sets the anchor; cell receives a primary-color inset ring highlight.
+3. **Hover adjacent cell** — a smooth curve preview extends the current chain to include the hovered cell. Non-adjacent cells show no preview.
+4. **Click adjacent cell** — commits a new path segment and auto-chains: the anchor moves to the clicked cell so the next click extends further.
+5. **Continue clicking** adjacent cells to grow the chain. The entire chain renders as one smooth Catmull-Rom spline.
+6. **End the chain** by pressing **Escape**, clicking the current anchor cell, or switching tools.
+
+**Smooth curve rendering:** all committed path segments plus the hover-cell preview are rendered as a single SVG `<path>` per chain using Catmull-Rom to cubic Bézier interpolation (`chainToSmoothSvgPath` in `pathOverlayRendering.ts`). The `pathSvgData` memo in `LocationGridAuthoringSection` extends the active chain with the hover cell so the preview is visually seamless with committed segments.
+
+**Hex click-gap handling:** hex cells use CSS `clip-path` for hexagonal shapes, which can leave narrow dead zones between cells. `resolveNearestHexCell` (in `hexGridMapOverlayGeometry.ts`) resolves pointer positions to the nearest hex center, used by both the fallback click handler and the hover resolver to ensure clicks and previews work even when the pointer lands between cells.
+
+**Adjacency:** path segment adjacency is geometry-aware. Both the client (`handlePlaceCell` in `LocationEditRoute.tsx`, `pathSvgData` memo) and the server-side validation (`validatePathSegmentsStructure` in `locationMapFeatures.validation.ts`) use `getNeighborPoints` from `shared/domain/grid/gridHelpers.ts`, which handles both square orthogonal neighbors and hex offset-column neighbors.
+
+**Key modules:**
+
+| Module | Exports |
+|--------|---------|
+| `components/pathOverlayRendering.ts` | `buildPathChains` (adjacency-graph walk to build ordered cell chains), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier), `pathSegmentsToSvgPaths` (convenience: segments → SVG `d` strings) |
+| `components/hexGridMapOverlayGeometry.ts` | `hexCellCenterPx`, `hexOverlayDimensions`, `resolveNearestHexCell` |
+| `components/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId` |
+| `shared/domain/grid/gridHelpers.ts` | `getNeighborPoints` (geometry-aware: square + hex offset-column) |
+| `shared/domain/locations/map/locationMapFeatures.validation.ts` | `validatePathSegmentsStructure` (accepts `geometry` param) |
+
+**Palette filtering:** `LocationEditRoute` filters `placePaletteItems` by geometry. Hex grids allow `object` and `path` categories. Edge tools are hidden on hex because hex edge authoring is not yet implemented (see **Open issues**).
 
 ---
 
@@ -73,28 +106,43 @@ When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEd
 Edges (walls, windows, doors) use a **boundary-paint** interaction model on **square grids**. Instead of two-click placement through cell centers, the pointer resolves the nearest cell-boundary edge:
 
 1. **Hover** — moving over the grid shows a dashed preview on the nearest edge boundary.
-2. **Pointer down** — starts an edge stroke; the first boundary is added.
-3. **Drag** — crossing neighboring boundaries adds them to the stroke (deduplicated).
+2. **Pointer down** — starts an edge stroke; the first boundary is added and the axis locks to horizontal or vertical based on the clicked edge's orientation.
+3. **Drag** — crossing neighboring boundaries adds them to the stroke. Edges are constrained to be **collinear** (same boundary line) and **sequential** (next cell along that line), preventing branches from hand jitter.
 4. **Pointer up** — commits the stroke to the draft.
+5. **Shift held** — temporarily unlocks the axis, allowing direction changes mid-stroke for L-shaped or cornered walls. The new direction becomes the locked axis when Shift is released.
+
+**Pointer event architecture:** when an edge tool is active, `LocationGridAuthoringSection` attaches **capture-phase** pointer handlers (`onPointerDownCapture`, `onPointerMoveCapture`, `onPointerUpCapture`) on the grid container Box. Capture-phase fires before child elements, so cell-level `stopPropagation` cannot block edge detection. The container also sets `cursor: crosshair` with `& * { cursor: crosshair !important }` to override the canvas pan handler's `grab` cursor in gap areas.
 
 **Key modules:**
-- `domain/mapEditor/edgeAuthoring.ts` — pure helpers: `resolveNearestCellEdgeSide`, `resolveEdgeTargetFromGridPosition`, `applyEdgeStrokeToDraft` (with replace/no-op rules).
-- `squareGridMapOverlayGeometry.ts` — `squareEdgeSegmentPxFromEdgeId` for rendering committed and preview edges.
-- `LocationGridAuthoringSection` — wrapper-level pointer handlers resolve edge targets and manage stroke state; SVG overlay renders both hover preview and accumulated stroke.
+
+| Module | Exports |
+|--------|---------|
+| `domain/mapEditor/edgeAuthoring.ts` | `resolveNearestCellEdgeSide`, `resolveEdgeTargetFromGridPosition`, `applyEdgeStrokeToDraft` (replace/no-op rules), `shouldAcceptStrokeEdge` (axis lock + collinearity + adjacency), `areEdgesAdjacent`, `getSquareEdgeOrientation`, types `ResolvedEdgeTarget`, `EdgeOrientation` |
+| `squareGridMapOverlayGeometry.ts` | `squareEdgeSegmentPxFromEdgeId` for rendering committed and preview edges |
+| `domain/mapEditor/resolveEraseTarget.ts` | `resolveEraseEdgeByEdgeId` for precise edge-specific erase |
+| `LocationGridAuthoringSection` | Capture-phase pointer handlers, stroke refs (`edgeStrokeActive`, `edgeStrokeSeen`, `edgeStrokeEdgeIds`, `edgeStrokeLockedAxis`, `edgeStrokeLastTarget`, `shiftHeld`), SVG overlay for hover preview and stroke accumulation |
+
+**Stroke constraint rules (`shouldAcceptStrokeEdge`):**
+1. **Axis lock** — the initial click locks the axis (horizontal or vertical). Subsequent edges must match unless Shift is held.
+2. **Collinearity** — same-axis edges must share the same boundary line (same row index for horizontal, same column index for vertical).
+3. **Sequential** — the running index along the boundary must differ by exactly 1 from the last accepted edge.
+4. **Shift override** — when Shift is held, adjacency is checked loosely (shared or neighboring cells) and axis switches to the candidate's orientation.
 
 **Replace/overwrite rules:** same kind on same edge = no-op; different kind replaces in place; empty edge = add.
 
 **Erase:** in Erase mode, the pointer resolves the nearest edge boundary and removes that specific edge feature (`onEraseEdge`). Cell-level erase (`resolveEraseTargetAtCell`) still handles objects, paths, and links.
 
-### Open issues
+**Edge rendering:** committed edges render at 15px stroke width on the cell boundary (gutter). Wall uses near-opaque text color; window uses dashed info-blue; door uses warning-amber. The `EdgeOrientation` type is designed as a union (`'horizontal' | 'vertical'`) extensible for hex grids (`'hex-a' | 'hex-b' | 'hex-c'`).
 
-### 1. Hex maps: no path/edge overlay — palette entries hidden
+---
 
-`LocationGridAuthoringSection` draws persisted path segments, edge features, and edge previews only when the map is **square** (`squareGridGeometry && !isHex`). On **hex** geometry, that SVG layer is omitted.
+## Open issues
 
-**Current mitigation:** `LocationEditRoute` filters `placePaletteItems` to **exclude** `path` and `edge` categories when `gridGeometry === 'hex'`, so users cannot select tools that have no visual feedback. Existing path/edge data stored against a hex grid is preserved but not rendered.
+### 1. Hex maps: no edge overlay — edge palette entries hidden
 
-**Long-term direction:** Add hex-aware segment geometry (`hexGridMapOverlayGeometry.ts` with hex cell-center and shared-edge helpers), use `getNeighborPoints` from `shared/domain/grid/gridHelpers.ts` for adjacency in `handlePlaceCell`, and add a hex SVG overlay branch in `LocationGridAuthoringSection`. See [locations.md](./locations.md) *Grid geometry* and *What is deferred* for hex scope.
+Edge authoring (walls, windows, doors) is implemented for **square grids only**. The boundary-paint pointer model, edge geometry resolution, and SVG overlay all assume square cell boundaries. On **hex** geometry, edge palette items are filtered out so users cannot select tools that have no visual feedback. Existing edge data stored against a hex grid is preserved but not rendered.
+
+**Direction:** hex edge authoring would require hex-specific boundary resolution (6 edges per cell with 3 orientations), hit-testing against hex edge geometry, and a hex edge SVG overlay. The `EdgeOrientation` type already includes placeholder values for hex (`'hex-a' | 'hex-b' | 'hex-c'`).
 
 ### 2. Canvas pan vs reliable clicks (place mode)
 
@@ -106,6 +154,10 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 
 **Remaining scope:** switching to `pointerup`-based placement (instead of browser `click`) with a movement threshold would further improve reliability on trackpads. This is deferred.
 
+### 3. Path chain preview responsiveness
+
+The smooth curve preview (hover → smooth Catmull-Rom spline) recalculates the full chain curve on every pointer move. On long chains or slower machines this can feel choppy. A potential optimization would be to cache the committed portion of the chain curve and only recompute the last 2–3 segments when the hover cell changes.
+
 ---
 
 ## Building scale (special edit workspace)
@@ -113,8 +165,8 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 For **`scale === building`** (campaign edit only), the editor is **building-centric** but **maps live on floor children**, not on the building record:
 
 - **Floors** are separate locations: `scale: floor`, `parentId` = building id. Each floor has its own default map (normal persistence — no merged multi-floor document).
-- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip). Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor’s grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
-- **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor’s** map. If there are no floors yet, save is disabled until at least one floor exists.
+- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip). Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor's grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
+- **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor's** map. If there are no floors yet, save is disabled until at least one floor exists.
 - **Code:** helpers in `domain/building/buildingWorkspaceFloors.ts`; branching in `LocationEditRoute.tsx` (map load/save keyed by `activeFloorId`, `hostScale: 'floor'` for grid authoring). Out of scope for this pass: basement labels, floor reorder/delete UX, stacked canvases.
 
 ---
@@ -138,6 +190,8 @@ Both hooks are used at the route level; derived values are passed down to canvas
 1. **Workspace layout changes:** modify components under `components/workspace/`; constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
-4. **Map toolbar / path-edge placement:** new tools live under `components/mapEditor/` and `domain/mapEditor/`; grid integration in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Open issues** above (hex overlay gap, pan vs click).
+4. **Path authoring:** chain-building logic lives in `LocationEditRoute.tsx` (`handlePlaceCell`); smooth curve rendering in `pathOverlayRendering.ts`; hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
+5. **Edge authoring:** edge logic lives under `domain/mapEditor/edgeAuthoring.ts` with tests in `edgeAuthoring.test.ts`; grid integration in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
+6. **Path preview performance:** if the chain preview feels sluggish, consider caching the committed chain curve and only recomputing the tail segments on hover. See **Open issues §3**.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

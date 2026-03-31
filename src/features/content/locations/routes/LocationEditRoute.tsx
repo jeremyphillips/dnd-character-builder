@@ -59,6 +59,7 @@ import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDe
 import {
   canPlaceObjectKindOnHostScale,
   getAllowedLinkedLocationOptions,
+  normalizeLocationMapAuthoringFields,
   removePathChainSegment,
   type LocationScaleId,
 } from '@/shared/domain/locations';
@@ -297,12 +298,13 @@ export default function LocationEditRoute() {
           setValue('gridRows', String(def.grid.height));
           setValue('gridCellUnit', String(def.grid.cellUnit));
           setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale(loc!.scale));
+          const authoring = normalizeLocationMapAuthoringFields(def);
           const next = {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
-            ...cellEntriesToDraft(def.cellEntries),
-            pathEntries: Array.isArray(def.pathEntries) ? def.pathEntries : [],
-            edgeEntries: Array.isArray(def.edgeEntries) ? def.edgeEntries : [],
+            ...cellEntriesToDraft(authoring.cellEntries),
+            pathEntries: authoring.pathEntries,
+            edgeEntries: authoring.edgeEntries,
           };
           setGridDraft(next);
           setGridDraftBaseline(structuredClone(next));
@@ -340,12 +342,13 @@ export default function LocationEditRoute() {
           setValue('gridRows', String(def.grid.height));
           setValue('gridCellUnit', String(def.grid.cellUnit));
           setValue('gridGeometry', def.grid.geometry ?? getDefaultGeometryForScale('floor'));
+          const authoring = normalizeLocationMapAuthoringFields(def);
           const next = {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
-            ...cellEntriesToDraft(def.cellEntries),
-            pathEntries: Array.isArray(def.pathEntries) ? def.pathEntries : [],
-            edgeEntries: Array.isArray(def.edgeEntries) ? def.edgeEntries : [],
+            ...cellEntriesToDraft(authoring.cellEntries),
+            pathEntries: authoring.pathEntries,
+            edgeEntries: authoring.edgeEntries,
           };
           setGridDraft(next);
           setGridDraftBaseline(structuredClone(next));
@@ -533,13 +536,15 @@ export default function LocationEditRoute() {
             values,
             {
               excludedCellIds: draft.excludedCellIds,
-              cellEntries: cellDraftToCellEntries(
-                draft.linkedLocationByCellId,
-                draft.objectsByCellId,
-                draft.cellFillByCellId,
-              ),
-              pathEntries: Array.isArray(draft.pathEntries) ? draft.pathEntries : [],
-              edgeEntries: Array.isArray(draft.edgeEntries) ? draft.edgeEntries : [],
+              ...normalizeLocationMapAuthoringFields({
+                cellEntries: cellDraftToCellEntries(
+                  draft.linkedLocationByCellId,
+                  draft.objectsByCellId,
+                  draft.cellFillByCellId,
+                ),
+                pathEntries: draft.pathEntries,
+                edgeEntries: draft.edgeEntries,
+              }),
             },
           );
           reset({
@@ -577,13 +582,15 @@ export default function LocationEditRoute() {
           values,
           {
             excludedCellIds: draft.excludedCellIds,
-            cellEntries: cellDraftToCellEntries(
-              draft.linkedLocationByCellId,
-              draft.objectsByCellId,
-              draft.cellFillByCellId,
-            ),
-            pathEntries: Array.isArray(draft.pathEntries) ? draft.pathEntries : [],
-            edgeEntries: Array.isArray(draft.edgeEntries) ? draft.edgeEntries : [],
+            ...normalizeLocationMapAuthoringFields({
+              cellEntries: cellDraftToCellEntries(
+                draft.linkedLocationByCellId,
+                draft.objectsByCellId,
+                draft.cellFillByCellId,
+              ),
+              pathEntries: draft.pathEntries,
+              edgeEntries: draft.edgeEntries,
+            }),
           },
         );
         reset({

@@ -10,6 +10,7 @@ import {
   canPlaceObjectKindOnHostScale,
   isCellUnitAllowedForScale,
   mapKindForLocationScale,
+  normalizeLocationMapAuthoringFields,
 } from '../../../../../shared/domain/locations';
 import { CampaignLocationMap } from '../../../../shared/models/CampaignLocationMap.model';
 import { CampaignLocation } from '../../../../shared/models/CampaignLocation.model';
@@ -44,6 +45,11 @@ function validateGridCellUnitForLocationScale(
 }
 
 function toDoc(doc: Record<string, unknown>): LocationMapDoc {
+  const authoring = normalizeLocationMapAuthoringFields({
+    cellEntries: doc.cellEntries,
+    pathEntries: doc.pathEntries,
+    edgeEntries: doc.edgeEntries,
+  });
   return {
     id: doc.mapId as string,
     campaignId: doc.campaignId as string,
@@ -54,13 +60,9 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     layout: doc.layout as LocationMapDoc['layout'],
     isDefault: doc.isDefault as boolean | undefined,
     cells: doc.cells as LocationMapDoc['cells'],
-    cellEntries: doc.cellEntries as LocationMapDoc['cellEntries'],
-    pathEntries: Array.isArray(doc.pathEntries)
-      ? (doc.pathEntries as LocationMapPathAuthoringEntry[])
-      : [],
-    edgeEntries: Array.isArray(doc.edgeEntries)
-      ? (doc.edgeEntries as LocationMapEdgeAuthoringEntry[])
-      : [],
+    cellEntries: authoring.cellEntries,
+    pathEntries: authoring.pathEntries,
+    edgeEntries: authoring.edgeEntries,
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt),
   };

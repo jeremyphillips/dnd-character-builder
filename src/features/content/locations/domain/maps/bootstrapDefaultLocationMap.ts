@@ -15,6 +15,7 @@ import type {
   LocationMapEdgeAuthoringEntry,
   LocationMapPathAuthoringEntry,
 } from '@/shared/domain/locations';
+import { normalizeLocationMapAuthoringFields } from '@/shared/domain/locations';
 import { pruneExcludedCellIdsForGrid } from '@/features/content/locations/domain/maps/gridLayoutDraft';
 
 export function validateGridBootstrap(values: LocationFormValues): string | null {
@@ -72,9 +73,12 @@ export async function bootstrapDefaultLocationMap(
     rows,
   );
   const layout = { excludedCellIds };
-  const cellEntries = options?.cellEntries ?? [];
-  const pathEntries = options?.pathEntries ?? [];
-  const edgeEntries = options?.edgeEntries ?? [];
+  const authoring = normalizeLocationMapAuthoringFields({
+    cellEntries: options?.cellEntries,
+    pathEntries: options?.pathEntries,
+    edgeEntries: options?.edgeEntries,
+  });
+  const { cellEntries, pathEntries, edgeEntries } = authoring;
 
   if (defaultMap) {
     await updateLocationMap(campaignId, locationId, defaultMap.id, {

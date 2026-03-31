@@ -16,6 +16,7 @@ export * from './map/locationMapEdgeFeature.constants';
 export * from './map/locationMap.helpers';
 export * from './map/locationMapPlacement.policy';
 export * from './map/locationMap.types';
+export * from './map/locationMapAuthoring.normalize';
 export * from './map/locationMapPathAuthoring.helpers';
 export * from './map/locationMapPathCenterline.helpers';
 export * from './map/locationMapGeometry.types';

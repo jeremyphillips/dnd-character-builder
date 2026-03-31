@@ -4,9 +4,37 @@ This document describes the **full-width create/edit shell** for campaign locati
 
 Location create and edit routes render inside a full-width workspace via `AuthMainFocus` layout mode, triggered by `isAuthMainFocusPath` in `src/app/layouts/auth/auth-main-path.ts`.
 
-**Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). Server `toDoc` normalizes omitted Mongo arrays to empty `[]` so clients always receive arrays.
+**Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). At persistence and API boundaries, `normalizeLocationMapAuthoringFields` / `normalizeLocationMapBaseAuthoring` (`shared/domain/locations/map/locationMapAuthoring.normalize.ts`) ensure `cellEntries`, `pathEntries`, and `edgeEntries` are always arrays (never `undefined`), including server `toDoc`, client `locationMapRepo` responses, `bootstrapDefaultLocationMap`, and save/load paths in `LocationEditRoute`.
 
 **Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
+
+### Location map authored model (reference)
+
+**What is persisted** on `LocationMap` (sparse, map-owned):
+
+| Collection | Role |
+|------------|------|
+| **`cellEntries`** | Per-cell authoring: optional `linkedLocationId`, optional `objects[]`, optional `cellFillKind` (terrain/surface fill). |
+| **`pathEntries`** | Map-level **roads** and **rivers** as ordered authored chains: each entry has `id`, `kind` (`road` \| `river`), and ordered `cellIds` (adjacent along the grid). |
+| **`edgeEntries`** | Map-level **walls**, **windows**, and **doors** on shared cell boundaries: each entry has canonical undirected `edgeId` and `kind`. |
+
+**Derived vs persisted**
+
+- **Geometry is derived from authored entries** (cell placement, path chains, edge ids). It is **not** persisted.
+- **`pathEntries` and `edgeEntries` are canonical inputs** to the geometry seam (`pathEntriesToPolylineGeometry`, `edgeEntriesToSegmentGeometrySquare` on square grids).
+- **SVG path strings**, Catmull-Rom smoothing, and overlay styling are **render-layer outputs**, not source of truth.
+
+**Square vs hex (as implemented today)**
+
+- **Paths:** cell-chain authoring and centerline geometry work for **both** square and hex (neighbor rules in `gridHelpers`).
+- **Edges:** boundary authoring, hit-testing, and segment geometry are **square-first** (`edgeEntriesToSegmentGeometrySquare`; hex edge boundaries are not modeled in shared geometry). Hex maps may still **store** `edgeEntries`, but overlay and tools are square-oriented; see **Open issues** for hex edges.
+
+**Where things live**
+
+- **Authoring types:** `shared/domain/locations/map/locationMap.types.ts` (`LocationMapAuthoringContent`, path/edge/cell entry shapes).
+- **Normalization at boundaries:** `locationMapAuthoring.normalize.ts`.
+- **Derived geometry (pixels, polylines, segments):** `locationMapPathPolyline.helpers.ts`, `locationMapEdgeGeometry.helpers.ts`, `squareGridOverlayGeometry.ts` / `hexGridMapOverlayGeometry.ts` as appropriate.
+- **Feature SVG / smoothing:** `pathOverlayRendering.ts` and components such as `LocationGridAuthoringSection`.
 
 ---
 

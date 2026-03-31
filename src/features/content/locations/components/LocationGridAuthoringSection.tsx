@@ -56,7 +56,7 @@ import {
   squareEdgeSegmentPxFromEdgeId,
 } from './squareGridMapOverlayGeometry';
 import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
-import { buildPathChains, chainToSmoothSvgPath } from './pathOverlayRendering';
+import { chainToSmoothSvgPath } from './pathOverlayRendering';
 import type { LocationMapPathFeatureKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 
@@ -192,10 +192,10 @@ export function LocationGridAuthoringSection({
         if (!p) return false;
         return p.x >= 0 && p.y >= 0 && p.x < cols && p.y < rows;
       };
-      const prunedPaths = prev.pathSegments.filter(
-        (s) => cellInBounds(s.startCellId) && cellInBounds(s.endCellId),
+      const prunedPaths = prev.pathEntries.filter((pe) =>
+        pe.cellIds.every((cid) => cellInBounds(cid.trim())),
       );
-      const prunedEdges = prev.edgeFeatures.filter((e) => {
+      const prunedEdges = prev.edgeEntries.filter((e) => {
         const m = BETWEEN_EDGE_ID_RE.exec(e.edgeId);
         if (!m) return false;
         return cellInBounds(m[1]) && cellInBounds(m[2]);
@@ -216,8 +216,8 @@ export function LocationGridAuthoringSection({
         JSON.stringify(prunedObjs) === JSON.stringify(prev.objectsByCellId);
       const fillSame =
         JSON.stringify(prunedFill) === JSON.stringify(prev.cellFillByCellId);
-      const pathsSame = JSON.stringify(prunedPaths) === JSON.stringify(prev.pathSegments);
-      const edgesSame = JSON.stringify(prunedEdges) === JSON.stringify(prev.edgeFeatures);
+      const pathsSame = JSON.stringify(prunedPaths) === JSON.stringify(prev.pathEntries);
+      const edgesSame = JSON.stringify(prunedEdges) === JSON.stringify(prev.edgeEntries);
       if (
         sameIds &&
         nextSel === prev.selectedCellId &&
@@ -236,8 +236,8 @@ export function LocationGridAuthoringSection({
         linkedLocationByCellId: prunedLinks,
         objectsByCellId: prunedObjs,
         cellFillByCellId: prunedFill,
-        pathSegments: prunedPaths,
-        edgeFeatures: prunedEdges,
+        pathEntries: prunedPaths,
+        edgeEntries: prunedEdges,
       };
     });
   }, [validPreview, cols, rows, setDraft]);
@@ -307,7 +307,10 @@ export function LocationGridAuthoringSection({
     activePlace?.category === 'path' ? activePlace.kind : null;
 
   const pathSvgData = useMemo(() => {
-    const chains = buildPathChains(draft.pathSegments);
+    const chains = draft.pathEntries.map((pe) => ({
+      kind: pe.kind,
+      cells: [...pe.cellIds],
+    }));
     if (chains.length === 0 && !placePathAnchorCellId) return [];
 
     let extendIdx = -1;
@@ -362,7 +365,7 @@ export function LocationGridAuthoringSection({
     }
 
     return result;
-  }, [draft.pathSegments, placePathAnchorCellId, placeHoverCellId, cellCenterPx, gridGeometry, cols, rows, activePathKind]);
+  }, [draft.pathEntries, placePathAnchorCellId, placeHoverCellId, cellCenterPx, gridGeometry, cols, rows, activePathKind]);
 
   const pathOverlayStroke = theme.palette.info.main;
 
@@ -398,12 +401,13 @@ export function LocationGridAuthoringSection({
 
   const pathEndpointCells = useMemo(() => {
     const s = new Set<string>();
-    for (const seg of draft.pathSegments) {
-      s.add(seg.startCellId.trim());
-      s.add(seg.endCellId.trim());
+    for (const pe of draft.pathEntries) {
+      for (const cid of pe.cellIds) {
+        s.add(cid.trim());
+      }
     }
     return s;
-  }, [draft.pathSegments]);
+  }, [draft.pathEntries]);
 
   const getCellClassName = useCallback(
     (cell: GridCell) => {
@@ -915,7 +919,7 @@ export function LocationGridAuthoringSection({
         {squareGridGeometry &&
         !isHex &&
         (pathSvgData.length > 0 ||
-          draft.edgeFeatures.length > 0 ||
+          draft.edgeEntries.length > 0 ||
           edgeHoverTarget != null ||
           edgeStrokeSnapshot.length > 0) ? (
           <svg
@@ -985,13 +989,13 @@ export function LocationGridAuthoringSection({
                 strokeLinejoin="round"
               />
             ))}
-            {draft.edgeFeatures.map((e) => {
+            {draft.edgeEntries.map((e) => {
               const seg = squareEdgeSegmentPxFromEdgeId(e.edgeId, squareGridGeometry.cellPx);
               if (!seg) return null;
               const st = edgeOverlayStrokeProps[e.kind];
               return (
                 <line
-                  key={e.id}
+                  key={e.edgeId}
                   x1={seg.x1}
                   y1={seg.y1}
                   x2={seg.x2}

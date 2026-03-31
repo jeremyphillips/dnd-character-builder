@@ -117,28 +117,18 @@ describe('resolveEdgeTargetFromGridPosition', () => {
 // ---------------------------------------------------------------------------
 
 describe('applyEdgeStrokeToDraft', () => {
-  let idCounter = 0;
-  const testIdFactory = () => `test-${++idCounter}`;
-
-  beforeEach(() => {
-    idCounter = 0;
-  });
-
-  it('adds new edge features for empty edges', () => {
+  it('adds new edge entries for empty edges', () => {
     const result = applyEdgeStrokeToDraft(
       [],
       ['between:0,0|1,0', 'between:0,0|0,1'],
       'wall',
-      testIdFactory,
     );
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
-      id: 'test-1',
       kind: 'wall',
       edgeId: 'between:0,0|1,0',
     });
     expect(result[1]).toEqual({
-      id: 'test-2',
       kind: 'wall',
       edgeId: 'between:0,0|0,1',
     });
@@ -146,21 +136,19 @@ describe('applyEdgeStrokeToDraft', () => {
 
   it('no-ops when same kind already exists on edge', () => {
     const existing = [
-      { id: 'e1', kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
+      { kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
     ];
-    const result = applyEdgeStrokeToDraft(existing, ['between:0,0|1,0'], 'wall', testIdFactory);
+    const result = applyEdgeStrokeToDraft(existing, ['between:0,0|1,0'], 'wall');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('e1');
     expect(result[0].kind).toBe('wall');
   });
 
-  it('replaces existing edge with different kind, keeping original id', () => {
+  it('replaces existing edge with different kind', () => {
     const existing = [
-      { id: 'e1', kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
+      { kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
     ];
-    const result = applyEdgeStrokeToDraft(existing, ['between:0,0|1,0'], 'door', testIdFactory);
+    const result = applyEdgeStrokeToDraft(existing, ['between:0,0|1,0'], 'door');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('e1');
     expect(result[0].kind).toBe('door');
   });
 
@@ -169,21 +157,19 @@ describe('applyEdgeStrokeToDraft', () => {
       [],
       ['between:0,0|1,0', 'between:0,0|1,0', 'between:0,0|1,0'],
       'wall',
-      testIdFactory,
     );
     expect(result).toHaveLength(1);
   });
 
-  it('preserves untouched existing features', () => {
+  it('preserves untouched existing entries', () => {
     const existing = [
-      { id: 'e1', kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
-      { id: 'e2', kind: 'door' as const, edgeId: 'between:1,0|2,0' },
+      { kind: 'wall' as const, edgeId: 'between:0,0|1,0' },
+      { kind: 'door' as const, edgeId: 'between:1,0|2,0' },
     ];
     const result = applyEdgeStrokeToDraft(
       existing,
       ['between:0,0|0,1'],
       'window',
-      testIdFactory,
     );
     expect(result).toHaveLength(3);
     expect(result.find((e) => e.edgeId === 'between:0,0|1,0')?.kind).toBe('wall');
@@ -193,17 +179,15 @@ describe('applyEdgeStrokeToDraft', () => {
 
   it('handles mixed add and replace in a single stroke', () => {
     const existing = [
-      { id: 'e1', kind: 'door' as const, edgeId: 'between:0,0|1,0' },
+      { kind: 'door' as const, edgeId: 'between:0,0|1,0' },
     ];
     const result = applyEdgeStrokeToDraft(
       existing,
       ['between:0,0|1,0', 'between:0,0|0,1'],
       'wall',
-      testIdFactory,
     );
     expect(result).toHaveLength(2);
     expect(result.find((e) => e.edgeId === 'between:0,0|1,0')).toEqual({
-      id: 'e1',
       kind: 'wall',
       edgeId: 'between:0,0|1,0',
     });

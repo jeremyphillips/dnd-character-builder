@@ -11,7 +11,7 @@ import {
   edgeKeyFromCellAndSide,
   type SquareCellSide,
 } from '@/shared/domain/grid/gridEdgeIds';
-import type { LocationMapEdgeFeatureEntry } from '@/shared/domain/locations';
+import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 
 const BETWEEN_RE = /^between:([^|]+)\|([^|]+)$/;
@@ -145,20 +145,19 @@ export function resolveEdgeTargetFromGridPosition(
 }
 
 /**
- * Apply a set of edge IDs to the draft edge features array.
+ * Apply a set of edge IDs to the draft edge entries array.
  *
  * Rules:
  * - Same kind already on edge -> no-op (skip)
- * - Different kind on edge -> replace (keep original `id`)
- * - Empty edge -> add with new id from `idFactory`
+ * - Different kind on edge -> replace in place
+ * - Empty edge -> add `{ edgeId, kind }`
  */
 export function applyEdgeStrokeToDraft(
-  existingFeatures: readonly LocationMapEdgeFeatureEntry[],
+  existingFeatures: readonly LocationMapEdgeAuthoringEntry[],
   strokeEdgeIds: readonly string[],
   edgeKind: LocationEdgeFeatureKindId,
-  idFactory: () => string = () => crypto.randomUUID(),
-): LocationMapEdgeFeatureEntry[] {
-  const byEdgeId = new Map<string, LocationMapEdgeFeatureEntry>();
+): LocationMapEdgeAuthoringEntry[] {
+  const byEdgeId = new Map<string, LocationMapEdgeAuthoringEntry>();
   for (const f of existingFeatures) {
     byEdgeId.set(f.edgeId, f);
   }
@@ -169,9 +168,9 @@ export function applyEdgeStrokeToDraft(
     const existing = byEdgeId.get(edgeId);
     if (existing) {
       if (existing.kind === edgeKind) continue;
-      byEdgeId.set(edgeId, { ...existing, kind: edgeKind });
+      byEdgeId.set(edgeId, { edgeId, kind: edgeKind });
     } else {
-      byEdgeId.set(edgeId, { id: idFactory(), kind: edgeKind, edgeId });
+      byEdgeId.set(edgeId, { edgeId, kind: edgeKind });
     }
   }
 

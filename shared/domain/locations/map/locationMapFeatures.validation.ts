@@ -1,21 +1,19 @@
 /**
- * Structural validation for map-level path segments and edge features.
+ * Structural validation for map-level path entries and edge entries.
  */
 import { parseGridCellId } from '../../grid/gridCellIds';
 import type { GridGeometryId } from '../../grid/gridGeometry';
 import { getNeighborPoints } from '../../grid/gridHelpers';
 import {
-  LOCATION_MAP_EDGE_FEATURE_KIND_IDS,
-  type LocationMapEdgeFeatureKindId,
+  LOCATION_MAP_EDGE_KIND_IDS,
 } from './locationMapEdgeFeature.constants';
 import {
-  LOCATION_MAP_PATH_FEATURE_KIND_IDS,
-  type LocationMapPathFeatureKindId,
+  LOCATION_MAP_PATH_KIND_IDS,
 } from './locationMapPathFeature.constants';
 import type { LocationMapValidationError } from './locationMap.validation';
 
-const PATH_KIND_SET = new Set<string>(LOCATION_MAP_PATH_FEATURE_KIND_IDS as readonly string[]);
-const EDGE_KIND_SET = new Set<string>(LOCATION_MAP_EDGE_FEATURE_KIND_IDS as readonly string[]);
+const PATH_KIND_SET = new Set<string>(LOCATION_MAP_PATH_KIND_IDS as readonly string[]);
+const EDGE_KIND_SET = new Set<string>(LOCATION_MAP_EDGE_KIND_IDS as readonly string[]);
 
 function isOrthogonalAdjacentSquare(a: string, b: string): boolean {
   const pa = parseGridCellId(a);
@@ -47,30 +45,30 @@ function cellInBounds(cellId: string, width: number, height: number): boolean {
   return p.x >= 0 && p.y >= 0 && p.x < width && p.y < height;
 }
 
-export function validatePathSegmentsStructure(
-  pathSegments: unknown,
+export function validatePathEntriesStructure(
+  pathEntries: unknown,
   width: number,
   height: number,
   geometry: GridGeometryId = 'square',
 ): LocationMapValidationError[] {
   const errors: LocationMapValidationError[] = [];
-  if (pathSegments === undefined || pathSegments === null) return errors;
-  if (!Array.isArray(pathSegments)) {
-    return [{ path: 'pathSegments', code: 'INVALID', message: 'pathSegments must be an array' }];
+  if (pathEntries === undefined || pathEntries === null) return errors;
+  if (!Array.isArray(pathEntries)) {
+    return [{ path: 'pathEntries', code: 'INVALID', message: 'pathEntries must be an array' }];
   }
   const seenIds = new Set<string>();
-  for (let i = 0; i < pathSegments.length; i++) {
-    const prefix = `pathSegments[${i}]`;
-    const row = pathSegments[i];
+  for (let i = 0; i < pathEntries.length; i++) {
+    const prefix = `pathEntries[${i}]`;
+    const row = pathEntries[i];
     if (!row || typeof row !== 'object') {
-      errors.push({ path: prefix, code: 'INVALID', message: 'Each path segment must be an object' });
+      errors.push({ path: prefix, code: 'INVALID', message: 'Each path entry must be an object' });
       continue;
     }
     const o = row as Record<string, unknown>;
     if (typeof o.id !== 'string' || o.id.trim() === '') {
       errors.push({ path: `${prefix}.id`, code: 'REQUIRED', message: 'id is required' });
     } else if (seenIds.has(o.id)) {
-      errors.push({ path: `${prefix}.id`, code: 'DUPLICATE', message: `Duplicate path segment id "${o.id}"` });
+      errors.push({ path: `${prefix}.id`, code: 'DUPLICATE', message: `Duplicate path entry id "${o.id}"` });
     } else {
       seenIds.add(o.id);
     }
@@ -78,82 +76,100 @@ export function validatePathSegmentsStructure(
       errors.push({
         path: `${prefix}.kind`,
         code: 'INVALID',
-        message: `kind must be one of: ${LOCATION_MAP_PATH_FEATURE_KIND_IDS.join(', ')}`,
+        message: `kind must be one of: ${LOCATION_MAP_PATH_KIND_IDS.join(', ')}`,
       });
     }
-    const start = typeof o.startCellId === 'string' ? o.startCellId.trim() : '';
-    const end = typeof o.endCellId === 'string' ? o.endCellId.trim() : '';
-    if (!start) {
-      errors.push({ path: `${prefix}.startCellId`, code: 'REQUIRED', message: 'startCellId is required' });
-    } else if (!cellInBounds(start, width, height)) {
+    if (!Array.isArray(o.cellIds)) {
+      errors.push({ path: `${prefix}.cellIds`, code: 'INVALID', message: 'cellIds must be an array' });
+      continue;
+    }
+    if (o.cellIds.length < 2) {
       errors.push({
-        path: `${prefix}.startCellId`,
-        code: 'OUT_OF_RANGE',
-        message: 'startCellId must be within grid bounds',
+        path: `${prefix}.cellIds`,
+        code: 'INVALID',
+        message: 'cellIds must contain at least two cells',
       });
+      continue;
     }
-    if (!end) {
-      errors.push({ path: `${prefix}.endCellId`, code: 'REQUIRED', message: 'endCellId is required' });
-    } else if (!cellInBounds(end, width, height)) {
-      errors.push({
-        path: `${prefix}.endCellId`,
-        code: 'OUT_OF_RANGE',
-        message: 'endCellId must be within grid bounds',
-      });
-    }
-    if (start && end && cellInBounds(start, width, height) && cellInBounds(end, width, height)) {
-      if (!areCellsAdjacent(start, end, width, height, geometry)) {
+    for (let j = 0; j < o.cellIds.length; j++) {
+      const cid = typeof o.cellIds[j] === 'string' ? (o.cellIds[j] as string).trim() : '';
+      const cellPrefix = `${prefix}.cellIds[${j}]`;
+      if (!cid) {
+        errors.push({ path: cellPrefix, code: 'REQUIRED', message: 'Each cell id must be a non-empty string' });
+      } else if (!cellInBounds(cid, width, height)) {
         errors.push({
-          path: `${prefix}.startCellId`,
-          code: 'INVALID',
-          message: 'Path segment endpoints must be adjacent cells',
+          path: cellPrefix,
+          code: 'OUT_OF_RANGE',
+          message: 'cell id must be within grid bounds',
         });
       }
     }
+    const ids = o.cellIds as string[];
+    let chainOk = true;
+    for (let j = 0; j < ids.length - 1; j++) {
+      const a = ids[j].trim();
+      const b = ids[j + 1].trim();
+      if (!a || !b) continue;
+      if (cellInBounds(a, width, height) && cellInBounds(b, width, height)) {
+        if (!areCellsAdjacent(a, b, width, height, geometry)) {
+          errors.push({
+            path: `${prefix}.cellIds`,
+            code: 'INVALID',
+            message: 'Consecutive cells in cellIds must be grid-adjacent',
+          });
+          chainOk = false;
+          break;
+        }
+      }
+    }
+    if (!chainOk) continue;
   }
   return errors;
 }
 
 const BETWEEN_EDGE = /^between:([^|]+)\|([^|]+)$/;
 
-export function validateEdgeFeaturesStructure(
-  edgeFeatures: unknown,
+export function validateEdgeEntriesStructure(
+  edgeEntries: unknown,
   width: number,
   height: number,
 ): LocationMapValidationError[] {
   const errors: LocationMapValidationError[] = [];
-  if (edgeFeatures === undefined || edgeFeatures === null) return errors;
-  if (!Array.isArray(edgeFeatures)) {
-    return [{ path: 'edgeFeatures', code: 'INVALID', message: 'edgeFeatures must be an array' }];
+  if (edgeEntries === undefined || edgeEntries === null) return errors;
+  if (!Array.isArray(edgeEntries)) {
+    return [{ path: 'edgeEntries', code: 'INVALID', message: 'edgeEntries must be an array' }];
   }
-  const seenIds = new Set<string>();
-  for (let i = 0; i < edgeFeatures.length; i++) {
-    const prefix = `edgeFeatures[${i}]`;
-    const row = edgeFeatures[i];
+  const seenEdgeIds = new Set<string>();
+  for (let i = 0; i < edgeEntries.length; i++) {
+    const prefix = `edgeEntries[${i}]`;
+    const row = edgeEntries[i];
     if (!row || typeof row !== 'object') {
-      errors.push({ path: prefix, code: 'INVALID', message: 'Each edge feature must be an object' });
+      errors.push({ path: prefix, code: 'INVALID', message: 'Each edge entry must be an object' });
       continue;
     }
     const o = row as Record<string, unknown>;
-    if (typeof o.id !== 'string' || o.id.trim() === '') {
-      errors.push({ path: `${prefix}.id`, code: 'REQUIRED', message: 'id is required' });
-    } else if (seenIds.has(o.id)) {
-      errors.push({ path: `${prefix}.id`, code: 'DUPLICATE', message: `Duplicate edge feature id "${o.id}"` });
-    } else {
-      seenIds.add(o.id);
-    }
     if (typeof o.kind !== 'string' || !EDGE_KIND_SET.has(o.kind)) {
       errors.push({
         path: `${prefix}.kind`,
         code: 'INVALID',
-        message: `kind must be one of: ${LOCATION_MAP_EDGE_FEATURE_KIND_IDS.join(', ')}`,
+        message: `kind must be one of: ${LOCATION_MAP_EDGE_KIND_IDS.join(', ')}`,
       });
     }
     if (typeof o.edgeId !== 'string' || o.edgeId.trim() === '') {
       errors.push({ path: `${prefix}.edgeId`, code: 'REQUIRED', message: 'edgeId is required' });
       continue;
     }
-    const m = BETWEEN_EDGE.exec(o.edgeId.trim());
+    const eid = o.edgeId.trim();
+    if (seenEdgeIds.has(eid)) {
+      errors.push({
+        path: `${prefix}.edgeId`,
+        code: 'DUPLICATE',
+        message: `Duplicate edgeId "${eid}"`,
+      });
+    } else {
+      seenEdgeIds.add(eid);
+    }
+    const m = BETWEEN_EDGE.exec(eid);
     if (!m) {
       errors.push({
         path: `${prefix}.edgeId`,

@@ -53,6 +53,8 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     isDefault: doc.isDefault as boolean | undefined,
     cells: doc.cells as LocationMapDoc['cells'],
     cellEntries: doc.cellEntries as LocationMapDoc['cellEntries'],
+    pathEntries: doc.pathEntries as LocationMapDoc['pathEntries'],
+    edgeEntries: doc.edgeEntries as LocationMapDoc['edgeEntries'],
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt),
   };
@@ -233,12 +235,15 @@ export async function createLocationMap(
       width: grid.width as number,
       height: grid.height as number,
       cellUnit: grid.cellUnit,
+      ...((grid as Record<string, unknown>).geometry !== undefined
+        ? { geometry: (grid as Record<string, unknown>).geometry }
+        : {}),
     },
     cells: body.cells,
     layout: body.layout,
     cellEntries: body.cellEntries,
-    pathSegments: body.pathSegments,
-    edgeFeatures: body.edgeFeatures,
+    pathEntries: body.pathEntries,
+    edgeEntries: body.edgeEntries,
   };
   const vErr = validateLocationMapInput(validationPayload);
   if (vErr.length > 0) return { errors: vErr };
@@ -294,8 +299,8 @@ export async function createLocationMap(
     isDefault,
     cells: (body.cells as LocationMapDoc['cells']) ?? [],
     ...(Array.isArray(body.cellEntries) ? { cellEntries: body.cellEntries } : {}),
-    ...(Array.isArray(body.pathSegments) ? { pathSegments: body.pathSegments } : {}),
-    ...(Array.isArray(body.edgeFeatures) ? { edgeFeatures: body.edgeFeatures } : {}),
+    ...(Array.isArray(body.pathEntries) ? { pathEntries: body.pathEntries } : {}),
+    ...(Array.isArray(body.edgeEntries) ? { edgeEntries: body.edgeEntries } : {}),
   });
 
   if (isDefault) {
@@ -319,23 +324,28 @@ function mergeMapPayload(
   cells?: unknown;
   layout?: unknown;
   cellEntries?: unknown;
-  pathSegments?: unknown;
-  edgeFeatures?: unknown;
+  pathEntries?: unknown;
+  edgeEntries?: unknown;
 } {
   const eg = existing.grid as Record<string, unknown>;
-  let grid: { width: number; height: number; cellUnit: unknown };
+  let grid: { width: number; height: number; cellUnit: unknown; geometry?: unknown };
   if (body.grid && typeof body.grid === 'object') {
     const bg = body.grid as Record<string, unknown>;
+    const geometry =
+      bg.geometry !== undefined ? bg.geometry : eg.geometry !== undefined ? eg.geometry : undefined;
     grid = {
       width: (bg.width !== undefined ? bg.width : eg.width) as number,
       height: (bg.height !== undefined ? bg.height : eg.height) as number,
       cellUnit: bg.cellUnit !== undefined ? bg.cellUnit : eg.cellUnit,
+      ...(geometry !== undefined ? { geometry } : {}),
     };
   } else {
+    const geometry = eg.geometry !== undefined ? eg.geometry : undefined;
     grid = {
       width: eg.width as number,
       height: eg.height as number,
       cellUnit: eg.cellUnit,
+      ...(geometry !== undefined ? { geometry } : {}),
     };
   }
   let layout: unknown;
@@ -350,17 +360,17 @@ function mergeMapPayload(
   } else if (existing.cellEntries !== undefined) {
     cellEntries = existing.cellEntries;
   }
-  let pathSegments: unknown;
-  if (body.pathSegments !== undefined) {
-    pathSegments = body.pathSegments;
-  } else if (existing.pathSegments !== undefined) {
-    pathSegments = existing.pathSegments;
+  let pathEntries: unknown;
+  if (body.pathEntries !== undefined) {
+    pathEntries = body.pathEntries;
+  } else if (existing.pathEntries !== undefined) {
+    pathEntries = existing.pathEntries;
   }
-  let edgeFeatures: unknown;
-  if (body.edgeFeatures !== undefined) {
-    edgeFeatures = body.edgeFeatures;
-  } else if (existing.edgeFeatures !== undefined) {
-    edgeFeatures = existing.edgeFeatures;
+  let edgeEntries: unknown;
+  if (body.edgeEntries !== undefined) {
+    edgeEntries = body.edgeEntries;
+  } else if (existing.edgeEntries !== undefined) {
+    edgeEntries = existing.edgeEntries;
   }
   return {
     name: body.name !== undefined ? String(body.name).trim() : (existing.name as string),
@@ -369,8 +379,8 @@ function mergeMapPayload(
     cells: body.cells !== undefined ? body.cells : existing.cells,
     layout,
     cellEntries,
-    pathSegments,
-    edgeFeatures,
+    pathEntries,
+    edgeEntries,
   };
 }
 
@@ -438,8 +448,8 @@ export async function updateLocationMap(
   if (body.cells !== undefined) $set.cells = body.cells ?? [];
   if (body.layout !== undefined) $set.layout = body.layout;
   if (body.cellEntries !== undefined) $set.cellEntries = body.cellEntries ?? [];
-  if (body.pathSegments !== undefined) $set.pathSegments = body.pathSegments ?? [];
-  if (body.edgeFeatures !== undefined) $set.edgeFeatures = body.edgeFeatures ?? [];
+  if (body.pathEntries !== undefined) $set.pathEntries = body.pathEntries ?? [];
+  if (body.edgeEntries !== undefined) $set.edgeEntries = body.edgeEntries ?? [];
   if (body.isDefault !== undefined) $set.isDefault = body.isDefault;
 
   if (Object.keys($set).length === 0) {

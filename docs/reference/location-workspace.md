@@ -77,7 +77,7 @@ Paths (roads, rivers) use a **cell-chain** interaction model that works on both 
 1. Select a path tool (road or river) from the Place panel.
 2. **Click first cell** — sets the anchor; cell receives a primary-color inset ring highlight.
 3. **Hover adjacent cell** — a smooth curve preview extends the current chain to include the hovered cell. Non-adjacent cells show no preview.
-4. **Click adjacent cell** — commits a new path segment and auto-chains: the anchor moves to the clicked cell so the next click extends further.
+4. **Click adjacent cell** — extends the current authored path chain (same kind) when the anchor is the chain end; otherwise starts a new chain. The anchor moves to the clicked cell so the next click extends further.
 5. **Continue clicking** adjacent cells to grow the chain. The entire chain renders as one smooth Catmull-Rom spline.
 6. **End the chain** by pressing **Escape**, clicking the current anchor cell, or switching tools.
 
@@ -85,17 +85,20 @@ Paths (roads, rivers) use a **cell-chain** interaction model that works on both 
 
 **Hex click-gap handling:** hex cells use CSS `clip-path` for hexagonal shapes, which can leave narrow dead zones between cells. `resolveNearestHexCell` (in `hexGridMapOverlayGeometry.ts`) resolves pointer positions to the nearest hex center, used by both the fallback click handler and the hover resolver to ensure clicks and previews work even when the pointer lands between cells.
 
-**Adjacency:** path segment adjacency is geometry-aware. Both the client (`handlePlaceCell` in `LocationEditRoute.tsx`, `pathSvgData` memo) and the server-side validation (`validatePathSegmentsStructure` in `locationMapFeatures.validation.ts`) use `getNeighborPoints` from `shared/domain/grid/gridHelpers.ts`, which handles both square orthogonal neighbors and hex offset-column neighbors.
+**Adjacency:** consecutive cells in an authored path chain are geometry-aware. Both the client (`handlePlaceCell` in `LocationEditRoute.tsx`, `pathSvgData` memo) and the server-side validation (`validatePathEntriesStructure` in `locationMapFeatures.validation.ts`) use `getNeighborPoints` from `shared/domain/grid/gridHelpers.ts`, which handles both square orthogonal neighbors and hex offset-column neighbors.
+
+**Persistence:** paths are stored on the map as `pathEntries`: each entry has an `id`, a `kind` (`road` | `river`), and ordered `cellIds` for that chain. This is the canonical authored model; SVG smoothing is a render concern.
 
 **Key modules:**
 
 | Module | Exports |
 |--------|---------|
-| `components/pathOverlayRendering.ts` | `buildPathChains` (adjacency-graph walk to build ordered cell chains), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier), `pathSegmentsToSvgPaths` (convenience: segments → SVG `d` strings) |
+| `components/pathOverlayRendering.ts` | `pathEntriesToSvgPaths` (path chains → SVG `d` strings), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier) |
 | `components/hexGridMapOverlayGeometry.ts` | `hexCellCenterPx`, `hexOverlayDimensions`, `resolveNearestHexCell` |
 | `components/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId` |
 | `shared/domain/grid/gridHelpers.ts` | `getNeighborPoints` (geometry-aware: square + hex offset-column) |
-| `shared/domain/locations/map/locationMapFeatures.validation.ts` | `validatePathSegmentsStructure` (accepts `geometry` param) |
+| `shared/domain/locations/map/locationMapFeatures.validation.ts` | `validatePathEntriesStructure` (accepts `geometry` param) |
+| `shared/domain/locations/map/locationMapPathAuthoring.helpers.ts` | `removePathChainSegment` (erase one step along a chain) |
 
 **Palette filtering:** `LocationEditRoute` filters `placePaletteItems` by geometry. Hex grids allow `object` and `path` categories. Edge tools are hidden on hex because hex edge authoring is not yet implemented (see **Open issues**).
 
@@ -130,7 +133,9 @@ Edges (walls, windows, doors) use a **boundary-paint** interaction model on **sq
 
 **Replace/overwrite rules:** same kind on same edge = no-op; different kind replaces in place; empty edge = add.
 
-**Erase:** in Erase mode, the pointer resolves the nearest edge boundary and removes that specific edge feature (`onEraseEdge`). Cell-level erase (`resolveEraseTargetAtCell`) still handles objects, paths, and links.
+**Erase:** in Erase mode, the pointer resolves the nearest edge boundary and removes that edge by canonical `edgeId` (`onEraseEdge`). Cell-level erase (`resolveEraseTargetAtCell`) still handles objects, path segments along chains, and links.
+
+**Persistence:** edges are stored on the map as `edgeEntries`: `{ edgeId, kind }` with no per-feature id; `edgeId` is the canonical shared boundary key (`between:cellA|cellB`).
 
 **Edge rendering:** committed edges render at 15px stroke width on the cell boundary (gutter). Wall uses near-opaque text color; window uses dashed info-blue; door uses warning-amber. The `EdgeOrientation` type is designed as a union (`'horizontal' | 'vertical'`) extensible for hex grids (`'hex-a' | 'hex-b' | 'hex-c'`).
 
@@ -190,7 +195,7 @@ Both hooks are used at the route level; derived values are passed down to canvas
 1. **Workspace layout changes:** modify components under `components/workspace/`; constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
-4. **Path authoring:** chain-building logic lives in `LocationEditRoute.tsx` (`handlePlaceCell`); smooth curve rendering in `pathOverlayRendering.ts`; hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
+4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handlePlaceCell`); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
 5. **Edge authoring:** edge logic lives under `domain/mapEditor/edgeAuthoring.ts` with tests in `edgeAuthoring.test.ts`; grid integration in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
 6. **Path preview performance:** if the chain preview feels sluggish, consider caching the committed chain curve and only recomputing the tail segments on hover. See **Open issues §3**.
 

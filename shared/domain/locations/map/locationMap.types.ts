@@ -4,8 +4,8 @@ import {
 } from './locationMap.constants';
 import type { LocationCellUnitId } from './locationMap.constants';
 import type { LocationMapCellFillKindId } from './locationMapCellFill.constants';
-import type { LocationMapEdgeFeatureKindId } from './locationMapEdgeFeature.constants';
-import type { LocationMapPathFeatureKindId } from './locationMapPathFeature.constants';
+import type { LocationMapEdgeKindId } from './locationMapEdgeFeature.constants';
+import type { LocationMapPathKindId } from './locationMapPathFeature.constants';
 import type { GridGeometryId } from '../../grid/gridGeometry';
 
 export type { LocationCellUnitId };
@@ -55,24 +55,29 @@ export type LocationMapCellAuthoringEntry = {
 };
 
 /**
- * Linear path segment between two adjacent cells (map-level authoring).
- * Endpoints are normalized lexicographically for stable identity.
+ * One authored path chain (road or river). `cellIds` is ordered along the chain;
+ * consecutive cells must be grid-adjacent.
  */
-export type LocationMapPathSegment = {
+export type LocationMapPathAuthoringEntry = {
   id: string;
-  kind: LocationMapPathFeatureKindId;
-  startCellId: string;
-  endCellId: string;
+  kind: LocationMapPathKindId;
+  cellIds: string[];
 };
 
 /**
- * Feature attached to a cell boundary (e.g. wall on shared edge).
- * `edgeId` format: see `encodeSquareCellEdgeId` in shared grid helpers.
+ * One authored feature on a shared cell boundary. `edgeId` is the canonical
+ * undirected key (see `makeUndirectedSquareEdgeKey` in grid edge helpers).
  */
-export type LocationMapEdgeFeatureEntry = {
-  id: string;
-  kind: LocationMapEdgeFeatureKindId;
+export type LocationMapEdgeAuthoringEntry = {
   edgeId: string;
+  kind: LocationMapEdgeKindId;
+};
+
+/** Sparse map-level authored content split by primitive. */
+export type LocationMapAuthoringContent = {
+  cellEntries: LocationMapCellAuthoringEntry[];
+  pathEntries: LocationMapPathAuthoringEntry[];
+  edgeEntries: LocationMapEdgeAuthoringEntry[];
 };
 
 /** Map fields shared by client and API (no campaign scope). */
@@ -87,8 +92,8 @@ export type LocationMapBase = {
   cells?: LocationMapCell[];
   /** Sparse cell authoring: links + simple objects (optional). */
   cellEntries?: LocationMapCellAuthoringEntry[];
-  /** Map-level path segments (roads, rivers). */
-  pathSegments?: LocationMapPathSegment[];
-  /** Map-level edge features (walls, doors on boundaries). */
-  edgeFeatures?: LocationMapEdgeFeatureEntry[];
+  /** Map-level path chains (roads, rivers). */
+  pathEntries?: LocationMapPathAuthoringEntry[];
+  /** Map-level edge features on shared boundaries. */
+  edgeEntries?: LocationMapEdgeAuthoringEntry[];
 };

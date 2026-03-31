@@ -5,12 +5,12 @@ import {
 
 import type { LocationGridDraftState } from './locationGridDraft.types';
 
-function sortPathSegmentsForCompare(d: LocationGridDraftState) {
-  return [...d.pathSegments].sort((x, y) => x.id.localeCompare(y.id));
+function sortPathEntriesForCompare(d: LocationGridDraftState) {
+  return [...d.pathEntries].sort((x, y) => x.id.localeCompare(y.id));
 }
 
-function sortEdgeFeaturesForCompare(d: LocationGridDraftState) {
-  return [...d.edgeFeatures].sort((x, y) => x.id.localeCompare(y.id));
+function sortEdgeEntriesForCompare(d: LocationGridDraftState) {
+  return [...d.edgeEntries].sort((x, y) => x.edgeId.localeCompare(y.edgeId));
 }
 
 function stableStringify(value: unknown): string {
@@ -60,14 +60,14 @@ export function gridDraftPersistableEquals(
     return false;
   }
   if (
-    stableStringify(sortPathSegmentsForCompare(a)) !==
-    stableStringify(sortPathSegmentsForCompare(b))
+    stableStringify(sortPathEntriesForCompare(a)) !==
+    stableStringify(sortPathEntriesForCompare(b))
   ) {
     return false;
   }
   if (
-    stableStringify(sortEdgeFeaturesForCompare(a)) !==
-    stableStringify(sortEdgeFeaturesForCompare(b))
+    stableStringify(sortEdgeEntriesForCompare(a)) !==
+    stableStringify(sortEdgeEntriesForCompare(b))
   ) {
     return false;
   }

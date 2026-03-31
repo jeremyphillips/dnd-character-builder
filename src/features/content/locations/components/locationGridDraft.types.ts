@@ -1,8 +1,8 @@
 import type {
   LocationMapCellFillKindId,
   LocationMapCellObjectEntry,
-  LocationMapEdgeFeatureEntry,
-  LocationMapPathSegment,
+  LocationMapEdgeAuthoringEntry,
+  LocationMapPathAuthoringEntry,
 } from '@/shared/domain/locations';
 
 /** Same shape as persisted map cell objects. */
@@ -17,10 +17,10 @@ export type LocationGridDraftState = {
   objectsByCellId: Record<string, LocationCellObjectDraft[]>;
   /** Whole-cell terrain / surface fill (sparse). */
   cellFillByCellId: Record<string, LocationMapCellFillKindId | undefined>;
-  /** Map-level path segments (persisted on LocationMap). */
-  pathSegments: LocationMapPathSegment[];
-  /** Map-level edge features (persisted on LocationMap). */
-  edgeFeatures: LocationMapEdgeFeatureEntry[];
+  /** Map-level path chains (persisted on LocationMap). */
+  pathEntries: LocationMapPathAuthoringEntry[];
+  /** Map-level edge features on boundaries (persisted on LocationMap). */
+  edgeEntries: LocationMapEdgeAuthoringEntry[];
 };
 
 export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
@@ -29,6 +29,6 @@ export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
   linkedLocationByCellId: {},
   objectsByCellId: {},
   cellFillByCellId: {},
-  pathSegments: [],
-  edgeFeatures: [],
+  pathEntries: [],
+  edgeEntries: [],
 };

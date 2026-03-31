@@ -9,27 +9,27 @@ describe('resolveEraseTargetAtCell', () => {
   const cols = 4;
   const rows = 4;
 
-  it('prefers an edge feature when present on that cell boundary', () => {
+  it('prefers an edge entry when present on that cell boundary', () => {
     const a = '0,0';
     const b = '1,0';
     const edgeId = makeUndirectedSquareEdgeKey(a, b);
     const draft = {
-      pathSegments: [{ id: 'p1', startCellId: a, endCellId: b }],
-      edgeFeatures: [{ id: 'e1', edgeId }],
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: [a, b] }],
+      edgeEntries: [{ edgeId, kind: 'wall' as const }],
       objectsByCellId: { [a]: [{ id: 'o1' }] },
       linkedLocationByCellId: { [a]: 'loc1' },
     };
     expect(resolveEraseTargetAtCell(a, draft, cols, rows)).toEqual({
       type: 'edge',
-      featureId: 'e1',
+      edgeId,
     });
   });
 
   it('then object when no edge', () => {
     const cell = '1,1';
     const draft = {
-      pathSegments: [],
-      edgeFeatures: [],
+      pathEntries: [],
+      edgeEntries: [],
       objectsByCellId: { [cell]: [{ id: 'o1' }] },
       linkedLocationByCellId: {},
     };
@@ -43,22 +43,23 @@ describe('resolveEraseTargetAtCell', () => {
   it('then path segment when no edge or object', () => {
     const cell = '2,2';
     const draft = {
-      pathSegments: [{ id: 'p1', startCellId: '2,1', endCellId: cell }],
-      edgeFeatures: [],
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['2,1', cell] }],
+      edgeEntries: [],
       objectsByCellId: {},
       linkedLocationByCellId: {},
     };
     expect(resolveEraseTargetAtCell(cell, draft, cols, rows)).toEqual({
       type: 'path',
-      segmentId: 'p1',
+      pathId: 'p1',
+      neighborCellId: '2,1',
     });
   });
 
   it('then link when only link remains', () => {
     const cell = '0,1';
     const draft = {
-      pathSegments: [],
-      edgeFeatures: [],
+      pathEntries: [],
+      edgeEntries: [],
       objectsByCellId: {},
       linkedLocationByCellId: { [cell]: 'x' },
     };

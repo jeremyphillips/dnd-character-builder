@@ -6,30 +6,43 @@ import { makeUndirectedSquareEdgeKey } from '@/shared/domain/grid/gridEdgeIds';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 
 export type EraseDraftLike = {
-  pathSegments: ReadonlyArray<{ id: string; startCellId: string; endCellId: string }>;
-  edgeFeatures: ReadonlyArray<{ id: string; edgeId: string }>;
+  pathEntries: ReadonlyArray<{ id: string; cellIds: readonly string[] }>;
+  edgeEntries: ReadonlyArray<{ edgeId: string }>;
   objectsByCellId: Record<string, { id: string }[] | undefined>;
   linkedLocationByCellId: Record<string, string | undefined>;
 };
 
 export type EraseTarget =
-  | { type: 'edge'; featureId: string }
+  | { type: 'edge'; edgeId: string }
   | { type: 'object'; cellId: string; objectId: string }
-  | { type: 'path'; segmentId: string }
+  | { type: 'path'; pathId: string; neighborCellId: string }
   | { type: 'link'; cellId: string }
   | null;
 
-function pathSegmentsTouchingCell(draft: EraseDraftLike, cellId: string): { id: string }[] {
+function pathSegmentTouchingCell(
+  draft: EraseDraftLike,
+  cellId: string,
+): { pathId: string; neighborCellId: string }[] {
   const c = cellId.trim();
-  return draft.pathSegments.filter((s) => s.startCellId === c || s.endCellId === c);
+  const out: { pathId: string; neighborCellId: string }[] = [];
+  for (const p of draft.pathEntries) {
+    const ids = p.cellIds;
+    for (let i = 0; i < ids.length - 1; i++) {
+      const a = ids[i].trim();
+      const b = ids[i + 1].trim();
+      if (a === c) out.push({ pathId: p.id, neighborCellId: b });
+      else if (b === c) out.push({ pathId: p.id, neighborCellId: a });
+    }
+  }
+  return out;
 }
 
-function edgeFeaturesOnCellEdges(
+function edgeEntriesOnCellEdges(
   draft: EraseDraftLike,
   cellId: string,
   columns: number,
   rows: number,
-): { id: string; edgeId: string }[] {
+): { edgeId: string }[] {
   const p = parseGridCellId(cellId);
   if (!p) return [];
   const { x, y } = p;
@@ -45,19 +58,18 @@ function edgeFeaturesOnCellEdges(
     const oid = `${ox},${oy}`;
     keys.add(makeUndirectedSquareEdgeKey(cellId, oid));
   }
-  return draft.edgeFeatures.filter((e) => keys.has(e.edgeId));
+  return draft.edgeEntries.filter((e) => keys.has(e.edgeId));
 }
 
 /**
- * Resolve an erase target for a specific canonical edgeId. Returns the
- * matching edge feature's id if found.
+ * Resolve an erase target for a specific canonical edgeId.
  */
 export function resolveEraseEdgeByEdgeId(
   edgeId: string,
-  draft: Pick<EraseDraftLike, 'edgeFeatures'>,
+  draft: Pick<EraseDraftLike, 'edgeEntries'>,
 ): EraseTarget {
-  const hit = draft.edgeFeatures.find((e) => e.edgeId === edgeId);
-  if (hit) return { type: 'edge', featureId: hit.id };
+  const hit = draft.edgeEntries.find((e) => e.edgeId === edgeId);
+  if (hit) return { type: 'edge', edgeId };
   return null;
 }
 
@@ -67,17 +79,18 @@ export function resolveEraseTargetAtCell(
   gridColumns: number,
   gridRows: number,
 ): EraseTarget {
-  const edgesHere = edgeFeaturesOnCellEdges(draft, cellId, gridColumns, gridRows);
+  const edgesHere = edgeEntriesOnCellEdges(draft, cellId, gridColumns, gridRows);
   if (edgesHere.length > 0) {
-    return { type: 'edge', featureId: edgesHere[0].id };
+    return { type: 'edge', edgeId: edgesHere[0].edgeId };
   }
   const objs = draft.objectsByCellId[cellId];
   if (objs && objs.length > 0) {
     return { type: 'object', cellId, objectId: objs[objs.length - 1].id };
   }
-  const paths = pathSegmentsTouchingCell(draft, cellId);
+  const paths = pathSegmentTouchingCell(draft, cellId);
   if (paths.length > 0) {
-    return { type: 'path', segmentId: paths[paths.length - 1].id };
+    const last = paths[paths.length - 1];
+    return { type: 'path', pathId: last.pathId, neighborCellId: last.neighborCellId };
   }
   const linked = draft.linkedLocationByCellId[cellId]?.trim();
   if (linked) {

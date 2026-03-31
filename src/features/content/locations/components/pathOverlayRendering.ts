@@ -1,89 +1,28 @@
-import type { LocationMapPathSegment } from '@/shared/domain/locations/map/locationMap.types';
-import type { LocationMapPathFeatureKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
+import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations/map/locationMap.types';
+import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 
 type Point = { cx: number; cy: number };
 type CenterFn = (cellId: string) => Point | null;
 
 /**
- * Build maximal ordered chains of cell IDs from a set of path segments.
- * Segments are grouped by kind; within each kind an adjacency graph is built
- * and chains are extracted by walking from endpoints (degree-1 nodes) or
- * from arbitrary nodes for cycles.
+ * Build smooth SVG path data from authored path chains, using the provided
+ * center function to map cell IDs to pixel coordinates.
  */
-export function buildPathChains(
-  segments: readonly LocationMapPathSegment[],
-  kindFilter?: LocationMapPathFeatureKindId,
-): { kind: LocationMapPathFeatureKindId; cells: string[] }[] {
-  const filtered = kindFilter
-    ? segments.filter((s) => s.kind === kindFilter)
-    : segments;
+export function pathEntriesToSvgPaths(
+  pathEntries: readonly LocationMapPathAuthoringEntry[],
+  centerFn: CenterFn,
+): { kind: LocationMapPathKindId; d: string }[] {
+  const result: { kind: LocationMapPathKindId; d: string }[] = [];
 
-  const byKind = new Map<LocationMapPathFeatureKindId, LocationMapPathSegment[]>();
-  for (const seg of filtered) {
-    let list = byKind.get(seg.kind);
-    if (!list) {
-      list = [];
-      byKind.set(seg.kind, list);
+  for (const entry of pathEntries) {
+    const points: Point[] = [];
+    for (const cellId of entry.cellIds) {
+      const pt = centerFn(cellId);
+      if (pt) points.push(pt);
     }
-    list.push(seg);
-  }
-
-  const result: { kind: LocationMapPathFeatureKindId; cells: string[] }[] = [];
-
-  for (const [kind, segs] of byKind) {
-    const adj = new Map<string, Set<string>>();
-    const addEdge = (a: string, b: string) => {
-      let s = adj.get(a);
-      if (!s) { s = new Set(); adj.set(a, s); }
-      s.add(b);
-    };
-    for (const seg of segs) {
-      addEdge(seg.startCellId, seg.endCellId);
-      addEdge(seg.endCellId, seg.startCellId);
-    }
-
-    const visited = new Set<string>();
-    const edgeUsed = new Set<string>();
-    const edgeKey = (a: string, b: string) => a <= b ? `${a}|${b}` : `${b}|${a}`;
-
-    const endpoints = [...adj.entries()]
-      .filter(([, neighbors]) => neighbors.size === 1)
-      .map(([id]) => id);
-
-    const startNodes = endpoints.length > 0
-      ? endpoints
-      : [...adj.keys()];
-
-    for (const start of startNodes) {
-      if (visited.has(start) && adj.get(start)!.size <= 2) continue;
-
-      const chain: string[] = [start];
-      visited.add(start);
-      let current = start;
-
-      while (true) {
-        const neighbors = adj.get(current);
-        if (!neighbors) break;
-        let next: string | null = null;
-        for (const n of neighbors) {
-          const ek = edgeKey(current, n);
-          if (!edgeUsed.has(ek)) {
-            next = n;
-            edgeUsed.add(ek);
-            break;
-          }
-        }
-        if (!next) break;
-        chain.push(next);
-        visited.add(next);
-        current = next;
-        if ((adj.get(current)?.size ?? 0) > 2) break;
-      }
-
-      if (chain.length >= 2) {
-        result.push({ kind, cells: chain });
-      }
-    }
+    if (points.length < 2) continue;
+    const d = chainToSmoothSvgPath(points);
+    result.push({ kind: entry.kind, d });
   }
 
   return result;
@@ -128,31 +67,6 @@ export function chainToSmoothSvgPath(
   }
 
   return parts.join(' ');
-}
-
-/**
- * Build smooth SVG path data from path segments, using the provided
- * center function to map cell IDs to pixel coordinates.
- */
-export function pathSegmentsToSvgPaths(
-  segments: readonly LocationMapPathSegment[],
-  centerFn: CenterFn,
-): { kind: LocationMapPathFeatureKindId; d: string }[] {
-  const chains = buildPathChains(segments);
-  const result: { kind: LocationMapPathFeatureKindId; d: string }[] = [];
-
-  for (const chain of chains) {
-    const points: Point[] = [];
-    for (const cellId of chain.cells) {
-      const pt = centerFn(cellId);
-      if (pt) points.push(pt);
-    }
-    if (points.length < 2) continue;
-    const d = chainToSmoothSvgPath(points);
-    result.push({ kind: chain.kind, d });
-  }
-
-  return result;
 }
 
 function mirrorPoint(anchor: Point, other: Point): Point {

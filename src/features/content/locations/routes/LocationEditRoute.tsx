@@ -59,7 +59,7 @@ import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDe
 import {
   canPlaceObjectKindOnHostScale,
   getAllowedLinkedLocationOptions,
-  normalizePathSegmentEndpoints,
+  removePathChainSegment,
   type LocationScaleId,
 } from '@/shared/domain/locations';
 import { applyEdgeStrokeToDraft } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
@@ -296,8 +296,8 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(def.cellEntries),
-            pathSegments: def.pathSegments ?? [],
-            edgeFeatures: def.edgeFeatures ?? [],
+            pathEntries: def.pathEntries ?? [],
+            edgeEntries: def.edgeEntries ?? [],
           };
           setGridDraft(next);
           setGridDraftBaseline(structuredClone(next));
@@ -339,8 +339,8 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(def.cellEntries),
-            pathSegments: def.pathSegments ?? [],
-            edgeFeatures: def.edgeFeatures ?? [],
+            pathEntries: def.pathEntries ?? [],
+            edgeEntries: def.edgeEntries ?? [],
           };
           setGridDraft(next);
           setGridDraftBaseline(structuredClone(next));
@@ -532,14 +532,8 @@ export default function LocationEditRoute() {
                 gridDraft.objectsByCellId,
                 gridDraft.cellFillByCellId,
               ),
-              pathSegments: gridDraft.pathSegments.map((s) => {
-                const { startCellId, endCellId } = normalizePathSegmentEndpoints(
-                  s.startCellId,
-                  s.endCellId,
-                );
-                return { ...s, startCellId, endCellId };
-              }),
-              edgeFeatures: gridDraft.edgeFeatures,
+              pathEntries: gridDraft.pathEntries,
+              edgeEntries: gridDraft.edgeEntries,
             },
           );
           reset({
@@ -581,14 +575,8 @@ export default function LocationEditRoute() {
               gridDraft.objectsByCellId,
               gridDraft.cellFillByCellId,
             ),
-            pathSegments: gridDraft.pathSegments.map((s) => {
-              const { startCellId, endCellId } = normalizePathSegmentEndpoints(
-                s.startCellId,
-                s.endCellId,
-              );
-              return { ...s, startCellId, endCellId };
-            }),
-            edgeFeatures: gridDraft.edgeFeatures,
+            pathEntries: gridDraft.pathEntries,
+            edgeEntries: gridDraft.edgeEntries,
           },
         );
         reset({
@@ -619,8 +607,8 @@ export default function LocationEditRoute() {
       gridDraft.linkedLocationByCellId,
       gridDraft.objectsByCellId,
       gridDraft.cellFillByCellId,
-      gridDraft.pathSegments,
-      gridDraft.edgeFeatures,
+      gridDraft.pathEntries,
+      gridDraft.edgeEntries,
     ],
   );
 
@@ -676,8 +664,8 @@ export default function LocationEditRoute() {
             INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
             INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
           ),
-          pathSegments: INITIAL_LOCATION_GRID_DRAFT.pathSegments,
-          edgeFeatures: INITIAL_LOCATION_GRID_DRAFT.edgeFeatures,
+          pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
+          edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
         },
       );
       setLocationListRefreshKey((k) => k + 1);
@@ -762,7 +750,7 @@ export default function LocationEditRoute() {
         if (target.type === 'edge') {
           return {
             ...prev,
-            edgeFeatures: prev.edgeFeatures.filter((e) => e.id !== target.featureId),
+            edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== target.edgeId),
           };
         }
         if (target.type === 'object') {
@@ -776,7 +764,13 @@ export default function LocationEditRoute() {
         if (target.type === 'path') {
           return {
             ...prev,
-            pathSegments: prev.pathSegments.filter((s) => s.id !== target.segmentId),
+            pathEntries: removePathChainSegment(
+              prev.pathEntries,
+              target.pathId,
+              cellId,
+              target.neighborCellId,
+              () => crypto.randomUUID(),
+            ),
           };
         }
         const nextLinks = { ...prev.linkedLocationByCellId };
@@ -842,19 +836,37 @@ export default function LocationEditRoute() {
           mapEditor.setPathAnchorCellId(cellId);
           return;
         }
-        const { startCellId, endCellId } = normalizePathSegmentEndpoints(anchor, cellId);
-        setGridDraft((prev) => ({
-          ...prev,
-          pathSegments: [
-            ...prev.pathSegments,
-            {
-              id: crypto.randomUUID(),
-              kind: res.pathKind,
-              startCellId,
-              endCellId,
-            },
-          ],
-        }));
+        setGridDraft((prev) => {
+          const pathKind = res.pathKind;
+          const candidates = prev.pathEntries.filter((p) => p.kind === pathKind);
+          let extendId: string | undefined;
+          for (let i = candidates.length - 1; i >= 0; i--) {
+            const p = candidates[i];
+            if (p.cellIds[p.cellIds.length - 1]?.trim() === anchor.trim()) {
+              extendId = p.id;
+              break;
+            }
+          }
+          if (extendId) {
+            return {
+              ...prev,
+              pathEntries: prev.pathEntries.map((p) =>
+                p.id === extendId ? { ...p, cellIds: [...p.cellIds, cellId] } : p,
+              ),
+            };
+          }
+          return {
+            ...prev,
+            pathEntries: [
+              ...prev.pathEntries,
+              {
+                id: crypto.randomUUID(),
+                kind: pathKind,
+                cellIds: [anchor, cellId],
+              },
+            ],
+          };
+        });
         mapEditor.setPathAnchorCellId(cellId);
         return;
       }
@@ -878,7 +890,7 @@ export default function LocationEditRoute() {
       if (edgeIds.length === 0) return;
       setGridDraft((prev) => ({
         ...prev,
-        edgeFeatures: applyEdgeStrokeToDraft(prev.edgeFeatures, edgeIds, edgeKind),
+        edgeEntries: applyEdgeStrokeToDraft(prev.edgeEntries, edgeIds, edgeKind),
       }));
     },
     [],
@@ -887,7 +899,7 @@ export default function LocationEditRoute() {
   const handleEraseEdge = useCallback((edgeId: string) => {
     setGridDraft((prev) => ({
       ...prev,
-      edgeFeatures: prev.edgeFeatures.filter((e) => e.edgeId !== edgeId),
+      edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== edgeId),
     }));
   }, []);
 

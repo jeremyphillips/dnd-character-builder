@@ -11,8 +11,8 @@ import {
 import type { LocationMapKindId } from './locationMap.types';
 import { validateCellEntriesStructure } from './locationMapCellAuthoring.validation';
 import {
-  validateEdgeFeaturesStructure,
-  validatePathSegmentsStructure,
+  validateEdgeEntriesStructure,
+  validatePathEntriesStructure,
 } from './locationMapFeatures.validation';
 import { GRID_GEOMETRY_IDS, type GridGeometryId } from '../../grid/gridGeometry';
 
@@ -230,8 +230,8 @@ export function validateLocationMapInput(payload: {
   cells?: unknown;
   layout?: unknown;
   cellEntries?: unknown;
-  pathSegments?: unknown;
-  edgeFeatures?: unknown;
+  pathEntries?: unknown;
+  edgeEntries?: unknown;
 }): LocationMapValidationError[] {
   const errors: LocationMapValidationError[] = [];
   if (typeof payload.name !== 'string' || payload.name.trim().length === 0) {
@@ -263,8 +263,8 @@ export function validateLocationMapInput(payload: {
   errors.push(...validateCellEntriesStructure(payload.cellEntries, w, h));
 
   const geometry: GridGeometryId = typeof g.geometry === 'string' && (g.geometry === 'hex' || g.geometry === 'square') ? g.geometry : 'square';
-  errors.push(...validatePathSegmentsStructure(payload.pathSegments, w, h, geometry));
-  errors.push(...validateEdgeFeaturesStructure(payload.edgeFeatures, w, h));
+  errors.push(...validatePathEntriesStructure(payload.pathEntries, w, h, geometry));
+  errors.push(...validateEdgeEntriesStructure(payload.edgeEntries, w, h));
 
   return errors;
 }

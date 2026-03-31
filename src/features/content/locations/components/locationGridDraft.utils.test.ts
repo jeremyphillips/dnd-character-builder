@@ -36,4 +36,30 @@ describe('gridDraftPersistableEquals', () => {
     };
     expect(gridDraftPersistableEquals(baseline, afterRemove)).toBe(false);
   });
+
+  it('compares pathEntries and edgeEntries for persistence equality', () => {
+    const a = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0'] }],
+      edgeEntries: [{ edgeId: 'between:0,0|0,1', kind: 'wall' as const }],
+    };
+    const b = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0'] }],
+      edgeEntries: [{ edgeId: 'between:0,0|0,1', kind: 'wall' as const }],
+    };
+    expect(gridDraftPersistableEquals(a, b)).toBe(true);
+  });
+
+  it('detects pathEntries changes', () => {
+    const a = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0'] }],
+    };
+    const b = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0', '2,0'] }],
+    };
+    expect(gridDraftPersistableEquals(a, b)).toBe(false);
+  });
 });

@@ -26,10 +26,31 @@ export type LocationMapSelection =
       axis: 'horizontal' | 'vertical';
       anchorEdgeId: string;
     }
-  /** Reserved until region authoring exists. */
+  /** Authored region; derived from cell `regionId` in Select mode when no higher-priority hit. */
   | { type: 'region'; regionId: string };
 
-/** Event-driven auto-switch: opening Place mode should focus the Map rail section (place palette). */
+/**
+ * Which cell (if any) should receive grid “selected cell” chrome. Region / path / edge do not
+ * highlight a cell; only `cell` and `object` selections do.
+ */
+export function selectedCellIdForMapSelection(
+  selection: LocationMapSelection,
+): string | null {
+  if (selection.type === 'cell' || selection.type === 'object') {
+    return selection.cellId;
+  }
+  return null;
+}
+
+/** Stable equality for hover vs selection state updates. */
+export function mapSelectionEqual(a: LocationMapSelection, b: LocationMapSelection): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
+ * Event-driven auto-switch: opening Place or Draw mode should focus the Map rail section.
+ * Region paint switches the rail to Map when paint domain becomes `region` (see route `handlePaintChange`).
+ */
 export function shouldAutoSwitchRailToMapForMode(mode: LocationMapEditorMode): boolean {
   return mode === 'place' || mode === 'draw';
 }

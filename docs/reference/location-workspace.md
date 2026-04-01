@@ -6,7 +6,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 **Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). At persistence and API boundaries, `normalizeLocationMapAuthoringFields` / `normalizeLocationMapBaseAuthoring` (`shared/domain/locations/map/locationMapAuthoring.normalize.ts`) ensure `cellEntries`, `pathEntries`, and `edgeEntries` are always arrays (never `undefined`), including server `toDoc`, client `locationMapRepo` responses, `bootstrapDefaultLocationMap`, and save/load paths in `LocationEditRoute`.
 
-**Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
+**Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
 ### Location map authored model (reference)
 
@@ -35,6 +35,33 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 - **Normalization at boundaries:** `locationMapAuthoring.normalize.ts`.
 - **Derived geometry (pixels, polylines, segments):** `locationMapPathPolyline.helpers.ts`, `locationMapEdgeGeometry.helpers.ts`, `squareGridOverlayGeometry.ts` / `hexGridMapOverlayGeometry.ts` as appropriate.
 - **Feature SVG / smoothing:** `pathOverlayRendering.ts` and components such as `LocationGridAuthoringSection`.
+
+### Location map styling
+
+Presentation is split so hex/terrain colors, overlay rules, and grid chrome stay traceable:
+
+| Layer | Where | Role |
+|--------|--------|------|
+| **Primitives & map colors** | `src/app/theme/colorPrimitives.ts`, `mapColors.ts` | Hex scales; terrain swatches (`baseMapSwatchColors`); region preset colors (`baseMapRegionColors`). |
+| **Map UI tokens** | `domain/mapPresentation/locationMapUiStyles.ts` | Stroke widths, opacities, SVG/path/edge emphasis, region overlay placeholders; `resolveLocationMapUiStyles(theme)` for palette-dependent strokes. |
+| **Grid cells** | `components/mapGrid/gridCellStyles.ts` | `gridCellPalette` (MUI paths for borders/backgrounds) and selected inset shadow — shared by `GridEditor` / `HexGridEditor`. |
+| **Cell hover / selection chrome (Select mode)** | `components/mapGrid/mapGridCellVisualState.ts` | Pure helpers `shouldApplyCellHoverChrome`, `shouldApplyCellSelectedChrome`; re-exported from `components/mapGrid/index.ts`. |
+
+App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should go through these modules rather than ad hoc values in components. See [color-theming.md](./color-theming.md) and [locations.md](./locations.md) (grid renderers + styling parity).
+
+### Select mode: interactive targets and cell chrome
+
+**Unified resolver:** `domain/mapEditor/resolveSelectModeInteractiveTarget.ts` is the single entry for **Select**-mode hover and click targeting. Priority: **DOM** hit on map object (`[data-map-object-id]`) → **DOM** hit on linked-location icon (`[data-map-linked-cell]`) → **square** edge geometry → **path** polyline → **draft interior** via `resolveSelectModeAfterPathEdgeHits`.
+
+**Interior resolution** (`resolveSelectModeRegionOrCellSelection.ts` — `resolveSelectModeAfterPathEdgeHits`): after path/edge misses, **map objects → region assignment → linked location → bare cell**. Region is ordered **before** linked so that hovering the **cell interior** (not the link icon) treats the **region** as the primary target; that drives `selectHoverTarget` in `LocationGridAuthoringSection` and keeps cell-level hover chrome off unless the winner is actually **`cell`**. Direct pointer hits on the link icon still resolve to `{ type: 'cell' }` via the DOM branch first.
+
+**Region drill-in (click only):** `refineSelectModeClickAfterRegionDrill` — if the base resolver returns the **same** region as the current map selection, the next click becomes a **cell** selection. Not applied to hover.
+
+**Grid wiring:** `GridEditor` / `HexGridEditor` receive optional `selectHoverTarget` (`LocationMapSelection`) when the map editor is in **select** mode (`LocationGridAuthoringSection` passes it; other modes omit it so cells keep normal hover). **Square** grids: `handleSelectPointerMove` uses `resolveSquareCellIdFromGridLocalPx` in `shared/domain/grid/squareGridOverlayGeometry.ts` (re-exported from `squareGridMapOverlayGeometry.ts`) when `elementFromPoint` does not resolve a `[role="gridcell"]` (e.g. pointer in the inter-cell gap). **Hex** grids continue to use `resolveNearestHexCell` for that fallback.
+
+**Rendering note:** Grid cells use MUI `Box` with `component="button"`. When cell hover chrome is suppressed, `:hover` rules **mirror** the non-hover border/background so native `<button>` hover does not leak past the intended visual state.
+
+**Known gap:** Per-cell hover vs region emphasis can still misbehave in some cases — see **Open issues §4**.
 
 ---
 
@@ -131,7 +158,7 @@ Paths (roads, rivers) use a **cell-chain** interaction model that works on both 
 |--------|---------|
 | `components/pathOverlayRendering.ts` | `pathEntriesToSvgPaths` (path chains → SVG `d` strings), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier) |
 | `components/hexGridMapOverlayGeometry.ts` | `hexCellCenterPx`, `hexOverlayDimensions`, `resolveNearestHexCell` |
-| `components/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId` |
+| `components/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx` (grid-local point → cell id; gaps return null) |
 | `shared/domain/grid/gridHelpers.ts` | `getNeighborPoints` (geometry-aware: square + hex offset-column) |
 | `shared/domain/locations/map/locationMapFeatures.validation.ts` | `validatePathEntriesStructure` (accepts `geometry` param) |
 | `shared/domain/locations/map/locationMapPathAuthoring.helpers.ts` | `removePathChainSegment` (erase one step along a chain) |
@@ -199,6 +226,14 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 
 The smooth curve preview (hover → smooth Catmull-Rom spline) recalculates the full chain curve on every pointer move. On long chains or slower machines this can feel choppy. A potential optimization would be to cache the committed portion of the chain curve and only recompute the last 2–3 segments when the hover cell changes.
 
+### 4. Region vs cell hover chrome (follow-up)
+
+**Intent:** In **Select** mode, when the resolved **hover winner** is a **region** (or path, edge, object, etc.), grid **cells** should not show the usual per-cell hover treatment (primary border / dimmed fill) as if the cell were the primary target. Cell-level hover should read as active mainly when the winner is **`cell`** for that `cellId`.
+
+**In place today:** `selectHoverTarget` from `resolveSelectModeInteractiveTarget`, `shouldApplyCellHoverChrome` / `shouldApplyCellSelectedChrome` (`mapGridCellVisualState.ts`), interior priority **region before linked** (`resolveSelectModeAfterPathEdgeHits`), square `anchorCellId` fallback (`resolveSquareCellIdFromGridLocalPx`), and explicit `:hover` style mirroring on grid cell buttons when chrome is suppressed.
+
+**Still open:** Reports that region hover and cell hover can both read as active in some situations, or that behavior feels inconsistent (e.g. timing vs React updates, remaining edge cases in DOM vs geometry hit order, or native control styling). **Defer deeper fixes** until revisited; extend the resolver and `mapGridCellVisualState` helpers rather than scattering one-off conditions in JSX.
+
 ---
 
 ## Building scale (special edit workspace)
@@ -234,5 +269,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
 5. **Edge authoring:** edge logic lives under `domain/mapEditor/edgeAuthoring.ts` with tests in `edgeAuthoring.test.ts`; grid integration in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
 6. **Path preview performance:** if the chain preview feels sluggish, consider caching the committed chain curve and only recomputing the tail segments on hover. See **Open issues §3**.
+7. **Select mode / region hover:** resolver and grid chrome live in `resolveSelectModeInteractiveTarget.ts`, `resolveSelectModeRegionOrCellSelection.ts`, `refineSelectModeClickAfterRegionDrill.ts`, and `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

@@ -26,8 +26,10 @@ import {
   listLocationMaps,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
-  cellDraftToCellEntries,
   cellEntriesToDraft,
+  canApplyRegionPaint,
+  shouldSwitchRailToMapForPaintDomain,
+  upsertRegionEntry,
   pickMapGridFormValues,
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
@@ -65,8 +67,17 @@ import {
   removePathChainSegment,
   type LocationScaleId,
 } from '@/shared/domain/locations';
+import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
+import {
+  LOCATION_MAP_DEFAULT_REGION_NAME,
+  LOCATION_MAP_REGION_COLOR_KEYS,
+} from '@/shared/domain/locations/map/locationMapRegion.constants';
+import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
 import { applyEdgeStrokeToDraft } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
-import type { LocationMapEditorMode } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
+import type {
+  LocationMapEditorMode,
+  LocationMapPaintState,
+} from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
@@ -80,12 +91,15 @@ import {
   LocationEditorRailSectionTabs,
   LocationEditorSelectionPanel,
   shouldAutoSwitchRailToMapForMode,
+  selectedCellIdForMapSelection,
   LocationAncestryBreadcrumbs,
   BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
+  normalizedAuthoringPayloadFromGridDraft,
   LocationMapEditorLinkedLocationModal,
   LocationMapEditorPaintTray,
+  LocationMapEditorPaintMapPanel,
   LocationMapEditorPlacePanel,
   LocationMapEditorDrawTray,
   LocationMapEditorDrawPanel,
@@ -312,6 +326,7 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(authoring.cellEntries),
+            regionEntries: authoring.regionEntries,
             pathEntries: authoring.pathEntries,
             edgeEntries: authoring.edgeEntries,
           };
@@ -357,6 +372,7 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(authoring.cellEntries),
+            regionEntries: authoring.regionEntries,
             pathEntries: authoring.pathEntries,
             edgeEntries: authoring.edgeEntries,
           };
@@ -431,6 +447,99 @@ export default function LocationEditRoute() {
   const mapEditor = useLocationMapEditorState();
   const { setMode: setMapEditorMode } = mapEditor;
 
+  const handlePaintChange = useCallback(
+    (next: LocationMapPaintState) => {
+      mapEditor.setActivePaint(next);
+      if (shouldSwitchRailToMapForPaintDomain(next.domain)) {
+        setRailSection('map');
+      }
+    },
+    [mapEditor.setActivePaint, setRailSection],
+  );
+
+  const handleUpdateRegionEntry = useCallback(
+    (
+      regionId: string,
+      patch: Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>,
+    ) => {
+      setGridDraft((prev) => {
+        const cur = prev.regionEntries.find((r) => r.id === regionId);
+        if (!cur) return prev;
+        return {
+          ...prev,
+          regionEntries: upsertRegionEntry(prev.regionEntries, { ...cur, ...patch }),
+        };
+      });
+    },
+    [],
+  );
+
+  const handleCreateRegionPaint = useCallback(() => {
+    const id = crypto.randomUUID();
+    const colorKey = LOCATION_MAP_REGION_COLOR_KEYS[0];
+    const name = LOCATION_MAP_DEFAULT_REGION_NAME;
+    setGridDraft((prev) => ({
+      ...prev,
+      regionEntries: upsertRegionEntry(prev.regionEntries, { id, colorKey, name }),
+    }));
+    mapEditor.setActivePaint((p) => (p ? { ...p, domain: 'region', activeRegionId: id } : p));
+    setRailSection('map');
+  }, [mapEditor.setActivePaint, setRailSection]);
+
+  const handleSelectActiveRegionPaint = useCallback(
+    (regionId: string) => {
+      mapEditor.setActivePaint((p) => {
+        if (!p) return p;
+        const trimmed = regionId.trim();
+        return {
+          ...p,
+          domain: 'region',
+          activeRegionId: trimmed === '' ? null : trimmed,
+        };
+      });
+      setRailSection('map');
+    },
+    [mapEditor.setActivePaint, setRailSection],
+  );
+
+  const handleActiveRegionColorKeyChange = useCallback(
+    (colorKey: LocationMapRegionColorKey) => {
+      const id = mapEditor.activePaint?.activeRegionId?.trim();
+      if (!id) return;
+      setGridDraft((prev) => {
+        const cur = prev.regionEntries.find((r) => r.id === id);
+        if (!cur) return prev;
+        return {
+          ...prev,
+          regionEntries: upsertRegionEntry(prev.regionEntries, { ...cur, colorKey }),
+        };
+      });
+    },
+    [mapEditor.activePaint?.activeRegionId],
+  );
+
+  const handleEditRegionInSelection = useCallback(() => {
+    const id = mapEditor.activePaint?.activeRegionId?.trim();
+    if (!id) return;
+    const ms = { type: 'region' as const, regionId: id };
+    setGridDraft((prev) => ({
+      ...prev,
+      mapSelection: ms,
+      selectedCellId: selectedCellIdForMapSelection(ms),
+    }));
+    setRailSection('selection');
+  }, [mapEditor.activePaint?.activeRegionId]);
+
+  useEffect(() => {
+    const p = mapEditor.activePaint;
+    if (!p || p.domain !== 'region' || !p.activeRegionId?.trim()) return;
+    const id = p.activeRegionId.trim();
+    const ok = gridDraft.regionEntries.some((r) => r.id === id);
+    if (!ok) {
+      mapEditor.setActivePaint({ ...p, activeRegionId: null });
+    }
+  }, [gridDraft.regionEntries, mapEditor.activePaint, mapEditor.setActivePaint]);
+
   const handleMapEditorModeChange = useCallback(
     (mode: LocationMapEditorMode) => {
       setMapEditorMode(mode);
@@ -466,7 +575,10 @@ export default function LocationEditRoute() {
   /** Path / object placement: pointer capture on cells so pan does not steal clicks. */
   const mapPlaceSuppressesCanvasPanOnCells =
     mapEditor.mode === 'place' ||
-    (mapEditor.mode === 'draw' && mapEditor.activeDraw?.category === 'path');
+    (mapEditor.mode === 'draw' && mapEditor.activeDraw?.category === 'path') ||
+    (mapEditor.mode === 'paint' &&
+      mapEditor.activePaint != null &&
+      canApplyRegionPaint(mapEditor.activePaint, gridDraft.regionEntries));
 
   const mapPlaceObjectDragStrokeEnabled =
     mapEditor.mode === 'place' && mapEditor.activePlace?.category === 'map-object';
@@ -569,15 +681,7 @@ export default function LocationEditRoute() {
             values,
             {
               excludedCellIds: draft.excludedCellIds,
-              ...normalizeLocationMapAuthoringFields({
-                cellEntries: cellDraftToCellEntries(
-                  draft.linkedLocationByCellId,
-                  draft.objectsByCellId,
-                  draft.cellFillByCellId,
-                ),
-                pathEntries: draft.pathEntries,
-                edgeEntries: draft.edgeEntries,
-              }),
+              ...normalizedAuthoringPayloadFromGridDraft(draft),
             },
           );
           reset({
@@ -615,15 +719,7 @@ export default function LocationEditRoute() {
           values,
           {
             excludedCellIds: draft.excludedCellIds,
-            ...normalizeLocationMapAuthoringFields({
-              cellEntries: cellDraftToCellEntries(
-                draft.linkedLocationByCellId,
-                draft.objectsByCellId,
-                draft.cellFillByCellId,
-              ),
-              pathEntries: draft.pathEntries,
-              edgeEntries: draft.edgeEntries,
-            }),
+            ...normalizedAuthoringPayloadFromGridDraft(draft),
           },
         );
         reset({
@@ -700,13 +796,7 @@ export default function LocationEditRoute() {
         bootstrapValues,
         {
           excludedCellIds: INITIAL_LOCATION_GRID_DRAFT.excludedCellIds,
-          cellEntries: cellDraftToCellEntries(
-            INITIAL_LOCATION_GRID_DRAFT.linkedLocationByCellId,
-            INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
-            INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
-          ),
-          pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
-          edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
+          ...normalizedAuthoringPayloadFromGridDraft(INITIAL_LOCATION_GRID_DRAFT),
         },
       );
       setLocationListRefreshKey((k) => k + 1);
@@ -818,6 +908,11 @@ export default function LocationEditRoute() {
           const nextFill = { ...prev.cellFillByCellId };
           delete nextFill[cellId];
           return { ...prev, cellFillByCellId: nextFill };
+        }
+        if (target.type === 'region') {
+          const nextRegion = { ...prev.regionIdByCellId };
+          delete nextRegion[cellId];
+          return { ...prev, regionIdByCellId: nextRegion };
         }
         const nextLinks = { ...prev.linkedLocationByCellId };
         delete nextLinks[target.cellId];
@@ -993,11 +1088,15 @@ export default function LocationEditRoute() {
           activeDraw={mapEditor.activeDraw}
           onSelectDraw={mapEditor.setActiveDraw}
         />
-      ) : mapEditor.mode === 'paint' ? (
-        <Typography variant="body2" color="text.secondary">
-          Use the swatch column next to the toolbar to pick terrain, then drag across cells to paint. Region painting
-          can extend this tool later.
-        </Typography>
+      ) : mapEditor.mode === 'paint' && mapEditor.activePaint ? (
+        <LocationMapEditorPaintMapPanel
+          paint={mapEditor.activePaint}
+          regionEntries={gridDraft.regionEntries}
+          onCreateRegion={handleCreateRegionPaint}
+          onSelectActiveRegion={handleSelectActiveRegionPaint}
+          onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
+          onEditRegionInSelection={handleEditRegionInSelection}
+        />
       ) : mapEditor.mode === 'erase' ? (
         <Typography variant="body2" color="text.secondary">
           Click a cell to remove the topmost feature (edge, object, path segment, link, or terrain fill). Drag across
@@ -1016,8 +1115,10 @@ export default function LocationEditRoute() {
       selection={gridDraft.mapSelection}
       pathEntries={gridDraft.pathEntries}
       edgeEntries={gridDraft.edgeEntries}
+      regionEntries={gridDraft.regionEntries}
+      onUpdateRegionEntry={handleUpdateRegionEntry}
       cellPanelProps={{
-        selectedCellId: gridDraft.selectedCellId,
+        selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: locationId,
         hostScale: scaleForFormRules,
         hostName: loc.name,
@@ -1036,8 +1137,10 @@ export default function LocationEditRoute() {
       selection={gridDraft.mapSelection}
       pathEntries={gridDraft.pathEntries}
       edgeEntries={gridDraft.edgeEntries}
+      regionEntries={gridDraft.regionEntries}
+      onUpdateRegionEntry={handleUpdateRegionEntry}
       cellPanelProps={{
-        selectedCellId: gridDraft.selectedCellId,
+        selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: mapHostLocationId,
         hostScale: mapHostScale,
         hostName: mapHostName,
@@ -1072,6 +1175,7 @@ export default function LocationEditRoute() {
         canvas={
           <Box
             sx={{
+              position: 'relative',
               display: 'flex',
               flex: 1,
               minHeight: 0,
@@ -1085,11 +1189,11 @@ export default function LocationEditRoute() {
                   mode={mapEditor.mode}
                   onModeChange={handleMapEditorModeChange}
                 />
-                {mapEditor.mode === 'paint' && (
+                {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                   <LocationMapEditorPaintTray
                     items={paintPaletteItems}
                     activePaint={mapEditor.activePaint}
-                    onSelectSwatch={mapEditor.setActivePaint}
+                    onPaintChange={handlePaintChange}
                   />
                 )}
                 {mapEditor.mode === 'draw' && (
@@ -1260,11 +1364,11 @@ export default function LocationEditRoute() {
                       mode={mapEditor.mode}
                       onModeChange={handleMapEditorModeChange}
                     />
-                    {mapEditor.mode === 'paint' && (
+                    {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                       <LocationMapEditorPaintTray
                         items={paintPaletteItems}
                         activePaint={mapEditor.activePaint}
-                        onSelectSwatch={mapEditor.setActivePaint}
+                        onPaintChange={handlePaintChange}
                       />
                     )}
                     {mapEditor.mode === 'draw' && (
@@ -1333,6 +1437,7 @@ export default function LocationEditRoute() {
           ) : (
             <Box
               sx={{
+                position: 'relative',
                 display: 'flex',
                 flex: 1,
                 minHeight: 0,
@@ -1346,11 +1451,11 @@ export default function LocationEditRoute() {
                     mode={mapEditor.mode}
                     onModeChange={handleMapEditorModeChange}
                   />
-                  {mapEditor.mode === 'paint' && (
+                  {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                     <LocationMapEditorPaintTray
                       items={paintPaletteItems}
                       activePaint={mapEditor.activePaint}
-                      onSelectSwatch={mapEditor.setActivePaint}
+                      onPaintChange={handlePaintChange}
                     />
                   )}
                   {mapEditor.mode === 'draw' && (

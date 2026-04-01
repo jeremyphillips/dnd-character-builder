@@ -1,5 +1,5 @@
 /**
- * Single-cell erase target. Priority: edge → object → path segment → linked location → cell fill.
+ * Single-cell erase target. Priority: edge → object → path segment → linked location → cell fill → region.
  */
 import { makeUndirectedSquareEdgeKey } from '@/shared/domain/grid/gridEdgeIds';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
@@ -11,6 +11,8 @@ export type EraseDraftLike = {
   linkedLocationByCellId: Record<string, string | undefined>;
   /** Sparse cell terrain fill; cleared in Erase mode when no higher-priority target. */
   cellFillByCellId?: Record<string, string | undefined>;
+  /** Sparse cell → region id (overlay). */
+  regionIdByCellId?: Record<string, string | undefined>;
 };
 
 export type EraseTarget =
@@ -19,6 +21,7 @@ export type EraseTarget =
   | { type: 'path'; pathId: string; neighborCellId: string }
   | { type: 'link'; cellId: string }
   | { type: 'fill'; cellId: string }
+  | { type: 'region'; cellId: string }
   | null;
 
 function pathSegmentTouchingCell(
@@ -101,6 +104,10 @@ export function resolveEraseTargetAtCell(
   const fill = draft.cellFillByCellId?.[cellId];
   if (fill != null && String(fill).trim() !== '') {
     return { type: 'fill', cellId };
+  }
+  const regionId = draft.regionIdByCellId?.[cellId];
+  if (regionId != null && String(regionId).trim() !== '') {
+    return { type: 'region', cellId };
   }
   return null;
 }

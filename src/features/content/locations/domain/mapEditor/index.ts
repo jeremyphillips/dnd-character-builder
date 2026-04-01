@@ -1,4 +1,6 @@
 export * from './locationMapEditor.types';
+export * from './locationMapEditorRail.helpers';
+export * from './locationMapPaintSelection.helpers';
 export * from './locationMapEditorPalette.helpers';
 export * from './placeObjectBridge';
 export * from './resolvePlacedKindToAction';
@@ -6,3 +8,6 @@ export * from './resolveDrawSelectionToAction';
 export * from './resolveEraseTarget';
 export * from './useLocationMapEditorState';
 export * from './locationMapSelectionHitTest';
+export * from './resolveSelectModeRegionOrCellSelection';
+export * from './resolveSelectModeInteractiveTarget';
+export * from './refineSelectModeClickAfterRegionDrill';

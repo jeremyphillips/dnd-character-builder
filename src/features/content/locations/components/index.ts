@@ -6,6 +6,7 @@ export type { LocationCellAuthoringPanelProps } from './LocationCellAuthoringPan
 export {
   LocationMapEditorToolbar,
   LocationMapEditorPaintTray,
+  LocationMapEditorPaintMapPanel,
   LocationMapEditorDrawTray,
   LocationMapEditorDrawPanel,
   LocationMapEditorPlacePanel,
@@ -18,7 +19,10 @@ export type {
   LocationCellObjectDraft,
   LocationGridDraftState,
 } from './locationGridDraft.types'
-export { gridDraftPersistableEquals } from './locationGridDraft.utils'
+export {
+  gridDraftPersistableEquals,
+  normalizedAuthoringPayloadFromGridDraft,
+} from './locationGridDraft.utils';
 export {
   LocationEditorWorkspace,
   LocationEditorHeader,
@@ -36,4 +40,8 @@ export {
   LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
 } from './workspace'
 export type { LocationEditorRailSection, LocationMapSelection } from './workspace'
-export { shouldAutoSwitchRailToMapForMode } from './workspace'
+export {
+  shouldAutoSwitchRailToMapForMode,
+  selectedCellIdForMapSelection,
+  mapSelectionEqual,
+} from './workspace'

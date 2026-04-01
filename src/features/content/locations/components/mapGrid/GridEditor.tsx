@@ -3,46 +3,51 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-} from 'react'
-import Box from '@mui/material/Box'
-import { makeGridCellId } from '@/shared/domain/grid'
+} from 'react';
+import Box from '@mui/material/Box';
+import { makeGridCellId } from '@/shared/domain/grid';
 import {
-  GRID_CELL_BG_COLOR,
-  GRID_CELL_BG_COLOR_EXCLUDED,
-  GRID_CELL_BG_COLOR_HOVER,
-  GRID_CELL_BG_COLOR_SELECTED,
   GRID_CELL_BORDER_COLOR,
-  GRID_CELL_BORDER_COLOR_EXCLUDED,
   GRID_CELL_BORDER_COLOR_HOVER,
-  GRID_CELL_BORDER_COLOR_SELECTED,
+  gridCellPalette,
   gridCellSelectedShadow,
-} from './gridCellStyles'
+} from './gridCellStyles';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/locationEditorRail.types';
+import {
+  shouldApplyCellHoverChrome,
+  shouldApplyCellSelectedChrome,
+} from './mapGridCellVisualState';
 
 export type GridCell = {
-  cellId: string
-  x: number
-  y: number
-}
+  cellId: string;
+  x: number;
+  y: number;
+};
 
 export type GridEditorProps = {
-  columns: number
-  rows: number
-  selectedCellId?: string | null
+  columns: number;
+  rows: number;
+  selectedCellId?: string | null;
   /** Cells masked out of walkable layout (authoring); distinct from selection styling. */
-  excludedCellIds?: string[]
-  onCellClick?: (cell: GridCell, event: ReactMouseEvent<HTMLElement>) => void
+  excludedCellIds?: string[];
+  onCellClick?: (cell: GridCell, event: ReactMouseEvent<HTMLElement>) => void;
   /** Optional whole-cell background (e.g. terrain fill); selection / excluded still win. */
-  getCellBackgroundColor?: (cell: GridCell) => string | undefined
-  onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void
-  onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void
-  onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void
-  getCellLabel?: (cell: GridCell) => string | undefined
+  getCellBackgroundColor?: (cell: GridCell) => string | undefined;
+  onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
+  onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
+  onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
+  getCellLabel?: (cell: GridCell) => string | undefined;
   /** When set, rendered inside the cell instead of {@link getCellLabel} text. */
-  renderCellContent?: (cell: GridCell) => ReactNode
-  getCellClassName?: (cell: GridCell) => string | undefined
-  className?: string
-  disabled?: boolean
-}
+  renderCellContent?: (cell: GridCell) => ReactNode;
+  getCellClassName?: (cell: GridCell) => string | undefined;
+  className?: string;
+  disabled?: boolean;
+  /**
+   * Select-mode hover winner from map hit-testing. When set, cell `:hover` chrome follows
+   * {@link shouldApplyCellHoverChrome}; omit in other modes so all cells keep normal hover.
+   */
+  selectHoverTarget?: LocationMapSelection;
+};
 
 export default function GridEditor({
   columns,
@@ -59,13 +64,14 @@ export default function GridEditor({
   getCellClassName,
   className,
   disabled,
+  selectHoverTarget: selectHoverTargetProp,
 }: GridEditorProps) {
-  const safeCols = Math.max(0, Math.floor(columns))
-  const safeRows = Math.max(0, Math.floor(rows))
+  const safeCols = Math.max(0, Math.floor(columns));
+  const safeRows = Math.max(0, Math.floor(rows));
   const excludedSet = useMemo(
     () => new Set(excludedCellIds ?? []),
     [excludedCellIds],
-  )
+  );
 
   return (
     <Box
@@ -82,16 +88,17 @@ export default function GridEditor({
       aria-rowcount={safeRows}
     >
       {Array.from({ length: safeRows * safeCols }, (_, i) => {
-        const x = i % safeCols
-        const y = Math.floor(i / safeCols)
-        const cellId = makeGridCellId(x, y)
-        const cell: GridCell = { cellId, x, y }
-        const label = getCellLabel?.(cell)
-        const custom = renderCellContent?.(cell)
-        const extraClass = getCellClassName?.(cell)
-        const selected = selectedCellId != null && selectedCellId === cellId
-        const excluded = excludedSet.has(cellId)
-        const fillBg = getCellBackgroundColor?.(cell)
+        const x = i % safeCols;
+        const y = Math.floor(i / safeCols);
+        const cellId = makeGridCellId(x, y);
+        const cell: GridCell = { cellId, x, y };
+        const label = getCellLabel?.(cell);
+        const custom = renderCellContent?.(cell);
+        const extraClass = getCellClassName?.(cell);
+        const selected = shouldApplyCellSelectedChrome(selectedCellId, cellId);
+        const excluded = excludedSet.has(cellId);
+        const fillBg = getCellBackgroundColor?.(cell);
+        const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTargetProp);
 
         return (
           <Box
@@ -109,32 +116,34 @@ export default function GridEditor({
             disabled={disabled}
             onClick={(e) => !disabled && onCellClick?.(cell, e)}
             onPointerDown={(e) => {
-              onCellPointerDown?.(e, cell)
+              onCellPointerDown?.(e, cell);
             }}
             onPointerEnter={(e) => {
-              onCellPointerEnter?.(e, cell)
+              onCellPointerEnter?.(e, cell);
             }}
             onPointerUp={(e) => {
-              onCellPointerUp?.(e, cell)
+              onCellPointerUp?.(e, cell);
             }}
             className={extraClass}
             sx={{
+              position: 'relative',
+              overflow: 'hidden',
               aspectRatio: '1',
               minWidth: 0,
               minHeight: 0,
               border: 1,
               borderRadius: 0.5,
               borderColor: selected
-                ? GRID_CELL_BORDER_COLOR_SELECTED
+                ? gridCellPalette.border.selected
                 : excluded
-                  ? GRID_CELL_BORDER_COLOR_EXCLUDED
+                  ? gridCellPalette.border.excluded
                   : GRID_CELL_BORDER_COLOR,
               borderStyle: excluded && !selected ? 'dashed' : 'solid',
               bgcolor: selected
-                ? GRID_CELL_BG_COLOR_SELECTED
+                ? gridCellPalette.background.selected
                 : excluded
-                  ? GRID_CELL_BG_COLOR_EXCLUDED
-                  : fillBg ?? GRID_CELL_BG_COLOR,
+                  ? gridCellPalette.background.excluded
+                  : fillBg ?? gridCellPalette.background.default,
               backgroundImage: excluded
                 ? 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)'
                 : undefined,
@@ -149,17 +158,17 @@ export default function GridEditor({
               boxShadow: selected
                 ? (theme) => gridCellSelectedShadow(theme)
                 : undefined,
-              '&:hover': disabled
+              '&:hover': disabled || !allowHover
                 ? undefined
                 : {
                     borderColor: selected
-                      ? GRID_CELL_BORDER_COLOR_SELECTED
+                      ? gridCellPalette.border.selected
                       : GRID_CELL_BORDER_COLOR_HOVER,
                     bgcolor: selected
-                      ? GRID_CELL_BG_COLOR_SELECTED
+                      ? gridCellPalette.background.selected
                       : excluded
-                        ? GRID_CELL_BG_COLOR_EXCLUDED
-                        : fillBg ?? GRID_CELL_BG_COLOR_HOVER,
+                        ? gridCellPalette.background.excluded
+                        : fillBg ?? gridCellPalette.background.hover,
                   },
             }}
           >
@@ -182,8 +191,8 @@ export default function GridEditor({
               </Box>
             ) : null}
           </Box>
-        )
+        );
       })}
     </Box>
-  )
+  );
 }

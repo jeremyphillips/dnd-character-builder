@@ -3,6 +3,7 @@ import type {
   LocationMapCellObjectEntry,
   LocationMapEdgeAuthoringEntry,
   LocationMapPathAuthoringEntry,
+  LocationMapRegionAuthoringEntry,
 } from '@/shared/domain/locations';
 
 import type { LocationMapSelection } from './workspace/locationEditorRail.types';
@@ -25,6 +26,10 @@ export type LocationGridDraftState = {
   pathEntries: LocationMapPathAuthoringEntry[];
   /** Map-level edge features on boundaries (persisted on LocationMap). */
   edgeEntries: LocationMapEdgeAuthoringEntry[];
+  /** Authored regions (overlay); cells reference ids via {@link regionIdByCellId}. */
+  regionEntries: LocationMapRegionAuthoringEntry[];
+  /** Sparse cell → region membership (persisted via cellEntries.regionId). */
+  regionIdByCellId: Record<string, string | undefined>;
 };
 
 export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
@@ -36,4 +41,6 @@ export const INITIAL_LOCATION_GRID_DRAFT: LocationGridDraftState = {
   cellFillByCellId: {},
   pathEntries: [],
   edgeEntries: [],
+  regionEntries: [],
+  regionIdByCellId: {},
 };

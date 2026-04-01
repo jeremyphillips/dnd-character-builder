@@ -39,7 +39,19 @@ export type LocationMapActiveDrawSelection =
     }
   | null;
 
-export type LocationMapActivePaintSelection = LocationCellFillKindId | null;
+/**
+ * Paint tool state: Surface (terrain fill) vs Region (authored region target).
+ * Region metadata lives in draft `regionEntries`; paint state only holds `activeRegionId`.
+ * `null` when the editor is not in Paint mode.
+ */
+export type LocationMapPaintState = {
+  domain: 'surface' | 'region';
+  surfaceFillKind: LocationCellFillKindId | null;
+  /** Must match an id in draft `regionEntries` when painting regions. */
+  activeRegionId: string | null;
+};
+
+export type LocationMapActivePaintSelection = LocationMapPaintState | null;
 
 /**
  * Pending linked-location modal. Campaign-only locations; cancel leaves draft unchanged.

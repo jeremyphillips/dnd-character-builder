@@ -10,6 +10,11 @@ import {
 } from './locationMap.constants';
 import type { LocationMapKindId } from './locationMap.types';
 import { validateCellEntriesStructure } from './locationMapCellAuthoring.validation';
+import { normalizeRegionEntriesArray } from './locationMapRegionAuthoring.normalize';
+import {
+  validateRegionEntriesStructure,
+  validateCellRegionIdsReferenceRegionEntries,
+} from './locationMapRegionAuthoring.validation';
 import {
   validateEdgeEntriesStructure,
   validatePathEntriesStructure,
@@ -232,6 +237,7 @@ export function validateLocationMapInput(payload: {
   cellEntries?: unknown;
   pathEntries?: unknown;
   edgeEntries?: unknown;
+  regionEntries?: unknown;
 }): LocationMapValidationError[] {
   const errors: LocationMapValidationError[] = [];
   if (typeof payload.name !== 'string' || payload.name.trim().length === 0) {
@@ -261,6 +267,16 @@ export function validateLocationMapInput(payload: {
   errors.push(...validateLocationMapLayout(payload.layout));
 
   errors.push(...validateCellEntriesStructure(payload.cellEntries, w, h));
+
+  const regionNorm = normalizeRegionEntriesArray(payload.regionEntries);
+  errors.push(...validateRegionEntriesStructure(regionNorm));
+  errors.push(
+    ...validateCellRegionIdsReferenceRegionEntries(payload.cellEntries, regionNorm).map((e) => ({
+      path: e.path,
+      code: e.code,
+      message: e.message,
+    })),
+  );
 
   const geometry: GridGeometryId = typeof g.geometry === 'string' && (g.geometry === 'hex' || g.geometry === 'square') ? g.geometry : 'square';
   errors.push(...validatePathEntriesStructure(payload.pathEntries, w, h, geometry));

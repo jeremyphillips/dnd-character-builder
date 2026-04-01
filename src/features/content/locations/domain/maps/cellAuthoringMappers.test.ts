@@ -29,7 +29,16 @@ describe('cellAuthoringMappers', () => {
     expect(back.linkedLocationByCellId['1,1']).toBe('loc-a');
   });
 
-  it('omits draft when no link, objects, or fill', () => {
-    expect(cellDraftToCellEntries({}, {}, {})).toEqual([]);
+  it('omits draft when no link, objects, fill, or region', () => {
+    expect(cellDraftToCellEntries({}, {}, {}, {})).toEqual([]);
+  });
+
+  it('round-trips region membership', () => {
+    const entries = cellDraftToCellEntries({}, {}, {}, { '0,0': 'reg-1' });
+    expect(entries).toEqual([
+      { cellId: '0,0', regionId: 'reg-1' },
+    ]);
+    const back = cellEntriesToDraft(entries);
+    expect(back.regionIdByCellId['0,0']).toBe('reg-1');
   });
 });

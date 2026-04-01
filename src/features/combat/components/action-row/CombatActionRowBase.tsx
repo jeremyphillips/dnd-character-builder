@@ -1,9 +1,10 @@
 import { AppBadge } from '@/ui/primitives'
 import { HorizontalCompactActionCard } from '@/ui/patterns'
 import type { ActionBadgeDescriptor } from '@/features/mechanics/domain/combat/presentation/badges/action/combat-action-badges.types'
-import { combatToneToAppBadgeTone } from '@/features/combat/components'
 
-export type ActionRowBaseProps = {
+import { combatToneToAppBadgeTone } from '../cards/combatant-badges'
+
+export type CombatActionRowBaseProps = {
   isSelected: boolean
   isAvailable?: boolean
   onSelect?: () => void
@@ -15,7 +16,7 @@ export type ActionRowBaseProps = {
   footerActionOpenInNewTab?: boolean
 }
 
-export function ActionRowBase({
+export function CombatActionRowBase({
   isSelected,
   isAvailable = true,
   onSelect,
@@ -25,7 +26,7 @@ export function ActionRowBase({
   footerActionTo,
   footerActionLabel,
   footerActionOpenInNewTab,
-}: ActionRowBaseProps) {
+}: CombatActionRowBaseProps) {
   return (
     <HorizontalCompactActionCard
       isSelected={isSelected}

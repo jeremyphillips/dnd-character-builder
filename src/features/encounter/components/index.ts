@@ -46,7 +46,11 @@ export { EncounterGridSetup } from './setup/options/EncounterGridSetup'
 export { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets'
 export type { GridSizePreset } from '@/shared/domain/grid/gridPresets'
 export { ActionRow } from './active/action-row/ActionRow'
-export { ActionRowBase } from './active/action-row/ActionRowBase'
+/** Temporary alias (Phase 3C). Prefer `CombatActionRowBase` from `@/features/combat/components`. */
+export {
+  CombatActionRowBase as ActionRowBase,
+  type CombatActionRowBaseProps as ActionRowBaseProps,
+} from '@/features/combat/components'
 export { EncounterEditModal } from './shared/modals/EncounterEditModal'
 export { CombatTargetSelectModal, buildTargetOptions } from './active/modals/CombatTargetSelectModal'
 export { CombatLogModal } from './active/combat-log/CombatLogModal'

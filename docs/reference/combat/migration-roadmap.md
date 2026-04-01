@@ -87,9 +87,14 @@ This is the bridge from single-client mutation flow toward server-authoritative 
 
 - Not a second migration: committed action execution already flows through `handleResolveAction` → `ResolveActionIntent` → `applyCombatIntent` → `resolveCombatAction`.
 - Added prep-vs-commit note, narrow validation/events in `apply-resolve-action-intent`, pure `buildResolveActionIntentFromActiveSelection` in Encounter domain, docs aligned with reality.
-- Next (4D+): log/toast from canonical events, remaining legacy mutators, optional server path.
 
-See [.cursor/plans/phase_4a_combat_intent_dispatch.plan.md](../../../.cursor/plans/phase_4a_combat_intent_dispatch.plan.md) and [.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md](../../../.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md).
+### Phase 4D (log/toast from canonical success output)
+
+- Implemented: `flattenLogEntriesFromIntentSuccess` in combat application; `useEncounterState` schedules a single log/toast callback per successful intent (flattened entries, one microtask). `registerCombatLogAppended` API unchanged.
+
+- Next (4E+): remaining legacy mutators, optional server path.
+
+See [.cursor/plans/phase_4a_combat_intent_dispatch.plan.md](../../../.cursor/plans/phase_4a_combat_intent_dispatch.plan.md), [.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md](../../../.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md), and [.cursor/plans/phase_4d_log_toast_events.plan.md](../../../.cursor/plans/phase_4d_log_toast_events.plan.md).
 
 ## Future server-authoritative phase
 

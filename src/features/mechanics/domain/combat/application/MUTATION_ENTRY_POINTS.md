@@ -17,12 +17,15 @@ Orchestration for move/resolve/end-turn lives in [`apply-combat-intent.ts`](./ap
 
 Routes (`EncounterActiveRoute`, `EncounterRuntimeContext`) wire grid/footer callbacks to the handlers above.
 
-## Later migration (4D+)
+## Phase 4D — log and toast from intent success
+
+After a successful `applyCombatIntent`, Encounter schedules **one** `queueMicrotask` per intent (not per `log-appended` event). Log rows for UI/toast are a **single flattened** array: `flattenLogEntriesFromIntentSuccess` in [`intent-success-log-entries.ts`](./intent-success-log-entries.ts) concatenates every `log-appended` chunk in `result.events` order. The hook still exposes **`registerCombatLogAppended(entries, stateAfter)`** unchanged; the route passes flattened `entries` into `buildEncounterActionToastPayload`.
+
+## Later migration (4E+)
 
 | Area | Notes |
 |------|--------|
 | AoE / spawn as standalone intents | Optional; today folded into `resolve-action` selection |
 | DM manual mutators | Could become intents or stay simulator-only |
-| Log/toast | Derive from `CombatEvent` records (4D) |
 
 UI-only (never authoritative intents): hover, drawer mode, unconfirmed target, AoE preview, modal open state.

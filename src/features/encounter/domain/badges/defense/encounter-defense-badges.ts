@@ -5,7 +5,7 @@ import {
   type ConditionImmunityId,
 } from '@/features/mechanics/domain/conditions/effect-condition-definitions'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import { MONSTER_TYPE_OPTIONS } from '@/features/content/monsters/domain/vocab/monster.vocab'
 import { ENERGY_DAMAGE_TYPES } from '@/features/mechanics/domain/damage/energyDamageTypes'
 import { WEAPON_DAMAGE_TYPE_OPTIONS } from '@/features/content/equipment/weapons/domain/vocab/weapons.vocab'

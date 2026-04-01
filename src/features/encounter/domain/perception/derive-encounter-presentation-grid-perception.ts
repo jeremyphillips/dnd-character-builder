@@ -13,7 +13,7 @@
  */
 import { getEncounterViewerPerceptionCapabilitiesFromCombatant } from '@/features/mechanics/domain/perception/perception.capabilities'
 import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/perception/perception.render.projection'
-import type { EncounterState } from '@/features/mechanics/domain/encounter'
+import type { EncounterState } from '@/features/mechanics/domain/combat'
 
 import type { EncounterSimulatorViewerMode } from '../capabilities/encounter-capabilities.types'
 

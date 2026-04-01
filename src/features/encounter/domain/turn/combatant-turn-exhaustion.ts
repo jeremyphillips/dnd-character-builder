@@ -1,5 +1,5 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution'
-import type { CombatantTurnResources } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution'
+import type { CombatantTurnResources } from '@/features/mechanics/domain/combat/state/types'
 
 import {
   deriveBucketState,

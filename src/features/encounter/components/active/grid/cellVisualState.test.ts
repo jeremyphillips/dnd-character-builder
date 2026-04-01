@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { GridCellViewModel } from '../../../space/selectors/space.selectors'
+import type { GridCellViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/perception/perception.render.projection'
 
 import {

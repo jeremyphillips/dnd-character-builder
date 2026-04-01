@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { EXTRAPLANAR_CREATURE_TYPES } from '@/features/mechanics/domain/rulesets/system/monsters/extraplanar-creature-types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import {
   deriveEncounterDefenseBadges,
   describeConditionScopeForDefenseTooltip,

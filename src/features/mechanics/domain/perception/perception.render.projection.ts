@@ -14,8 +14,8 @@
  * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
-import { getCellForCombatant, gridDistanceFt } from '@/features/encounter/space'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
+import { getCellForCombatant, gridDistanceFt } from '@/features/mechanics/domain/combat/space'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
 import {

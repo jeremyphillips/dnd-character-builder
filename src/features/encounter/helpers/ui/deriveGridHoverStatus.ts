@@ -1,20 +1,20 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import { getActionTargetInvalidReason } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import { getActionTargetInvalidReason } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
 
 import { isAreaGridAction, isSelfCenteredAreaAction } from '../actions'
 import type { GridInteractionMode } from '../../domain/interaction/encounter-interaction.types'
 import {
   getSingleCellPlacementRequirement,
   validateSingleCellPlacement,
-} from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
-import { getCellById, getCellForCombatant, gridDistanceFt } from '../../space/space.helpers'
+} from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
+import { getCellById, getCellForCombatant, gridDistanceFt } from '@/features/mechanics/domain/combat/space/space.helpers'
 import {
   actionUsesGridCreatureTargeting,
   getMoveRejectionReason,
   isValidAoeOriginCell,
-} from '../../space/selectors/space.selectors'
+} from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 
 export type AoeStep = 'none' | 'placing' | 'confirm'
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
 
-import { updateEncounterEnvironmentBaseline } from '@/features/mechanics/domain/encounter/state/environment/environment-baseline-mutations'
+import { updateEncounterEnvironmentBaseline } from '@/features/mechanics/domain/combat/state/environment/environment-baseline-mutations'
 
 import { applyEnvironmentBaselinePatch } from '../environment.baseline.patch'
 import { DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE } from '../environment.resolve'

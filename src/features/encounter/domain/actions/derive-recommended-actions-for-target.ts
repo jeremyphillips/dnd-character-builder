@@ -1,5 +1,5 @@
-import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 
 import { deriveActionPresentation } from './action-presentation'
 

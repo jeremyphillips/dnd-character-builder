@@ -2,8 +2,8 @@ import {
   combatantHasSpatialSpeedReduction,
   type CombatantInstance,
   type SpatialBattlefieldPresentationOptions,
-} from '@/features/mechanics/domain/encounter'
-import { isDefeatedCombatant } from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
+} from '@/features/mechanics/domain/combat'
+import { isDefeatedCombatant } from '@/features/mechanics/domain/combat/state/combatants/combatant-participation'
 import type { CombatStatePriority } from '../../domain/effects/presentable-effects.types'
 
 import {

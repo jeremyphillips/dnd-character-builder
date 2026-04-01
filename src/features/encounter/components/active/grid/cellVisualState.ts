@@ -1,7 +1,7 @@
 import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { VisibilityFillKind } from '@/features/mechanics/domain/perception/visibility.types'
 
-import type { GridCellViewModel } from '../../../space/selectors/space.selectors'
+import type { GridCellViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 
 /**
  * Resolved base fill / overlay intent (top-down precedence). Used by {@link getCellVisualSx}.

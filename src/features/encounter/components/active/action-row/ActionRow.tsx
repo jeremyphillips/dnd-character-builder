@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 
 import { ROUTES } from '@/app/routes'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
 import { ActionRowBase } from './ActionRowBase'
 

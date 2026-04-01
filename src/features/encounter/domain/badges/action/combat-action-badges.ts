@@ -1,4 +1,4 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import type { ActionBadgeDescriptor } from './combat-action-badges.types'
 
 const PRIORITY_CRITICAL = 10

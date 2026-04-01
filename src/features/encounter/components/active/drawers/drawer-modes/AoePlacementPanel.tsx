@@ -4,8 +4,8 @@ import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import { isSelfCenteredAreaAction, type AoeStep } from '../../../../helpers/actions'
 
 import { formatAreaTemplateLabel, formatSpellRangeLine } from './aoePlacementFormat'

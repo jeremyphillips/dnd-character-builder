@@ -1,4 +1,4 @@
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat/state/types'
 
 import type { EncounterViewerPerceptionCapabilities } from './perception.types'
 

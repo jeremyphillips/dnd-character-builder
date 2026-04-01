@@ -8,8 +8,8 @@ import {
   buildActiveMonsterEffects,
   buildMonsterTurnHooks,
   type CombatantInstance,
-} from '@/features/mechanics/domain/encounter'
-import { DEFAULT_MANUAL_MONSTER_TRIGGER_CONTEXT } from '@/features/mechanics/domain/encounter/runtime/monster-runtime.types'
+} from '@/features/mechanics/domain/combat'
+import { DEFAULT_MANUAL_MONSTER_TRIGGER_CONTEXT } from '@/features/mechanics/domain/combat/runtime/monster-runtime.types'
 import {
   buildMonsterAttackEntries,
   buildMonsterExecutableActions,

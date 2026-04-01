@@ -2,7 +2,7 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import type { SingleCellPlacementRequirement } from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
+import type { SingleCellPlacementRequirement } from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
 
 export type SingleCellPlacementPanelProps = {
   actionLabel: string

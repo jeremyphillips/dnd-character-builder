@@ -13,7 +13,7 @@ import {
   type ManualEnvironmentContext,
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 
 import type { OpponentOption, OpponentRosterEntry } from '../../../types'

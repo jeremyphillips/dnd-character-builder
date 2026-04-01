@@ -14,7 +14,7 @@ import {
   sortByPriority,
 } from '../../../domain'
 import type { CombatStateSection, EnrichedPresentableEffect } from '../../../domain'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import { combatToneToAppBadgeTone } from '../../shared/cards/combatant-badges'
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {

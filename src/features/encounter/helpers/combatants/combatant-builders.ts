@@ -21,7 +21,7 @@ import {
   type DamageResistanceMarker,
   createCombatTurnResources,
   type RuntimeTurnHook,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 
 import { deriveHideEligibilityFeatureFlagsFromCharacterDetail } from './derive-hide-eligibility-from-authored'
 import { getCombatantPortraitImageKey } from './getCombatantPortraitImageKey'

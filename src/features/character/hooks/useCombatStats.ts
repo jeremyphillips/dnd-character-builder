@@ -27,7 +27,7 @@ import {
 } from '@/features/mechanics/domain/effects/sources/magic-items-to-effects'
 import { getEnchantmentCandidateEffects } from '@/features/mechanics/domain/effects/sources/enchantments-to-effects'
 import type { WeaponDamageType } from '@/features/content/equipment/weapons/domain/vocab'
-import type { CombatantAttackRange } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
+import type { CombatantAttackRange } from '@/features/mechanics/domain/combat/state/types/combatant.types'
 
 // ---------------------------------------------------------------------------
 // Attack types

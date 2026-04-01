@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 import { collectPresentableEffects, enrichPresentableEffects } from '../../../domain/effects/presentable-effects'
 import { buildCombatantPreviewChips } from '../../presentation'

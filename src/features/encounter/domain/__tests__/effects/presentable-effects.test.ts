@@ -7,7 +7,7 @@ import {
   groupBySection,
   sortByPriority,
 } from '../../effects/presentable-effects'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 function minimalCombatant(overrides: Partial<CombatantInstance> = {}): CombatantInstance {
   return {

@@ -1,5 +1,5 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
 
 import { isAreaGridAction, isSelfCenteredAreaAction, type AoeStep } from '../../helpers/actions'
 import { deriveCombatantTurnExhaustion, type CombatantTurnExhaustionInput } from '../turn/combatant-turn-exhaustion'

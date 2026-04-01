@@ -2,17 +2,10 @@ import type { ReactNode } from 'react'
 
 import type { CombatStatePriority } from '../effects/presentable-effects.types'
 
+export type { ViewerCombatantPresentationKind } from '@/features/mechanics/domain/combat/presentation/view.types'
+
 export type CombatantPreviewMode = 'setup' | 'active'
 export type CombatantPreviewKind = 'character' | 'monster'
-
-/**
- * Viewer-relative **presentation** for a combatant (sidebar, initiative, header, grid metadata).
- * Derived only from existing rule seams — not a second visibility engine.
- *
- * Future: may extend with e.g. `guessed-position` when awareness presentation ships; render can then
- * branch without changing `canPerceiveTargetOccupantForCombat` / stealth reconciliation.
- */
-export type ViewerCombatantPresentationKind = 'visible' | 'out-of-sight' | 'hidden'
 
 export type PreviewTone = 'neutral' | 'info' | 'warning' | 'danger' | 'success'
 

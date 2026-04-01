@@ -4,10 +4,10 @@ import {
   getActionTargetInvalidReason,
   getActionResolutionReadiness,
   actionRequiresCreatureTargetForResolve,
-} from '@/features/mechanics/domain/encounter'
-import type { EncounterState } from '@/features/mechanics/domain/encounter'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
+import type { EncounterState } from '@/features/mechanics/domain/combat'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 import type { AoeStep } from '../../helpers/actions'
 

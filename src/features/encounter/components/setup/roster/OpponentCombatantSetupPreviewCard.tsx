@@ -19,7 +19,7 @@ import {
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
   type CombatantInstance,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'

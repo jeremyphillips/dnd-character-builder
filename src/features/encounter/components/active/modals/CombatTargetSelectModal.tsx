@@ -8,8 +8,8 @@ import Typography from '@mui/material/Typography'
 
 import { AppModal } from '@/ui/patterns'
 import { AppBadge } from '@/ui/primitives'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 
 type TargetOption = {
   combatantId: string

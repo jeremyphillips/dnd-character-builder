@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { createEncounterState } from '@/features/mechanics/domain/encounter/state'
-import { createCombatant } from '@/features/mechanics/domain/encounter/tests/action-resolution.test-helpers'
-import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
+import { createEncounterState } from '@/features/mechanics/domain/combat/state'
+import { createCombatant } from '@/features/mechanics/domain/combat/tests/action-resolution.test-helpers'
+import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
 
 import { deriveEncounterPresentationGridPerceptionInput } from '../../perception/derive-encounter-presentation-grid-perception'
 

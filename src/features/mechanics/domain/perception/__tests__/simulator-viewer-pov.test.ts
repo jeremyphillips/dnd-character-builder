@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space/creation/createSquareGridSpace'
+import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
 
 import {
   buildGridPerceptionSlice,
   mergeGridPerceptionInputCapabilities,
 } from '../perception.render.projection'
-import type { EncounterState } from '../../encounter/state/types/encounter-state.types'
+import type { EncounterState } from '../../combat/state/types/encounter-state.types'
 
 function baseEncounter(overrides: Partial<EncounterState> = {}): EncounterState {
   const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })

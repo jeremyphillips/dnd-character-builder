@@ -2,7 +2,7 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
 import { useCharacter } from '@/features/character/hooks'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 import { buildCombatantPreviewChips } from '@/features/encounter/helpers/presentation'
 import { formatEncounterHeaderSensesLine } from './formatEncounterHeaderSenses'

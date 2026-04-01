@@ -1,5 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import { AppAvatar, type AvatarSize } from '@/ui/primitives'
 
 import {

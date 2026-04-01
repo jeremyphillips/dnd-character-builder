@@ -1,4 +1,4 @@
-import type { CombatActionAreaTemplate } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionAreaTemplate } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 
 export function formatAreaTemplateLabel(t: CombatActionAreaTemplate): string {
   if (t.kind === 'sphere') return `${t.radiusFt} ft sphere`

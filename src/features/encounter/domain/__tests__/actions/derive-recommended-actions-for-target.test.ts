@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 
 import { deriveRecommendedActionsForTarget } from '../../actions/derive-recommended-actions-for-target'
 

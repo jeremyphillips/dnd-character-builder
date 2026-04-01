@@ -6,7 +6,7 @@ import {
   type RuntimeTurnHook,
   type SpatialBattlefieldPresentationOptions,
   type StatModifierMarker,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import type {
   CombatStatePresentation,
   CombatStateSection,

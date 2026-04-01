@@ -7,7 +7,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
 import { AppModal } from '@/ui/patterns'
-import type { CombatLogEvent } from '@/features/mechanics/domain/encounter'
+import type { CombatLogEvent } from '@/features/mechanics/domain/combat'
 import {
   filterLogByMode,
   groupLogEntries,

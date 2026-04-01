@@ -17,9 +17,9 @@ import {
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
   type RuntimeTurnHook,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import { formatAuthoredDamage } from '../combatants'
-import { injectSpellSaveDcDeep } from '@/features/mechanics/domain/encounter/state/auras/battlefield-attached-aura-shared'
+import { injectSpellSaveDcDeep } from '@/features/mechanics/domain/combat/state/auras/battlefield-attached-aura-shared'
 import { buildMonsterActionRuntimeId } from './monster-action-runtime-ids'
 
 function formatDice(value: DiceOrFlat | undefined): string | undefined {

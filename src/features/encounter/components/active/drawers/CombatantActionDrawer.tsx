@@ -12,8 +12,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { AppBadge, AppTooltipWrap } from '@/ui/primitives'
 import { AppDrawer } from '@/ui/patterns'
-import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import {
   buildInitialCasterOptionsForAction,
   formatCasterOptionSummary,
@@ -28,7 +28,7 @@ import { CasterOptionsDrawerPanel } from './drawer-modes/CasterOptionsDrawerPane
 import {
   getPlacementCtaLabel,
   getSingleCellPlacementRequirement,
-} from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
+} from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
 import { SingleCellPlacementPanel } from './drawer-modes/SingleCellPlacementPanel'
 
 import {
@@ -43,7 +43,7 @@ import { deriveActionPresentation } from '../../../domain/actions/action-present
 import { deriveRecommendedActionsForTarget } from '../../../domain/actions/derive-recommended-actions-for-target'
 import { ActionRow } from '../action-row/ActionRow'
 import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import type { CombatantOption } from '../../setup/modals/SelectEncounterCombatantModal'
 import { AttachedEmanationSetupPanel } from './AttachedEmanationSetupPanel'
 

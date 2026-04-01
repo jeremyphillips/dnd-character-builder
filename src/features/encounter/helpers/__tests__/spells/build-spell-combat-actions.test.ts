@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
-import { isHostileAction } from '@/features/mechanics/domain/encounter'
+import { isHostileAction } from '@/features/mechanics/domain/combat'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 import { getSystemSpell } from '@/features/mechanics/domain/rulesets/system/spells'
 import { buildSpellCombatActions, deriveSpellHostility } from '../../spells'

@@ -20,7 +20,7 @@ import { buildSpellCombatActions, getCharacterSpellcastingStats } from '@/featur
 import { useCharacter, useCombatStats } from '@/features/character/hooks'
 import { toCharacterForEngine } from '@/features/character/read-model'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
-import type { CombatantInstance, CombatantSide } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance, CombatantSide } from '@/features/mechanics/domain/combat'
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
 import { CombatantAvatar } from '../../shared/CombatantAvatar'

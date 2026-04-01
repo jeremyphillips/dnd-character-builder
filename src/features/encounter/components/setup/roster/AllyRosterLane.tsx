@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 
 import { CombatLane } from './CombatLane'

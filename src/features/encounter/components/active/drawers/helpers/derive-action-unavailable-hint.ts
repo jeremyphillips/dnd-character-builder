@@ -1,4 +1,4 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 
 /**
  * Returns a short user-facing hint for why an action row is disabled, or `null`

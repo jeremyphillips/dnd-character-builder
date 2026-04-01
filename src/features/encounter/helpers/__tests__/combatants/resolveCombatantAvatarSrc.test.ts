@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 import {
   resolveCombatantAvatarSrc,

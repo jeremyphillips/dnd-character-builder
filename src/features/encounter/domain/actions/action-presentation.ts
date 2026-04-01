@@ -1,4 +1,4 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import type { ActionPresentationViewModel, ActionSemanticCategory, ActionSourceTag } from '../badges/action/action-presentation.types'
 import { deriveCombatActionBadges } from '../badges/action/combat-action-badges'
 

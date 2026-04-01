@@ -1,5 +1,5 @@
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import { resolveImageUrl } from '@/shared/lib/media'
 
 /** Stored portrait fields for a character (PC/NPC). */

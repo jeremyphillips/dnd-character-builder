@@ -1,6 +1,6 @@
 import type { CharacterDetailDto } from '@/features/character/read-model'
-import type { CombatantHideEligibilityFeatureFlagsRuntime } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
-import { featGrantsAllowHalfCoverForHide } from '@/features/mechanics/domain/encounter/state/stealth/hide-eligibility-feat-sources'
+import type { CombatantHideEligibilityFeatureFlagsRuntime } from '@/features/mechanics/domain/combat/state/types/combatant.types'
+import { featGrantsAllowHalfCoverForHide } from '@/features/mechanics/domain/combat/state/stealth/hide-eligibility-feat-sources'
 
 /**
  * Maps authored character **feats** (detail DTO) into `skillRuntime.hideEligibilityFeatureFlags`.

@@ -4,7 +4,6 @@ import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.ty
 import {
   addConditionToCombatant,
   addStateToCombatant,
-  advanceEncounterTurn,
   resolveAttachedAuraSpatialEntryAfterMovement,
   applyDamageToCombatant,
   applyHealingToCombatant,
@@ -18,6 +17,7 @@ import {
   resolveCombatAction,
   removeStateFromCombatant,
   appendStealthMovementRecheckHeaderNote,
+  applyCombatIntent,
   triggerManualHook,
   type CombatantInstance,
   type CombatLogEvent,
@@ -298,23 +298,26 @@ export function useEncounterState({
   function handleNextTurn() {
     setEncounterState((prev) => {
       if (!prev) return prev
-      const startLen = prev.log.length
-      const next = advanceEncounterTurn(prev, {
-        rng: Math.random,
-        battlefieldInterval:
-          spellsById != null
-            ? {
-                spellLookup: (id) => spellsById[id],
-                suppressSameSideHostile,
-                monstersById,
-              }
-            : undefined,
+      const result = applyCombatIntent(prev, { kind: 'end-turn' }, {
+        advanceEncounterTurnOptions: {
+          rng: Math.random,
+          battlefieldInterval:
+            spellsById != null
+              ? {
+                  spellLookup: (id) => spellsById[id],
+                  suppressSameSideHostile,
+                  monstersById,
+                }
+              : undefined,
+        },
       })
-      const appended = next.log.slice(startLen)
-      if (appended.length > 0) {
-        queueMicrotask(() => combatLogAppendedRef.current?.(appended, next))
+      if (!result.ok) return prev
+      for (const event of result.events) {
+        if (event.kind === 'log-appended' && event.entries.length > 0) {
+          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
+        }
       }
-      return next
+      return result.nextState
     })
   }
 

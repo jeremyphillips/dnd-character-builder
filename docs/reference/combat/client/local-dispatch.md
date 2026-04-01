@@ -12,6 +12,8 @@ Describe how the Encounter feature submits truth-changing combat operations toda
 4. The applier returns a **`CombatIntentResult`**: success with `nextState` and **`CombatEvent`** records, or structured failure (`CombatDispatchError`).
 5. Encounter applies `nextState` (e.g. `setEncounterState`) and may derive toasts or log side effects from events.
 
+**Phase 4B:** End turn, grid movement (`move-combatant`), and action resolution (`resolve-action` → `resolveCombatAction`) all go through `applyCombatIntent`; see `apply-move-combatant-intent.ts` and `apply-resolve-action-intent.ts`.
+
 ## Ownership
 
 | Concern | Owner |

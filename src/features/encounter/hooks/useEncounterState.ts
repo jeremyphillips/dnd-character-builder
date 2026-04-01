@@ -4,7 +4,6 @@ import type { TurnBoundary } from '@/features/mechanics/domain/effects/timing.ty
 import {
   addConditionToCombatant,
   addStateToCombatant,
-  resolveAttachedAuraSpatialEntryAfterMovement,
   applyDamageToCombatant,
   applyHealingToCombatant,
   buildReducedToZeroTraits,
@@ -13,11 +12,8 @@ import {
   getActionTargetCandidates,
   getCombatantAvailableActions,
   removeConditionFromCombatant,
-  reconcileBattlefieldEffectAnchors,
-  resolveCombatAction,
-  removeStateFromCombatant,
-  appendStealthMovementRecheckHeaderNote,
   applyCombatIntent,
+  removeStateFromCombatant,
   triggerManualHook,
   type CombatantInstance,
   type CombatLogEvent,
@@ -41,7 +37,6 @@ import type { AoeStep } from '../helpers/actions'
 
 import type { OpponentRosterEntry } from '../types'
 import type { EncounterSpace, InitialPlacementOptions } from '@/features/mechanics/domain/combat/space'
-import { getCellForCombatant, moveCombatant } from '@/features/mechanics/domain/combat/space'
 
 type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
@@ -324,10 +319,10 @@ export function useEncounterState({
   const handleResolveAction = useCallback(() => {
     setEncounterState((prev) => {
       if (!prev || !prev.activeCombatantId || !selectedActionId) return prev
-      const startLen = prev.log.length
-      const next = resolveCombatAction(
+      const result = applyCombatIntent(
         prev,
         {
+          kind: 'resolve-action',
           actorId: prev.activeCombatantId,
           targetId: selectedActionTargetId || undefined,
           actionId: selectedActionId,
@@ -337,13 +332,15 @@ export function useEncounterState({
           unaffectedCombatantIds,
           objectId: selectedObjectAnchorId?.trim() || undefined,
         },
-        { monstersById, buildSummonAllyCombatant },
+        { resolveCombatActionOptions: { monstersById, buildSummonAllyCombatant } },
       )
-      const appended = next.log.slice(startLen)
-      if (appended.length > 0) {
-        queueMicrotask(() => combatLogAppendedRef.current?.(appended, next))
+      if (!result.ok) return prev
+      for (const event of result.events) {
+        if (event.kind === 'log-appended' && event.entries.length > 0) {
+          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
+        }
       }
-      return next
+      return result.nextState
     })
     resetAoePlacement()
     setSelectedActionId('')
@@ -456,43 +453,35 @@ export function useEncounterState({
     if (!encounterState || !activeCombatantId) return
     setEncounterState((prev) => {
       if (!prev) return prev
-      const fromCellId = getCellForCombatant(prev.placements!, activeCombatantId)
-      const afterMove = moveCombatant(
+      const result = applyCombatIntent(
         prev,
-        activeCombatantId,
-        targetCellId,
-        spellsById != null
-          ? { spellLookup: (id) => spellsById[id], suppressSameSideHostile }
-          : undefined,
+        {
+          kind: 'move-combatant',
+          combatantId: activeCombatantId,
+          destinationCellId: targetCellId,
+        },
+        {
+          moveCombatantSpellContext:
+            spellsById != null
+              ? { spellLookup: (id) => spellsById[id], suppressSameSideHostile }
+              : undefined,
+          spatialEntryAfterMove:
+            spellsById != null
+              ? {
+                  spellLookup: (id) => spellsById[id],
+                  suppressSameSideHostile,
+                  monstersById,
+                }
+              : undefined,
+        },
       )
-      if (afterMove === prev) return prev
-      const toCellId = getCellForCombatant(afterMove.placements!, activeCombatantId)
-      const hadStealthBookkeeping = Object.values(afterMove.combatantsById).some(
-        (c) => (c.stealth?.hiddenFromObserverIds?.length ?? 0) > 0,
-      )
-      let afterMoveWithLog = afterMove
-      if (hadStealthBookkeeping && fromCellId && toCellId) {
-        afterMoveWithLog = appendStealthMovementRecheckHeaderNote(
-          afterMove,
-          activeCombatantId,
-          fromCellId,
-          toCellId,
-        )
+      if (!result.ok) return prev
+      for (const event of result.events) {
+        if (event.kind === 'log-appended' && event.entries.length > 0) {
+          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
+        }
       }
-      const startLen = prev.log.length
-      let next = reconcileBattlefieldEffectAnchors(afterMoveWithLog)
-      if (spellsById != null) {
-        next = resolveAttachedAuraSpatialEntryAfterMovement(prev, next, {
-          spellLookup: (id) => spellsById[id],
-          suppressSameSideHostile,
-          monstersById,
-        })
-      }
-      const appended = next.log.slice(startLen)
-      if (appended.length > 0) {
-        queueMicrotask(() => combatLogAppendedRef.current?.(appended, next))
-      }
-      return next
+      return result.nextState
     })
   }
 

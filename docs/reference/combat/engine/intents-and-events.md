@@ -192,7 +192,7 @@ Concrete types and the local apply seam live under the shared combat engine pack
 - **Application:** `src/features/mechanics/domain/combat/application/apply-combat-intent.ts` — `applyCombatIntent(state, intent, context)`; today calls shared engine functions; later can be backed by server authority without changing intent/result shapes.
 - **Mutation audit:** `src/features/mechanics/domain/combat/application/MUTATION_ENTRY_POINTS.md`.
 
-End turn is wired through `applyCombatIntent` from Encounter state (`useEncounterState`). Other intents are defined but return `not-implemented` until Phase 4B+.
+End turn, grid movement, and action resolution (`resolveCombatAction`) are wired through `applyCombatIntent` from Encounter state (`useEncounterState`). `place-area` / `choose-spawn-cell` remain reserved for future explicit intents if needed (often covered by `resolve-action` today).
 
 ## Open design questions
 

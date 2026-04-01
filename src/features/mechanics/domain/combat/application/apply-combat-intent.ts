@@ -13,6 +13,8 @@ import type { CombatEvent, CombatIntentResult } from '../results'
 import { advanceEncounterTurn } from '../state/runtime'
 import type { EncounterState } from '../state/types'
 import type { ApplyCombatIntentContext } from './apply-combat-intent-context.types'
+import { applyMoveCombatantIntent } from './apply-move-combatant-intent'
+import { applyResolveActionIntent } from './apply-resolve-action-intent'
 
 export function applyCombatIntent(
   state: EncounterState | null,
@@ -33,7 +35,9 @@ export function applyCombatIntent(
     case 'end-turn':
       return applyEndTurnIntent(state, intent, ctx)
     case 'move-combatant':
+      return applyMoveCombatantIntent(state, intent, ctx)
     case 'resolve-action':
+      return applyResolveActionIntent(state, intent, ctx)
     case 'place-area':
     case 'choose-spawn-cell':
       return {
@@ -41,7 +45,7 @@ export function applyCombatIntent(
         error: {
           code: 'not-implemented',
           intentKind: intent.kind,
-          message: `Intent "${intent.kind}" is not yet handled by applyCombatIntent (Phase 4B+).`,
+          message: `Intent "${intent.kind}" is not yet handled by applyCombatIntent (Phase 4C+).`,
         },
       }
   }

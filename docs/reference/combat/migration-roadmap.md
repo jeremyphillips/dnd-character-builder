@@ -78,7 +78,11 @@ This is the bridge from single-client mutation flow toward server-authoritative 
 ### Phase 4A (contracts + local seam)
 
 - Implemented: intent unions, `CombatIntentResult` / `CombatEvent` / `CombatDispatchError`, `applyCombatIntent` in `src/features/mechanics/domain/combat/application/`, end-turn wired from Encounter.
-- Next (4B+): migrate additional flows (movement, resolve action, AoE/spawn confirm) without renaming core runtime types.
+
+### Phase 4B (move + resolve through seam)
+
+- Implemented: `MoveCombatantIntent` and `ResolveActionIntent` handled in `applyCombatIntent`; `handleMoveCombatant` and `handleResolveAction` dispatch intents only (orchestration in application layer).
+- Next (4C+): broader action UX, optional standalone place/spawn intents, DM mutators.
 
 See [.cursor/plans/phase_4a_combat_intent_dispatch.plan.md](../../../.cursor/plans/phase_4a_combat_intent_dispatch.plan.md).
 

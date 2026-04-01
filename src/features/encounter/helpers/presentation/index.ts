@@ -1,4 +1,2 @@
-export * from './build-combatant-preview-chips'
-export * from './combatant-card-tooltips'
-export * from './combatant-modal-stats'
-export * from './format-turn-duration'
+/** Temporary re-exports (Phase 3B). Prefer `@/features/combat/presentation` or `@/features/combat`. */
+export * from '@/features/combat/presentation'

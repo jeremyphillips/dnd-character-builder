@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
 import { collectPresentableEffects, enrichPresentableEffects } from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects'
-import { buildCombatantPreviewChips } from '../../presentation'
+
+import { buildCombatantPreviewChips } from '../build-combatant-preview-chips'
 
 function minimalCombatant(overrides: Partial<CombatantInstance> = {}): CombatantInstance {
   return {

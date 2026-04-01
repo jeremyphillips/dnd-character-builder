@@ -15,7 +15,7 @@ import {
 } from '@/features/encounter/helpers/combatants'
 import { buildSkillAffordanceCombatActions } from '@/features/encounter/helpers/actions'
 import { buildTurnHooksFromEffects } from '@/features/encounter/helpers/monsters'
-import { getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
+import { getPreviewStatTooltip } from '@/features/combat/presentation'
 import { buildSpellCombatActions, getCharacterSpellcastingStats } from '@/features/encounter/helpers/spells'
 import { useCharacter, useCombatStats } from '@/features/character/hooks'
 import { toCharacterForEngine } from '@/features/character/read-model'

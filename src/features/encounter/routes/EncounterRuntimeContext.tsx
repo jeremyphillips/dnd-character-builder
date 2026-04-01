@@ -15,7 +15,7 @@ import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
-import { buildMonsterModalStats } from '../helpers/presentation'
+import { buildMonsterModalStats } from '@/features/combat/presentation'
 import {
   ATMOSPHERE_TAGS,
   DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,

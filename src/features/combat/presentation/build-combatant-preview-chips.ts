@@ -4,15 +4,13 @@ import {
   type SpatialBattlefieldPresentationOptions,
 } from '@/features/mechanics/domain/combat'
 import { isDefeatedCombatant } from '@/features/mechanics/domain/combat/state/combatants/combatant-participation'
+import { buildEncounterDefensePreviewChips } from '@/features/mechanics/domain/combat/presentation/badges/defense/encounter-defense-badges'
 import type { CombatStatePriority } from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects.types'
+import { resolvePresentationForSemanticKey } from '@/features/mechanics/domain/combat/presentation/effects/combat-state-ui-map'
+import { formatTurnDuration } from '@/features/mechanics/domain/combat/presentation/formatters/turn-duration'
+import type { PreviewChip } from '@/features/mechanics/domain/combat/presentation/view/tactical-preview.types'
 
-import {
-  buildEncounterDefensePreviewChips,
-  resolvePresentationForSemanticKey,
-  type PreviewChip,
-} from '../../domain'
 import { CONCENTRATING_BADGE_TOOLTIP, tooltipForConditionMarkerLabel } from './combatant-card-tooltips'
-import { formatTurnDuration } from './format-turn-duration'
 
 export type BuildCombatantPreviewChipsOptions = {
   /** Max condition chips. Omit = all conditions. */

@@ -8,7 +8,7 @@ import {
   type CombatantPortraitEntry,
 } from '@/features/encounter/helpers/combatants'
 import { buildMonsterAttackEntries, buildMonsterExecutableActions } from '@/features/encounter/helpers/monsters'
-import { getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
+import { getPreviewStatTooltip } from '@/features/combat/presentation'
 import { calculateMonsterArmorClass } from '@/features/content/monsters/domain/mechanics/calculateMonsterArmorClass'
 import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import type { Monster } from '@/features/content/monsters/domain/types'

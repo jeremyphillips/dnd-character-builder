@@ -4,7 +4,7 @@ import { formatCharacterDetailSubtitle } from '@/features/character/formatters'
 import { useCharacter } from '@/features/character/hooks'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
-import { buildCombatantPreviewChips } from '@/features/encounter/helpers/presentation'
+import { buildCombatantPreviewChips } from '@/features/combat/presentation'
 import { formatEncounterHeaderSensesLine } from './formatEncounterHeaderSenses'
 import { combatToneToAppBadgeTone } from '@/features/combat/components'
 import Box from '@mui/material/Box'

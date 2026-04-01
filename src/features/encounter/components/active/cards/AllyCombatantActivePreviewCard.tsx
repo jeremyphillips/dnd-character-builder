@@ -14,7 +14,7 @@ import { useCharacter } from '@/features/character/hooks'
 
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { formatSigned } from '@/features/encounter/helpers/combatants'
-import { buildCombatantPreviewChips, getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
+import { buildCombatantPreviewChips, getPreviewStatTooltip } from '@/features/combat/presentation'
 import { CombatantAvatar, CombatantPreviewCard } from '@/features/combat/components'
 
 type AllyCombatantActivePreviewCardProps = {

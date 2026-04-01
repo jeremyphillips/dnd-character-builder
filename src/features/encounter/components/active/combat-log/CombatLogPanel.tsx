@@ -8,10 +8,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 
 import type { CombatLogEvent } from '@/features/mechanics/domain/combat'
+import { CombatLogEntryGroup } from '@/features/combat/components'
 import {
   filterLogByMode,
   groupLogEntries,
-  formatLogGroupHeader,
   type CombatLogPresentationMode,
 } from '../../../domain'
 import { toCombatLogEntries } from '../../../helpers/logs'
@@ -61,36 +61,11 @@ export function CombatLogPanel({ log }: CombatLogPanelProps) {
           ) : (
             <Stack spacing={1.5}>
               {groups.map((group) => (
-                <Box key={group.groupKey}>
-                  <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                    {formatLogGroupHeader(group)}
-                  </Typography>
-                  <Stack spacing={0.5}>
-                    {group.entries.map((entry) => (
-                      <Box key={entry.id}>
-                        <Typography variant="body2">{entry.message}</Typography>
-                        {entry.details && entry.details.length > 0 && (
-                          <Box sx={{ pl: 2 }}>
-                            {entry.details.map((d, i) => (
-                              <Typography key={i} variant="caption" color="text.secondary" display="block">
-                                {d}
-                              </Typography>
-                            ))}
-                          </Box>
-                        )}
-                        {mode === 'debug' && entry.debugDetails && entry.debugDetails.length > 0 && (
-                          <Box sx={{ pl: 2 }}>
-                            {entry.debugDetails.map((d, i) => (
-                              <Typography key={i} variant="caption" color="text.disabled" display="block" sx={{ fontFamily: 'monospace' }}>
-                                {d}
-                              </Typography>
-                            ))}
-                          </Box>
-                        )}
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
+                <CombatLogEntryGroup
+                  key={group.groupKey}
+                  group={group}
+                  showDebugDetails={mode === 'debug'}
+                />
               ))}
             </Stack>
           )}

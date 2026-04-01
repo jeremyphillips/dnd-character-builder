@@ -456,6 +456,16 @@ src/features/encounter/components/active/drawers/AllyActionDrawer.tsx
 src/features/encounter/components/active/drawers/OpponentActionDrawer.tsx
 ```
 
+**Phase 3F (combat log display leaves):** grouped log entry rendering and presentable-effects lists live in combat; panel/modal chrome stays in Encounter.
+
+```txt
+src/features/combat/components/combat-log/CombatLogEntry.tsx
+src/features/combat/components/combat-log/PresentableEffectsList.tsx
+
+src/features/encounter/components/active/combat-log/CombatLogPanel.tsx
+src/features/encounter/components/active/combat-log/CombatLogModal.tsx
+```
+
 Keep in mind:
 
 - local panel state and composition can remain encounter-owned
@@ -580,6 +590,7 @@ This adapter should avoid leaking editor-facing concepts deep into combat runtim
 - extract avatar/card/badge/chip primitives
 - split `EncounterGrid` into generic renderer + encounter wrapper
 - split action/drawer **panel leaves** (under `src/features/combat/components/panels/`, etc.) from encounter **drawer shells** (`CombatantActionDrawer`, ally/opponent drawers)
+- split combat log **display leaves** (`src/features/combat/components/combat-log/`) from encounter **log shells** (`CombatLogPanel`, `CombatLogModal`)
 
 See **[combat-client-ui.md](./combat-client-ui.md)** for what lives under `src/features/combat` and how it relates to the engine and Encounter.
 

@@ -7,7 +7,11 @@ export {
   CombatantPreviewCard,
   CombatActionPreviewCard,
 } from '@/features/combat/components'
-export { CombatLogEntryGroup } from './active/combat-log/CombatLogEntry'
+export {
+  CombatLogEntryGroup,
+  PresentableEffectsList,
+  PresentableEffectsHeaderChips,
+} from '@/features/combat/components'
 export { TurnOrderList } from './active/modals/TurnOrderList'
 export type { TurnOrderEntry } from './active/modals/TurnOrderList'
 export { EncounterView } from './shared/layout/EncounterView'

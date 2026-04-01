@@ -5,17 +5,22 @@ import Typography from '@mui/material/Typography'
 import { AppBadge, AppTooltip } from '@/ui/primitives'
 
 import {
+  getSectionOrder,
+  shouldShowPresentationInHeader,
+} from '@/features/mechanics/domain/combat/presentation/effects/combat-state-ui-map'
+import {
   collectPresentableEffects,
   enrichPresentableEffects,
-  getSectionOrder,
   getUserFacingEffectLabel,
   groupBySection,
-  shouldShowPresentationInHeader,
   sortByPriority,
-} from '../../../domain'
-import type { CombatStateSection, EnrichedPresentableEffect } from '../../../domain'
+} from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects'
+import type {
+  CombatStateSection,
+  EnrichedPresentableEffect,
+} from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects.types'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
-import { combatToneToAppBadgeTone } from '@/features/combat/components'
+import { combatToneToAppBadgeTone } from '../cards/combatant-badges'
 
 const SECTION_LABELS: Record<CombatStateSection, string> = {
   'critical-now': 'Critical Now',
@@ -84,7 +89,7 @@ function EffectSection({
   )
 }
 
-type PresentableEffectsListProps = {
+export type PresentableEffectsListProps = {
   combatant: CombatantInstance
   /** When true, only show user-facing effects. Default: false (show all for debug) */
   userFacingOnly?: boolean

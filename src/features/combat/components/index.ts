@@ -1,4 +1,13 @@
 export {
+  CombatLogEntryGroup,
+  type CombatLogEntryGroupProps,
+} from './combat-log/CombatLogEntry'
+export {
+  PresentableEffectsList,
+  PresentableEffectsHeaderChips,
+  type PresentableEffectsListProps,
+} from './combat-log/PresentableEffectsList'
+export {
   CombatActionRowBase,
   type CombatActionRowBaseProps,
 } from './action-row/CombatActionRowBase'

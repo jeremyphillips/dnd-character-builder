@@ -145,7 +145,7 @@ Turn Triggers, System Details).
 | `src/features/mechanics/domain/combat/presentation/badges/defense/encounter-defense-badges.ts` | `buildEncounterDefensePreviewChips` -- defense preview chips with filtering options |
 | `src/features/combat/presentation/build-combatant-preview-chips.ts` | `buildCombatantPreviewChips` -- priority-driven preview chip pipeline |
 | `src/features/mechanics/domain/combat/presentation/formatters/turn-duration.ts` | `formatTurnDuration` -- source of truth; `src/features/combat/presentation/format-turn-duration.ts` re-exports for client combat UI |
-| `src/features/encounter/components/active/combat-log/PresentableEffectsList.tsx` | Section-grouped badge list rendering |
+| `src/features/combat/components/combat-log/PresentableEffectsList.tsx` | Section-grouped badge list rendering |
 | `src/features/encounter/components/active/drawers/CombatantActionDrawer.tsx` | Inline condition badge rendering in drawer |
 | `src/features/combat/components/cards/combatant-badges.tsx` | `CombatantPreviewChipRow` -- preview card chips with `maxVisible` overflow |
 

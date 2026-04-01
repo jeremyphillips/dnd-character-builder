@@ -37,6 +37,7 @@ Files under **`src/features/combat/**`** must **not** import from **`src/feature
 | [`action-row/CombatActionRowBase.tsx`](../../src/features/combat/components/action-row/CombatActionRowBase.tsx) | Compact action row presentation (badges + optional footer link props). Router/campaign link construction stays in Encounter (`ActionRow`). |
 | [`grid/`](../../src/features/combat/components/grid/) | **`CombatGrid`** (tactical renderer), **`cellVisualState`**, **`cellVisualStyles`**, tests. Encounter exposes a thin **`EncounterGrid`** wrapper that forwards the same props. |
 | [`panels/`](../../src/features/combat/components/panels/) | Prop-driven drawer **panel leaves**: AoE placement, single-cell placement, spell caster options. Drawer shells stay in Encounter (`CombatantActionDrawer`, etc.). |
+| [`combat-log/`](../../src/features/combat/components/combat-log/) | **`CombatLogEntryGroup`**, **`PresentableEffectsList`**, **`PresentableEffectsHeaderChips`**. Log panel/modal shells stay in Encounter (`CombatLogPanel`, `CombatLogModal`). |
 
 Barrel: [`components/index.ts`](../../src/features/combat/components/index.ts).
 

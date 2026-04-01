@@ -54,7 +54,7 @@ Each pass should end with a green typecheck + test run and a grep proving no `fe
 
 **Hard constraints**
 
-- `**src/features/combat/`** must not import from `src/features/encounter/**`** — including routes, setup, `EncounterRuntimeContext`, Encounter hooks, Encounter-only helpers.
+- `**src/features/combat/`** must not import from `src/features/encounter/`**** — including routes, setup, `EncounterRuntimeContext`, Encounter hooks, Encounter-only helpers.
 - If a candidate **depends on Encounter-owned code**: split (reusable leaf in combat, wrapper in Encounter), **or** leave in Encounter and note the blocker — **do not force** a move that violates the boundary.
 - **Minimal prop churn:** do not redesign props unless required to remove Encounter coupling.
 
@@ -133,7 +133,7 @@ Each pass should end with a green typecheck + test run and a grep proving no `fe
 
 ### Pass 3D — Grid: `CombatGrid` + thin `EncounterGrid` wrapper (milestone)
 
-**Goal:** Extract the reusable grid renderer into [`CombatGrid.tsx`](../../src/features/combat/components/grid/CombatGrid.tsx); keep [`EncounterGrid.tsx`](../../src/features/encounter/components/active/grid/EncounterGrid.tsx) as an Encounter-owned **thin wrapper/adapter**. This is the centerpiece UI extraction pass for Phase 3.
+**Goal:** Extract the reusable grid renderer into `[CombatGrid.tsx](../../src/features/combat/components/grid/CombatGrid.tsx)`; keep `[EncounterGrid.tsx](../../src/features/encounter/components/active/grid/EncounterGrid.tsx)` as an Encounter-owned **thin wrapper/adapter**. This is the centerpiece UI extraction pass for Phase 3.
 
 **Why isolate:** Highest architectural value **and** highest regression risk **and** highest chance of leaking Encounter state shape into reusable UI—keep the pass **PR-sized**, narrowly reviewed, and renderer-boundary–focused.
 
@@ -144,27 +144,27 @@ Each pass should end with a green typecheck + test run and a grep proving no `fe
 
 **In scope**
 
-- Extract reusable rendering from [`EncounterGrid.tsx`](../../src/features/encounter/components/active/grid/EncounterGrid.tsx) → [`CombatGrid.tsx`](../../src/features/combat/components/grid/CombatGrid.tsx).
+- Extract reusable rendering from `[EncounterGrid.tsx](../../src/features/encounter/components/active/grid/EncounterGrid.tsx)` → `[CombatGrid.tsx](../../src/features/combat/components/grid/CombatGrid.tsx)`.
 - Move with the grid layer (generic renderer concerns):
-  - [`cellVisualState.ts`](../../src/features/encounter/components/active/grid/cellVisualState.ts)
-  - [`cellVisualStyles.ts`](../../src/features/encounter/components/active/grid/cellVisualStyles.ts)
-  - [`cellVisualState.test.ts`](../../src/features/encounter/components/active/grid/cellVisualState.test.ts)
-- [`EncounterGrid.tsx`](../../src/features/encounter/components/active/grid/EncounterGrid.tsx) ends as **thin adapter** only: maps Encounter props/state into the combat grid contract, wires callbacks, preserves outer API where practical to minimize parent churn—not the primary renderer.
+  - `[cellVisualState.ts](../../src/features/encounter/components/active/grid/cellVisualState.ts)`
+  - `[cellVisualStyles.ts](../../src/features/encounter/components/active/grid/cellVisualStyles.ts)`
+  - `[cellVisualState.test.ts](../../src/features/encounter/components/active/grid/cellVisualState.test.ts)`
+- `[EncounterGrid.tsx](../../src/features/encounter/components/active/grid/EncounterGrid.tsx)` ends as **thin adapter** only: maps Encounter props/state into the combat grid contract, wires callbacks, preserves outer API where practical to minimize parent churn—not the primary renderer.
 
-**`CombatGrid` should own (renderer-first)**  
+`**CombatGrid` should own (renderer-first)**  
 Rendering from a prepared grid VM (or normalized contract), cell visual state/styles, token/cell/obstacle display, click/hover callbacks, selection/highlight **visuals**, `renderTokenPopover` (injectable, no Encounter imports).
 
-**`EncounterGrid` should own (adaptation)**  
+`**EncounterGrid` should own (adaptation)**  
 Adapting feature props into `CombatGrid` props, wiring Encounter-specific callbacks, connecting feature-level selection/target state, minimal compatibility shims—**not** route/layout migration, not `EncounterRuntimeContext` migration here.
 
 **Explicitly out of scope for 3D**
 
-- [`EncounterActiveSidebar.tsx`](../../src/features/encounter/components/active/grid/EncounterActiveSidebar.tsx) — **do not move or refactor** (composition chrome).
+- `[EncounterActiveSidebar.tsx](../../src/features/encounter/components/active/grid/EncounterActiveSidebar.tsx)` — **do not move or refactor** (composition chrome).
 - Route/layout changes, drawer orchestration, setup workflow, `EncounterRuntimeContext` migration, broader action/selection redesign, non-grid modals/panels.
 
 **Hard rules**
 
-- `src/features/combat/components/grid/**` must **not** import `src/features/encounter/**` (no context, hooks, routes, setup types, feature wrappers). Split the adapter in Encounter if the current grid imports Encounter.
+- `src/features/combat/components/grid/`** must **not** import `src/features/encounter/`** (no context, hooks, routes, setup types, feature wrappers). Split the adapter in Encounter if the current grid imports Encounter.
 - **Avoid prop explosion:** do not dump Encounter internals into `CombatGrid`—prefer focused contract + thin wrapper over a “reusable” component with an enormous Encounter-shaped surface.
 - **Behavior stable:** preserve user-visible behavior unless required for a clean extraction.
 - First-extraction `CombatGrid` does **not** need to be globally perfect—only Encounter-independent, plausibly reusable, cleanly separated from workflow.
@@ -245,7 +245,7 @@ Legend: **move** | **split** | **keep** | **defer**
 | `grid/EncounterActiveSidebar.tsx`                                                                                                                                               | **keep**                                 | Sidebar composition.                                                                                                       |
 | `action-row/ActionRowBase.tsx`                                                                                                                                                  | **move**                                 |                                                                                                                            |
 | `action-row/ActionRow.tsx`                                                                                                                                                      | **split**                                | Routing/footer links stay Encounter-side.                                                                                  |
-| `action-row/CasterOptionsFields.tsx`                                                                                                                                            | **defer** / **audit**                    | May move in Pass 3E if generic.                                                                                             |
+| `action-row/CasterOptionsFields.tsx`                                                                                                                                            | **defer** / **audit**                    | May move in Pass 3E if generic.                                                                                            |
 | `cards/CombatActionPreviewCard.tsx`                                                                                                                                             | **move**                                 |                                                                                                                            |
 | `cards/AllyCombatantActivePreviewCard.tsx`                                                                                                                                      | **keep** or **split**                    | Uses `useCharacter` + encounter helpers—do not move whole file to combat. Future: generic card + Encounter data providers. |
 | `cards/OpponentCombatantActivePreviewCard.tsx`                                                                                                                                  | **keep** or **split**                    | Same pattern without `useCharacter`; could converge with Ally via shared base later (**defer**).                           |
@@ -362,7 +362,7 @@ Allowed: `mechanics/domain/combat` (VM types), MUI, shared UI primitives, `comba
 1. **Pass 3A** — Scaffold `components` / `presentation` (empty hooks unless necessary) + move avatar, preview card, badges, `CombatActionPreviewCard` per §1 Pass 3A.
 2. **Pass 3B** — `combat/presentation` from `helpers/presentation` (chips/tooltips/modal stats).
 3. **Pass 3C** — Action row base + Encounter `ActionRow` wrapper / footer props.
-4. **Pass 3D** — Grid: audit → `CombatGrid` + move `cellVisual*` + tests + thin `EncounterGrid` adapter (see §1 Pass 3D, §3).
+4. **Pass 3D** — Grid: audit → `CombatGrid` + move `cellVisual`* + tests + thin `EncounterGrid` adapter (see §1 Pass 3D, §3).
 5. **Pass 3E** — Drawer panels (file-by-file audit); skip anything with setup-modal imports.
 6. **Pass 3F** — Combat log list/entry components; optional hook extraction **defer**.
 

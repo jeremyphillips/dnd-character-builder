@@ -12,13 +12,23 @@ export type ApplyIntentBodyParseError = {
 }
 
 /**
- * Stateless smoke body: canonical `state` + `intent` + optional `context`.
- * `context` matches {@link ApplyCombatIntentContext} (JSON-serializable options only).
+ * Stateless mechanics call (tests / direct use).
  */
-export function parseApplyIntentBody(
+export function applyCombatIntentRequest(
+  state: EncounterState | null,
+  intent: CombatIntent,
+  context: ApplyCombatIntentContext,
+): CombatIntentResult {
+  return applyCombatIntent(state, intent, context)
+}
+
+/**
+ * Persisted apply-intent body: `baseRevision` + `intent` + optional `context`.
+ */
+export function parsePersistedApplyIntentBody(
   body: unknown,
 ):
-  | { ok: true; state: EncounterState | null; intent: CombatIntent; context: ApplyCombatIntentContext }
+  | { ok: true; baseRevision: number; intent: CombatIntent; context: ApplyCombatIntentContext }
   | { ok: false; error: ApplyIntentBodyParseError } {
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {
     return {
@@ -30,6 +40,17 @@ export function parseApplyIntentBody(
     }
   }
   const record = body as Record<string, unknown>
+
+  if (typeof record.baseRevision !== 'number' || !Number.isInteger(record.baseRevision)) {
+    return {
+      ok: false,
+      error: {
+        code: 'invalid-body',
+        message: 'Expected integer "baseRevision".',
+      },
+    }
+  }
+
   if (record.intent === undefined || record.intent === null) {
     return {
       ok: false,
@@ -59,18 +80,6 @@ export function parseApplyIntentBody(
     }
   }
 
-  if (record.state !== undefined && record.state !== null) {
-    if (typeof record.state !== 'object' || Array.isArray(record.state)) {
-      return {
-        ok: false,
-        error: {
-          code: 'invalid-body',
-          message: 'Expected "state" to be an object or null.',
-        },
-      }
-    }
-  }
-
   let context: ApplyCombatIntentContext = {}
   if (record.context !== undefined && record.context !== null) {
     if (typeof record.context !== 'object' || Array.isArray(record.context)) {
@@ -85,23 +94,10 @@ export function parseApplyIntentBody(
     context = record.context as ApplyCombatIntentContext
   }
 
-  const state: EncounterState | null =
-    record.state === undefined || record.state === null
-      ? null
-      : (record.state as EncounterState)
-
   return {
     ok: true,
-    state,
+    baseRevision: record.baseRevision,
     intent: record.intent as CombatIntent,
     context,
   }
-}
-
-export function applyCombatIntentRequest(
-  state: EncounterState | null,
-  intent: CombatIntent,
-  context: ApplyCombatIntentContext,
-): CombatIntentResult {
-  return applyCombatIntent(state, intent, context)
 }

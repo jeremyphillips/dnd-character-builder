@@ -4,6 +4,10 @@ import express from 'express'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { CombatantInstance } from '@rpg-world-builder/mechanics'
 
+import {
+  createInMemoryCombatSessionBackend,
+  setCombatSessionBackendForTests,
+} from '../persistence/combatSession.backend'
 import combatRoutes from './combat.routes'
 
 function minimalCombatant(
@@ -41,29 +45,30 @@ describe('POST /api/combat/sessions', () => {
   let baseUrl: string
   let server: ReturnType<typeof app.listen>
 
-  beforeAll(
-    () =>
-      new Promise<void>((resolve, reject) => {
-        server = app.listen(0, () => {
-          try {
-            const addr = server.address() as AddressInfo
-            baseUrl = `http://127.0.0.1:${addr.port}`
-            resolve()
-          } catch (e) {
-            reject(e)
-          }
-        })
-      }),
-  )
+  beforeAll(() => {
+    setCombatSessionBackendForTests(createInMemoryCombatSessionBackend())
+    return new Promise<void>((resolve, reject) => {
+      server = app.listen(0, () => {
+        try {
+          const addr = server.address() as AddressInfo
+          baseUrl = `http://127.0.0.1:${addr.port}`
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
+  })
 
   afterAll(
     () =>
       new Promise<void>((resolve, reject) => {
+        setCombatSessionBackendForTests(null)
         server.close((err) => (err ? reject(err) : resolve()))
       }),
   )
 
-  it('returns initialized state for a valid body', async () => {
+  it('returns sessionId, revision, and state for a valid body', async () => {
     const res = await fetch(`${baseUrl}/api/combat/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,8 +77,15 @@ describe('POST /api/combat/sessions', () => {
       }),
     })
     expect(res.status).toBe(200)
-    const json = (await res.json()) as { ok: boolean; state?: { started: boolean } }
+    const json = (await res.json()) as {
+      ok: boolean
+      sessionId?: string
+      revision?: number
+      state?: { started: boolean }
+    }
     expect(json.ok).toBe(true)
+    expect(json.sessionId).toBeDefined()
+    expect(json.revision).toBe(1)
     expect(json.state?.started).toBe(true)
   })
 

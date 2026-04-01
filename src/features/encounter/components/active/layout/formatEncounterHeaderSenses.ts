@@ -1,4 +1,4 @@
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import { getCombatantVisionSenseRanges } from '@/features/mechanics/domain/perception/perception.capabilities'
 
 /**

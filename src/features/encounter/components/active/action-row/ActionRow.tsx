@@ -2,9 +2,9 @@ import { useParams } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 
 import { ROUTES } from '@/app/routes'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
-import { ActionRowBase } from './ActionRowBase'
+import { CombatActionRowBase } from '@/features/combat/components'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
+import { deriveActionPresentation } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation'
 
 type ActionRowProps = {
   action: CombatActionDefinition
@@ -23,7 +23,7 @@ export function ActionRow({ action, isSelected, isAvailable = true, onSelect }: 
       : undefined
 
   return (
-    <ActionRowBase
+    <CombatActionRowBase
       isSelected={isSelected}
       isAvailable={isAvailable}
       onSelect={onSelect}

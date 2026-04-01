@@ -10,8 +10,8 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import type { CombatantTurnResources } from '@/features/mechanics/domain/encounter/state/types/combatant.types'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import type { CombatantTurnResources } from '@/features/mechanics/domain/combat/state/types/combatant.types'
 
 import {
   AppBadge,

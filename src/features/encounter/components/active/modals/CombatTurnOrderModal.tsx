@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 
 import { AppModal } from '@/ui/patterns'
-import type { EncounterState } from '@/features/mechanics/domain/encounter'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+import type { EncounterState } from '@/features/mechanics/domain/combat'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import {
   hasBattlefieldPresence,
   isDefeatedCombatant,
-} from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
+} from '@/features/mechanics/domain/combat/state/combatants/combatant-participation'
 import type { TurnOrderStatus, ViewerCombatantPresentationKind } from '../../../domain'
 import { TurnOrderList } from './TurnOrderList'
 import type { TurnOrderEntry } from './TurnOrderList'

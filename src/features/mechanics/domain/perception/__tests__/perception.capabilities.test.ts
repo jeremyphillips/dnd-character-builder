@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildMonsterCombatantInstance } from '@/features/encounter/helpers/combatants'
 import type { Monster } from '@/features/content/monsters/domain/types'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat/state/types'
 
 import {
   getCombatantBlindsightRangeFt,

@@ -5,7 +5,7 @@ import type {
   CombatActionAreaTemplate,
   CombatActionDefinition,
   CombatActionTargetingProfile,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import { classifySpellResolutionMode } from './spell-resolution-classifier'
 import { deriveSpellHostility, spellHostilityToHostileApplication } from './spell-hostility'
 

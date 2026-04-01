@@ -14,8 +14,8 @@
  * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
-import { getCellForCombatant, gridDistanceFt } from '@/features/encounter/space'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
+import { getCellForCombatant, gridDistanceFt } from '@/features/mechanics/domain/combat/space'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
 import {
@@ -42,7 +42,7 @@ export type EncounterGridCellRenderState = {
   occupantTokenVisibility: OccupantTokenVisibility
   showObstacleGlyph: boolean
   /**
-   * When set, may replace tactical base fills (see `mergePerceptionIntoCellVisualState` in `cellVisualState.ts`;
+   * When set, may replace tactical base fills (see `mergePerceptionIntoCellVisualState` in `features/combat/components/grid/cellVisualState.ts`;
    * immersed PCs may also replace `aoe-cast-range` / `placement-cast-range` band fills). Presentation-only.
    */
   perceptionBaseFillKind: VisibilityFillKind | null

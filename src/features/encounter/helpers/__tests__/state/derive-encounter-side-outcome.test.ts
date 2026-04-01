@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
 
 import { deriveEncounterSideOutcome } from '../../state'
 

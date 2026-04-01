@@ -5,8 +5,8 @@ import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combat
 import type {
   CombatantInstance,
   SpatialBattlefieldPresentationOptions,
-} from '@/features/mechanics/domain/encounter'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+} from '@/features/mechanics/domain/combat'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import type { AoeStep } from '../../../helpers/actions'
 import {
   collectPresentableEffects,

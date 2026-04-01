@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CombatLogEvent } from '@/features/mechanics/domain/encounter'
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types'
+import type { CombatLogEvent } from '@/features/mechanics/domain/combat'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
 
 import { buildEncounterActionToastPayload } from '../../actions'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSquareGridSpace } from '@/features/encounter/space'
+import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space'
 
 import {
   buildResolvedWorldEnvironmentCellMap,

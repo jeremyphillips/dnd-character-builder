@@ -15,17 +15,17 @@ import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
-import { buildMonsterModalStats } from '../helpers/presentation'
+import { buildMonsterModalStats } from '@/features/combat/presentation'
 import {
   ATMOSPHERE_TAGS,
   DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
 } from '@/features/mechanics/domain/environment'
-import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/encounter/state'
-import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/encounter/state/battlefield/battlefield-effect-anchor'
-import { getCombatantBaseMovement } from '@/features/mechanics/domain/encounter/state/shared'
-import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/encounter'
-import { getSingleCellPlacementRequirement } from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+import { getEffectiveGroundMovementBudgetFt } from '@/features/mechanics/domain/combat/state'
+import { resolveBattlefieldEffectOriginCellId } from '@/features/mechanics/domain/combat/state/battlefield/battlefield-effect-anchor'
+import { getCombatantBaseMovement } from '@/features/mechanics/domain/combat/state/shared'
+import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
+import { getSingleCellPlacementRequirement } from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 
 import {
   canResolveCombatActionSelection,
@@ -51,13 +51,13 @@ import {
   type EnvironmentSetupValues,
   type GridSizePreset,
 } from '../components'
-import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
 import { isAreaGridAction } from '../helpers/actions'
-import { getCellForCombatant } from '../space/space.helpers'
-import { buildCombatantViewerPresentationKindById } from '../space/rendering/grid-occupant-render-visibility'
-import { selectGridViewModel } from '../space/selectors/space.selectors'
-import { createSquareGridSpace } from '../space/creation/createSquareGridSpace'
-import { placeRandomGridObstacle } from '../space/placement/placeRandomGridObstacle'
+import { getCellForCombatant } from '@/features/mechanics/domain/combat/space/space.helpers'
+import { buildCombatantViewerPresentationKindById } from '@/features/mechanics/domain/combat/space/rendering/grid-occupant-render-visibility'
+import { selectGridViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
+import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
+import { placeRandomGridObstacle } from '@/features/mechanics/domain/combat/space/placement/placeRandomGridObstacle'
 
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 

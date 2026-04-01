@@ -13,18 +13,18 @@ import {
 import { ZoomControl } from '@/ui/patterns'
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks'
 
-import { areaTemplateRadiusFt } from '@/features/mechanics/domain/encounter/resolution/action/action-targeting'
+import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
 import {
   isValidActionTarget,
   actionRequiresCreatureTargetForResolve,
   getPrimaryResolutionMissing,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import {
   getSingleCellPlacementRequirement,
   validateSingleCellPlacement,
   type PlacementValidationReason,
-} from '@/features/mechanics/domain/encounter/resolution/action/action-requirement-model'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+} from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 
 import { buildEncounterActionToastPayload } from '../helpers/actions'
@@ -36,12 +36,12 @@ import {
   isSelfCenteredAreaAction,
   resolveAttachedEmanationAnchorModeFromSelection,
 } from '../helpers/actions'
-import { findGridObstacleAtCell, formatGridCellLabel, getCellForCombatant } from '../space/space.helpers'
+import { findGridObstacleAtCell, formatGridCellLabel, getCellForCombatant } from '@/features/mechanics/domain/combat/space/space.helpers'
 import {
   actionUsesGridCreatureTargeting,
   isValidAoeOriginCell,
   selectCombatantIdsInAoeFootprint,
-} from '../space/selectors/space.selectors'
+} from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,

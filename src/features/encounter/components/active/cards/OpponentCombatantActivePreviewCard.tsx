@@ -4,18 +4,17 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 import { formatMonsterIdentityLine } from '@/features/content/monsters/formatters'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 import type { ViewerCombatantPresentationKind } from '@/features/encounter/domain'
-import type { CombatantInstance, SpatialBattlefieldPresentationOptions } from '@/features/mechanics/domain/encounter'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+import type { CombatantInstance, SpatialBattlefieldPresentationOptions } from '@/features/mechanics/domain/combat'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import {
   hasBattlefieldPresence,
   isDefeatedCombatant,
-} from '@/features/mechanics/domain/encounter/state/combatants/combatant-participation'
+} from '@/features/mechanics/domain/combat/state/combatants/combatant-participation'
 
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { formatSigned } from '@/features/encounter/helpers/combatants'
-import { buildCombatantPreviewChips, getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
-import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
-import { CombatantAvatar } from '../../shared/CombatantAvatar'
+import { buildCombatantPreviewChips, getPreviewStatTooltip } from '@/features/combat/presentation'
+import { CombatantAvatar, CombatantPreviewCard } from '@/features/combat/components'
 
 type OpponentCombatantActivePreviewCardProps = {
   combatant: CombatantInstance

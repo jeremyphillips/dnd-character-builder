@@ -1,4 +1,4 @@
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import type { EffectConditionId } from '@/features/mechanics/domain/effects/effects.types'
 import { ABILITIES } from '@/features/mechanics/domain/character/abilities/abilities'
 

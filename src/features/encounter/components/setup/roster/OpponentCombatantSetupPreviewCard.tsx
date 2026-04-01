@@ -8,7 +8,7 @@ import {
   type CombatantPortraitEntry,
 } from '@/features/encounter/helpers/combatants'
 import { buildMonsterAttackEntries, buildMonsterExecutableActions } from '@/features/encounter/helpers/monsters'
-import { getPreviewStatTooltip } from '@/features/encounter/helpers/presentation'
+import { getPreviewStatTooltip } from '@/features/combat/presentation'
 import { calculateMonsterArmorClass } from '@/features/content/monsters/domain/mechanics/calculateMonsterArmorClass'
 import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abilities/abilityScoreMap'
 import type { Monster } from '@/features/content/monsters/domain/types'
@@ -19,11 +19,10 @@ import {
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
   type CombatantInstance,
-} from '@/features/mechanics/domain/encounter'
+} from '@/features/mechanics/domain/combat'
 import type { CombatantPreviewCardProps, PreviewStat } from '../../../domain'
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
-import { CombatantPreviewCard } from '../../shared/cards/CombatantPreviewCard'
-import { CombatantAvatar } from '../../shared/CombatantAvatar'
+import { CombatantAvatar, CombatantPreviewCard } from '@/features/combat/components'
 
 type OpponentCombatantSetupPreviewCardProps = {
   monster: Monster

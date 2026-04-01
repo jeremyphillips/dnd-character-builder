@@ -1,28 +1,32 @@
+/**
+ * Encounter feature re-exports combat-owned presentation/selectors (Phase 2).
+ * Prefer importing from `@/features/mechanics/domain/combat/presentation/*` or `.../selectors/*` in new code.
+ */
 export {
   buildEncounterDefensePreviewChips,
   defenseBadgesToPresentableCombatEffects,
   deriveEncounterDefenseBadges,
   describeConditionScopeForDefenseTooltip,
   formatDamageDefenseLabel,
-} from './badges/defense/encounter-defense-badges'
+} from '@/features/mechanics/domain/combat/presentation/badges/defense/encounter-defense-badges'
 export type {
   EncounterConditionImmunityBadge,
   EncounterDamageDefenseBadge,
   EncounterDefenseBadges,
-} from './badges/defense/encounter-defense-badges.types'
-export { deriveCombatActionBadges } from './badges/action/combat-action-badges'
+} from '@/features/mechanics/domain/combat/presentation/badges/defense/encounter-defense-badges.types'
+export { deriveCombatActionBadges } from '@/features/mechanics/domain/combat/presentation/badges/action/combat-action-badges'
 export type {
   ActionBadgeDescriptor,
   ActionBadgeKind,
-} from './badges/action/combat-action-badges.types'
-export { deriveActionPresentation } from './actions/action-presentation'
-export { deriveRecommendedActionsForTarget } from './actions/derive-recommended-actions-for-target'
+} from '@/features/mechanics/domain/combat/presentation/badges/action/combat-action-badges.types'
+export { deriveActionPresentation } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation'
+export { deriveRecommendedActionsForTarget } from '@/features/mechanics/domain/combat/presentation/actions/derive-recommended-actions-for-target'
 export type {
   ActionPresentationViewModel,
   ActionSemanticCategory,
   ActionSourceTag,
   ActionFooterLink,
-} from './actions/action-presentation.types'
+} from '@/features/mechanics/domain/combat/presentation/actions/action-presentation.types'
 export {
   collectPresentableEffects,
   enrichPresentableEffects,
@@ -30,7 +34,7 @@ export {
   getUserFacingEffectLabel,
   groupBySection,
   sortByPriority,
-} from './effects/presentable-effects'
+} from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects'
 export {
   COMBAT_STATE_UI_MAP,
   COMBAT_STATE_MARKER_UI_MAP,
@@ -48,7 +52,7 @@ export {
   shouldShowPresentationInHeader,
   SPECIALIZED_EFFECT_KEYS,
   SPECIALIZED_EFFECT_PRESENTATION_MAP,
-} from './effects/combat-state-ui-map'
+} from '@/features/mechanics/domain/combat/presentation/effects/combat-state-ui-map'
 export type {
   CombatStatePresentation,
   CombatStateSection,
@@ -59,21 +63,17 @@ export type {
   PresentableCombatEffect,
   PresentableCombatEffectKind,
   PresentableTurnHook,
-} from './effects/presentable-effects.types'
+} from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects.types'
 
 export {
   filterLogByMode,
   groupLogEntries,
   formatLogGroupHeader,
   formatLogEntryDetail,
-} from './combat-log/combat-log'
-export type { GroupedLogEntry } from './combat-log/combat-log'
-export type {
-  CombatLogEntry,
-  CombatLogEntryImportance,
-  CombatLogPresentationMode,
-} from './combat-log/combat-log.types'
-export type { GridInteractionMode } from './interaction/encounter-interaction.types'
+} from '@/features/mechanics/domain/combat/presentation/combat-log/combat-log'
+export type { GroupedLogEntry } from '@/features/mechanics/domain/combat/presentation/combat-log/combat-log.types'
+export type { CombatLogEntry, CombatLogEntryImportance, CombatLogPresentationMode } from '@/features/mechanics/domain/combat/presentation/combat-log/combat-log.types'
+export type { GridInteractionMode } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-interaction.types'
 export {
   deriveBucketChrome,
   deriveBucketState,
@@ -81,17 +81,15 @@ export {
   deriveTurnExhaustion,
   partitionCombatantActionBuckets,
   turnResourceBucketHeaderBadge,
-} from './turn/turn-options'
+} from '@/features/mechanics/domain/combat/selectors/turn/turn-options'
 export {
   canResolveCombatActionSelection,
   selectValidActionIdsForTarget,
-} from './interaction/encounter-resolve-selection'
-export type { CanResolveCombatActionSelectionArgs } from './interaction/encounter-resolve-selection'
-export { deriveCombatantTurnExhaustion } from './turn/combatant-turn-exhaustion'
-export type { CombatantTurnExhaustionInput } from './turn/combatant-turn-exhaustion'
-export {
-  deriveEncounterHeaderModel,
-} from './header/encounter-header-model'
+} from '@/features/mechanics/domain/combat/selectors/interaction/encounter-resolve-selection'
+export type { CanResolveCombatActionSelectionArgs } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-resolve-selection'
+export { deriveCombatantTurnExhaustion } from '@/features/mechanics/domain/combat/selectors/turn/combatant-turn-exhaustion'
+export type { CombatantTurnExhaustionInput } from '@/features/mechanics/domain/combat/selectors/turn/combatant-turn-exhaustion'
+export { deriveEncounterHeaderModel } from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
 export type {
   DeriveEncounterHeaderModelArgs,
   EncounterHeaderDisplayArgs,
@@ -99,28 +97,22 @@ export type {
   EncounterHeaderModel,
   EncounterHeaderTurnArgs,
   EndTurnEmphasis,
-} from './header/encounter-header-model'
-export type { TurnOptionBucketState, TurnResourceBucketHeaderBadge } from './turn/turn-options'
-export {
-  deriveEncounterCapabilities,
-} from './capabilities/encounter-capabilities.types'
+} from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
+export type { TurnOptionBucketState, TurnResourceBucketHeaderBadge } from '@/features/mechanics/domain/combat/selectors/turn/turn-options'
+export { deriveEncounterCapabilities } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 export type {
   EncounterCapabilities,
   EncounterSimulatorViewerMode,
   EncounterViewerContext,
   EncounterViewerRole,
-} from './capabilities/encounter-capabilities.types'
-export {
-  deriveEncounterPerceptionUiFeedback,
-} from './perception/encounter-perception-ui.feedback'
+} from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
+export { deriveEncounterPerceptionUiFeedback } from '@/features/mechanics/domain/combat/presentation/perception/encounter-perception-ui.feedback'
 export type {
   EncounterPerceptionUiFeedback,
   DeriveEncounterPerceptionUiFeedbackArgs,
-} from './perception/encounter-perception-ui.feedback'
-export {
-  deriveEncounterPresentationGridPerceptionInput,
-} from './perception/derive-encounter-presentation-grid-perception'
-export type { DeriveEncounterPresentationGridPerceptionInputArgs } from './perception/derive-encounter-presentation-grid-perception'
+} from '@/features/mechanics/domain/combat/presentation/perception/encounter-perception-ui.feedback'
+export { deriveEncounterPresentationGridPerceptionInput } from '@/features/mechanics/domain/combat/presentation/perception/derive-encounter-presentation-grid-perception'
+export type { DeriveEncounterPresentationGridPerceptionInputArgs } from '@/features/mechanics/domain/combat/presentation/perception/derive-encounter-presentation-grid-perception'
 export type {
   CombatantPreviewMode,
   CombatantPreviewKind,
@@ -130,11 +122,11 @@ export type {
   CombatantStatBadge,
   CombatantTrackedPartBadge,
   CombatantPreviewAction,
-  CombatantPreviewCardProps,
   CharacterCombatant,
   MonsterCombatant,
   SetupPreviewWrapperProps,
   ActivePreviewWrapperProps,
   TurnOrderStatus,
   ViewerCombatantPresentationKind,
-} from './view/encounter-view.types'
+} from '@/features/mechanics/domain/combat/presentation/view/tactical-preview.types'
+export type { CombatantPreviewCardProps } from './view/encounter-view.types'

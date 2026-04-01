@@ -1,9 +1,17 @@
 export { CombatLane } from './setup/roster/CombatLane'
 export { AllyRosterLane } from './setup/roster/AllyRosterLane'
 export { OpponentRosterLane } from './setup/roster/OpponentRosterLane'
-export { CombatantPreviewCard } from './shared/cards/CombatantPreviewCard'
-export { CombatantAvatar } from './shared/CombatantAvatar'
-export { CombatLogEntryGroup } from './active/combat-log/CombatLogEntry'
+/** Temporary re-exports (Phase 3A). Prefer `@/features/combat/components` in new code. */
+export {
+  CombatantAvatar,
+  CombatantPreviewCard,
+  CombatActionPreviewCard,
+} from '@/features/combat/components'
+export {
+  CombatLogEntryGroup,
+  PresentableEffectsList,
+  PresentableEffectsHeaderChips,
+} from '@/features/combat/components'
 export { TurnOrderList } from './active/modals/TurnOrderList'
 export type { TurnOrderEntry } from './active/modals/TurnOrderList'
 export { EncounterView } from './shared/layout/EncounterView'
@@ -13,7 +21,7 @@ export { EncounterActiveHeader } from './active/layout/EncounterActiveHeader'
 export { EncounterPresentationPovField } from './active/layout/EncounterPresentationPovField'
 export { EncounterActiveFooter } from './active/layout/EncounterActiveFooter'
 export type { InteractionMode } from './active/layout/EncounterActiveFooter'
-export type { GridInteractionMode } from '../domain/interaction/encounter-interaction.types'
+export type { GridInteractionMode } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-interaction.types'
 export { EncounterEnvironmentSetup } from './setup/options/EncounterEnvironmentSetup'
 export type { EnvironmentSetupValues } from './setup/options/EncounterEnvironmentSetup'
 export { EncounterEnvironmentSummary } from './active/layout/EncounterEnvironmentSummary'
@@ -28,13 +36,13 @@ export {
   useCloseCombatantActionDrawerOnActiveCombatantChange,
   type CombatantActionDrawerView,
 } from './active/drawers/CombatantActionDrawer'
-export type { CombatantStatBadge, CombatantTrackedPartBadge } from './shared/cards/combatant-badges'
+export type { CombatantStatBadge, CombatantTrackedPartBadge } from '@/features/combat/components'
 export {
   CombatantCoreBadgeRow,
   CombatantPreviewChipRow,
   CombatantStatBadgeRow,
   CombatantTrackedPartBadgeRow,
-} from './shared/cards/combatant-badges'
+} from '@/features/combat/components'
 export { CombatLogPanel } from './active/combat-log/CombatLogPanel'
 export { EncounterActiveSidebar } from './active/grid/EncounterActiveSidebar'
 export { EncounterGrid } from './active/grid/EncounterGrid'
@@ -42,7 +50,11 @@ export { EncounterGridSetup } from './setup/options/EncounterGridSetup'
 export { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets'
 export type { GridSizePreset } from '@/shared/domain/grid/gridPresets'
 export { ActionRow } from './active/action-row/ActionRow'
-export { ActionRowBase } from './active/action-row/ActionRowBase'
+/** Temporary alias (Phase 3C). Prefer `CombatActionRowBase` from `@/features/combat/components`. */
+export {
+  CombatActionRowBase as ActionRowBase,
+  type CombatActionRowBaseProps as ActionRowBaseProps,
+} from '@/features/combat/components'
 export { EncounterEditModal } from './shared/modals/EncounterEditModal'
 export { CombatTargetSelectModal, buildTargetOptions } from './active/modals/CombatTargetSelectModal'
 export { CombatLogModal } from './active/combat-log/CombatLogModal'

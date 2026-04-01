@@ -4,8 +4,8 @@
  * Call from {@link reconcileBattlefieldEffectAnchors} so anchors and zones stay aligned.
  */
 
-import { resolveBattlefieldEffectOriginCellId } from '../encounter/state/battlefield/battlefield-effect-anchor'
-import type { BattlefieldEffectInstance, EncounterState } from '../encounter/state/types/encounter-state.types'
+import { resolveBattlefieldEffectOriginCellId } from '../combat/state/battlefield/battlefield-effect-anchor'
+import type { BattlefieldEffectInstance, EncounterState } from '../combat/state/types/encounter-state.types'
 
 import type {
   AttachedEnvironmentZoneProfile,

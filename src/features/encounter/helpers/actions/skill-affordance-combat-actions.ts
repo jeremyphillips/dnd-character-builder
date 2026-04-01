@@ -1,6 +1,6 @@
 import type { SkillProficiency, SkillProficiencyCombatUiActionId } from '@/features/content/skillProficiencies/domain/types'
-import type { CombatActionDefinition } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
-import { DEFAULT_HIDE_COMBAT_ACTION } from '@/features/mechanics/domain/encounter/resolution/combat-action.types'
+import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
+import { DEFAULT_HIDE_COMBAT_ACTION } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 
 /**
  * Maps a skill-advertised combat affordance to a {@link CombatActionDefinition}.

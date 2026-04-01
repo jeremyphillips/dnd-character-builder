@@ -1,6 +1,6 @@
-import type { EncounterSpace } from '@/features/encounter/space'
-import { gridDistanceFt } from '@/features/encounter/space'
-import type { EncounterState } from '@/features/mechanics/domain/encounter/state/types/encounter-state.types'
+import type { EncounterSpace } from '@/features/mechanics/domain/combat/space'
+import { gridDistanceFt } from '@/features/mechanics/domain/combat/space'
+import type { EncounterState } from '@/features/mechanics/domain/combat/state/types/encounter-state.types'
 
 import type {
   EncounterAtmosphereTag,

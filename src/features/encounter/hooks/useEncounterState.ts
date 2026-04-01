@@ -25,8 +25,8 @@ import {
   type ManualEnvironmentContext,
   type ManualMonsterTriggerContext,
   type MonsterFormContext,
-} from '@/features/mechanics/domain/encounter'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+} from '@/features/mechanics/domain/combat'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 import type { Armor } from '@/features/content/equipment/armor/domain/types/armor.types'
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types/weapon.types'
@@ -40,8 +40,8 @@ import { buildSummonAllyMonsterCombatant } from '../helpers/combatants'
 import type { AoeStep } from '../helpers/actions'
 
 import type { OpponentRosterEntry } from '../types'
-import type { EncounterSpace, InitialPlacementOptions } from '../space'
-import { getCellForCombatant, moveCombatant } from '../space'
+import type { EncounterSpace, InitialPlacementOptions } from '@/features/mechanics/domain/combat/space'
+import { getCellForCombatant, moveCombatant } from '@/features/mechanics/domain/combat/space'
 
 type UseEncounterStateArgs = {
   selectedCombatantIds: string[]

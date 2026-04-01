@@ -6,8 +6,8 @@ import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import type { CombatantInstance } from '@/features/mechanics/domain/encounter'
-import { getCombatantDisplayLabel } from '@/features/mechanics/domain/encounter/state'
+import type { CombatantInstance } from '@/features/mechanics/domain/combat'
+import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import { SelectEncounterCombatantModal, type CombatantOption } from '../../setup/modals/SelectEncounterCombatantModal'
 
 type AttachedEmanationSetupPanelProps = {

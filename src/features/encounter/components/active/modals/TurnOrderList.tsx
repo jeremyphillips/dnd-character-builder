@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography'
 import { AppBadge } from '@/ui/primitives'
 import type { AppBadgeTone } from '@/ui/types'
 import type { TurnOrderStatus, ViewerCombatantPresentationKind } from '../../../domain'
-import { getTurnOrderRowOpacity } from '../../../domain/presentation-participation'
+import { getTurnOrderRowOpacity } from '@/features/mechanics/domain/combat/presentation/participation/presentation-participation'
 
 export type TurnOrderEntry = {
   combatantId: string

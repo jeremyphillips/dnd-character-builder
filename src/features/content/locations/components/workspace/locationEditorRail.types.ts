@@ -26,7 +26,7 @@ export type LocationMapSelection =
       axis: 'horizontal' | 'vertical';
       anchorEdgeId: string;
     }
-  /** Reserved until region authoring exists. */
+  /** Authored region; derived from cell `regionId` in Select mode when no higher-priority hit. */
   | { type: 'region'; regionId: string };
 
 /**

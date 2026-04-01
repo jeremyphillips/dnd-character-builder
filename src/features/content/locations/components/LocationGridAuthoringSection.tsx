@@ -80,6 +80,7 @@ import {
   resolveNearestEdgeHit,
   resolveNearestPathHit,
 } from '@/features/content/locations/domain/mapEditor/locationMapSelectionHitTest';
+import { resolveSelectModeRegionOrCellSelection } from '@/features/content/locations/domain/mapEditor/resolveSelectModeRegionOrCellSelection';
 import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
 import { polylinePoint2DToSmoothSvgPath } from './pathOverlayRendering';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
@@ -770,7 +771,7 @@ export function LocationGridAuthoringSection({
     if (!gridContainerRef.current) {
       setDraft((d) => ({
         ...d,
-        mapSelection: { type: 'cell', cellId: cell.cellId },
+        mapSelection: resolveSelectModeRegionOrCellSelection(cell.cellId, d.regionIdByCellId),
         selectedCellId: cell.cellId,
       }));
       onCellFocusRail?.();
@@ -797,7 +798,7 @@ export function LocationGridAuthoringSection({
       }
     }
 
-    // Select-mode hit order (square): object → path → edge → cell. Path before edge: authored paths
+    // Select-mode hit order (square): object → path → edge → region → cell. Path before edge: authored paths
     // run near boundary geometry; edge pick would otherwise steal path clicks.
     const pathPolys = pathEntriesToPolylineGeometry(draft.pathEntries, (cid) =>
       cellCenterPx(cid),
@@ -863,9 +864,10 @@ export function LocationGridAuthoringSection({
       }
     }
 
+    const mapSelection = resolveSelectModeRegionOrCellSelection(cell.cellId, draft.regionIdByCellId);
     setDraft((d) => ({
       ...d,
-      mapSelection: { type: 'cell', cellId: cell.cellId },
+      mapSelection,
       selectedCellId: cell.cellId,
     }));
     onCellFocusRail?.();

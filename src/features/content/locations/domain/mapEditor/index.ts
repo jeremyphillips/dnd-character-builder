@@ -8,3 +8,4 @@ export * from './resolveDrawSelectionToAction';
 export * from './resolveEraseTarget';
 export * from './useLocationMapEditorState';
 export * from './locationMapSelectionHitTest';
+export * from './resolveSelectModeRegionOrCellSelection';

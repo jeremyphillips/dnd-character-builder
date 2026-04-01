@@ -45,7 +45,7 @@ export function LocationEditorSelectionPanel({
     case 'none':
       return (
         <Typography variant="body2" color="text.secondary">
-          Select a cell, path, edge, or object on the map.
+          Select a cell, region, path, edge, or object on the map.
         </Typography>
       );
     case 'cell':

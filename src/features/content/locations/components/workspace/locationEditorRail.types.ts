@@ -29,7 +29,10 @@ export type LocationMapSelection =
   /** Reserved until region authoring exists. */
   | { type: 'region'; regionId: string };
 
-/** Event-driven auto-switch: opening Place mode should focus the Map rail section (place palette). */
+/**
+ * Event-driven auto-switch: opening Place or Draw mode should focus the Map rail section.
+ * Region paint switches the rail to Map when paint domain becomes `region` (see route `handlePaintChange`).
+ */
 export function shouldAutoSwitchRailToMapForMode(mode: LocationMapEditorMode): boolean {
   return mode === 'place' || mode === 'draw';
 }

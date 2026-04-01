@@ -1,28 +1,34 @@
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+import { getMapRegionColor } from '@/app/theme/mapColors';
+import { LOCATION_MAP_REGION_COLOR_KEYS } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
+import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
 import type { LocationMapPaintState } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
 import { resolveActiveRegionEntry } from '@/features/content/locations/domain/mapEditor/locationMapPaintSelection.helpers';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
-import { LocationMapRegionMetadataForm } from '@/features/content/locations/components/workspace/LocationMapRegionMetadataForm';
-import type { RegionMetadataFormValues } from '@/features/content/locations/components/workspace/LocationMapRegionMetadataForm';
+
+import { RegionPaintActiveRegionSelect } from './RegionPaintActiveRegionSelect';
 
 type LocationMapEditorPaintMapPanelProps = {
   paint: LocationMapPaintState;
   regionEntries: readonly LocationMapRegionAuthoringEntry[];
-  onUpdateRegionEntry: (
-    regionId: string,
-    patch: Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>,
-  ) => void;
-  onFocusRegionInSelection?: () => void;
+  onCreateRegion: () => void;
+  onSelectActiveRegion: (regionId: string) => void;
+  onActiveRegionColorKeyChange: (colorKey: LocationMapRegionColorKey) => void;
+  onEditRegionInSelection: () => void;
 };
 
 export function LocationMapEditorPaintMapPanel({
   paint,
   regionEntries,
-  onUpdateRegionEntry,
-  onFocusRegionInSelection,
+  onCreateRegion,
+  onSelectActiveRegion,
+  onActiveRegionColorKeyChange,
+  onEditRegionInSelection,
 }: LocationMapEditorPaintMapPanelProps) {
   if (paint.domain === 'surface') {
     return (
@@ -33,41 +39,103 @@ export function LocationMapEditorPaintMapPanel({
   }
 
   const active = resolveActiveRegionEntry(regionEntries, paint.activeRegionId);
-
-  if (!active) {
-    return (
-      <Stack spacing={1}>
-        <Typography variant="subtitle2" fontWeight={600}>
-          Region paint
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Create a region or choose one in the paint tray, then paint cells to assign them to that region.
-        </Typography>
-      </Stack>
-    );
-  }
+  const regionColorKey = active?.colorKey ?? LOCATION_MAP_REGION_COLOR_KEYS[0];
+  const regionSwatchColor = getMapRegionColor(regionColorKey);
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={1.5}>
       <Typography variant="subtitle2" fontWeight={600}>
-        Active region
+        Region paint
       </Typography>
-      {onFocusRegionInSelection ? (
-        <Button variant="outlined" size="small" onClick={onFocusRegionInSelection} sx={{ alignSelf: 'flex-start' }}>
-          Open in Selection
-        </Button>
-      ) : null}
-      <LocationMapRegionMetadataForm
-        region={active}
-        formId="location-map-region-metadata-paint"
-        onSubmitValues={(values: RegionMetadataFormValues) => {
-          onUpdateRegionEntry(active.id, {
-            name: values.name,
-            description: values.description.trim() === '' ? undefined : values.description.trim(),
-            colorKey: values.colorKey,
-          });
-        }}
+      <Typography variant="body2" color="text.secondary">
+        Paint cells into the active region. Full name, description, and color editing are in Selection.
+      </Typography>
+
+      <Typography variant="body2">
+        <strong>Active region:</strong>{' '}
+        {active ? active.name : '—'}
+      </Typography>
+
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Box
+          sx={{
+            width: 28,
+            height: 28,
+            borderRadius: 0,
+            border: 1,
+            borderColor: 'divider',
+            bgcolor: regionSwatchColor,
+            flexShrink: 0,
+          }}
+          aria-hidden
+        />
+        <Typography variant="body2" color="text.secondary">
+          {regionColorKey}
+        </Typography>
+      </Stack>
+
+      <RegionPaintActiveRegionSelect
+        activeRegionId={paint.activeRegionId}
+        regionEntries={regionEntries}
+        onSelectActiveRegion={onSelectActiveRegion}
       />
+
+      <Button variant="outlined" size="small" onClick={onCreateRegion} sx={{ borderRadius: 0, alignSelf: 'flex-start' }}>
+        New region
+      </Button>
+
+      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+        Preset colors
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 28px)',
+          gap: 0.5,
+          justifyContent: 'flex-start',
+        }}
+      >
+        {LOCATION_MAP_REGION_COLOR_KEYS.map((key) => {
+          const c = getMapRegionColor(key);
+          const selected = regionColorKey === key;
+          return (
+            <Tooltip key={key} title={key} placement="top">
+              <Box
+                component="button"
+                type="button"
+                onClick={() => {
+                  if (active) onActiveRegionColorKeyChange(key);
+                }}
+                disabled={!active}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 0,
+                  border: 2,
+                  borderColor: selected ? 'primary.main' : 'divider',
+                  bgcolor: c,
+                  cursor: active ? 'pointer' : 'not-allowed',
+                  p: 0,
+                  boxShadow: selected ? 2 : 0,
+                  opacity: active ? 1 : 0.45,
+                }}
+                aria-label={key}
+                aria-pressed={selected}
+              />
+            </Tooltip>
+          );
+        })}
+      </Box>
+
+      <Button
+        variant="contained"
+        size="small"
+        onClick={onEditRegionInSelection}
+        disabled={!active}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        Edit region
+      </Button>
     </Stack>
   );
 }

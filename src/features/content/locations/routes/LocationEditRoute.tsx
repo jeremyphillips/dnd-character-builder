@@ -28,6 +28,7 @@ import {
   bootstrapDefaultLocationMap,
   cellEntriesToDraft,
   canApplyRegionPaint,
+  shouldSwitchRailToMapForPaintDomain,
   upsertRegionEntry,
   pickMapGridFormValues,
   applyScaleToLocationFormUiPolicy,
@@ -73,7 +74,10 @@ import {
 } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
 import { applyEdgeStrokeToDraft } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
-import type { LocationMapEditorMode } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
+import type {
+  LocationMapEditorMode,
+  LocationMapPaintState,
+} from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
@@ -442,6 +446,16 @@ export default function LocationEditRoute() {
   const mapEditor = useLocationMapEditorState();
   const { setMode: setMapEditorMode } = mapEditor;
 
+  const handlePaintChange = useCallback(
+    (next: LocationMapPaintState) => {
+      mapEditor.setActivePaint(next);
+      if (shouldSwitchRailToMapForPaintDomain(next.domain)) {
+        setRailSection('map');
+      }
+    },
+    [mapEditor.setActivePaint, setRailSection],
+  );
+
   const handleUpdateRegionEntry = useCallback(
     (
       regionId: string,
@@ -468,7 +482,8 @@ export default function LocationEditRoute() {
       regionEntries: upsertRegionEntry(prev.regionEntries, { id, colorKey, name }),
     }));
     mapEditor.setActivePaint((p) => (p ? { ...p, domain: 'region', activeRegionId: id } : p));
-  }, [mapEditor.setActivePaint]);
+    setRailSection('map');
+  }, [mapEditor.setActivePaint, setRailSection]);
 
   const handleSelectActiveRegionPaint = useCallback(
     (regionId: string) => {
@@ -481,8 +496,9 @@ export default function LocationEditRoute() {
           activeRegionId: trimmed === '' ? null : trimmed,
         };
       });
+      setRailSection('map');
     },
-    [mapEditor.setActivePaint],
+    [mapEditor.setActivePaint, setRailSection],
   );
 
   const handleActiveRegionColorKeyChange = useCallback(
@@ -501,7 +517,7 @@ export default function LocationEditRoute() {
     [mapEditor.activePaint?.activeRegionId],
   );
 
-  const handleFocusRegionInSelection = useCallback(() => {
+  const handleEditRegionInSelection = useCallback(() => {
     const id = mapEditor.activePaint?.activeRegionId?.trim();
     if (!id) return;
     setGridDraft((prev) => ({ ...prev, mapSelection: { type: 'region', regionId: id } }));
@@ -1070,8 +1086,10 @@ export default function LocationEditRoute() {
         <LocationMapEditorPaintMapPanel
           paint={mapEditor.activePaint}
           regionEntries={gridDraft.regionEntries}
-          onUpdateRegionEntry={handleUpdateRegionEntry}
-          onFocusRegionInSelection={handleFocusRegionInSelection}
+          onCreateRegion={handleCreateRegionPaint}
+          onSelectActiveRegion={handleSelectActiveRegionPaint}
+          onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
+          onEditRegionInSelection={handleEditRegionInSelection}
         />
       ) : mapEditor.mode === 'erase' ? (
         <Typography variant="body2" color="text.secondary">
@@ -1169,11 +1187,7 @@ export default function LocationEditRoute() {
                   <LocationMapEditorPaintTray
                     items={paintPaletteItems}
                     activePaint={mapEditor.activePaint}
-                    onPaintChange={mapEditor.setActivePaint}
-                    regionEntries={gridDraft.regionEntries}
-                    onCreateRegion={handleCreateRegionPaint}
-                    onSelectActiveRegion={handleSelectActiveRegionPaint}
-                    onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
+                    onPaintChange={handlePaintChange}
                   />
                 )}
                 {mapEditor.mode === 'draw' && (
@@ -1348,11 +1362,7 @@ export default function LocationEditRoute() {
                       <LocationMapEditorPaintTray
                         items={paintPaletteItems}
                         activePaint={mapEditor.activePaint}
-                        onPaintChange={mapEditor.setActivePaint}
-                        regionEntries={gridDraft.regionEntries}
-                        onCreateRegion={handleCreateRegionPaint}
-                        onSelectActiveRegion={handleSelectActiveRegionPaint}
-                        onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
+                        onPaintChange={handlePaintChange}
                       />
                     )}
                     {mapEditor.mode === 'draw' && (
@@ -1439,11 +1449,7 @@ export default function LocationEditRoute() {
                     <LocationMapEditorPaintTray
                       items={paintPaletteItems}
                       activePaint={mapEditor.activePaint}
-                      onPaintChange={mapEditor.setActivePaint}
-                      regionEntries={gridDraft.regionEntries}
-                      onCreateRegion={handleCreateRegionPaint}
-                      onSelectActiveRegion={handleSelectActiveRegionPaint}
-                      onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
+                      onPaintChange={handlePaintChange}
                     />
                   )}
                   {mapEditor.mode === 'draw' && (

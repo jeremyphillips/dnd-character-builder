@@ -8,7 +8,7 @@ import {
   distancePointToSegmentSquared,
   resolveNearestEdgeHit,
   resolveNearestPathHit,
-} from './locationMapSelectionHitTest';
+} from '../../select-mode';
 
 describe('distancePointToSegmentSquared', () => {
   it('is zero for a point on the segment', () => {

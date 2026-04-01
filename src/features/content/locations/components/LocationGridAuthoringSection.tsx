@@ -46,9 +46,9 @@ import type { LocationEdgeFeatureKindId } from '@/features/content/locations/dom
 import {
   buildSelectModeInteractiveTargetInput,
   buildSelectModeInteractiveTargetInputSkipGeometry,
-} from '@/features/content/locations/domain/mapEditor/buildSelectModeInteractiveTargetInput';
-import { refineSelectModeClickAfterRegionDrill } from '@/features/content/locations/domain/mapEditor/refineSelectModeClickAfterRegionDrill';
-import { resolveSelectModeInteractiveTarget } from '@/features/content/locations/domain/mapEditor/resolveSelectModeInteractiveTarget';
+  refineSelectModeClickAfterRegionDrill,
+  resolveSelectModeInteractiveTarget,
+} from '@/features/content/locations/domain/mapEditor';
 
 import type { LocationGridDraftState } from './locationGridDraft.types';
 import {

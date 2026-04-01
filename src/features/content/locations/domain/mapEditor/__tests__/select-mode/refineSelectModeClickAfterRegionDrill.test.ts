@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
-import { refineSelectModeClickAfterRegionDrill } from './refineSelectModeClickAfterRegionDrill';
+import { refineSelectModeClickAfterRegionDrill } from '../../select-mode';
 
 describe('refineSelectModeClickAfterRegionDrill', () => {
   const regionR1 = { type: 'region' as const, regionId: 'r1' };

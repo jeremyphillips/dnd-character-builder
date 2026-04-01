@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { EdgeSegmentGeometry, PathPolylineGeometry } from '@/shared/domain/locations/map/locationMapGeometry.types';
 
-import { resolveSelectModeInteractiveTarget } from './resolveSelectModeInteractiveTarget';
+import { resolveSelectModeInteractiveTarget } from '../../select-mode';
 
 describe('resolveSelectModeInteractiveTarget', () => {
   const emptyDraft = {

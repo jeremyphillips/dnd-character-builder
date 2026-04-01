@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveSelectModeAfterPathEdgeHits,
   resolveSelectModeRegionOrCellSelection,
-} from './resolveSelectModeRegionOrCellSelection';
+} from '../../select-mode';
 
 describe('resolveSelectModeRegionOrCellSelection', () => {
   it('returns region when cell has regionId', () => {

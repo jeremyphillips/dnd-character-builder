@@ -204,6 +204,11 @@ This pass adds:
 - Narrow hardening in `apply-resolve-action-intent.ts` (e.g. unknown `actionId` when the actor has a non-empty action list) and optional `action-log-slice` events (log entry types appended) for future log/toast work.
 - Optional pure helper [`build-resolve-action-intent.ts`](../../../../src/features/encounter/domain/interaction/build-resolve-action-intent.ts) mapping confirmed hook fields into `ResolveActionIntent`.
 
+### Phase 4D (flatten log feedback per successful intent)
+
+- [`intent-success-log-entries.ts`](../../../../src/features/mechanics/domain/combat/application/intent-success-log-entries.ts) — `flattenLogEntriesFromIntentSuccess` / `flattenLogEntriesFromEvents` merge all `log-appended` slices from one `CombatIntentSuccess` into a single `CombatLogEvent[]` in event order.
+- Encounter (`useEncounterState`) calls `registerCombatLogAppended` at most **once** per successful intent via one `queueMicrotask`, so multiple `log-appended` events in one result do not duplicate toasts or scheduling.
+
 ## Open design questions
 
 As the system evolves, these questions will need clear answers:

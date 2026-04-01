@@ -86,10 +86,10 @@ Deliverable: a short `**MUTATION_ENTRY_POINTS.md`** or block comment in the new 
 **Shape:** Discriminated union (e.g. `kind` or `type` field), explicit payloads only:
 
 - `**EndTurnIntent`** — optional `actorId` if you want explicit actor (or omit if always “active combatant” from state).
-- `**MoveCombatantIntent**` — `combatantId`, `destinationCellId` (and any minimal fields the engine already needs).
-- `**ResolveActionIntent**` — align with existing `resolveCombatAction` arg shape: `actorId`, `actionId`, optional `targetId`, `casterOptions`, `aoeOriginCellId`, `singleCellPlacementCellId`, `unaffectedCombatantIds`, `objectId` — **mirror engine DTO**, not drawer props.
+- `**MoveCombatantIntent`** — `combatantId`, `destinationCellId` (and any minimal fields the engine already needs).
+- `**ResolveActionIntent`** — align with existing `resolveCombatAction` arg shape: `actorId`, `actionId`, optional `targetId`, `casterOptions`, `aoeOriginCellId`, `singleCellPlacementCellId`, `unaffectedCombatantIds`, `objectId` — **mirror engine DTO**, not drawer props.
 - `**PlaceAreaIntent`** — e.g. confirm step: `actorId`, `actionId`, `originCellId` (map current `aoeStep === 'confirm'` semantics when wired in 4B).
-- `**ChooseSpawnCellIntent**` — `actorId`, `actionId`, `cellId` (for future spawn confirm).
+- `**ChooseSpawnCellIntent`** — `actorId`, `actionId`, `cellId` (for future spawn confirm).
 
 **Rules:** Serializable plain objects/arrays/strings; **no** React nodes, router, or component refs; **no** renaming `EncounterState` / `EncounterSpace`.
 
@@ -103,7 +103,7 @@ Deliverable: a short `**MUTATION_ENTRY_POINTS.md`** or block comment in the new 
 
 **Minimum concepts:**
 
-- `**CombatIntentResult`** — success vs failure; optional `nextState: EncounterState` (or “patch” later); `**events: CombatEvent[]**` for canonical records; `**validationIssues**` or `**error: CombatDispatchError**`.
+- `**CombatIntentResult`** — success vs failure; optional `nextState: EncounterState` (or “patch” later); `**events: CombatEvent[]`** for canonical records; `**validationIssues`** or `**error: CombatDispatchError**`.
 - `**CombatValidationIssue**` — code + message (stable for UI).
 - `**CombatDispatchError**` — not-found, illegal, permission (future), wrapped validation list.
 - `**CombatEvent**` — narrow v1 set: e.g. `turn-ended`, `combatant-moved`, `action-resolved`, `log-appended` — enough to subsume “log slice appended” without rewriting log UI in 4A.
@@ -151,7 +151,7 @@ If risk stays low:
 ## 6. Documentation updates
 
 - `**docs/reference/combat/engine/intents-and-events.md`** — add “Implementation status: Phase 4A introduces types under …” and link to source paths.
-- `**docs/reference/combat/client/overview.md**` (or a short `**client/local-dispatch.md**`) — describe Encounter → dispatch → engine flow and UI-local vs authoritative state.
+- `**docs/reference/combat/client/overview.md`** (or a short `**client/local-dispatch.md`**) — describe Encounter → dispatch → engine flow and UI-local vs authoritative state.
 - `**docs/reference/combat/migration-roadmap.md**` — add a **Phase 4A** bullet under Phase 4: “4A — contracts + local seam (complete); 4B+ — migrate flows.”
 
 ---

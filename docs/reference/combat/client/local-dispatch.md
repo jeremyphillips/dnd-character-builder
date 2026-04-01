@@ -10,7 +10,7 @@ Describe how the Encounter feature submits truth-changing combat operations toda
 2. Ephemeral UI state (hover, unconfirmed target, AoE preview, modal open) stays in React state — it is **not** an authoritative combat intent.
 3. When the user commits a truth-changing action, code should go through **`applyCombatIntent`** (`src/features/mechanics/domain/combat/application/apply-combat-intent.ts`) with a serializable **`CombatIntent`** and an **`ApplyCombatIntentContext`** (RNG, spell lookup for turn boundaries, etc.).
 4. The applier returns a **`CombatIntentResult`**: success with `nextState` and **`CombatEvent`** records, or structured failure (`CombatDispatchError`).
-5. Encounter applies `nextState` (e.g. `setEncounterState`) and may derive toasts or log side effects from events.
+5. Encounter applies `nextState` (e.g. `setEncounterState`) and may derive toasts or log side effects from events. **Phase 4D:** log/toast registration uses `flattenLogEntriesFromIntentSuccess` so all `log-appended` chunks in one success are merged; **one** microtask per successful intent (see [`intent-success-log-entries.ts`](../../../../src/features/mechanics/domain/combat/application/intent-success-log-entries.ts)).
 
 **Phase 4B:** End turn, grid movement (`move-combatant`), and action resolution (`resolve-action` → `resolveCombatAction`) all go through `applyCombatIntent`; see `apply-move-combatant-intent.ts` and `apply-resolve-action-intent.ts`.
 

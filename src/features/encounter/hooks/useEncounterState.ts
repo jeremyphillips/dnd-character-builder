@@ -13,6 +13,7 @@ import {
   getCombatantAvailableActions,
   removeConditionFromCombatant,
   applyCombatIntent,
+  flattenLogEntriesFromIntentSuccess,
   removeStateFromCombatant,
   triggerManualHook,
   type CombatantInstance,
@@ -38,6 +39,7 @@ import type { AoeStep } from '../helpers/actions'
 import { buildResolveActionIntentFromActiveSelection } from '../domain/interaction/build-resolve-action-intent'
 import type { OpponentRosterEntry } from '../types'
 import type { EncounterSpace, InitialPlacementOptions } from '@/features/mechanics/domain/combat/space'
+import type { CombatIntentSuccess } from '@/features/mechanics/domain/combat/results'
 
 type UseEncounterStateArgs = {
   selectedCombatantIds: string[]
@@ -105,6 +107,12 @@ export function useEncounterState({
     },
     [],
   )
+
+  const notifyLogAppendedFromIntentSuccess = useCallback((result: CombatIntentSuccess) => {
+    const logEntries = flattenLogEntriesFromIntentSuccess(result)
+    if (logEntries.length === 0) return
+    queueMicrotask(() => combatLogAppendedRef.current?.(logEntries, result.nextState))
+  }, [])
 
   const selectedCombatants = useMemo(
     () =>
@@ -308,11 +316,7 @@ export function useEncounterState({
         },
       })
       if (!result.ok) return prev
-      for (const event of result.events) {
-        if (event.kind === 'log-appended' && event.entries.length > 0) {
-          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
-        }
-      }
+      notifyLogAppendedFromIntentSuccess(result)
       return result.nextState
     })
   }
@@ -335,11 +339,7 @@ export function useEncounterState({
         { resolveCombatActionOptions: { monstersById, buildSummonAllyCombatant } },
       )
       if (!result.ok) return prev
-      for (const event of result.events) {
-        if (event.kind === 'log-appended' && event.entries.length > 0) {
-          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
-        }
-      }
+      notifyLogAppendedFromIntentSuccess(result)
       return result.nextState
     })
     resetAoePlacement()
@@ -360,6 +360,7 @@ export function useEncounterState({
     monstersById,
     buildSummonAllyCombatant,
     resetAoePlacement,
+    notifyLogAppendedFromIntentSuccess,
   ])
 
   function handleResetEncounter() {
@@ -476,11 +477,7 @@ export function useEncounterState({
         },
       )
       if (!result.ok) return prev
-      for (const event of result.events) {
-        if (event.kind === 'log-appended' && event.entries.length > 0) {
-          queueMicrotask(() => combatLogAppendedRef.current?.(event.entries, result.nextState))
-        }
-      }
+      notifyLogAppendedFromIntentSuccess(result)
       return result.nextState
     })
   }

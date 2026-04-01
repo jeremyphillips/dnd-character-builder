@@ -2,6 +2,18 @@ export {
   CombatActionRowBase,
   type CombatActionRowBaseProps,
 } from './action-row/CombatActionRowBase'
+export {
+  AoePlacementPanel,
+  type AoePlacementPanelProps,
+} from './panels/AoePlacementPanel'
+export {
+  CasterOptionsDrawerPanel,
+  type CasterOptionsDrawerPanelProps,
+} from './panels/CasterOptionsDrawerPanel'
+export {
+  SingleCellPlacementPanel,
+  type SingleCellPlacementPanelProps,
+} from './panels/SingleCellPlacementPanel'
 export { CombatGrid, type CombatGridProps } from './grid/CombatGrid'
 export { CombatantAvatar, type CombatantAvatarProps } from './avatar/CombatantAvatar'
 export { CombatantPreviewCard } from './cards/CombatantPreviewCard'

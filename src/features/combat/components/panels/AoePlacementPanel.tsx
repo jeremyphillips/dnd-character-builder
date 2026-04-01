@@ -5,14 +5,19 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
+import {
+  isSelfCenteredAreaAction,
+  type AoeStep,
+} from '@/features/mechanics/domain/combat/resolution/action/area-grid-action'
 import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
-import { isSelfCenteredAreaAction, type AoeStep } from '../../../../helpers/actions'
 
-import { formatAreaTemplateLabel, formatSpellRangeLine } from './aoePlacementFormat'
+import { formatAreaTemplateLabel, formatSpellRangeLine } from '@/features/combat/presentation/aoePlacementFormat'
 
 export type AoePlacementPanelProps = {
   action: CombatActionDefinition
   aoeStep: Exclude<AoeStep, 'none'>
+  /** Pass cast-time options so place-or-object emanations resolve like encounter routing. */
+  selectedCasterOptions?: Record<string, string>
   aoePlacementError?: string | null
   onDismissAoeError?: () => void
   aoeAffectedNames: string[]
@@ -26,6 +31,7 @@ export type AoePlacementPanelProps = {
 export function AoePlacementPanel({
   action,
   aoeStep,
+  selectedCasterOptions,
   aoePlacementError,
   onDismissAoeError,
   aoeAffectedNames,
@@ -37,7 +43,7 @@ export function AoePlacementPanel({
   const template = action.areaTemplate
   if (!template) return null
 
-  const selfCentered = isSelfCenteredAreaAction(action)
+  const selfCentered = isSelfCenteredAreaAction(action, selectedCasterOptions)
   const metaLine = `${formatAreaTemplateLabel(template)} · ${formatSpellRangeLine(action)}`
   const approxFt = areaTemplateRadiusFt(template)
 

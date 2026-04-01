@@ -36,6 +36,7 @@ Files under **`src/features/combat/**`** must **not** import from **`src/feature
 | [`cards/`](../../src/features/combat/components/cards/) | `CombatantPreviewCard`, `combatant-badges` (incl. `combatToneToAppBadgeTone`, chip rows), `CombatActionPreviewCard`. |
 | [`action-row/CombatActionRowBase.tsx`](../../src/features/combat/components/action-row/CombatActionRowBase.tsx) | Compact action row presentation (badges + optional footer link props). Router/campaign link construction stays in Encounter (`ActionRow`). |
 | [`grid/`](../../src/features/combat/components/grid/) | **`CombatGrid`** (tactical renderer), **`cellVisualState`**, **`cellVisualStyles`**, tests. Encounter exposes a thin **`EncounterGrid`** wrapper that forwards the same props. |
+| [`panels/`](../../src/features/combat/components/panels/) | Prop-driven drawer **panel leaves**: AoE placement, single-cell placement, spell caster options. Drawer shells stay in Encounter (`CombatantActionDrawer`, etc.). |
 
 Barrel: [`components/index.ts`](../../src/features/combat/components/index.ts).
 
@@ -51,10 +52,13 @@ Client-only helpers (chips, tooltips, modal stat lines, turn-duration re-export,
 | [`format-turn-duration.ts`](../../src/features/combat/presentation/format-turn-duration.ts) | Re-exports engine `formatTurnDuration` (single source of truth under mechanics). |
 | [`resolveCombatantAvatarSrc.ts`](../../src/features/combat/presentation/resolveCombatantAvatarSrc.ts) | Portrait URL resolution for tokens. |
 | [`format-signed.ts`](../../src/features/combat/presentation/format-signed.ts) | Small numeric display helper used by modal stats. |
+| [`aoePlacementFormat.ts`](../../src/features/combat/presentation/aoePlacementFormat.ts) | AoE template / range display lines for placement UI. |
 
 Barrel: [`presentation/index.ts`](../../src/features/combat/presentation/index.ts). Tests live under [`presentation/__tests__/`](../../src/features/combat/presentation/__tests__/).
 
 Encounter may keep a **thin re-export** of `presentation` under `encounter/helpers/presentation/index.ts` for compatibility; prefer **`@/features/combat/presentation`** in new code.
+
+Disabled-action hints for the action list use [`deriveActionUnavailableHint`](../../src/features/mechanics/domain/combat/presentation/actions/derive-action-unavailable-hint.ts) under **mechanics** `presentation` (pure, React-free; consumed by `CombatantActionDrawer`).
 
 ### `types/`
 

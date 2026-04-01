@@ -90,7 +90,7 @@ All sources share the same pipeline once **`BattlefieldEffectInstance`** exists.
 ## 8. Encounter UI (high level)
 
 - **Selection:** Readiness and resolve wiring live in [`action-resolution-requirements.ts`](../../src/features/mechanics/domain/combat/resolution/action/action-resolution-requirements.ts) and encounter runtime context.
-  - **`anchorMode === 'place'`** — uses the shared **AoE origin** flow (**`aoe-place`**): user confirms a grid point; **`aoeOriginCellId`** is required to resolve. Same pipeline as other area templates on the action, not [`SingleCellPlacementPanel`](../../src/features/encounter/components/active/drawers/drawer-modes/SingleCellPlacementPanel.tsx) (that panel is for spawn / single-cell requirements from **`getActionRequirements`**).
+  - **`anchorMode === 'place'`** — uses the shared **AoE origin** flow (**`aoe-place`**): user confirms a grid point; **`aoeOriginCellId`** is required to resolve. Same pipeline as other area templates on the action, not [`SingleCellPlacementPanel`](../../src/features/combat/components/panels/SingleCellPlacementPanel.tsx) (that panel is for spawn / single-cell requirements from **`getActionRequirements`**).
   - **`anchorMode === 'object'`** — grid **object-anchor** selection; **`objectId`** on the resolve payload.
   - **`anchorMode === 'creature'`** — standard combatant target selection (**`targetId`**).
   - **`anchorMode === 'caster'`** (default) — anchor follows the caster; no separate anchor pick beyond normal hostile/target rules.
@@ -119,7 +119,7 @@ flowchart LR
 - **`attachedEmanation.anchorMode`** on [`CombatActionDefinition`](../../src/features/mechanics/domain/combat/resolution/combat-action.types.ts) and authored **`EmanationEffect.anchorMode`**.
 - Cast-time selection + resolver mapping for **`caster`**, **`place`**, **`creature`**, and **`object`** anchors ([`action-resolver.ts`](../../src/features/mechanics/domain/combat/resolution/action/action-resolver.ts), [`battlefield-effect-anchor.ts`](../../src/features/mechanics/domain/combat/state/battlefield/battlefield-effect-anchor.ts)).
 - Example **place**-anchored authored spell: **Darkness** (sphere at a point) — validates content → adapter → UI → resolver → runtime → grid for non-caster anchoring ([`darkness-place-anchor.test.ts`](../../src/features/encounter/__tests__/combat/darkness-place-anchor.test.ts)).
-- **Single-cell vs AoE** remains a separate concept: [`SingleCellPlacementPanel`](../../src/features/encounter/components/active/drawers/drawer-modes/SingleCellPlacementPanel.tsx) is for **`getActionRequirements`** spawn/single-cell rules ([`action-requirement-model.ts`](../../src/features/mechanics/domain/combat/resolution/action/action-requirement-model.ts)), not emanation. Point-based emanations use the **AoE origin** path.
+- **Single-cell vs AoE** remains a separate concept: [`SingleCellPlacementPanel`](../../src/features/combat/components/panels/SingleCellPlacementPanel.tsx) is for **`getActionRequirements`** spawn/single-cell rules ([`action-requirement-model.ts`](../../src/features/mechanics/domain/combat/resolution/action/action-requirement-model.ts)), not emanation. Point-based emanations use the **AoE origin** path.
 
 **Highest impact before “full” SRD-style emanation support**
 

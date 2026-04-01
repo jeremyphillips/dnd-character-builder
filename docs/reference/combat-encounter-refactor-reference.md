@@ -442,6 +442,20 @@ Action drawers should be split between:
 - reusable combat UI primitives/panels
 - encounter-owned orchestration shells
 
+**Phase 3E (drawer panel leaves):** prop-driven panels and small format/hint helpers live outside Encounter; shells stay feature-owned.
+
+```txt
+src/features/combat/components/panels/AoePlacementPanel.tsx
+src/features/combat/components/panels/SingleCellPlacementPanel.tsx
+src/features/combat/components/panels/CasterOptionsDrawerPanel.tsx
+src/features/combat/presentation/aoePlacementFormat.ts
+src/features/mechanics/domain/combat/presentation/actions/derive-action-unavailable-hint.ts
+
+src/features/encounter/components/active/drawers/CombatantActionDrawer.tsx
+src/features/encounter/components/active/drawers/AllyActionDrawer.tsx
+src/features/encounter/components/active/drawers/OpponentActionDrawer.tsx
+```
+
 Keep in mind:
 
 - local panel state and composition can remain encounter-owned
@@ -495,7 +509,7 @@ Not every interaction needs to be a server intent.
 ### Keep client-local
 
 - hover state
-n- panel open/close state
+- panel open/close state
 - temporary selection previews
 - local formatting preferences
 - ephemeral UI-only modes
@@ -565,7 +579,7 @@ This adapter should avoid leaking editor-facing concepts deep into combat runtim
 
 - extract avatar/card/badge/chip primitives
 - split `EncounterGrid` into generic renderer + encounter wrapper
-- split action/drawer primitives from encounter orchestration
+- split action/drawer **panel leaves** (under `src/features/combat/components/panels/`, etc.) from encounter **drawer shells** (`CombatantActionDrawer`, ally/opponent drawers)
 
 See **[combat-client-ui.md](./combat-client-ui.md)** for what lives under `src/features/combat` and how it relates to the engine and Encounter.
 

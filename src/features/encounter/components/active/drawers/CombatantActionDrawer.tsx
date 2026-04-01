@@ -23,13 +23,15 @@ import {
   resolveAttachedEmanationAnchorModeFromSelection,
   type AoeStep,
 } from '../../../helpers/actions'
-import { AoePlacementPanel } from './drawer-modes/AoePlacementPanel'
-import { CasterOptionsDrawerPanel } from './drawer-modes/CasterOptionsDrawerPanel'
+import {
+  AoePlacementPanel,
+  CasterOptionsDrawerPanel,
+  SingleCellPlacementPanel,
+} from '@/features/combat/components'
 import {
   getPlacementCtaLabel,
   getSingleCellPlacementRequirement,
 } from '@/features/mechanics/domain/combat/resolution/action/action-requirement-model'
-import { SingleCellPlacementPanel } from './drawer-modes/SingleCellPlacementPanel'
 
 import {
   deriveBucketChrome,
@@ -42,7 +44,7 @@ import type { ActionSemanticCategory } from '@/features/mechanics/domain/combat/
 import { deriveActionPresentation } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation'
 import { deriveRecommendedActionsForTarget } from '@/features/mechanics/domain/combat/presentation/actions/derive-recommended-actions-for-target'
 import { ActionRow } from '../action-row/ActionRow'
-import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
+import { deriveActionUnavailableHint } from '@/features/mechanics/domain/combat/presentation/actions/derive-action-unavailable-hint'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import type { CombatantOption } from '../../setup/modals/SelectEncounterCombatantModal'
 import { AttachedEmanationSetupPanel } from './AttachedEmanationSetupPanel'
@@ -621,6 +623,7 @@ export function CombatantActionDrawer({
                 <AoePlacementPanel
                   action={aoeAction}
                   aoeStep={aoeStep}
+                  selectedCasterOptions={resolvedCasterOptions}
                   aoePlacementError={aoePlacementError}
                   onDismissAoeError={onDismissAoeError}
                   aoeAffectedNames={aoeAffectedNames}

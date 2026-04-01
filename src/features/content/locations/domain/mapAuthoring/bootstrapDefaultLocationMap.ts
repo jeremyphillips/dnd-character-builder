@@ -17,7 +17,7 @@ import type {
   LocationMapRegionAuthoringEntry,
 } from '@/shared/domain/locations';
 import { normalizeLocationMapAuthoringFields } from '@/shared/domain/locations';
-import { pruneExcludedCellIdsForGrid } from '@/features/content/locations/domain/maps/gridLayoutDraft';
+import { pruneExcludedCellIdsForGrid } from '@/features/content/locations/domain/mapAuthoring/gridLayoutDraft';
 
 export function validateGridBootstrap(values: LocationFormValues): string | null {
   const cols = Number(values.gridColumns);

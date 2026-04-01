@@ -4,7 +4,7 @@ import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import {
   pruneCellKeyedRecordForGrid,
   pruneExcludedCellIdsForGrid,
-} from '@/features/content/locations/domain/maps/gridLayoutDraft';
+} from '@/features/content/locations/domain/mapAuthoring/gridLayoutDraft';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
 import { selectedCellIdForMapSelection } from '@/features/content/locations/components/workspace/locationEditorRail.types';
 import { BETWEEN_EDGE_ID_RE } from '@/features/content/locations/components/squareGridMapOverlayGeometry';

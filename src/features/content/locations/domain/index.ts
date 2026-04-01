@@ -12,8 +12,8 @@ export {
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
   pickMapGridFormValues,
-} from './maps/bootstrapDefaultLocationMap';
-export { cellDraftToCellEntries, cellEntriesToDraft } from './maps/cellAuthoringMappers';
+} from './mapAuthoring/bootstrapDefaultLocationMap';
+export { cellDraftToCellEntries, cellEntriesToDraft } from './mapAuthoring/cellAuthoringMappers';
 export * from './mapEditor';
 export * from './mapContent';
 export * from './mapPresentation';

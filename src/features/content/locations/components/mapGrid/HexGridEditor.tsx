@@ -45,6 +45,9 @@ export type HexGridEditorProps = {
   disabled?: boolean;
   /** Pixel width of a single hex cell. Defaults to 48. */
   hexSize?: number;
+  /** See {@link GridEditorProps.selectHoverCellPolicy}. */
+  selectHoverCellPolicy?: 'all' | 'none' | 'single';
+  selectHoverCellId?: string | null;
 };
 
 const CLIP_HEX = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)';
@@ -65,6 +68,8 @@ export default function HexGridEditor({
   className,
   disabled,
   hexSize = 48,
+  selectHoverCellPolicy = 'all',
+  selectHoverCellId = null,
 }: HexGridEditorProps) {
   const safeCols = Math.max(0, Math.floor(columns));
   const safeRows = Math.max(0, Math.floor(rows));
@@ -127,6 +132,10 @@ export default function HexGridEditor({
             ? gridCellPalette.background.excluded
             : fillBg ?? gridCellPalette.background.default;
 
+        const allowHover =
+          selectHoverCellPolicy === 'all' ||
+          (selectHoverCellPolicy === 'single' && selectHoverCellId === cellId);
+
         return (
           <Box
             key={cellId}
@@ -171,18 +180,22 @@ export default function HexGridEditor({
               lineHeight: 1.2,
               color: excluded ? 'text.secondary' : 'text.primary',
               bgcolor: outerRingColor,
-              '&:hover:not(:disabled)': {
-                bgcolor: selected
-                  ? gridCellPalette.border.selected
-                  : gridCellPalette.border.hover,
-              },
-              '&:hover:not(:disabled) .hex-inner': {
-                bgcolor: selected
-                  ? gridCellPalette.background.selected
-                  : excluded
-                    ? gridCellPalette.background.excluded
-                    : fillBg ?? gridCellPalette.background.hover,
-              },
+              '&:hover:not(:disabled)': allowHover
+                ? {
+                    bgcolor: selected
+                      ? gridCellPalette.border.selected
+                      : gridCellPalette.border.hover,
+                  }
+                : {},
+              '&:hover:not(:disabled) .hex-inner': allowHover
+                ? {
+                    bgcolor: selected
+                      ? gridCellPalette.background.selected
+                      : excluded
+                        ? gridCellPalette.background.excluded
+                        : fillBg ?? gridCellPalette.background.hover,
+                  }
+                : {},
             }}
           >
             <Box

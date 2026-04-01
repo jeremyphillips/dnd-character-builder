@@ -13,7 +13,7 @@ export const locationMapUiStyleTokens = {
     /** Semi-transparent region overlay fill (future region painting). */
     overlayOpacity: 0,
     /** Slightly stronger fill when this region is the active map selection. */
-    selectedOverlayOpacity: 0.9,
+    selectedOverlayOpacity: 0.4,
     /** Region border: full-strength for readability over the overlay. */
     borderOpacity: 0.18,
     borderWidthPx: 2,

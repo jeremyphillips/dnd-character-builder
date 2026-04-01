@@ -56,14 +56,17 @@ import {
   resolveEdgeTargetFromGridPosition,
   shouldAcceptStrokeEdge,
   getSquareEdgeOrientation,
-  getSquareEdgeOrientationFromEdgeId,
   type ResolvedEdgeTarget,
   type EdgeOrientation,
 } from '@/features/content/locations/domain/mapEditor/edgeAuthoring';
-import { deriveSquareEdgeRunSelection } from '@/features/content/locations/domain/mapEditor/squareEdgeRunSelection';
+import { resolveSelectModeInteractiveTarget } from '@/features/content/locations/domain/mapEditor/resolveSelectModeInteractiveTarget';
 
 import type { LocationGridDraftState } from './locationGridDraft.types';
-import { selectedCellIdForMapSelection } from './workspace/locationEditorRail.types';
+import {
+  mapSelectionEqual,
+  selectedCellIdForMapSelection,
+  type LocationMapSelection,
+} from './workspace/locationEditorRail.types';
 import {
   BETWEEN_EDGE_ID_RE,
   SQUARE_GRID_GAP_PX,
@@ -75,15 +78,6 @@ import {
   pathEntriesToPolylineGeometry,
   pathEntryToPolylineGeometry,
 } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
-import {
-  DEFAULT_EDGE_PICK_HALF_WIDTH_PX,
-  DEFAULT_PATH_PICK_TOLERANCE_PX,
-  resolveNearestEdgeHit,
-  resolveNearestPathHit,
-} from '@/features/content/locations/domain/mapEditor/locationMapSelectionHitTest';
-import {
-  resolveSelectModeAfterPathEdgeHits,
-} from '@/features/content/locations/domain/mapEditor/resolveSelectModeRegionOrCellSelection';
 import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
 import { hexExposedRegionBoundarySegments } from './hexRegionBoundarySegments';
 import { polylinePoint2DToSmoothSvgPath } from './pathOverlayRendering';
@@ -190,6 +184,9 @@ export function LocationGridAuthoringSection({
   const edgeStrokeSeen = useRef<Set<string>>(new Set());
   const edgeStrokeEdgeIds = useRef<string[]>([]);
   const [edgeStrokeSnapshot, setEdgeStrokeSnapshot] = useState<string[]>([]);
+  const [selectHoverTarget, setSelectHoverTarget] = useState<LocationMapSelection>({
+    type: 'none',
+  });
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const edgeStrokeLockedAxis = useRef<EdgeOrientation | null>(null);
   const edgeStrokeLastTarget = useRef<ResolvedEdgeTarget | null>(null);
@@ -205,6 +202,12 @@ export function LocationGridAuthoringSection({
       window.removeEventListener('keyup', onKeyUp);
     };
   }, []);
+
+  useEffect(() => {
+    if (mapEditorMode !== 'select') {
+      setSelectHoverTarget({ type: 'none' });
+    }
+  }, [mapEditorMode]);
 
   const edgePlaceActive = mapEditorMode === 'draw' && activeDraw?.category === 'edge';
   const edgeEraseActive = mapEditorMode === 'erase';
@@ -381,6 +384,23 @@ export function LocationGridAuthoringSection({
     return hexExposedRegionBoundarySegments(cols, rows, ids, hexGridGeometry.hexSize);
   }, [isHex, hexGridGeometry, draft.mapSelection, draft.regionIdByCellId, cols, rows]);
 
+  const hexHoverRegionBoundarySegments = useMemo(() => {
+    if (!isHex || !hexGridGeometry || selectHoverTarget.type !== 'region') {
+      return [];
+    }
+    const hoverRid = selectHoverTarget.regionId;
+    const ids = new Set<string>();
+    for (const [cid, r] of Object.entries(draft.regionIdByCellId)) {
+      if (r?.trim() === hoverRid) {
+        ids.add(cid);
+      }
+    }
+    if (ids.size === 0) {
+      return [];
+    }
+    return hexExposedRegionBoundarySegments(cols, rows, ids, hexGridGeometry.hexSize);
+  }, [isHex, hexGridGeometry, selectHoverTarget, draft.regionIdByCellId, cols, rows]);
+
   const cellCenterPx = useCallback(
     (cellId: string): { cx: number; cy: number } | null => {
       if (isHex && hexGridGeometry) return hexCellCenterPx(cellId, hexGridGeometry.hexSize);
@@ -477,6 +497,15 @@ export function LocationGridAuthoringSection({
   /** Committed edge features (square grid only): shared geometry layer → SVG lines below. */
   const committedEdgeSegmentGeometry = useMemo(() => {
     if (!squareGridGeometry || isHex) return [];
+    return edgeEntriesToSegmentGeometrySquare(draft.edgeEntries, squareGridGeometry.cellPx);
+  }, [draft.edgeEntries, squareGridGeometry, isHex]);
+
+  const pathPickPolys = useMemo(() => {
+    return pathEntriesToPolylineGeometry(draft.pathEntries, (cid) => cellCenterPx(cid));
+  }, [draft.pathEntries, cellCenterPx]);
+
+  const edgePickGeoms = useMemo(() => {
+    if (!squareGridGeometry || isHex) return null;
     return edgeEntriesToSegmentGeometrySquare(draft.edgeEntries, squareGridGeometry.cellPx);
   }, [draft.edgeEntries, squareGridGeometry, isHex]);
 
@@ -690,6 +719,52 @@ export function LocationGridAuthoringSection({
     [isHex, hexGridGeometry, cols, rows],
   );
 
+  const handleSelectPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (mapEditorMode !== 'select' || !validPreview) return;
+      if (!gridContainerRef.current) return;
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const gx = e.clientX - rect.left;
+      const gy = e.clientY - rect.top;
+      const top = document.elementFromPoint(e.clientX, e.clientY);
+      const cellEl = top?.closest('[role="gridcell"]');
+      const anchorCellId =
+        cellEl?.getAttribute('data-cell-id') ?? resolveHexCellFromClient(e.clientX, e.clientY);
+      if (!anchorCellId) {
+        setSelectHoverTarget((prev) =>
+          mapSelectionEqual(prev, { type: 'none' }) ? prev : { type: 'none' },
+        );
+        return;
+      }
+      const next = resolveSelectModeInteractiveTarget({
+        targetElement: top as HTMLElement | null,
+        gx,
+        gy,
+        anchorCellId,
+        objectsByCellId: draft.objectsByCellId,
+        linkedLocationByCellId: draft.linkedLocationByCellId,
+        regionIdByCellId: draft.regionIdByCellId,
+        pathPolys: pathPickPolys,
+        edgeGeoms: edgePickGeoms,
+        edgeEntries: draft.edgeEntries,
+        isHex,
+      });
+      setSelectHoverTarget((prev) => (mapSelectionEqual(prev, next) ? prev : next));
+    },
+    [
+      mapEditorMode,
+      validPreview,
+      draft.objectsByCellId,
+      draft.linkedLocationByCellId,
+      draft.regionIdByCellId,
+      draft.edgeEntries,
+      pathPickPolys,
+      edgePickGeoms,
+      isHex,
+      resolveHexCellFromClient,
+    ],
+  );
+
   const updatePlaceHoverFromPointerClient = useCallback(
     (clientX: number, clientY: number) => {
       const top = document.elementFromPoint(clientX, clientY);
@@ -789,12 +864,20 @@ export function LocationGridAuthoringSection({
     }
     if (!gridContainerRef.current) {
       setDraft((d) => {
-        const ms = resolveSelectModeAfterPathEdgeHits(
-          cell.cellId,
-          d.objectsByCellId,
-          d.linkedLocationByCellId,
-          d.regionIdByCellId,
-        );
+        const ms = resolveSelectModeInteractiveTarget({
+          targetElement: e.target as HTMLElement,
+          gx: 0,
+          gy: 0,
+          anchorCellId: cell.cellId,
+          objectsByCellId: d.objectsByCellId,
+          linkedLocationByCellId: d.linkedLocationByCellId,
+          regionIdByCellId: d.regionIdByCellId,
+          pathPolys: [],
+          edgeGeoms: null,
+          edgeEntries: [],
+          isHex,
+          skipGeometry: true,
+        });
         return {
           ...d,
           mapSelection: ms,
@@ -807,119 +890,26 @@ export function LocationGridAuthoringSection({
     const rect = gridContainerRef.current.getBoundingClientRect();
     const gx = e.clientX - rect.left;
     const gy = e.clientY - rect.top;
-
-    const target = e.target as HTMLElement;
-    const objWrap = target.closest('[data-map-object-id]');
-    if (objWrap) {
-      const objectId = objWrap.getAttribute('data-map-object-id');
-      const cellId =
-        objWrap.getAttribute('data-map-object-cell-id') ?? cell.cellId;
-      if (objectId) {
-        const ms = { type: 'object' as const, cellId, objectId };
-        setDraft((d) => ({
-          ...d,
-          mapSelection: ms,
-          selectedCellId: selectedCellIdForMapSelection(ms),
-        }));
-        onCellFocusRail?.();
-        return;
-      }
-    }
-
-    const linkedWrap = target.closest('[data-map-linked-cell]');
-    if (linkedWrap) {
-      const cellId = linkedWrap.getAttribute('data-map-linked-cell') ?? cell.cellId;
-      const ms = { type: 'cell' as const, cellId };
-      setDraft((d) => ({
-        ...d,
-        mapSelection: ms,
-        selectedCellId: selectedCellIdForMapSelection(ms),
-      }));
-      onCellFocusRail?.();
-      return;
-    }
-
-    // Select-mode hit order (square): object → linked (DOM) → path → edge → object/linked/region (draft) → cell.
-    // Path before edge: authored paths
-    // run near boundary geometry; edge pick would otherwise steal path clicks.
-    const pathPolys = pathEntriesToPolylineGeometry(draft.pathEntries, (cid) =>
-      cellCenterPx(cid),
-    );
-    const pathHit = resolveNearestPathHit(
-      gx,
-      gy,
-      pathPolys,
-      DEFAULT_PATH_PICK_TOLERANCE_PX,
-    );
-    if (pathHit) {
-      const ms = { type: 'path' as const, pathId: pathHit.pathId };
-      setDraft((d) => ({
-        ...d,
-        mapSelection: ms,
-        selectedCellId: selectedCellIdForMapSelection(ms),
-      }));
-      onCellFocusRail?.();
-      return;
-    }
-
-    if (!isHex && squareGridGeometry) {
-      const edgeGeoms = edgeEntriesToSegmentGeometrySquare(
-        draft.edgeEntries,
-        squareGridGeometry.cellPx,
-      );
-      const edgeHit = resolveNearestEdgeHit(
+    setDraft((d) => {
+      const ms = resolveSelectModeInteractiveTarget({
+        targetElement: e.target as HTMLElement,
         gx,
         gy,
-        edgeGeoms,
-        DEFAULT_EDGE_PICK_HALF_WIDTH_PX,
-      );
-      if (edgeHit) {
-        const run = deriveSquareEdgeRunSelection(edgeHit.edgeId, draft.edgeEntries);
-        const entry = draft.edgeEntries.find((e) => e.edgeId === edgeHit.edgeId);
-        const axis = entry ? getSquareEdgeOrientationFromEdgeId(edgeHit.edgeId) : null;
-        if (run) {
-          const ms = {
-            type: 'edge-run' as const,
-            kind: run.kind,
-            edgeIds: run.edgeIds,
-            axis: run.axis,
-            anchorEdgeId: run.anchorEdgeId,
-          };
-          setDraft((d) => ({
-            ...d,
-            mapSelection: ms,
-            selectedCellId: selectedCellIdForMapSelection(ms),
-          }));
-        } else if (entry && axis) {
-          const ms = {
-            type: 'edge-run' as const,
-            kind: entry.kind,
-            edgeIds: [edgeHit.edgeId],
-            axis,
-            anchorEdgeId: edgeHit.edgeId,
-          };
-          setDraft((d) => ({
-            ...d,
-            mapSelection: ms,
-            selectedCellId: selectedCellIdForMapSelection(ms),
-          }));
-        }
-        onCellFocusRail?.();
-        return;
-      }
-    }
-
-    const mapSelection = resolveSelectModeAfterPathEdgeHits(
-      cell.cellId,
-      draft.objectsByCellId,
-      draft.linkedLocationByCellId,
-      draft.regionIdByCellId,
-    );
-    setDraft((d) => ({
-      ...d,
-      mapSelection,
-      selectedCellId: selectedCellIdForMapSelection(mapSelection),
-    }));
+        anchorCellId: cell.cellId,
+        objectsByCellId: d.objectsByCellId,
+        linkedLocationByCellId: d.linkedLocationByCellId,
+        regionIdByCellId: d.regionIdByCellId,
+        pathPolys: pathPickPolys,
+        edgeGeoms: edgePickGeoms,
+        edgeEntries: d.edgeEntries,
+        isHex,
+      });
+      return {
+        ...d,
+        mapSelection: ms,
+        selectedCellId: selectedCellIdForMapSelection(ms),
+      };
+    });
     onCellFocusRail?.();
   };
 
@@ -956,7 +946,17 @@ export function LocationGridAuthoringSection({
       rid != null &&
       draft.mapSelection.type === 'region' &&
       draft.mapSelection.regionId === rid;
+    const regionHover =
+      rid != null &&
+      selectHoverTarget.type === 'region' &&
+      selectHoverTarget.regionId === rid;
     const hexSelectedRegionOutline = isHex && regionSelected;
+    const hexHoverRegionOutline = isHex && regionHover;
+    const overlayFillOpacity = regionSelected
+      ? mapUi.tokens.region.selectedOverlayOpacity
+      : regionHover
+        ? (mapUi.tokens.region.selectedOverlayOpacity + mapUi.tokens.region.overlayOpacity) / 2
+        : mapUi.tokens.region.overlayOpacity;
     const overlay =
       baseColor != null ? (
         <Box
@@ -964,18 +964,15 @@ export function LocationGridAuthoringSection({
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            bgcolor: alpha(
-              baseColor,
-              regionSelected
-                ? mapUi.tokens.region.selectedOverlayOpacity
-                : mapUi.tokens.region.overlayOpacity,
-            ),
-            boxShadow: hexSelectedRegionOutline
+            bgcolor: alpha(baseColor, overlayFillOpacity),
+            boxShadow: hexSelectedRegionOutline || hexHoverRegionOutline
               ? 'none'
               : `inset 0 0 0 ${
                   regionSelected
                     ? mapUi.tokens.region.selectedBorderWidthPx
-                    : mapUi.tokens.region.borderWidthPx
+                    : regionHover
+                      ? mapUi.tokens.region.selectedBorderWidthPx
+                      : mapUi.tokens.region.borderWidthPx
                 }px ${alpha(baseColor, mapUi.tokens.region.borderOpacity)}`,
             zIndex: 0,
           }}
@@ -1043,7 +1040,18 @@ export function LocationGridAuthoringSection({
                 component="span"
                 data-map-object-id={o.id}
                 data-map-object-cell-id={cell.cellId}
-                sx={{ display: 'inline-flex', lineHeight: 0 }}
+                sx={{
+                  display: 'inline-flex',
+                  lineHeight: 0,
+                  outline: (theme) =>
+                    selectHoverTarget.type === 'object' &&
+                    selectHoverTarget.cellId === cell.cellId &&
+                    selectHoverTarget.objectId === o.id
+                      ? `2px solid ${theme.palette.primary.main}`
+                      : 'none',
+                  outlineOffset: 2,
+                  borderRadius: 0.5,
+                }}
               >
                 {createElement(getLocationMapObjectKindIcon(o.kind), {
                   sx: iconSx,
@@ -1156,6 +1164,19 @@ export function LocationGridAuthoringSection({
     mapEditorMode === 'erase' ||
     mapEditorMode === 'paint';
 
+  const selectHoverCellPolicy: 'all' | 'none' | 'single' =
+    mapEditorMode === 'select'
+      ? selectHoverTarget.type === 'none'
+        ? 'all'
+        : selectHoverTarget.type === 'cell'
+          ? 'single'
+          : 'none'
+      : 'all';
+  const selectHoverCellOnlyId =
+    mapEditorMode === 'select' && selectHoverTarget.type === 'cell'
+      ? selectHoverTarget.cellId
+      : null;
+
   const sharedGridProps = {
     columns: cols,
     rows: rows,
@@ -1183,6 +1204,8 @@ export function LocationGridAuthoringSection({
         : undefined,
     renderCellContent: renderMapCellIcons,
     getCellClassName,
+    selectHoverCellPolicy,
+    selectHoverCellId: selectHoverCellOnlyId,
   };
 
   if (!validPreview) return null;
@@ -1240,12 +1263,14 @@ export function LocationGridAuthoringSection({
         onPointerUpCapture={
           edgePlaceActive ? handleEdgePointerUp : undefined
         }
-        onPointerMove={
-          placePathPlacement ? handlePlacePathEdgePointerMove : undefined
-        }
+        onPointerMove={(e) => {
+          if (placePathPlacement) handlePlacePathEdgePointerMove(e);
+          if (mapEditorMode === 'select' && validPreview) handleSelectPointerMove(e);
+        }}
         onPointerLeave={() => {
           if (edgePlaceActive || edgeEraseActive) handleEdgePointerLeave();
           if (placePathPlacement) setPlaceHoverCellId(null);
+          if (mapEditorMode === 'select') setSelectHoverTarget({ type: 'none' });
         }}
       >
         <Box sx={{ position: 'relative', zIndex: 1 }}>
@@ -1328,8 +1353,10 @@ export function LocationGridAuthoringSection({
                 stroke={mapUi.path.stroke}
                 strokeWidth={
                   p.pathId !== '__preview__' &&
-                  draft.mapSelection.type === 'path' &&
-                  draft.mapSelection.pathId === p.pathId
+                  ((draft.mapSelection.type === 'path' &&
+                    draft.mapSelection.pathId === p.pathId) ||
+                    (selectHoverTarget.type === 'path' &&
+                      selectHoverTarget.pathId === p.pathId))
                     ? mapUi.path.selectedStrokeWidthPx
                     : mapUi.path.defaultStrokeWidthPx
                 }
@@ -1345,6 +1372,9 @@ export function LocationGridAuthoringSection({
                   draft.mapSelection.edgeId === g.edgeId) ||
                 (draft.mapSelection.type === 'edge-run' &&
                   draft.mapSelection.edgeIds.includes(g.edgeId));
+              const hovered =
+                selectHoverTarget.type === 'edge-run' &&
+                selectHoverTarget.edgeIds.includes(g.edgeId);
               return (
                 <line
                   key={g.edgeId}
@@ -1354,7 +1384,7 @@ export function LocationGridAuthoringSection({
                   y2={seg.y2}
                   stroke={st.stroke}
                   strokeWidth={
-                    selected
+                    selected || hovered
                       ? st.strokeWidth + mapUi.tokens.edge.selectedStrokeWidthBoostPx
                       : st.strokeWidth
                   }
@@ -1369,7 +1399,9 @@ export function LocationGridAuthoringSection({
         ) : null}
         {hexGridGeometry &&
         isHex &&
-        (pathSvgData.length > 0 || hexSelectedRegionBoundarySegments.length > 0) ? (
+        (pathSvgData.length > 0 ||
+          hexSelectedRegionBoundarySegments.length > 0 ||
+          hexHoverRegionBoundarySegments.length > 0) ? (
           <svg
             width={hexGridGeometry.width}
             height={hexGridGeometry.height}
@@ -1391,8 +1423,10 @@ export function LocationGridAuthoringSection({
                 stroke={mapUi.path.stroke}
                 strokeWidth={
                   p.pathId !== '__preview__' &&
-                  draft.mapSelection.type === 'path' &&
-                  draft.mapSelection.pathId === p.pathId
+                  ((draft.mapSelection.type === 'path' &&
+                    draft.mapSelection.pathId === p.pathId) ||
+                    (selectHoverTarget.type === 'path' &&
+                      selectHoverTarget.pathId === p.pathId))
                     ? mapUi.path.selectedStrokeWidthPx
                     : mapUi.path.defaultStrokeWidthPx
                 }
@@ -1413,6 +1447,26 @@ export function LocationGridAuthoringSection({
                   strokeWidth={mapUi.regionSelectedOutline.strokeWidthPx}
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                />
+              ))}
+            {selectHoverTarget.type === 'region' &&
+              !(
+                draft.mapSelection.type === 'region' &&
+                draft.mapSelection.regionId === selectHoverTarget.regionId
+              ) &&
+              hexHoverRegionBoundarySegments.map((seg, i) => (
+                <line
+                  key={`hex-region-hover-${i}-${seg.x1}-${seg.y1}-${seg.x2}-${seg.y2}`}
+                  x1={seg.x1}
+                  y1={seg.y1}
+                  x2={seg.x2}
+                  y2={seg.y2}
+                  fill="none"
+                  stroke={mapUi.regionSelectedOutline.stroke}
+                  strokeWidth={mapUi.regionSelectedOutline.strokeWidthPx}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={0.65}
                 />
               ))}
           </svg>

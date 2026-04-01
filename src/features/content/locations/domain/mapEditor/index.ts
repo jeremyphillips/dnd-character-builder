@@ -9,3 +9,4 @@ export * from './resolveEraseTarget';
 export * from './useLocationMapEditorState';
 export * from './locationMapSelectionHitTest';
 export * from './resolveSelectModeRegionOrCellSelection';
+export * from './resolveSelectModeInteractiveTarget';

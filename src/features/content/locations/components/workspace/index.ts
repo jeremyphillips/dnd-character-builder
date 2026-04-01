@@ -13,6 +13,7 @@ export type {
 export {
   shouldAutoSwitchRailToMapForMode,
   selectedCellIdForMapSelection,
+  mapSelectionEqual,
 } from './locationEditorRail.types'
 export { LocationCreateSetupFormDialog } from './LocationCreateSetupFormDialog'
 export type { LocationCreateSetupFormDialogProps } from './LocationCreateSetupFormDialog'

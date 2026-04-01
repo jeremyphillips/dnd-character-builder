@@ -40,4 +40,8 @@ export {
   LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
 } from './workspace'
 export type { LocationEditorRailSection, LocationMapSelection } from './workspace'
-export { shouldAutoSwitchRailToMapForMode, selectedCellIdForMapSelection } from './workspace'
+export {
+  shouldAutoSwitchRailToMapForMode,
+  selectedCellIdForMapSelection,
+  mapSelectionEqual,
+} from './workspace'

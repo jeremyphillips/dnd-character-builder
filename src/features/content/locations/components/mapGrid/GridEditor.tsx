@@ -37,6 +37,12 @@ export type GridEditorProps = {
   getCellClassName?: (cell: GridCell) => string | undefined;
   className?: string;
   disabled?: boolean;
+  /**
+   * Select-mode hover policy: when `'single'`, only `selectHoverCellId` receives `:hover` chrome;
+   * when `'none'`, cell hover is suppressed (path/edge/region/object is the hover target).
+   */
+  selectHoverCellPolicy?: 'all' | 'none' | 'single';
+  selectHoverCellId?: string | null;
 };
 
 export default function GridEditor({
@@ -54,6 +60,8 @@ export default function GridEditor({
   getCellClassName,
   className,
   disabled,
+  selectHoverCellPolicy = 'all',
+  selectHoverCellId = null,
 }: GridEditorProps) {
   const safeCols = Math.max(0, Math.floor(columns));
   const safeRows = Math.max(0, Math.floor(rows));
@@ -87,6 +95,9 @@ export default function GridEditor({
         const selected = selectedCellId != null && selectedCellId === cellId;
         const excluded = excludedSet.has(cellId);
         const fillBg = getCellBackgroundColor?.(cell);
+        const allowHover =
+          selectHoverCellPolicy === 'all' ||
+          (selectHoverCellPolicy === 'single' && selectHoverCellId === cellId);
 
         return (
           <Box
@@ -146,7 +157,7 @@ export default function GridEditor({
               boxShadow: selected
                 ? (theme) => gridCellSelectedShadow(theme)
                 : undefined,
-              '&:hover': disabled
+              '&:hover': disabled || !allowHover
                 ? undefined
                 : {
                     borderColor: selected

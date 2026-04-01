@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import { selectedCellIdForMapSelection } from './locationEditorRail.types';
+import { mapSelectionEqual, selectedCellIdForMapSelection } from './locationEditorRail.types';
+
+describe('mapSelectionEqual', () => {
+  it('returns true for equivalent selections', () => {
+    expect(
+      mapSelectionEqual({ type: 'path', pathId: 'a' }, { type: 'path', pathId: 'a' }),
+    ).toBe(true);
+  });
+
+  it('returns false when selections differ', () => {
+    expect(
+      mapSelectionEqual({ type: 'path', pathId: 'a' }, { type: 'path', pathId: 'b' }),
+    ).toBe(false);
+  });
+});
 
 describe('selectedCellIdForMapSelection', () => {
   it('returns cell id for cell and object selections', () => {

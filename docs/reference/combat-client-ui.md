@@ -12,11 +12,11 @@ For the broader refactor goals (engine vs feature vs locations), see **[combat-e
 
 | Layer | Location | Owns |
 |--------|-----------|--------|
-| Shared combat engine | `src/features/mechanics/domain/combat` | Truth, selectors, **pure** presentation derivation (React-free) |
+| Shared combat engine | `packages/mechanics/src/combat` | Truth, selectors, **pure** presentation derivation (React-free) |
 | **Client combat UI** | `src/features/combat` | Reusable components, avatar resolution, grid renderer, client-only chip/tooltip/stat helpers |
 | Encounter feature | `src/features/encounter` | Routes, setup, active-screen composition, DM workflow, context-heavy wrappers |
 
-Do **not** move pure derivation back into `features/combat/presentation`—that belongs under **`mechanics/domain/combat/presentation`** (see Phase 2 in the refactor reference).
+Do **not** move pure derivation back into `features/combat/presentation`—that belongs under **`packages/mechanics/src/combat/presentation`** (see Phase 2 in the refactor reference).
 
 ---
 
@@ -59,7 +59,7 @@ Barrel: [`presentation/index.ts`](../../src/features/combat/presentation/index.t
 
 Encounter may keep a **thin re-export** of `presentation` under `encounter/helpers/presentation/index.ts` for compatibility; prefer **`@/features/combat/presentation`** in new code.
 
-Disabled-action hints for the action list use [`deriveActionUnavailableHint`](../../src/features/mechanics/domain/combat/presentation/actions/derive-action-unavailable-hint.ts) under **mechanics** `presentation` (pure, React-free; consumed by `CombatantActionDrawer`).
+Disabled-action hints for the action list use [`deriveActionUnavailableHint`](../../packages/mechanics/src/combat/presentation/actions/derive-action-unavailable-hint.ts) under **mechanics** `presentation` (pure, React-free; consumed by `CombatantActionDrawer`).
 
 ### `types/`
 

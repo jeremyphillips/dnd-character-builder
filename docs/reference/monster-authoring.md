@@ -5,14 +5,14 @@ System and campaign monsters share `MonsterFields` ([`monster.types.ts`](../../s
 ## Abilities
 
 - Author ability scores using **short ids** (`str`, `dex`, …) per `AbilityScoreMap`.
-- Reads normalize id vs full key via [`getAbilityScoreValue`](../../src/features/mechanics/domain/character/abilities/abilityScoreMap.ts) (see [`abilityScoreMap.ts`](../../src/features/mechanics/domain/character/abilities/abilityScoreMap.ts)); prefer ids for new content.
+- Reads normalize id vs full key via [`getAbilityScoreValue`](../../packages/mechanics/src/character/abilities/abilityScoreMap.ts) (see [`abilityScoreMap.ts`](../../packages/mechanics/src/character/abilities/abilityScoreMap.ts)); prefer ids for new content.
 
 ## Armor class
 
-Author AC so it recomputes from ability scores and equipment via [`calculateMonsterArmorClass`](../../src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts) (delegates to [`calculateCreatureArmorClass`](../../src/features/mechanics/domain/equipment/armorClass.ts)).
+Author AC so it recomputes from ability scores and equipment via [`calculateMonsterArmorClass`](../../src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts) (delegates to [`calculateCreatureArmorClass`](../../packages/mechanics/src/equipment/armorClass.ts)).
 
 - **`kind: 'natural'`** — optional **`offset`**: points **above** the unarmored AC baseline ([`MONSTER_UNARMORED_AC_BASELINE`](../../src/features/content/monsters/domain/mechanics/calculateMonsterArmorClass.ts), 10 until rulesets expose a single source of truth). Omit **`offset`** when it would be **0** (equivalent to baseline + DEX only). DEX is folded in by the shared creature AC path; model edge cases via **`offset`** and catalog armor, not deprecated per-monster DEX flags.
-- **`kind: 'equipment'`** — `armorRefs` plus `equipment.armor` entries tied to the armor catalog; DEX caps follow real armor rules in [`armorClass.ts`](../../src/features/mechanics/domain/equipment/armorClass.ts).
+- **`kind: 'equipment'`** — `armorRefs` plus `equipment.armor` entries tied to the armor catalog; DEX caps follow real armor rules in [`armorClass.ts`](../../packages/mechanics/src/equipment/armorClass.ts).
 - **`kind: 'fixed'`** and **`override`** — **escape hatches only** when natural + equipment cannot match the printed AC honestly.
 
 See [`monster-equipment.types.ts`](../../src/features/content/monsters/domain/types/monster-equipment.types.ts) for the shape of `armorClass`.
@@ -30,9 +30,9 @@ Stat blocks often list **gear** or **named attacks** that should drive resolutio
 
 **Reference examples**
 
-- **Armor — battered stand-in:** Skeleton [`scraps`](../../src/features/mechanics/domain/rulesets/system/monsters/data/monsters-s-u.ts) uses `armorId: 'chain-shirt'` with `acModifier: -1`, `aliasName: 'Armor Scraps'`, and `notes` explaining the fiction.
-- **Weapon — same id, different printed dice/reach:** Bugbear Warrior [`light-hammer`](../../src/features/mechanics/domain/rulesets/system/monsters/data/monsters-b.ts) keeps `weaponId: 'light-hammer'` but sets `damageOverride: '3d4'`, `reach: 10`, and `notes` for the grapple advantage clause.
-- **Weapon — MM name differs from catalog name:** Wight [`necrotic-sword` / `necrotic-bow`](../../src/features/mechanics/domain/rulesets/system/monsters/data/monsters-v-z.ts) uses `weaponId` `longsword` / `longbow` with `aliasName: 'Necrotic Sword'` / `'Necrotic Bow'` and authored bonuses plus necrotic rider `notes`.
+- **Armor — battered stand-in:** Skeleton [`scraps`](../../packages/mechanics/src/rulesets/system/monsters/data/monsters-s-u.ts) uses `armorId: 'chain-shirt'` with `acModifier: -1`, `aliasName: 'Armor Scraps'`, and `notes` explaining the fiction.
+- **Weapon — same id, different printed dice/reach:** Bugbear Warrior [`light-hammer`](../../packages/mechanics/src/rulesets/system/monsters/data/monsters-b.ts) keeps `weaponId: 'light-hammer'` but sets `damageOverride: '3d4'`, `reach: 10`, and `notes` for the grapple advantage clause.
+- **Weapon — MM name differs from catalog name:** Wight [`necrotic-sword` / `necrotic-bow`](../../packages/mechanics/src/rulesets/system/monsters/data/monsters-v-z.ts) uses `weaponId` `longsword` / `longbow` with `aliasName: 'Necrotic Sword'` / `'Necrotic Bow'` and authored bonuses plus necrotic rider `notes`.
 
 When the block lists **Gear** but you model AC as **`kind: 'natural'`** (no worn armor row)—e.g. constructs—you typically **omit** `equipment.armor` and keep the flavor in **description** / traits unless you deliberately want an equipment-based AC breakdown.
 
@@ -61,16 +61,16 @@ When the block lists **Gear** but you model AC as **`kind: 'natural'`** (no worn
 
 ## Damage: resistances, immunities, vulnerabilities
 
-Shared elemental/weapon damage labels include **`DamageType`** in [`damage.types.ts`](../../src/features/mechanics/domain/damage/damage.types.ts).
+Shared elemental/weapon damage labels include **`DamageType`** in [`damage.types.ts`](../../packages/mechanics/src/damage/damage.types.ts).
 
-- **`mechanics.resistances`** — [`CreatureResistanceDamageType[]`](../../src/features/mechanics/domain/creatures/immunities.types.ts); combat builds **resistance** markers (half damage).
-- **`mechanics.immunities`** / **`mechanics.vulnerabilities`** — mixed damage + condition immunities use [`ImmunityType`](../../src/features/mechanics/domain/creatures/immunities.types.ts) (vulnerabilities use [`CreatureVulnerabilityDamageType`](../../src/features/mechanics/domain/creatures/immunities.types.ts)); [`buildMonsterCombatantInstance`](../../src/features/encounter/helpers/combatants/combatant-builders.ts) maps them to combat markers. Condition-like entries are partitioned vs damage types consistently with spells.
+- **`mechanics.resistances`** — [`CreatureResistanceDamageType[]`](../../packages/mechanics/src/creatures/immunities.types.ts); combat builds **resistance** markers (half damage).
+- **`mechanics.immunities`** / **`mechanics.vulnerabilities`** — mixed damage + condition immunities use [`ImmunityType`](../../packages/mechanics/src/creatures/immunities.types.ts) (vulnerabilities use [`CreatureVulnerabilityDamageType`](../../packages/mechanics/src/creatures/immunities.types.ts)); [`buildMonsterCombatantInstance`](../../src/features/encounter/helpers/combatants/combatant-builders.ts) maps them to combat markers. Condition-like entries are partitioned vs damage types consistently with spells.
 
 ## Actions and traits
 
 - **Natural** attacks: `MonsterNaturalAttackAction` — optional `onHitEffects` for riders (saves, extra damage, conditions).
 - **Special** actions: `MonsterSpecialAction` — saves, recharge, `sequence` for Multiattack, etc.
-- **`resolution?: ContentResolutionMeta`** on special actions and traits (and optional `mechanics.resolution` for the whole stat block) for **caveats** and optional **subtype** — same shared type as spells ([`content-resolution.types.ts`](../../src/features/mechanics/domain/resolution/content-resolution.types.ts)).
+- **`resolution?: ContentResolutionMeta`** on special actions and traits (and optional `mechanics.resolution` for the whole stat block) for **caveats** and optional **subtype** — same shared type as spells ([`content-resolution.types.ts`](../../packages/mechanics/src/resolution/content-resolution.types.ts)).
 
 ### Action ids and Multiattack
 
@@ -82,7 +82,7 @@ Shared elemental/weapon damage labels include **`DamageType`** in [`damage.types
 Structured data lives in **`mechanics.legendaryActions`** ([`monster-legendary.types.ts`](../../src/features/content/monsters/domain/types/monster-legendary.types.ts)). Do **not** duplicate the full legendary list in a **`Legendary Actions`** trait when this block is present.
 
 - **`uses`** / **`usesInLair`**: per stat block (e.g. 3 / 4 in lair).
-- **`timing`**: use **`OffTurnTiming`** — typically **`'end-of-other-creatures-turn'`** (immediately after another creature’s turn). Shared with other encounter concepts in [`turn-hooks.types.ts`](../../src/features/mechanics/domain/triggers/turn-hooks.types.ts).
+- **`timing`**: use **`OffTurnTiming`** — typically **`'end-of-other-creatures-turn'`** (immediately after another creature’s turn). Shared with other encounter concepts in [`turn-hooks.types.ts`](../../packages/mechanics/src/triggers/turn-hooks.types.ts).
 - **`refresh`**: use **`TurnHookKind`** when uses are regained at **start or end of this creature’s turn** (usually **`'turn-start'`** for legendary uses).
 - **`actions`**: each entry is **`kind: 'reference'`** ( **`name`**, **`actionId`** pointing at a normal action, optional **`cost`** defaulting to 1, optional **`heal`**, **`notes`**, **`additionalEffects`**, **`resolution`**) or **`kind: 'inline'`** ( **`name`**, full **`MonsterAction`** for legendary-only lines such as spell sub-actions).
 
@@ -124,4 +124,4 @@ Before assigning a new **`type`** on a stat block, add its **id** and display **
 
 ## System catalog
 
-- Factory defaults live in [`monsters/index.ts`](../../src/features/mechanics/domain/rulesets/system/monsters/index.ts) and single-letter / letter-range shards under [`monsters/data/`](../../src/features/mechanics/domain/rulesets/system/monsters/data/) (see [`monsters.ts`](../../src/features/mechanics/domain/rulesets/system/monsters/data/monsters.ts) for the shard registry).
+- Factory defaults live in [`monsters/index.ts`](../../packages/mechanics/src/rulesets/system/monsters/index.ts) and single-letter / letter-range shards under [`monsters/data/`](../../packages/mechanics/src/rulesets/system/monsters/data/) (see [`monsters.ts`](../../packages/mechanics/src/rulesets/system/monsters/data/monsters.ts) for the shard registry).

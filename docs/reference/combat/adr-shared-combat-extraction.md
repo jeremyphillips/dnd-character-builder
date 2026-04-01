@@ -6,10 +6,10 @@
 
 ## Context
 
-Combat engine code currently lives under [`src/features/mechanics/domain/combat`](../../../src/features/mechanics/domain/combat). Phase 4 (through 4F) established:
+Combat engine code lives under [`packages/mechanics/src/combat`](../../../packages/mechanics/src/combat). Phase 4 (through 4F) established:
 
-- A **runtime** truth-changing seam: [`applyCombatIntent`](../../../src/features/mechanics/domain/combat/application/apply-combat-intent.ts) with serializable intents and structured results/events.
-- A **startup** seam separate from runtime intents: [`startEncounterFromSetup`](../../../src/features/mechanics/domain/combat/application/start-encounter-from-setup.ts) and [`CombatStartupInput`](../../../src/features/mechanics/domain/combat/application/combat-startup.types.ts).
+- A **runtime** truth-changing seam: [`applyCombatIntent`](../../../packages/mechanics/src/combat/application/apply-combat-intent.ts) with serializable intents and structured results/events.
+- A **startup** seam separate from runtime intents: [`startEncounterFromSetup`](../../../packages/mechanics/src/combat/application/start-encounter-from-setup.ts) and [`CombatStartupInput`](../../../packages/mechanics/src/combat/application/combat-startup.types.ts).
 
 The long-term direction (see [architecture.md](./architecture.md), [ownership-boundaries.md](./ownership-boundaries.md), [server/authoritative-flow.md](./server/authoritative-flow.md)) is:
 
@@ -17,7 +17,7 @@ The long-term direction (see [architecture.md](./architecture.md), [ownership-bo
 - **Client** and **server** both consume that core; the server adds authority, persistence, and realtime — it does **not** reimplement rules in a fork.
 - **Encounter** and **client combat UI** remain workflow/presentation consumers.
 
-Empirically, **combat is not an isolated leaf module**. It imports multiple sibling areas under `src/features/mechanics/domain` and content types from `src/features/content`. Any extraction plan must name those dependencies or it will fail at compile time.
+Empirically, **combat is not an isolated leaf module**. It imports multiple sibling areas under `packages/mechanics/src` and content types from `src/features/content`. Any extraction plan must name those dependencies or it will fail at compile time.
 
 This ADR freezes a **public API surface** for near-term stability, recommends an initial **package shape**, and defines **import policy** for server work during transition.
 
@@ -37,7 +37,7 @@ This ADR freezes a **public API surface** for near-term stability, recommends an
 
 ## Public combat API freeze (near-term stable boundary)
 
-The barrel [`src/features/mechanics/domain/combat/index.ts`](../../../src/features/mechanics/domain/combat/index.ts) re-exports **many** symbols. For **extraction and server integration**, treat the following as the **intentionally stable, version-sensitive surface**.
+The barrel [`packages/mechanics/src/combat/index.ts`](../../../packages/mechanics/src/combat/index.ts) re-exports **many** symbols. For **extraction and server integration**, treat the following as the **intentionally stable, version-sensitive surface** (also re-exported from [`packages/mechanics/src/index.ts`](../../../packages/mechanics/src/index.ts) for the combat-focused package entry).
 
 ### Application layer
 
@@ -62,7 +62,7 @@ The barrel [`src/features/mechanics/domain/combat/index.ts`](../../../src/featur
 
 ### Canonical state types
 
-`EncounterState` and exports from [`state/types/`](../../../src/features/mechanics/domain/combat/state/types/index.ts) — **Public** (treat persisted snapshots as **schema-versioned**).
+`EncounterState` and exports from [`state/types/`](../../../packages/mechanics/src/combat/state/types/index.ts) — **Public** (treat persisted snapshots as **schema-versioned**).
 
 ### Engine internals
 
@@ -89,7 +89,7 @@ The barrel [`src/features/mechanics/domain/combat/index.ts`](../../../src/featur
 ## Transitional import policy
 
 - **Target:** Server and client import shared rules from the published package path with a clear `exports` map.
-- **Transitional:** Server may import from `src/features/mechanics/domain/**` via the same `@/features/mechanics/domain/*` alias as the client (`tsconfig.server.json` includes `src`). No imports from Encounter routes or React UI.
+- **Transitional:** Server may import from `packages/mechanics/src/**` via the same `@/features/mechanics/domain/*` alias as the client (and optional `@rpg-world-builder/mechanics` for the combat entry). No imports from Encounter routes or React UI.
 - **Avoid:** Duplicating rules under `server/`; importing `src/features/encounter` or `src/features/combat` from server code.
 
 ## Startup vs runtime application boundary
@@ -110,6 +110,4 @@ This ADR does **not** implement extraction, server routes, persistence, final re
 
 ## Next step (after ADR approval)
 
-**Physical move + path wiring:** Move `src/features/mechanics/domain` into `packages/mechanics/src` (or agreed layout), update `@/features/mechanics/domain/*` to resolve there, fix **relative imports** that assume a different directory depth (audit `state/stealth`, `state/types`, tests), extend Vitest `include` for package tests, and run `tsc -b` / `vitest run` until green.
-
-**Scaffolding done in-repo:** Root `package.json` declares `"workspaces": ["packages/*"]`; [`packages/mechanics/README.md`](../../../packages/mechanics/README.md) documents the placeholder and move checklist.
+**Stage 2 (done):** Mechanics source lives in `packages/mechanics/src`; `@/features/mechanics/domain/*` resolves there; Vitest includes package tests. See [`packages/mechanics/README.md`](../../../packages/mechanics/README.md) for consumption notes.

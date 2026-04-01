@@ -22,7 +22,7 @@ Creature-level functions are the shared base. Character-specific logic layers on
 ## 3. Directory Layout
 
 ```
-src/features/mechanics/domain/resolution/
+packages/mechanics/src/resolution/
 ├── index.ts                           # Public barrel
 ├── types.ts                           # StatTarget, BreakdownToken, StatResult
 ├── engines/
@@ -42,7 +42,7 @@ src/features/mechanics/domain/resolution/
     ├── buildCreatureResolutionInput.ts  # Shared base for any creature
     └── buildCharacterResolutionInput.ts # Extends creature with character concerns
 
-src/features/mechanics/domain/combat/resolution/
+packages/mechanics/src/combat/resolution/
 ├── index.ts                           # Encounter resolution barrel (re-exports initiative from resolution/)
 ├── combat-action.types.ts            # CombatActionDefinition, profiles, costs
 ├── action-resolution.types.ts        # Selection and options types
@@ -154,7 +154,7 @@ Targeting validation is centralized so the resolver and UI share a single source
 - `getActionTargetCandidates(state, actor, action, options?)` — returns all combatants that pass `isValidActionTarget`. **Initiative order** for most kinds; for **`dead-creature`**, also includes combatants in `combatantsById` that are **missing from `initiativeOrder`** (e.g. corpses dropped when a new round re-rolls initiative from living participants only in `advanceEncounterTurn`). Used by the UI to populate the target picker.
 - `getActionTargets(state, actor, selection, action, options?)` — resolves the actual target(s) for a selected action. Handles selection-specific concerns (targetId lookup, `self` auto-targeting, no-target fallbacks) and delegates validation to `isValidActionTarget`.
 
-**LOS / visibility seams** (`visibility/visibility-seams.ts` re-exports; see `visibility/visibility-los.ts`, `visibility/combatant-pair-visibility.ts`): `lineOfSightClear` / `lineOfEffectClear` delegate to `hasLineOfSight` when `EncounterSpace` and placements exist; otherwise they stay **clear** for backwards compatibility. `canSeeForTargeting` is the public entry for “can I select this target for a sight-required action?” and shares `canPerceiveTargetOccupantForCombat` with attack-roll resolution. **Binary** LoS geometry is in [`sight/space.sight.ts`](../../src/features/mechanics/domain/combat/space/sight/space.sight.ts); **obscurement / darkness** affecting whether the **occupant** is perceived are resolved in `perception.resolve.ts`, not as a second ad hoc targeting layer.
+**LOS / visibility seams** (`visibility/visibility-seams.ts` re-exports; see `visibility/visibility-los.ts`, `visibility/combatant-pair-visibility.ts`): `lineOfSightClear` / `lineOfEffectClear` delegate to `hasLineOfSight` when `EncounterSpace` and placements exist; otherwise they stay **clear** for backwards compatibility. `canSeeForTargeting` is the public entry for “can I select this target for a sight-required action?” and shares `canPerceiveTargetOccupantForCombat` with attack-roll resolution. **Binary** LoS geometry is in [`sight/space.sight.ts`](../../packages/mechanics/src/combat/space/sight/space.sight.ts); **obscurement / darkness** affecting whether the **occupant** is perceived are resolved in `perception.resolve.ts`, not as a second ad hoc targeting layer.
 
 **Opportunity attacks** (`reactions/opportunity-attack.ts`): **Leave reach** (spatial) is `didHostileMoverLeaveMeleeReachOfReactor` — compare distances before/after `moveCombatant`. **Sight** for OA uses the same occupant seam: `canReactorPerceiveDepartingOccupantForOpportunityAttack` → `canPerceiveTargetOccupantForCombat` on **pre-move** state (combat semantics, `viewerRole: 'pc'`). Full legality is `getOpportunityAttackLegalityDenialReason` (hostile, active, reaction budget, leave-reach, then sight). Disengage / no-OA movement flags are not modeled yet.
 

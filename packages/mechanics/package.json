@@ -3,5 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Shared mechanics domain (combat engine, environment, perception, rulesets). Source lives under src/; consumed via @/features/mechanics/domain/* path alias from the app."
+  "description": "Shared mechanics: combat engine, rulesets, character math, environment, perception. Source: packages/mechanics/src. App imports use @/features/mechanics/domain/*; package entry: src/index.ts (combat public surface).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ]
 }

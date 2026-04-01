@@ -77,7 +77,7 @@ This is the bridge from single-client mutation flow toward server-authoritative 
 
 ### Phase 4A (contracts + local seam)
 
-- Implemented: intent unions, `CombatIntentResult` / `CombatEvent` / `CombatDispatchError`, `applyCombatIntent` in `src/features/mechanics/domain/combat/application/`, end-turn wired from Encounter.
+- Implemented: intent unions, `CombatIntentResult` / `CombatEvent` / `CombatDispatchError`, `applyCombatIntent` in `packages/mechanics/src/combat/application/`, end-turn wired from Encounter.
 
 ### Phase 4B (move + resolve through seam)
 
@@ -99,7 +99,7 @@ This is the bridge from single-client mutation flow toward server-authoritative 
 
 ### Phase 4F (startup application seam)
 
-- **Encounter start** no longer calls `createEncounterState` directly from the hook as the canonical path. Confirmed setup is passed as [`CombatStartupInput`](../../../src/features/mechanics/domain/combat/application/combat-startup.types.ts) to [`startEncounterFromSetup`](../../../src/features/mechanics/domain/combat/application/start-encounter-from-setup.ts), which delegates to engine `createEncounterState`. Startup is **not** modeled as a runtime `CombatIntent` (initialization vs in-encounter commands).
+- **Encounter start** no longer calls `createEncounterState` directly from the hook as the canonical path. Confirmed setup is passed as [`CombatStartupInput`](../../../packages/mechanics/src/combat/application/combat-startup.types.ts) to [`startEncounterFromSetup`](../../../packages/mechanics/src/combat/application/start-encounter-from-setup.ts), which delegates to engine `createEncounterState`. Startup is **not** modeled as a runtime `CombatIntent` (initialization vs in-encounter commands).
 - DM/manual mutators and reset remain unchanged.
 
 See [.cursor/plans/phase_4a_combat_intent_dispatch.plan.md](../../../.cursor/plans/phase_4a_combat_intent_dispatch.plan.md), [.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md](../../../.cursor/plans/phase_4c_action_seam_7edcc62d.plan.md), [.cursor/plans/phase_4d_log_toast_events.plan.md](../../../.cursor/plans/phase_4d_log_toast_events.plan.md), and [.cursor/plans/phase_4e_consolidation.plan.md](../../../.cursor/plans/phase_4e_consolidation.plan.md).

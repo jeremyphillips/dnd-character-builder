@@ -187,10 +187,10 @@ This is why their contracts belong near combat engine ownership.
 
 Concrete types and the local apply seam live under the shared combat engine package:
 
-- **Intents:** `src/features/mechanics/domain/combat/intents/` — discriminated union (`end-turn`, `move-combatant`, `resolve-action`, `place-area`, `choose-spawn-cell`).
-- **Results / events / errors:** `src/features/mechanics/domain/combat/results/`.
-- **Application:** `src/features/mechanics/domain/combat/application/apply-combat-intent.ts` — `applyCombatIntent(state, intent, context)`; today calls shared engine functions; later can be backed by server authority without changing intent/result shapes.
-- **Mutation audit:** `src/features/mechanics/domain/combat/application/MUTATION_ENTRY_POINTS.md`.
+- **Intents:** `packages/mechanics/src/combat/intents/` — discriminated union (`end-turn`, `move-combatant`, `resolve-action`, `place-area`, `choose-spawn-cell`).
+- **Results / events / errors:** `packages/mechanics/src/combat/results/`.
+- **Application:** `packages/mechanics/src/combat/application/apply-combat-intent.ts` — `applyCombatIntent(state, intent, context)`; today calls shared engine functions; later can be backed by server authority without changing intent/result shapes.
+- **Mutation audit:** `packages/mechanics/src/combat/application/MUTATION_ENTRY_POINTS.md`.
 
 End turn, grid movement, and action resolution (`resolveCombatAction`) are wired through `applyCombatIntent` from Encounter state (`useEncounterState`). `place-area` / `choose-spawn-cell` remain reserved for future explicit intents if needed (often covered by `resolve-action` today).
 
@@ -200,13 +200,13 @@ Phase 4C is **not** a second migration: committed action execution was already u
 
 This pass adds:
 
-- [`PHASE_4C_ACTION_PREP_VS_COMMIT.md`](../../../../src/features/mechanics/domain/combat/application/PHASE_4C_ACTION_PREP_VS_COMMIT.md) — classifies UI-local prep (A), confirmed payload shaping (B), and authoritative execution (C).
+- [`PHASE_4C_ACTION_PREP_VS_COMMIT.md`](../../../../packages/mechanics/src/combat/application/PHASE_4C_ACTION_PREP_VS_COMMIT.md) — classifies UI-local prep (A), confirmed payload shaping (B), and authoritative execution (C).
 - Narrow hardening in `apply-resolve-action-intent.ts` (e.g. unknown `actionId` when the actor has a non-empty action list) and optional `action-log-slice` events (log entry types appended) for future log/toast work.
 - Optional pure helper [`build-resolve-action-intent.ts`](../../../../src/features/encounter/domain/interaction/build-resolve-action-intent.ts) mapping confirmed hook fields into `ResolveActionIntent`.
 
 ### Phase 4D (flatten log feedback per successful intent)
 
-- [`intent-success-log-entries.ts`](../../../../src/features/mechanics/domain/combat/application/intent-success-log-entries.ts) — `flattenLogEntriesFromIntentSuccess` / `flattenLogEntriesFromEvents` merge all `log-appended` slices from one `CombatIntentSuccess` into a single `CombatLogEvent[]` in event order.
+- [`intent-success-log-entries.ts`](../../../../packages/mechanics/src/combat/application/intent-success-log-entries.ts) — `flattenLogEntriesFromIntentSuccess` / `flattenLogEntriesFromEvents` merge all `log-appended` slices from one `CombatIntentSuccess` into a single `CombatLogEvent[]` in event order.
 - Encounter (`useEncounterState`) calls `registerCombatLogAppended` at most **once** per successful intent via one `queueMicrotask`, so multiple `log-appended` events in one result do not duplicate toasts or scheduling.
 
 ### Phase 4E (seam canonical; honest unmigrated surface)
@@ -216,7 +216,7 @@ This pass adds:
 
 ### Phase 4F (startup seam — not a runtime intent)
 
-- **Encounter start** uses **`startEncounterFromSetup`** ([`start-encounter-from-setup.ts`](../../../../src/features/mechanics/domain/combat/application/start-encounter-from-setup.ts)) with **`CombatStartupInput`** ([`combat-startup.types.ts`](../../../../src/features/mechanics/domain/combat/application/combat-startup.types.ts)), which calls engine **`createEncounterState`**. This keeps **initialization** separate from **`applyCombatIntent`** (commands on an existing encounter). Do not add `StartEncounterIntent` to the runtime intent union for this — startup is not a transition on prior `EncounterState`.
+- **Encounter start** uses **`startEncounterFromSetup`** ([`start-encounter-from-setup.ts`](../../../../packages/mechanics/src/combat/application/start-encounter-from-setup.ts)) with **`CombatStartupInput`** ([`combat-startup.types.ts`](../../../../packages/mechanics/src/combat/application/combat-startup.types.ts)), which calls engine **`createEncounterState`**. This keeps **initialization** separate from **`applyCombatIntent`** (commands on an existing encounter). Do not add `StartEncounterIntent` to the runtime intent union for this — startup is not a transition on prior `EncounterState`.
 - **Still unmigrated:** DM/manual mutators, reset.
 
 ## Open design questions

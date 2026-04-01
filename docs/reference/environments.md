@@ -94,7 +94,7 @@ The encounter simulator uses **`GridPerceptionInput`** with **`viewerCombatantId
 | Module | Role |
 |--------|------|
 | `perception.render.projection.ts` | Maps `EncounterViewerPerceptionCell` + `EncounterViewerBattlefieldPerception` → `EncounterGridCellRenderState` / `EncounterBattlefieldRenderState` (presentation flags, not domain merge). |
-| [`selectors/space.selectors.ts`](../../src/features/mechanics/domain/combat/space/selectors/space.selectors.ts) (`selectGridViewModel`) | When `perception` input is passed, attaches per-cell render state and battlefield veil flags to the grid view model. |
+| [`selectors/space.selectors.ts`](../../packages/mechanics/src/combat/space/selectors/space.selectors.ts) (`selectGridViewModel`) | When `perception` input is passed, attaches per-cell render state and battlefield veil flags to the grid view model. |
 | [`cellVisualState.ts`](../../src/features/combat/components/grid/cellVisualState.ts) / [`cellVisualStyles.ts`](../../src/features/combat/components/grid/cellVisualStyles.ts) | Maps `VisibilityFillKind` → `CellBaseFillKind` and `baseFillSx` — **presentation only**; not a rules source. |
 | [`CombatGrid.tsx`](../../src/features/combat/components/grid/CombatGrid.tsx) | Generic grid renderer: merged cell visuals, blind veil overlay (viewer cell lifted above veil), token visibility from `occupantTokenVisibility`, obstacle glyphs from `showObstacleGlyph`. |
 | [`EncounterGrid.tsx`](../../src/features/encounter/components/active/grid/EncounterGrid.tsx) | Thin encounter wrapper over `CombatGrid` (same props; feature-owned entry point). |

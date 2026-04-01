@@ -1,3 +1,7 @@
+export { LocationEditCampaignWorkspace } from './LocationEditCampaignWorkspace'
+export type { LocationEditCampaignWorkspaceProps } from './LocationEditCampaignWorkspace'
+export { LocationEditSystemPatchWorkspace } from './LocationEditSystemPatchWorkspace'
+export type { LocationEditSystemPatchWorkspaceProps } from './LocationEditSystemPatchWorkspace'
 export { LocationEditorWorkspace } from './LocationEditorWorkspace'
 export { LocationEditorHeader } from './LocationEditorHeader'
 export { LocationEditorCanvas } from './LocationEditorCanvas'

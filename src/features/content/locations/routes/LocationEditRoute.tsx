@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FormProvider, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -48,8 +47,8 @@ import {
   useLocationMapEditorState,
 } from '@/features/content/locations/domain';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
-import { ConditionalFormRenderer, ConfirmModal, VisibilityField } from '@/ui/patterns';
-import { AppAlert, AppBadge } from '@/ui/primitives';
+import { VisibilityField } from '@/ui/patterns';
+import { AppAlert } from '@/ui/primitives';
 import { useEditRouteFeedbackState } from '@/features/content/shared/hooks/useEditRouteFeedbackState';
 import { useResetEditFeedbackOnChange } from '@/features/content/shared/hooks/useResetEditFeedbackOnChange';
 import { useCampaignEntryFormReset } from '@/features/content/shared/hooks/useCampaignEntryFormReset';
@@ -81,20 +80,16 @@ import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import {
   LocationGridAuthoringSection,
-  LocationEditorWorkspace,
-  LocationEditorHeader,
+  LocationEditCampaignWorkspace,
+  LocationEditSystemPatchWorkspace,
   LocationEditorMapCanvasColumn,
-  LocationEditorRightRail,
-  LocationEditorRailSectionTabs,
   LocationEditorSelectionPanel,
   shouldAutoSwitchRailToMapForMode,
   selectedCellIdForMapSelection,
   LocationAncestryBreadcrumbs,
-  BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
   normalizedAuthoringPayloadFromGridDraft,
-  LocationMapEditorLinkedLocationModal,
   LocationMapEditorPaintMapPanel,
   LocationMapEditorPlacePanel,
   LocationMapEditorDrawPanel,
@@ -1126,184 +1121,88 @@ export default function LocationEditRoute() {
 
   if (isSystem && driver) {
     return (
-      <LocationEditorWorkspace
-        header={
-          <LocationEditorHeader
-            title={`Patch: ${loc.name}`}
-            ancestryBreadcrumbs={ancestryBreadcrumbs}
-            saving={saving}
-            dirty={driver.isDirty() || isGridDraftDirty}
-            isNew={false}
-            onSave={handlePatchSave}
-            onBack={handleBack}
-            errors={errors}
-            success={success}
-            rightRailOpen={rightRailOpen}
-            onToggleRightRail={() => setRightRailOpen((o) => !o)}
-          />
-        }
-        canvas={mapCanvasColumn}
-        rightRail={
-          <LocationEditorRightRail open={rightRailOpen}>
-            <LocationEditorRailSectionTabs
-              section={railSection}
-              onSectionChange={setRailSection}
-              locationPanel={
-                <Stack spacing={2}>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    Patching: {loc.name}
-                  </Typography>
-                  {loc.patched && (
-                    <AppBadge label="Patched" tone="warning" size="small" />
-                  )}
-                  <ConditionalFormRenderer
-                    fields={fieldConfigs}
-                    driver={{
-                      kind: 'patch',
-                      getValue: driver.getValue,
-                      setValue: driver.setValue,
-                      unsetValue: driver.unsetValue,
-                    }}
-                    onValidationApi={(api) => {
-                      validationApiRef.current = api;
-                    }}
-                  />
-                  {hasExistingPatch && (
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={handleRemovePatch}
-                      disabled={saving}
-                      sx={{ alignSelf: 'flex-start' }}
-                    >
-                      Remove patch
-                    </Button>
-                  )}
-                </Stack>
-              }
-              mapPanel={mapAuthoringPanel}
-              selectionPanel={selectionPanel}
-            />
-          </LocationEditorRightRail>
-        }
+      <LocationEditSystemPatchWorkspace
+        locationName={loc.name}
+        locationPatched={loc.patched}
+        ancestryBreadcrumbs={ancestryBreadcrumbs}
+        saving={saving}
+        dirty={driver.isDirty() || isGridDraftDirty}
+        errors={errors}
+        success={success}
+        rightRailOpen={rightRailOpen}
+        onToggleRightRail={() => setRightRailOpen((o) => !o)}
+        onSave={handlePatchSave}
+        onBack={handleBack}
+        fieldConfigs={fieldConfigs}
+        patchDriver={driver}
+        validationApiRef={validationApiRef}
+        hasExistingPatch={hasExistingPatch}
+        onRemovePatch={handleRemovePatch}
+        railSection={railSection}
+        onRailSectionChange={setRailSection}
+        mapCanvasColumn={mapCanvasColumn}
+        mapAuthoringPanel={mapAuthoringPanel}
+        selectionPanel={selectionPanel}
       />
     );
   }
 
   return (
-    <FormProvider {...methods}>
-      <LocationEditorWorkspace
-        header={
-          <LocationEditorHeader
-            title={loc.name}
-            ancestryBreadcrumbs={ancestryBreadcrumbs}
-            saving={saving}
-            dirty={isDirty || isGridDraftDirty}
-            isNew={false}
-            formId={FORM_ID}
-            onSave={handleCampaignFormSaveClick}
-            onBack={handleBack}
-            errors={errors}
-            success={success}
-            rightRailOpen={rightRailOpen}
-            onToggleRightRail={() => setRightRailOpen((o) => !o)}
-            saveDisabled={isBuildingWorkspace && !activeFloorId}
-            actions={
-              canDelete ? (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={async () => {
-                    const result = await handleValidateDelete();
-                    if (result.allowed) setDeleteConfirmOpen(true);
-                  }}
-                  disabled={saving || deleting}
-                >
-                  Delete
-                </Button>
-              ) : undefined
+    <LocationEditCampaignWorkspace
+      form={methods}
+      formId={FORM_ID}
+      onCampaignSubmit={handleCampaignSubmit}
+      headerTitle={loc.name}
+      ancestryBreadcrumbs={ancestryBreadcrumbs}
+      saving={saving}
+      dirty={isDirty || isGridDraftDirty}
+      errors={errors}
+      success={success}
+      rightRailOpen={rightRailOpen}
+      onToggleRightRail={() => setRightRailOpen((o) => !o)}
+      onSaveClick={handleCampaignFormSaveClick}
+      onBack={handleBack}
+      saveDisabled={isBuildingWorkspace && !activeFloorId}
+      canDelete={canDelete}
+      onRequestDelete={async () => {
+        const result = await handleValidateDelete();
+        if (result.allowed) setDeleteConfirmOpen(true);
+      }}
+      deleteLoading={deleting}
+      buildingFloorStrip={
+        isBuildingWorkspace
+          ? {
+              floors: floorChildren,
+              activeFloorId,
+              onSelectFloor: setActiveFloorId,
+              onAddFloor: handleAddFloor,
+              adding: addingFloor,
+              disabled: saving,
             }
+          : null
+      }
+      mapCanvasColumn={mapCanvasColumn}
+      railSection={railSection}
+      onRailSectionChange={setRailSection}
+      fieldConfigs={fieldConfigs}
+      showFloorRailHint={Boolean(isBuildingWorkspace && activeFloorId)}
+      floorRailHintLabel={activeFloorName ?? null}
+      policyPanel={
+        policyValue ? (
+          <VisibilityField
+            value={policyValue}
+            onChange={handlePolicyChange}
+            characters={policyCharacters}
           />
-        }
-        canvas={
-          isBuildingWorkspace ? (
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              <BuildingFloorStrip
-                floors={floorChildren}
-                activeFloorId={activeFloorId}
-                onSelectFloor={setActiveFloorId}
-                onAddFloor={handleAddFloor}
-                adding={addingFloor}
-                disabled={saving}
-              />
-              <Box
-                sx={{
-                  flex: 1,
-                  minHeight: 0,
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  overflow: 'hidden',
-                }}
-              >
-                {mapCanvasColumn}
-              </Box>
-            </Box>
-          ) : (
-            mapCanvasColumn
-          )
-        }
-        rightRail={
-          <LocationEditorRightRail open={rightRailOpen}>
-            <LocationEditorRailSectionTabs
-              section={railSection}
-              onSectionChange={setRailSection}
-              locationPanel={
-                <Stack spacing={2}>
-                  {isBuildingWorkspace && activeFloorId ? (
-                    <Typography variant="caption" color="text.secondary">
-                      Map and cells: {activeFloorName ?? 'Floor'} (save updates this floor).
-                    </Typography>
-                  ) : null}
-                  <form
-                    key="location-form"
-                    id={FORM_ID}
-                    onSubmit={methods.handleSubmit(handleCampaignSubmit)}
-                    noValidate
-                  >
-                    <ConditionalFormRenderer fields={fieldConfigs} />
-                  </form>
-                  {policyValue && (
-                    <VisibilityField
-                      value={policyValue}
-                      onChange={handlePolicyChange}
-                      characters={policyCharacters}
-                    />
-                  )}
-                </Stack>
-              }
-              mapPanel={mapAuthoringPanel}
-              selectionPanel={selectionPanel}
-            />
-          </LocationEditorRightRail>
-        }
-      />
-
-      <LocationMapEditorLinkedLocationModal
-        open={mapEditor.pendingPlacement != null}
-        pending={mapEditor.pendingPlacement}
-        options={linkModalSelectOptions}
-        onConfirm={(linkedLocationId) => {
+        ) : null
+      }
+      mapAuthoringPanel={mapAuthoringPanel}
+      selectionPanel={selectionPanel}
+      linkedLocationModal={{
+        open: mapEditor.pendingPlacement != null,
+        pending: mapEditor.pendingPlacement!,
+        options: linkModalSelectOptions,
+        onConfirm: (linkedLocationId) => {
           const p = mapEditor.pendingPlacement;
           if (!p || p.type !== 'linked-location') return;
           const cellId = p.targetCellId;
@@ -1315,18 +1214,13 @@ export default function LocationEditRoute() {
             },
           }));
           mapEditor.setPendingPlacement(null);
-        }}
-        onCancel={() => mapEditor.setPendingPlacement(null)}
-      />
-
-      <ConfirmModal
-        open={deleteConfirmOpen}
-        headline="Delete Location"
-        description="Are you sure you want to delete this location? This action cannot be undone."
-        confirmLabel="Delete"
-        confirmColor="error"
-        loading={deleting}
-        onConfirm={async () => {
+        },
+        onCancel: () => mapEditor.setPendingPlacement(null),
+      }}
+      deleteConfirm={{
+        open: deleteConfirmOpen,
+        loading: deleting,
+        onConfirm: async () => {
           setDeleting(true);
           try {
             await handleDelete();
@@ -1334,9 +1228,9 @@ export default function LocationEditRoute() {
             setDeleting(false);
             setDeleteConfirmOpen(false);
           }
-        }}
-        onCancel={() => setDeleteConfirmOpen(false)}
-      />
-    </FormProvider>
+        },
+        onCancel: () => setDeleteConfirmOpen(false),
+      }}
+    />
   );
 }

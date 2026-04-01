@@ -24,6 +24,8 @@ export {
   normalizedAuthoringPayloadFromGridDraft,
 } from './locationGridDraft.utils';
 export {
+  LocationEditCampaignWorkspace,
+  LocationEditSystemPatchWorkspace,
   LocationEditorWorkspace,
   LocationEditorHeader,
   LocationEditorCanvas,
@@ -40,7 +42,12 @@ export {
   LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
   LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
 } from './workspace'
-export type { LocationEditorRailSection, LocationMapSelection } from './workspace'
+export type {
+  LocationEditCampaignWorkspaceProps,
+  LocationEditSystemPatchWorkspaceProps,
+  LocationEditorRailSection,
+  LocationMapSelection,
+} from './workspace'
 export {
   shouldAutoSwitchRailToMapForMode,
   selectedCellIdForMapSelection,

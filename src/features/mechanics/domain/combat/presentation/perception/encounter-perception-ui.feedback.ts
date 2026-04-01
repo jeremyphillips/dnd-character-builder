@@ -1,4 +1,4 @@
-import type { EncounterSimulatorViewerMode } from '../capabilities/encounter-capabilities.types'
+import type { EncounterSimulatorViewerMode } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 import type { GridViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 
 /**

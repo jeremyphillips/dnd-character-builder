@@ -15,7 +15,7 @@ import { getEncounterViewerPerceptionCapabilitiesFromCombatant } from '@/feature
 import type { GridPerceptionDebugOverrides, GridPerceptionInput } from '@/features/mechanics/domain/perception/perception.render.projection'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 
-import type { EncounterSimulatorViewerMode } from '../capabilities/encounter-capabilities.types'
+import type { EncounterSimulatorViewerMode } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 
 export type DeriveEncounterPresentationGridPerceptionInputArgs = {
   encounterState: EncounterState | null | undefined

@@ -9,7 +9,7 @@ import type {
   PreviewChip,
   PreviewTone,
 } from '../../../domain'
-import type { CombatStateTone } from '../../../domain/effects/presentable-effects.types'
+import type { CombatStateTone } from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects.types'
 
 export type { CombatantStatBadge, CombatantTrackedPartBadge } from '../../../domain'
 

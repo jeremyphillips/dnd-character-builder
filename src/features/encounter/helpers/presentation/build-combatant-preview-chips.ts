@@ -4,7 +4,7 @@ import {
   type SpatialBattlefieldPresentationOptions,
 } from '@/features/mechanics/domain/combat'
 import { isDefeatedCombatant } from '@/features/mechanics/domain/combat/state/combatants/combatant-participation'
-import type { CombatStatePriority } from '../../domain/effects/presentable-effects.types'
+import type { CombatStatePriority } from '@/features/mechanics/domain/combat/presentation/effects/presentable-effects.types'
 
 import {
   buildEncounterDefensePreviewChips,

@@ -3,7 +3,7 @@
  * Pair with domain predicates from mechanics (`isDefeatedCombatant`, `hasBattlefieldPresence`, …).
  */
 
-import type { TurnOrderStatus } from './view/encounter-view.types'
+import type { TurnOrderStatus } from '../view/tactical-preview.types'
 
 export const PARTICIPATION_VISUALS = {
   defeated: {

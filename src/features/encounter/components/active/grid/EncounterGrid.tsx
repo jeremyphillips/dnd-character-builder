@@ -15,7 +15,7 @@ import type { Theme } from '@mui/material/styles'
 import { AppAvatar } from '@/ui/primitives'
 import { resolveImageUrl } from '@/shared/lib/media'
 import type { GridViewModel, GridCellViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
-import { DEFEATED_PARTICIPATION_OPACITY } from '../../../domain/presentation-defeated'
+import { DEFEATED_PARTICIPATION_OPACITY } from '@/features/mechanics/domain/combat/presentation/participation/presentation-defeated'
 import { getCellVisualState, mergePerceptionIntoCellVisualState } from './cellVisualState'
 import { getCellVisualSx } from './cellVisualStyles'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveEncounterPresentationGridPerceptionInput } from '@/features/encounter/domain/perception/derive-encounter-presentation-grid-perception'
+import { deriveEncounterPresentationGridPerceptionInput } from '@/features/mechanics/domain/combat/presentation/perception/derive-encounter-presentation-grid-perception'
 import {
   encounterBlindsightOrdinaryDarkness10ftFromOrc,
   encounterBlindsightOutOfRangeHeavyObscuredInDarkvisionRange,

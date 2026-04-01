@@ -1,6 +1,6 @@
 import { AppBadge } from '@/ui/primitives'
 import { HorizontalCompactActionCard } from '@/ui/patterns'
-import type { ActionBadgeDescriptor } from '../../../domain/badges/action/combat-action-badges.types'
+import type { ActionBadgeDescriptor } from '@/features/mechanics/domain/combat/presentation/badges/action/combat-action-badges.types'
 import { combatToneToAppBadgeTone } from '../../shared/cards/combatant-badges'
 
 export type ActionRowBaseProps = {

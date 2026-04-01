@@ -38,9 +38,9 @@ import {
   type CombatStateSection,
   type EnrichedPresentableEffect,
 } from '../../../domain'
-import type { ActionSemanticCategory } from '../../../domain/actions/action-presentation.types'
-import { deriveActionPresentation } from '../../../domain/actions/action-presentation'
-import { deriveRecommendedActionsForTarget } from '../../../domain/actions/derive-recommended-actions-for-target'
+import type { ActionSemanticCategory } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation.types'
+import { deriveActionPresentation } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation'
+import { deriveRecommendedActionsForTarget } from '@/features/mechanics/domain/combat/presentation/actions/derive-recommended-actions-for-target'
 import { ActionRow } from '../action-row/ActionRow'
 import { deriveActionUnavailableHint } from './helpers/derive-action-unavailable-hint'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'

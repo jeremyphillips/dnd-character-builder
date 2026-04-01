@@ -4,7 +4,7 @@ import { getActionTargetInvalidReason } from '@/features/mechanics/domain/combat
 import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
 
 import { isAreaGridAction, isSelfCenteredAreaAction } from '../actions'
-import type { GridInteractionMode } from '../../domain/interaction/encounter-interaction.types'
+import type { GridInteractionMode } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-interaction.types'
 import {
   getSingleCellPlacementRequirement,
   validateSingleCellPlacement,

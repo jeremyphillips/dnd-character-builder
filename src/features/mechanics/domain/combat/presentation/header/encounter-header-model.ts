@@ -1,9 +1,16 @@
 import type { CombatActionDefinition } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
 
-import { isAreaGridAction, isSelfCenteredAreaAction, type AoeStep } from '../../helpers/actions'
-import { deriveCombatantTurnExhaustion, type CombatantTurnExhaustionInput } from '../turn/combatant-turn-exhaustion'
-import type { GridInteractionMode } from '../interaction/encounter-interaction.types'
+import {
+  isAreaGridAction,
+  isSelfCenteredAreaAction,
+  type AoeStep,
+} from '@/features/mechanics/domain/combat/resolution/action/area-grid-action'
+import {
+  deriveCombatantTurnExhaustion,
+  type CombatantTurnExhaustionInput,
+} from '@/features/mechanics/domain/combat/selectors/turn/combatant-turn-exhaustion'
+import type { GridInteractionMode } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-interaction.types'
 
 export type EndTurnEmphasis = 'subtle' | 'strong'
 

@@ -20,7 +20,7 @@ import {
   getSectionOrder,
   resolveEffectPresentation,
 } from './combat-state-ui-map'
-import { formatTurnDuration } from '../../helpers/presentation'
+import { formatTurnDuration } from '../formatters/turn-duration'
 
 const DEFENSE_BADGE_PRESENTATION_BASE: CombatStatePresentation = {
   label: '',

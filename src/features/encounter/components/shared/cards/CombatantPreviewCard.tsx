@@ -7,7 +7,7 @@ import { AppAvatar } from '@/ui/primitives'
 import { EntitySummaryCard } from '@/ui/patterns'
 
 import type { CombatantPreviewCardProps, ViewerCombatantPresentationKind } from '../../../domain'
-import { getCombatantPreviewCardOpacity } from '../../../domain/presentation-participation'
+import { getCombatantPreviewCardOpacity } from '@/features/mechanics/domain/combat/presentation/participation/presentation-participation'
 import { CombatantPreviewChipRow } from './combatant-badges'
 
 export function CombatantPreviewCard({

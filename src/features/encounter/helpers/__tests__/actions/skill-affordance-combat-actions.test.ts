@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SkillProficiency } from '@/features/content/skillProficiencies/domain/types'
-import { deriveActionPresentation } from '@/features/encounter/domain/actions/action-presentation'
+import { deriveActionPresentation } from '@/features/mechanics/domain/combat/presentation/actions/action-presentation'
 import { getSystemSkillProficiency } from '@/features/mechanics/domain/rulesets/system/skillProficiencies'
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds'
 

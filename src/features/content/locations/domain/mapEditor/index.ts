@@ -1,4 +1,5 @@
 export * from './locationMapEditor.types';
+export * from './locationMapPaintSelection.helpers';
 export * from './locationMapEditorPalette.helpers';
 export * from './placeObjectBridge';
 export * from './resolvePlacedKindToAction';

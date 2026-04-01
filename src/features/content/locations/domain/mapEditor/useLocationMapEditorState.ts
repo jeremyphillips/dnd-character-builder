@@ -7,6 +7,7 @@ import type {
   LocationMapEditorMode,
   LocationMapPendingPlacement,
 } from './locationMapEditor.types';
+import { createInitialPaintState } from './locationMapPaintSelection.helpers';
 
 export function useLocationMapEditorState() {
   const [mode, setMode] = useState<LocationMapEditorMode>('select');
@@ -27,7 +28,9 @@ export function useLocationMapEditorState() {
       setActiveDraw(null);
       setPathAnchorCellId(null);
     }
-    if (next !== 'paint') {
+    if (next === 'paint') {
+      setActivePaint(createInitialPaintState());
+    } else {
       setActivePaint(null);
     }
   }, []);

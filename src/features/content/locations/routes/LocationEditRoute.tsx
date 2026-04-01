@@ -86,6 +86,7 @@ import {
   gridDraftPersistableEquals,
   LocationMapEditorLinkedLocationModal,
   LocationMapEditorPaintTray,
+  LocationMapEditorPaintMapPanel,
   LocationMapEditorPlacePanel,
   LocationMapEditorDrawTray,
   LocationMapEditorDrawPanel,
@@ -993,11 +994,8 @@ export default function LocationEditRoute() {
           activeDraw={mapEditor.activeDraw}
           onSelectDraw={mapEditor.setActiveDraw}
         />
-      ) : mapEditor.mode === 'paint' ? (
-        <Typography variant="body2" color="text.secondary">
-          Use the swatch column next to the toolbar to pick terrain, then drag across cells to paint. Region painting
-          can extend this tool later.
-        </Typography>
+      ) : mapEditor.mode === 'paint' && mapEditor.activePaint ? (
+        <LocationMapEditorPaintMapPanel paint={mapEditor.activePaint} />
       ) : mapEditor.mode === 'erase' ? (
         <Typography variant="body2" color="text.secondary">
           Click a cell to remove the topmost feature (edge, object, path segment, link, or terrain fill). Drag across
@@ -1085,11 +1083,11 @@ export default function LocationEditRoute() {
                   mode={mapEditor.mode}
                   onModeChange={handleMapEditorModeChange}
                 />
-                {mapEditor.mode === 'paint' && (
+                {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                   <LocationMapEditorPaintTray
                     items={paintPaletteItems}
                     activePaint={mapEditor.activePaint}
-                    onSelectSwatch={mapEditor.setActivePaint}
+                    onPaintChange={mapEditor.setActivePaint}
                   />
                 )}
                 {mapEditor.mode === 'draw' && (
@@ -1260,11 +1258,11 @@ export default function LocationEditRoute() {
                       mode={mapEditor.mode}
                       onModeChange={handleMapEditorModeChange}
                     />
-                    {mapEditor.mode === 'paint' && (
+                    {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                       <LocationMapEditorPaintTray
                         items={paintPaletteItems}
                         activePaint={mapEditor.activePaint}
-                        onSelectSwatch={mapEditor.setActivePaint}
+                        onPaintChange={mapEditor.setActivePaint}
                       />
                     )}
                     {mapEditor.mode === 'draw' && (
@@ -1346,11 +1344,11 @@ export default function LocationEditRoute() {
                     mode={mapEditor.mode}
                     onModeChange={handleMapEditorModeChange}
                   />
-                  {mapEditor.mode === 'paint' && (
+                  {mapEditor.mode === 'paint' && mapEditor.activePaint && (
                     <LocationMapEditorPaintTray
                       items={paintPaletteItems}
                       activePaint={mapEditor.activePaint}
-                      onSelectSwatch={mapEditor.setActivePaint}
+                      onPaintChange={mapEditor.setActivePaint}
                     />
                   )}
                   {mapEditor.mode === 'draw' && (

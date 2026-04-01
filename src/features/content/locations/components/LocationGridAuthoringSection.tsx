@@ -36,6 +36,10 @@ import type {
   LocationMapActivePaintSelection,
   LocationMapEditorMode,
 } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
+import {
+  canApplySurfaceTerrainPaint,
+  getActiveSurfaceFillKind,
+} from '@/features/content/locations/domain/mapEditor/locationMapPaintSelection.helpers';
 import { resolveCellFillSwatchColor } from '@/app/theme/mapColors';
 import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
 import type { Location } from '@/features/content/locations/domain/types';
@@ -491,10 +495,11 @@ export function LocationGridAuthoringSection({
       if (strokeSeen.current.has(cellId)) return;
       strokeSeen.current.add(cellId);
       if (mapEditorMode === 'paint') {
-        if (!activePaint) return;
+        const fillKind = getActiveSurfaceFillKind(activePaint ?? null);
+        if (!fillKind) return;
         setDraft((d) => ({
           ...d,
-          cellFillByCellId: { ...d.cellFillByCellId, [cellId]: activePaint },
+          cellFillByCellId: { ...d.cellFillByCellId, [cellId]: fillKind },
         }));
       } else if (mapEditorMode === 'erase') {
         setDraft((d) => {
@@ -543,8 +548,10 @@ export function LocationGridAuthoringSection({
   const handlePaintPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
       if (mapEditorMode !== 'paint' && mapEditorMode !== 'erase') return;
+      if (mapEditorMode === 'paint' && !canApplySurfaceTerrainPaint(activePaint ?? null)) {
+        return;
+      }
       e.stopPropagation();
-      if (mapEditorMode === 'paint' && !activePaint) return;
       paintStrokeActive.current = true;
       strokeSeen.current = new Set();
       applyStrokeCell(cell.cellId);
@@ -556,7 +563,9 @@ export function LocationGridAuthoringSection({
     (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
       if (!paintStrokeActive.current) return;
       if (e.buttons !== 1) return;
-      if (mapEditorMode === 'paint' && !activePaint) return;
+      if (mapEditorMode === 'paint' && !canApplySurfaceTerrainPaint(activePaint ?? null)) {
+        return;
+      }
       e.stopPropagation();
       applyStrokeCell(cell.cellId);
     },

@@ -6,7 +6,12 @@ import {
 } from 'react';
 import Box from '@mui/material/Box';
 import { makeGridCellId } from '@/shared/domain/grid';
-import { gridCellPalette, gridCellSelectedShadow } from './gridCellStyles';
+import {
+  GRID_CELL_BORDER_COLOR,
+  GRID_CELL_BORDER_COLOR_HOVER,
+  gridCellPalette,
+  gridCellSelectedShadow,
+} from './gridCellStyles';
 
 export type GridCell = {
   cellId: string;
@@ -118,7 +123,7 @@ export default function GridEditor({
                 ? gridCellPalette.border.selected
                 : excluded
                   ? gridCellPalette.border.excluded
-                  : gridCellPalette.border.default,
+                  : GRID_CELL_BORDER_COLOR,
               borderStyle: excluded && !selected ? 'dashed' : 'solid',
               bgcolor: selected
                 ? gridCellPalette.background.selected
@@ -144,7 +149,7 @@ export default function GridEditor({
                 : {
                     borderColor: selected
                       ? gridCellPalette.border.selected
-                      : gridCellPalette.border.hover,
+                      : GRID_CELL_BORDER_COLOR_HOVER,
                     bgcolor: selected
                       ? gridCellPalette.background.selected
                       : excluded

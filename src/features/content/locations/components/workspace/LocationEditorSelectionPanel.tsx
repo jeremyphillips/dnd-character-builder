@@ -47,7 +47,7 @@ export function LocationEditorSelectionPanel({
       return (
         <PlaceholderMessage
           title="Region"
-          body="Region inspector will be available in a future update."
+          body="Region selection and editing will arrive with persisted region overlays. Use Paint → Region to prepare draft targets for now."
         />
       );
     case 'path':

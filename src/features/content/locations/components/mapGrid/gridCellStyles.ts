@@ -4,14 +4,20 @@
  */
 import type { Theme } from '@mui/material/styles';
 
+/** MUI `sx` palette path for default square/hex grid cell borders. */
+export const GRID_CELL_BORDER_COLOR = 'divider';
+
+/** MUI `sx` palette path for grid cell border on hover (non-selected). */
+export const GRID_CELL_BORDER_COLOR_HOVER = 'primary.main';
+
 /**
  * MUI palette paths for `borderColor` / `bgcolor` in `sx` (nested for readability).
  */
 export const gridCellPalette = {
   border: {
-    default: 'divider',
+    default: GRID_CELL_BORDER_COLOR,
     excluded: 'text.disabled',
-    hover: 'primary.main',
+    hover: GRID_CELL_BORDER_COLOR_HOVER,
     selected: 'primary.main',
   },
   background: {

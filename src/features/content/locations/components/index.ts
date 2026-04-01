@@ -6,6 +6,7 @@ export type { LocationCellAuthoringPanelProps } from './LocationCellAuthoringPan
 export {
   LocationMapEditorToolbar,
   LocationMapEditorPaintTray,
+  LocationMapEditorPaintMapPanel,
   LocationMapEditorDrawTray,
   LocationMapEditorDrawPanel,
   LocationMapEditorPlacePanel,

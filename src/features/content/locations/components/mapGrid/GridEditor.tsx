@@ -114,6 +114,8 @@ export default function GridEditor({
             }}
             className={extraClass}
             sx={{
+              position: 'relative',
+              overflow: 'hidden',
               aspectRatio: '1',
               minWidth: 0,
               minHeight: 0,

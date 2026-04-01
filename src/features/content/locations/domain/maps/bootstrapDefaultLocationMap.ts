@@ -14,6 +14,7 @@ import type {
   LocationMapCellAuthoringEntry,
   LocationMapEdgeAuthoringEntry,
   LocationMapPathAuthoringEntry,
+  LocationMapRegionAuthoringEntry,
 } from '@/shared/domain/locations';
 import { normalizeLocationMapAuthoringFields } from '@/shared/domain/locations';
 import { pruneExcludedCellIdsForGrid } from '@/features/content/locations/domain/maps/gridLayoutDraft';
@@ -45,6 +46,7 @@ export async function bootstrapDefaultLocationMap(
     cellEntries?: LocationMapCellAuthoringEntry[];
     pathEntries?: LocationMapPathAuthoringEntry[];
     edgeEntries?: LocationMapEdgeAuthoringEntry[];
+    regionEntries?: LocationMapRegionAuthoringEntry[];
   },
 ): Promise<void> {
   const err = validateGridBootstrap(values);
@@ -77,17 +79,15 @@ export async function bootstrapDefaultLocationMap(
     cellEntries: options?.cellEntries,
     pathEntries: options?.pathEntries,
     edgeEntries: options?.edgeEntries,
+    regionEntries: options?.regionEntries,
   });
-  const { cellEntries, pathEntries, edgeEntries } = authoring;
 
   if (defaultMap) {
     await updateLocationMap(campaignId, locationId, defaultMap.id, {
       grid,
       layout,
       isDefault: true,
-      cellEntries,
-      pathEntries,
-      edgeEntries,
+      ...authoring,
     });
     return;
   }
@@ -99,9 +99,7 @@ export async function bootstrapDefaultLocationMap(
     layout,
     isDefault: true,
     cells: [],
-    cellEntries,
-    pathEntries,
-    edgeEntries,
+    ...authoring,
   });
 }
 

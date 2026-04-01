@@ -19,7 +19,10 @@ export type {
   LocationCellObjectDraft,
   LocationGridDraftState,
 } from './locationGridDraft.types'
-export { gridDraftPersistableEquals } from './locationGridDraft.utils'
+export {
+  gridDraftPersistableEquals,
+  normalizedAuthoringPayloadFromGridDraft,
+} from './locationGridDraft.utils';
 export {
   LocationEditorWorkspace,
   LocationEditorHeader,

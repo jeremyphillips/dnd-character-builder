@@ -11,6 +11,8 @@ export * from './scale/locationScaleUi.policy';
 export * from './scale/locationParent.validation';
 export * from './map/locationMap.constants';
 export * from './map/locationMapCellFill.constants';
+export * from './map/locationMapRegion.constants';
+export * from './map/locationMapRegionAuthoring.validation';
 export * from './map/locationMapPathFeature.constants';
 export * from './map/locationMapEdgeFeature.constants';
 export * from './map/locationMap.helpers';

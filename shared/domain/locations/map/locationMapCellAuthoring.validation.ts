@@ -85,6 +85,16 @@ export function validateCellEntriesStructure(
       }
     }
 
+    if (row.regionId !== undefined && row.regionId !== null) {
+      if (typeof row.regionId !== 'string' || row.regionId.trim() === '') {
+        errors.push({
+          path: `${prefix}.regionId`,
+          code: 'INVALID',
+          message: 'regionId must be a non-empty string when set',
+        });
+      }
+    }
+
     const objects = row.objects;
     if (objects !== undefined && objects !== null) {
       if (!Array.isArray(objects)) {

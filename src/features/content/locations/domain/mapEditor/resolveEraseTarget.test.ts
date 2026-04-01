@@ -83,4 +83,35 @@ describe('resolveEraseTargetAtCell', () => {
       cellId: cell,
     });
   });
+
+  it('prefers fill over region when both present', () => {
+    const cell = '1,2';
+    const draft = {
+      pathEntries: [],
+      edgeEntries: [],
+      objectsByCellId: {},
+      linkedLocationByCellId: {},
+      cellFillByCellId: { [cell]: 'plains' },
+      regionIdByCellId: { [cell]: 'r1' },
+    };
+    expect(resolveEraseTargetAtCell(cell, draft, cols, rows)).toEqual({
+      type: 'fill',
+      cellId: cell,
+    });
+  });
+
+  it('then region assignment when no higher-priority content', () => {
+    const cell = '1,2';
+    const draft = {
+      pathEntries: [],
+      edgeEntries: [],
+      objectsByCellId: {},
+      linkedLocationByCellId: {},
+      regionIdByCellId: { [cell]: 'r1' },
+    };
+    expect(resolveEraseTargetAtCell(cell, draft, cols, rows)).toEqual({
+      type: 'region',
+      cellId: cell,
+    });
+  });
 });

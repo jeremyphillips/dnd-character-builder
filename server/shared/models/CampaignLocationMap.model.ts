@@ -37,12 +37,22 @@ const mapCellObjectEntrySchema = new Schema(
   { _id: false },
 );
 
+const mapRegionEntrySchema = new Schema(
+  {
+    id: { type: String, required: true },
+    colorKey: { type: String, required: true },
+    label: { type: String },
+  },
+  { _id: false },
+);
+
 const mapCellAuthoringEntrySchema = new Schema(
   {
     cellId: { type: String, required: true },
     linkedLocationId: { type: String },
     objects: { type: [mapCellObjectEntrySchema], default: undefined },
     cellFillKind: { type: String },
+    regionId: { type: String },
   },
   { _id: false },
 );
@@ -82,6 +92,7 @@ const campaignLocationMapSchema = new Schema(
     cellEntries: { type: [mapCellAuthoringEntrySchema], default: undefined },
     pathEntries: { type: [mapPathEntrySchema], default: undefined },
     edgeEntries: { type: [mapEdgeEntrySchema], default: undefined },
+    regionEntries: { type: [mapRegionEntrySchema], default: undefined },
   },
   { timestamps: true },
 );

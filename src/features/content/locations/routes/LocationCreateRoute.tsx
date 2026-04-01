@@ -11,7 +11,6 @@ import {
   type LocationFormValues,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
-  cellDraftToCellEntries,
   buildLocationFormValuesFromSetup,
   toLocationInput,
   useLocationFormCampaignData,
@@ -23,6 +22,7 @@ import {
   LocationEditorRightRail,
   LocationCreateSetupFormDialog,
   INITIAL_LOCATION_GRID_DRAFT,
+  normalizedAuthoringPayloadFromGridDraft,
 } from '@/features/content/locations/components';
 import type { LocationCreateSetupDraft } from '@/features/content/locations/domain';
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks';
@@ -81,13 +81,7 @@ export default function LocationCreateRoute() {
           values,
           {
             excludedCellIds: INITIAL_LOCATION_GRID_DRAFT.excludedCellIds,
-            cellEntries: cellDraftToCellEntries(
-              INITIAL_LOCATION_GRID_DRAFT.linkedLocationByCellId,
-              INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
-              INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
-            ),
-            pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
-            edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
+            ...normalizedAuthoringPayloadFromGridDraft(INITIAL_LOCATION_GRID_DRAFT),
           },
         );
         navigate(

@@ -17,7 +17,10 @@ import {
   ensureRegionDraftTarget,
 } from '@/features/content/locations/domain/mapEditor/locationMapPaintSelection.helpers';
 import type { LocationCellFillKindId } from '@/features/content/locations/domain/mapContent/locationCellFill.types';
-import { LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX } from '@/features/content/locations/components/workspace/locationEditor.constants';
+import {
+  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
+  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
+} from '@/features/content/locations/components/workspace/locationEditor.constants';
 
 type LocationMapEditorPaintTrayProps = {
   items: MapPaintPaletteItem[];
@@ -64,6 +67,12 @@ export function LocationMapEditorPaintTray({
   return (
     <Box
       sx={{
+        // TODO: move to absolute position after tackling other trays
+        // position: 'absolute',
+        // top: 0,
+        // bottom: 0,
+        // left: LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
+        // zIndex: 1,
         display: 'flex',
         flexDirection: 'column',
         gap: 1,

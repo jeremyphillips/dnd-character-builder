@@ -26,8 +26,8 @@ import {
   listLocationMaps,
   validateGridBootstrap,
   bootstrapDefaultLocationMap,
-  cellDraftToCellEntries,
   cellEntriesToDraft,
+  canApplyRegionPaint,
   pickMapGridFormValues,
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
@@ -84,6 +84,7 @@ import {
   BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
+  normalizedAuthoringPayloadFromGridDraft,
   LocationMapEditorLinkedLocationModal,
   LocationMapEditorPaintTray,
   LocationMapEditorPaintMapPanel,
@@ -313,6 +314,7 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(authoring.cellEntries),
+            regionEntries: authoring.regionEntries,
             pathEntries: authoring.pathEntries,
             edgeEntries: authoring.edgeEntries,
           };
@@ -358,6 +360,7 @@ export default function LocationEditRoute() {
             selectedCellId: null,
             excludedCellIds: def.layout?.excludedCellIds ?? [],
             ...cellEntriesToDraft(authoring.cellEntries),
+            regionEntries: authoring.regionEntries,
             pathEntries: authoring.pathEntries,
             edgeEntries: authoring.edgeEntries,
           };
@@ -467,7 +470,10 @@ export default function LocationEditRoute() {
   /** Path / object placement: pointer capture on cells so pan does not steal clicks. */
   const mapPlaceSuppressesCanvasPanOnCells =
     mapEditor.mode === 'place' ||
-    (mapEditor.mode === 'draw' && mapEditor.activeDraw?.category === 'path');
+    (mapEditor.mode === 'draw' && mapEditor.activeDraw?.category === 'path') ||
+    (mapEditor.mode === 'paint' &&
+      mapEditor.activePaint != null &&
+      canApplyRegionPaint(mapEditor.activePaint));
 
   const mapPlaceObjectDragStrokeEnabled =
     mapEditor.mode === 'place' && mapEditor.activePlace?.category === 'map-object';
@@ -570,15 +576,7 @@ export default function LocationEditRoute() {
             values,
             {
               excludedCellIds: draft.excludedCellIds,
-              ...normalizeLocationMapAuthoringFields({
-                cellEntries: cellDraftToCellEntries(
-                  draft.linkedLocationByCellId,
-                  draft.objectsByCellId,
-                  draft.cellFillByCellId,
-                ),
-                pathEntries: draft.pathEntries,
-                edgeEntries: draft.edgeEntries,
-              }),
+              ...normalizedAuthoringPayloadFromGridDraft(draft),
             },
           );
           reset({
@@ -616,15 +614,7 @@ export default function LocationEditRoute() {
           values,
           {
             excludedCellIds: draft.excludedCellIds,
-            ...normalizeLocationMapAuthoringFields({
-              cellEntries: cellDraftToCellEntries(
-                draft.linkedLocationByCellId,
-                draft.objectsByCellId,
-                draft.cellFillByCellId,
-              ),
-              pathEntries: draft.pathEntries,
-              edgeEntries: draft.edgeEntries,
-            }),
+            ...normalizedAuthoringPayloadFromGridDraft(draft),
           },
         );
         reset({
@@ -701,13 +691,7 @@ export default function LocationEditRoute() {
         bootstrapValues,
         {
           excludedCellIds: INITIAL_LOCATION_GRID_DRAFT.excludedCellIds,
-          cellEntries: cellDraftToCellEntries(
-            INITIAL_LOCATION_GRID_DRAFT.linkedLocationByCellId,
-            INITIAL_LOCATION_GRID_DRAFT.objectsByCellId,
-            INITIAL_LOCATION_GRID_DRAFT.cellFillByCellId,
-          ),
-          pathEntries: INITIAL_LOCATION_GRID_DRAFT.pathEntries,
-          edgeEntries: INITIAL_LOCATION_GRID_DRAFT.edgeEntries,
+          ...normalizedAuthoringPayloadFromGridDraft(INITIAL_LOCATION_GRID_DRAFT),
         },
       );
       setLocationListRefreshKey((k) => k + 1);
@@ -819,6 +803,11 @@ export default function LocationEditRoute() {
           const nextFill = { ...prev.cellFillByCellId };
           delete nextFill[cellId];
           return { ...prev, cellFillByCellId: nextFill };
+        }
+        if (target.type === 'region') {
+          const nextRegion = { ...prev.regionIdByCellId };
+          delete nextRegion[cellId];
+          return { ...prev, regionIdByCellId: nextRegion };
         }
         const nextLinks = { ...prev.linkedLocationByCellId };
         delete nextLinks[target.cellId];
@@ -1070,6 +1059,7 @@ export default function LocationEditRoute() {
         canvas={
           <Box
             sx={{
+              position: 'relative',
               display: 'flex',
               flex: 1,
               minHeight: 0,
@@ -1331,6 +1321,7 @@ export default function LocationEditRoute() {
           ) : (
             <Box
               sx={{
+                position: 'relative',
                 display: 'flex',
                 flex: 1,
                 minHeight: 0,

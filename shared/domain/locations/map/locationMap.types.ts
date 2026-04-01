@@ -4,6 +4,7 @@ import {
 } from './locationMap.constants';
 import type { LocationCellUnitId } from './locationMap.constants';
 import type { LocationMapCellFillKindId } from './locationMapCellFill.constants';
+import type { LocationMapRegionColorKey } from './locationMapRegion.constants';
 import type { LocationMapEdgeKindId } from './locationMapEdgeFeature.constants';
 import type { LocationMapPathKindId } from './locationMapPathFeature.constants';
 import type { GridGeometryId } from '../../grid/gridGeometry';
@@ -52,6 +53,15 @@ export type LocationMapCellAuthoringEntry = {
   objects?: LocationMapCellObjectEntry[];
   /** Whole-cell terrain / surface fill (authored map content). */
   cellFillKind?: LocationMapCellFillKindId;
+  /** Membership in an authored map region (overlay; not terrain). */
+  regionId?: string;
+};
+
+/** One authored named region (overlay); cells reference {@link LocationMapCellAuthoringEntry.regionId}. */
+export type LocationMapRegionAuthoringEntry = {
+  id: string;
+  colorKey: LocationMapRegionColorKey;
+  label?: string;
 };
 
 /**
@@ -78,6 +88,8 @@ export type LocationMapAuthoringContent = {
   cellEntries: LocationMapCellAuthoringEntry[];
   pathEntries: LocationMapPathAuthoringEntry[];
   edgeEntries: LocationMapEdgeAuthoringEntry[];
+  /** Authored region entities (cell membership via cellEntries.regionId). */
+  regionEntries: LocationMapRegionAuthoringEntry[];
 };
 
 /** Map fields shared by client and API (no campaign scope). */
@@ -96,4 +108,6 @@ export type LocationMapBase = {
   pathEntries: LocationMapPathAuthoringEntry[];
   /** Map-level edges on shared boundaries. Normalized to `[]` at API boundaries when omitted. */
   edgeEntries: LocationMapEdgeAuthoringEntry[];
+  /** Authored regions (overlay). Normalized to `[]` at API boundaries when omitted. */
+  regionEntries: LocationMapRegionAuthoringEntry[];
 };

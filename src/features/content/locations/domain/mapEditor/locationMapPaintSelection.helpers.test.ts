@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canApplyAnyPaintStroke,
+  canApplyRegionPaint,
   canApplySurfaceTerrainPaint,
   createInitialPaintState,
   ensureRegionDraftTarget,
@@ -23,12 +25,12 @@ describe('locationMapPaintSelection.helpers', () => {
     expect(getActiveSurfaceFillKind(null)).toBeNull();
     const surface: LocationMapPaintState = {
       domain: 'surface',
-      surfaceFillKind: 'cellFillPlains',
+      surfaceFillKind: 'plains',
       activeRegionColorKey: null,
       activeRegionDraftId: null,
       regionLabel: 'Untitled Region',
     };
-    expect(getActiveSurfaceFillKind(surface)).toBe('cellFillPlains');
+    expect(getActiveSurfaceFillKind(surface)).toBe('plains');
     const region: LocationMapPaintState = {
       ...surface,
       domain: 'region',
@@ -50,9 +52,37 @@ describe('locationMapPaintSelection.helpers', () => {
     expect(
       canApplySurfaceTerrainPaint({
         ...emptySurface,
-        surfaceFillKind: 'cellFillWater',
+        surfaceFillKind: 'water',
       }),
     ).toBe(true);
+  });
+
+  it('canApplyRegionPaint requires domain, draft id, and color key', () => {
+    expect(canApplyRegionPaint(null)).toBe(false);
+    const r = ensureRegionDraftTarget(createInitialPaintState());
+    expect(canApplyRegionPaint(r)).toBe(true);
+  });
+
+  it('canApplyAnyPaintStroke is surface or region stroke', () => {
+    expect(
+      canApplyAnyPaintStroke({
+        domain: 'surface',
+        surfaceFillKind: 'plains',
+        activeRegionColorKey: null,
+        activeRegionDraftId: null,
+        regionLabel: 'Untitled Region',
+      }),
+    ).toBe(true);
+    expect(canApplyAnyPaintStroke(ensureRegionDraftTarget(createInitialPaintState()))).toBe(true);
+    expect(
+      canApplyAnyPaintStroke({
+        domain: 'surface',
+        surfaceFillKind: null,
+        activeRegionColorKey: null,
+        activeRegionDraftId: null,
+        regionLabel: 'Untitled Region',
+      }),
+    ).toBe(false);
   });
 
   it('ensureRegionDraftTarget assigns id and default color', () => {

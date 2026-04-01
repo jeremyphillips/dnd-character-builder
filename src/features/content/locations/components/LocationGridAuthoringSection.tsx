@@ -13,7 +13,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import {
   GridEditor,
@@ -27,6 +27,10 @@ import {
 } from '@/features/content/locations/domain';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import {
+  cellDraftToCellEntries,
+  pruneRegionEntriesForCellEntries,
+} from '@/features/content/locations/domain/maps/cellAuthoringMappers';
+import {
   pruneCellKeyedRecordForGrid,
   pruneExcludedCellIdsForGrid,
 } from '@/features/content/locations/domain/maps/gridLayoutDraft';
@@ -37,10 +41,14 @@ import type {
   LocationMapEditorMode,
 } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
 import {
-  canApplySurfaceTerrainPaint,
+  canApplyAnyPaintStroke,
+  canApplyRegionPaint,
   getActiveSurfaceFillKind,
+  upsertRegionEntry,
 } from '@/features/content/locations/domain/mapEditor/locationMapPaintSelection.helpers';
-import { resolveCellFillSwatchColor } from '@/app/theme/mapColors';
+import { DEFAULT_REGION_PAINT_LABEL } from '@/features/content/locations/domain/mapEditor/locationMapEditor.types';
+import { getMapRegionColor, resolveCellFillSwatchColor } from '@/app/theme/mapColors';
+import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
 import type { Location } from '@/features/content/locations/domain/types';
 import {
@@ -208,6 +216,17 @@ export function LocationGridAuthoringSection({
       const prunedLinks = pruneCellKeyedRecordForGrid(prev.linkedLocationByCellId, cols, rows);
       const prunedObjs = pruneCellKeyedRecordForGrid(prev.objectsByCellId, cols, rows);
       const prunedFill = pruneCellKeyedRecordForGrid(prev.cellFillByCellId, cols, rows);
+      const prunedRegion = pruneCellKeyedRecordForGrid(prev.regionIdByCellId, cols, rows);
+      const cellEntriesForPrune = cellDraftToCellEntries(
+        prunedLinks,
+        prunedObjs,
+        prunedFill,
+        prunedRegion,
+      );
+      const prunedRegionEntries = pruneRegionEntriesForCellEntries(
+        prev.regionEntries,
+        cellEntriesForPrune,
+      );
       const cellInBounds = (cellId: string) => {
         const p = parseGridCellId(cellId);
         if (!p) return false;
@@ -266,6 +285,9 @@ export function LocationGridAuthoringSection({
         JSON.stringify(prunedObjs) === JSON.stringify(prev.objectsByCellId);
       const fillSame =
         JSON.stringify(prunedFill) === JSON.stringify(prev.cellFillByCellId);
+      const regionSame =
+        JSON.stringify(prunedRegion) === JSON.stringify(prev.regionIdByCellId) &&
+        JSON.stringify(prunedRegionEntries) === JSON.stringify(prev.regionEntries);
       const pathsSame = JSON.stringify(prunedPaths) === JSON.stringify(prev.pathEntries);
       const edgesSame = JSON.stringify(prunedEdges) === JSON.stringify(prev.edgeEntries);
       const mapSelSame =
@@ -276,6 +298,7 @@ export function LocationGridAuthoringSection({
         linksSame &&
         objsSame &&
         fillSame &&
+        regionSame &&
         pathsSame &&
         edgesSame &&
         mapSelSame
@@ -290,6 +313,8 @@ export function LocationGridAuthoringSection({
         linkedLocationByCellId: prunedLinks,
         objectsByCellId: prunedObjs,
         cellFillByCellId: prunedFill,
+        regionIdByCellId: prunedRegion,
+        regionEntries: prunedRegionEntries,
         pathEntries: prunedPaths,
         edgeEntries: prunedEdges,
       };
@@ -495,17 +520,39 @@ export function LocationGridAuthoringSection({
       if (strokeSeen.current.has(cellId)) return;
       strokeSeen.current.add(cellId);
       if (mapEditorMode === 'paint') {
-        const fillKind = getActiveSurfaceFillKind(activePaint ?? null);
-        if (!fillKind) return;
-        setDraft((d) => ({
-          ...d,
-          cellFillByCellId: { ...d.cellFillByCellId, [cellId]: fillKind },
-        }));
-      } else if (mapEditorMode === 'erase') {
+        const surfaceFill = getActiveSurfaceFillKind(activePaint ?? null);
+        if (surfaceFill) {
+          setDraft((d) => ({
+            ...d,
+            cellFillByCellId: { ...d.cellFillByCellId, [cellId]: surfaceFill },
+          }));
+          return;
+        }
+        if (canApplyRegionPaint(activePaint ?? null)) {
+          const paint = activePaint!;
+          const rid = paint.activeRegionDraftId!.trim();
+          const colorKey = paint.activeRegionColorKey!;
+          const label = paint.regionLabel.trim() || DEFAULT_REGION_PAINT_LABEL;
+          const entry: LocationMapRegionAuthoringEntry = {
+            id: rid,
+            colorKey,
+            label,
+          };
+          setDraft((d) => ({
+            ...d,
+            regionEntries: upsertRegionEntry(d.regionEntries, entry),
+            regionIdByCellId: { ...d.regionIdByCellId, [cellId]: rid },
+          }));
+        }
+        return;
+      }
+      if (mapEditorMode === 'erase') {
         setDraft((d) => {
-          const next = { ...d.cellFillByCellId };
-          delete next[cellId];
-          return { ...d, cellFillByCellId: next };
+          const nextFill = { ...d.cellFillByCellId };
+          delete nextFill[cellId];
+          const nextRegion = { ...d.regionIdByCellId };
+          delete nextRegion[cellId];
+          return { ...d, cellFillByCellId: nextFill, regionIdByCellId: nextRegion };
         });
       }
     },
@@ -548,7 +595,7 @@ export function LocationGridAuthoringSection({
   const handlePaintPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
       if (mapEditorMode !== 'paint' && mapEditorMode !== 'erase') return;
-      if (mapEditorMode === 'paint' && !canApplySurfaceTerrainPaint(activePaint ?? null)) {
+      if (mapEditorMode === 'paint' && !canApplyAnyPaintStroke(activePaint ?? null)) {
         return;
       }
       e.stopPropagation();
@@ -563,7 +610,7 @@ export function LocationGridAuthoringSection({
     (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
       if (!paintStrokeActive.current) return;
       if (e.buttons !== 1) return;
-      if (mapEditorMode === 'paint' && !canApplySurfaceTerrainPaint(activePaint ?? null)) {
+      if (mapEditorMode === 'paint' && !canApplyAnyPaintStroke(activePaint ?? null)) {
         return;
       }
       e.stopPropagation();
@@ -870,10 +917,33 @@ export function LocationGridAuthoringSection({
   );
 
   const renderMapCellIcons = (cell: GridCell) => {
+    const rid = draft.regionIdByCellId[cell.cellId]?.trim();
+    const regionEntry = rid ? draft.regionEntries.find((r) => r.id === rid) : undefined;
+    const baseColor = regionEntry ? getMapRegionColor(regionEntry.colorKey) : null;
+    const overlay =
+      baseColor != null ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            bgcolor: alpha(baseColor, mapUi.tokens.region.overlayOpacity),
+            boxShadow: `inset 0 0 0 ${mapUi.tokens.region.borderWidthPx}px ${alpha(
+              baseColor,
+              mapUi.tokens.region.borderOpacity,
+            )}`,
+            zIndex: 0,
+          }}
+        />
+      ) : null;
+
     const linkId = draft.linkedLocationByCellId[cell.cellId];
     const objs = draft.objectsByCellId[cell.cellId];
     const linked = linkId ? locationById.get(linkId) : undefined;
-    if (!linked && (!objs || objs.length === 0)) return null;
+    const hasIcons = Boolean(linked || (objs && objs.length > 0));
+    if (!overlay && !hasIcons) {
+      return null;
+    }
     const iconSx = {
       fontSize: 22,
       width: 22,
@@ -881,45 +951,59 @@ export function LocationGridAuthoringSection({
       display: 'block' as const,
     };
     return (
-      <Stack
-        direction="row"
-        flexWrap="wrap"
-        justifyContent="center"
-        alignItems="center"
-        gap={0.25}
-        sx={{ lineHeight: 0, maxWidth: '100%' }}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
       >
-        {linked
-          ? (
+        {overlay}
+        {hasIcons ? (
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            justifyContent="center"
+            alignItems="center"
+            gap={0.25}
+            sx={{ lineHeight: 0, maxWidth: '100%', position: 'relative', zIndex: 1 }}
+          >
+            {linked
+              ? (
+                  <Box
+                    component="span"
+                    data-map-linked-cell={cell.cellId}
+                    sx={{ display: 'inline-flex', lineHeight: 0 }}
+                  >
+                    {createElement(getLocationScaleMapIcon(linked.scale), {
+                      sx: iconSx,
+                      color: 'action',
+                      'aria-hidden': true,
+                    })}
+                  </Box>
+                )
+              : null}
+            {objs?.map((o) => (
               <Box
+                key={o.id}
                 component="span"
-                data-map-linked-cell={cell.cellId}
+                data-map-object-id={o.id}
+                data-map-object-cell-id={cell.cellId}
                 sx={{ display: 'inline-flex', lineHeight: 0 }}
               >
-                {createElement(getLocationScaleMapIcon(linked.scale), {
+                {createElement(getLocationMapObjectKindIcon(o.kind), {
                   sx: iconSx,
                   color: 'action',
                   'aria-hidden': true,
                 })}
               </Box>
-            )
-          : null}
-        {objs?.map((o) => (
-          <Box
-            key={o.id}
-            component="span"
-            data-map-object-id={o.id}
-            data-map-object-cell-id={cell.cellId}
-            sx={{ display: 'inline-flex', lineHeight: 0 }}
-          >
-            {createElement(getLocationMapObjectKindIcon(o.kind), {
-              sx: iconSx,
-              color: 'action',
-              'aria-hidden': true,
-            })}
-          </Box>
-        ))}
-      </Stack>
+            ))}
+          </Stack>
+        ) : null}
+      </Box>
     );
   };
 

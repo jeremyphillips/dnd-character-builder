@@ -49,6 +49,7 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     cellEntries: doc.cellEntries,
     pathEntries: doc.pathEntries,
     edgeEntries: doc.edgeEntries,
+    regionEntries: doc.regionEntries,
   });
   return {
     id: doc.mapId as string,
@@ -63,6 +64,7 @@ function toDoc(doc: Record<string, unknown>): LocationMapDoc {
     cellEntries: authoring.cellEntries,
     pathEntries: authoring.pathEntries,
     edgeEntries: authoring.edgeEntries,
+    regionEntries: authoring.regionEntries,
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt),
   };
@@ -245,6 +247,7 @@ export async function createLocationMap(
   const cellEntriesNorm = Array.isArray(body.cellEntries)
     ? (body.cellEntries as LocationMapCellAuthoringEntry[])
     : [];
+  const regionEntriesNorm = Array.isArray(body.regionEntries) ? body.regionEntries : [];
 
   const validationPayload = {
     name,
@@ -262,6 +265,7 @@ export async function createLocationMap(
     cellEntries: body.cellEntries,
     pathEntries: pathEntriesNorm,
     edgeEntries: edgeEntriesNorm,
+    regionEntries: regionEntriesNorm,
   };
   const vErr = validateLocationMapInput(validationPayload);
   if (vErr.length > 0) return { errors: vErr };
@@ -319,6 +323,7 @@ export async function createLocationMap(
     cellEntries: cellEntriesNorm,
     pathEntries: pathEntriesNorm,
     edgeEntries: edgeEntriesNorm,
+    regionEntries: regionEntriesNorm,
   });
 
   if (isDefault) {
@@ -344,6 +349,7 @@ function mergeMapPayload(
   cellEntries?: unknown;
   pathEntries?: unknown;
   edgeEntries?: unknown;
+  regionEntries?: unknown;
 } {
   const eg = existing.grid as Record<string, unknown>;
   let grid: { width: number; height: number; cellUnit: unknown; geometry?: unknown };
@@ -390,6 +396,12 @@ function mergeMapPayload(
   } else if (existing.edgeEntries !== undefined) {
     edgeEntries = existing.edgeEntries;
   }
+  let regionEntries: unknown;
+  if (body.regionEntries !== undefined) {
+    regionEntries = body.regionEntries;
+  } else if (existing.regionEntries !== undefined) {
+    regionEntries = existing.regionEntries;
+  }
   const pathEntriesNorm = Array.isArray(pathEntries) ? pathEntries : [];
   const edgeEntriesNorm = Array.isArray(edgeEntries) ? edgeEntries : [];
 
@@ -402,6 +414,7 @@ function mergeMapPayload(
     cellEntries,
     pathEntries: pathEntriesNorm,
     edgeEntries: edgeEntriesNorm,
+    regionEntries,
   };
 }
 
@@ -468,7 +481,8 @@ export async function updateLocationMap(
     body.layout !== undefined ||
     body.cellEntries !== undefined ||
     body.pathEntries !== undefined ||
-    body.edgeEntries !== undefined;
+    body.edgeEntries !== undefined ||
+    body.regionEntries !== undefined;
 
   const $set: Record<string, unknown> = {};
   if (body.name !== undefined) $set.name = merged.name;
@@ -480,6 +494,7 @@ export async function updateLocationMap(
   if (touchesAuthoring) {
     $set.pathEntries = Array.isArray(merged.pathEntries) ? merged.pathEntries : [];
     $set.edgeEntries = Array.isArray(merged.edgeEntries) ? merged.edgeEntries : [];
+    $set.regionEntries = Array.isArray(merged.regionEntries) ? merged.regionEntries : [];
   }
   if (body.isDefault !== undefined) $set.isDefault = body.isDefault;
 

@@ -3,21 +3,24 @@ import type {
   LocationMapCellAuthoringEntry,
   LocationMapEdgeAuthoringEntry,
   LocationMapPathAuthoringEntry,
+  LocationMapRegionAuthoringEntry,
 } from './locationMap.types';
 
 /**
  * Runtime normalization for persisted/API map authoring fields.
- * Ensures `cellEntries`, `pathEntries`, and `edgeEntries` are arrays (never undefined).
+ * Ensures `cellEntries`, `pathEntries`, `edgeEntries`, and `regionEntries` are arrays (never undefined).
  * Does not change authored meaning when arrays are already present.
  */
 export function normalizeLocationMapAuthoringFields(input: {
   cellEntries?: unknown;
   pathEntries?: unknown;
   edgeEntries?: unknown;
+  regionEntries?: unknown;
 }): {
   cellEntries: LocationMapCellAuthoringEntry[];
   pathEntries: LocationMapPathAuthoringEntry[];
   edgeEntries: LocationMapEdgeAuthoringEntry[];
+  regionEntries: LocationMapRegionAuthoringEntry[];
 } {
   return {
     cellEntries: Array.isArray(input.cellEntries)
@@ -28,6 +31,9 @@ export function normalizeLocationMapAuthoringFields(input: {
       : [],
     edgeEntries: Array.isArray(input.edgeEntries)
       ? (input.edgeEntries as LocationMapEdgeAuthoringEntry[])
+      : [],
+    regionEntries: Array.isArray(input.regionEntries)
+      ? (input.regionEntries as LocationMapRegionAuthoringEntry[])
       : [],
   };
 }

@@ -3,15 +3,7 @@
  * from `colorPrimitives` — separate from terrain `LocationMapSwatchColorKey`.
  */
 
-export const LOCATION_MAP_REGION_COLOR_KEYS = [
-  'regionRed',
-  'regionBlue',
-  'regionGreen',
-  'regionPurple',
-  'regionGold',
-  'regionTeal',
-  'regionOrange',
-  'regionGray',
-] as const;
-
-export type LocationMapRegionColorKey = (typeof LOCATION_MAP_REGION_COLOR_KEYS)[number];
+export {
+  LOCATION_MAP_REGION_COLOR_KEYS,
+  type LocationMapRegionColorKey,
+} from '@/shared/domain/locations/map/locationMapRegion.constants';

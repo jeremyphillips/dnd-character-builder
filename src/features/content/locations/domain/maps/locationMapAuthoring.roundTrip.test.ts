@@ -21,16 +21,19 @@ describe('location map authoring round-trip', () => {
           linkedLocationId: 'linked-loc',
           cellFillKind: 'water',
           objects: [{ id: 'obj-a', kind: 'landmark', label: 'Shrine' }],
+          regionId: 'reg-a',
         },
       ],
       pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['1,1', '2,1'] }],
       edgeEntries: [{ edgeId: 'between:1,1|1,2', kind: 'wall' as const }],
+      regionEntries: [{ id: 'reg-a', colorKey: 'regionRed' as const, label: 'R' }],
     });
 
     const draft = {
       ...cellEntriesToDraft(loaded.cellEntries),
       pathEntries: loaded.pathEntries,
       edgeEntries: loaded.edgeEntries,
+      regionEntries: loaded.regionEntries,
     };
 
     const persistedShaped = normalizeLocationMapAuthoringFields({
@@ -38,14 +41,17 @@ describe('location map authoring round-trip', () => {
         draft.linkedLocationByCellId,
         draft.objectsByCellId,
         draft.cellFillByCellId,
+        draft.regionIdByCellId,
       ),
       pathEntries: draft.pathEntries,
       edgeEntries: draft.edgeEntries,
+      regionEntries: draft.regionEntries,
     });
 
     expect(persistedShaped.cellEntries).toEqual(loaded.cellEntries);
     expect(persistedShaped.pathEntries).toEqual(loaded.pathEntries);
     expect(persistedShaped.edgeEntries).toEqual(loaded.edgeEntries);
+    expect(persistedShaped.regionEntries).toEqual(loaded.regionEntries);
 
     const centers = new Map<string, { cx: number; cy: number }>([
       ['1,1', { cx: 0, cy: 0 }],

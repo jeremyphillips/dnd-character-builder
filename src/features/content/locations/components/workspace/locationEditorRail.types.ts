@@ -30,6 +30,19 @@ export type LocationMapSelection =
   | { type: 'region'; regionId: string };
 
 /**
+ * Which cell (if any) should receive grid “selected cell” chrome. Region / path / edge do not
+ * highlight a cell; only `cell` and `object` selections do.
+ */
+export function selectedCellIdForMapSelection(
+  selection: LocationMapSelection,
+): string | null {
+  if (selection.type === 'cell' || selection.type === 'object') {
+    return selection.cellId;
+  }
+  return null;
+}
+
+/**
  * Event-driven auto-switch: opening Place or Draw mode should focus the Map rail section.
  * Region paint switches the rail to Map when paint domain becomes `region` (see route `handlePaintChange`).
  */

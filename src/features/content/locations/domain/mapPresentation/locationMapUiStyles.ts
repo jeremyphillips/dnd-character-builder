@@ -11,11 +11,15 @@ import type { LocationEdgeFeatureKindId } from '@/features/content/locations/dom
 export const locationMapUiStyleTokens = {
   region: {
     /** Semi-transparent region overlay fill (future region painting). */
-    overlayOpacity: 0.3,
+    overlayOpacity: 0,
+    /** Slightly stronger fill when this region is the active map selection. */
+    selectedOverlayOpacity: 0.9,
     /** Region border: full-strength for readability over the overlay. */
-    borderOpacity: 1,
+    borderOpacity: 0.18,
     borderWidthPx: 2,
-    selectedBorderWidthPx: 3,
+    selectedBorderWidthPx: 2,
+    /** Hex: SVG hull stroke for selected region (not used for per-cell inset on hex). */
+    selectedBoundaryStrokeWidthPx: 2,
     hoverBorderWidthPx: 2,
   },
   path: {
@@ -70,6 +74,11 @@ export type LocationMapUiResolvedStyles = {
     pathEndpointOutlinePx: number;
     placeHoverPreviewOutlinePx: number;
   };
+  /** Selected region outer boundary (hex maps); theme primary for contrast on dark canvases. */
+  regionSelectedOutline: {
+    stroke: string;
+    strokeWidthPx: number;
+  };
 };
 
 /**
@@ -120,6 +129,10 @@ export function resolveLocationMapUiStyles(theme: Theme): LocationMapUiResolvedS
       placeAnchorOutlinePx: t.cell.placeAnchorOutlinePx,
       pathEndpointOutlinePx: t.cell.pathEndpointOutlinePx,
       placeHoverPreviewOutlinePx: t.cell.placeHoverPreviewOutlinePx,
+    },
+    regionSelectedOutline: {
+      stroke: theme.palette.primary.main,
+      strokeWidthPx: t.region.selectedBoundaryStrokeWidthPx,
     },
   };
 }

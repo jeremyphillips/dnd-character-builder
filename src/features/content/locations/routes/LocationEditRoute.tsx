@@ -91,6 +91,7 @@ import {
   LocationEditorRailSectionTabs,
   LocationEditorSelectionPanel,
   shouldAutoSwitchRailToMapForMode,
+  selectedCellIdForMapSelection,
   LocationAncestryBreadcrumbs,
   BuildingFloorStrip,
   INITIAL_LOCATION_GRID_DRAFT,
@@ -520,7 +521,12 @@ export default function LocationEditRoute() {
   const handleEditRegionInSelection = useCallback(() => {
     const id = mapEditor.activePaint?.activeRegionId?.trim();
     if (!id) return;
-    setGridDraft((prev) => ({ ...prev, mapSelection: { type: 'region', regionId: id } }));
+    const ms = { type: 'region' as const, regionId: id };
+    setGridDraft((prev) => ({
+      ...prev,
+      mapSelection: ms,
+      selectedCellId: selectedCellIdForMapSelection(ms),
+    }));
     setRailSection('selection');
   }, [mapEditor.activePaint?.activeRegionId]);
 
@@ -1112,7 +1118,7 @@ export default function LocationEditRoute() {
       regionEntries={gridDraft.regionEntries}
       onUpdateRegionEntry={handleUpdateRegionEntry}
       cellPanelProps={{
-        selectedCellId: gridDraft.selectedCellId,
+        selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: locationId,
         hostScale: scaleForFormRules,
         hostName: loc.name,
@@ -1134,7 +1140,7 @@ export default function LocationEditRoute() {
       regionEntries={gridDraft.regionEntries}
       onUpdateRegionEntry={handleUpdateRegionEntry}
       cellPanelProps={{
-        selectedCellId: gridDraft.selectedCellId,
+        selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: mapHostLocationId,
         hostScale: mapHostScale,
         hostName: mapHostName,

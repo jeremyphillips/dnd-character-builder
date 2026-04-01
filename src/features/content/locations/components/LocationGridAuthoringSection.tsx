@@ -63,6 +63,7 @@ import {
 import { deriveSquareEdgeRunSelection } from '@/features/content/locations/domain/mapEditor/squareEdgeRunSelection';
 
 import type { LocationGridDraftState } from './locationGridDraft.types';
+import { selectedCellIdForMapSelection } from './workspace/locationEditorRail.types';
 import {
   BETWEEN_EDGE_ID_RE,
   SQUARE_GRID_GAP_PX,
@@ -84,6 +85,7 @@ import {
   resolveSelectModeAfterPathEdgeHits,
 } from '@/features/content/locations/domain/mapEditor/resolveSelectModeRegionOrCellSelection';
 import { hexCellCenterPx, hexOverlayDimensions, resolveNearestHexCell } from './hexGridMapOverlayGeometry';
+import { hexExposedRegionBoundarySegments } from './hexRegionBoundarySegments';
 import { polylinePoint2DToSmoothSvgPath } from './pathOverlayRendering';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
@@ -228,24 +230,21 @@ export function LocationGridAuthoringSection({
         if (!m) return false;
         return cellInBounds(m[1]) && cellInBounds(m[2]);
       });
-      let nextSel = prev.selectedCellId;
-      if (nextSel) {
-        const p = parseGridCellId(nextSel);
-        if (!p || p.x < 0 || p.y < 0 || p.x >= cols || p.y >= rows) {
-          nextSel = null;
-        }
-      }
 
       let nextMapSelection = prev.mapSelection;
       const ms = prev.mapSelection;
       if (ms.type === 'cell') {
-        if (nextSel == null || ms.cellId !== nextSel) {
+        if (!cellInBounds(ms.cellId)) {
           nextMapSelection = { type: 'none' };
         }
       } else if (ms.type === 'object') {
-        const objs = prunedObjs[ms.cellId];
-        if (!objs?.some((o) => o.id === ms.objectId)) {
+        if (!cellInBounds(ms.cellId)) {
           nextMapSelection = { type: 'none' };
+        } else {
+          const objs = prunedObjs[ms.cellId];
+          if (!objs?.some((o) => o.id === ms.objectId)) {
+            nextMapSelection = { type: 'none' };
+          }
         }
       } else if (ms.type === 'path') {
         if (!prunedPaths.some((p) => p.id === ms.pathId)) {
@@ -283,9 +282,10 @@ export function LocationGridAuthoringSection({
       const edgesSame = JSON.stringify(prunedEdges) === JSON.stringify(prev.edgeEntries);
       const mapSelSame =
         JSON.stringify(nextMapSelection) === JSON.stringify(prev.mapSelection);
+      const nextSelectedCellId = selectedCellIdForMapSelection(nextMapSelection);
       if (
         sameIds &&
-        nextSel === prev.selectedCellId &&
+        nextSelectedCellId === prev.selectedCellId &&
         linksSame &&
         objsSame &&
         fillSame &&
@@ -300,7 +300,7 @@ export function LocationGridAuthoringSection({
         ...prev,
         mapSelection: nextMapSelection,
         excludedCellIds: prunedExcluded,
-        selectedCellId: nextSel,
+        selectedCellId: nextSelectedCellId,
         linkedLocationByCellId: prunedLinks,
         objectsByCellId: prunedObjs,
         cellFillByCellId: prunedFill,
@@ -363,6 +363,23 @@ export function LocationGridAuthoringSection({
     const dims = hexOverlayDimensions(cols, rows, gridSizePx.hexCellPx);
     return { hexSize: gridSizePx.hexCellPx, ...dims };
   }, [validPreview, isHex, cols, rows, gridSizePx.hexCellPx]);
+
+  const hexSelectedRegionBoundarySegments = useMemo(() => {
+    if (!isHex || !hexGridGeometry || draft.mapSelection.type !== 'region') {
+      return [];
+    }
+    const selectedRid = draft.mapSelection.regionId;
+    const ids = new Set<string>();
+    for (const [cid, r] of Object.entries(draft.regionIdByCellId)) {
+      if (r?.trim() === selectedRid) {
+        ids.add(cid);
+      }
+    }
+    if (ids.size === 0) {
+      return [];
+    }
+    return hexExposedRegionBoundarySegments(cols, rows, ids, hexGridGeometry.hexSize);
+  }, [isHex, hexGridGeometry, draft.mapSelection, draft.regionIdByCellId, cols, rows]);
 
   const cellCenterPx = useCallback(
     (cellId: string): { cx: number; cy: number } | null => {
@@ -771,16 +788,19 @@ export function LocationGridAuthoringSection({
       return;
     }
     if (!gridContainerRef.current) {
-      setDraft((d) => ({
-        ...d,
-        mapSelection: resolveSelectModeAfterPathEdgeHits(
+      setDraft((d) => {
+        const ms = resolveSelectModeAfterPathEdgeHits(
           cell.cellId,
           d.objectsByCellId,
           d.linkedLocationByCellId,
           d.regionIdByCellId,
-        ),
-        selectedCellId: cell.cellId,
-      }));
+        );
+        return {
+          ...d,
+          mapSelection: ms,
+          selectedCellId: selectedCellIdForMapSelection(ms),
+        };
+      });
       onCellFocusRail?.();
       return;
     }
@@ -795,10 +815,11 @@ export function LocationGridAuthoringSection({
       const cellId =
         objWrap.getAttribute('data-map-object-cell-id') ?? cell.cellId;
       if (objectId) {
+        const ms = { type: 'object' as const, cellId, objectId };
         setDraft((d) => ({
           ...d,
-          mapSelection: { type: 'object', cellId, objectId },
-          selectedCellId: cellId,
+          mapSelection: ms,
+          selectedCellId: selectedCellIdForMapSelection(ms),
         }));
         onCellFocusRail?.();
         return;
@@ -808,10 +829,11 @@ export function LocationGridAuthoringSection({
     const linkedWrap = target.closest('[data-map-linked-cell]');
     if (linkedWrap) {
       const cellId = linkedWrap.getAttribute('data-map-linked-cell') ?? cell.cellId;
+      const ms = { type: 'cell' as const, cellId };
       setDraft((d) => ({
         ...d,
-        mapSelection: { type: 'cell', cellId },
-        selectedCellId: cellId,
+        mapSelection: ms,
+        selectedCellId: selectedCellIdForMapSelection(ms),
       }));
       onCellFocusRail?.();
       return;
@@ -830,10 +852,11 @@ export function LocationGridAuthoringSection({
       DEFAULT_PATH_PICK_TOLERANCE_PX,
     );
     if (pathHit) {
+      const ms = { type: 'path' as const, pathId: pathHit.pathId };
       setDraft((d) => ({
         ...d,
-        mapSelection: { type: 'path', pathId: pathHit.pathId },
-        selectedCellId: null,
+        mapSelection: ms,
+        selectedCellId: selectedCellIdForMapSelection(ms),
       }));
       onCellFocusRail?.();
       return;
@@ -855,28 +878,30 @@ export function LocationGridAuthoringSection({
         const entry = draft.edgeEntries.find((e) => e.edgeId === edgeHit.edgeId);
         const axis = entry ? getSquareEdgeOrientationFromEdgeId(edgeHit.edgeId) : null;
         if (run) {
+          const ms = {
+            type: 'edge-run' as const,
+            kind: run.kind,
+            edgeIds: run.edgeIds,
+            axis: run.axis,
+            anchorEdgeId: run.anchorEdgeId,
+          };
           setDraft((d) => ({
             ...d,
-            mapSelection: {
-              type: 'edge-run',
-              kind: run.kind,
-              edgeIds: run.edgeIds,
-              axis: run.axis,
-              anchorEdgeId: run.anchorEdgeId,
-            },
-            selectedCellId: null,
+            mapSelection: ms,
+            selectedCellId: selectedCellIdForMapSelection(ms),
           }));
         } else if (entry && axis) {
+          const ms = {
+            type: 'edge-run' as const,
+            kind: entry.kind,
+            edgeIds: [edgeHit.edgeId],
+            axis,
+            anchorEdgeId: edgeHit.edgeId,
+          };
           setDraft((d) => ({
             ...d,
-            mapSelection: {
-              type: 'edge-run',
-              kind: entry.kind,
-              edgeIds: [edgeHit.edgeId],
-              axis,
-              anchorEdgeId: edgeHit.edgeId,
-            },
-            selectedCellId: null,
+            mapSelection: ms,
+            selectedCellId: selectedCellIdForMapSelection(ms),
           }));
         }
         onCellFocusRail?.();
@@ -893,7 +918,7 @@ export function LocationGridAuthoringSection({
     setDraft((d) => ({
       ...d,
       mapSelection,
-      selectedCellId: cell.cellId,
+      selectedCellId: selectedCellIdForMapSelection(mapSelection),
     }));
     onCellFocusRail?.();
   };
@@ -927,6 +952,11 @@ export function LocationGridAuthoringSection({
     const rid = draft.regionIdByCellId[cell.cellId]?.trim();
     const regionEntry = rid ? draft.regionEntries.find((r) => r.id === rid) : undefined;
     const baseColor = regionEntry ? getMapRegionColor(regionEntry.colorKey) : null;
+    const regionSelected =
+      rid != null &&
+      draft.mapSelection.type === 'region' &&
+      draft.mapSelection.regionId === rid;
+    const hexSelectedRegionOutline = isHex && regionSelected;
     const overlay =
       baseColor != null ? (
         <Box
@@ -934,11 +964,19 @@ export function LocationGridAuthoringSection({
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            bgcolor: alpha(baseColor, mapUi.tokens.region.overlayOpacity),
-            boxShadow: `inset 0 0 0 ${mapUi.tokens.region.borderWidthPx}px ${alpha(
+            bgcolor: alpha(
               baseColor,
-              mapUi.tokens.region.borderOpacity,
-            )}`,
+              regionSelected
+                ? mapUi.tokens.region.selectedOverlayOpacity
+                : mapUi.tokens.region.overlayOpacity,
+            ),
+            boxShadow: hexSelectedRegionOutline
+              ? 'none'
+              : `inset 0 0 0 ${
+                  regionSelected
+                    ? mapUi.tokens.region.selectedBorderWidthPx
+                    : mapUi.tokens.region.borderWidthPx
+                }px ${alpha(baseColor, mapUi.tokens.region.borderOpacity)}`,
             zIndex: 0,
           }}
         />
@@ -1121,7 +1159,7 @@ export function LocationGridAuthoringSection({
   const sharedGridProps = {
     columns: cols,
     rows: rows,
-    selectedCellId: draft.selectedCellId,
+    selectedCellId: selectedCellIdForMapSelection(draft.mapSelection),
     excludedCellIds: draft.excludedCellIds,
     onCellClick,
     getCellBackgroundColor,
@@ -1331,7 +1369,7 @@ export function LocationGridAuthoringSection({
         ) : null}
         {hexGridGeometry &&
         isHex &&
-        pathSvgData.length > 0 ? (
+        (pathSvgData.length > 0 || hexSelectedRegionBoundarySegments.length > 0) ? (
           <svg
             width={hexGridGeometry.width}
             height={hexGridGeometry.height}
@@ -1362,6 +1400,21 @@ export function LocationGridAuthoringSection({
                 strokeLinejoin="round"
               />
             ))}
+            {draft.mapSelection.type === 'region' &&
+              hexSelectedRegionBoundarySegments.map((seg, i) => (
+                <line
+                  key={`hex-region-boundary-${i}-${seg.x1}-${seg.y1}-${seg.x2}-${seg.y2}`}
+                  x1={seg.x1}
+                  y1={seg.y1}
+                  x2={seg.x2}
+                  y2={seg.y2}
+                  fill="none"
+                  stroke={mapUi.regionSelectedOutline.stroke}
+                  strokeWidth={mapUi.regionSelectedOutline.strokeWidthPx}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
           </svg>
         ) : null}
       </Box>

@@ -52,6 +52,7 @@ export default defineConfig({
       "@/features/account": path.resolve(__dirname, "src/features/account"),
       "@/features/combat": path.resolve(__dirname, "src/features/combat"),
       "@/features/encounter": path.resolve(__dirname, "src/features/encounter"),
+      "@/features/game-session": path.resolve(__dirname, "src/features/game-session"),
       "@/features/character": path.resolve(__dirname, "src/features/character"),
       "@/features/levelUp": path.resolve(__dirname, "src/features/levelUp"),
       "@/features/campaign": path.resolve(__dirname, "src/features/campaign"),

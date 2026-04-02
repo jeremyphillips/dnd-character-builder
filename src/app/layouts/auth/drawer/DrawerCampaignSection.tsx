@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography'
 import ChatIcon from '@mui/icons-material/Chat'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import EventIcon from '@mui/icons-material/Event'
+import LiveTvIcon from '@mui/icons-material/LiveTv'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import GavelIcon from '@mui/icons-material/Gavel'
@@ -197,7 +198,12 @@ export function DrawerCampaignSection({
           <ListItemButton
             component={NavLink}
             to={activeCampaignId ? ROUTES.SESSIONS.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
-            selected={activeCampaignId ? pathname.startsWith(`/campaigns/${activeCampaignId}/sessions`) : false}
+            selected={
+              activeCampaignId
+                ? pathname.startsWith(`/campaigns/${activeCampaignId}/sessions`) &&
+                  !pathname.startsWith(`/campaigns/${activeCampaignId}/game-sessions`)
+                : false
+            }
             disabled={!activeCampaignId}
             sx={{ pl: 0 }}
           >
@@ -205,6 +211,18 @@ export function DrawerCampaignSection({
               <EventIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="Sessions" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+          </ListItemButton>
+          <ListItemButton
+            component={NavLink}
+            to={activeCampaignId ? ROUTES.CAMPAIGN_GAME_SESSIONS.replace(':id', activeCampaignId) : ROUTES.CAMPAIGNS}
+            selected={activeCampaignId ? pathname.startsWith(`/campaigns/${activeCampaignId}/game-sessions`) : false}
+            disabled={!activeCampaignId}
+            sx={{ pl: 0 }}
+          >
+            <ListItemIcon sx={{ minWidth: 36 }}>
+              <LiveTvIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Live play" slotProps={{ primary: { fontSize: '0.85rem' } }} />
           </ListItemButton>
           <ListItemButton
             component={NavLink}
@@ -252,7 +270,7 @@ export function DrawerCampaignSection({
                 <ListItemIcon sx={{ minWidth: 36 }}>
                   <ShieldIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Encounter" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                <ListItemText primary="Encounter simulator" slotProps={{ primary: { fontSize: '0.85rem' } }} />
               </ListItemButton>
 
               <ListItemButton

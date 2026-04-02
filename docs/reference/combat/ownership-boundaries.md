@@ -8,7 +8,7 @@ This is the primary reference for deciding **where code belongs** in the combat 
 
 ## Core rule
 
-> Combat owns truth. Encounter owns workflow.
+> Combat owns truth. The Encounter Simulator owns this combat workflow shell. **GameSession** owns live-play **session** workflow (lobby, setup, lifecycle) in `src/features/game-session`—see [game-session.md](./game-session.md).
 
 That rule is expanded below.
 
@@ -46,7 +46,7 @@ The engine must not own:
 - React components
 - route state
 - setup flow
-- Encounter-specific workflow
+- Encounter Simulator-specific workflow
 - modal/drawer orchestration
 - server transport
 - authored location editor semantics
@@ -59,6 +59,7 @@ It owns:
 
 - reusable combat components
 - reusable combat renderer layers
+- the shared **active play** layout shell (**`CombatPlayView`**) — header/grid/sidebar/drawer **slots** — consumed by Encounter Simulator and GameSession **`/play`**, not simulator-only workflow
 - client-only formatting/chips/tooltips
 - optional reusable combat UI hooks
 - wrappers around canonical state/results for display
@@ -73,40 +74,59 @@ Questions client combat UI should answer:
 Client combat UI must not own:
 
 - combat truth
-- Encounter workflow
+- Encounter Simulator workflow
 - route/campaign lookup
 - setup modal types
 - server authority
 - authored location semantics
 
-## Encounter feature owns
+## Encounter Simulator feature owns
 
-Encounter owns product workflow and orchestration.
+The Encounter Simulator owns **dev/testing** combat workflow and orchestration (single operator, all combatants). It does **not** own **GameSession** (live-play session product shell—see [game-session.md](./game-session.md)).
 
 It owns:
 
-- routes
+- simulator routes and navigation
 - setup flow
 - active-screen composition
 - feature-specific wrappers
-- DM workflow
+- operator workflow in this surface
 - drawer shells
 - modal shells
 - route/campaign-specific link construction
 - temporary UI state tied to feature workflow
 
-Questions Encounter should answer:
+Questions the Encounter Simulator should answer:
 
 - Which setup modal is open?
 - Which floor is selected for this encounter?
 - How should the active screen be composed?
-- How do feature-level wrappers adapt Encounter state into combat props?
+- How do feature-level wrappers adapt encounter state into combat props?
 
-Encounter must not own:
+The Encounter Simulator must not own:
 
 - shared combat truth
 - reusable engine derivation
 - reusable combat UI primitives that can live elsewhere
+
+## GameSession feature owns
+
+The **GameSession** feature (`src/features/game-session`) owns the **live-play session** shell: game session records, campaign-scoped routes, **lobby**, **setup**, **`/play`**, session lifecycle status, and **ephemeral lobby presence** (Socket.IO) for “who is here.”
+
+It owns:
+
+- game session CRUD and lifecycle actions (e.g. draft / scheduled / open lobby / start session)
+- lobby and setup presentation that is **not** combat encounter state
+- **`/play` orchestration**: resolve **`activeEncounterId`**, fetch persisted combat (**`GET /api/combat/sessions/:id`**), hydrate local state, mirror intents (**`POST .../intents`**) after local applies, render the shared **`CombatPlayView`** shell (via **`GameSessionEncounterPlaySurface`** + **`useEncounterActivePlaySurface`**)
+- mapping expected party display to campaign roster (with a placeholder seam for stricter rules later)
+
+It must **not** own:
+
+- canonical **encounter** / combat state (that remains mechanics + server combat application)
+- combat rules, intents, or grid truth (it **calls** shared mechanics and HTTP APIs)
+- Encounter Simulator workflow (roster/setup/modals for the dev surface stay in **`encounter`**)
+
+“Start encounter / bind combat to this session” orchestration belongs here **only** as workflow that **invokes** the same combat seams used elsewhere—not as a second combat engine.
 
 ## Server combat application owns
 
@@ -177,12 +197,16 @@ It should be explicit and narrow.
 - it is pure and serializable
 
 ### Put code in client combat UI if:
-- it is a reusable combat-facing component or client presentation helper
-- it should not depend on Encounter routes/workflow
+- it is a reusable combat-facing component or client presentation helper (including the shared **`CombatPlayView`** shell)
+- it should not depend on Encounter Simulator routes/workflow or GameSession session orchestration
 
-### Put code in Encounter if:
-- it is setup, layout, orchestration, or feature workflow
+### Put code in Encounter Simulator (`src/features/encounter`) if:
+- it is setup, layout, orchestration, or feature workflow for the dev/testing combat surface
 - it is a shell around reusable combat pieces
+
+### Put code in GameSession (`src/features/game-session`) if:
+- it is live-play **session** lifecycle, lobby, or setup for a table session
+- it is ephemeral lobby presence or session-scoped UI that is not encounter combat state
 
 ### Put code in server combat application if:
 - it is about authority, validation, persistence, sync, or session flow

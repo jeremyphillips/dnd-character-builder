@@ -1,5 +1,5 @@
 /**
- * Encounter feature re-exports combat-owned presentation/selectors (Phase 2).
+ * Encounter Simulator feature re-exports combat-owned presentation/selectors (Phase 2).
  * Prefer importing from `@/features/mechanics/domain/combat/presentation/*` or `.../selectors/*` in new code.
  */
 export {
@@ -130,3 +130,11 @@ export type {
   ViewerCombatantPresentationKind,
 } from '@/features/mechanics/domain/combat/presentation/view/tactical-preview.types'
 export type { CombatantPreviewCardProps } from './view/encounter-view.types'
+
+export type {
+  EncounterSetupPolicy,
+  EncounterSetupRosterPolicy,
+  EncounterSetupEnvironmentPolicy,
+  EncounterSetupGridPolicy,
+} from './setup'
+export { SIMULATOR_ENCOUNTER_SETUP_POLICY } from './setup'

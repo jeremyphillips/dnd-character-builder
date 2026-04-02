@@ -7,33 +7,13 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { AppAvatar } from '@/ui/primitives'
-import { AppModal, EntitySummaryCard } from '@/ui/patterns'
-import type { ModalSize } from '@/ui/patterns'
+import { EntitySummaryCard } from '../cards/EntitySummaryCard'
+import AppModal from '../modals/AppModal'
 import { resolveImageUrl } from '@/shared/lib/media'
 
-export type CombatantOption = {
-  id: string
-  label: string
-  subtitle?: string
-  imageUrl?: string | null
-  imageKey?: string | null
-  stats?: Array<{ label: string; value: string; tooltip?: string }>
-}
+import type { SelectEntityModalProps } from './SelectEntityModal.types'
 
-type SelectEncounterCombatantModalProps = {
-  open: boolean
-  onClose: () => void
-  headline: string
-  subheadline?: string
-  size?: ModalSize
-  options: CombatantOption[]
-  selectedIds: string[]
-  onApply: (selectedIds: string[]) => void
-  footerNote?: string
-  headerSlot?: React.ReactNode
-}
-
-export function SelectEncounterCombatantModal({
+export function SelectEntityModal({
   open,
   onClose,
   headline,
@@ -44,7 +24,9 @@ export function SelectEncounterCombatantModal({
   onApply,
   footerNote,
   headerSlot,
-}: SelectEncounterCombatantModalProps) {
+  maxSelections,
+  filterPlaceholder = 'Search…',
+}: SelectEntityModalProps) {
   const [filter, setFilter] = useState('')
   const [localSelected, setLocalSelected] = useState<string[]>(selectedIds)
 
@@ -61,9 +43,12 @@ export function SelectEncounterCombatantModal({
   }, [options, filter])
 
   const toggleSelection = (id: string) => {
-    setLocalSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    )
+    setLocalSelected((prev) => {
+      if (maxSelections === 1) {
+        return prev.includes(id) ? [] : [id]
+      }
+      return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    })
   }
 
   const handleApply = () => {
@@ -88,7 +73,7 @@ export function SelectEncounterCombatantModal({
         <TextField
           fullWidth
           size="small"
-          placeholder="Search…"
+          placeholder={filterPlaceholder}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           autoFocus

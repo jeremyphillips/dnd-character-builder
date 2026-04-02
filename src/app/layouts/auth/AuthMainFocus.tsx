@@ -5,7 +5,7 @@ type AuthMainFocusProps = {
   children: ReactNode
 }
 
-/** Full-bleed main region for encounter / canvas-style views (outlier). */
+/** Full-bleed main region for encounter simulator / canvas-style views (outlier). */
 export function AuthMainFocus({ children }: AuthMainFocusProps) {
   return (
     <Box

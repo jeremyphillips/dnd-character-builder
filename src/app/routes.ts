@@ -17,6 +17,10 @@ export const ROUTES = {
   CAMPAIGN_ADMIN_INVITES: '/campaigns/:id/admin/invites',
   CAMPAIGN_ADMIN_SETTINGS: '/campaigns/:id/admin/settings',
   CAMPAIGN_ADMIN_RULESET: '/campaigns/:id/admin/ruleset',
+  /**
+   * Encounter Simulator (dev/testing combat). Path segment `encounter` is kept for stability.
+   * Not the future player-facing GameSession live-play surface.
+   */
   CAMPAIGN_ENCOUNTER: '/campaigns/:id/encounter',
   CAMPAIGN_ENCOUNTER_SETUP: '/campaigns/:id/encounter/setup',
   CAMPAIGN_ENCOUNTER_ACTIVE: '/campaigns/:id/encounter/active',
@@ -25,6 +29,15 @@ export const ROUTES = {
   INVITE: '/invites/:inviteId',
   SESSIONS: '/campaigns/:id/sessions',
   SESSION: '/campaigns/:id/sessions/:sessionId',
+  /**
+   * Live-play GameSession (player-facing container). Distinct from calendar `SESSIONS` and
+   * Encounter Simulator (`CAMPAIGN_ENCOUNTER`).
+   */
+  CAMPAIGN_GAME_SESSIONS: '/campaigns/:id/game-sessions',
+  CAMPAIGN_GAME_SESSION: '/campaigns/:id/game-sessions/:gameSessionId',
+  CAMPAIGN_GAME_SESSION_LOBBY: '/campaigns/:id/game-sessions/:gameSessionId/lobby',
+  CAMPAIGN_GAME_SESSION_SETUP: '/campaigns/:id/game-sessions/:gameSessionId/setup',
+  CAMPAIGN_GAME_SESSION_PLAY: '/campaigns/:id/game-sessions/:gameSessionId/play',
   MESSAGING: '/campaigns/:id/messages',
   MESSAGING_CONVERSATION: '/campaigns/:id/messages/:conversationId',
   WORLD: '/campaigns/:id/world',

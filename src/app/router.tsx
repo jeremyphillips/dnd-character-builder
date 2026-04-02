@@ -22,6 +22,12 @@ import {
   EncounterIndexRedirect,
   EncounterSetupRoute,
   EncounterActiveRoute,
+  GameSessionListRoute,
+  GameSessionLayout,
+  GameSessionIndexRedirect,
+  GameSessionLobbyRoute,
+  GameSessionSetupRoute,
+  GameSessionPlayRoute,
   RulesRoute,
   PartyRoute,
   SessionsRoute,
@@ -170,6 +176,21 @@ export const router = createBrowserRouter([
               },
               { path: 'sessions', element: <SessionsRoute /> },
               { path: 'sessions/:sessionId', element: <SessionRoute /> },
+              { path: 'game-sessions', element: <GameSessionListRoute /> },
+              {
+                path: 'game-sessions/:gameSessionId',
+                element: <GameSessionLayout />,
+                children: [
+                  { index: true, element: <GameSessionIndexRedirect /> },
+                  { path: 'lobby', element: <GameSessionLobbyRoute /> },
+                  {
+                    path: 'setup',
+                    element: <AdminGuard />,
+                    children: [{ index: true, element: <GameSessionSetupRoute /> }],
+                  },
+                  { path: 'play', element: <GameSessionPlayRoute /> },
+                ],
+              },
               { path: 'messages', element: <MessagingRoute /> },
               { path: 'messages/:conversationId', element: <MessagingRoute /> },
               { path: 'party', element: <PartyRoute /> },
@@ -178,6 +199,11 @@ export const router = createBrowserRouter([
                 element: <AdminGuard />,
                 children: [
                   {
+                    /*
+                     * Encounter Simulator: DM/admin setup + active combat sandbox.
+                     * Setup is not a player participation surface — future player flow belongs on a
+                     * separate lobby/session route, not readonly setup.
+                     */
                     path: 'encounter',
                     element: <EncounterLayout />,
                     children: [

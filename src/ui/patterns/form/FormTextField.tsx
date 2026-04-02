@@ -10,8 +10,9 @@ type FormTextFieldProps = {
   rows?: number;
   placeholder?: string;
   disabled?: boolean;
-  type?: 'text' | 'email' | 'password' | 'number';
+  type?: 'text' | 'email' | 'password' | 'number' | 'datetime-local';
   rules?: RegisterOptions;
+  size?: 'small' | 'medium';
 };
 
 export default function FormTextField({
@@ -24,6 +25,7 @@ export default function FormTextField({
   disabled,
   type = 'text',
   rules,
+  size = 'medium',
 }: FormTextFieldProps) {
   const { control } = useFormContext();
 
@@ -41,6 +43,7 @@ export default function FormTextField({
           label={label}
           required={required}
           fullWidth
+          size={size}
           multiline={multiline}
           rows={multiline ? rows : undefined}
           placeholder={placeholder}
@@ -48,6 +51,11 @@ export default function FormTextField({
           type={type}
           error={!!fieldState.error}
           helperText={fieldState.error?.message}
+          slotProps={
+            type === 'datetime-local'
+              ? { inputLabel: { shrink: true } }
+              : undefined
+          }
         />
       )}
     />

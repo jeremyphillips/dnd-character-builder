@@ -17,16 +17,26 @@ Usually refers to:
 
 Combat is broader than any one feature screen.
 
-## Encounter
-The product feature/surface that hosts combat workflow in the app.
+## Encounter Simulator
+The **dev/testing** product surface that hosts local combat workflow: fast setup, any roster, one operator controls all combatants. Implemented under `src/features/encounter` (URLs may still use the path segment `encounter`).
 
 Usually refers to:
-- setup flow
+- simulator setup flow
 - active combat screen composition
-- DM workflow
+- operator workflow in this sandbox
 - feature-specific wrappers, shells, and orchestration
 
-Encounter is a consumer of combat.
+The Encounter Simulator is a consumer of combat. It is **not** **GameSession** (see below).
+
+## GameSession
+Campaign-scoped **live-play session** container: DM-facing setup, **lobby**, **`/play`**, lifecycle status. Implemented under `src/features/game-session` (distinct from calendar Sessions and from the Encounter Simulator). See [game-session.md](./game-session.md).
+
+**Today:** list/setup/lobby/play routes, lifecycle (`draft` → `scheduled` → `lobby` → `active` → …), planning field `scheduledFor` (informational; lobby opens via explicit DM action), ephemeral **lobby presence** (Socket.IO), expected party display from the campaign roster (first pass). When the session record has **`activeEncounterId`**, **`/play`** loads that persisted combat session and renders the shared **Combat play view** shell with HTTP intent mirroring.
+
+**Not yet (combat-relevant):** WebSocket **combat** broadcast to all participants, per-role **action ownership** enforcement, and polished **stale revision (409)** UX—see [roadmap.md](./roadmap.md).
+
+## Combat play view
+Shared **active encounter** layout shell (**`CombatPlayView`** in `src/features/combat`): header slot, grid, sidebar, drawers, toasts. Composed by **`useEncounterActivePlaySurface`** for both the **Encounter Simulator** active route and **GameSession `/play`**. Simulator-only controls (e.g. presentation POV, edit encounter) stay in the **`encounter`** feature, not in this shell.
 
 ## Shared combat engine
 The pure/shared layer that owns combat truth.
@@ -45,6 +55,7 @@ The reusable client-only combat-facing UI layer.
 
 It includes:
 - reusable components
+- **`CombatPlayView`** (shared active play layout; see **Combat play view**)
 - client presentation helpers
 - renderer-level primitives
 - optional reusable combat hooks
@@ -135,7 +146,7 @@ A smaller UI leaf component, often prop-driven, that may be reusable even when i
 ## Authoritative state
 The canonical source of truth for combat state.
 
-For **multiplayer / live play**, authoritative snapshots are intended to live on the **server** and be broadcast to clients. Today, the product’s main Encounter flow may still apply mechanics **locally** while the server exposes a **persisted** combat session API for the same seams—see [roadmap.md](./roadmap.md).
+For **multiplayer / live play**, authoritative snapshots are intended to live on the **server** and be broadcast to clients. Today, the **Encounter Simulator** may still apply mechanics **locally** while the server exposes a **persisted** combat session API for the same seams—see [roadmap.md](./roadmap.md). **GameSession `/play`** **calls** HTTP load and intent apply for the persisted session referenced by **`activeEncounterId`**; realtime **combat** broadcast is still outstanding—see [game-session.md](./game-session.md).
 
 ## Persisted combat session (server)
 A server-owned record tying a **`sessionId`** to the latest **`EncounterState` snapshot**, a monotonic **`revision`**, and timestamps. Clients send **`baseRevision`** when applying an intent so the server can reject **stale** concurrent updates. This is snapshot-first persistence, not full event sourcing.

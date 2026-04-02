@@ -16,8 +16,8 @@ These are high-level checkpoints, not exhaustive changelogs.
 
 - **Phase 1:** `combat` naming, space under combat ownership, import hygiene.
 - **Phase 2:** Pure derivation moved toward combat-owned selectors/presentation where applicable.
-- **Phase 3 (client UI):** `src/features/combat` as reusable combat-facing UI; Encounter remains workflow shell.
-- **Phase 4A–4F:** Intent/result/event contracts; **`applyCombatIntent`** for in-encounter mutations; **`startEncounterFromSetup`** + **`CombatStartupInput`** for startup (distinct from runtime intents); Encounter uses these seams for migrated flows (see [client/local-dispatch.md](./client/local-dispatch.md)).
+- **Phase 3 (client UI):** `src/features/combat` as reusable combat-facing UI; Encounter Simulator remains workflow shell.
+- **Phase 4A–4F:** Intent/result/event contracts; **`applyCombatIntent`** for in-encounter mutations; **`startEncounterFromSetup`** + **`CombatStartupInput`** for startup (distinct from runtime intents); Encounter Simulator uses these seams for migrated flows (see [client/local-dispatch.md](./client/local-dispatch.md)).
 - **Shared package:** Combat-facing public surface lives in [`@rpg-world-builder/mechanics`](../../../packages/mechanics/README.md) (`applyCombatIntent`, `startEncounterFromSetup`, wire types, canonical state types). See [adr-shared-combat-extraction.md](./adr-shared-combat-extraction.md).
 
 ### Server (authoritative persistence, first pass)
@@ -25,6 +25,10 @@ These are high-level checkpoints, not exhaustive changelogs.
 - **Stage 3A:** `POST /api/combat/sessions` — startup via shared mechanics, proof of server import.
 - **Stage 3B:** Stateless apply-intent smoke (superseded by 3C).
 - **Stage 3C:** **Persisted** combat sessions (MongoDB): `sessionId`, monotonic **`revision`**, snapshot **`state`**; **`POST /api/combat/sessions`** creates a session; **`POST /api/combat/sessions/:sessionId/intents`** applies intents with **`baseRevision`**; stale revision → **409**, missing session → **404**. No realtime, no campaign permissions on combat routes yet.
+
+### Related product (live-play session shell)
+
+- **GameSession** (`src/features/game-session`): campaign game session list, lobby/setup routes, **`/play`** when **`activeEncounterId`** is set, lifecycle status, informational scheduling, ephemeral **lobby presence** (Socket.IO), expected-party UI, and **client orchestration** of persisted combat (HTTP load + intent mirror). **Authoritative** state and revision still live on the **server**; **WebSocket combat broadcast** and **fine-grained permissions** remain outstanding—see [game-session.md](./game-session.md).
 
 ---
 
@@ -34,7 +38,7 @@ Order is indicative, not a commitment.
 
 ### 1. Server: realtime and synchronization (likely “Stage 3D”)
 
-- WebSocket (or equivalent) broadcast of canonical state/results after mutations.
+- WebSocket (or equivalent) broadcast of **combat** canonical state/results after intent mutations. (Socket.IO **lobby presence** for GameSession is separate and does not satisfy this.)
 - Reconnect / resync contract (client sends last known revision; server returns snapshot or error).
 - Optional: delta vs full snapshot policy.
 
@@ -45,7 +49,7 @@ Order is indicative, not a commitment.
 
 ### 3. Client: optional migration to server-backed combat
 
-- Encounter (or a thin adapter) could call HTTP combat APIs instead of (or in addition to) local `applyCombatIntent` / `startEncounterFromSetup` when “live server combat” is enabled.
+- **GameSession `/play`** already uses HTTP **`GET`** load and **`POST .../intents`** mirroring for table play when **`activeEncounterId`** points at a persisted session. Remaining work: robust **409 stale revision** UX, optional Encounter Simulator opt-in to the same server path for parity testing, and realtime refresh when multiple clients exist.
 - UX for **409 stale revision** (refresh state, retry, or merge policy).
 
 ### 4. Persistence depth
@@ -75,9 +79,9 @@ These are **known limitations** as of the last doc update; they are not bugs per
 
 | Area | Gap |
 |------|-----|
-| **Multiplayer** | No socket broadcast; clients do not share one authoritative stream yet. |
+| **Multiplayer (combat)** | No WebSocket broadcast of **combat** state after intents; clients do not share one authoritative combat stream yet. (GameSession lobby presence uses Socket.IO for a different purpose.) |
 | **Permissions** | Combat REST routes do not enforce campaign membership or role; treat as dev/smoke unless gated elsewhere. |
-| **Client integration** | Production Encounter still uses **local** dispatch; persisted server combat is **not** wired into the Encounter UI by default. |
+| **Client integration** | Encounter Simulator still uses **local** dispatch by default; persisted server combat is **not** wired into that UI unless explicitly integrated. **GameSession `/play`** loads persisted combat by **`activeEncounterId`** and mirrors intents to the server; **lobby → start** wiring and **multi-client** sync polish remain incremental ([game-session.md](./game-session.md)). |
 | **Stateless apply** | Stage 3B-style “send full state in body” apply path was removed in favor of **session id + revision**; old clients must migrate. |
 | **Persistence** | Single snapshot per session; no append-only event log, no replay tooling. |
 | **RNG / determinism** | Startup `rng` is not part of JSON; server uses engine defaults. Reproducible seeds for server-side tests/APIs are not fully standardized. |

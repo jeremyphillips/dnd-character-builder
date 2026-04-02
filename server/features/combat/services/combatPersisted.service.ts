@@ -9,7 +9,18 @@ import {
   type EncounterState,
 } from '@rpg-world-builder/mechanics'
 
+import { CombatSession } from '../persistence/combatSession.model'
 import { getCombatSessionBackend } from '../persistence/combatSession.backend'
+import type { CombatSessionRecord } from '../persistence/combatSession.backend'
+
+export async function deletePersistedCombatSession(sessionId: string): Promise<void> {
+  await CombatSession.deleteOne({ sessionId })
+}
+
+export async function getPersistedCombatSession(sessionId: string): Promise<CombatSessionRecord | null> {
+  const backend = getCombatSessionBackend()
+  return backend.getSession(sessionId)
+}
 
 export type CreatePersistedSessionResult =
   | { ok: true; sessionId: string; revision: number; state: EncounterState }

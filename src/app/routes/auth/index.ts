@@ -20,6 +20,12 @@ export { default as EncounterLayout } from '@/features/encounter/routes/Encounte
 export { default as EncounterIndexRedirect } from '@/features/encounter/routes/EncounterIndexRedirect'
 export { default as EncounterSetupRoute } from '@/features/encounter/routes/EncounterSetupRoute'
 export { default as EncounterActiveRoute } from '@/features/encounter/routes/EncounterActiveRoute'
+export { default as GameSessionListRoute } from '@/features/game-session/routes/GameSessionListRoute'
+export { default as GameSessionLayout } from '@/features/game-session/routes/GameSessionLayout'
+export { default as GameSessionIndexRedirect } from '@/features/game-session/routes/GameSessionIndexRedirect'
+export { default as GameSessionLobbyRoute } from '@/features/game-session/routes/GameSessionLobbyRoute'
+export { default as GameSessionSetupRoute } from '@/features/game-session/routes/GameSessionSetupRoute'
+export { default as GameSessionPlayRoute } from '@/features/game-session/routes/GameSessionPlayRoute'
 export {
   LocationListRoute,
   LocationDetailRoute,

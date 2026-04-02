@@ -1,4 +1,4 @@
-export { CombatLane } from './setup/roster/CombatLane'
+export { SelectedEntitiesLane } from '@/ui/patterns'
 export { AllyRosterLane } from './setup/roster/AllyRosterLane'
 export { OpponentRosterLane } from './setup/roster/OpponentRosterLane'
 /** Temporary re-exports (Phase 3A). Prefer `@/features/combat/components` in new code. */
@@ -59,7 +59,5 @@ export { EncounterEditModal } from './shared/modals/EncounterEditModal'
 export { CombatTargetSelectModal, buildTargetOptions } from './active/modals/CombatTargetSelectModal'
 export { CombatLogModal } from './active/combat-log/CombatLogModal'
 export { CombatTurnOrderModal } from './active/modals/CombatTurnOrderModal'
-export { SelectEncounterCombatantModal } from './setup/modals/SelectEncounterCombatantModal'
-export type { CombatantOption } from './setup/modals/SelectEncounterCombatantModal'
 export { SelectEncounterAllyModal } from './setup/modals/SelectEncounterAllyModal'
 export { SelectEncounterOpponentModal } from './setup/modals/SelectEncounterOpponentModal'

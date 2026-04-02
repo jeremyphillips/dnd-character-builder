@@ -3,14 +3,14 @@ import { useState } from 'react'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
-import { SelectEncounterCombatantModal } from './SelectEncounterCombatantModal'
-import type { CombatantOption } from './SelectEncounterCombatantModal'
+import { SelectEntityModal, type SelectEntityOption } from '@/ui/patterns'
 
 type SelectEncounterOpponentModalProps = {
   open: boolean
   onClose: () => void
-  monsterOptions: CombatantOption[]
-  npcOptions: CombatantOption[]
+  headline?: string
+  monsterOptions: SelectEntityOption[]
+  npcOptions: SelectEntityOption[]
   selectedOpponentKeys: string[]
   onApply: (selectedKeys: string[]) => void
 }
@@ -18,6 +18,7 @@ type SelectEncounterOpponentModalProps = {
 export function SelectEncounterOpponentModal({
   open,
   onClose,
+  headline = 'Select Opponent Combatants',
   monsterOptions,
   npcOptions,
   selectedOpponentKeys,
@@ -35,10 +36,10 @@ export function SelectEncounterOpponentModal({
   )
 
   return (
-    <SelectEncounterCombatantModal
+    <SelectEntityModal
       open={open}
       onClose={onClose}
-      headline="Select Opponent Combatants"
+      headline={headline}
       options={activeOptions}
       selectedIds={selectedOpponentKeys}
       onApply={onApply}

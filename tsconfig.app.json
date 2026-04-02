@@ -40,6 +40,8 @@
       "@/features/encounter": ["features/encounter/index.ts"],
       "@/features/encounter/components": ["features/encounter/components/index.ts"],
       "@/features/encounter/*": ["features/encounter/*"],
+      "@/features/game-session": ["features/game-session/index.ts"],
+      "@/features/game-session/*": ["features/game-session/*"],
       "@/features/character/*": ["features/character/*"],
       "@/features/campaign/*": ["features/campaign/*"],
       "@/features/npc/*": ["features/npc/*"],

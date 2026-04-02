@@ -18,7 +18,7 @@ It is the top-level answer to:
 Combat documentation is split on purpose:
 
 - **Truth** (rules, state, legality, resolution) must be **shared** and **testable** in one place so client and server do not diverge.
-- **Workflow** (modals, setup, routing, DM experience) is product-specific and belongs in **Encounter**, not inside the engine.
+- **Workflow** (modals, setup, routing, operator experience) is product-specific and belongs in the **Encounter Simulator** feature, not inside the engine.
 - **Presentation** (grid rendering, tooltips) is **client UI** and must not own canonical state.
 - **Authority** (who may act, what is persisted, ordering, broadcast) is **server**; the server calls the same mechanics functions as the client.
 
@@ -28,7 +28,7 @@ If you are unsure where something goes, use [ownership-boundaries.md](./ownershi
 
 This is a **brief** anchor; details and gaps are in [roadmap.md](./roadmap.md).
 
-- **Client:** Encounter uses **`startEncounterFromSetup`** for encounter start and **`applyCombatIntent`** for migrated in-encounter actions (see [client/local-dispatch.md](./client/local-dispatch.md)). This is still **local** to the browser for the main product flow.
+- **Client:** The **Encounter Simulator** uses **`startEncounterFromSetup`** for encounter start and **`applyCombatIntent`** for migrated in-encounter actions (see [client/local-dispatch.md](./client/local-dispatch.md)); active combat uses the shared **`CombatPlayView`** shell via **`useEncounterActivePlaySurface`**. **GameSession** (`src/features/game-session`) provides lobby, setup, lifecycle, and a **`/play`** route that loads persisted combat by **`activeEncounterId`**, hydrates **`useEncounterState`**, mirrors intents to the server, and reuses the same **`CombatPlayView`** surface—see [game-session.md](./game-session.md).
 - **Shared package:** [`@rpg-world-builder/mechanics`](../../../packages/mechanics/README.md) exposes the combat application seams and wire types (see [adr-shared-combat-extraction.md](./adr-shared-combat-extraction.md)).
 - **Server:** REST endpoints persist **combat sessions** (MongoDB) with **`sessionId`**, **`revision`**, and **`EncounterState` snapshot**; startup and apply-intent are **separate** routes. Realtime broadcast and campaign permissions are **not** part of the current minimal server surface.
 
@@ -38,7 +38,7 @@ The combat system is split into five major layers:
 
 1. **shared combat engine**
 2. **client combat UI**
-3. **encounter feature**
+3. **Encounter Simulator feature**
 4. **server combat application**
 5. **authored content + adapter seam**
 
@@ -65,7 +65,7 @@ This layer should be:
 - deterministic
 - serializable
 - reusable on both client and server
-- free of React, router, and Encounter workflow concerns
+- free of React, router, and Encounter Simulator workflow concerns
 
 ### 2. Client combat UI
 
@@ -77,23 +77,24 @@ It is responsible for:
 - reusable combat presentation helpers
 - reusable renderer-level contracts
 - client display of canonical combat state and results
+- the shared **active play layout shell** (**`CombatPlayView`**) used by both the Encounter Simulator active route and GameSession **`/play`**
 
 This layer does **not** own truth.
 
-### 3. Encounter feature
+### 3. Encounter Simulator feature
 
-This layer owns the product workflow around combat.
+This layer owns the **dev/testing** workflow around combat: a single operator runs the simulator, picks any roster, and controls every combatant’s turn. It is **not** **GameSession** (DM-led live session: lobby, setup, **`/play`**, lifecycle)—that product shell is a **separate feature**; see [game-session.md](./game-session.md).
 
 It is responsible for:
 
-- routes
+- simulator routes (campaign-scoped; URL may still use the segment `encounter` for stability)
 - setup flow
-- active encounter screen composition
-- DM workflow
+- active combat screen composition (via shared **`useEncounterActivePlaySurface`** → **`CombatPlayView`**)
+- operator workflow (all combatants controlled by one user in this surface)
 - wrappers/adapters that connect feature state to combat UI
 - feature-specific modals and orchestration shells
 
-Encounter is a **consumer** of combat engine and combat UI.
+The Encounter Simulator is a **consumer** of combat engine and combat UI.
 
 ### 4. Server combat application
 
@@ -132,7 +133,7 @@ Authored content does **not** directly own live combat state.
 2. An adapter converts the location floor into a combat seed
 3. Combat starts with canonical runtime state
 4. Client UI renders combat state through reusable combat UI
-5. Encounter composes product workflow around that UI
+5. Encounter Simulator composes workflow around that UI; **GameSession** composes live-play session concerns separately (lobby, setup, **`/play`** with persisted combat when **`activeEncounterId`** is set—see [game-session.md](./game-session.md))
 6. Truth-changing operations use the **intent** seam (client-local and/or server-backed)
 7. Server is authoritative for persisted combat state and broadcasts updates to participants
 
@@ -140,13 +141,13 @@ The gap between “local intents only” and “server-backed multiplayer” is 
 
 ### Today (incremental)
 
-Local dispatch is in production for migrated flows; the server exposes a **persisted** combat API suitable for **authoritative** clients when wired up. Encounter is not required to use the server API yet.
+Local dispatch is in production for migrated flows; the server exposes a **persisted** combat API suitable for **authoritative** clients when wired up. The Encounter Simulator is not required to use the server API yet.
 
 ## Key boundaries
 
-### Combat vs Encounter
+### Combat vs Encounter Simulator
 - Combat owns reusable truth and reusable combat-facing abstractions
-- Encounter owns feature workflow and orchestration
+- Encounter Simulator owns this feature’s workflow and orchestration (sandbox / mechanics validation). **GameSession** owns live-play **session** workflow (lobby, setup, lifecycle) beside it, not inside `encounter`; see [game-session.md](./game-session.md).
 
 ### Engine vs Client UI
 - Engine owns pure derivation and state transitions
@@ -164,7 +165,7 @@ Local dispatch is in production for migrated flows; the server exposes a **persi
 
 This architecture is specifically intended to prevent:
 
-- truth being trapped inside Encounter UI
+- truth being trapped inside Encounter Simulator UI
 - engine code depending on feature code
 - reusable combat UI depending on routes or setup state
 - server-authoritative multiplayer requiring a full rewrite later
@@ -175,7 +176,7 @@ This architecture is specifically intended to prevent:
 This architecture is successful when:
 
 - combat engine can run identically on client and server
-- Encounter consumes combat instead of owning combat truth
-- reusable combat UI is clearly separated from Encounter workflow
+- Encounter Simulator consumes combat instead of owning combat truth
+- reusable combat UI is clearly separated from Encounter Simulator workflow
 - location floors enter combat through an explicit adapter seam
 - truth-changing flows can move from local dispatch to server authority without rewriting the whole UI

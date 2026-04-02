@@ -91,6 +91,7 @@ export function useEncounterState({
 
   const [resolvedCombatantsById, setResolvedCombatantsById] = useState<Record<string, CombatantInstance>>({})
   const [encounterState, setEncounterState] = useState<EncounterState | null>(null)
+  encounterStateRef.current = encounterState
   const [controlTargetId, setControlTargetId] = useState('')
   const [damageAmount, setDamageAmount] = useState('5')
   const [damageTypeInput, setDamageTypeInput] = useState('fire')
@@ -367,7 +368,12 @@ export function useEncounterState({
 
   function handleNextTurn() {
     const prev = encounterStateRef.current
-    if (!prev) return
+    if (!prev) {
+      if (import.meta.env.DEV && encounterState) {
+        console.error('handleNextTurn: encounterStateRef is null but encounterState exists — ref sync is missing')
+      }
+      return
+    }
     const context: ApplyCombatIntentContext = {
       advanceEncounterTurnOptions: {
         rng: Math.random,
@@ -391,7 +397,12 @@ export function useEncounterState({
 
   const handleResolveAction = useCallback(() => {
     const prev = encounterStateRef.current
-    if (!prev || !prev.activeCombatantId || !selectedActionId) return
+    if (!prev || !prev.activeCombatantId || !selectedActionId) {
+      if (import.meta.env.DEV && encounterState && !prev) {
+        console.error('handleResolveAction: encounterStateRef is null but encounterState exists — ref sync is missing')
+      }
+      return
+    }
     const intent = buildResolveActionIntentFromActiveSelection({
       activeCombatantId: prev.activeCombatantId,
       selectedActionId,
@@ -523,7 +534,12 @@ export function useEncounterState({
   function handleMoveCombatant(targetCellId: string) {
     const prev = encounterStateRef.current
     const moverId = prev?.activeCombatantId
-    if (!prev || !moverId) return
+    if (!prev || !moverId) {
+      if (import.meta.env.DEV && encounterState) {
+        console.error('handleMoveCombatant: encounterStateRef is null but encounterState exists — ref sync is missing')
+      }
+      return
+    }
     const intent: CombatIntent = {
       kind: 'move-combatant',
       combatantId: moverId,

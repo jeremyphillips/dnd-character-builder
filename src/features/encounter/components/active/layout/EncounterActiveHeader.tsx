@@ -303,16 +303,17 @@ export function EncounterActiveHeader({
                 Actions
               </Button>
             )}
-            <Button
-              variant={endTurnEmphasis === 'strong' ? 'contained' : 'outlined'}
-              color={endTurnEmphasis === 'strong' ? 'primary' : 'inherit'}
-              size="medium"
-              disabled={!canEndTurn}
-              onClick={onEndTurn}
-              sx={{ minWidth: 120 }}
-            >
-              End Turn
-            </Button>
+            {canEndTurn && (
+              <Button
+                variant={endTurnEmphasis === 'strong' ? 'contained' : 'outlined'}
+                color={endTurnEmphasis === 'strong' ? 'primary' : 'inherit'}
+                size="medium"
+                onClick={onEndTurn}
+                sx={{ minWidth: 120 }}
+              >
+                End Turn
+              </Button>
+            )}
           </Stack>
         </Stack>
       </Stack>

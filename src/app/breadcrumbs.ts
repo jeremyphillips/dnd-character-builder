@@ -52,6 +52,10 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbRouteConfig> = {
   '/campaigns/:id/equipment/:equipmentId':         { label: 'Details' },
   '/campaigns/:id/sessions':                       { label: 'Sessions' },
   '/campaigns/:id/sessions/:sessionId':            { label: 'Session' },
+  '/campaigns/:id/game-sessions':                  { label: 'Live play' },
+  '/campaigns/:id/game-sessions/:gameSessionId': { label: 'Game session' },
+  '/campaigns/:id/game-sessions/:gameSessionId/lobby': { label: 'Lobby' },
+  '/campaigns/:id/game-sessions/:gameSessionId/setup': { label: 'Setup' },
   '/campaigns/:id/messages':                       { label: 'Messages' },
   '/campaigns/:id/messages/:conversationId':       { label: 'Conversation' },
 

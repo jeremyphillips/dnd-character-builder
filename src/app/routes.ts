@@ -29,6 +29,14 @@ export const ROUTES = {
   INVITE: '/invites/:inviteId',
   SESSIONS: '/campaigns/:id/sessions',
   SESSION: '/campaigns/:id/sessions/:sessionId',
+  /**
+   * Live-play GameSession (player-facing container). Distinct from calendar `SESSIONS` and
+   * Encounter Simulator (`CAMPAIGN_ENCOUNTER`).
+   */
+  CAMPAIGN_GAME_SESSIONS: '/campaigns/:id/game-sessions',
+  CAMPAIGN_GAME_SESSION: '/campaigns/:id/game-sessions/:gameSessionId',
+  CAMPAIGN_GAME_SESSION_LOBBY: '/campaigns/:id/game-sessions/:gameSessionId/lobby',
+  CAMPAIGN_GAME_SESSION_SETUP: '/campaigns/:id/game-sessions/:gameSessionId/setup',
   MESSAGING: '/campaigns/:id/messages',
   MESSAGING_CONVERSATION: '/campaigns/:id/messages/:conversationId',
   WORLD: '/campaigns/:id/world',

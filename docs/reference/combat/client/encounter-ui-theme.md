@@ -8,8 +8,9 @@ Encounter-specific **layout** and shared tokens should stay in a small feature-o
 
 Implementation: [`src/features/encounter/ui/theme/encounterUiStateTheme.ts`](../../../../src/features/encounter/ui/theme/encounterUiStateTheme.ts)
 
-- **`getEncounterUiStateTheme(theme)`** — header **height** (CSS var name + layout fallback px) and **bar** padding / `minHeight` (layout only).
-- **`EncounterActiveHeader`** — header **fill and border** use `sx` with `'background.default'`, `'divider'`, and `alpha` / `lighten` on **`theme`** from callbacks so values track `--mui-palette-*` at runtime. The header root is a **`Box`**, not **`Paper`**, to avoid Paper’s default `paper` fill and `--Paper-overlay` elevation wash.
+- **`getEncounterUiStateTheme(theme)`** — header **height** (CSS var name + layout fallback px), **bar** padding / `minHeight`, and **`header.chrome`** (see below).
+- **`header.chrome`** — module-level map: **`default`** and **`activeTurn`** use `EncounterMuiSxColor` — palette path strings (`'background.default'`, `'divider'`) or **`(theme) => string`** for `alpha` / `lighten` (live `theme` when `sx` runs, no one-off hex snapshot). **`directive.resourcesExhaustedTextColor`** is `'warning.main'`.
+- **`EncounterActiveHeader`** — picks `header.chrome[activeTurn ? 'activeTurn' : 'default']` for `bgcolor` / `borderColor`; directive line uses `chrome.directive.resourcesExhaustedTextColor` when resources are exhausted. The header root is a **`Box`**, not **`Paper`**, to avoid Paper’s default `paper` fill and `--Paper-overlay` elevation wash.
 
 Raw color primitives (`colorPrimitives`) and global [`palette`](../../../../src/app/theme/palette.ts) definitions stay in app theme code.
 
@@ -20,7 +21,7 @@ Raw color primitives (`colorPrimitives`) and global [`palette`](../../../../src/
 | Surface | Notes |
 |--------|--------|
 | **Header layout** | `header.height`, `header.bar` on `EncounterUiStateTheme`. |
-| **Header chrome colors** | Resolved in `EncounterActiveHeader` `sx` (see above). |
+| **Header chrome colors** | `header.chrome` (`default` / `activeTurn` / `directive`) — safe palette paths + resolvers in `encounterUiStateTheme.ts`. |
 
 ## Scaling pattern
 

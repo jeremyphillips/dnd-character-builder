@@ -1,10 +1,30 @@
 import type { Theme } from '@mui/material/styles'
+import { alpha, lighten } from '@mui/material/styles'
+
+/**
+ * Safe values for MUI `sx` color props with `cssVariables` + `colorSchemes`:
+ * - **Palette path strings** (`'background.default'`, `'divider'`, …) track `--mui-palette-*` at runtime.
+ * - **Functions** take the **live** `theme` from `sx` when applied — use for `alpha` / `lighten` / `mode`.
+ * Do **not** store `theme.palette.*` hex snapshots from a one-off `useTheme()` call.
+ */
+export type EncounterMuiSxColor = string | ((theme: Theme) => string)
+
+export type EncounterHeaderChrome = {
+  default: {
+    bgColor: EncounterMuiSxColor
+    borderColor: EncounterMuiSxColor
+  }
+  activeTurn: {
+    bgColor: EncounterMuiSxColor
+    borderColor: EncounterMuiSxColor
+  }
+  directive: {
+    resourcesExhaustedTextColor: EncounterMuiSxColor
+  }
+}
 
 /**
  * Semantic encounter UI tokens derived from the active MUI theme.
- * Prefer **palette path strings** (e.g. `'background.default'`) in component `sx` when colors must
- * track **CSS color-scheme** (`colorSchemes` + `cssVariables`); do not bake `theme.palette.*` hex
- * here — those resolve once and can stay on the light palette while the document is in dark mode.
  */
 export type EncounterUiStateTheme = {
   header: {
@@ -20,12 +40,34 @@ export type EncounterUiStateTheme = {
       minHeightPx: number
       boxSizing: 'border-box'
     }
+    /** Header strip fill / border / directive — safe for color-scheme (see {@link EncounterMuiSxColor}). */
+    chrome: EncounterHeaderChrome
   }
 }
 
 /**
- * Layout and non–color-scheme-dependent tokens. Header **fill and border** use `sx` palette paths
- * / callbacks in `EncounterActiveHeader` so dark/light follow `--mui-palette-*` at runtime.
+ * Stable module-level map: same function references across renders so `useMemo` deps behave predictably.
+ */
+const ENCOUNTER_HEADER_CHROME: EncounterHeaderChrome = {
+  default: {
+    bgColor: 'background.paper',
+    borderColor: 'divider',
+  },
+  activeTurn: {
+    bgColor: (t) =>
+      t.palette.mode === 'dark'
+        ? lighten(t.palette.background.default, 0.06)
+        : alpha(t.palette.primary.main, 0.07),
+    borderColor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.5 : 0.32),
+  },
+  directive: {
+    resourcesExhaustedTextColor: 'warning.main',
+  },
+}
+
+/**
+ * Layout tokens plus header chrome map. The `theme` argument is reserved for future theme-dependent layout;
+ * chrome colors do not snapshot `theme` at call time.
  */
 export function getEncounterUiStateTheme(_theme: Theme): EncounterUiStateTheme {
   return {
@@ -40,6 +82,7 @@ export function getEncounterUiStateTheme(_theme: Theme): EncounterUiStateTheme {
         minHeightPx: 104,
         boxSizing: 'border-box',
       },
+      chrome: ENCOUNTER_HEADER_CHROME,
     },
   }
 }

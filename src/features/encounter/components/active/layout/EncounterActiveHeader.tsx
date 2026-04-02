@@ -2,7 +2,7 @@
 // import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 
-import { alpha, lighten, useTheme } from '@mui/material/styles'
+import { useTheme } from '@mui/material/styles'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -138,6 +138,7 @@ export function EncounterActiveHeader({
   }, [encounterUiStateTheme])
 
   const headerBar = encounterUiStateTheme.header.bar
+  const headerChrome = encounterUiStateTheme.header.chrome[isActiveTurnChrome ? 'activeTurn' : 'default']
 
   return (
     <Box
@@ -148,15 +149,8 @@ export function EncounterActiveHeader({
         zIndex: (t) => t.zIndex.appBar + 1,
         borderRadius: 0,
         borderBottom: '1px solid',
-        borderColor: isActiveTurnChrome
-          ? (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.5 : 0.32)
-          : 'divider',
-        bgcolor: isActiveTurnChrome
-          ? (t) =>
-              t.palette.mode === 'dark'
-                ? lighten(t.palette.background.default, 0.06)
-                : alpha(t.palette.primary.main, 0.07)
-          : 'background.default',
+        borderColor: headerChrome.borderColor,
+        bgcolor: headerChrome.bgColor,
         boxShadow: (t) => t.shadows[2],
         color: 'text.primary',
         px: headerBar.horizontalSpacing,
@@ -305,7 +299,9 @@ export function EncounterActiveHeader({
               fontWeight: 700,
               lineHeight: 1.35,
               textAlign: { xs: 'left', md: 'right' },
-              color: resourcesExhausted ? 'warning.main' : 'inherit',
+              color: resourcesExhausted
+                ? encounterUiStateTheme.header.chrome.directive.resourcesExhaustedTextColor
+                : 'inherit',
             }}
           >
             {directive}

@@ -1,5 +1,5 @@
-export { LocationHorizontalCard } from './cards'
-export type { LocationHorizontalCardProps } from './cards'
+export { LocationSummaryCard } from './cards'
+export type { LocationSummaryCardProps } from './cards'
 export { LocationGridAuthoringSection } from './LocationGridAuthoringSection'
 export { LocationCellAuthoringPanel } from './LocationCellAuthoringPanel'
 export type { LocationCellAuthoringPanelProps } from './LocationCellAuthoringPanel'

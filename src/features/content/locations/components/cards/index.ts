@@ -1,2 +1,2 @@
-export { default as LocationHorizontalCard } from './LocationHorizontalCard'
-export type { LocationHorizontalCardProps } from './LocationHorizontalCard'
+export { default as LocationSummaryCard } from './LocationSummaryCard'
+export type { LocationSummaryCardProps } from './LocationSummaryCard'

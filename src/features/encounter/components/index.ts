@@ -1,4 +1,4 @@
-export { CombatLane } from './setup/roster/CombatLane'
+export { SelectedEntitiesLane } from '@/ui/patterns'
 export { AllyRosterLane } from './setup/roster/AllyRosterLane'
 export { OpponentRosterLane } from './setup/roster/OpponentRosterLane'
 /** Temporary re-exports (Phase 3A). Prefer `@/features/combat/components` in new code. */

@@ -1,9 +1,9 @@
 import { AppBadge } from '@/ui/primitives'
+import { SelectedEntitiesLane } from '@/ui/patterns'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 import type { Monster } from '@/features/content/monsters/domain/types'
@@ -17,7 +17,6 @@ import {
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 
 import type { OpponentOption, OpponentRosterEntry } from '../../../types'
-import { CombatLane } from './CombatLane'
 import { AllyCombatantSetupPreviewCard } from './AllyCombatantSetupPreviewCard'
 import { OpponentCombatantSetupPreviewCard } from './OpponentCombatantSetupPreviewCard'
 
@@ -51,26 +50,17 @@ export function OpponentRosterLane({
   onAddOpponentCopy,
 }: OpponentRosterLaneProps) {
   return (
-    <CombatLane
+    <SelectedEntitiesLane
       title="Opponents"
       description="Choose NPC or monster sources. Use the button below to add opponents."
+      actionLabel="Add Opponents"
+      onAction={onOpenModal}
+      emptyMessage="No opponent combatants selected yet."
+      hasSelection={opponentRoster.length > 0}
     >
-      <Button
-        variant="outlined"
-        fullWidth
-        startIcon={<AddIcon />}
-        onClick={onOpenModal}
-      >
-        Add Opponents
-      </Button>
-
-      <Stack spacing={1.5}>
-        {opponentRoster.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No opponent combatants selected yet.
-          </Typography>
-        ) : (
-          opponentRoster.map((entry) => {
+      <Stack spacing={2}>
+        <Stack spacing={1.5}>
+          {opponentRoster.map((entry) => {
             if (entry.kind === 'npc') {
               return (
                 <AllyCombatantSetupPreviewCard
@@ -124,23 +114,23 @@ export function OpponentRosterLane({
                 onDuplicate={() => onAddOpponentCopy(entry)}
               />
             )
-          })
+          })}
+        </Stack>
+
+        {selectedOpponentOptions.length > 0 && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {selectedOpponentOptions.map((option) => (
+              <AppBadge
+                key={option.key}
+                label={`${option.label} \u00d7 ${opponentSourceCounts[option.key] ?? 0}`}
+                tone="default"
+                variant="outlined"
+                size="small"
+              />
+            ))}
+          </Stack>
         )}
       </Stack>
-
-      {selectedOpponentOptions.length > 0 && (
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {selectedOpponentOptions.map((option) => (
-            <AppBadge
-              key={option.key}
-              label={`${option.label} \u00d7 ${opponentSourceCounts[option.key] ?? 0}`}
-              tone="default"
-              variant="outlined"
-              size="small"
-            />
-          ))}
-        </Stack>
-      )}
-    </CombatLane>
+    </SelectedEntitiesLane>
   )
 }

@@ -51,6 +51,9 @@ export type { TimelineCardProps } from './cards/TimelineCard'
 export { SelectEntityModal } from './modal'
 export type { SelectEntityOption, SelectEntityModalProps } from './modal'
 
+export { SelectedEntitiesLane } from './selection/SelectedEntitiesLane'
+export type { SelectedEntitiesLaneProps } from './selection/SelectedEntitiesLane'
+
 export { default as AppModal } from './modals/AppModal'
 export { default as ConfirmModal } from './modals/ConfirmModal'
 export { default as FormModal } from './modals/FormModal'

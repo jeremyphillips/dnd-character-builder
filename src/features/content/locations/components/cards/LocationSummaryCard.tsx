@@ -2,7 +2,7 @@ import { HorizontalCompactCard } from '@/ui/patterns'
 import { CardBadge } from '@/ui/primitives'
 import type { CardBadgeProps } from '@/ui/primitives'
 
-export interface LocationHorizontalCardProps {
+export interface LocationSummaryCardProps {
   /** Location detail route (footer “View details”). */
   link: string
   name: string
@@ -15,7 +15,7 @@ export interface LocationHorizontalCardProps {
   parentName?: string
 }
 
-const LocationHorizontalCard = ({
+const LocationSummaryCard = ({
   link,
   name,
   type,
@@ -23,7 +23,7 @@ const LocationHorizontalCard = ({
   imageUrl,
   isCustom,
   parentName,
-}: LocationHorizontalCardProps) => {
+}: LocationSummaryCardProps) => {
   const badgeItems: CardBadgeProps[] = [
     { type: 'tag', value: type },
   ]
@@ -55,4 +55,4 @@ const LocationHorizontalCard = ({
   )
 }
 
-export default LocationHorizontalCard
+export default LocationSummaryCard

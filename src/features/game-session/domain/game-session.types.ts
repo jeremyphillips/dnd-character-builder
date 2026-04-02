@@ -35,7 +35,10 @@ export type GameSession = {
   status: GameSessionStatus
   dmUserId: string
   title: string
-  /** ISO datetime or null if not scheduled */
+  /**
+   * Planned start (ISO datetime), for display and planning only.
+   * Lifecycle `status` is authoritative; this does not auto-open the lobby.
+   */
   scheduledFor: string | null
   location: GameSessionLocationContext
   participants: GameSessionParticipant[]

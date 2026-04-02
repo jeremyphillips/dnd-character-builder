@@ -5,7 +5,7 @@ import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import List from '@mui/material/List'
 import LogoutIcon from '@mui/icons-material/Logout'
-import { DRAWER_WIDTH, HEADER_HEIGHT } from '../auth-layout.constants'
+import { DRAWER_WIDTH } from '../auth-layout.constants'
 import { DrawerCampaignSection } from './DrawerCampaignSection'
 import { DrawerNav } from './DrawerNav'
 import { DrawerUserSection } from './DrawerUserSection'
@@ -57,7 +57,7 @@ export function AuthDrawer({
           boxSizing: 'border-box',
           bgcolor: 'var(--mui-palette-background-paper)',
           borderRight: '1px solid var(--mui-palette-divider)',
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+          height: `calc(100vh)`,
         },
       }}
     >

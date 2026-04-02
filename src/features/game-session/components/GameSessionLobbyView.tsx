@@ -1,5 +1,7 @@
 import type { GameSession } from '../domain/game-session.types'
 import { formatSessionDateTime } from '@/features/session/dates'
+import { getLobbyStatusBanner } from '../utils/lobbyStatusPresentation'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -24,8 +26,21 @@ type GameSessionLobbyViewProps = {
 }
 
 export function GameSessionLobbyView({ session }: GameSessionLobbyViewProps) {
+  const banner = getLobbyStatusBanner(session)
+
   return (
     <Stack spacing={2}>
+      <Alert severity={banner.severity}>
+        <Typography variant="subtitle2" component="div" fontWeight={600}>
+          {banner.title}
+        </Typography>
+        {banner.body && (
+          <Typography variant="body2" component="div" sx={{ mt: 0.5 }}>
+            {banner.body}
+          </Typography>
+        )}
+      </Alert>
+
       <Box>
         <Typography variant="h5" component="h1" gutterBottom>
           {session.title}
@@ -34,7 +49,7 @@ export function GameSessionLobbyView({ session }: GameSessionLobbyViewProps) {
           <Chip size="small" label={STATUS_LABEL[session.status]} color="primary" variant="outlined" />
           {session.scheduledFor && (
             <Typography variant="body2" color="text.secondary">
-              Scheduled: {formatSessionDateTime(session.scheduledFor)}
+              Planned start: {formatSessionDateTime(session.scheduledFor)}
             </Typography>
           )}
         </Stack>

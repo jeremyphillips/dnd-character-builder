@@ -165,6 +165,9 @@ export function cellHasMovementBlockingGridObject(
 /**
  * Composed “may a token enter / stand on this cell?” for movement and placement.
  * Combines {@link EncounterCell} wall/blocking kind, `blocksMovement`, and grid objects.
+ *
+ * `EncounterCell` fields are often **compatibility / denormalized** inputs from legacy or map
+ * hydration; first-class `GridObject` and `EncounterEdge` data should align when both exist.
  */
 export function cellMovementBlockedForEntering(
   space: EncounterSpace,

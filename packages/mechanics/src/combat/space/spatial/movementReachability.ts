@@ -1,3 +1,23 @@
+/**
+ * **Movement reachability** (walking on the tactical grid): king-adjacency BFS with per-step
+ * legality. This is **not** line-of-sight: do not substitute {@link hasLineOfSight} or supercover
+ * rays for movement.
+ *
+ * **Contract for callers**
+ * - **Single step:** use only {@link movementStepLegal} (never raw edge checks for diagonals).
+ * - **Shortest path cost / existence:** {@link minMovementCostFtToCell}.
+ * - **All cells within budget:** {@link cellsReachableWithinMovementBudget}.
+ *
+ * **Diagonal rule (plain English):** a diagonal step is allowed only if **at least one** of the two
+ * orthogonal two-step routes `from → orth1 → to` or `from → orth2 → to` is fully legal (each leg
+ * passes terrain + edge movement rules; intermediate cell not occupied by another token). This is
+ * **not** a coarse “either/both edge from `from`” shortcut — each full decomposition must work.
+ *
+ * **Source-of-truth layers (transitional):** blocking is composed from {@link EncounterCell} flags
+ * (compatibility / denormalized in some flows), {@link EncounterSpace.gridObjects}, and
+ * {@link EncounterSpace.edges}. Prefer composed helpers in `space.helpers` / `edgeCrossing` over
+ * ad hoc flag reads.
+ */
 import {
   getCellAt,
   getCellById,

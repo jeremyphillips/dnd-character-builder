@@ -6,7 +6,7 @@ The spatial system adds tactical grid-based positioning to encounters. It answer
 
 - **Where are combatants?** Cell-based placement on a square grid.
 - **Is a target in range?** Chebyshev distance check against action `rangeFt`.
-- **Can a combatant move there?** Distance-based movement spending from `movementRemaining`.
+- **Can a combatant move there?** Shortest-path movement cost from `movementRemaining` (king-adjacency BFS — not the same as range or LoS).
 
 The system is intentionally separate from narrative `Location` content. Locations describe fictional places; encounter spaces define tactical geometry.
 
@@ -30,7 +30,7 @@ packages/mechanics/src/combat/space/
 ├── selectors/                      # State-level selectors, GridViewModel, movement
 ├── sight/                          # Supercover line + hasLineOfSight, cellBlocksSight (raw), cellOpaqueToSight
 ├── spatial/                        # Edge segment crossing; movement BFS (reachability, shortest path ft)
-└── __tests__/                      # Mirrors creation, placement, rendering, selectors, sight (+ space.helpers.test)
+└── __tests__/                      # Mirrors creation, placement, rendering, selectors, sight, `spatial/` regression tests (+ space.helpers.test)
 ```
 
 ## 3. Current Functionality
@@ -80,7 +80,7 @@ When an encounter is started from setup, the app calls **`placeRandomGridObject`
 
 The `showReachable` option is driven by movement budget (`movementRemaining > 0`) and UI mode (movement highlights are suppressed during AoE origin placement) so reachable cells can highlight without an explicit movement mode.
 
-**Movement rejection helper:** `getMoveRejectionReason(state, combatantId, targetCellId)` returns short labels such as `Out of range`, `Cell occupied`, or `Blocked` when a move would fail, for anchored status text (not tooltips on cells).
+**Movement rejection helper:** `getMoveRejectionReason(state, combatantId, targetCellId)` returns short labels for illegal hover / status text: **`Terrain blocked`** (destination cell not enterable), **`No path`** (no legal route with the graph rules), **`Out of range`** (shortest path exists but exceeds `movementRemaining`), **`Cell occupied`**. UI may map **`Terrain blocked`** to a generic “Blocked” string.
 
 **Grid hover status:** `deriveGridHoverStatusMessage` (encounter helpers) composes a single line for illegal hover (movement, creature targeting, or invalid AoE origin) to show under the encounter header.
 
@@ -111,7 +111,7 @@ When a **`spawn`** effect creates new combatants that **replace** an existing to
 
 - **Line geometry:** The segment runs between **cell centers** of the source and target cells `(x+0.5, y+0.5)`. The set of cells visited is a **grid supercover** using an **Amanatides & Woo–style DDA** (each unit cell the segment intersects). When a ray hits a **corner** between two cells, the tie branch steps **diagonally** so both grid steps are included.
 - **Interior opacity:** **Intermediate** cells (not source or target **as cell interiors**) use **`cellOpaqueToSight`**: raw `EncounterCell.blocksSight` via **`cellBlocksSight`**, **plus** any **`GridObject`** on that cell with **`blocksLineOfSight`**. Source/target cell **centers** are not treated as opaque interiors; a **segment** into the target can still be blocked by an **`EncounterEdge`**.
-- **Edges:** Consecutive cells on the path are checked with **`segmentSightBlocked`** (`spatial/edgeCrossing.ts`). Orthogonal steps use the edge between the two cells (if absent, the boundary is open). **Diagonal** steps use a **strict corner rule**: sight is blocked if **either** orthogonal edge from the source toward that diagonal would block sight (same geometry as movement segment checks; **policy** can differ — e.g. a **window** edge may set **`blocksMovement: true`** and **`blocksSight: false`**).
+- **Edges:** Consecutive cells on the path are checked with **`segmentSightBlocked`** (`spatial/edgeCrossing.ts`). Orthogonal steps use the edge between the two cells (if absent, the boundary is open). **Diagonal** steps use a **strict corner rule for rays**: sight is blocked if **either** supporting orthogonal segment would block sight. **Movement** diagonals do **not** use this rule — they use **orthogonal decomposition** in `movementReachability.ts` (see §3 Movement). **Window** example: an edge may set **`blocksMovement: true`** and **`blocksSight: false`** (blocks walking through the sill, not the sight line).
 - **API:** `hasLineOfSight(space, fromCellId, toCellId)`; `traceLineOfSightCells` is mainly for tests and debugging. Raw flag read: **`cellBlocksSight`**; composed interior: **`cellOpaqueToSight`**.
 - **Targeting:** `canSeeForTargeting` delegates to `canPerceiveTargetOccupantForCombat` (`visibility/combatant-pair-visibility.ts`): condition-based sight (e.g. blinded, invisible), `lineOfSightClear` → `hasLineOfSight` when a grid exists, then **occupant** visibility from `perception.resolve.ts` (heavy obscurement, magical darkness, etc.). **Cover** for attack modifiers is still separate; binary LoS here does not replace perception’s “can you see the creature in that cell?”
 
@@ -128,9 +128,15 @@ When no context is passed, **`movementRemaining`** is reduced by the **shortest 
 
 Turn start resets movement via **`createCombatantTurnResources`** in **`shared.ts`**: when **`advanceEncounterTurn`** / **`createEncounterState`** supply spell lookup (same object shape as interval resolution), the initial **`movementRemaining`** uses the same **effective** budget for the combatant’s position at turn start.
 
-**Movement reachability (not LoS):** **`spatial/movementReachability.ts`** performs **breadth-first search** over **king-adjacent** cells (8 directions). **Orthogonal** steps: **`cellMovementBlockedForEntering`** on the destination cell, and the crossed **`EncounterEdge`** must not have **`blocksMovement`**. **Diagonal** steps: legal only if **at least one** of the two orthogonal decompositions **`from → orth1 → to`** or **`from → orth2 → to`** is fully legal (each orthogonal leg passes the same edge + terrain checks, and the intermediate cell is not occupied by another token). This prevents cutting through a sealed wall while still allowing real corner routes. **`segmentMovementBlocked`** is **orthogonal-only** (diagonal movement does not use the old single-edge shortcut). **`hasLineOfSight`** still uses **`segmentSightBlocked`** (stricter diagonal rule for rays). This answers “is there **some** legal route within budget?” — **not** “is the straight supercover ray clear?”
+**Movement reachability (not LoS):** **`spatial/movementReachability.ts`** performs **breadth-first search** over **king-adjacent** cells (8 directions). **Orthogonal** steps: **`cellMovementBlockedForEntering`** on the destination cell, and the crossed **`EncounterEdge`** must not have **`blocksMovement`** (via **`orthogonalMovementEdgeBlocked`**). **Diagonal** steps: legal only if **at least one** of the two orthogonal two-step routes **`from → orth1 → to`** or **`from → orth2 → to`** is fully legal (each leg uses the same orthogonal rules; the intermediate cell must not be occupied by another token). This allows routing around corners when a real two-step path exists, and blocks “cutting through” wall-separated areas when **neither** decomposition is legal. **`segmentMovementBlocked`** in `edgeCrossing.ts` is **orthogonal-only** — diagonal **walking** is **not** decided by a single coarse edge test from `from`.
+
+**API contract (do not bypass):** use **`movementStepLegal`** for one king-step; **`minMovementCostFtToCell`** for shortest cost / existence; **`cellsReachableWithinMovementBudget`** for reachable highlights. **`selectCellsWithinDistance`**, **`canMoveTo`**, and **`moveCombatant`** go through these primitives.
 
 **`minMovementCostFtToCell`** returns the **shortest** route cost in feet (each orthogonal or diagonal step costs one **`cellFeet`**). **`cellsReachableWithinMovementBudget`** collects all cells reachable within **`movementRemaining`**. **`selectCellsWithinDistance`** and **`canMoveTo`** use this BFS; **`moveCombatant`** deducts the shortest-path cost. **`placeCombatant`**, **`isValidSingleCellPlacementPick`**, **`validateSingleCellPlacement`**, and **`isValidAoeOriginCell`** still use **`cellMovementBlockedForEntering`** only for destination validity (not graph search).
+
+Regression coverage for movement vs LoS edge cases lives in **`__tests__/spatial/spatial-movement-los-regression.test.ts`** (and related `movementReachability` / `sight` tests).
+
+**Transitional source-of-truth:** resolution still reads **`EncounterCell`** flags (e.g. `blocksMovement`, `blocksSight`, `kind`), **`GridObject`** on **`EncounterSpace.gridObjects`**, and **`EncounterEdge`**. Denormalized cell flags are **compatibility** inputs from some legacy/hydration paths — they are not documented as the sole long-term authority when edges or grid objects also describe the same feature.
 
 ### Character speed
 
@@ -187,4 +193,10 @@ These are intentional simplifications for the current milestone, not bugs:
 | `getEffectiveGroundMovementBudgetFt` | `combat/state/battlefield/battlefield-spatial-movement-modifiers.ts` | Effective movement cap from base speed × attached-aura speed multipliers (current overlap) |
 | `applyGridSpawnReplacementFromTarget` | `placement/applyGridSpawnReplacement.ts` | Transfers tactical `placements` from a spawn target to new combatant(s) (replacement / corpse→minion) |
 | `hasLineOfSight` | `sight/space.sight.ts` | Binary LoS along supercover segment between cell centers |
+| `movementStepLegal` | `spatial/movementReachability.ts` | One king-step; diagonal requires legal orthogonal decomposition |
+| `minMovementCostFtToCell` | `spatial/movementReachability.ts` | Shortest-path feet; `undefined` if unreachable |
+| `cellsReachableWithinMovementBudget` | `spatial/movementReachability.ts` | BFS reachable set within budget |
+| `segmentSightBlocked` | `spatial/edgeCrossing.ts` | Edge-based sight segment (strict diagonal for rays) |
+| `orthogonalMovementEdgeBlocked` | `spatial/edgeCrossing.ts` | Movement blocked on one orthogonal edge crossing |
+| `getMoveRejectionReason` | `selectors/space.selectors.ts` | `Terrain blocked` / `No path` / `Out of range` / `Cell occupied` |
 | `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move' \| 'aoe-place' \| 'single-cell-place' \| 'object-anchor-select'` |

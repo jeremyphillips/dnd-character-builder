@@ -29,6 +29,8 @@ export function mapMechanicsReasonToGridStatus(reason: string | null | undefined
   const t = reason.trim()
   const table: Record<string, string> = {
     'Out of range': 'Out of range',
+    'No path': 'No path',
+    'Terrain blocked': 'Blocked',
     'Requires enemy target': 'Requires enemy target',
     'Requires willing ally': 'Requires ally target',
     'Target is defeated': 'Invalid target',

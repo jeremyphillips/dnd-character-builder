@@ -1,3 +1,11 @@
+/**
+ * **EncounterEdge** primitives: orthogonal edge lookup and segment policies.
+ * - **Sight** ({@link segmentSightBlocked}): diagonal uses strict corner rule (either supporting
+ *   orthogonal segment can block the diagonal for rays).
+ * - **Movement edges** ({@link orthogonalMovementEdgeBlocked}, {@link segmentMovementBlocked}):
+ *   orthogonal only; diagonal **movement** legality lives in `movementReachability.ts`
+ *   (orthogonal decomposition), not here.
+ */
 import type { EncounterEdge, EncounterSpace } from '../space.types'
 import { getCellAt, getCellById } from '../space.helpers'
 

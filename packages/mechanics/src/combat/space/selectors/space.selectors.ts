@@ -537,8 +537,9 @@ export function placeCombatant(
 // ---------------------------------------------------------------------------
 
 /**
- * Cells reachable within `movementRemaining` feet via legal king-move steps (adjacency BFS),
- * not straight-line / supercover validation.
+ * Cells reachable within `movementRemaining` feet via legal king-move steps (adjacency BFS).
+ * Uses {@link cellsReachableWithinMovementBudget} — do not reimplement reachability or bypass
+ * {@link movementStepLegal} from `spatial/movementReachability.ts`.
  */
 export function selectCellsWithinDistance(
   state: EncounterState,
@@ -567,7 +568,8 @@ export function selectCellsWithinDistance(
 
 /**
  * Single predicate: can the combatant move to the target cell?
- * Checks distance, movement remaining, cell validity, and occupancy.
+ * Checks movement remaining, destination terrain, occupancy, and shortest-path existence via
+ * {@link minMovementCostFtToCell} (same graph rules as reachability highlights).
  */
 export function canMoveTo(
   state: EncounterState,
@@ -603,6 +605,9 @@ export function canMoveTo(
 /**
  * Short rejection label for an illegal move attempt, or `null` when the move would be valid
  * or movement budget is exhausted (caller should not surface status in that case).
+ *
+ * Distinct strings when useful for UI/debug: **`Terrain blocked`** (destination cell), **`No path`**
+ * (graph unreachable with legal steps), **`Out of range`** (path exists but exceeds budget).
  */
 export function getMoveRejectionReason(
   state: EncounterState,
@@ -619,7 +624,7 @@ export function getMoveRejectionReason(
   if (movementRemaining <= 0) return null
 
   const cell = getCellById(space, targetCellId)
-  if (!cell || cellMovementBlockedForEntering(space, targetCellId)) return 'Blocked'
+  if (!cell || cellMovementBlockedForEntering(space, targetCellId)) return 'Terrain blocked'
 
   if (isCellOccupied(placements, targetCellId)) return 'Cell occupied'
 
@@ -633,7 +638,7 @@ export function getMoveRejectionReason(
     placements,
     combatantId,
   )
-  if (pathCostFt === undefined) return 'Blocked'
+  if (pathCostFt === undefined) return 'No path'
   if (pathCostFt > movementRemaining) return 'Out of range'
 
   return null

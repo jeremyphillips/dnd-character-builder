@@ -1,3 +1,12 @@
+/**
+ * **Line of sight** (ray-style): supercover cell sequence between cell centers plus segment checks
+ * ({@link segmentSightBlocked}). Stricter than **movement** (see `spatial/movementReachability.ts`):
+ * LoS does not use adjacency BFS or orthogonal-decomposition rules for diagonals.
+ *
+ * Spatial inputs combine {@link EncounterCell} flags (including `blocksSight`), grid objects
+ * ({@link cellOpaqueToSight}), and edges — cell flags remain compatibility inputs where present,
+ * not guaranteed long-term sole authority.
+ */
 import { cellHasSightBlockingGridObject, getCellAt, getCellById } from '../space.helpers'
 import { segmentSightBlocked } from '../spatial/edgeCrossing'
 import type { EncounterSpace } from '../space.types'

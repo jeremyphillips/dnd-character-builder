@@ -37,8 +37,11 @@ The same **`applyCombatIntent`** *shape* (intent in, result out) is what a serve
 
 **Current scope:** REST endpoints persist sessions and apply intents with **revision** checks; production Encounter still uses **local** mechanics by default. Realtime, permissions, and full client integration are tracked in [../roadmap.md](../roadmap.md) and [../server/authoritative-flow.md](../server/authoritative-flow.md).
 
+**GameSession `/play` (persisted combat):** When **`useEncounterState`** receives **`persistedCombat`**, successful applies are mirrored to **`POST .../intents`** with **`baseRevision`**. Implementation notes (slim context, serialized POST queue, ref sync, server body limit) live in [persisted-intent-sync.md](./persisted-intent-sync.md).
+
 ## See also
 
 - [engine/intents-and-events.md](../engine/intents-and-events.md)
 - [application/MUTATION_ENTRY_POINTS.md](../../../../packages/mechanics/src/combat/application/MUTATION_ENTRY_POINTS.md) (repo path)
+- [persisted-intent-sync.md](./persisted-intent-sync.md) — HTTP mirror for persisted sessions (GameSession `/play`)
 - [feedback-followups.md](./feedback-followups.md) — deferred `action-log-slice` / `registerIntentFailure`

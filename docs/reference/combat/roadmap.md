@@ -25,6 +25,7 @@ These are high-level checkpoints, not exhaustive changelogs.
 - **Stage 3A:** `POST /api/combat/sessions` — startup via shared mechanics, proof of server import.
 - **Stage 3B:** Stateless apply-intent smoke (superseded by 3C).
 - **Stage 3C:** **Persisted** combat sessions (MongoDB): `sessionId`, monotonic **`revision`**, snapshot **`state`**; **`POST /api/combat/sessions`** creates a session; **`POST /api/combat/sessions/:sessionId/intents`** applies intents with **`baseRevision`**; stale revision → **409**, missing session → **404**. No realtime, no campaign permissions on combat routes yet.
+- **Persisted intent mirror (client + server hygiene):** **`express.json`** body limit raised for intent POSTs; **`postPersistedCombatIntent`** strips **`monstersById`** from JSON context; **`useEncounterState`** serializes mirror POSTs, syncs encounter state to a ref during render, and applies move/end-turn/resolve outside `setState` updaters — see [client/persisted-intent-sync.md](./client/persisted-intent-sync.md).
 
 ### Related product (live-play session shell)
 

@@ -20,6 +20,10 @@ As of the Stage 3C pass, the server exposes revisioned combat sessions over REST
 - **`POST /api/combat/sessions`** — builds initial state via **`startEncounterFromSetup`**, persists a document with **`sessionId`**, **`revision`** (initial snapshot), and **`state`**, returns those fields to the client.
 - **`POST /api/combat/sessions/:sessionId/intents`** — body includes **`baseRevision`**, **`intent`**, optional **`context`**; loads persisted state, checks revision, runs **`applyCombatIntent`**; on success, persists **`nextState`** and increments revision; returns **`409`** on stale revision and **`404`** if the session id is unknown.
 
+**HTTP body limit:** JSON bodies for this route can exceed Express’s default **`express.json()`** size (~100kb) when clients send large optional context. The server raises the limit (e.g. **`2mb`**) in **`server/app.ts`** so **`PayloadTooLargeError`** does not reject valid intent payloads before the handler runs.
+
+**JSON `context`:** The wire shape is JSON only — no **`spellLookup`**, **`rng`**, or **`buildSummonAllyCombatant`** functions. GameSession clients also **omit** serialized **`monstersById`** blobs in **`postPersistedCombatIntent`** to reduce size; server-side resolution should not assume a full client catalog on the wire. Details: [../client/persisted-intent-sync.md](../client/persisted-intent-sync.md).
+
 This is **not** multiplayer yet: there is **no** socket broadcast, **no** campaign permission checks on these routes by default, and the **Encounter Simulator** client still uses **local** dispatch unless separately wired to these APIs. See [roadmap.md](../roadmap.md).
 
 ## Core principle

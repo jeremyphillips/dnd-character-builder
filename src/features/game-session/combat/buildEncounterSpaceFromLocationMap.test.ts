@@ -80,5 +80,13 @@ describe('buildEncounterSpaceFromLocationMap', () => {
     expect(space.cells.find((c) => c.id === 'c-1-0')?.kind).toBe(
       tableRt.blocksMovement ? 'blocking' : 'open',
     )
+
+    expect(space.authoringPresentation?.authoredObjectRenderItems).toHaveLength(2)
+    expect(space.authoringPresentation?.authoredObjectRenderItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'a1', authorCellId: '0,0', combatCellId: 'c-0-0', kind: 'treasure' }),
+        expect.objectContaining({ id: 't1', authorCellId: '1,0', combatCellId: 'c-1-0', kind: 'marker' }),
+      ]),
+    )
   })
 })

@@ -1,4 +1,5 @@
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
+import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types';
 
 export type EncounterSpaceMode =
   | 'zone-grid'
@@ -65,7 +66,7 @@ export type GridObstacle = {
 };
 
 /**
- * Serialized authored map chrome for combat **presentation only** (fills, region tint, paths, wall strokes).
+ * Serialized authored map chrome for combat **presentation only** (fills, region tint, paths, wall strokes, authored object icons).
  * Mechanics (movement, LoS, targeting) use {@link EncounterCell} / {@link EncounterEdge} on this space;
  * this blob is optional and ignored by the engine when absent.
  */
@@ -76,6 +77,11 @@ export type EncounterAuthoringPresentation = {
   cellFillByCombatCellId: Record<string, string>;
   /** Combat cell id → region color key (e.g. `regionRed`) for semi-transparent overlay. */
   regionColorKeyByCombatCellId?: Record<string, string>;
+  /**
+   * Authored map objects for display only (same shape as `LocationMapAuthoredObjectRenderItem` in shared domain).
+   * Distinct from runtime `GridObject` and tactical obstacle glyphs on the grid view model.
+   */
+  authoredObjectRenderItems?: LocationMapAuthoredObjectRenderItem[];
 };
 
 export type EncounterSpace = {

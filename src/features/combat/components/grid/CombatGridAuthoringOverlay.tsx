@@ -1,7 +1,9 @@
 import type { Theme } from '@mui/material/styles'
+import Box from '@mui/material/Box'
 
 import type { EncounterAuthoringPresentation } from '@/features/mechanics/domain/combat/space'
 import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles'
+import { LocationMapAuthoredObjectIconsLayer } from '@/features/content/locations/components/mapGrid/LocationMapAuthoredObjectIconsLayer'
 import { LocationMapPathSvgPaths } from '@/features/content/locations/components/mapGrid/LocationMapPathSvgPaths'
 import { polylinePoint2DToSmoothSvgPath } from '@/features/content/locations/components/pathOverlayRendering'
 import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations/map/locationMap.types'
@@ -22,8 +24,8 @@ type CombatGridAuthoringOverlayProps = {
 }
 
 /**
- * Read-only authored map chrome (paths + wall/door/window edges) aligned to the combat grid.
- * Pointer-events none; rendered under combat tokens.
+ * Read-only authored base map: paths, edges, then authored object icons (see `LocationMapAuthoredObjectIconsLayer`).
+ * Pointer-events none; rendered under tactical cells and combat overlays.
  */
 export function CombatGridAuthoringOverlay({
   theme,
@@ -57,44 +59,56 @@ export function CombatGridAuthoringOverlay({
 
   const w = columns * cellPx + (columns - 1) * gapPx
   const h = rows * cellPx + (rows - 1) * gapPx
+  const objectItems = authoringPresentation.authoredObjectRenderItems ?? []
 
   return (
-    <svg
-      width={w}
-      height={h}
-      style={{
+    <Box
+      sx={{
         position: 'absolute',
         left: 0,
         top: 0,
+        width: w,
+        height: h,
         pointerEvents: 'none',
-        zIndex: 0,
-        display: 'block',
       }}
-      aria-hidden
     >
-      <LocationMapPathSvgPaths
-        pathSvgData={pathSvgData}
-        mapUi={mapUi}
-        mapSelection={{ type: 'none' }}
-        selectHoverTarget={{ type: 'none' }}
-      />
-      {edgeGeoms.map((g) => {
-        const st = mapUi.edgeCommittedStrokeByKind[g.kind]
-        const seg = g.segment
-        return (
-          <line
-            key={g.edgeId}
-            x1={seg.x1}
-            y1={seg.y1}
-            x2={seg.x2}
-            y2={seg.y2}
-            stroke={st.stroke}
-            strokeWidth={st.strokeWidth}
-            strokeLinecap="square"
-            {...('strokeDasharray' in st && st.strokeDasharray != null ? { strokeDasharray: st.strokeDasharray } : {})}
-          />
-        )
-      })}
-    </svg>
+      <svg
+        width={w}
+        height={h}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          display: 'block',
+          zIndex: 0,
+        }}
+        aria-hidden
+      >
+        <LocationMapPathSvgPaths
+          pathSvgData={pathSvgData}
+          mapUi={mapUi}
+          mapSelection={{ type: 'none' }}
+          selectHoverTarget={{ type: 'none' }}
+        />
+        {edgeGeoms.map((g) => {
+          const st = mapUi.edgeCommittedStrokeByKind[g.kind]
+          const seg = g.segment
+          return (
+            <line
+              key={g.edgeId}
+              x1={seg.x1}
+              y1={seg.y1}
+              x2={seg.x2}
+              y2={seg.y2}
+              stroke={st.stroke}
+              strokeWidth={st.strokeWidth}
+              strokeLinecap="square"
+              {...('strokeDasharray' in st && st.strokeDasharray != null ? { strokeDasharray: st.strokeDasharray } : {})}
+            />
+          )
+        })}
+      </svg>
+      <LocationMapAuthoredObjectIconsLayer items={objectItems} cellPx={cellPx} gapPx={gapPx} />
+    </Box>
   )
 }

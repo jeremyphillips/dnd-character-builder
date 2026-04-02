@@ -15,6 +15,7 @@ The system is intentionally separate from narrative `Location` content. Location
 - **Authored vocabulary** — e.g. `LocationPlacedObjectKindId` in location map content (what authors place).
 - **Runtime grid objects** — `GridObject` on `EncounterSpace.gridObjects`: blocking, LoS, cover, `isMovable`, optional `authoredPlaceKindId` or `proceduralPlacementKind` (`tree` / `pillar`).
 - **Edges and boundaries** — `EncounterEdge`, `EncounterCell.kind` (e.g. `wall`), and `EncounterAuthoringPresentation.edgeEntries` (walls / doors / windows as presentation); not folded into `GridObject` unless a future feature explicitly bridges them.
+- **Authored map object presentation** — icons and fills from location map authoring, carried on `EncounterAuthoringPresentation` (`authoredObjectRenderItems`, cell/region fills). Derived in `shared/domain` as `LocationMapAuthoredObjectRenderItem[]` (`deriveLocationMapAuthoredObjectRenderItems`). **Not** the same as runtime `GridObject` or tactical obstacle glyphs on `GridCellViewModel`.
 
 ## 2. Directory Layout
 
@@ -200,3 +201,5 @@ These are intentional simplifications for the current milestone, not bugs:
 | `orthogonalMovementEdgeBlocked` | `spatial/edgeCrossing.ts` | Movement blocked on one orthogonal edge crossing |
 | `getMoveRejectionReason` | `selectors/space.selectors.ts` | `Terrain blocked` / `No path` / `Out of range` / `Cell occupied` |
 | `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move' \| 'aoe-place' \| 'single-cell-place' \| 'object-anchor-select'` |
+| `EncounterAuthoringPresentation` | `space.types.ts` | Serialized **presentation-only** authored map: paths, edges, cell/region fills, **`authoredObjectRenderItems`** (optional). Ignored by combat resolution. |
+| `LocationMapAuthoredObjectRenderItem` | `shared/domain/locations/map/locationMapAuthoredObjectRender.types.ts` | One cell-anchored authored object for display; derived from map `cellEntries`. |

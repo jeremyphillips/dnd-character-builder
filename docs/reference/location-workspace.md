@@ -8,6 +8,8 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 **Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
+**Authored base-map layer order (square editor and combat underlay should match intent):** cell fills / region tint → **paths** → **edges** → **authored object icons** (cell-anchored). The path/edge SVG overlay is stacked **below** the cell grid (`SquareMapAuthoringSvgOverlay` z-order under `GridEditor`) so object icons inside cells remain visible. Object display rules align with `deriveLocationMapAuthoredObjectRenderItems` / `LocationMapAuthoredObjectRenderItem` in `shared/domain` (see `locationMapAuthoredObjectRender.helpers.ts`).
+
 ### Location map authored model (reference)
 
 **What is persisted** on `LocationMap` (sparse, map-owned):

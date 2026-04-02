@@ -1,5 +1,6 @@
 import type { EncounterAuthoringPresentation } from '@/features/mechanics/domain/combat/space'
 import type { LocationMapBase } from '@/shared/domain/locations/map/locationMap.types'
+import { deriveLocationMapAuthoredObjectRenderItems } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.helpers'
 
 import { authorCellIdToCombatCellId } from './encounterMapCellIds'
 
@@ -26,6 +27,8 @@ export function buildEncounterAuthoringPresentationFromLocationMap(
     }
   }
 
+  const authoredObjectRenderItems = deriveLocationMapAuthoredObjectRenderItems(map)
+
   return {
     edgeEntries: (map.edgeEntries ?? []).map((e) => ({ edgeId: e.edgeId, kind: e.kind })),
     pathEntries: (map.pathEntries ?? []).map((p) => ({
@@ -37,5 +40,6 @@ export function buildEncounterAuthoringPresentationFromLocationMap(
     ...(Object.keys(regionColorKeyByCombatCellId).length > 0
       ? { regionColorKeyByCombatCellId }
       : {}),
+    ...(authoredObjectRenderItems.length > 0 ? { authoredObjectRenderItems } : {}),
   }
 }

@@ -93,6 +93,17 @@ should live with the grid renderer if they are truly generic renderer concerns.
 
 If parts of them are Encounter-specific, they should be split rather than moved wholesale.
 
+## Authored base map vs tactical overlays
+
+`CombatGrid` draws **tactical** cell state from `GridCellViewModel` (`getCellVisualState`, `getCellVisualSx` — movement, AoE, placement bands, perception). **Under** that, when `authoringPresentation` is present, `CombatGridAuthoringOverlay` renders the **authored location map** chrome only (presentation; not mechanics):
+
+1. **Paths** and **edges** (SVG strokes).
+2. **Authored object icons** — cell-anchored glyphs from `EncounterAuthoringPresentation.authoredObjectRenderItems` (same canonical shape as `LocationMapAuthoredObjectRenderItem` in `shared/domain/locations/map/`), derived by `deriveLocationMapAuthoredObjectRenderItems` when building the presentation blob.
+
+**Derive vs render:** Pure lists and geometry live in `shared/domain`; MUI icons, SVG smoothing, and z-order live in feature components (`CombatGridAuthoringOverlay`, `LocationMapAuthoredObjectIconsLayer`, `pathOverlayRendering.ts`).
+
+**Not the same as:** runtime `GridObject` rows or the small **obstacle letter** glyph (`obstacleLabel` / T–P) on cells — those reflect encounter mechanics and stay separate from authored map icons.
+
 ## Wrapper philosophy
 
 `EncounterGrid` should be as thin as reasonably possible, but not thinner.

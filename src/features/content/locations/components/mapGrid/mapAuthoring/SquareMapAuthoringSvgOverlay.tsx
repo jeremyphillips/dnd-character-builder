@@ -24,7 +24,7 @@ export type SquareMapAuthoringSvgOverlayProps = {
 
 /**
  * Square grid: path splines, committed edges, boundary-paint preview stroke, and hover edge dash.
- * Pointer-events none; rendered above the cell grid.
+ * Pointer-events none; rendered **below** the cell grid (z-index under cell layer) so cell-hosted icons stay visible.
  */
 export function SquareMapAuthoringSvgOverlay({
   width,
@@ -48,7 +48,7 @@ export function SquareMapAuthoringSvgOverlay({
         left: 0,
         top: 0,
         pointerEvents: 'none',
-        zIndex: 2,
+        zIndex: 0,
         display: 'block',
       }}
       aria-hidden

@@ -74,6 +74,10 @@ These should not leak directly into combat internals without normalization:
 - content-management-specific wrapper structures
 - arbitrary location editor assumptions that the combat engine does not need
 
+## Presentation payload (combat UI)
+
+When an encounter space is built from an authored location map, `buildEncounterAuthoringPresentationFromLocationMap` fills `EncounterAuthoringPresentation` for **display only**: paths, edges, cell/region fills, and **`authoredObjectRenderItems`** (canonical `LocationMapAuthoredObjectRenderItem[]` from `deriveLocationMapAuthoredObjectRenderItems`). That blob does **not** drive movement, LoS, or targeting; it mirrors what authors placed for **visual** parity (including building-floor maps). Runtime blocking and `GridObject` rows are hydrated separately.
+
 ## Relationship to Encounter
 
 Encounter may use a location floor during setup, but Encounter should not directly treat the raw location floor as combat runtime state.

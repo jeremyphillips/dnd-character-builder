@@ -20,7 +20,7 @@ As of the Stage 3C pass, the server exposes revisioned combat sessions over REST
 - **`POST /api/combat/sessions`** — builds initial state via **`startEncounterFromSetup`**, persists a document with **`sessionId`**, **`revision`** (initial snapshot), and **`state`**, returns those fields to the client.
 - **`POST /api/combat/sessions/:sessionId/intents`** — body includes **`baseRevision`**, **`intent`**, optional **`context`**; loads persisted state, checks revision, runs **`applyCombatIntent`**; on success, persists **`nextState`** and increments revision; returns **`409`** on stale revision and **`404`** if the session id is unknown.
 
-This is **not** multiplayer yet: there is **no** socket broadcast, **no** campaign permission checks on these routes by default, and the **Encounter** client still uses **local** dispatch unless separately wired to these APIs. See [roadmap.md](../roadmap.md).
+This is **not** multiplayer yet: there is **no** socket broadcast, **no** campaign permission checks on these routes by default, and the **Encounter Simulator** client still uses **local** dispatch unless separately wired to these APIs. See [roadmap.md](../roadmap.md).
 
 ## Core principle
 

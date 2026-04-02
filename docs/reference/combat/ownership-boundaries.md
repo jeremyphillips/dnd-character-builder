@@ -8,7 +8,7 @@ This is the primary reference for deciding **where code belongs** in the combat 
 
 ## Core rule
 
-> Combat owns truth. Encounter owns workflow.
+> Combat owns truth. The Encounter Simulator owns this combat workflow shell (future **GameSession** will own live-play session workflow separately).
 
 That rule is expanded below.
 
@@ -46,7 +46,7 @@ The engine must not own:
 - React components
 - route state
 - setup flow
-- Encounter-specific workflow
+- Encounter Simulator-specific workflow
 - modal/drawer orchestration
 - server transport
 - authored location editor semantics
@@ -73,36 +73,36 @@ Questions client combat UI should answer:
 Client combat UI must not own:
 
 - combat truth
-- Encounter workflow
+- Encounter Simulator workflow
 - route/campaign lookup
 - setup modal types
 - server authority
 - authored location semantics
 
-## Encounter feature owns
+## Encounter Simulator feature owns
 
-Encounter owns product workflow and orchestration.
+The Encounter Simulator owns **dev/testing** combat workflow and orchestration (single operator, all combatants). It does **not** represent the future **GameSession** live-play product.
 
 It owns:
 
-- routes
+- simulator routes and navigation
 - setup flow
 - active-screen composition
 - feature-specific wrappers
-- DM workflow
+- operator workflow in this surface
 - drawer shells
 - modal shells
 - route/campaign-specific link construction
 - temporary UI state tied to feature workflow
 
-Questions Encounter should answer:
+Questions the Encounter Simulator should answer:
 
 - Which setup modal is open?
 - Which floor is selected for this encounter?
 - How should the active screen be composed?
-- How do feature-level wrappers adapt Encounter state into combat props?
+- How do feature-level wrappers adapt encounter state into combat props?
 
-Encounter must not own:
+The Encounter Simulator must not own:
 
 - shared combat truth
 - reusable engine derivation
@@ -178,10 +178,10 @@ It should be explicit and narrow.
 
 ### Put code in client combat UI if:
 - it is a reusable combat-facing component or client presentation helper
-- it should not depend on Encounter routes/workflow
+- it should not depend on Encounter Simulator routes/workflow
 
-### Put code in Encounter if:
-- it is setup, layout, orchestration, or feature workflow
+### Put code in Encounter Simulator (`src/features/encounter`) if:
+- it is setup, layout, orchestration, or feature workflow for the dev/testing combat surface
 - it is a shell around reusable combat pieces
 
 ### Put code in server combat application if:

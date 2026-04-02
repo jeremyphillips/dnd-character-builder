@@ -1,3 +1,7 @@
+/**
+ * React context for the **Encounter Simulator**: roster/setup state, local `EncounterState`, and UI wiring.
+ * Future **GameSession** live play will compose combat differently (multiplayer, ownership); this stays a single-operator sandbox.
+ */
 import {
   createContext,
   useCallback,

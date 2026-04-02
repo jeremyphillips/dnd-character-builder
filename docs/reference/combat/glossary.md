@@ -17,16 +17,19 @@ Usually refers to:
 
 Combat is broader than any one feature screen.
 
-## Encounter
-The product feature/surface that hosts combat workflow in the app.
+## Encounter Simulator
+The **dev/testing** product surface that hosts local combat workflow: fast setup, any roster, one operator controls all combatants. Implemented under `src/features/encounter` (URLs may still use the path segment `encounter`).
 
 Usually refers to:
-- setup flow
+- simulator setup flow
 - active combat screen composition
-- DM workflow
+- operator workflow in this sandbox
 - feature-specific wrappers, shells, and orchestration
 
-Encounter is a consumer of combat.
+The Encounter Simulator is a consumer of combat. It is **not** the future **GameSession** (live game with joined players and per-player PC ownership).
+
+## GameSession (planned)
+Future player-facing live-play container: DM-created session, campaign members join, encounters exist inside a broader session, non-owner users typically control one PC. **Not implemented** as of the Encounter Simulator reframe; add as a separate feature when built.
 
 ## Shared combat engine
 The pure/shared layer that owns combat truth.
@@ -135,7 +138,7 @@ A smaller UI leaf component, often prop-driven, that may be reusable even when i
 ## Authoritative state
 The canonical source of truth for combat state.
 
-For **multiplayer / live play**, authoritative snapshots are intended to live on the **server** and be broadcast to clients. Today, the product’s main Encounter flow may still apply mechanics **locally** while the server exposes a **persisted** combat session API for the same seams—see [roadmap.md](./roadmap.md).
+For **multiplayer / live play**, authoritative snapshots are intended to live on the **server** and be broadcast to clients. Today, the **Encounter Simulator** may still apply mechanics **locally** while the server exposes a **persisted** combat session API for the same seams—see [roadmap.md](./roadmap.md). Future **GameSession** integration will build on those seams without conflating them with the simulator.
 
 ## Persisted combat session (server)
 A server-owned record tying a **`sessionId`** to the latest **`EncounterState` snapshot**, a monotonic **`revision`**, and timestamps. Clients send **`baseRevision`** when applying an intent so the server can reject **stale** concurrent updates. This is snapshot-first persistence, not full event sourcing.

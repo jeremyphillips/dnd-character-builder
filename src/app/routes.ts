@@ -17,6 +17,10 @@ export const ROUTES = {
   CAMPAIGN_ADMIN_INVITES: '/campaigns/:id/admin/invites',
   CAMPAIGN_ADMIN_SETTINGS: '/campaigns/:id/admin/settings',
   CAMPAIGN_ADMIN_RULESET: '/campaigns/:id/admin/ruleset',
+  /**
+   * Encounter Simulator (dev/testing combat). Path segment `encounter` is kept for stability.
+   * Not the future player-facing GameSession live-play surface.
+   */
   CAMPAIGN_ENCOUNTER: '/campaigns/:id/encounter',
   CAMPAIGN_ENCOUNTER_SETUP: '/campaigns/:id/encounter/setup',
   CAMPAIGN_ENCOUNTER_ACTIVE: '/campaigns/:id/encounter/active',

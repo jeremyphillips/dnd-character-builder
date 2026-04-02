@@ -35,7 +35,10 @@ export function EncounterSetupHeader({
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
         <div>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Encounter Setup
+            Encounter Simulator
+          </Typography>
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.25, mb: 0 }}>
+            Dev/testing sandbox — you control every combatant’s turn.
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {subtitleParts.join('\u2003')}
@@ -43,7 +46,7 @@ export function EncounterSetupHeader({
         </div>
 
         <Button variant="contained" onClick={onStartEncounter} disabled={!canStartEncounter}>
-          Start Encounter
+          Start combat
         </Button>
       </Stack>
     </Paper>

@@ -1,5 +1,5 @@
 /**
- * Encounter feature re-exports combat-owned presentation/selectors (Phase 2).
+ * Encounter Simulator feature re-exports combat-owned presentation/selectors (Phase 2).
  * Prefer importing from `@/features/mechanics/domain/combat/presentation/*` or `.../selectors/*` in new code.
  */
 export {

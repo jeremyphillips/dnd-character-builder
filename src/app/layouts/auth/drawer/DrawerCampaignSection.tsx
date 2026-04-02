@@ -252,7 +252,7 @@ export function DrawerCampaignSection({
                 <ListItemIcon sx={{ minWidth: 36 }}>
                   <ShieldIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Encounter" slotProps={{ primary: { fontSize: '0.85rem' } }} />
+                <ListItemText primary="Encounter simulator" slotProps={{ primary: { fontSize: '0.85rem' } }} />
               </ListItemButton>
 
               <ListItemButton

@@ -16,8 +16,8 @@ These are high-level checkpoints, not exhaustive changelogs.
 
 - **Phase 1:** `combat` naming, space under combat ownership, import hygiene.
 - **Phase 2:** Pure derivation moved toward combat-owned selectors/presentation where applicable.
-- **Phase 3 (client UI):** `src/features/combat` as reusable combat-facing UI; Encounter remains workflow shell.
-- **Phase 4A–4F:** Intent/result/event contracts; **`applyCombatIntent`** for in-encounter mutations; **`startEncounterFromSetup`** + **`CombatStartupInput`** for startup (distinct from runtime intents); Encounter uses these seams for migrated flows (see [client/local-dispatch.md](./client/local-dispatch.md)).
+- **Phase 3 (client UI):** `src/features/combat` as reusable combat-facing UI; Encounter Simulator remains workflow shell.
+- **Phase 4A–4F:** Intent/result/event contracts; **`applyCombatIntent`** for in-encounter mutations; **`startEncounterFromSetup`** + **`CombatStartupInput`** for startup (distinct from runtime intents); Encounter Simulator uses these seams for migrated flows (see [client/local-dispatch.md](./client/local-dispatch.md)).
 - **Shared package:** Combat-facing public surface lives in [`@rpg-world-builder/mechanics`](../../../packages/mechanics/README.md) (`applyCombatIntent`, `startEncounterFromSetup`, wire types, canonical state types). See [adr-shared-combat-extraction.md](./adr-shared-combat-extraction.md).
 
 ### Server (authoritative persistence, first pass)
@@ -45,7 +45,7 @@ Order is indicative, not a commitment.
 
 ### 3. Client: optional migration to server-backed combat
 
-- Encounter (or a thin adapter) could call HTTP combat APIs instead of (or in addition to) local `applyCombatIntent` / `startEncounterFromSetup` when “live server combat” is enabled.
+- **GameSession** or another live-play client (or a thin adapter) could call HTTP combat APIs instead of (or in addition to) local `applyCombatIntent` / `startEncounterFromSetup` when “live server combat” is enabled. The Encounter Simulator may also opt into server-backed combat independently for testing.
 - UX for **409 stale revision** (refresh state, retry, or merge policy).
 
 ### 4. Persistence depth
@@ -77,7 +77,7 @@ These are **known limitations** as of the last doc update; they are not bugs per
 |------|-----|
 | **Multiplayer** | No socket broadcast; clients do not share one authoritative stream yet. |
 | **Permissions** | Combat REST routes do not enforce campaign membership or role; treat as dev/smoke unless gated elsewhere. |
-| **Client integration** | Production Encounter still uses **local** dispatch; persisted server combat is **not** wired into the Encounter UI by default. |
+| **Client integration** | Encounter Simulator still uses **local** dispatch by default; persisted server combat is **not** wired into that UI unless explicitly integrated. Future **GameSession** may use server-backed combat first. |
 | **Stateless apply** | Stage 3B-style “send full state in body” apply path was removed in favor of **session id + revision**; old clients must migrate. |
 | **Persistence** | Single snapshot per session; no append-only event log, no replay tooling. |
 | **RNG / determinism** | Startup `rng` is not part of JSON; server uses engine defaults. Reproducible seeds for server-side tests/APIs are not fully standardized. |

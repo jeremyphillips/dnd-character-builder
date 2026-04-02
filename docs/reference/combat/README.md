@@ -25,15 +25,15 @@ Then branch by concern:
 |--------|-----|
 | Intents, events, engine concepts | [engine/overview.md](./engine/overview.md), [engine/intents-and-events.md](./engine/intents-and-events.md) |
 | Client UI | [client/overview.md](./client/overview.md), [client/grid.md](./client/grid.md) |
-| Encounter → mechanics today | [client/local-dispatch.md](./client/local-dispatch.md) |
+| Encounter Simulator → mechanics today | [client/local-dispatch.md](./client/local-dispatch.md) |
 | Deferred client hooks | [client/feedback-followups.md](./client/feedback-followups.md) |
 | Server authority (target + current notes) | [server/authoritative-flow.md](./server/authoritative-flow.md) |
 | Location floors → combat seed | [authored-content/location-floor-adapter.md](./authored-content/location-floor-adapter.md) |
 
 ## Core philosophy (short)
 
-- **`packages/mechanics` (combat)** owns **canonical rules and state** and the **startup** and **runtime intent** application seams. It stays free of React, routes, and Encounter workflow.
-- **`src/features/encounter`** owns **product workflow** (setup, composition, DM shells). It **consumes** combat; it does not own combat truth.
+- **`packages/mechanics` (combat)** owns **canonical rules and state** and the **startup** and **runtime intent** application seams. It stays free of React, routes, and Encounter Simulator workflow.
+- **`src/features/encounter`** is the **Encounter Simulator**: dev/testing combat workflow (setup, composition, operator shells). It **consumes** combat; it does not own combat truth. Future **GameSession** live play is a separate feature.
 - **`src/features/combat`** (client) owns **reusable combat UI** primitives; it does not own authoritative state.
 - **Server** owns **persistence, authority, sequencing, and eventually realtime** around the same mechanics seams. It does **not** fork rules.
 
@@ -54,7 +54,7 @@ Shared combat engine: state, resolution, space, intents/events, selectors.
 
 ### `client/`
 
-Reusable combat UI and Encounter integration; local dispatch documentation.
+Reusable combat UI and Encounter Simulator integration; local dispatch documentation.
 
 ### `server/`
 

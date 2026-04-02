@@ -178,6 +178,7 @@ export const router = createBrowserRouter([
                 element: <AdminGuard />,
                 children: [
                   {
+                    /* Encounter Simulator (dev/testing); not future GameSession */
                     path: 'encounter',
                     element: <EncounterLayout />,
                     children: [

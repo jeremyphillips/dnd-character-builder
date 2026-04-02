@@ -7,10 +7,15 @@ export type StartGameSessionResult =
   | { ok: true; session: GameSessionApi }
   | { ok: false; status: number; message: string }
 
+/**
+ * @param clientPresentUserIds - When set (from DM client), intersected with server lobby socket
+ *   presence so launch uses the same user set the lobby UI shows; filters stale server-only ids.
+ */
 export async function startGameSession(
   gameSessionId: string,
   campaignId: string,
   userId: string,
+  clientPresentUserIds?: string[],
 ): Promise<StartGameSessionResult> {
   const existing = await getGameSessionById(gameSessionId, campaignId)
   if (!existing) {
@@ -26,7 +31,13 @@ export async function startGameSession(
     return { ok: false, status: 409, message: 'Session already has an active encounter.' }
   }
 
-  const presentUserIds = getGameSessionLobbyPresentUserIds(campaignId, gameSessionId)
+  const serverPresentUserIds = getGameSessionLobbyPresentUserIds(campaignId, gameSessionId)
+  const serverSet = new Set(serverPresentUserIds)
+  const presentUserIds =
+    clientPresentUserIds !== undefined
+      ? clientPresentUserIds.filter((id) => serverSet.has(id))
+      : serverPresentUserIds
+
   const built = await buildCombatStartupInputFromGameSession(existing, campaignId, { presentUserIds })
   if (!built.ok) {
     return { ok: false, status: 400, message: built.message }

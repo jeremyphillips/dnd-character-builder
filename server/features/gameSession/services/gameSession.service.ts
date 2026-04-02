@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { env } from '../../../shared/config/env'
+import { deletePersistedCombatSession } from '../../combat/services/combatPersisted.service'
 
 const db = () => mongoose.connection.useDb(env.DB_NAME)
 const gameSessionsCollection = () => db().collection('gameSessions')
@@ -114,6 +115,23 @@ export async function getGameSessionById(
   })
   if (!doc) return null
   return docToApi(doc as GameSessionDoc & { _id: mongoose.Types.ObjectId })
+}
+
+export async function deleteGameSession(gameSessionId: string, campaignId: string): Promise<boolean> {
+  const existing = await getGameSessionById(gameSessionId, campaignId)
+  if (!existing) return false
+  if (existing.activeEncounterId) {
+    await deletePersistedCombatSession(existing.activeEncounterId)
+  }
+  let oid: mongoose.Types.ObjectId
+  try {
+    oid = new mongoose.Types.ObjectId(gameSessionId)
+  } catch {
+    return false
+  }
+  const cid = new mongoose.Types.ObjectId(campaignId)
+  const result = await gameSessionsCollection().deleteOne({ _id: oid, campaignId: cid })
+  return result.deletedCount === 1
 }
 
 export async function createGameSession(

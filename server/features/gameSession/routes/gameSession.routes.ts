@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireCampaignRole } from '../../../shared/middleware/requireCampaignRole'
+import { requireCampaignOwner, requireCampaignRole } from '../../../shared/middleware/requireCampaignRole'
 import { asyncHandler } from '../../../shared/middleware/asyncHandler'
 import {
   listGameSessions,
@@ -7,6 +7,7 @@ import {
   createGameSession,
   updateGameSession,
   startGameSession,
+  deleteGameSession,
 } from '../controllers/gameSession.controller'
 
 const router = Router({ mergeParams: true })
@@ -20,5 +21,6 @@ router.post(
   requireCampaignRole('dm'),
   asyncHandler(startGameSession),
 )
+router.delete('/:gameSessionId', requireCampaignOwner(), asyncHandler(deleteGameSession))
 
 export default router

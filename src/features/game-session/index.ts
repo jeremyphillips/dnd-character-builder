@@ -10,6 +10,7 @@ export {
   fetchGameSessionsForCampaign,
   createGameSession,
   updateGameSession,
+  deleteGameSession,
   startGameSession,
   type GameSessionPatch,
 } from './api/gameSessionApi'

@@ -19,11 +19,8 @@ export function GameSessionPlayView({ session }: GameSessionPlayViewProps) {
     <ActivePlayPageShell
       metadata={
         <Stack spacing={0.5}>
-          <Typography variant="h5" component="h1">
+          <Typography variant="body2" component="h1">
             {session.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Session play — combat state is loaded from the linked encounter record.
           </Typography>
         </Stack>
       }

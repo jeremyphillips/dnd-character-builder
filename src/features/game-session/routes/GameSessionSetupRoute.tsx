@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { useCharacters } from '@/features/character/hooks'
@@ -7,13 +7,15 @@ import { listCampaignLocations } from '@/features/content/locations/domain/repo/
 import type { Location } from '@/features/content/locations/domain/types'
 import { useEncounterOptions } from '@/features/encounter/hooks/useEncounterOptions'
 import type { EncounterNpc, OpponentOption } from '@/features/encounter/types'
-import { updateGameSession, type GameSessionPatch } from '../api/gameSessionApi'
+import { deleteGameSession, updateGameSession, type GameSessionPatch } from '../api/gameSessionApi'
 import { GameSessionSetupView } from '../components/GameSessionSetupView'
+import { campaignGameSessionsListPath } from './gameSessionPaths'
 import { useGameSessionRecord } from './GameSessionRecordContext'
 import { canEditGameSessionSetup } from '../utils/canEditGameSessionSetup'
 import type { SelectEntityOption } from '@/ui/patterns'
 
 export default function GameSessionSetupRoute() {
+  const navigate = useNavigate()
   const { id: campaignId } = useParams<{ id: string }>()
   const { campaign } = useActiveCampaign()
   const { session, refetch } = useGameSessionRecord()
@@ -79,6 +81,12 @@ export default function GameSessionSetupRoute() {
     await refetch()
   }
 
+  async function handleDeleteSession() {
+    if (!campaignId) return
+    await deleteGameSession(campaignId, session.id)
+    navigate(campaignGameSessionsListPath(campaignId), { replace: true })
+  }
+
   return (
     <GameSessionSetupView
       session={session}
@@ -89,6 +97,7 @@ export default function GameSessionSetupRoute() {
       npcSelectOptions={npcSelectOptions}
       opponentOptionsByKey={opponentOptionsByKey}
       onSave={handleSave}
+      onDelete={handleDeleteSession}
     />
   )
 }

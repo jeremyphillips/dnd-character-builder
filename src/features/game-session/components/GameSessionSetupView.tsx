@@ -27,7 +27,13 @@ import type { GameSession, GameSessionStatus } from '../domain/game-session.type
 import FormDateTimeField from '@/ui/patterns/form/FormDateTimeField'
 import FormSelectField from '@/ui/patterns/form/FormSelectField'
 import FormTextField from '@/ui/patterns/form/FormTextField'
-import { EntitySummaryCard, SelectedEntitiesLane, SelectEntityModal, type SelectEntityOption } from '@/ui/patterns'
+import {
+  ConfirmModal,
+  EntitySummaryCard,
+  SelectedEntitiesLane,
+  SelectEntityModal,
+  type SelectEntityOption,
+} from '@/ui/patterns'
 import { AppAlert, AppAvatar } from '@/ui/primitives'
 import { resolveImageUrl } from '@/shared/lib/media'
 
@@ -487,6 +493,8 @@ type GameSessionSetupViewProps = {
   npcSelectOptions: SelectEntityOption[]
   opponentOptionsByKey: Record<string, OpponentOption>
   onSave: (patch: GameSessionPatch) => Promise<void>
+  /** Permanently delete this session (campaign owner / platform admin route + API). */
+  onDelete: () => Promise<void>
 }
 
 export function GameSessionSetupView({
@@ -498,9 +506,13 @@ export function GameSessionSetupView({
   npcSelectOptions,
   opponentOptionsByKey,
   onSave,
+  onDelete,
 }: GameSessionSetupViewProps) {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const methods = useForm<FormValues>({
     shouldUnregister: true,
@@ -571,6 +583,23 @@ export function GameSessionSetupView({
       return null
     })
 
+  async function handleConfirmDelete() {
+    setDeleteError(null)
+    setDeleting(true)
+    try {
+      await onDelete()
+      setDeleteConfirmOpen(false)
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setDeleteError(e.message)
+      } else {
+        setDeleteError('Failed to delete session')
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <Stack spacing={2}>
       <Typography variant="h5" component="h1">
@@ -590,6 +619,12 @@ export function GameSessionSetupView({
       {saveError && (
         <AppAlert tone="danger" onClose={() => setSaveError(null)}>
           {saveError}
+        </AppAlert>
+      )}
+
+      {deleteError && (
+        <AppAlert tone="danger" onClose={() => setDeleteError(null)}>
+          {deleteError}
         </AppAlert>
       )}
 
@@ -635,6 +670,45 @@ export function GameSessionSetupView({
           </Typography>
         </CardContent>
       </Card>
+
+      {canEdit && (
+        <Card variant="outlined" sx={{ borderColor: 'error.light' }}>
+          <CardContent>
+            <Typography variant="subtitle2" color="error" gutterBottom>
+              Danger zone
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Permanently delete this game session and any linked active encounter data. This cannot be
+              undone.
+            </Typography>
+            <Button
+              type="button"
+              variant="outlined"
+              color="error"
+              disabled={saving || deleting}
+              onClick={() => {
+                setDeleteError(null)
+                setDeleteConfirmOpen(true)
+              }}
+            >
+              Delete session
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => void handleConfirmDelete()}
+        headline="Delete this game session?"
+        description={`“${session.title}” will be removed permanently, including any linked combat encounter.`}
+        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+        cancelLabel="Cancel"
+        confirmColor="error"
+        loading={deleting}
+        size="compact"
+      />
     </Stack>
   )
 }

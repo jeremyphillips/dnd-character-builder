@@ -103,13 +103,24 @@ export async function updateGameSession(
   return dtoToGameSession(data.gameSession)
 }
 
+/** Campaign owner / platform admin only (server); removes linked combat session when present. */
+export async function deleteGameSession(campaignId: string, gameSessionId: string): Promise<void> {
+  await apiFetch(`/api/campaigns/${campaignId}/game-sessions/${gameSessionId}`, { method: 'DELETE' })
+}
+
 /**
  * DM-only: creates persisted combat from session setup, marks session active, attaches {@link GameSession.activeEncounterId}.
+ * Pass {@link presentUserIds} so the server can intersect with socket room presence (matches lobby UI).
  */
-export async function startGameSession(campaignId: string, gameSessionId: string): Promise<GameSession> {
+export async function startGameSession(
+  campaignId: string,
+  gameSessionId: string,
+  options?: { presentUserIds?: string[] },
+): Promise<GameSession> {
+  const body = options?.presentUserIds != null ? { presentUserIds: options.presentUserIds } : undefined
   const data = await apiFetch<{ gameSession: GameSessionDto }>(
     `/api/campaigns/${campaignId}/game-sessions/${gameSessionId}/start`,
-    { method: 'POST' },
+    { method: 'POST', body },
   )
   return dtoToGameSession(data.gameSession)
 }

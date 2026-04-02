@@ -103,7 +103,12 @@ export async function startGameSession(req: Request, res: Response) {
     return
   }
 
-  const result = await executeStartGameSession(gameSessionId, campaignId, userId)
+  const raw = (req.body as { presentUserIds?: unknown } | undefined)?.presentUserIds
+  const clientPresentUserIds = Array.isArray(raw)
+    ? raw.map((x) => (typeof x === 'string' ? x : String(x))).filter((s) => s.length > 0)
+    : undefined
+
+  const result = await executeStartGameSession(gameSessionId, campaignId, userId, clientPresentUserIds)
   if (!result.ok) {
     res.status(result.status).json({ error: result.message })
     return
@@ -165,4 +170,19 @@ export async function updateGameSession(req: Request, res: Response) {
     console.error('updateGameSession:', err)
     res.status(500).json({ error: 'Failed to update game session' })
   }
+}
+
+export async function deleteGameSession(req: Request, res: Response) {
+  const campaignId = paramString(req, 'id')
+  const gameSessionId = paramString(req, 'gameSessionId')
+  if (!campaignId || !gameSessionId) {
+    res.status(400).json({ error: 'Campaign ID and game session ID are required' })
+    return
+  }
+  const deleted = await gameSessionService.deleteGameSession(gameSessionId, campaignId)
+  if (!deleted) {
+    res.status(404).json({ error: 'Game session not found' })
+    return
+  }
+  res.status(204).send()
 }

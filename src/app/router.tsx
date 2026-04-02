@@ -183,7 +183,11 @@ export const router = createBrowserRouter([
                 children: [
                   { index: true, element: <GameSessionIndexRedirect /> },
                   { path: 'lobby', element: <GameSessionLobbyRoute /> },
-                  { path: 'setup', element: <GameSessionSetupRoute /> },
+                  {
+                    path: 'setup',
+                    element: <AdminGuard />,
+                    children: [{ index: true, element: <GameSessionSetupRoute /> }],
+                  },
                   { path: 'play', element: <GameSessionPlayRoute /> },
                 ],
               },

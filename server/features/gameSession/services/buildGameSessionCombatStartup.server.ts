@@ -31,11 +31,16 @@ export async function buildCombatStartupInputFromGameSession(
     return { ok: false, message: 'No approved party characters in this campaign.' }
   }
 
+  /** Player characters only — matches lobby / session-start UX; opponent NPCs come from opponentRefKeys. */
+  const rosterPlayerCharacters = roster.filter((row) => row.type !== 'npc')
+
   const sessionForExpected = session as unknown as GameSession
-  const expectedCharacterIds = resolveExpectedSessionCharacterIds(sessionForExpected, roster)
+  const expectedAll = resolveExpectedSessionCharacterIds(sessionForExpected, roster)
+  const expectedCharacterIds = expectedAll.filter((id) => rosterPlayerCharacters.some((r) => r.id === id))
+
   const launchCharacterIds = resolveLaunchSessionCharacterIds({
     expectedCharacterIds,
-    rosterCharacters: roster,
+    rosterCharacters: rosterPlayerCharacters,
     presentUserIds: options.presentUserIds,
   })
 

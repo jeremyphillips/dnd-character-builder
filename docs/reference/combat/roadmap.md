@@ -25,10 +25,12 @@ These are high-level checkpoints, not exhaustive changelogs.
 - **Stage 3A:** `POST /api/combat/sessions` — startup via shared mechanics, proof of server import.
 - **Stage 3B:** Stateless apply-intent smoke (superseded by 3C).
 - **Stage 3C:** **Persisted** combat sessions (MongoDB): `sessionId`, monotonic **`revision`**, snapshot **`state`**; **`POST /api/combat/sessions`** creates a session; **`POST /api/combat/sessions/:sessionId/intents`** applies intents with **`baseRevision`**; stale revision → **409**, missing session → **404**. No realtime, no campaign permissions on combat routes yet.
+- **Persisted intent mirror (client + server hygiene):** **`express.json`** body limit raised for intent POSTs; **`postPersistedCombatIntent`** strips **`monstersById`** from JSON context; **`useEncounterState`** serializes mirror POSTs, syncs encounter state to a ref during render, and applies move/end-turn/resolve outside `setState` updaters — see [client/persisted-intent-sync.md](./client/persisted-intent-sync.md).
 
 ### Related product (live-play session shell)
 
-- **GameSession** (`src/features/game-session`): campaign game session list, lobby/setup routes, **`/play`** when **`activeEncounterId`** is set, lifecycle status, informational scheduling, ephemeral **lobby presence** (Socket.IO), expected-party UI, and **client orchestration** of persisted combat (HTTP load + intent mirror). **Authoritative** state and revision still live on the **server**; **WebSocket combat broadcast** and **fine-grained permissions** remain outstanding—see [game-session.md](./game-session.md).
+- **GameSession** (`src/features/game-session`): campaign game session list, lobby/setup routes, **`/play`** when **`activeEncounterId`** is set, lifecycle status, informational scheduling, ephemeral **lobby presence** (Socket.IO), expected-party UI, and **client orchestration** of persisted combat (HTTP load + intent mirror). **Authoritative** state and revision still live on the **server**; **WebSocket combat broadcast** remains outstanding.
+- **Game-linked intent authorization:** when combat is tied to a game session via **`activeEncounterId`**, **`POST .../intents`** enforces **who may act** using the same **seat + controlled combatant** rules as the client (including **roster-based inference** when **`participants`** is incomplete). **403** on forbidden intents; orphan combat sessions still use looser policy until campaign tenancy—see [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md), [server/authoritative-flow.md](./server/authoritative-flow.md).
 
 ---
 
@@ -44,7 +46,7 @@ Order is indicative, not a commitment.
 
 ### 2. Server: permissions and tenancy
 
-- Tie combat sessions to **campaign** (or session) and enforce **who may start or mutate** combat.
+- Tie combat sessions to **campaign** (or session) and enforce **who may start or mutate** combat **beyond** game-linked “act for combatants you control” checks (e.g. orphan sessions, campaign membership for **create**/**startup**).
 - Authenticated routes; avoid anonymous combat mutation in production.
 
 ### 3. Client: optional migration to server-backed combat
@@ -80,7 +82,7 @@ These are **known limitations** as of the last doc update; they are not bugs per
 | Area | Gap |
 |------|-----|
 | **Multiplayer (combat)** | No WebSocket broadcast of **combat** state after intents; clients do not share one authoritative combat stream yet. (GameSession lobby presence uses Socket.IO for a different purpose.) |
-| **Permissions** | Combat REST routes do not enforce campaign membership or role; treat as dev/smoke unless gated elsewhere. |
+| **Permissions** | **Game-session–linked** apply-intent enforces **seat + controlled combatant** (aligned with client). **Orphan** combat sessions and **broad** campaign/role tenancy on combat routes are still minimal—see [server/authoritative-flow.md](./server/authoritative-flow.md). |
 | **Client integration** | Encounter Simulator still uses **local** dispatch by default; persisted server combat is **not** wired into that UI unless explicitly integrated. **GameSession `/play`** loads persisted combat by **`activeEncounterId`** and mirrors intents to the server; **lobby → start** wiring and **multi-client** sync polish remain incremental ([game-session.md](./game-session.md)). |
 | **Stateless apply** | Stage 3B-style “send full state in body” apply path was removed in favor of **session id + revision**; old clients must migrate. |
 | **Persistence** | Single snapshot per session; no append-only event log, no replay tooling. |

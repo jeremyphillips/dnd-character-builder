@@ -97,6 +97,7 @@ export function resolveIntervalEffectsForCombatantAtTurnBoundary(
     const syntheticAction =
       aura.source.kind === 'spell'
         ? (() => {
+            if (typeof options.spellLookup !== 'function') return null
             const spell = options.spellLookup(aura.source.spellId)
             return spell ? buildSyntheticSpellAction(spell, aura.id, 'interval') : null
           })()

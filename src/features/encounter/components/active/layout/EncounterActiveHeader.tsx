@@ -2,10 +2,11 @@
 // import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 
+import { useTheme } from '@mui/material/styles'
+
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 // import IconButton from '@mui/material/IconButton'
-import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
@@ -13,11 +14,7 @@ import type { Monster } from '@/features/content/monsters/domain/types'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 import type { CombatantTurnResources } from '@/features/mechanics/domain/combat/state/types/combatant.types'
 
-import {
-  AppBadge,
-  ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR,
-  encounterActiveBarSx,
-} from '@/ui/primitives'
+import { AppBadge } from '@/ui/primitives'
 
 import type {
   EndTurnEmphasis,
@@ -30,6 +27,7 @@ import {
   partitionCombatantActionBuckets,
   turnResourceBucketHeaderBadge,
 } from '../../../domain'
+import { getEncounterUiStateTheme } from '../../../ui/theme/encounterUiStateTheme'
 import { EncounterActiveCombatantIdentity } from './EncounterActiveCombatantIdentity'
 import { EncounterPresentationPovField } from './EncounterPresentationPovField'
 import { AppTooltipWrap } from '@/ui/primitives'
@@ -45,6 +43,11 @@ export type EncounterActiveHeaderProps = {
   activeCombatant: CombatantInstance | null
   /** Duplicate-aware title for the active combatant. */
   activeCombatantDisplayLabel: string
+  /**
+   * When set (e.g. viewer controls this combatant’s turn), replaces the identity headline
+   * — typically `Your turn — {name}` to match turn-change toast copy.
+   */
+  activeCombatantHeadlineOverride?: string | null
   monstersById: Record<string, Monster | undefined>
   turnResources: CombatantTurnResources | null
   baseMovementFt: number
@@ -78,6 +81,7 @@ export function EncounterActiveHeader({
   nextCombatantLabel,
   activeCombatant,
   activeCombatantDisplayLabel,
+  activeCombatantHeadlineOverride,
   monstersById,
   turnResources,
   baseMovementFt,
@@ -95,6 +99,10 @@ export function EncounterActiveHeader({
   nextCombatantPresentationKind = null,
   toolbarVariant = 'simulator',
 }: EncounterActiveHeaderProps) {
+  const theme = useTheme()
+  const encounterUiStateTheme = useMemo(() => getEncounterUiStateTheme(theme), [theme])
+  const isActiveTurnChrome = Boolean(activeCombatantHeadlineOverride)
+
   const showSimulatorChrome = toolbarVariant === 'simulator'
   const move = turnResources?.movementRemaining ?? 0
   const headerRootRef = useRef<HTMLDivElement>(null)
@@ -114,9 +122,10 @@ export function EncounterActiveHeader({
     const el = headerRootRef.current
     if (!el) return
 
+    const cssVar = encounterUiStateTheme.header.height.cssVarName
     const syncHeightVar = () => {
       const h = Math.ceil(el.getBoundingClientRect().height)
-      document.documentElement.style.setProperty(ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR, `${h}px`)
+      document.documentElement.style.setProperty(cssVar, `${h}px`)
     }
 
     syncHeightVar()
@@ -124,23 +133,30 @@ export function EncounterActiveHeader({
     ro.observe(el)
     return () => {
       ro.disconnect()
-      document.documentElement.style.removeProperty(ENCOUNTER_ACTIVE_HEADER_HEIGHT_CSS_VAR)
+      document.documentElement.style.removeProperty(cssVar)
     }
-  }, [])
+  }, [encounterUiStateTheme])
+
+  const headerBar = encounterUiStateTheme.header.bar
+  const headerChrome = encounterUiStateTheme.header.chrome[isActiveTurnChrome ? 'activeTurn' : 'default']
 
   return (
-    <Paper
+    <Box
       ref={headerRootRef}
-      square
-      elevation={2}
       sx={{
         position: 'sticky',
         top: 0,
-        zIndex: (theme) => theme.zIndex.appBar + 1,
+        zIndex: (t) => t.zIndex.appBar + 1,
+        borderRadius: 0,
         borderBottom: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        ...encounterActiveBarSx,
+        borderColor: headerChrome.borderColor,
+        bgcolor: headerChrome.bgColor,
+        boxShadow: (t) => t.shadows[2],
+        color: 'text.primary',
+        px: headerBar.horizontalSpacing,
+        py: headerBar.verticalSpacing,
+        minHeight: headerBar.minHeightPx,
+        boxSizing: headerBar.boxSizing,
       }}
     >
       <Stack
@@ -152,7 +168,7 @@ export function EncounterActiveHeader({
           {activeCombatant ? (
             <EncounterActiveCombatantIdentity
               combatant={activeCombatant}
-              displayLabel={activeCombatantDisplayLabel}
+              displayLabel={activeCombatantHeadlineOverride ?? activeCombatantDisplayLabel}
               monstersById={monstersById}
             />
           ) : (
@@ -279,11 +295,13 @@ export function EncounterActiveHeader({
         >
           <Typography
             variant="subtitle1"
-            color={resourcesExhausted ? 'warning.main' : 'inherit'}
             sx={{
               fontWeight: 700,
               lineHeight: 1.35,
               textAlign: { xs: 'left', md: 'right' },
+              color: resourcesExhausted
+                ? encounterUiStateTheme.header.chrome.directive.resourcesExhaustedTextColor
+                : 'inherit',
             }}
           >
             {directive}
@@ -303,16 +321,17 @@ export function EncounterActiveHeader({
                 Actions
               </Button>
             )}
-            <Button
-              variant={endTurnEmphasis === 'strong' ? 'contained' : 'outlined'}
-              color={endTurnEmphasis === 'strong' ? 'primary' : 'inherit'}
-              size="medium"
-              disabled={!canEndTurn}
-              onClick={onEndTurn}
-              sx={{ minWidth: 120 }}
-            >
-              End Turn
-            </Button>
+            {canEndTurn && (
+              <Button
+                variant={endTurnEmphasis === 'strong' ? 'contained' : 'outlined'}
+                color={endTurnEmphasis === 'strong' ? 'primary' : 'inherit'}
+                size="medium"
+                onClick={onEndTurn}
+                sx={{ minWidth: 120 }}
+              >
+                End Turn
+              </Button>
+            )}
           </Stack>
         </Stack>
       </Stack>
@@ -350,6 +369,6 @@ export function EncounterActiveHeader({
           </AppTooltipWrap>
         </Stack>
       )}
-    </Paper>
+    </Box>
   )
 }

@@ -23,8 +23,8 @@ app.options('/*', (_req, res) => res.sendStatus(200))
 // Cookie parsing
 app.use(cookieParser())
 
-// Body parsing
-app.use(express.json())
+// Body parsing (combat intent POSTs include serialized context; default 100kb is too small)
+app.use(express.json({ limit: '2mb' }))
 app.use(express.raw({ type: 'image/*', limit: '10mb' }))
 
 // Logging

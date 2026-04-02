@@ -16,6 +16,7 @@ export function getEffectsForAttachedBattlefieldSource(
 ): Effect[] {
   switch (source.kind) {
     case 'spell': {
+      if (typeof opts.spellLookup !== 'function') return []
       const spell = opts.spellLookup(source.spellId)
       return spell?.effects ?? []
     }
@@ -39,7 +40,9 @@ export function getLabelForAttachedBattlefieldSource(
 ): string {
   switch (source.kind) {
     case 'spell':
-      return opts.spellLookup(source.spellId)?.name ?? source.spellId
+      return typeof opts.spellLookup === 'function'
+        ? opts.spellLookup(source.spellId)?.name ?? source.spellId
+        : source.spellId
     case 'monster-action': {
       const monster = opts.monstersById?.[source.monsterId]
       const found = monster ? findMonsterSpecialActionByRuntimeActionId(monster, source.actionId) : undefined

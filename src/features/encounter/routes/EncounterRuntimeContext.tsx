@@ -38,7 +38,6 @@ import {
   SelectEncounterAllyModal,
   SelectEncounterOpponentModal,
   EncounterEditModal,
-  CombatTurnOrderModal,
   GRID_SIZE_PRESETS,
   type EnvironmentSetupValues,
   type GridSizePreset,
@@ -193,7 +192,9 @@ function useEncounterRuntimeValue() {
 
   const viewerContext: EncounterViewerContext = useMemo(
     () => ({
+      mode: 'simulator' as const,
       viewerRole: 'dm' as const,
+      viewerUserId: null,
       simulatorViewerMode,
       presentationSelectedCombatantId,
       controlledCombatantIds: [],
@@ -235,7 +236,6 @@ function useEncounterRuntimeValue() {
   const [allyModalOpen, setAllyModalOpen] = useState(false)
   const [opponentModalOpen, setOpponentModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
-  const [turnOrderModalOpen, setTurnOrderModalOpen] = useState(false)
   const [actionDrawerOpen, setActionDrawerOpen] = useState(false)
 
   const partyAllyModalOptions = useMemo(
@@ -397,7 +397,6 @@ function useEncounterRuntimeValue() {
   )
 
   const { activeHeader, capabilities } = useEncounterCombatActiveHeader({
-    variant: 'simulator',
     encounterState,
     activeCombatant,
     availableActions,
@@ -506,8 +505,6 @@ function useEncounterRuntimeValue() {
     setOpponentModalOpen,
     editModalOpen,
     setEditModalOpen,
-    turnOrderModalOpen,
-    setTurnOrderModalOpen,
     partyAllyModalOptions,
     npcAllyModalOptions,
     monsterModalOptions,
@@ -551,8 +548,6 @@ function EncounterRuntimeModals() {
     setOpponentModalOpen,
     editModalOpen,
     setEditModalOpen,
-    turnOrderModalOpen,
-    setTurnOrderModalOpen,
     partyAllyModalOptions,
     npcAllyModalOptions,
     monsterModalOptions,
@@ -575,8 +570,6 @@ function EncounterRuntimeModals() {
     removeAllyCombatant,
     removeOpponentCombatant,
     addOpponentCopy,
-    encounterState,
-    combatantViewerPresentationKindById,
   } = useEncounterRuntime()
 
   return (
@@ -637,15 +630,6 @@ function EncounterRuntimeModals() {
           />
         }
       />
-
-      {encounterState && (
-        <CombatTurnOrderModal
-          open={turnOrderModalOpen}
-          onClose={() => setTurnOrderModalOpen(false)}
-          encounterState={encounterState}
-          combatantViewerPresentationKindById={combatantViewerPresentationKindById}
-        />
-      )}
     </>
   )
 }

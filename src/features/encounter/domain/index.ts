@@ -89,23 +89,31 @@ export {
 export type { CanResolveCombatActionSelectionArgs } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-resolve-selection'
 export { deriveCombatantTurnExhaustion } from '@/features/mechanics/domain/combat/selectors/turn/combatant-turn-exhaustion'
 export type { CombatantTurnExhaustionInput } from '@/features/mechanics/domain/combat/selectors/turn/combatant-turn-exhaustion'
-export { deriveEncounterHeaderModel } from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
+export {
+  deriveEncounterHeaderModel,
+  resolveEncounterHeaderPhase,
+} from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
 export type {
   DeriveEncounterHeaderModelArgs,
   EncounterHeaderDisplayArgs,
   EncounterHeaderInteractionArgs,
   EncounterHeaderModel,
+  EncounterHeaderPhase,
+  EncounterHeaderTonePerspective,
   EncounterHeaderTurnArgs,
+  EncounterHeaderViewerPolicy,
   EndTurnEmphasis,
 } from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
 export type { TurnOptionBucketState, TurnResourceBucketHeaderBadge } from '@/features/mechanics/domain/combat/selectors/turn/turn-options'
 export { deriveEncounterCapabilities } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
+export { resolveSessionControlledCombatantIds } from '@/features/mechanics/domain/combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
 export type {
   EncounterCapabilities,
   EncounterSimulatorViewerMode,
   EncounterViewerContext,
-  EncounterViewerRole,
+  EncounterSessionSeat,
 } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
+export type { ResolveSessionControlledCombatantIdsArgs } from '@/features/mechanics/domain/combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
 export { deriveEncounterPerceptionUiFeedback } from '@/features/mechanics/domain/combat/presentation/perception/encounter-perception-ui.feedback'
 export type {
   EncounterPerceptionUiFeedback,

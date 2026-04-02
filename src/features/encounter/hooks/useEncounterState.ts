@@ -80,6 +80,10 @@ export function useEncounterState({
 }: UseEncounterStateArgs) {
   const isHydratedMode = Boolean(hydratedEncounterState)
   const persistedRevisionRef = useRef(persistedCombat?.revision ?? 0)
+  /** Serializes POST /intents so each request uses the revision from the previous commit (avoids 409 stale). */
+  const syncPersistedQueueRef = useRef(Promise.resolve())
+  /** Latest encounter state for apply + sync without relying on setState updater (Strict Mode / concurrent safe). */
+  const encounterStateRef = useRef<EncounterState | null>(null)
 
   useEffect(() => {
     if (persistedCombat) persistedRevisionRef.current = persistedCombat.revision
@@ -87,6 +91,7 @@ export function useEncounterState({
 
   const [resolvedCombatantsById, setResolvedCombatantsById] = useState<Record<string, CombatantInstance>>({})
   const [encounterState, setEncounterState] = useState<EncounterState | null>(null)
+  encounterStateRef.current = encounterState
   const [controlTargetId, setControlTargetId] = useState('')
   const [damageAmount, setDamageAmount] = useState('5')
   const [damageTypeInput, setDamageTypeInput] = useState('fire')
@@ -151,18 +156,23 @@ export function useEncounterState({
   const syncPersistedAfterApply = useCallback(
     (intent: CombatIntent, context: ApplyCombatIntentContext = {}) => {
       if (!persistedCombat) return
-      const baseRev = persistedRevisionRef.current
-      void postPersistedCombatIntent({
-        sessionId: persistedCombat.sessionId,
-        baseRevision: baseRev,
-        intent,
-        context,
-      }).then((r) => {
-        if (r.ok) {
-          persistedRevisionRef.current = r.revision
-          persistedCombat.setRevision(r.revision)
-        }
-      })
+      syncPersistedQueueRef.current = syncPersistedQueueRef.current
+        .then(async () => {
+          const baseRev = persistedRevisionRef.current
+          const r = await postPersistedCombatIntent({
+            sessionId: persistedCombat.sessionId,
+            baseRevision: baseRev,
+            intent,
+            context,
+          })
+          if (r.ok) {
+            persistedRevisionRef.current = r.revision
+            persistedCombat.setRevision(r.revision)
+          }
+        })
+        .catch((err) => {
+          console.error('persisted combat sync failed', err)
+        })
     },
     [persistedCombat],
   )
@@ -357,51 +367,61 @@ export function useEncounterState({
   }
 
   function handleNextTurn() {
-    setEncounterState((prev) => {
-      if (!prev) return prev
-      const context: ApplyCombatIntentContext = {
-        advanceEncounterTurnOptions: {
-          rng: Math.random,
-          battlefieldInterval:
-            spellsById != null
-              ? {
-                  spellLookup: (id) => spellsById[id],
-                  suppressSameSideHostile,
-                  monstersById,
-                }
-              : undefined,
-        },
+    const prev = encounterStateRef.current
+    if (!prev) {
+      if (import.meta.env.DEV && encounterState) {
+        console.error('handleNextTurn: encounterStateRef is null but encounterState exists — ref sync is missing')
       }
-      const result = applyCombatIntent(prev, { kind: 'end-turn' }, context)
-      if (!result.ok) return prev
-      notifyLogAppendedFromIntentSuccess(result)
-      syncPersistedAfterApply({ kind: 'end-turn' }, context)
-      return result.nextState
-    })
+      return
+    }
+    const context: ApplyCombatIntentContext = {
+      advanceEncounterTurnOptions: {
+        rng: Math.random,
+        battlefieldInterval:
+          spellsById != null
+            ? {
+                spellLookup: (id) => spellsById[id],
+                suppressSameSideHostile,
+                monstersById,
+              }
+            : undefined,
+      },
+    }
+    const result = applyCombatIntent(prev, { kind: 'end-turn' }, context)
+    if (!result.ok) return
+    encounterStateRef.current = result.nextState
+    setEncounterState(result.nextState)
+    notifyLogAppendedFromIntentSuccess(result)
+    syncPersistedAfterApply({ kind: 'end-turn' }, context)
   }
 
   const handleResolveAction = useCallback(() => {
-    setEncounterState((prev) => {
-      if (!prev || !prev.activeCombatantId || !selectedActionId) return prev
-      const intent = buildResolveActionIntentFromActiveSelection({
-        activeCombatantId: prev.activeCombatantId,
-        selectedActionId,
-        selectedActionTargetId,
-        selectedCasterOptions,
-        aoeOriginCellId,
-        selectedSingleCellPlacementCellId,
-        unaffectedCombatantIds,
-        selectedObjectAnchorId,
-      })
-      const context: ApplyCombatIntentContext = {
-        resolveCombatActionOptions: { monstersById, buildSummonAllyCombatant },
+    const prev = encounterStateRef.current
+    if (!prev || !prev.activeCombatantId || !selectedActionId) {
+      if (import.meta.env.DEV && encounterState && !prev) {
+        console.error('handleResolveAction: encounterStateRef is null but encounterState exists — ref sync is missing')
       }
-      const result = applyCombatIntent(prev, intent, context)
-      if (!result.ok) return prev
-      notifyLogAppendedFromIntentSuccess(result)
-      syncPersistedAfterApply(intent, context)
-      return result.nextState
+      return
+    }
+    const intent = buildResolveActionIntentFromActiveSelection({
+      activeCombatantId: prev.activeCombatantId,
+      selectedActionId,
+      selectedActionTargetId,
+      selectedCasterOptions,
+      aoeOriginCellId,
+      selectedSingleCellPlacementCellId,
+      unaffectedCombatantIds,
+      selectedObjectAnchorId,
     })
+    const context: ApplyCombatIntentContext = {
+      resolveCombatActionOptions: { monstersById, buildSummonAllyCombatant },
+    }
+    const result = applyCombatIntent(prev, intent, context)
+    if (!result.ok) return
+    encounterStateRef.current = result.nextState
+    setEncounterState(result.nextState)
+    notifyLogAppendedFromIntentSuccess(result)
+    syncPersistedAfterApply(intent, context)
     resetAoePlacement()
     setSelectedActionId('')
     setSelectedActionTargetId('')
@@ -512,34 +532,39 @@ export function useEncounterState({
   }
 
   function handleMoveCombatant(targetCellId: string) {
-    if (!encounterState || !activeCombatantId) return
-    setEncounterState((prev) => {
-      if (!prev) return prev
-      const intent: CombatIntent = {
-        kind: 'move-combatant',
-        combatantId: activeCombatantId,
-        destinationCellId: targetCellId,
+    const prev = encounterStateRef.current
+    const moverId = prev?.activeCombatantId
+    if (!prev || !moverId) {
+      if (import.meta.env.DEV && encounterState) {
+        console.error('handleMoveCombatant: encounterStateRef is null but encounterState exists — ref sync is missing')
       }
-      const context: ApplyCombatIntentContext = {
-        moveCombatantSpellContext:
-          spellsById != null
-            ? { spellLookup: (id) => spellsById[id], suppressSameSideHostile }
-            : undefined,
-        spatialEntryAfterMove:
-          spellsById != null
-            ? {
-                spellLookup: (id) => spellsById[id],
-                suppressSameSideHostile,
-                monstersById,
-              }
-            : undefined,
-      }
-      const result = applyCombatIntent(prev, intent, context)
-      if (!result.ok) return prev
-      notifyLogAppendedFromIntentSuccess(result)
-      syncPersistedAfterApply(intent, context)
-      return result.nextState
-    })
+      return
+    }
+    const intent: CombatIntent = {
+      kind: 'move-combatant',
+      combatantId: moverId,
+      destinationCellId: targetCellId,
+    }
+    const context: ApplyCombatIntentContext = {
+      moveCombatantSpellContext:
+        spellsById != null
+          ? { spellLookup: (id) => spellsById[id], suppressSameSideHostile }
+          : undefined,
+      spatialEntryAfterMove:
+        spellsById != null
+          ? {
+              spellLookup: (id) => spellsById[id],
+              suppressSameSideHostile,
+              monstersById,
+            }
+          : undefined,
+    }
+    const result = applyCombatIntent(prev, intent, context)
+    if (!result.ok) return
+    encounterStateRef.current = result.nextState
+    setEncounterState(result.nextState)
+    notifyLogAppendedFromIntentSuccess(result)
+    syncPersistedAfterApply(intent, context)
   }
 
   function handleMonsterManualTriggerChange(

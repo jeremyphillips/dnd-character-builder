@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
-import { AppToast, type AppAlertTone } from '@/ui/primitives'
+import { AppToast } from '@/ui/primitives'
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks'
 
 import { CombatPlayView } from '@/features/combat/components/CombatPlayView'
@@ -20,7 +20,8 @@ import {
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 
-import { buildEncounterActionToastPayload } from '../helpers/actions'
+import { deriveEncounterToastsFromNewLogSlice } from '../toast/derive-encounter-toast-for-viewer'
+import type { EncounterToastPresentation, EncounterToastViewerInput } from '../toast/encounter-toast-types'
 import { deriveEncounterSideOutcome } from '../helpers/state'
 import { EncounterGameOverModal } from '../components/active/modals/EncounterGameOverModal'
 import { canResolveCombatActionSelection, selectValidActionIdsForTarget } from '../domain'
@@ -94,6 +95,8 @@ export type EncounterActivePlaySurfaceDeps = Pick<
   | 'setObjectAnchorHoverCellId'
   | 'suppressSameSideHostile'
   | 'spellsById'
+  | 'capabilities'
+  | 'viewerContext'
 >
 
 function placementReasonMessage(reason: PlacementValidationReason): string {
@@ -146,7 +149,7 @@ export function useEncounterActivePlaySurface(
     handleMoveCombatant,
     handleResolveAction,
     handleNextTurn,
-    registerCombatLogAppended,
+    registerCombatLogAppended: _registerCombatLogAppended,
     handleResetEncounter,
     actionDrawerOpen,
     setActionDrawerOpen,
@@ -164,16 +167,54 @@ export function useEncounterActivePlaySurface(
     setObjectAnchorHoverCellId,
     suppressSameSideHostile,
     spellsById,
+    capabilities,
+    viewerContext,
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
-  const [toastPayload, setToastPayload] = useState<{
-    title: string
-    tone: AppAlertTone
-    narrative: string
-    mechanics: string
-  } | null>(null)
+  const [toastPayload, setToastPayload] = useState<EncounterToastPresentation | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
+  const toastOpenRef = useRef(false)
+  const toastQueueRef = useRef<EncounterToastPresentation[]>([])
+  const shownToastDedupeKeysRef = useRef<Set<string>>(new Set())
+  /** Tracks processed `encounterState.log` length so remote hydration (e.g. other player’s intent) also drives toasts. */
+  const lastProcessedCombatLogLenRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    toastOpenRef.current = toastOpen
+  }, [toastOpen])
+
+  const toastViewerInput = useMemo((): EncounterToastViewerInput => {
+    const mode: EncounterToastViewerInput['viewerMode'] =
+      viewerContext.mode === 'simulator' ? 'simulator' : 'session'
+    return {
+      viewerMode: mode,
+      controlledCombatantIds: viewerContext.controlledCombatantIds,
+      tonePerspective: capabilities?.tonePerspective ?? 'dm',
+      viewerRole: viewerContext.mode === 'session' ? viewerContext.viewerRole : undefined,
+      simulatorPresentationCombatantId:
+        viewerContext.mode === 'simulator' ? viewerContext.presentationSelectedCombatantId ?? null : undefined,
+    }
+  }, [
+    viewerContext.mode,
+    viewerContext.controlledCombatantIds,
+    viewerContext.viewerRole,
+    viewerContext.presentationSelectedCombatantId,
+    capabilities?.tonePerspective,
+  ])
+
+  const handleToastClose = useCallback(() => {
+    setToastOpen(false)
+    window.setTimeout(() => {
+      const next = toastQueueRef.current.shift()
+      if (next) {
+        setToastPayload(next)
+        setToastOpen(true)
+      } else {
+        setToastPayload(null)
+      }
+    }, 0)
+  }, [])
   const [placementError, setPlacementError] = useState<string | null>(null)
   const [singleCellPlacementError, setSingleCellPlacementError] = useState<string | null>(null)
   const [gameOverDismissed, setGameOverDismissed] = useState(false)
@@ -193,15 +234,47 @@ export function useEncounterActivePlaySurface(
 
 
   useEffect(() => {
-    registerCombatLogAppended((events, stateAfter) => {
-      const payload = buildEncounterActionToastPayload(events, stateAfter)
-      if (payload) {
-        setToastPayload(payload)
+    if (!encounterState) {
+      shownToastDedupeKeysRef.current.clear()
+      lastProcessedCombatLogLenRef.current = null
+      return
+    }
+
+    const log = encounterState.log
+    const prevLen = lastProcessedCombatLogLenRef.current
+    if (prevLen === null) {
+      lastProcessedCombatLogLenRef.current = log.length
+      return
+    }
+    if (log.length < prevLen) {
+      lastProcessedCombatLogLenRef.current = log.length
+      return
+    }
+    if (log.length === prevLen) return
+
+    const newEntries = log.slice(prevLen)
+    lastProcessedCombatLogLenRef.current = log.length
+
+    const presentations = deriveEncounterToastsFromNewLogSlice(newEntries, encounterState, toastViewerInput)
+    if (presentations.length === 0) return
+
+    let placedFirstInBatch = false
+    for (const presentation of presentations) {
+      if (shownToastDedupeKeysRef.current.has(presentation.dedupeKey)) continue
+      shownToastDedupeKeysRef.current.add(presentation.dedupeKey)
+
+      const busy = toastOpenRef.current || toastQueueRef.current.length > 0
+      if (!placedFirstInBatch && !busy) {
+        setToastPayload(presentation)
         setToastOpen(true)
+        placedFirstInBatch = true
+        continue
       }
-    })
-    return () => registerCombatLogAppended(undefined)
-  }, [registerCombatLogAppended])
+      const q = toastQueueRef.current
+      const last = q[q.length - 1]
+      if (last?.dedupeKey !== presentation.dedupeKey) q.push(presentation)
+    }
+  }, [encounterState, encounterState?.log.length, toastViewerInput])
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom()
   const { pan, isDragging, hasDragMoved, pointerHandlers, resetPan } = useCanvasPan()
@@ -267,6 +340,7 @@ export function useEncounterActivePlaySurface(
 
   const handleSelectTarget = useCallback(
     (nextTargetId: string) => {
+      if (!capabilities?.canSelectAction) return
       setSelectedActionTargetId(nextTargetId)
 
       if (selectedActionId && encounterState && activeCombatant) {
@@ -289,11 +363,13 @@ export function useEncounterActivePlaySurface(
       selectedCasterOptions,
       setSelectedActionTargetId,
       setSelectedActionId,
+      capabilities?.canSelectAction,
     ],
   )
 
   const handleSelectAction = useCallback(
     (actionId: string) => {
+      if (!capabilities?.canSelectAction) return
       const action = availableActions.find((a) => a.id === actionId)
       setSelectedActionId(actionId)
       setPlacementError(null)
@@ -369,6 +445,7 @@ export function useEncounterActivePlaySurface(
       setSingleCellPlacementError,
       setSelectedObjectAnchorId,
       setObjectAnchorHoverCellId,
+      capabilities?.canSelectAction,
     ],
   )
 
@@ -452,6 +529,7 @@ export function useEncounterActivePlaySurface(
 
   const canResolveAction = useMemo(
     () =>
+      Boolean(capabilities?.canResolveAction) &&
       canResolveCombatActionSelection({
         selectedActionId,
         selectedAction,
@@ -466,6 +544,7 @@ export function useEncounterActivePlaySurface(
         activeCombatant,
       }),
     [
+      capabilities?.canResolveAction,
       selectedActionId,
       selectedAction,
       availableActions,
@@ -535,6 +614,11 @@ export function useEncounterActivePlaySurface(
 
   useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawerOnTurnChange)
 
+  const handleEndTurnWithPermission = useCallback(() => {
+    if (!capabilities?.canEndTurn) return
+    handleNextTurn()
+  }, [capabilities?.canEndTurn, handleNextTurn])
+
   const handleCancelAoe = useCallback(() => {
     resetAoePlacement()
     setSelectedActionId('')
@@ -594,6 +678,7 @@ export function useEncounterActivePlaySurface(
       if (!encounterState || !activeCombatantId) return
 
       if (interactionMode === 'single-cell-place') {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         const placements = encounterState.placements
         if (!space || !placements || !selectedAction) return
@@ -612,6 +697,7 @@ export function useEncounterActivePlaySurface(
       }
 
       if (interactionMode === 'object-anchor-select') {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         if (!space) return
         const obstacle = findGridObstacleAtCell(space, cellId)
@@ -628,6 +714,7 @@ export function useEncounterActivePlaySurface(
         isAreaGridAction(selectedAction, selectedCasterOptions) &&
         !isSelfCenteredAreaAction(selectedAction, selectedCasterOptions)
       ) {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         const placements = encounterState.placements
         if (!space || !placements) return
@@ -654,9 +741,11 @@ export function useEncounterActivePlaySurface(
 
       const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
       if (occupant) {
+        if (!capabilities?.canSelectAction) return
         handleSelectTarget(occupant.combatantId)
         setActionDrawerOpen(true)
       } else {
+        if (!capabilities?.canMoveActiveCombatant) return
         handleMoveCombatant(cellId)
       }
     },
@@ -668,6 +757,8 @@ export function useEncounterActivePlaySurface(
       selectedAction,
       selectedCasterOptions,
       interactionMode,
+      capabilities?.canSelectAction,
+      capabilities?.canMoveActiveCombatant,
       handleMoveCombatant,
       handleSelectTarget,
       setAoeOriginCellId,
@@ -802,7 +893,7 @@ export function useEncounterActivePlaySurface(
     canResolveAction,
     primaryResolutionMissingMessage: primaryResolutionMissing?.message,
     onResolveAction: handleResolveAction,
-    onEndTurn: handleNextTurn,
+    onEndTurn: handleEndTurnWithPermission,
     aoeStep,
     aoePlacementError: placementError,
     onDismissAoeError: () => setPlacementError(null),
@@ -833,12 +924,14 @@ export function useEncounterActivePlaySurface(
       toast={
         <AppToast
           open={toastOpen && toastPayload != null}
-          onClose={() => setToastOpen(false)}
+          onClose={handleToastClose}
           title={toastPayload?.title ?? ''}
           tone={toastPayload?.tone ?? 'info'}
+          variant={toastPayload?.variant ?? 'standard'}
+          autoHideDuration={toastPayload?.autoHideDuration ?? 8000}
           mechanics={toastPayload?.mechanics || undefined}
         >
-          {toastPayload?.narrative || undefined}
+          {toastPayload?.children || undefined}
         </AppToast>
       }
       wheelContainerRef={wheelContainerRef}
@@ -881,6 +974,7 @@ export function useEncounterActivePlaySurface(
           suppressSameSideHostile={suppressSameSideHostile}
           combatantViewerPresentationKindById={combatantViewerPresentationKindById}
           onSelectTarget={(combatantId) => {
+            if (!capabilities?.canSelectAction) return
             handleSelectTarget(combatantId)
             setActionDrawerOpen(true)
           }}

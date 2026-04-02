@@ -18,7 +18,15 @@ It should answer:
 As of the Stage 3C pass, the server exposes revisioned combat sessions over REST:
 
 - **`POST /api/combat/sessions`** — builds initial state via **`startEncounterFromSetup`**, persists a document with **`sessionId`**, **`revision`** (initial snapshot), and **`state`**, returns those fields to the client.
-- **`POST /api/combat/sessions/:sessionId/intents`** — body includes **`baseRevision`**, **`intent`**, optional **`context`**; loads persisted state, checks revision, runs **`applyCombatIntent`**; on success, persists **`nextState`** and increments revision; returns **`409`** on stale revision and **`404`** if the session id is unknown.
+- **`POST /api/combat/sessions/:sessionId/intents`** — requires **authentication** (`requireAuth`). Body includes **`baseRevision`**, **`intent`**, optional **`context`**; loads persisted state; if a **game session** has **`activeEncounterId`** equal to this combat **`sessionId`**, runs **authorization** (aligned with client `resolveSessionControlledCombatantIds`) and returns **`403`** when the user may not perform that intent; then checks revision, runs **`applyCombatIntent`**; on success, persists **`nextState`** and increments revision; returns **`409`** on stale revision and **`404`** if the session id is unknown. Combat sessions **not** linked to a game session still require **auth**; policy for those “orphan” sessions is looser until optional metadata (e.g. campaign) is added.
+
+### Game-session–linked authorization (seat parity)
+
+When **`findGameSessionByActiveEncounterId`** returns a row, the handler loads **approved party characters** via **`getPartyCharacters(campaignId, 'approved')`** and passes a slim **`partyRoster`** (`id`, **`ownerUserId`**) into **`authorizeCombatIntentForGameSession`**. That mirrors client **`resolveGameSessionEncounterSeat`**: DM from **`dmUserId`**; players from **`participants`** when present; otherwise **inference** from roster + encounter **`EncounterState`** (party combatants with **`source.kind === 'pc'`**). **`resolveSessionControlledCombatantIds`** then decides whether the intent’s actor is controllable by the user. Details and follow-ups: [../client/encounter-viewer-permissions.md](../client/encounter-viewer-permissions.md).
+
+**HTTP body limit:** JSON bodies for this route can exceed Express’s default **`express.json()`** size (~100kb) when clients send large optional context. The server raises the limit (e.g. **`2mb`**) in **`server/app.ts`** so **`PayloadTooLargeError`** does not reject valid intent payloads before the handler runs.
+
+**JSON `context`:** The wire shape is JSON only — no **`spellLookup`**, **`rng`**, or **`buildSummonAllyCombatant`** functions. GameSession clients also **omit** serialized **`monstersById`** blobs in **`postPersistedCombatIntent`** to reduce size; server-side resolution should not assume a full client catalog on the wire. Details: [../client/persisted-intent-sync.md](../client/persisted-intent-sync.md).
 
 This is **not** multiplayer yet: there is **no** socket broadcast, **no** campaign permission checks on these routes by default, and the **Encounter Simulator** client still uses **local** dispatch unless separately wired to these APIs. See [roadmap.md](../roadmap.md).
 

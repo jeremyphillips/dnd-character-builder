@@ -5,6 +5,7 @@ import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
 import { fetchGameSession } from '../api/gameSessionApi'
 import { GameSessionRecordProvider } from './GameSessionRecordContext'
+import { GameSessionSyncProvider } from './GameSessionSyncContext'
 import {
   campaignGameSessionLobbyPath,
   campaignGameSessionPlayPath,
@@ -19,6 +20,10 @@ import Typography from '@mui/material/Typography'
 import MuiLink from '@mui/material/Link'
 import CircularProgress from '@mui/material/CircularProgress'
 
+/** Campaign game session shell: loads canonical `GameSession`, owns `GameSessionSyncProvider`
+ * (socket `game_session_sync` at layout scope for lobby/setup/play), and wraps outlet. Route
+ * guards derive encounter phase via `deriveGameSessionCanonicalPhase` after refetch.
+ */
 export default function GameSessionLayout() {
   const { id: campaignId, gameSessionId } = useParams<{ id: string; gameSessionId: string }>()
   const { pathname } = useLocation()
@@ -146,52 +151,58 @@ export default function GameSessionLayout() {
 
   return (
     <GameSessionRecordProvider session={session} refetch={refetch}>
-      {inPlay ? (
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-          }}
-        >
-          <Outlet />
-        </Box>
-      ) : (
-        <Box>
-          <Breadcrumbs items={breadcrumbs} />
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Button
-              component={NavLink}
-              to={lobbyPath}
-              variant={inLobby ? 'contained' : 'outlined'}
-              size="small"
-            >
-              Lobby
-            </Button>
-            <Button
-              component={NavLink}
-              to={setupPath}
-              variant={inSetup ? 'contained' : 'outlined'}
-              size="small"
-            >
-              Setup
-            </Button>
-            {showPlayTab && (
+      <GameSessionSyncProvider
+        campaignId={campaignId}
+        gameSessionId={gameSessionId}
+        refetchSession={refetch}
+      >
+        {inPlay ? (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
+          >
+            <Outlet />
+          </Box>
+        ) : (
+          <Box>
+            <Breadcrumbs items={breadcrumbs} />
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
               <Button
                 component={NavLink}
-                to={playPath}
-                variant="outlined"
+                to={lobbyPath}
+                variant={inLobby ? 'contained' : 'outlined'}
                 size="small"
               >
-                Play
+                Lobby
               </Button>
-            )}
-          </Stack>
-          <Outlet />
-        </Box>
-      )}
+              <Button
+                component={NavLink}
+                to={setupPath}
+                variant={inSetup ? 'contained' : 'outlined'}
+                size="small"
+              >
+                Setup
+              </Button>
+              {showPlayTab && (
+                <Button
+                  component={NavLink}
+                  to={playPath}
+                  variant="outlined"
+                  size="small"
+                >
+                  Play
+                </Button>
+              )}
+            </Stack>
+            <Outlet />
+          </Box>
+        )}
+      </GameSessionSyncProvider>
     </GameSessionRecordProvider>
   )
 }

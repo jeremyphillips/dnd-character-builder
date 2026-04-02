@@ -207,7 +207,7 @@ This pass adds:
 ### Phase 4D (flatten log feedback per successful intent)
 
 - [`intent-success-log-entries.ts`](../../../../packages/mechanics/src/combat/application/intent-success-log-entries.ts) — `flattenLogEntriesFromIntentSuccess` / `flattenLogEntriesFromEvents` merge all `log-appended` slices from one `CombatIntentSuccess` into a single `CombatLogEvent[]` in event order.
-- Encounter (`useEncounterState`) calls `registerCombatLogAppended` at most **once** per successful intent via one `queueMicrotask`, so multiple `log-appended` events in one result do not duplicate toasts or scheduling.
+- Encounter (`useEncounterState`) may still invoke optional `registerCombatLogAppended` listeners at most **once** per successful intent via one `queueMicrotask` (multiple `log-appended` events in one result stay merged by `flattenLogEntriesFromIntentSuccess`). **Action-resolved toasts** on the active play surface are driven by **`encounterState.log` growth** (local apply and remote hydration) so off-turn viewers (e.g. targets on another client) receive the same derivation — see [client/local-dispatch.md § Encounter toasts (viewer-aware)](../client/local-dispatch.md#encounter-toasts-viewer-aware).
 
 ### Phase 4E (seam canonical; honest unmigrated surface)
 

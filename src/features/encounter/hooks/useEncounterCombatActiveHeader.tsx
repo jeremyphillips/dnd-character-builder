@@ -18,6 +18,7 @@ import {
   deriveEncounterCapabilities,
   deriveEncounterHeaderModel,
   deriveEncounterPerceptionUiFeedback,
+  type EncounterHeaderViewerPolicy,
   type EncounterViewerContext,
   type EncounterSimulatorViewerMode,
 } from '../domain'
@@ -25,10 +26,7 @@ import type { GridInteractionMode } from '../domain'
 import { EncounterActiveHeader } from '../components'
 import type { AoeStep } from '../helpers/actions'
 
-export type EncounterCombatActiveHeaderVariant = 'simulator' | 'session'
-
 export type UseEncounterCombatActiveHeaderArgs = {
-  variant: EncounterCombatActiveHeaderVariant
   encounterState: EncounterState | null
   activeCombatant: CombatantInstance | null
   availableActions: CombatActionDefinition[]
@@ -60,7 +58,6 @@ export type UseEncounterCombatActiveHeaderArgs = {
  * Shared Encounter Simulator / GameSession active combat header (round, turn, actions, POV, movement).
  */
 export function useEncounterCombatActiveHeader({
-  variant,
   encounterState,
   activeCombatant,
   availableActions,
@@ -143,6 +140,24 @@ export function useEncounterCombatActiveHeader({
     [encounterState, viewerContext],
   )
 
+  const encounterHeaderViewerPolicy = useMemo((): EncounterHeaderViewerPolicy => {
+    if (viewerContext.mode === 'simulator') {
+      return { viewerMayActOnTurn: true, tonePerspective: 'dm' }
+    }
+    if (!capabilities) {
+      return { viewerMayActOnTurn: false, tonePerspective: 'observer' }
+    }
+    return {
+      viewerMayActOnTurn: capabilities.canSelectAction,
+      tonePerspective: capabilities.tonePerspective,
+    }
+  }, [viewerContext.mode, capabilities])
+
+  const activeCombatantDisplayLabelForHeader = useMemo(() => {
+    if (!activeCombatant) return ''
+    return getCombatantDisplayLabel(activeCombatant, encounterCombatantRoster)
+  }, [activeCombatant, encounterCombatantRoster])
+
   const targetCombatantForHeader = useMemo(() => {
     if (!encounterState || !selectedActionTargetId) return null
     return encounterState.combatantsById[selectedActionTargetId] ?? null
@@ -221,7 +236,9 @@ export function useEncounterCombatActiveHeader({
           targetCombatantForHeader && encounterState
             ? getCombatantDisplayLabel(targetCombatantForHeader, encounterCombatantRoster)
             : null,
+        activeCombatantDisplayLabel: activeCombatantDisplayLabelForHeader,
       },
+      viewer: encounterHeaderViewerPolicy,
     })
   }, [
     activeCombatant,
@@ -235,10 +252,28 @@ export function useEncounterCombatActiveHeader({
     encounterState,
     encounterCombatantRoster,
     selectedCasterOptions,
+    activeCombatantDisplayLabelForHeader,
+    encounterHeaderViewerPolicy,
   ])
 
   const canOpenActionsDrawer =
     Boolean(capabilities?.canSelectAction) && availableActions.length > 0
+
+  const activeCombatantHeadlineOverride = useMemo(() => {
+    if (!encounterState || !activeCombatant) return null
+    const id = activeCombatant.instanceId
+    let viewerActsAsThisCombatant = false
+    if (viewerContext.mode === 'session') {
+      viewerActsAsThisCombatant = viewerContext.controlledCombatantIds.includes(id)
+    } else {
+      const pov =
+        viewerContext.presentationSelectedCombatantId ?? encounterState.activeCombatantId ?? null
+      viewerActsAsThisCombatant = pov === id
+    }
+    if (!viewerActsAsThisCombatant) return null
+    const label = getCombatantDisplayLabel(activeCombatant, encounterCombatantRoster)
+    return `Your turn — ${label}`
+  }, [encounterState, activeCombatant, encounterCombatantRoster, viewerContext])
 
   const activeHeader =
     encounterState && activeCombatant ? (
@@ -249,6 +284,7 @@ export function useEncounterCombatActiveHeader({
         nextCombatantLabel={nextCombatantLabel}
         activeCombatant={activeCombatant}
         activeCombatantDisplayLabel={getCombatantDisplayLabel(activeCombatant, encounterCombatantRoster)}
+        activeCombatantHeadlineOverride={activeCombatantHeadlineOverride}
         monstersById={monstersById}
         turnResources={activeCombatant.turnResources ?? null}
         baseMovementFt={baseMovementFt}
@@ -264,7 +300,7 @@ export function useEncounterCombatActiveHeader({
         onSimulatorViewerModeChange={onSimulatorViewerModeChange}
         perceptionFeedback={perceptionUiFeedback}
         nextCombatantPresentationKind={nextCombatantPresentationKind}
-        toolbarVariant={variant === 'session' ? 'session' : 'simulator'}
+        toolbarVariant={viewerContext.mode === 'session' ? 'session' : 'simulator'}
       />
     ) : undefined
 

@@ -1,9 +1,13 @@
 // @vitest-environment node
 import type { AddressInfo } from 'node:net'
+import cookieParser from 'cookie-parser'
 import express from 'express'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CombatantInstance } from '@rpg-world-builder/mechanics'
 
+import { signToken } from '../../../shared/utils/jwt'
+import * as campaignService from '../../campaign/services/campaign.service'
+import * as gameSessionService from '../../gameSession/services/gameSession.service'
 import {
   createInMemoryCombatSessionBackend,
   setCombatSessionBackendForTests,
@@ -37,13 +41,20 @@ function minimalCombatant(
   }
 }
 
+function authCookie(userId: string): string {
+  const token = signToken({ userId, role: 'user' })
+  return `token=${token}`
+}
+
 describe('POST /api/combat/sessions/:sessionId/intents', () => {
   const app = express()
+  app.use(cookieParser())
   app.use(express.json())
   app.use('/api/combat', combatRoutes)
 
   let baseUrl: string
   let server: ReturnType<typeof app.listen>
+  let findSpy: ReturnType<typeof vi.spyOn>
 
   beforeAll(() => {
     setCombatSessionBackendForTests(createInMemoryCombatSessionBackend())
@@ -58,6 +69,15 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
         }
       })
     })
+  })
+
+  beforeEach(() => {
+    findSpy = vi.spyOn(gameSessionService, 'findGameSessionByActiveEncounterId').mockResolvedValue(null)
+    vi.spyOn(campaignService, 'getPartyCharacters').mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   afterAll(
@@ -80,11 +100,27 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
     return (await res.json()) as { sessionId: string; revision: number }
   }
 
-  it('returns 400 for invalid body', async () => {
+  it('returns 401 without auth cookie', async () => {
     const created = await createSession()
     const res = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        baseRevision: 1,
+        intent: { kind: 'end-turn' },
+      }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 400 for invalid body', async () => {
+    const created = await createSession()
+    const res = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('any-user'),
+      },
       body: JSON.stringify({}),
     })
     expect(res.status).toBe(400)
@@ -93,11 +129,14 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
     expect(json.error?.code).toBe('invalid-body')
   })
 
-  it('returns 200 with updated revision and state on successful end-turn', async () => {
+  it('returns 200 with updated revision and state on successful end-turn (orphan session)', async () => {
     const created = await createSession()
     const res = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('any-user'),
+      },
       body: JSON.stringify({
         baseRevision: 1,
         intent: { kind: 'end-turn' },
@@ -121,7 +160,10 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
     const created = await createSession()
     const first = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('u1'),
+      },
       body: JSON.stringify({
         baseRevision: 1,
         intent: { kind: 'end-turn' },
@@ -132,7 +174,10 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
 
     const stale = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('u1'),
+      },
       body: JSON.stringify({
         baseRevision: 1,
         intent: { kind: 'end-turn' },
@@ -154,7 +199,10 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
       `${baseUrl}/api/combat/sessions/00000000-0000-0000-0000-000000000000/intents`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: authCookie('u1'),
+        },
         body: JSON.stringify({
           baseRevision: 1,
           intent: { kind: 'end-turn' },
@@ -168,7 +216,10 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
     const created = await createSession()
     const res = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('u1'),
+      },
       body: JSON.stringify({
         baseRevision: 1,
         intent: { kind: 'end-turn', actorId: 'not-active' },
@@ -184,5 +235,39 @@ describe('POST /api/combat/sessions/:sessionId/intents', () => {
     expect(json.revision).toBe(1)
     expect(json.result?.ok).toBe(false)
     expect(json.result?.error?.code).toBe('actor-mismatch')
+  })
+
+  it('returns 403 when a game session binds this combat and the user may not act', async () => {
+    const created = await createSession()
+    findSpy.mockResolvedValue({
+      id: 'gs1',
+      campaignId: 'c1',
+      dmUserId: 'dm-user',
+      status: 'active',
+      title: 'Table',
+      scheduledFor: null,
+      location: { locationId: null, buildingId: null, floorId: null, label: null },
+      participants: [{ userId: 'obs-user', characterId: null, role: 'observer' }],
+      opponentRefKeys: [],
+      activeEncounterId: created.sessionId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    const res = await fetch(`${baseUrl}/api/combat/sessions/${created.sessionId}/intents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie('obs-user'),
+      },
+      body: JSON.stringify({
+        baseRevision: 1,
+        intent: { kind: 'end-turn' },
+        context: { advanceEncounterTurnOptions: {} },
+      }),
+    })
+    expect(res.status).toBe(403)
+    const json = (await res.json()) as { ok: boolean; error?: { code: string } }
+    expect(json.ok).toBe(false)
+    expect(json.error?.code).toBe('forbidden')
   })
 })

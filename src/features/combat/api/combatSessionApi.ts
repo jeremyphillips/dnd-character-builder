@@ -3,6 +3,36 @@ import type { ApplyCombatIntentContext } from '@/features/mechanics/domain/comba
 import type { CombatIntent } from '@/features/mechanics/domain/combat'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 
+/** Drops catalog blobs from context for HTTP — not JSON-serializable functions are already absent; monstersById is huge. */
+function slimPersistedCombatIntentContext(context: ApplyCombatIntentContext): ApplyCombatIntentContext {
+  const out: ApplyCombatIntentContext = { ...context }
+
+  if (context.resolveCombatActionOptions?.monstersById) {
+    const { monstersById: _m, ...rest } = context.resolveCombatActionOptions
+    out.resolveCombatActionOptions = rest
+  }
+
+  if (context.advanceEncounterTurnOptions?.battlefieldInterval?.monstersById) {
+    const { monstersById: _m, ...bfInterval } = context.advanceEncounterTurnOptions.battlefieldInterval
+    out.advanceEncounterTurnOptions = {
+      ...context.advanceEncounterTurnOptions,
+      battlefieldInterval: bfInterval,
+    }
+  }
+
+  if (context.moveCombatantSpellContext?.monstersById) {
+    const { monstersById: _m, ...rest } = context.moveCombatantSpellContext
+    out.moveCombatantSpellContext = rest
+  }
+
+  if (context.spatialEntryAfterMove?.monstersById) {
+    const { monstersById: _m, ...rest } = context.spatialEntryAfterMove
+    out.spatialEntryAfterMove = rest
+  }
+
+  return out
+}
+
 export type PersistedCombatSessionDto = {
   sessionId: string
   revision: number
@@ -38,6 +68,7 @@ export async function postPersistedCombatIntent(args: {
   context?: ApplyCombatIntentContext
 }): Promise<PostCombatIntentResult> {
   const { sessionId, baseRevision, intent, context = {} } = args
+  const slimContext = slimPersistedCombatIntentContext(context)
   try {
     const data = await apiFetch<{
       ok: true
@@ -46,7 +77,7 @@ export async function postPersistedCombatIntent(args: {
       result?: unknown
     }>(`/api/combat/sessions/${encodeURIComponent(sessionId)}/intents`, {
       method: 'POST',
-      body: { baseRevision, intent, context },
+      body: { baseRevision, intent, context: slimContext },
     })
 
     if (data.state != null && typeof data.revision === 'number') {

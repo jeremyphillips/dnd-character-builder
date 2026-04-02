@@ -105,7 +105,6 @@ export type {
   EncounterCapabilities,
   EncounterSimulatorViewerMode,
   EncounterViewerContext,
-  EncounterViewerRole,
   EncounterSessionSeat,
 } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 export type { ResolveSessionControlledCombatantIdsArgs } from '@/features/mechanics/domain/combat/selectors/capabilities/resolve-session-controlled-combatant-ids'

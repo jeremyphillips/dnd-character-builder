@@ -4,11 +4,14 @@ import { requireAuth } from '../../../shared/middleware/requireAuth'
 import {
   parsePersistedApplyIntentBody,
 } from '../services/combatApplyIntent.service'
+import { getPartyCharacters } from '../../campaign/services/campaign.service'
+import { findGameSessionByActiveEncounterId } from '../../gameSession/services/gameSession.service'
 import {
   applyPersistedIntent,
   createPersistedCombatSession,
   getPersistedCombatSession,
 } from '../services/combatPersisted.service'
+import { authorizeCombatIntentForGameSession } from '../services/combatIntentAuthorization.service'
 import {
   parseCombatStartupBody,
 } from '../services/combatSessions.service'
@@ -41,7 +44,13 @@ router.get(
 
 router.post(
   '/sessions/:sessionId/intents',
+  requireAuth,
   asyncHandler(async (req, res) => {
+    const userId = req.userId
+    if (!userId) {
+      res.status(401).json({ ok: false, error: { code: 'unauthorized', message: 'Unauthorized' } })
+      return
+    }
     const rawId = req.params.sessionId
     const sessionId = Array.isArray(rawId) ? rawId[0] : rawId
     if (typeof sessionId !== 'string' || sessionId.length === 0) {
@@ -55,6 +64,42 @@ router.post(
     if (!parsed.ok) {
       res.status(400).json({ ok: false, error: parsed.error })
       return
+    }
+    const record = await getPersistedCombatSession(sessionId)
+    if (!record) {
+      res.status(404).json({
+        ok: false,
+        error: {
+          code: 'session-not-found',
+          message: 'Combat session not found.',
+        },
+      })
+      return
+    }
+    const gameSession = await findGameSessionByActiveEncounterId(sessionId)
+    let partyRoster: { id: string; ownerUserId: string }[] | undefined
+    if (gameSession) {
+      const party = await getPartyCharacters(gameSession.campaignId, 'approved')
+      partyRoster = party.map((c) => ({ id: c.id, ownerUserId: c.ownerUserId }))
+    }
+    if (gameSession) {
+      const auth = authorizeCombatIntentForGameSession({
+        userId,
+        state: record.state,
+        intent: parsed.intent,
+        gameSession,
+        partyRoster,
+      })
+      if (!auth.allowed) {
+        res.status(403).json({
+          ok: false,
+          error: {
+            code: 'forbidden',
+            message: 'Not allowed to perform this combat action for the current session.',
+          },
+        })
+        return
+      }
     }
     const outcome = await applyPersistedIntent(
       sessionId,

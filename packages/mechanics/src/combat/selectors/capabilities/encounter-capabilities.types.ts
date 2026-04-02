@@ -10,11 +10,6 @@ import type { EncounterState } from '@/features/mechanics/domain/combat'
 export type EncounterSessionSeat = 'dm' | 'player' | 'observer'
 
 /**
- * @deprecated Use {@link EncounterSessionSeat}. Kept briefly for external imports; prefer `EncounterSessionSeat`.
- */
-export type EncounterViewerRole = EncounterSessionSeat
-
-/**
  * Who the tactical grid “camera” follows for perception/render (simulator POV).
  * Distinct from {@link EncounterSessionSeat} (session tools vs turn ownership) and from turn/action ownership
  * (`activeCombatantId`).

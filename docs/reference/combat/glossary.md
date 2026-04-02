@@ -33,10 +33,13 @@ Campaign-scoped **live-play session** container: DM-facing setup, **lobby**, **`
 
 **Today:** list/setup/lobby/play routes, lifecycle (`draft` → `scheduled` → `lobby` → `active` → …), planning field `scheduledFor` (informational; lobby opens via explicit DM action), ephemeral **lobby presence** (Socket.IO), expected party display from the campaign roster (first pass). When the session record has **`activeEncounterId`**, **`/play`** loads that persisted combat session and renders the shared **Combat play view** shell with HTTP intent mirroring.
 
-**Not yet (combat-relevant):** WebSocket **combat** broadcast to all participants, per-role **action ownership** enforcement, and polished **stale revision (409)** UX—see [roadmap.md](./roadmap.md).
+**Not yet (combat-relevant):** WebSocket **combat** broadcast to all participants and polished **stale revision (409)** UX—see [roadmap.md](./roadmap.md). **Game-session–linked** play already resolves **viewer seat** (DM / player / observer) and **controlled combatants** for client UX and **server apply-intent** (**403** when the user may not act); richer **participant** modeling and orphan-session **campaign** tenancy are still incremental—see [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md).
 
 ## Combat play view
 Shared **active encounter** layout shell (**`CombatPlayView`** in `src/features/combat`): header slot, grid, sidebar, drawers, toasts. Composed by **`useEncounterActivePlaySurface`** for both the **Encounter Simulator** active route and **GameSession `/play`**. Simulator-only controls (e.g. presentation POV, edit encounter) stay in the **`encounter`** feature, not in this shell.
+
+## Viewer seat (session mode)
+In **GameSession `/play`** (not the Encounter Simulator), the client resolves **`viewerRole`** (**`dm`** | **`player`** | **`observer`**) and **`controlledCombatantIds`** before **`deriveEncounterCapabilities`**. **`dmUserId`** and **`participants`** on the game session document are used when present; if a logged-in player is missing from **`participants`**, seat may be **inferred** from **campaign roster** character ownership and **party PC** combatants in **`EncounterState`**. The server **`POST .../intents`** path uses the same rules when the combat is **game-session–linked**. See [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md).
 
 ## Shared combat engine
 The pure/shared layer that owns combat truth.

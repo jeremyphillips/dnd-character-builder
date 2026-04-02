@@ -16,3 +16,9 @@ export * from './combat/application'
 export * from './combat/intents'
 export * from './combat/results'
 export * from './combat/state/types'
+
+/** Session play: which combatants a viewer may act for (server auth should mirror client policy). */
+export { resolveSessionControlledCombatantIds } from './combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
+export type { ResolveSessionControlledCombatantIdsArgs } from './combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
+export type { EncounterSessionSeat } from './combat/selectors/capabilities/encounter-capabilities.types'
+export { inferPlayerCharacterIdFromEncounterOwnership } from './combat/selectors/capabilities/infer-player-character-from-encounter'

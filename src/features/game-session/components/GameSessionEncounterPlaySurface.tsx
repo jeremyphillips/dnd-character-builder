@@ -151,8 +151,12 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   )
 
   const { viewerRole, playerCharacterId } = useMemo(
-    () => resolveGameSessionEncounterSeat(session, user?.id ?? null),
-    [session, user?.id],
+    () =>
+      resolveGameSessionEncounterSeat(session, user?.id ?? null, {
+        encounterState: encounter.encounterState,
+        partyRoster: party.map((m) => ({ id: m.id, ownerUserId: m.ownerUserId })),
+      }),
+    [session, user?.id, encounter.encounterState, party],
   )
 
   const controlledCombatantIds = useMemo(() => {

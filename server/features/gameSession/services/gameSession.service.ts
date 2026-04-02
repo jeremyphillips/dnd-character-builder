@@ -98,6 +98,19 @@ export async function listGameSessionsForCampaign(campaignId: string): Promise<G
   return docs.map((d) => docToApi(d as GameSessionDoc & { _id: mongoose.Types.ObjectId }))
 }
 
+/**
+ * Finds a game session whose live combat is bound to this persisted combat `sessionId`
+ * (`GameSession.activeEncounterId` === combat session id).
+ */
+export async function findGameSessionByActiveEncounterId(
+  activeEncounterId: string,
+): Promise<GameSessionApi | null> {
+  if (typeof activeEncounterId !== 'string' || activeEncounterId.length === 0) return null
+  const doc = await gameSessionsCollection().findOne({ activeEncounterId })
+  if (!doc) return null
+  return docToApi(doc as GameSessionDoc & { _id: mongoose.Types.ObjectId })
+}
+
 export async function getGameSessionById(
   gameSessionId: string,
   campaignId: string,

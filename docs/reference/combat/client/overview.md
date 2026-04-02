@@ -140,3 +140,7 @@ As Phase 4 introduces local dispatch and intent flow, the client combat UI layer
 It should not become the new owner of combat truth.
 
 Details: [local-dispatch.md](./local-dispatch.md) — intents, `applyCombatIntent`, and Encounter’s role as composer.
+
+## GameSession `/play` (shared shell, session policy)
+
+**GameSession** (`src/features/game-session`) composes the same **`CombatPlayView`** shell for live table play. Turn-level affordances (movement, end turn, etc.) depend on **viewer seat** and **controlled combatants**, not on this package’s components alone—see [encounter-viewer-permissions.md](./encounter-viewer-permissions.md).

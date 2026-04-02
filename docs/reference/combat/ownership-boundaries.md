@@ -118,6 +118,7 @@ It owns:
 - game session CRUD and lifecycle actions (e.g. draft / scheduled / open lobby / start session)
 - lobby and setup presentation that is **not** combat encounter state
 - **`/play` orchestration**: resolve **`activeEncounterId`**, fetch persisted combat (**`GET /api/combat/sessions/:id`**), hydrate local state, mirror intents (**`POST .../intents`**) after local applies, render the shared **`CombatPlayView`** shell (via **`GameSessionEncounterPlaySurface`** + **`useEncounterActivePlaySurface`**)
+- **Encounter viewer context for `/play`**: wiring **`resolveGameSessionEncounterSeat`** with **encounter state** and **campaign roster** (for seat inference when **`participants`** is incomplete) so turn capabilities match **who controls which combatants** — see [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md)
 - mapping expected party display to campaign roster (with a placeholder seam for stricter rules later)
 
 It must **not** own:
@@ -135,7 +136,7 @@ Server combat application owns authority and session orchestration.
 It owns:
 
 - intent validation
-- permission checks
+- permission checks (**including game-session–linked combat:** resolve seat and controlled combatants with the **same** rules as the client—**`findGameSessionByActiveEncounterId`**, **`getPartyCharacters`** for roster-backed inference, **`authorizeCombatIntentForGameSession`** — so unauthorized intents return **403** before **`applyPersistedIntent`**)
 - latest-state loading
 - resolving through the shared engine
 - persistence

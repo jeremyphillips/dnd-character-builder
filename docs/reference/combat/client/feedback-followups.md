@@ -1,6 +1,6 @@
 # Deferred client feedback enhancements
 
-This note records **optional** follow-ups for richer feedback from the combat application seam. They are **not** required for the seam to be valid: success paths already expose `CombatIntentResult`, `CombatEvent` (including `log-appended`), and Encounter registers log/toast via `registerCombatLogAppended` after Phase 4D flattening.
+This note records **optional** follow-ups for richer feedback from the combat application seam. They are **not** required for the seam to be valid: success paths already expose `CombatIntentResult`, `CombatEvent` (including `log-appended`), Phase 4D flattening for optional `registerCombatLogAppended` listeners, and viewer-aware action toasts derived from **`encounterState.log`** on the active play surface (see [local-dispatch.md § Encounter toasts (viewer-aware)](./local-dispatch.md#encounter-toasts-viewer-aware)).
 
 See also: [local-dispatch.md](./local-dispatch.md), [../engine/intents-and-events.md](../engine/intents-and-events.md).
 

@@ -149,7 +149,7 @@ export function useEncounterActivePlaySurface(
     handleMoveCombatant,
     handleResolveAction,
     handleNextTurn,
-    registerCombatLogAppended,
+    registerCombatLogAppended: _registerCombatLogAppended,
     handleResetEncounter,
     actionDrawerOpen,
     setActionDrawerOpen,
@@ -177,6 +177,8 @@ export function useEncounterActivePlaySurface(
   const toastOpenRef = useRef(false)
   const toastQueueRef = useRef<EncounterToastPresentation[]>([])
   const shownToastDedupeKeysRef = useRef<Set<string>>(new Set())
+  /** Tracks processed `encounterState.log` length so remote hydration (e.g. other player’s intent) also drives toasts. */
+  const lastProcessedCombatLogLenRef = useRef<number | null>(null)
 
   useEffect(() => {
     toastOpenRef.current = toastOpen
@@ -225,27 +227,39 @@ export function useEncounterActivePlaySurface(
   useEffect(() => {
     if (!encounterState) {
       shownToastDedupeKeysRef.current.clear()
+      lastProcessedCombatLogLenRef.current = null
+      return
     }
-  }, [encounterState])
 
-  useEffect(() => {
-    registerCombatLogAppended((events, stateAfter) => {
-      const presentation = deriveEncounterToastForViewer(events, stateAfter, toastViewerInput)
-      if (!presentation) return
-      if (shownToastDedupeKeysRef.current.has(presentation.dedupeKey)) return
-      shownToastDedupeKeysRef.current.add(presentation.dedupeKey)
+    const log = encounterState.log
+    const prevLen = lastProcessedCombatLogLenRef.current
+    if (prevLen === null) {
+      lastProcessedCombatLogLenRef.current = log.length
+      return
+    }
+    if (log.length < prevLen) {
+      lastProcessedCombatLogLenRef.current = log.length
+      return
+    }
+    if (log.length === prevLen) return
 
-      if (toastOpenRef.current) {
-        const q = toastQueueRef.current
-        const last = q[q.length - 1]
-        if (last?.dedupeKey !== presentation.dedupeKey) q.push(presentation)
-        return
-      }
-      setToastPayload(presentation)
-      setToastOpen(true)
-    })
-    return () => registerCombatLogAppended(undefined)
-  }, [registerCombatLogAppended, toastViewerInput])
+    const newEntries = log.slice(prevLen)
+    lastProcessedCombatLogLenRef.current = log.length
+
+    const presentation = deriveEncounterToastForViewer(newEntries, encounterState, toastViewerInput)
+    if (!presentation) return
+    if (shownToastDedupeKeysRef.current.has(presentation.dedupeKey)) return
+    shownToastDedupeKeysRef.current.add(presentation.dedupeKey)
+
+    if (toastOpenRef.current) {
+      const q = toastQueueRef.current
+      const last = q[q.length - 1]
+      if (last?.dedupeKey !== presentation.dedupeKey) q.push(presentation)
+      return
+    }
+    setToastPayload(presentation)
+    setToastOpen(true)
+  }, [encounterState, encounterState?.log.length, toastViewerInput])
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom()
   const { pan, isDragging, hasDragMoved, pointerHandlers, resetPan } = useCanvasPan()

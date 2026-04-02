@@ -41,7 +41,7 @@ The same **`applyCombatIntent`** *shape* (intent in, result out) is what a serve
 
 ## Encounter toasts (viewer-aware)
 
-After a successful intent, **`registerCombatLogAppended`** receives flattened log entries. Toasts are **not** driven by inline tone logic in the play hook:
+After combat log rows are **appended** (same entries whether the intent ran **locally** or arrived via **persisted refetch** / hydration), **`useEncounterActivePlaySurface`** diffs **`encounterState.log`** and derives a toast from **new** suffix entries. Toasts are **not** driven by inline tone logic in the play hook (the older **`registerCombatLogAppended`** path is reserved for future listeners; it is not required for action-resolved toasts):
 
 1. **Neutral content** — `buildActionResolvedNeutralContent` (viewer-agnostic title/narrative/mechanics + outcome metadata + stable **`dedupeKey`** from round/turn/log entry ids). No tone.
 2. **Viewer normalization** — `normalizeToastViewerContext` (simulator vs session in one place).

@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FormProvider, useForm, Controller } from 'react-hook-form'
+import { Controller, type UseFormReturn } from 'react-hook-form'
 import type { GameSession, GameSessionStatus } from '../domain/game-session.types'
 import type { GameSessionPatch } from '../api/gameSessionApi'
 import type { Location } from '@/features/content/locations/domain/types'
 import type { PickerOption } from '@/ui/patterns/form/OptionPickerField'
 import { ApiError } from '@/app/api'
-import OptionPickerField from '@/ui/patterns/form/OptionPickerField'
+import AppForm from '@/ui/patterns/form/AppForm'
+import FormTextField from '@/ui/patterns/form/FormTextField'
 import FormSelectField from '@/ui/patterns/form/FormSelectField'
+import OptionPickerField from '@/ui/patterns/form/OptionPickerField'
 import { AppAlert } from '@/ui/primitives'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 const STATUS_OPTIONS: { value: GameSessionStatus; label: string }[] = [
@@ -25,6 +25,11 @@ const STATUS_OPTIONS: { value: GameSessionStatus; label: string }[] = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ]
+
+const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({
+  label: o.label,
+  value: o.value,
+}))
 
 function toDatetimeLocalValue(iso: string | null): string {
   if (!iso) return ''
@@ -62,26 +67,20 @@ function floorCountForBuilding(buildingId: string, all: Location[]): number {
   return Math.max(1, n)
 }
 
-type GameSessionSetupViewProps = {
-  session: GameSession
+type GameSessionSetupFormFieldsProps = {
+  methods: UseFormReturn<FormValues>
   canEdit: boolean
   locations: Location[]
-  onSave: (patch: GameSessionPatch) => Promise<void>
+  buildingPickerOptions: PickerOption[]
 }
 
-export function GameSessionSetupView({ session, canEdit, locations, onSave }: GameSessionSetupViewProps) {
-  const [saveError, setSaveError] = useState<string | null>(null)
-
-  const methods = useForm<FormValues>({
-    shouldUnregister: true,
-    defaultValues: buildDefaults(session),
-  })
-
-  const { handleSubmit, control, register, reset, watch, setValue, getValues, formState } = methods
-
-  useEffect(() => {
-    reset(buildDefaults(session))
-  }, [session, reset])
+function GameSessionSetupFormFields({
+  methods,
+  canEdit,
+  locations,
+  buildingPickerOptions,
+}: GameSessionSetupFormFieldsProps) {
+  const { watch, control, setValue, getValues, formState } = methods
 
   const locationIds = watch('locationIds')
   const selectedBuildingId = locationIds?.[0]
@@ -117,6 +116,67 @@ export function GameSessionSetupView({ session, canEdit, locations, onSave }: Ga
     }
   }, [isBuildingLocation, selectedBuildingId, floorCount, getValues, setValue])
 
+  return (
+    <>
+      <FormTextField name="title" label="Session title" required size="small" disabled={!canEdit} />
+      <FormSelectField
+        name="status"
+        label="Status"
+        options={STATUS_SELECT_OPTIONS}
+        size="small"
+        disabled={!canEdit}
+      />
+      <FormTextField
+        name="scheduledFor"
+        label="Scheduled start (local)"
+        type="datetime-local"
+        size="small"
+        disabled={!canEdit}
+      />
+
+      <Controller
+        name="locationIds"
+        control={control}
+        defaultValue={[]}
+        render={({ field }) => (
+          <OptionPickerField
+            label="Location (building)"
+            options={buildingPickerOptions}
+            value={field.value ?? []}
+            onChange={field.onChange}
+            maxItems={1}
+            disabled={!canEdit}
+            renderSelectedAs="card"
+            placeholder="Search buildings…"
+            helperText="Only building-scale locations are listed."
+            emptyMessage="No building locations in this campaign."
+          />
+        )}
+      />
+
+      {isBuildingLocation && (
+        <FormSelectField name="floorId" label="Floor" options={floorOptions} size="small" disabled={!canEdit} />
+      )}
+
+      <Box>
+        <Button type="submit" variant="contained" disabled={!canEdit || formState.isSubmitting}>
+          {formState.isSubmitting ? 'Saving…' : 'Save'}
+        </Button>
+      </Box>
+    </>
+  )
+}
+
+type GameSessionSetupViewProps = {
+  session: GameSession
+  canEdit: boolean
+  locations: Location[]
+  onSave: (patch: GameSessionPatch) => Promise<void>
+}
+
+export function GameSessionSetupView({ session, canEdit, locations, onSave }: GameSessionSetupViewProps) {
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   const buildingPickerOptions: PickerOption[] = useMemo(
     () =>
       locations
@@ -151,103 +211,49 @@ export function GameSessionSetupView({ session, canEdit, locations, onSave }: Ga
         </AppAlert>
       )}
 
-      <FormProvider {...methods}>
-        <Card variant="outlined">
-          <CardContent>
-            <Stack
-              spacing={2}
-              component="form"
-              onSubmit={handleSubmit(async (vals) => {
-                setSaveError(null)
-                if (!canEdit) return
-                try {
-                  const locId = vals.locationIds[0] ?? null
-                  const building = locId ? locations.find((l) => l.id === locId) : null
-                  const isBuilding = building?.scale === 'building'
-                  await onSave({
-                    title: vals.title.trim(),
-                    status: vals.status,
-                    scheduledFor: vals.scheduledFor ? new Date(vals.scheduledFor).toISOString() : null,
-                    locationId: locId,
-                    locationLabel: null,
-                    buildingId: null,
-                    floorId: isBuilding ? (vals.floorId || '1') : null,
-                  })
-                } catch (err) {
-                  if (err instanceof ApiError) {
-                    setSaveError(err.message)
-                  } else {
-                    setSaveError('Failed to save')
-                  }
+      <Card variant="outlined">
+        <CardContent>
+          <AppForm<FormValues>
+            key={`${session.id}-${session.updatedAt ?? ''}`}
+            defaultValues={buildDefaults(session)}
+            useFormOptions={{ shouldUnregister: true }}
+            spacing={2}
+            onSubmit={async (vals) => {
+              setSaveError(null)
+              if (!canEdit) return
+              try {
+                const locId = vals.locationIds[0] ?? null
+                const building = locId ? locations.find((l) => l.id === locId) : null
+                const isBuilding = building?.scale === 'building'
+                await onSave({
+                  title: vals.title.trim(),
+                  status: vals.status,
+                  scheduledFor: vals.scheduledFor ? new Date(vals.scheduledFor).toISOString() : null,
+                  locationId: locId,
+                  locationLabel: null,
+                  buildingId: null,
+                  floorId: isBuilding ? (vals.floorId || '1') : null,
+                })
+              } catch (err) {
+                if (err instanceof ApiError) {
+                  setSaveError(err.message)
+                } else {
+                  setSaveError('Failed to save')
                 }
-              })}
-            >
-              <TextField
-                label="Session title"
-                {...register('title', { required: true })}
-                fullWidth
-                size="small"
-                disabled={!canEdit}
-                required
-                error={!!formState.errors.title}
+              }
+            }}
+          >
+            {(methods) => (
+              <GameSessionSetupFormFields
+                methods={methods}
+                canEdit={canEdit}
+                locations={locations}
+                buildingPickerOptions={buildingPickerOptions}
               />
-              <TextField
-                select
-                label="Status"
-                {...register('status')}
-                fullWidth
-                size="small"
-                disabled={!canEdit}
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                label="Scheduled start (local)"
-                type="datetime-local"
-                {...register('scheduledFor')}
-                fullWidth
-                size="small"
-                disabled={!canEdit}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              <Controller
-                name="locationIds"
-                control={control}
-                defaultValue={[]}
-                render={({ field }) => (
-                  <OptionPickerField
-                    label="Location (building)"
-                    options={buildingPickerOptions}
-                    value={field.value ?? []}
-                    onChange={field.onChange}
-                    maxItems={1}
-                    disabled={!canEdit}
-                    renderSelectedAs="card"
-                    placeholder="Search buildings…"
-                    helperText="Only building-scale locations are listed."
-                    emptyMessage="No building locations in this campaign."
-                  />
-                )}
-              />
-
-              {isBuildingLocation && (
-                <FormSelectField name="floorId" label="Floor" options={floorOptions} size="small" disabled={!canEdit} />
-              )}
-
-              <Box>
-                <Button type="submit" variant="contained" disabled={!canEdit || formState.isSubmitting}>
-                  {formState.isSubmitting ? 'Saving…' : 'Save'}
-                </Button>
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-      </FormProvider>
+            )}
+          </AppForm>
+        </CardContent>
+      </Card>
 
       <Card variant="outlined">
         <CardContent>

@@ -10,7 +10,7 @@ See also: [local-dispatch.md](./local-dispatch.md), [../engine/intents-and-event
 
 **What it is:** A narrow `CombatEvent` variant (`kind: 'action-log-slice'`) that can carry **`entryTypes`** — the set of `CombatLogEventType` values appended during a resolution — as a lightweight summary alongside full `log-appended` rows.
 
-**Where it lives:** Emitted from the application layer (e.g. [`apply-resolve-action-intent.ts`](../../../../src/features/mechanics/domain/combat/application/apply-resolve-action-intent.ts)) when useful; type definition is in [`combat-intent-result.types.ts`](../../../../src/features/mechanics/domain/combat/results/combat-intent-result.types.ts).
+**Where it lives:** Emitted from the application layer (e.g. [`apply-resolve-action-intent.ts`](../../../../packages/mechanics/src/combat/application/apply-resolve-action-intent.ts)) when useful; type definition is in [`combat-intent-result.types.ts`](../../../../packages/mechanics/src/combat/results/combat-intent-result.types.ts).
 
 **What it could enable (future):**
 
@@ -44,6 +44,6 @@ See also: [local-dispatch.md](./local-dispatch.md), [../engine/intents-and-event
 
 ## Encounter startup (Phase 4F — implemented)
 
-**Resolved in Phase 4F:** Confirmed encounter start goes through **`startEncounterFromSetup`** with **`CombatStartupInput`**, not through `applyCombatIntent` or a `StartEncounterIntent`. See [`start-encounter-from-setup.ts`](../../../../src/features/mechanics/domain/combat/application/start-encounter-from-setup.ts) and [`migration-roadmap.md`](../migration-roadmap.md).
+**Resolved in Phase 4F:** Confirmed encounter start goes through **`startEncounterFromSetup`** with **`CombatStartupInput`**, not through `applyCombatIntent` or a `StartEncounterIntent`. See [`start-encounter-from-setup.ts`](../../../../packages/mechanics/src/combat/application/start-encounter-from-setup.ts) and [`roadmap.md`](../roadmap.md).
 
 **Optional later:** surfacing startup log rows through the same toast path as post-start intents (`registerCombatLogAppended`) — not required for the startup seam to be valid.

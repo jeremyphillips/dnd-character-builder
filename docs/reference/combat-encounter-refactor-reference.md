@@ -301,7 +301,7 @@ src/
 Short-term, the shared combat engine may continue to live under a path like:
 
 ```txt
-src/features/mechanics/domain/combat
+packages/mechanics/src/combat
 ```
 
 That is acceptable as an intermediate step so long as the code remains compatible with future server sharing.
@@ -312,11 +312,11 @@ That is acceptable as an intermediate step so long as the code remains compatibl
 
 ### Rename engine ownership
 
-**Phase 1 (done):** the shared mechanics engine folder is `src/features/mechanics/domain/combat` (renamed from `encounter`). It holds engine/runtime/state/resolution logic, not encounter feature composition.
+**Phase 1 (done):** the shared mechanics engine folder is `packages/mechanics/src/combat` (renamed from `encounter`). It holds engine/runtime/state/resolution logic, not encounter feature composition.
 
 ### Move runtime board/space logic out of encounter feature
 
-**Phase 1 (done):** runtime grid/space lives at `src/features/mechanics/domain/combat/space` (moved from `src/features/encounter/space`). Combat space is engine-owned and will be needed by the server.
+**Phase 1 (done):** runtime grid/space lives at `packages/mechanics/src/combat/space` (moved from `src/features/encounter/space`). Combat space is engine-owned and will be needed by the server.
 
 ### Create a combat presentation/selectors layer
 
@@ -325,13 +325,13 @@ Most of the current `src/features/encounter/domain` is really shared combat deri
 Target direction:
 
 ```txt
-src/features/mechanics/domain/combat/presentation
+packages/mechanics/src/combat/presentation
 ```
 
 and/or:
 
 ```txt
-src/features/mechanics/domain/combat/selectors
+packages/mechanics/src/combat/selectors
 ```
 
 ### Extract reusable client combat UI
@@ -362,11 +362,11 @@ src/features/content/locations/adapters/locationFloorToCombatSeed.ts
 
 ## Folder-specific guidance from the current tree
 
-### `src/features/mechanics/domain/combat`
+### `packages/mechanics/src/combat`
 
 This is the shared combat engine (Phase 1: renamed from `encounter`).
 
-### `src/features/mechanics/domain/combat/space`
+### `packages/mechanics/src/combat/space`
 
 Runtime board logic lives here (Phase 1: moved from `src/features/encounter/space`). It is not encounter workflow composition.
 
@@ -449,7 +449,7 @@ src/features/combat/components/panels/AoePlacementPanel.tsx
 src/features/combat/components/panels/SingleCellPlacementPanel.tsx
 src/features/combat/components/panels/CasterOptionsDrawerPanel.tsx
 src/features/combat/presentation/aoePlacementFormat.ts
-src/features/mechanics/domain/combat/presentation/actions/derive-action-unavailable-hint.ts
+packages/mechanics/src/combat/presentation/actions/derive-action-unavailable-hint.ts
 
 src/features/encounter/components/active/drawers/CombatantActionDrawer.tsx
 src/features/encounter/components/active/drawers/AllyActionDrawer.tsx
@@ -601,7 +601,7 @@ See **[combat-client-ui.md](./combat-client-ui.md)** for what lives under `src/f
 - convert state-changing entry points to intent-shaped contracts
 - derive logs/toasts from canonical events
 
-Implementation detail and phase status: **[combat/migration-roadmap.md](./combat/migration-roadmap.md)**, **[combat/client/local-dispatch.md](./combat/client/local-dispatch.md)**. Phase 4E documents the local **runtime** seam as canonical for end turn, move, and resolve. Phase 4F adds **`startEncounterFromSetup`** for **encounter initialization** (not a runtime intent). Optional deferred client hooks (`action-log-slice` consumption, `registerIntentFailure`) are described in **[combat/client/feedback-followups.md](./combat/client/feedback-followups.md)**.
+Implementation detail, phase status, server persistence notes, and gaps: **[combat/roadmap.md](./combat/roadmap.md)** (the old **`migration-roadmap.md`** redirects there). **[combat/client/local-dispatch.md](./combat/client/local-dispatch.md)** describes Encounter → mechanics today. Phase 4E documents the local **runtime** seam as canonical for end turn, move, and resolve. Phase 4F adds **`startEncounterFromSetup`** for **encounter initialization** (not a runtime intent). Optional deferred client hooks (`action-log-slice` consumption, `registerIntentFailure`) are described in **[combat/client/feedback-followups.md](./combat/client/feedback-followups.md)**.
 
 ### Phase 5 — Add server combat application layer
 
@@ -609,6 +609,8 @@ Implementation detail and phase status: **[combat/migration-roadmap.md](./combat
 - receive intents server-side
 - apply shared combat engine
 - persist and broadcast canonical updates
+
+**Progress:** Persisted combat sessions and revisioned apply-intent exist as REST APIs (see **[combat/roadmap.md](./combat/roadmap.md)** and **[combat/server/authoritative-flow.md](./combat/server/authoritative-flow.md)**). Broadcast, permissions, and full client wiring remain outstanding.
 
 ---
 

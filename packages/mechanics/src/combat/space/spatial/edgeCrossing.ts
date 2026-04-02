@@ -58,7 +58,22 @@ export function segmentSightBlocked(
 }
 
 /**
- * True when movement along one grid step is blocked by edges (parallel policy to {@link segmentSightBlocked}).
+ * Movement across one **orthogonal** grid step, **edges only** (not cell terrain).
+ * Missing edge ⇒ open boundary.
+ */
+export function orthogonalMovementEdgeBlocked(
+  space: EncounterSpace,
+  fromCellId: string,
+  toCellId: string,
+): boolean {
+  const e = findEncounterEdgeBetween(space, fromCellId, toCellId)
+  return edgeBlocksMovement(e)
+}
+
+/**
+ * True when movement along one **orthogonal** step is blocked by **edges** (not cell terrain).
+ * For **diagonal** king-moves, use decomposition in {@link movementStepLegal} — do not pass
+ * diagonals here; non-orthogonal adjacency returns `true` (blocked) as a safe default.
  */
 export function segmentMovementBlocked(
   space: EncounterSpace,
@@ -70,19 +85,6 @@ export function segmentMovementBlocked(
   if (!a || !b) return true
   const dx = Math.abs(a.x - b.x)
   const dy = Math.abs(a.y - b.y)
-  if (dx === 0 && dy === 0) return false
-  if (dx > 1 || dy > 1 || dx + dy > 2) return true
-
-  if (dx + dy === 1) {
-    const e = findEncounterEdgeBetween(space, fromCellId, toCellId)
-    return edgeBlocksMovement(e)
-  }
-
-  const orth1 = getCellAt(space, b.x, a.y)
-  const orth2 = getCellAt(space, a.x, b.y)
-  if (!orth1 || !orth2) return true
-  return (
-    segmentMovementBlocked(space, fromCellId, orth1.id) ||
-    segmentMovementBlocked(space, fromCellId, orth2.id)
-  )
+  if (dx + dy !== 1) return true
+  return orthogonalMovementEdgeBlocked(space, fromCellId, toCellId)
 }

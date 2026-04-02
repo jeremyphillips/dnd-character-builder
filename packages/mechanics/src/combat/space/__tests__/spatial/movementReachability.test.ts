@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createSquareGridSpace } from '../../creation/createSquareGridSpace'
 import { hasLineOfSight } from '../../sight/space.sight'
+import { segmentSightBlocked } from '../../spatial/edgeCrossing'
 import {
   cellsReachableWithinMovementBudget,
   minMovementCostFtToCell,
@@ -27,14 +28,51 @@ describe('movementReachability', () => {
     )
   })
 
-  it('movementStepLegal applies diagonal corner rule via segmentMovementBlocked', () => {
+  it('diagonal movement: allowed when at least one orthogonal decomposition (two legal orth steps) exists', () => {
     const space = createSquareGridSpace({ id: 'g', name: 'G', columns: 4, rows: 4 })
-    const withEdge = {
+    const oneWall = {
       ...space,
       edges: [{ fromCellId: 'c-0-0', toCellId: 'c-1-0', blocksMovement: true }],
     }
-    expect(movementStepLegal(withEdge, 'c-0-0', 'c-1-1')).toBe(false)
-    expect(movementStepLegal(withEdge, 'c-0-0', 'c-0-1')).toBe(true)
+    // Path B: c-0-0 → c-0-1 → c-1-1 (east edge blocked, north-then-east still works).
+    expect(movementStepLegal(oneWall, 'c-0-0', 'c-1-1', [], 'm')).toBe(true)
+    expect(movementStepLegal(oneWall, 'c-0-0', 'c-0-1', [], 'm')).toBe(true)
+  })
+
+  it('diagonal movement: blocked when neither orthogonal decomposition is fully legal (sealed corner)', () => {
+    const space = createSquareGridSpace({ id: 'g', name: 'G', columns: 4, rows: 4 })
+    const sealed = {
+      ...space,
+      edges: [
+        { fromCellId: 'c-0-0', toCellId: 'c-1-0', blocksMovement: true },
+        { fromCellId: 'c-0-0', toCellId: 'c-0-1', blocksMovement: true },
+      ],
+    }
+    expect(movementStepLegal(sealed, 'c-0-0', 'c-1-1', [], 'm')).toBe(false)
+  })
+
+  it('diagonal movement: blocked when one leg of a decomposition crosses a movement-blocking edge', () => {
+    const space = createSquareGridSpace({ id: 'g', name: 'G', columns: 4, rows: 4 })
+    // from c-0-0 to c-1-1: orth1=c-1-0, orth2=c-0-1. Block east from c-0-0 and north from c-1-0 (path A dead);
+    // block east from c-0-1 (path B second leg c-0-1→c-1-1).
+    const noRoute = {
+      ...space,
+      edges: [
+        { fromCellId: 'c-0-0', toCellId: 'c-1-0', blocksMovement: true },
+        { fromCellId: 'c-1-0', toCellId: 'c-1-1', blocksMovement: true },
+        { fromCellId: 'c-0-1', toCellId: 'c-1-1', blocksMovement: true },
+      ],
+    }
+    expect(movementStepLegal(noRoute, 'c-0-0', 'c-1-1', [], 'm')).toBe(false)
+  })
+
+  it('LoS diagonal still uses strict corner rule (either orthogonal blocks sight)', () => {
+    const space = createSquareGridSpace({ id: 'g', name: 'G', columns: 4, rows: 4 })
+    const oneWall = {
+      ...space,
+      edges: [{ fromCellId: 'c-0-0', toCellId: 'c-1-0', blocksSight: true }],
+    }
+    expect(segmentSightBlocked(oneWall, 'c-0-0', 'c-1-1')).toBe(true)
   })
 
   it('is false when no path exists (fully enclosed)', () => {

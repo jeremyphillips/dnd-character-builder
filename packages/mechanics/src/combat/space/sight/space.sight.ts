@@ -1,5 +1,5 @@
 import { cellHasSightBlockingGridObject, getCellAt, getCellById } from '../space.helpers'
-import { segmentMovementBlocked, segmentSightBlocked } from '../spatial/edgeCrossing'
+import { segmentSightBlocked } from '../spatial/edgeCrossing'
 import type { EncounterSpace } from '../space.types'
 
 /**

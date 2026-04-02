@@ -1,5 +1,10 @@
-import { getCellAt, getCellById, cellMovementBlockedForEntering, getOccupant } from '../space.helpers'
-import { segmentMovementBlocked } from './edgeCrossing'
+import {
+  getCellAt,
+  getCellById,
+  cellMovementBlockedForEntering,
+  getOccupant,
+} from '../space.helpers'
+import { orthogonalMovementEdgeBlocked } from './edgeCrossing'
 import type { CombatantPosition, EncounterSpace } from '../space.types'
 
 const NEIGHBOR_DELTAS: ReadonlyArray<readonly [number, number]> = [
@@ -26,14 +31,65 @@ function isOccupiedByOther(
   return occ !== undefined && occ !== movingCombatantId
 }
 
+/** One orthogonal step: enter `to`, cross edge from→to (no occupancy — BFS handles destination). */
+function orthogonalMovementStepLegal(
+  space: EncounterSpace,
+  fromCellId: string,
+  toCellId: string,
+): boolean {
+  const from = getCellById(space, fromCellId)
+  const to = getCellById(space, toCellId)
+  if (!from || !to) return false
+  if (Math.abs(from.x - to.x) + Math.abs(from.y - to.y) !== 1) return false
+  if (cellMovementBlockedForEntering(space, toCellId)) return false
+  return !orthogonalMovementEdgeBlocked(space, fromCellId, toCellId)
+}
+
 /**
- * One king-move step: entering `toCellId` must be allowed, and the segment from → to must not
- * be blocked for movement (orthogonal edge or diagonal corner rule — see {@link segmentMovementBlocked}).
+ * Diagonal step is legal iff **at least one** orthogonal decomposition is fully legal:
+ * `from → orth1 → to` or `from → orth2 → to`, where each leg is a legal orthogonal step and
+ * the intermediate cell is not occupied by another combatant.
+ */
+function diagonalMovementStepLegal(
+  space: EncounterSpace,
+  fromCellId: string,
+  toCellId: string,
+  placements: CombatantPosition[],
+  movingCombatantId: string,
+): boolean {
+  const from = getCellById(space, fromCellId)
+  const to = getCellById(space, toCellId)
+  if (!from || !to) return false
+  if (Math.abs(from.x - to.x) !== 1 || Math.abs(from.y - to.y) !== 1) return false
+  if (cellMovementBlockedForEntering(space, toCellId)) return false
+
+  const orth1 = getCellAt(space, to.x, from.y)
+  const orth2 = getCellAt(space, from.x, to.y)
+  if (!orth1 || !orth2) return false
+
+  const pathA =
+    orthogonalMovementStepLegal(space, fromCellId, orth1.id) &&
+    !isOccupiedByOther(placements, orth1.id, movingCombatantId) &&
+    orthogonalMovementStepLegal(space, orth1.id, toCellId)
+
+  const pathB =
+    orthogonalMovementStepLegal(space, fromCellId, orth2.id) &&
+    !isOccupiedByOther(placements, orth2.id, movingCombatantId) &&
+    orthogonalMovementStepLegal(space, orth2.id, toCellId)
+
+  return pathA || pathB
+}
+
+/**
+ * One king-move step: orthogonal uses edge + destination terrain; diagonal uses full orthogonal
+ * decomposition (see {@link diagonalMovementStepLegal}).
  */
 export function movementStepLegal(
   space: EncounterSpace,
   fromCellId: string,
   toCellId: string,
+  placements: CombatantPosition[],
+  movingCombatantId: string,
 ): boolean {
   const from = getCellById(space, fromCellId)
   const to = getCellById(space, toCellId)
@@ -42,9 +98,10 @@ export function movementStepLegal(
   const dy = Math.abs(from.y - to.y)
   if (dx === 0 && dy === 0) return false
   if (dx > 1 || dy > 1) return false
-  if (cellMovementBlockedForEntering(space, toCellId)) return false
-  if (segmentMovementBlocked(space, fromCellId, toCellId)) return false
-  return true
+  if (dx + dy === 1) {
+    return orthogonalMovementStepLegal(space, fromCellId, toCellId)
+  }
+  return diagonalMovementStepLegal(space, fromCellId, toCellId, placements, movingCombatantId)
 }
 
 /**
@@ -75,7 +132,7 @@ export function minMovementCostFtToCell(
         const next = getCellAt(space, cell.x + dx, cell.y + dy)
         if (!next) continue
         if (visited.has(next.id)) continue
-        if (!movementStepLegal(space, id, next.id)) continue
+        if (!movementStepLegal(space, id, next.id, placements, movingCombatantId)) continue
         if (isOccupiedByOther(placements, next.id, movingCombatantId)) continue
         if (next.id === targetCellId) return (hops + 1) * cf
         visited.add(next.id)
@@ -116,7 +173,7 @@ export function cellsReachableWithinMovementBudget(
         const next = getCellAt(space, cell.x + dx, cell.y + dy)
         if (!next) continue
         if (visited.has(next.id)) continue
-        if (!movementStepLegal(space, id, next.id)) continue
+        if (!movementStepLegal(space, id, next.id, placements, movingCombatantId)) continue
         if (isOccupiedByOther(placements, next.id, movingCombatantId)) continue
         const nextCost = (hops + 1) * cf
         if (nextCost > budgetFt) continue

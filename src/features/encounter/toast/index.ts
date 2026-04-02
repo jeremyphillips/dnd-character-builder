@@ -3,7 +3,11 @@ export type {
   EncounterToastPresentation,
   EncounterToastViewerInput,
   ActionResolvedViewerRelationship,
+  TurnChangedViewerRelationship,
 } from './encounter-toast-types'
-export { deriveEncounterToastForViewer } from './derive-encounter-toast-for-viewer'
+export {
+  deriveEncounterToastForViewer,
+  deriveEncounterToastsFromNewLogSlice,
+} from './derive-encounter-toast-for-viewer'
 export { normalizeToastViewerContext } from './normalize-toast-viewer'
 export { deriveActionResolvedViewerRelationship } from './derive-viewer-relationship'

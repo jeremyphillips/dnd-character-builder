@@ -2,6 +2,7 @@ import type { AlertProps } from '@mui/material/Alert'
 
 import type { CombatLogEvent } from '@/features/mechanics/domain/combat'
 import type { EncounterState } from '@/features/mechanics/domain/combat/state/types'
+import type { EncounterSessionSeat } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 import type { AppAlertTone } from '@/ui/primitives'
 
 /** Structural outcome for policy (no tone). */
@@ -11,7 +12,7 @@ export type ActionResolvedOutcomeMeta = {
   hasNat1Miss: boolean
 }
 
-export type EncounterToastEventKind = 'action_resolved'
+export type EncounterToastEventKind = 'action_resolved' | 'turn_changed'
 
 export type EncounterToastEvent =
   | {
@@ -24,12 +25,35 @@ export type EncounterToastEvent =
       mechanics: string
       outcome: ActionResolvedOutcomeMeta
     }
+  | {
+      kind: 'turn_changed'
+      dedupeKey: string
+      encounterStateAfter: EncounterState | undefined
+      neutral: TurnChangedNeutralPayload
+    }
 
 export type ActionResolvedViewerRelationship =
   | 'actor_controller'
   | 'target_controller'
   | 'dm_observer'
   | 'uninvolved_observer'
+
+export type TurnChangedViewerRelationship =
+  | 'ended_turn_controller'
+  | 'new_turn_controller'
+  | 'participant_observer'
+  | 'dm_observer'
+  | 'uninvolved_observer'
+
+/** Viewer-agnostic turn transition (no tone / no viewer copy). */
+export type TurnChangedNeutralPayload = {
+  endedActiveId: string
+  nextActiveId: string
+  round: number
+  turn: number
+  dedupeKey: string
+  nextDisplayName: string
+}
 
 export type NormalizedToastViewerContext =
   | { mode: 'simulator' }
@@ -44,6 +68,10 @@ export type EncounterToastViewerInput = {
   viewerMode: 'simulator' | 'session'
   controlledCombatantIds: string[]
   tonePerspective: 'self' | 'observer' | 'dm'
+  /** Session seat; distinguishes observer seat from player “watching” (`tonePerspective` alone cannot). */
+  viewerRole?: EncounterSessionSeat
+  /** Simulator: selected combatant POV; `deriveTurnChangedViewerRelationship` falls back to `EncounterState.activeCombatantId`. */
+  simulatorPresentationCombatantId?: string | null
 }
 
 /** Per-kind defaults before relationship-specific overrides. */

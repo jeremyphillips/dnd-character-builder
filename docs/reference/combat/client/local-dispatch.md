@@ -41,21 +41,30 @@ The same **`applyCombatIntent`** *shape* (intent in, result out) is what a serve
 
 ## Encounter toasts (viewer-aware)
 
-After combat log rows are **appended** (same entries whether the intent ran **locally** or arrived via **persisted refetch** / hydration), **`useEncounterActivePlaySurface`** diffs **`encounterState.log`** and derives a toast from **new** suffix entries. Toasts are **not** driven by inline tone logic in the play hook (the older **`registerCombatLogAppended`** path is reserved for future listeners; it is not required for action-resolved toasts):
+After combat log rows are **appended** (same entries whether the intent ran **locally** or arrived via **persisted refetch** / hydration), **`useEncounterActivePlaySurface`** diffs **`encounterState.log`** and derives **one or more** toasts from **new** suffix entries via **`deriveEncounterToastsFromNewLogSlice`**. Toasts are **not** driven by inline tone logic in the play hook (the older **`registerCombatLogAppended`** path is reserved for future listeners; it is not required for action-resolved toasts):
 
-1. **Neutral content** — `buildActionResolvedNeutralContent` (viewer-agnostic title/narrative/mechanics + outcome metadata + stable **`dedupeKey`** from round/turn/log entry ids). No tone.
+**`action_resolved`**
+
+1. **Neutral content** — `buildActionResolvedNeutralContent` on log lines **excluding** turn/round markers (`filterActionEventsForEncounterToast`); viewer-agnostic title/narrative/mechanics + outcome metadata + stable **`dedupeKey`**. No tone.
 2. **Viewer normalization** — `normalizeToastViewerContext` (simulator vs session in one place).
-3. **Relationship** — e.g. actor vs target controller vs DM vs uninvolved, from log **`actorId` / `targetIds`** and session **`controlledCombatantIds`**.
-4. **Policy** — per-event defaults (`encounter-toast-defaults`) + `applyActionResolvedPolicyDimensions` (explicit **`show`**, tone, variant, `autoHideDuration`).
-5. **`deriveEncounterToastForViewer`** — merges into **`AppToast`** props only.
+3. **Relationship** — `deriveActionResolvedViewerRelationship`: actor vs target controller vs DM vs uninvolved, from log **`actorId` / `targetIds`** and session **`controlledCombatantIds`**.
+4. **Policy** — per-kind defaults + `applyActionResolvedPolicyDimensions` (explicit **`show`**, tone, variant, `autoHideDuration`).
+
+**`turn_changed`** (first `turn-ended` → last `turn-started` in the new suffix; supports multi-skip chains in one append)
+
+1. **Neutral parse** — `parseTurnChangedFromNewLogSlice` → **`endedActiveId`**, **`nextActiveId`**, round/turn meta, **`dedupeKey`** (no tone).
+2. **Relationship** — `deriveTurnChangedViewerRelationship` uses **`viewerRole`** (session observer vs player vs DM), **`controlledCombatantIds`**, and simulator POV (`simulatorPresentationCombatantId` or **`EncounterState.activeCombatantId`**): **`ended_turn_controller`** (suppress), **`new_turn_controller`** (`success`, ~3000ms), **`dm_observer`** / **`participant_observer`** (`info`, ~2000ms), **`uninvolved_observer`** (suppress).
+3. **Policy** — `applyTurnChangedPolicyDimensions` + per-kind defaults.
+
+**Orchestration** — **`deriveEncounterToastsFromNewLogSlice`** returns **`[action?, turn?]`** in that order when both apply; **`deriveEncounterToastForViewer`** remains a convenience that returns the **first** presentation only.
 
 **Dedupe:** A **`Set`** of shown **`dedupeKey`** values avoids duplicate toasts for the same logical batch (local dispatch and future replay-safe). Keys clear when **`encounterState`** is unset.
 
 **Queue (optional):** If a toast is already open, another presentation is **enqueued**; **on close**, the next item shows. **Adjacent duplicate keys** in the queue are not enqueued. No priority/preemption beyond FIFO.
 
-**Future toast kinds** (turn change, defeat, retreat) should follow the same pipeline: neutral payload → relationship → policy registry → presentation-only `AppToast`.
+**Future toast kinds** (defeat, retreat, etc.) should follow the same pipeline: neutral payload → relationship → policy registry → presentation-only `AppToast`.
 
-**Source (in-repo):** neutral builder and dedupe key in [`encounter-action-toast.ts`](../../../../src/features/encounter/helpers/actions/encounter-action-toast.ts); viewer pipeline modules under [`src/features/encounter/toast/`](../../../../src/features/encounter/toast/) (`normalize-toast-viewer.ts`, `derive-viewer-relationship.ts`, `encounter-toast-defaults.ts`, `encounter-toast-policy.ts`, `derive-encounter-toast-for-viewer.ts`); wiring in [`useEncounterActivePlaySurface.tsx`](../../../../src/features/encounter/hooks/useEncounterActivePlaySurface.tsx).
+**Source (in-repo):** neutral builder and dedupe key in [`encounter-action-toast.ts`](../../../../src/features/encounter/helpers/actions/encounter-action-toast.ts); turn parse in [`turn-changed-neutral.ts`](../../../../src/features/encounter/toast/turn-changed-neutral.ts); viewer pipeline under [`src/features/encounter/toast/`](../../../../src/features/encounter/toast/) (`normalize-toast-viewer.ts`, `derive-viewer-relationship.ts`, `derive-turn-changed-viewer-relationship.ts`, `encounter-toast-defaults.ts`, `encounter-toast-policy.ts`, `encounter-toast-policy-turn-changed.ts`, `derive-encounter-toast-for-viewer.ts`); wiring in [`useEncounterActivePlaySurface.tsx`](../../../../src/features/encounter/hooks/useEncounterActivePlaySurface.tsx).
 
 ## See also
 

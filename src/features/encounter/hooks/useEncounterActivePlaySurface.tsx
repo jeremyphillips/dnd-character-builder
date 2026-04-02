@@ -20,7 +20,7 @@ import {
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
 import { buildInitialCasterOptionsForAction } from '@/features/mechanics/domain/spells/caster-options'
 
-import { deriveEncounterToastForViewer } from '../toast/derive-encounter-toast-for-viewer'
+import { deriveEncounterToastsFromNewLogSlice } from '../toast/derive-encounter-toast-for-viewer'
 import type { EncounterToastPresentation, EncounterToastViewerInput } from '../toast/encounter-toast-types'
 import { deriveEncounterSideOutcome } from '../helpers/state'
 import { EncounterGameOverModal } from '../components/active/modals/EncounterGameOverModal'
@@ -191,8 +191,17 @@ export function useEncounterActivePlaySurface(
       viewerMode: mode,
       controlledCombatantIds: viewerContext.controlledCombatantIds,
       tonePerspective: capabilities?.tonePerspective ?? 'dm',
+      viewerRole: viewerContext.mode === 'session' ? viewerContext.viewerRole : undefined,
+      simulatorPresentationCombatantId:
+        viewerContext.mode === 'simulator' ? viewerContext.presentationSelectedCombatantId ?? null : undefined,
     }
-  }, [viewerContext.mode, viewerContext.controlledCombatantIds, capabilities?.tonePerspective])
+  }, [
+    viewerContext.mode,
+    viewerContext.controlledCombatantIds,
+    viewerContext.viewerRole,
+    viewerContext.presentationSelectedCombatantId,
+    capabilities?.tonePerspective,
+  ])
 
   const handleToastClose = useCallback(() => {
     setToastOpen(false)
@@ -246,19 +255,25 @@ export function useEncounterActivePlaySurface(
     const newEntries = log.slice(prevLen)
     lastProcessedCombatLogLenRef.current = log.length
 
-    const presentation = deriveEncounterToastForViewer(newEntries, encounterState, toastViewerInput)
-    if (!presentation) return
-    if (shownToastDedupeKeysRef.current.has(presentation.dedupeKey)) return
-    shownToastDedupeKeysRef.current.add(presentation.dedupeKey)
+    const presentations = deriveEncounterToastsFromNewLogSlice(newEntries, encounterState, toastViewerInput)
+    if (presentations.length === 0) return
 
-    if (toastOpenRef.current) {
+    let placedFirstInBatch = false
+    for (const presentation of presentations) {
+      if (shownToastDedupeKeysRef.current.has(presentation.dedupeKey)) continue
+      shownToastDedupeKeysRef.current.add(presentation.dedupeKey)
+
+      const busy = toastOpenRef.current || toastQueueRef.current.length > 0
+      if (!placedFirstInBatch && !busy) {
+        setToastPayload(presentation)
+        setToastOpen(true)
+        placedFirstInBatch = true
+        continue
+      }
       const q = toastQueueRef.current
       const last = q[q.length - 1]
       if (last?.dedupeKey !== presentation.dedupeKey) q.push(presentation)
-      return
     }
-    setToastPayload(presentation)
-    setToastOpen(true)
   }, [encounterState, encounterState?.log.length, toastViewerInput])
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom()

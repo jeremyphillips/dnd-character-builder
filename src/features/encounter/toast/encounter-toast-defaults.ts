@@ -6,6 +6,11 @@ const defaultsByKind: Record<EncounterToastEventKind, EncounterToastKindDefaults
     defaultAutoHideDuration: 8000,
     defaultShow: true,
   },
+  turn_changed: {
+    defaultVariant: 'standard',
+    defaultAutoHideDuration: 2000,
+    defaultShow: true,
+  },
 }
 
 export function getEncounterToastKindDefaults(kind: EncounterToastEventKind): EncounterToastKindDefaults {

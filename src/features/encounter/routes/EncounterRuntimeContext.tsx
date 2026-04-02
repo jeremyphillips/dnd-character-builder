@@ -193,7 +193,9 @@ function useEncounterRuntimeValue() {
 
   const viewerContext: EncounterViewerContext = useMemo(
     () => ({
+      mode: 'simulator' as const,
       viewerRole: 'dm' as const,
+      viewerUserId: null,
       simulatorViewerMode,
       presentationSelectedCombatantId,
       controlledCombatantIds: [],
@@ -397,7 +399,6 @@ function useEncounterRuntimeValue() {
   )
 
   const { activeHeader, capabilities } = useEncounterCombatActiveHeader({
-    variant: 'simulator',
     encounterState,
     activeCombatant,
     availableActions,

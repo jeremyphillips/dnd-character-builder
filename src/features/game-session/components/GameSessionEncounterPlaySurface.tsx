@@ -5,6 +5,7 @@ import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import { useAuth } from '@/app/providers/AuthProvider'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { useCampaignParty } from '@/features/campaign/hooks'
 import { useCharacters } from '@/features/character/hooks'
@@ -13,6 +14,7 @@ import type { OpponentRosterEntry } from '@/features/encounter/types'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 import {
   deriveEncounterPresentationGridPerceptionInput,
+  resolveSessionControlledCombatantIds,
   type EncounterViewerContext,
 } from '@/features/encounter/domain'
 import { isAreaGridAction } from '@/features/encounter/helpers/actions'
@@ -26,6 +28,7 @@ import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combat
 import type { GameSession } from '../domain/game-session.types'
 import { summarizeEncounterSpaceForLog } from '../combat/buildEncounterSpaceFromLocationMap'
 import { campaignGameSessionLobbyPath } from '../routes/gameSessionPaths'
+import { resolveGameSessionEncounterSeat } from '../utils/resolveGameSessionEncounterSeat'
 
 function buildHydrationFromEncounter(encounter: EncounterState): {
   selectedCombatantIds: string[]
@@ -46,6 +49,7 @@ function buildHydrationFromEncounter(encounter: EncounterState): {
 }
 
 export function GameSessionEncounterPlaySurface({ session }: { session: GameSession }) {
+  const { user } = useAuth()
   const { catalog, ruleset } = useCampaignRules()
   const suppressSameSideHostile = ruleset.mechanics.combat.encounter.suppressSameSideHostile === true
   const { party } = useCampaignParty('approved')
@@ -146,14 +150,29 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     [encounter.availableActions, encounter.selectedActionId],
   )
 
+  const { viewerRole, playerCharacterId } = useMemo(
+    () => resolveGameSessionEncounterSeat(session, user?.id ?? null),
+    [session, user?.id],
+  )
+
+  const controlledCombatantIds = useMemo(() => {
+    if (!encounter.encounterState) return [] as string[]
+    return resolveSessionControlledCombatantIds(encounter.encounterState, {
+      viewerRole,
+      playerCharacterId,
+    })
+  }, [encounter.encounterState, viewerRole, playerCharacterId])
+
   const viewerContext: EncounterViewerContext = useMemo(
     () => ({
-      viewerRole: 'dm',
+      mode: 'session',
+      viewerRole,
+      viewerUserId: user?.id ?? null,
       simulatorViewerMode: 'active-combatant',
       presentationSelectedCombatantId: null,
-      controlledCombatantIds: [],
+      controlledCombatantIds,
     }),
-    [],
+    [viewerRole, user?.id, controlledCombatantIds],
   )
 
   const presentationGridPerceptionInput = useMemo(
@@ -208,8 +227,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     }
   }, [campaignId, navigate, session.id])
 
-  const { activeHeader } = useEncounterCombatActiveHeader({
-    variant: 'session',
+  const { activeHeader, capabilities } = useEncounterCombatActiveHeader({
     encounterState: encounter.encounterState,
     activeCombatant: encounter.activeCombatant,
     availableActions: encounter.availableActions,
@@ -240,6 +258,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   const playSurface = useEncounterActivePlaySurface(
     {
       encounterState: encounter.encounterState,
+      capabilities,
       activeHeader,
       activeCombatant: encounter.activeCombatant,
       activeCombatantId: encounter.activeCombatantId,

@@ -94,6 +94,7 @@ export type EncounterActivePlaySurfaceDeps = Pick<
   | 'setObjectAnchorHoverCellId'
   | 'suppressSameSideHostile'
   | 'spellsById'
+  | 'capabilities'
 >
 
 function placementReasonMessage(reason: PlacementValidationReason): string {
@@ -164,6 +165,7 @@ export function useEncounterActivePlaySurface(
     setObjectAnchorHoverCellId,
     suppressSameSideHostile,
     spellsById,
+    capabilities,
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
@@ -267,6 +269,7 @@ export function useEncounterActivePlaySurface(
 
   const handleSelectTarget = useCallback(
     (nextTargetId: string) => {
+      if (!capabilities?.canSelectAction) return
       setSelectedActionTargetId(nextTargetId)
 
       if (selectedActionId && encounterState && activeCombatant) {
@@ -289,11 +292,13 @@ export function useEncounterActivePlaySurface(
       selectedCasterOptions,
       setSelectedActionTargetId,
       setSelectedActionId,
+      capabilities?.canSelectAction,
     ],
   )
 
   const handleSelectAction = useCallback(
     (actionId: string) => {
+      if (!capabilities?.canSelectAction) return
       const action = availableActions.find((a) => a.id === actionId)
       setSelectedActionId(actionId)
       setPlacementError(null)
@@ -369,6 +374,7 @@ export function useEncounterActivePlaySurface(
       setSingleCellPlacementError,
       setSelectedObjectAnchorId,
       setObjectAnchorHoverCellId,
+      capabilities?.canSelectAction,
     ],
   )
 
@@ -452,6 +458,7 @@ export function useEncounterActivePlaySurface(
 
   const canResolveAction = useMemo(
     () =>
+      Boolean(capabilities?.canResolveAction) &&
       canResolveCombatActionSelection({
         selectedActionId,
         selectedAction,
@@ -466,6 +473,7 @@ export function useEncounterActivePlaySurface(
         activeCombatant,
       }),
     [
+      capabilities?.canResolveAction,
       selectedActionId,
       selectedAction,
       availableActions,
@@ -535,6 +543,11 @@ export function useEncounterActivePlaySurface(
 
   useCloseCombatantActionDrawerOnActiveCombatantChange(activeCombatantId, handleCloseDrawerOnTurnChange)
 
+  const handleEndTurnWithPermission = useCallback(() => {
+    if (!capabilities?.canEndTurn) return
+    handleNextTurn()
+  }, [capabilities?.canEndTurn, handleNextTurn])
+
   const handleCancelAoe = useCallback(() => {
     resetAoePlacement()
     setSelectedActionId('')
@@ -594,6 +607,7 @@ export function useEncounterActivePlaySurface(
       if (!encounterState || !activeCombatantId) return
 
       if (interactionMode === 'single-cell-place') {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         const placements = encounterState.placements
         if (!space || !placements || !selectedAction) return
@@ -612,6 +626,7 @@ export function useEncounterActivePlaySurface(
       }
 
       if (interactionMode === 'object-anchor-select') {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         if (!space) return
         const obstacle = findGridObstacleAtCell(space, cellId)
@@ -628,6 +643,7 @@ export function useEncounterActivePlaySurface(
         isAreaGridAction(selectedAction, selectedCasterOptions) &&
         !isSelfCenteredAreaAction(selectedAction, selectedCasterOptions)
       ) {
+        if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         const placements = encounterState.placements
         if (!space || !placements) return
@@ -654,9 +670,11 @@ export function useEncounterActivePlaySurface(
 
       const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
       if (occupant) {
+        if (!capabilities?.canSelectAction) return
         handleSelectTarget(occupant.combatantId)
         setActionDrawerOpen(true)
       } else {
+        if (!capabilities?.canMoveActiveCombatant) return
         handleMoveCombatant(cellId)
       }
     },
@@ -668,6 +686,8 @@ export function useEncounterActivePlaySurface(
       selectedAction,
       selectedCasterOptions,
       interactionMode,
+      capabilities?.canSelectAction,
+      capabilities?.canMoveActiveCombatant,
       handleMoveCombatant,
       handleSelectTarget,
       setAoeOriginCellId,
@@ -802,7 +822,7 @@ export function useEncounterActivePlaySurface(
     canResolveAction,
     primaryResolutionMissingMessage: primaryResolutionMissing?.message,
     onResolveAction: handleResolveAction,
-    onEndTurn: handleNextTurn,
+    onEndTurn: handleEndTurnWithPermission,
     aoeStep,
     aoePlacementError: placementError,
     onDismissAoeError: () => setPlacementError(null),
@@ -881,6 +901,7 @@ export function useEncounterActivePlaySurface(
           suppressSameSideHostile={suppressSameSideHostile}
           combatantViewerPresentationKindById={combatantViewerPresentationKindById}
           onSelectTarget={(combatantId) => {
+            if (!capabilities?.canSelectAction) return
             handleSelectTarget(combatantId)
             setActionDrawerOpen(true)
           }}

@@ -100,12 +100,15 @@ export type {
 } from '@/features/mechanics/domain/combat/presentation/header/encounter-header-model'
 export type { TurnOptionBucketState, TurnResourceBucketHeaderBadge } from '@/features/mechanics/domain/combat/selectors/turn/turn-options'
 export { deriveEncounterCapabilities } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
+export { resolveSessionControlledCombatantIds } from '@/features/mechanics/domain/combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
 export type {
   EncounterCapabilities,
   EncounterSimulatorViewerMode,
   EncounterViewerContext,
   EncounterViewerRole,
+  EncounterSessionSeat,
 } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
+export type { ResolveSessionControlledCombatantIdsArgs } from '@/features/mechanics/domain/combat/selectors/capabilities/resolve-session-controlled-combatant-ids'
 export { deriveEncounterPerceptionUiFeedback } from '@/features/mechanics/domain/combat/presentation/perception/encounter-perception-ui.feedback'
 export type {
   EncounterPerceptionUiFeedback,

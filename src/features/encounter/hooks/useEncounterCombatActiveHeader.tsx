@@ -25,10 +25,7 @@ import type { GridInteractionMode } from '../domain'
 import { EncounterActiveHeader } from '../components'
 import type { AoeStep } from '../helpers/actions'
 
-export type EncounterCombatActiveHeaderVariant = 'simulator' | 'session'
-
 export type UseEncounterCombatActiveHeaderArgs = {
-  variant: EncounterCombatActiveHeaderVariant
   encounterState: EncounterState | null
   activeCombatant: CombatantInstance | null
   availableActions: CombatActionDefinition[]
@@ -60,7 +57,6 @@ export type UseEncounterCombatActiveHeaderArgs = {
  * Shared Encounter Simulator / GameSession active combat header (round, turn, actions, POV, movement).
  */
 export function useEncounterCombatActiveHeader({
-  variant,
   encounterState,
   activeCombatant,
   availableActions,
@@ -264,7 +260,7 @@ export function useEncounterCombatActiveHeader({
         onSimulatorViewerModeChange={onSimulatorViewerModeChange}
         perceptionFeedback={perceptionUiFeedback}
         nextCombatantPresentationKind={nextCombatantPresentationKind}
-        toolbarVariant={variant === 'session' ? 'session' : 'simulator'}
+        toolbarVariant={viewerContext.mode === 'session' ? 'session' : 'simulator'}
       />
     ) : undefined
 

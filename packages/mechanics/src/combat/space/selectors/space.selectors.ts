@@ -9,7 +9,11 @@ import type {
   EncounterSpace,
   GridObjectAuthoredKindId,
 } from '../space.types'
-import { gridObjectPlacementKindDisplayLabel, gridObjectPlacementKindKey } from '../gridObject/gridObject.defaults'
+import {
+  type PlacedObjectCellVisual,
+  resolvePlacedObjectCellVisualFromPlacedKind,
+} from '@/features/content/locations/domain/mapPresentation/resolvePlacedObjectCellVisual'
+import { gridObjectPlacementKindKey } from '../gridObject/gridObject.defaults'
 import {
   cellMovementBlockedForEntering,
   getCellById,
@@ -111,9 +115,10 @@ export type GridCellViewModel = {
   occupantSide: CombatantSide | null
   /** From `CombatantInstance.portraitImageKey` — resolve URLs in UI only. */
   occupantPortraitImageKey: string | null
-  /** Authored placed-object kind on this cell (`EncounterSpace.gridObjects`), for labels / tooltips. */
+  /** Authored placed-object kind on this cell (`EncounterSpace.gridObjects`), for targeting / cursor logic. */
   placedObjectKind: GridObjectAuthoredKindId | null
-  placedObjectLabel: string | null
+  /** Shared icon + label resolution for tactical placed-object rendering (see `resolvePlacedObjectCellVisualFromPlacedKind`). */
+  placedObjectVisual: PlacedObjectCellVisual | null
   isActive: boolean
   isSelectedTarget: boolean
   /** True when this cell is within Chebyshev distance of the active combatant for the selected action's `rangeFt` (distance only; not full targeting validity). */
@@ -326,8 +331,8 @@ export function selectGridViewModel(
     const occupantId = getOccupant(placements, cell.id) ?? null
     const combatant = occupantId ? state.combatantsById[occupantId] ?? null : null
     const placedObjectKind = placedObjectKindByCellId.get(cell.id) ?? null
-    const placedObjectLabel =
-      placedObjectKind != null ? gridObjectPlacementKindDisplayLabel(placedObjectKind) : null
+    const placedObjectVisual =
+      placedObjectKind != null ? resolvePlacedObjectCellVisualFromPlacedKind(placedObjectKind) : null
 
     let withinSelectedActionRange = false
     if (rangeFt != null && activeCellId) {
@@ -461,7 +466,7 @@ export function selectGridViewModel(
       ...(viewerPerceivesOccupantToken !== undefined ? { viewerPerceivesOccupantToken } : {}),
       ...(viewerOccupantPresentationKind !== undefined ? { viewerOccupantPresentationKind } : {}),
       placedObjectKind,
-      placedObjectLabel,
+      placedObjectVisual,
       isActive: occupantId !== null && occupantId === activeId,
       isSelectedTarget: occupantId !== null && occupantId === selectedTargetId,
       isWithinSelectedActionRange: withinSelectedActionRange,

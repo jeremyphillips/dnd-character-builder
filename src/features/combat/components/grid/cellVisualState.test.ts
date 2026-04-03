@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolvePlacedObjectCellVisualFromPlacedKind } from '@/features/content/locations/domain/mapPresentation/resolvePlacedObjectCellVisual'
 import type { GridCellViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 import type { EncounterGridCellRenderState } from '@/features/mechanics/domain/perception/perception.render.projection'
 
@@ -22,7 +23,7 @@ function baseCell(overrides: Partial<GridCellViewModel> = {}): GridCellViewModel
     occupantSide: null,
     occupantPortraitImageKey: null,
     placedObjectKind: null,
-    placedObjectLabel: null,
+    placedObjectVisual: null,
     isActive: false,
     isSelectedTarget: false,
     isWithinSelectedActionRange: false,
@@ -96,6 +97,7 @@ describe('resolveBaseFillKind', () => {
         baseCell({
           kind: 'blocking',
           placedObjectKind: 'tree',
+          placedObjectVisual: resolvePlacedObjectCellVisualFromPlacedKind('tree'),
         }),
       ),
     ).toBe('paper')

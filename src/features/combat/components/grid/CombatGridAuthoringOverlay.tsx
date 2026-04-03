@@ -114,7 +114,7 @@ export function CombatGridAuthoringOverlay({
           )
         })}
       </svg>
-      <LocationMapAuthoredObjectIconsLayer items={objectItems} cellPx={cellPx} gapPx={gapPx} />
+      <LocationMapAuthoredObjectIconsLayer items={objectItems} cellPx={cellPx} gapPx={gapPx} mapUi={mapUi} />
     </Box>
   )
 }

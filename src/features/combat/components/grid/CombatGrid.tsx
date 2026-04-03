@@ -9,7 +9,6 @@ import { Fragment, type ReactNode, useCallback, useMemo, useRef, useState } from
 import Box from '@mui/material/Box'
 import Popover from '@mui/material/Popover'
 import Tooltip from '@mui/material/Tooltip'
-import Typography from '@mui/material/Typography'
 import { alpha, keyframes, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import { AppAvatar } from '@/ui/primitives'
@@ -19,6 +18,8 @@ import { DEFEATED_PARTICIPATION_OPACITY } from '@/features/mechanics/domain/comb
 import { getCellVisualState, mergePerceptionIntoCellVisualState } from './cellVisualState'
 import { getCellVisualSx, mergeAuthoringMapUnderlayIntoCellSx } from './cellVisualStyles'
 import { CombatGridAuthoringOverlay } from './CombatGridAuthoringOverlay'
+import { PlacedObjectCellVisualCentered } from '@/features/content/locations/domain/mapPresentation/PlacedObjectCellVisualDisplay'
+import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles'
 import { filterAuthoredObjectRenderItemsForGrid } from './combatGridAuthoredObjects'
 
 const BASE_CELL_SIZE = 48
@@ -227,6 +228,8 @@ export function CombatGrid({
     [grid.cells, grid.authoringPresentation?.authoredObjectRenderItems],
   )
 
+  const mapUi = useMemo(() => resolveLocationMapUiStyles(theme), [theme])
+
   return (
     <Box
       {...panPointerHandlers}
@@ -385,31 +388,19 @@ export function CombatGrid({
                     />
                   </Box>
                 )}
-                {cell.placedObjectLabel && cell.perception?.showObstacleGlyph !== false && (
-                  <Typography
-                    variant="caption"
-                    component="span"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 2,
-                      right: 2,
-                      fontWeight: 800,
-                      fontSize: '0.6rem',
-                      lineHeight: 1,
-                      color: 'text.secondary',
-                      userSelect: 'none',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {cell.placedObjectLabel?.charAt(0).toUpperCase() ?? '·'}
-                  </Typography>
-                )}
+                {cell.placedObjectVisual && cell.perception?.showObstacleGlyph !== false ? (
+                  <PlacedObjectCellVisualCentered
+                    visual={cell.placedObjectVisual}
+                    variant="tactical"
+                    mapUi={mapUi}
+                  />
+                ) : null}
               </Box>
             )
 
-            if (cell.placedObjectLabel && cell.perception?.showObstacleGlyph !== false) {
+            if (cell.placedObjectVisual && cell.perception?.showObstacleGlyph !== false) {
               return (
-                <Tooltip key={cell.cellId} title={cell.placedObjectLabel} placement="top" arrow>
+                <Tooltip key={cell.cellId} title={cell.placedObjectVisual.tooltip} placement="top" arrow>
                   {cellBox}
                 </Tooltip>
               )

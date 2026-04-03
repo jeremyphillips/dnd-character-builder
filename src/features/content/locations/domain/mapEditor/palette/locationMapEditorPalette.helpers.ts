@@ -73,6 +73,11 @@ export function getDrawPathPaletteItemsForScale(scale: LocationScaleId): MapDraw
   });
 }
 
+/**
+ * Edge draw palette — label/description from {@link LOCATION_EDGE_FEATURE_KIND_META} only.
+ *
+ * @remarks **TODO:** does not surface facet options (`supportedMaterials`, etc.); base `kind` selection only.
+ */
 export function getDrawEdgePaletteItemsForScale(scale: LocationScaleId): MapDrawPaletteItem[] {
   const kinds = getAllowedEdgeKindsForScale(scale);
   return kinds.map((kind) => {

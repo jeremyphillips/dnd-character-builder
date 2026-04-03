@@ -150,6 +150,11 @@ function resolvePathStyles(
   };
 }
 
+/**
+ * Committed-edge SVG strokes keyed by **base** `LocationEdgeFeatureKindId` only.
+ *
+ * @remarks Edge facet vocabularies (material, window variant, …) are **not** consulted here yet.
+ */
 function resolveEdgeCommittedStyles(
   theme: Theme,
   tokens: LocationMapUiStyleTokens,

@@ -16,6 +16,7 @@ export * from './map/locationMapRecordUtils';
 export * from './map/locationMapRegion.constants';
 export * from './map/locationMapRegionAuthoring.validation';
 export * from './map/locationMapPathFeature.constants';
+export * from './map/locationEdgeFeature.facets';
 export * from './map/locationMapEdgeFeature.constants';
 export * from './map/locationMap.helpers';
 export * from './map/locationMapPlacement.policy';

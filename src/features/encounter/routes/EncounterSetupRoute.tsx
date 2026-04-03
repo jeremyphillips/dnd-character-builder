@@ -1,16 +1,9 @@
 /**
- * Encounter configuration (participants, environment, building for tactical maps). DM/simulator-only surface — not player lobby.
+ * Encounter Simulator setup route: redirects when combat is active; otherwise renders simulator setup surface.
  */
 import { Navigate } from 'react-router-dom'
 
-import {
-  AllyRosterLane,
-  EncounterEnvironmentSetup,
-  EncounterSetupView,
-  EncounterView,
-  OpponentRosterLane,
-} from '../components'
-import { EncounterSetupBuildingLocation } from '../components/setup/options/EncounterSetupBuildingLocation'
+import { EncounterView, SimulatorEncounterSetupSurface } from '../components'
 import { campaignEncounterActivePath } from './encounterPaths'
 import { useEncounterRuntime } from './EncounterRuntimeContext'
 
@@ -48,48 +41,29 @@ export default function EncounterSetupRoute() {
 
   return (
     <EncounterView mode="setup" setupHeader={setupHeader}>
-      <EncounterSetupView
-        environmentSetup={
-          <EncounterEnvironmentSetup
-            values={environmentSetup}
-            onChange={setEnvironmentSetup}
-            buildingLocationSlot={
-              <EncounterSetupBuildingLocation
-                selectedBuildingIds={buildingLocationIds}
-                onChange={setBuildingLocationIds}
-                locations={locations}
-                buildingSelectOptions={buildingSelectOptions}
-                campaignId={campaignId}
-              />
-            }
-          />
-        }
-        allyLane={
-          <AllyRosterLane
-            selectedAllyIds={selectedAllyIds}
-            monstersById={monstersById}
-            characterPortraitById={characterPortraitById}
-            onOpenModal={() => setAllyModalOpen(true)}
-            onResolvedCombatant={handleResolvedCombatant}
-            onRemoveAllyCombatant={removeAllyCombatant}
-          />
-        }
-        opponentLane={
-          <OpponentRosterLane
-            opponentRoster={opponentRoster}
-            monstersById={monstersById}
-            characterPortraitById={characterPortraitById}
-            environmentContext={environmentContext}
-            monsterFormsById={monsterFormsById}
-            monsterManualTriggersById={monsterManualTriggersById}
-            opponentSourceCounts={opponentSourceCounts}
-            selectedOpponentOptions={selectedOpponentOptions}
-            onOpenModal={() => setOpponentModalOpen(true)}
-            onResolvedCombatant={handleResolvedCombatant}
-            onRemoveOpponentCombatant={removeOpponentCombatant}
-            onAddOpponentCopy={addOpponentCopy}
-          />
-        }
+      <SimulatorEncounterSetupSurface
+        environmentSetup={environmentSetup}
+        onEnvironmentSetupChange={setEnvironmentSetup}
+        locations={locations}
+        buildingLocationIds={buildingLocationIds}
+        onBuildingLocationIdsChange={setBuildingLocationIds}
+        buildingSelectOptions={buildingSelectOptions}
+        campaignId={campaignId}
+        onOpenAllyModal={() => setAllyModalOpen(true)}
+        onOpenOpponentModal={() => setOpponentModalOpen(true)}
+        selectedAllyIds={selectedAllyIds}
+        monstersById={monstersById}
+        characterPortraitById={characterPortraitById}
+        onResolvedCombatant={handleResolvedCombatant}
+        onRemoveAllyCombatant={removeAllyCombatant}
+        opponentRoster={opponentRoster}
+        environmentContext={environmentContext}
+        monsterFormsById={monsterFormsById}
+        monsterManualTriggersById={monsterManualTriggersById}
+        opponentSourceCounts={opponentSourceCounts}
+        selectedOpponentOptions={selectedOpponentOptions}
+        onRemoveOpponentCombatant={removeOpponentCombatant}
+        onAddOpponentCopy={addOpponentCopy}
       />
     </EncounterView>
   )

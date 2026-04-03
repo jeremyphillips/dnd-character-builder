@@ -11,7 +11,7 @@ import type { Location } from '@/features/content/locations/domain/types'
 import { SelectedEntitiesLane, SelectEntityModal, type SelectEntityOption } from '@/ui/patterns'
 import { resolveImageUrl } from '@/shared/lib/media'
 
-export type EncounterSetupBuildingLocationProps = {
+export type SimulatorEncounterBuildingLocationProps = {
   selectedBuildingIds: string[]
   onChange: (ids: string[]) => void
   locations: Location[]
@@ -20,16 +20,16 @@ export type EncounterSetupBuildingLocationProps = {
 }
 
 /**
- * Building-scale location picker for encounter setup (feeds map-host resolution for **Start combat**).
- * Mirrors {@link GameSessionBuildingLocationField} in game session setup.
+ * Building-scale location picker for **Encounter Simulator** setup (map host for **Start combat**).
+ * Game session uses {@link GameSessionBuildingLocationField} instead; this stays simulator-owned.
  */
-export function EncounterSetupBuildingLocation({
+export function SimulatorEncounterBuildingLocation({
   selectedBuildingIds,
   onChange,
   locations,
   buildingSelectOptions,
   campaignId,
-}: EncounterSetupBuildingLocationProps) {
+}: SimulatorEncounterBuildingLocationProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
   const selectedId = selectedBuildingIds[0]

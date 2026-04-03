@@ -24,7 +24,7 @@ import type {
   EncounterVisibilityObscured,
 } from '@/features/mechanics/domain/environment'
 
-/** Setup panel edits the global encounter baseline; same shape as {@link EncounterEnvironmentBaseline}. */
+/** Simulator setup edits the global encounter baseline; same shape as {@link EncounterEnvironmentBaseline}. */
 export type EnvironmentSetupValues = EncounterEnvironmentBaseline
 
 type EnvironmentSelectForm = {
@@ -34,10 +34,10 @@ type EnvironmentSelectForm = {
   visibilityObscured: EncounterVisibilityObscured
 }
 
-type EncounterEnvironmentSetupProps = {
+type SimulatorEncounterEnvironmentSetupProps = {
   values: EnvironmentSetupValues
   onChange: (values: EnvironmentSetupValues) => void
-  /** Second column (e.g. building location picker on encounter setup). */
+  /** Second column (e.g. building location picker on simulator setup). */
   buildingLocationSlot?: React.ReactNode
 }
 
@@ -129,11 +129,15 @@ function EnvironmentSetupSelectFields({
   )
 }
 
-export function EncounterEnvironmentSetup({
+/**
+ * Environment + optional building column for the **Encounter Simulator** setup route and edit modal.
+ * Not a generic “any encounter host” panel — game session uses its own field components.
+ */
+export function SimulatorEncounterEnvironmentSetup({
   values,
   onChange,
   buildingLocationSlot,
-}: EncounterEnvironmentSetupProps) {
+}: SimulatorEncounterEnvironmentSetupProps) {
   function handleChange<K extends keyof EnvironmentSetupValues>(key: K, value: EnvironmentSetupValues[K]) {
     onChange({ ...values, [key]: value })
   }

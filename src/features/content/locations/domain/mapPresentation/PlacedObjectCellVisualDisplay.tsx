@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 
 import type { LocationMapUiResolvedStyles } from './locationMapUiStyles';
 import type { PlacedObjectCellVisual } from './resolvePlacedObjectCellVisual';
-import { getLocationMapIconByName } from './locationMapIconNameMap';
+import { getLocationMapGlyphIconByName } from './locationMapIconNameMap';
 
 export type PlacedObjectCellVisualDisplayProps = {
   visual: PlacedObjectCellVisual;
@@ -21,7 +21,7 @@ export function PlacedObjectCellVisualDisplay({ visual, variant, mapUi }: Placed
   const st = mapUi.placedObject[variant];
 
   if (visual.showIcon && visual.iconName) {
-    const IconComp = getLocationMapIconByName(visual.iconName);
+    const IconComp = getLocationMapGlyphIconByName(visual.iconName);
     return createElement(IconComp, {
       sx: {
         fontSize: st.icon.fontSizePx,

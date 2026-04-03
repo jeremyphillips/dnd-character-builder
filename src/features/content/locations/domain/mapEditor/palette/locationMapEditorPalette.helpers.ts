@@ -23,7 +23,6 @@ export function getPaintPaletteItemsForScale(scale: LocationScaleId): MapPaintPa
       fillKind,
       label: meta.label,
       description: meta.description,
-      iconName: meta.iconName,
       swatchColorKey: meta.swatchColorKey,
     };
   });

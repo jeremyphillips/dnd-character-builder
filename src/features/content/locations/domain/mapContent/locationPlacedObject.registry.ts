@@ -6,7 +6,7 @@
 import type { GridObjectCoverKind } from '@/features/mechanics/domain/combat/space/space.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import type { LocationMapIconName } from './locationMapIconNames';
+import type { LocationMapGlyphIconName } from './locationMapIconNames';
 
 export type AuthoredPlacedObjectRuntimeFields = {
   blocksMovement: boolean;
@@ -21,7 +21,7 @@ export type LocationPlacedObjectKindRuntimeDefaults = AuthoredPlacedObjectRuntim
 export type AuthoredPlacedObjectDefinition = {
   label: string;
   description?: string;
-  iconName: LocationMapIconName;
+  iconName: LocationMapGlyphIconName;
   /** If set, place tool uses linked-location flow for this scale. */
   linkedScale?: LocationScaleId;
   /** Host scales where this kind is offered in the place palette. */
@@ -75,7 +75,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
   tree: {
     label: 'Tree',
     description: 'Vegetation or landmark tree.',
-    iconName: 'forest_heavy',
+    iconName: 'tree',
     allowedScales: ['city'],
     runtime: {
       blocksMovement: true,

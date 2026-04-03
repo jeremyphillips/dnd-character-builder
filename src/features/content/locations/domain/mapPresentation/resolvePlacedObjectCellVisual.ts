@@ -5,7 +5,7 @@
 import type { LocationMapObjectKindId } from '@/shared/domain/locations';
 import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types';
 
-import type { LocationMapIconName } from '../mapContent/locationMapIconNames';
+import type { LocationMapGlyphIconName } from '../mapContent/locationMapIconNames';
 import type { LocationPlacedObjectKindId } from '../mapContent/locationPlacedObject.registry';
 import {
   getMapObjectKindIconName,
@@ -20,7 +20,7 @@ export type PlacedObjectCellVisual = {
   /** Tooltip text — same as label unless we add descriptions later. */
   tooltip: string
   /** Resolved semantic icon token; null only when no icon path exists. */
-  iconName: LocationMapIconName | null
+  iconName: LocationMapGlyphIconName | null
   /** When true, render the MUI icon for `iconName`. When false, render large centered fallback letter only. */
   showIcon: boolean
   /** First character of `label` (uppercase) for fallback presentation. */

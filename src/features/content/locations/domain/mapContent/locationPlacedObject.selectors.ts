@@ -7,7 +7,7 @@ import {
   type LocationPlacedObjectKindId,
   type LocationPlacedObjectKindRuntimeDefaults,
 } from './locationPlacedObject.registry';
-import type { LocationMapIconName } from './locationMapIconNames';
+import type { LocationMapGlyphIconName, LocationMapObjectIconName } from './locationMapIconNames';
 import { LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME } from './locationMapPresentation.constants';
 import { mapValuesStrict, recordKeys } from './locationPlacedObject.recordUtils';
 
@@ -28,7 +28,7 @@ export function parseLocationPlacedObjectKindId(raw: string | undefined | null):
 export type LocationPlacedObjectKindMeta = {
   label: string;
   description?: string;
-  iconName?: LocationMapIconName;
+  iconName?: LocationMapGlyphIconName;
   linkedScale?: LocationScaleId;
 };
 
@@ -63,12 +63,12 @@ export function getPlacedObjectRuntimeDefaults(
   return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].runtime;
 }
 
-export function getPlacedObjectIconName(kind: LocationPlacedObjectKindId): LocationMapIconName {
+export function getPlacedObjectIconName(kind: LocationPlacedObjectKindId): LocationMapGlyphIconName {
   return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].iconName;
 }
 
-/** Persisted map cell object kind → palette `LocationMapIconName` token (separate from authored place-tool icons). */
-export function getMapObjectKindIconName(kind: LocationMapObjectKindId): LocationMapIconName {
+/** Persisted map cell object kind → object icon id (separate from authored place-tool glyphs). */
+export function getMapObjectKindIconName(kind: LocationMapObjectKindId): LocationMapObjectIconName {
   return LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME[kind];
 }
 
@@ -76,7 +76,7 @@ export type PlacedObjectPaletteOption = {
   kind: LocationPlacedObjectKindId;
   label: string;
   description?: string;
-  iconName: LocationMapIconName;
+  iconName: LocationMapGlyphIconName;
   linkedScale?: LocationScaleId;
 };
 

@@ -104,6 +104,7 @@ export function getCellVisualSx(theme: Theme, state: CellVisualState): SystemSty
 /**
  * When the tactical base is neutral paper and the cell is walkable, apply authored map fill / region tint
  * beneath movement overlays (movement `boxShadow` from {@link getCellVisualSx} still applies).
+ * True {@link GridCellViewModel.kind} `wall` skips underlay at the selector.
  */
 export function mergeAuthoringMapUnderlayIntoCellSx(
   theme: Theme,
@@ -112,7 +113,7 @@ export function mergeAuthoringMapUnderlayIntoCellSx(
   visual: CellVisualState,
 ): SystemStyleObject<Theme> {
   if (visual.baseFillKind !== 'paper') return baseSx
-  if (cell.kind === 'wall' || cell.kind === 'blocking') return baseSx
+  if (cell.kind === 'wall') return baseSx
 
   const fillKind = cell.authoringCellFillKind
   const regionKey = cell.authoringRegionColorKey

@@ -64,7 +64,9 @@ export function movementFillSuppressedByOverlay(cell: GridCellViewModel): boolea
  * Single precedence chain for base fill (mirrors former `cellColor`), then `aoe-cast-range` when in cast band only.
  */
 export function resolveBaseFillKind(cell: GridCellViewModel): CellBaseFillKind {
-  if (cell.kind === 'wall' || cell.kind === 'blocking') return 'blocked'
+  if (cell.kind === 'wall') return 'blocked'
+  /** Structural blocking terrain — not a grid prop cell (tree/pillar), which keeps authored floor + glyph. */
+  if (cell.kind === 'blocking' && cell.obstacleKind == null) return 'blocked'
   if (cell.placementInvalidHover) return 'placement-invalid-hover'
   if (cell.placementSelected) return 'placement-selected'
   if (cell.placementCastRange) return 'placement-cast-range'

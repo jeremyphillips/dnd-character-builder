@@ -12,6 +12,7 @@ import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/
 import { createEncounterState } from '@/features/mechanics/domain/combat/state'
 import { createCombatant } from '@/features/mechanics/domain/combat/tests/action-resolution.test-helpers'
 
+import { hasLineOfSight } from '@/features/mechanics/domain/combat/space/sight/space.sight'
 import { selectGridViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 import { asEncounterState } from '@/features/mechanics/domain/combat/tests/encounter-test-state'
 
@@ -136,6 +137,46 @@ describe('selectGridViewModel — viewerPerceivesOccupantToken', () => {
     expect(orcCell?.viewerPerceivesOccupantToken).toBe(true)
     expect(orcCell?.viewerOccupantPresentationKind).toBe('visible')
     expect(orcCell?.perception?.occupantTokenVisibility).toBe('all')
+  })
+
+  it('PC: spatial line-of-sight blocks obstacle / authored-object presentation when lighting would allow', () => {
+    const space = createSquareGridSpace({ id: 'm', name: 'M', columns: 8, rows: 8 })
+    const mid = space.cells.find((c) => c.x === 1 && c.y === 0)!
+    const withWall = {
+      ...space,
+      cells: space.cells.map((c) =>
+        c.id === mid.id
+          ? { ...c, kind: 'blocking' as const, blocksSight: true, blocksMovement: true }
+          : c,
+      ),
+    }
+    expect(hasLineOfSight(withWall, 'c-0-0', 'c-2-0')).toBe(false)
+
+    const s = createEncounterState(
+      [
+        createCombatant({
+          instanceId: 'wiz',
+          label: 'Wizard',
+          side: 'party',
+          initiativeModifier: 2,
+          dexterityScore: 14,
+          armorClass: 14,
+        }),
+      ],
+      { rng: () => 0.5, space: withWall },
+    )
+    const state = {
+      ...s,
+      placements: [{ combatantId: 'wiz', cellId: 'c-0-0' }],
+    }
+    const grid = selectGridViewModel(state, {
+      perception: { viewerCombatantId: 'wiz', viewerRole: 'pc' },
+    })
+    const beyondWall = grid?.cells.find((c) => c.cellId === 'c-2-0')
+    expect(beyondWall?.perception?.showObstacleGlyph).toBe(false)
+    expect(beyondWall?.perception?.showAuthoredMapObjects).toBe(false)
+    const viewerCell = grid?.cells.find((c) => c.cellId === 'c-0-0')
+    expect(viewerCell?.perception?.showObstacleGlyph).toBe(true)
   })
 
   it('does not set viewerPerceivesOccupantToken when perception opts omitted', () => {

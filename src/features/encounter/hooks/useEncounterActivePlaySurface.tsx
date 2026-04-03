@@ -783,13 +783,15 @@ export function useEncounterActivePlaySurface(
     [interactionMode, setAoeHoverCellId, setSingleCellPlacementHoverCellId, setObjectAnchorHoverCellId],
   )
 
+  /** Reachable-cell / movement affordances only for the viewer who may act on the active turn (see `deriveEncounterCapabilities`). */
   const movementHighlightActive = useMemo(
     () =>
+      Boolean(capabilities?.canMoveActiveCombatant) &&
       (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 &&
       interactionMode !== 'aoe-place' &&
       interactionMode !== 'single-cell-place' &&
       interactionMode !== 'object-anchor-select',
-    [activeCombatant, interactionMode],
+    [capabilities?.canMoveActiveCombatant, activeCombatant, interactionMode],
   )
 
   const creatureTargetingActive = useMemo(() => {

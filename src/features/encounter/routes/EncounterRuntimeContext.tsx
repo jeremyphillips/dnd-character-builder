@@ -14,6 +14,9 @@ import {
 } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { useCampaignParty } from '@/features/campaign/hooks'
@@ -31,10 +34,10 @@ import { useEncounterState, useEncounterOptions, useEncounterRoster } from '../h
 import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiveHeader'
 import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
 import type { GridInteractionMode } from '../domain'
+import { AppPageHeader } from '@/ui/patterns'
 import {
   OpponentRosterLane,
   AllyRosterLane,
-  EncounterSetupHeader,
   SelectEncounterAllyModal,
   SelectEncounterOpponentModal,
   EncounterEditModal,
@@ -376,24 +379,47 @@ function useEncounterRuntimeValue() {
   ].filter(Boolean)
   const environmentSummary = environmentSummaryParts.length > 0 ? environmentSummaryParts.join(', ') : undefined
 
+  const setupHeaderSubtitleParts = [
+    `Allies: ${selectedAllyIds.length}`,
+    `Opponents: ${opponentRoster.length}`,
+  ]
+  if (environmentSummary) {
+    setupHeaderSubtitleParts.push(`Environment: ${environmentSummary}`)
+  }
+
   const setupHeader = (
-    <EncounterSetupHeader
-      allyCount={selectedAllyIds.length}
-      opponentCount={opponentRoster.length}
-      environmentSummary={environmentSummary}
-      canStartEncounter={canStartEncounter}
-      onStartEncounter={() => {
-        const preset = GRID_SIZE_PRESETS[gridSizePreset]
-        const base = createSquareGridSpace({
-          id: `grid-${Date.now()}`,
-          name: 'Combat Grid',
-          columns: preset.columns,
-          rows: preset.rows,
-        })
-        const space = placeRandomGridObject(base, environmentSetup.setting)
-        handleStartEncounter({ space, environmentBaseline: environmentSetup })
+    <Box
+      sx={{
+        px: 4,
+        py: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
       }}
-    />
+    >
+      <AppPageHeader
+        headline="Encounter Simulator"
+        actions={[
+          <Button
+            key="start-combat"
+            variant="contained"
+            disabled={!canStartEncounter}
+            onClick={() => {
+              const preset = GRID_SIZE_PRESETS[gridSizePreset]
+              const base = createSquareGridSpace({
+                id: `grid-${Date.now()}`,
+                name: 'Combat Grid',
+                columns: preset.columns,
+                rows: preset.rows,
+              })
+              const space = placeRandomGridObject(base, environmentSetup.setting)
+              handleStartEncounter({ space, environmentBaseline: environmentSetup })
+            }}
+          >
+            Start combat
+          </Button>,
+        ]}
+      />
+    </Box>
   )
 
   const { activeHeader, capabilities } = useEncounterCombatActiveHeader({

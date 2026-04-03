@@ -435,7 +435,8 @@ export function selectGridViewModel(
     }
 
     const ap = space.authoringPresentation
-    const blockAuthoringUnderlay = cell.kind === 'wall' || cell.kind === 'blocking'
+    /** Only true walls skip floor/region paint; props and structural blocking still use map cell fills (e.g. stone_floor). */
+    const blockAuthoringUnderlay = cell.kind === 'wall'
     let authoringCellFillKind: string | undefined
     let authoringRegionColorKey: string | undefined
     if (ap && !blockAuthoringUnderlay) {

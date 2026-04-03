@@ -85,6 +85,21 @@ describe('resolveBaseFillKind', () => {
   it('defaults to paper', () => {
     expect(resolveBaseFillKind(baseCell())).toBe('paper')
   })
+
+  it('structural blocking without a grid object keeps tactical blocked fill', () => {
+    expect(resolveBaseFillKind(baseCell({ kind: 'blocking' }))).toBe('blocked')
+  })
+
+  it('blocking cell hosting a grid object uses paper so authored floor (e.g. stone_floor) can apply', () => {
+    expect(
+      resolveBaseFillKind(
+        baseCell({
+          kind: 'blocking',
+          obstacleKind: 'tree',
+        }),
+      ),
+    ).toBe('paper')
+  })
 })
 
 describe('movementFillSuppressedByOverlay', () => {

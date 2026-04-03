@@ -1,15 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { FormProvider, useForm } from 'react-hook-form'
 
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
-import Collapse from '@mui/material/Collapse'
-import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
+import FormSelectField from '@/ui/patterns/form/FormSelectField'
 import {
   ATMOSPHERE_TAGS,
   ENVIRONMENT_SETTINGS,
@@ -29,32 +27,116 @@ import type {
 /** Setup panel edits the global encounter baseline; same shape as {@link EncounterEnvironmentBaseline}. */
 export type EnvironmentSetupValues = EncounterEnvironmentBaseline
 
+type EnvironmentSelectForm = {
+  setting: EncounterEnvironmentSetting
+  lightingLevel: EncounterLightingLevel
+  terrainMovement: EncounterTerrainMovement
+  visibilityObscured: EncounterVisibilityObscured
+}
+
 type EncounterEnvironmentSetupProps = {
   values: EnvironmentSetupValues
   onChange: (values: EnvironmentSetupValues) => void
+  /** Second column (e.g. building location picker on encounter setup). */
+  buildingLocationSlot?: React.ReactNode
 }
 
-export function EncounterEnvironmentSetup({ values, onChange }: EncounterEnvironmentSetupProps) {
-  const [expanded, setExpanded] = useState(false)
+function EnvironmentSetupSelectFields({
+  values,
+  onChange,
+}: {
+  values: EnvironmentSetupValues
+  onChange: (values: EnvironmentSetupValues) => void
+}) {
+  const methods = useForm<EnvironmentSelectForm>({
+    defaultValues: {
+      setting: values.setting,
+      lightingLevel: values.lightingLevel,
+      terrainMovement: values.terrainMovement,
+      visibilityObscured: values.visibilityObscured,
+    },
+  })
 
+  const { reset } = methods
+
+  useEffect(() => {
+    reset({
+      setting: values.setting,
+      lightingLevel: values.lightingLevel,
+      terrainMovement: values.terrainMovement,
+      visibilityObscured: values.visibilityObscured,
+    })
+  }, [values.setting, values.lightingLevel, values.terrainMovement, values.visibilityObscured, reset])
+
+  const settingOptions = useMemo(
+    () => ENVIRONMENT_SETTINGS.map((o) => ({ value: o.id, label: o.name })),
+    [],
+  )
+  const lightingOptions = useMemo(
+    () => LIGHTING_LEVELS.map((o) => ({ value: o.id, label: o.name })),
+    [],
+  )
+  const terrainOptions = useMemo(
+    () => TERRAIN_MOVEMENT_TYPES.map((o) => ({ value: o.id, label: o.name })),
+    [],
+  )
+  const visibilityOptions = useMemo(
+    () => VISIBILITY_OBSCURED_LEVELS.map((o) => ({ value: o.id, label: o.name })),
+    [],
+  )
+
+  return (
+    <FormProvider {...methods}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <FormSelectField
+          name="setting"
+          label="Setting"
+          options={settingOptions}
+          size="small"
+          onAfterChange={(v) =>
+            onChange({ ...values, setting: v as EncounterEnvironmentSetting })
+          }
+        />
+        <FormSelectField
+          name="lightingLevel"
+          label="Lighting"
+          options={lightingOptions}
+          size="small"
+          onAfterChange={(v) =>
+            onChange({ ...values, lightingLevel: v as EncounterLightingLevel })
+          }
+        />
+        <FormSelectField
+          name="terrainMovement"
+          label="Terrain"
+          options={terrainOptions}
+          size="small"
+          onAfterChange={(v) =>
+            onChange({ ...values, terrainMovement: v as EncounterTerrainMovement })
+          }
+        />
+        <FormSelectField
+          name="visibilityObscured"
+          label="Visibility"
+          options={visibilityOptions}
+          size="small"
+          onAfterChange={(v) =>
+            onChange({ ...values, visibilityObscured: v as EncounterVisibilityObscured })
+          }
+        />
+      </Stack>
+    </FormProvider>
+  )
+}
+
+export function EncounterEnvironmentSetup({
+  values,
+  onChange,
+  buildingLocationSlot,
+}: EncounterEnvironmentSetupProps) {
   function handleChange<K extends keyof EnvironmentSetupValues>(key: K, value: EnvironmentSetupValues[K]) {
     onChange({ ...values, [key]: value })
   }
-
-  const atmosphereSummary =
-    values.atmosphereTags.length > 0
-      ? values.atmosphereTags
-          .map((id) => ATMOSPHERE_TAGS.find((t) => t.id === id)?.name ?? id)
-          .join(', ')
-      : null
-
-  const summaryParts = [
-    ENVIRONMENT_SETTINGS.find((s) => s.id === values.setting)?.name,
-    LIGHTING_LEVELS.find((l) => l.id === values.lightingLevel)?.name,
-    TERRAIN_MOVEMENT_TYPES.find((t) => t.id === values.terrainMovement)?.name,
-    VISIBILITY_OBSCURED_LEVELS.find((v) => v.id === values.visibilityObscured)?.name,
-    atmosphereSummary,
-  ].filter(Boolean)
 
   function toggleAtmosphereTag(tag: EncounterAtmosphereTag) {
     const next = new Set(values.atmosphereTags)
@@ -64,92 +146,16 @@ export function EncounterEnvironmentSetup({ values, onChange }: EncounterEnviron
     handleChange('atmosphereTags', ordered)
   }
 
-  return (
-    <Paper variant="outlined" sx={{ p: 2.5 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+  const environmentColumn = (
+    <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+      <Stack spacing={2}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          Environment
+        </Typography>
+
+        <EnvironmentSetupSelectFields values={values} onChange={onChange} />
+
         <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Environment
-          </Typography>
-          {!expanded && (
-            <Typography variant="body2" color="text.secondary">
-              {summaryParts.join(', ')}
-            </Typography>
-          )}
-        </Box>
-        <Button variant="text" color="inherit" size="small" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? 'Collapse' : 'Configure'}
-        </Button>
-      </Stack>
-
-      <Collapse in={expanded}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
-          sx={{ mt: 2 }}
-        >
-          <TextField
-            select
-            fullWidth
-            label="Setting"
-            value={values.setting}
-            onChange={(e) => handleChange('setting', e.target.value as EncounterEnvironmentSetting)}
-            size="small"
-          >
-            {ENVIRONMENT_SETTINGS.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            select
-            fullWidth
-            label="Lighting"
-            value={values.lightingLevel}
-            onChange={(e) => handleChange('lightingLevel', e.target.value as EncounterLightingLevel)}
-            size="small"
-          >
-            {LIGHTING_LEVELS.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            select
-            fullWidth
-            label="Terrain"
-            value={values.terrainMovement}
-            onChange={(e) => handleChange('terrainMovement', e.target.value as EncounterTerrainMovement)}
-            size="small"
-          >
-            {TERRAIN_MOVEMENT_TYPES.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            select
-            fullWidth
-            label="Visibility"
-            value={values.visibilityObscured}
-            onChange={(e) => handleChange('visibilityObscured', e.target.value as EncounterVisibilityObscured)}
-            size="small"
-          >
-            {VISIBILITY_OBSCURED_LEVELS.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Stack>
-
-        <Box sx={{ mt: 2 }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
             Atmosphere (optional, additive)
           </Typography>
@@ -170,7 +176,25 @@ export function EncounterEnvironmentSetup({ values, onChange }: EncounterEnviron
             })}
           </Stack>
         </Box>
-      </Collapse>
+      </Stack>
+    </Box>
+  )
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2.5, width: '100%', boxSizing: 'border-box' }}>
+      {buildingLocationSlot ? (
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={3}
+          alignItems="flex-start"
+          sx={{ width: '100%' }}
+        >
+          {environmentColumn}
+          <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>{buildingLocationSlot}</Box>
+        </Stack>
+      ) : (
+        environmentColumn
+      )}
     </Paper>
   )
 }

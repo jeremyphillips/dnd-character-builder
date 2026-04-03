@@ -7,6 +7,7 @@ import { LocationMapAuthoredObjectIconsLayer } from '@/features/content/location
 import { LocationMapPathSvgPaths } from '@/features/content/locations/components/mapGrid/LocationMapPathSvgPaths'
 import { polylinePoint2DToSmoothSvgPath } from '@/features/content/locations/components/pathOverlayRendering'
 import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations/map/locationMap.types'
+import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types'
 import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers'
 import { pathEntryToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers'
 import { squareCellCenterPx } from '@/shared/domain/grid/squareGridOverlayGeometry'
@@ -18,6 +19,10 @@ export const COMBAT_GRID_GAP_PX = 1
 type CombatGridAuthoringOverlayProps = {
   theme: Theme
   authoringPresentation: EncounterAuthoringPresentation
+  /**
+   * Gated authored-object list for the current viewer (defaults to presentation when omitted).
+   */
+  authoredObjectRenderItems?: readonly LocationMapAuthoredObjectRenderItem[]
   columns: number
   rows: number
   cellPx: number
@@ -30,6 +35,7 @@ type CombatGridAuthoringOverlayProps = {
 export function CombatGridAuthoringOverlay({
   theme,
   authoringPresentation,
+  authoredObjectRenderItems: authoredObjectRenderItemsProp,
   columns,
   rows,
   cellPx,
@@ -59,7 +65,7 @@ export function CombatGridAuthoringOverlay({
 
   const w = columns * cellPx + (columns - 1) * gapPx
   const h = rows * cellPx + (rows - 1) * gapPx
-  const objectItems = authoringPresentation.authoredObjectRenderItems ?? []
+  const objectItems = authoredObjectRenderItemsProp ?? authoringPresentation.authoredObjectRenderItems ?? []
 
   return (
     <Box

@@ -15,7 +15,7 @@ export function EncounterSetupView({
   opponentLane,
 }: EncounterSetupViewProps) {
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ width: '100%' }}>
       {environmentSetup}
       {gridSetup}
 

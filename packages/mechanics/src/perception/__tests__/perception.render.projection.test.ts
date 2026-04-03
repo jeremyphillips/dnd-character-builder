@@ -104,6 +104,7 @@ describe('projectGridCellRenderState', () => {
     })
     expect(r.occupantTokenVisibility).toBe('all')
     expect(r.showObstacleGlyph).toBe(true)
+    expect(r.showAuthoredMapObjects).toBe(true)
     expect(r.perceptionBaseFillKind).toBeNull()
   })
 
@@ -120,6 +121,7 @@ describe('projectGridCellRenderState', () => {
     })
     expect(r.occupantTokenVisibility).toBe('self-only')
     expect(r.showObstacleGlyph).toBe(true)
+    expect(r.showAuthoredMapObjects).toBe(true)
   })
 
   it('blind veil: other cells hide tokens and obstacle glyphs', () => {
@@ -135,6 +137,7 @@ describe('projectGridCellRenderState', () => {
     })
     expect(r.occupantTokenVisibility).toBe('none')
     expect(r.showObstacleGlyph).toBe(false)
+    expect(r.showAuthoredMapObjects).toBe(false)
   })
 
   it('outside blind veil: darkness region shows magical-darkness tint, occupants hidden per domain', () => {
@@ -154,6 +157,8 @@ describe('projectGridCellRenderState', () => {
     })
     expect(r.perceptionBaseFillKind).toBe('magical-darkness')
     expect(r.occupantTokenVisibility).toBe('none')
+    expect(r.showObstacleGlyph).toBe(false)
+    expect(r.showAuthoredMapObjects).toBe(false)
   })
 
   it('viewer own cell: occupant masking still allows self token (self-only)', () => {
@@ -199,6 +204,7 @@ describe('projectGridCellRenderState', () => {
     })
     expect(r.perceptionBaseFillKind).toBe('fog')
     expect(r.showObstacleGlyph).toBe(false)
+    expect(r.showAuthoredMapObjects).toBe(false)
   })
 })
 

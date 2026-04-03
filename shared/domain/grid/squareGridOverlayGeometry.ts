@@ -1,7 +1,12 @@
 import { makeGridCellId, parseGridCellId } from './gridCellIds';
+import {
+  BETWEEN_EDGE_ID_RE,
+  PERIMETER_EDGE_ID_RE,
+  parseSquareEdgeId,
+  type SquareCellSide,
+} from './gridEdgeIds';
 
-/** Matches {@link makeUndirectedSquareEdgeKey} persisted edge ids. */
-export const BETWEEN_EDGE_ID_RE = /^between:([^|]+)\|([^|]+)$/;
+export { BETWEEN_EDGE_ID_RE, PERIMETER_EDGE_ID_RE } from './gridEdgeIds';
 
 export const SQUARE_GRID_GAP_PX = 4;
 
@@ -84,13 +89,50 @@ export function squareSharedEdgeSegmentPx(
   return null;
 }
 
-/** Pixel segment for a canonical `between:cellA|cellB` edge id. */
+/**
+ * Pixel segment on the **outer** boundary of the grid for a cell side with no neighbor
+ * (along the cell's outer edge — matches map border).
+ */
+export function squarePerimeterEdgeSegmentPx(
+  cellId: string,
+  side: SquareCellSide,
+  cellPx: number,
+  gapPx: number = SQUARE_GRID_GAP_PX,
+): { x1: number; y1: number; x2: number; y2: number } | null {
+  const p = parseGridCellId(cellId);
+  if (!p) return null;
+  const step = cellPx + gapPx;
+  const x0 = p.x * step;
+  const y0 = p.y * step;
+  if (side === 'N') {
+    const y = y0;
+    return { x1: x0, y1: y, x2: x0 + cellPx, y2: y };
+  }
+  if (side === 'S') {
+    const y = y0 + cellPx;
+    return { x1: x0, y1: y, x2: x0 + cellPx, y2: y };
+  }
+  if (side === 'W') {
+    const x = x0;
+    return { x1: x, y1: y0, x2: x, y2: y0 + cellPx };
+  }
+  if (side === 'E') {
+    const x = x0 + cellPx;
+    return { x1: x, y1: y0, x2: x, y2: y0 + cellPx };
+  }
+  return null;
+}
+
+/** Pixel segment for a canonical interior `between:` or outer `perimeter:` edge id. */
 export function squareEdgeSegmentPxFromEdgeId(
   edgeId: string,
   cellPx: number,
   gapPx: number = SQUARE_GRID_GAP_PX,
 ): { x1: number; y1: number; x2: number; y2: number } | null {
-  const m = BETWEEN_EDGE_ID_RE.exec(edgeId);
-  if (!m) return null;
-  return squareSharedEdgeSegmentPx(m[1].trim(), m[2].trim(), cellPx, gapPx);
+  const parsed = parseSquareEdgeId(edgeId);
+  if (!parsed) return null;
+  if (parsed.kind === 'between') {
+    return squareSharedEdgeSegmentPx(parsed.cellA, parsed.cellB, cellPx, gapPx);
+  }
+  return squarePerimeterEdgeSegmentPx(parsed.cellId, parsed.side, cellPx, gapPx);
 }

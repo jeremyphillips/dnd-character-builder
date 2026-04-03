@@ -19,8 +19,9 @@ export function mapPlacedObjectKindToPersistedMapObjectKind(
   if (placedKind === 'treasure' && hostScale === 'floor') {
     return 'treasure';
   }
+  /** Furniture / surface: persisted as obstacle; `authoredPlaceKindId` preserves palette id (`table`). */
   if (placedKind === 'table' && hostScale === 'floor') {
-    return 'marker';
+    return 'obstacle';
   }
   return null;
 }

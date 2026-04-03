@@ -55,10 +55,11 @@ describe('resolveLocationPlacedKindToAction', () => {
     });
   });
 
-  it('table on floor maps to marker for Phase 1', () => {
+  it('table on floor maps to obstacle (authoredPlaceKindId carries table)', () => {
     expect(resolveLocationPlacedKindToAction('table', 'floor')).toEqual({
       kind: 'place-object',
-      mapObjectKind: 'marker',
+      mapObjectKind: 'obstacle',
+      authoredPlaceKindId: 'table',
     });
   });
 

@@ -53,9 +53,17 @@ describe('locationMapPlacement.policy — linked locations', () => {
 describe('locationMapPlacement.policy — object kinds', () => {
   it('gates kinds by host scale', () => {
     expect(ALLOWED_MAP_OBJECT_KINDS_BY_HOST_SCALE.world).toEqual(['marker']);
-    expect(getAllowedObjectKindsForHostScale('building')).toContain('stairs');
+    expect(getAllowedObjectKindsForHostScale('building')).toEqual([]);
+    expect(getAllowedObjectKindsForHostScale('floor')).toEqual([
+      'obstacle',
+      'door',
+      'treasure',
+      'stairs',
+    ]);
+    expect(getAllowedObjectKindsForHostScale('floor')).not.toContain('marker');
     expect(getAllowedObjectKindsForHostScale('room')).not.toContain('stairs');
     expect(canPlaceObjectKindOnHostScale('room', 'stairs')).toBe(false);
     expect(canPlaceObjectKindOnHostScale('floor', 'stairs')).toBe(true);
+    expect(canPlaceObjectKindOnHostScale('floor', 'marker')).toBe(false);
   });
 });

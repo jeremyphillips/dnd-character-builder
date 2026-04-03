@@ -19,7 +19,7 @@ describe('deriveLocationMapAuthoredObjectRenderItems', () => {
           cellId: '0,0',
           objects: [
             { id: 'o1', kind: 'stairs', label: 'Up' },
-            { id: 'o2', kind: 'marker', authoredPlaceKindId: 'table' },
+            { id: 'o2', kind: 'obstacle', authoredPlaceKindId: 'table' },
           ],
         },
         { cellId: '1,0', objects: [{ id: 'o3', kind: 'treasure' }] },
@@ -41,7 +41,7 @@ describe('deriveLocationMapAuthoredObjectRenderItems', () => {
       id: 'o2',
       authorCellId: '0,0',
       combatCellId: 'c-0-0',
-      kind: 'marker',
+      kind: 'obstacle',
       authoredPlaceKindId: 'table',
     });
     expect(items[2]).toMatchObject({

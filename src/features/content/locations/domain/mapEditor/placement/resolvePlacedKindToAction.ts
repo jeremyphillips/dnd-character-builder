@@ -13,7 +13,12 @@ export type ResolvedPlacedKindAction =
       linkedScale: LocationScaleId;
       objectKind: LocationPlacedObjectKindId;
     }
-  | { type: 'object'; objectKind: LocationMapObjectKindId }
+  | {
+      type: 'object';
+      objectKind: LocationMapObjectKindId;
+      /** When palette kind differs from persisted `kind` (e.g. table → obstacle). */
+      authoredPlaceKindId?: LocationPlacedObjectKindId;
+    }
   | { type: 'unsupported'; reason?: string };
 
 export function resolvePlacedKindToAction(
@@ -38,7 +43,13 @@ export function resolvePlacedKindToAction(
   }
   const mapped = mapPlacedObjectKindToPersistedMapObjectKind(placedKind, hostScale);
   if (mapped) {
-    return { type: 'object', objectKind: mapped };
+    return {
+      type: 'object',
+      objectKind: mapped,
+      ...(placedKind === 'table' && mapped === 'obstacle'
+        ? { authoredPlaceKindId: 'table' as const }
+        : {}),
+    };
   }
   return { type: 'unsupported', reason: 'no_mapping' };
 }
@@ -53,6 +64,7 @@ export type ResolveLocationPlacedKindResult =
   | {
       kind: 'place-object';
       mapObjectKind: LocationMapObjectKindId;
+      authoredPlaceKindId?: LocationPlacedObjectKindId;
     }
   | { kind: 'unsupported' };
 
@@ -61,7 +73,7 @@ export function resolveLocationPlacedKindToAction(
   placedKind: LocationPlacedObjectKindId,
   hostScale: LocationScaleId,
 ): ResolveLocationPlacedKindResult {
-  const meta = LOCATION_PLACED_OBJECT_KIND_META[placedKind]
+  const meta = LOCATION_PLACED_OBJECT_KIND_META[placedKind];
   const cat =
     'linkedScale' in meta && meta.linkedScale
     ? ('linked-content' as const)
@@ -75,7 +87,13 @@ export function resolveLocationPlacedKindToAction(
     };
   }
   if (r.type === 'object') {
-    return { kind: 'place-object', mapObjectKind: r.objectKind };
+    return {
+      kind: 'place-object',
+      mapObjectKind: r.objectKind,
+      ...(r.authoredPlaceKindId !== undefined
+        ? { authoredPlaceKindId: r.authoredPlaceKindId }
+        : {}),
+    };
   }
   return { kind: 'unsupported' };
 }

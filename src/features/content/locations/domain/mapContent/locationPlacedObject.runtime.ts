@@ -11,11 +11,12 @@ import { getPlacedObjectRuntimeDefaults } from './locationPlacedObject.selectors
 export type { LocationPlacedObjectKindRuntimeDefaults } from './locationPlacedObject.registry';
 
 import { AUTHORED_PLACED_OBJECT_DEFINITIONS } from './locationPlacedObject.registry';
-import { LOCATION_PLACED_OBJECT_KIND_IDS } from './locationPlacedObject.selectors';
+import { mapValuesStrict } from './locationPlacedObject.recordUtils';
 
 /** Keyed table for callers that need a stable object reference (prefer {@link resolveLocationPlacedObjectKindRuntimeDefaults}). */
-export const LOCATION_PLACED_OBJECT_KIND_RUNTIME_DEFAULTS = Object.fromEntries(
-  LOCATION_PLACED_OBJECT_KIND_IDS.map((id) => [id, AUTHORED_PLACED_OBJECT_DEFINITIONS[id].runtime]),
+export const LOCATION_PLACED_OBJECT_KIND_RUNTIME_DEFAULTS = mapValuesStrict(
+  AUTHORED_PLACED_OBJECT_DEFINITIONS,
+  (d) => d.runtime,
 ) as Record<LocationPlacedObjectKindId, LocationPlacedObjectKindRuntimeDefaults>;
 
 /**

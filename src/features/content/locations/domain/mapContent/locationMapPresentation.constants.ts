@@ -20,8 +20,9 @@ export const LOCATION_SCALE_MAP_ICON_NAME: Record<LocationScaleId, LocationMapIc
 
 /**
  * Icon name per persisted cell object kind (`LOCATION_MAP_OBJECT_KIND_IDS`).
+ * Prefer {@link getMapObjectKindIconName} from `locationPlacedObject.selectors` for lookups.
  */
-export const LOCATION_MAP_OBJECT_KIND_ICON_NAME: Record<
+export const LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME: Record<
   LocationMapObjectKindId,
   LocationMapIconName
 > = {

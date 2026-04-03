@@ -1,6 +1,4 @@
-import {
-  LOCATION_PLACED_OBJECT_KIND_META,
-} from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
+import { getPlacedObjectMeta } from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
 
 import type {
   GridObject,
@@ -25,13 +23,13 @@ export function gridObjectPlacementKindKey(o: GridObject): GridObjectPlacementKi
 
 /**
  * Human-readable name for a placed object (procedural tree/pillar or authored vocabulary).
- * Display strings come only from {@link LOCATION_PLACED_OBJECT_KIND_META} for authored kinds.
+ * Display strings come only from {@link getPlacedObjectMeta} for authored kinds.
  */
 export function gridObjectPlacementKindDisplayLabel(key: GridObjectPlacementKindKey): string {
   if (key === 'tree' || key === 'pillar') {
     return key === 'tree' ? 'Tree' : 'Pillar'
   }
-  return LOCATION_PLACED_OBJECT_KIND_META[key].label
+  return getPlacedObjectMeta(key).label
 }
 
 export function gridObjectDisplayLabel(o: GridObject): string {

@@ -6,7 +6,8 @@
 import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
 import type { LocationMapIconName } from '@/features/content/locations/domain/mapContent';
 import {
-  LOCATION_MAP_OBJECT_KIND_ICON_NAME,
+  getMapObjectKindIconName,
+  LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME,
   LOCATION_SCALE_MAP_ICON_NAME,
 } from '@/features/content/locations/domain/mapContent';
 
@@ -37,7 +38,7 @@ const FALLBACK_SCALE_ICON = getLocationMapIconByName('map_world');
 export const LOCATION_SCALE_MAP_ICON = mapIconNamesToComponents(LOCATION_SCALE_MAP_ICON_NAME);
 
 export const LOCATION_MAP_OBJECT_KIND_ICON = mapIconNamesToComponents(
-  LOCATION_MAP_OBJECT_KIND_ICON_NAME,
+  LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME,
 );
 
 export function getLocationScaleMapIcon(scale: string): LocationMapDisplayIconComponent {
@@ -48,5 +49,5 @@ export function getLocationScaleMapIcon(scale: string): LocationMapDisplayIconCo
 export function getLocationMapObjectKindIcon(
   kind: LocationMapObjectKindId,
 ): LocationMapDisplayIconComponent {
-  return getLocationMapIconByName(LOCATION_MAP_OBJECT_KIND_ICON_NAME[kind]);
+  return getLocationMapIconByName(getMapObjectKindIconName(kind));
 }

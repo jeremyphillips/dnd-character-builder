@@ -9,8 +9,13 @@
 export type { LocationPlacedObjectKindId } from './locationPlacedObject.registry';
 
 export {
+  getMapObjectKindIconName,
+  getPlacedObjectIconName,
+  getPlacedObjectMeta,
+  getPlacedObjectPaletteOptionsForScale,
   LOCATION_PLACED_OBJECT_KIND_IDS,
   LOCATION_PLACED_OBJECT_KIND_META,
   parseLocationPlacedObjectKindId,
   type LocationPlacedObjectKindMeta,
+  type PlacedObjectPaletteOption,
 } from './locationPlacedObject.selectors';

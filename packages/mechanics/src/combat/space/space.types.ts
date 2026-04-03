@@ -26,7 +26,7 @@ export type GridObjectCoverKind = 'none' | 'half' | 'three-quarters';
  * **Authored → runtime bridge:** When hydrating from map placement, set `authoredPlaceKindId` and build with
  * `buildGridObjectFromAuthoredPlacedObject` (`gridObject.fromAuthored.ts`). Resolve combat behavior only through
  * `resolveLocationPlacedObjectKindRuntimeDefaults` — not ad hoc per-kind logic. Display metadata stays in
- * `LOCATION_PLACED_OBJECT_KIND_META`.
+ * the authored registry (`getPlacedObjectMeta` / `AUTHORED_PLACED_OBJECT_DEFINITIONS`).
  */
 export type GridObject = {
   id: string;

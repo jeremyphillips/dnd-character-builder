@@ -1,4 +1,4 @@
-import type { LocationScaleId } from '@/shared/domain/locations';
+import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
 import { isValidLocationScaleId } from '@/shared/domain/locations/scale/locationScale.rules';
 
 import {
@@ -8,17 +8,13 @@ import {
   type LocationPlacedObjectKindRuntimeDefaults,
 } from './locationPlacedObject.registry';
 import type { LocationMapIconName } from './locationMapIconNames';
+import { LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME } from './locationMapPresentation.constants';
+import { mapValuesStrict, recordKeys } from './locationPlacedObject.recordUtils';
 
-/** Stable tuple of authored placed-object ids (matches registry keys). */
-export const LOCATION_PLACED_OBJECT_KIND_IDS = [
-  'city',
-  'building',
-  'site',
-  'tree',
-  'table',
-  'stairs',
-  'treasure',
-] as const satisfies readonly LocationPlacedObjectKindId[];
+/** Stable list of authored placed-object ids — derived from registry keys (no manual mirror). */
+export const LOCATION_PLACED_OBJECT_KIND_IDS = recordKeys(
+  AUTHORED_PLACED_OBJECT_DEFINITIONS,
+) as readonly LocationPlacedObjectKindId[];
 
 const PLACED_KIND_ID_SET = new Set<string>(LOCATION_PLACED_OBJECT_KIND_IDS as readonly string[]);
 
@@ -46,15 +42,10 @@ function toMeta(d: AuthoredPlacedObjectDefinition): LocationPlacedObjectKindMeta
 }
 
 /** Display metadata derived from {@link AUTHORED_PLACED_OBJECT_DEFINITIONS}. */
-export const LOCATION_PLACED_OBJECT_KIND_META = {
-  city: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.city),
-  building: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.building),
-  site: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.site),
-  tree: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.tree),
-  table: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.table),
-  stairs: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.stairs),
-  treasure: toMeta(AUTHORED_PLACED_OBJECT_DEFINITIONS.treasure),
-} as const satisfies Record<LocationPlacedObjectKindId, LocationPlacedObjectKindMeta>;
+export const LOCATION_PLACED_OBJECT_KIND_META = mapValuesStrict(
+  AUTHORED_PLACED_OBJECT_DEFINITIONS,
+  toMeta,
+) satisfies Record<LocationPlacedObjectKindId, LocationPlacedObjectKindMeta>;
 
 export function getPlacedObjectDefinition(
   id: LocationPlacedObjectKindId,
@@ -70,6 +61,40 @@ export function getPlacedObjectRuntimeDefaults(
   kind: LocationPlacedObjectKindId,
 ): LocationPlacedObjectKindRuntimeDefaults {
   return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].runtime;
+}
+
+export function getPlacedObjectIconName(kind: LocationPlacedObjectKindId): LocationMapIconName {
+  return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].iconName;
+}
+
+/** Persisted map cell object kind → palette `LocationMapIconName` token (separate from authored place-tool icons). */
+export function getMapObjectKindIconName(kind: LocationMapObjectKindId): LocationMapIconName {
+  return LOCATION_MAP_OBJECT_KIND_TO_ICON_NAME[kind];
+}
+
+export type PlacedObjectPaletteOption = {
+  kind: LocationPlacedObjectKindId;
+  label: string;
+  description?: string;
+  iconName: LocationMapIconName;
+  linkedScale?: LocationScaleId;
+};
+
+/** Narrow DTOs for the place palette — derived from registry + `allowedScales` (via {@link getPlacedObjectKindsForScale}). */
+export function getPlacedObjectPaletteOptionsForScale(
+  scale: LocationScaleId,
+): readonly PlacedObjectPaletteOption[] {
+  const kinds = getPlacedObjectKindsForScale(scale);
+  return kinds.map((kind) => {
+    const def = getPlacedObjectDefinition(kind);
+    return {
+      kind,
+      label: def.label,
+      description: def.description,
+      iconName: def.iconName,
+      ...(def.linkedScale !== undefined ? { linkedScale: def.linkedScale } : {}),
+    };
+  });
 }
 
 /** Authored placed kinds allowed on the place palette for this host scale. */

@@ -2,7 +2,7 @@ import type { LocationMapObjectKindId } from '@/shared/domain/locations';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import { LOCATION_PLACED_OBJECT_KIND_META } from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
+import { getPlacedObjectMeta } from '@/features/content/locations/domain/mapContent/locationPlacedObject.types';
 import { buildPersistedPlacedObjectPayload } from '@/features/content/locations/domain/mapContent/locationPlacedObject.persistence';
 
 import type { LocationMapActivePlaceSelection } from '../types/locationMapEditor.types';
@@ -72,7 +72,7 @@ export function resolveLocationPlacedKindToAction(
   placedKind: LocationPlacedObjectKindId,
   hostScale: LocationScaleId,
 ): ResolveLocationPlacedKindResult {
-  const meta = LOCATION_PLACED_OBJECT_KIND_META[placedKind];
+  const meta = getPlacedObjectMeta(placedKind);
   const cat =
     'linkedScale' in meta && meta.linkedScale
       ? ('linked-content' as const)

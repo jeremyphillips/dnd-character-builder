@@ -4,8 +4,8 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 
 import { AppModal } from '@/ui/patterns'
-import type { EnvironmentSetupValues } from '../../setup/options/EncounterEnvironmentSetup'
-import { EncounterEnvironmentSetup } from '../../setup/options/EncounterEnvironmentSetup'
+import type { EnvironmentSetupValues } from '../../setup/simulator/SimulatorEncounterEnvironmentSetup'
+import { SimulatorEncounterEnvironmentSetup } from '../../setup/simulator/SimulatorEncounterEnvironmentSetup'
 
 type EncounterEditModalProps = {
   open: boolean
@@ -52,7 +52,7 @@ export function EncounterEditModal({
           {opponentLane}
         </Box>
 
-        <EncounterEnvironmentSetup values={localEnv} onChange={setLocalEnv} />
+        <SimulatorEncounterEnvironmentSetup values={localEnv} onChange={setLocalEnv} />
       </Stack>
     </AppModal>
   )

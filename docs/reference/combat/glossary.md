@@ -28,6 +28,8 @@ Usually refers to:
 
 The Encounter Simulator is a consumer of combat. It is **not** **GameSession** (see below).
 
+**Tactical space (simulator start):** **Start combat** resolves **`EncounterSpace`** with the same **map-first** contract as game-session combat: choose a **map host** (first **floor** under the **building** selected in setup), then **`listLocationMaps`** → default **encounter-grid** map → **`buildEncounterSpaceFromLocationMap`** (`src/features/game-session/combat/buildEncounterSpaceFromLocationMap.ts`); if none, a **10×10** fallback square grid tied to that floor (or a generic fallback when no host). Shared picks live in **`encounterSpaceResolution.ts`**; the async entry point is **`resolveEncounterSpaceForSimulatorStart`** (`src/features/game-session/combat/resolveEncounterSpaceForSimulatorStart.ts`). The old **grid size preset** UI is not used for simulator start.
+
 ## GameSession
 Campaign-scoped **live-play session** container: DM-facing setup, **lobby**, **`/play`**, lifecycle status. Implemented under `src/features/game-session` (distinct from calendar Sessions and from the Encounter Simulator). See [game-session.md](./game-session.md).
 
@@ -36,7 +38,7 @@ Campaign-scoped **live-play session** container: DM-facing setup, **lobby**, **`
 **Not yet (combat-relevant):** WebSocket **combat** broadcast to all participants and polished **stale revision (409)** UX—see [roadmap.md](./roadmap.md). **Game-session–linked** play already resolves **viewer seat** (DM / player / observer) and **controlled combatants** for client UX and **server apply-intent** (**403** when the user may not act); richer **participant** modeling and orphan-session **campaign** tenancy are still incremental—see [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md).
 
 ## Combat play view
-Shared **active encounter** layout shell (**`CombatPlayView`** in `src/features/combat`): header slot, grid, sidebar, drawers, toasts. Composed by **`useEncounterActivePlaySurface`** for both the **Encounter Simulator** active route and **GameSession `/play`**. Simulator-only controls (e.g. presentation POV, edit encounter) stay in the **`encounter`** feature, not in this shell.
+Shared **active encounter** layout shell (**`CombatPlayView`** in `src/features/combat`): header slot, grid, sidebar, drawers, toasts. Composed by **`useEncounterActivePlaySurface`** for both the **Encounter Simulator** active route and **GameSession `/play`**. Sticky-header layout metrics are **passed in as props** (e.g. CSS var + px fallback for grid hover line positioning) so this module does not import encounter theme code. Simulator-only controls (e.g. presentation POV, edit encounter) stay in the **`encounter`** feature, not in this shell.
 
 ## Viewer seat (session mode)
 In **GameSession `/play`** (not the Encounter Simulator), the client resolves **`viewerRole`** (**`dm`** | **`player`** | **`observer`**) and **`controlledCombatantIds`** before **`deriveEncounterCapabilities`**. **`dmUserId`** and **`participants`** on the game session document are used when present; if a logged-in player is missing from **`participants`**, seat may be **inferred** from **campaign roster** character ownership and **party PC** combatants in **`EncounterState`**. The server **`POST .../intents`** path uses the same rules when the combat is **game-session–linked**. See [client/encounter-viewer-permissions.md](./client/encounter-viewer-permissions.md).

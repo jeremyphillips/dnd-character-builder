@@ -1,10 +1,13 @@
 import type { EncounterSpace } from '@/features/mechanics/domain/combat/space'
-import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
 
 import {
   buildEncounterSpaceFromLocationMap,
   summarizeEncounterSpaceForLog,
 } from '@/features/game-session/combat/buildEncounterSpaceFromLocationMap'
+import {
+  buildFallbackEncounterSpace,
+  pickEncounterGridMap,
+} from '@/features/game-session/combat/encounterSpaceResolution'
 import { CampaignLocation } from '../../../shared/models/CampaignLocation.model'
 import { listMapsForLocation } from '../../content/locations/services/locationMaps.service'
 import type { GameSessionApi } from './gameSession.service'
@@ -40,14 +43,7 @@ function logResolution(debug: GameSessionCombatSpaceResolution['debug'], spaceSu
 }
 
 function fallbackSpace(opts: { id: string; name: string; locationId: string | null }) {
-  return createSquareGridSpace({
-    id: opts.id,
-    name: opts.name,
-    columns: 10,
-    rows: 10,
-    cellFeet: 5,
-    locationId: opts.locationId,
-  })
+  return buildFallbackEncounterSpace(opts)
 }
 
 /**
@@ -136,8 +132,7 @@ export async function resolveEncounterSpaceForGameSessionStart(
   }
 
   const maps = await listMapsForLocation(campaignId, mapHostLocationId)
-  const encounterMaps = maps.filter((m) => m.kind === 'encounter-grid')
-  const chosen = encounterMaps.find((m) => m.isDefault) ?? encounterMaps[0]
+  const chosen = pickEncounterGridMap(maps)
 
   if (chosen) {
     const space = buildEncounterSpaceFromLocationMap({

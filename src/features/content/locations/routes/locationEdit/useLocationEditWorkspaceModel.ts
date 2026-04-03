@@ -665,11 +665,18 @@ export function useLocationEditWorkspaceModel({
           if (!canPlaceObjectKindOnHostScale(mapHostScaleResolved, res.objectKind)) return;
           setGridDraft((prev) => {
             const existing = prev.objectsByCellId[cellId] ?? [];
+            const obj: (typeof existing)[number] = {
+              id: crypto.randomUUID(),
+              kind: res.objectKind,
+              ...(res.authoredPlaceKindId !== undefined
+                ? { authoredPlaceKindId: res.authoredPlaceKindId }
+                : {}),
+            };
             return {
               ...prev,
               objectsByCellId: {
                 ...prev.objectsByCellId,
-                [cellId]: [...existing, { id: crypto.randomUUID(), kind: res.objectKind }],
+                [cellId]: [...existing, obj],
               },
             };
           });

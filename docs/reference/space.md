@@ -6,23 +6,32 @@ The spatial system adds tactical grid-based positioning to encounters. It answer
 
 - **Where are combatants?** Cell-based placement on a square grid.
 - **Is a target in range?** Chebyshev distance check against action `rangeFt`.
-- **Can a combatant move there?** Distance-based movement spending from `movementRemaining`.
+- **Can a combatant move there?** Shortest-path movement cost from `movementRemaining` (king-adjacency BFS — not the same as range or LoS).
 
 The system is intentionally separate from narrative `Location` content. Locations describe fictional places; encounter spaces define tactical geometry.
+
+**Conceptual split (see also §6):**
+
+- **Authored vocabulary** — e.g. `LocationPlacedObjectKindId` in location map content (what authors place).
+- **Runtime grid objects** — `GridObject` on `EncounterSpace.gridObjects`: blocking, LoS, cover, `isMovable`, optional `authoredPlaceKindId` or `proceduralPlacementKind` (`tree` / `pillar`).
+- **Edges and boundaries** — `EncounterEdge`, `EncounterCell.kind` (e.g. `wall`), and `EncounterAuthoringPresentation.edgeEntries` (walls / doors / windows as presentation); not folded into `GridObject` unless a future feature explicitly bridges them.
+- **Authored map object presentation** — icons and fills from location map authoring, carried on `EncounterAuthoringPresentation` (`authoredObjectRenderItems`, cell/region fills). Derived in `shared/domain` as `LocationMapAuthoredObjectRenderItem[]` (`deriveLocationMapAuthoredObjectRenderItems`). **Not** the same as runtime `GridObject` or tactical obstacle glyphs on `GridCellViewModel`.
 
 ## 2. Directory Layout
 
 ```
 packages/mechanics/src/combat/space/
 ├── index.ts                        # Public barrel
-├── space.types.ts                  # EncounterSpace, EncounterCell, GridObstacle, CombatantPosition
-├── space.helpers.ts                # Pure cell/distance/occupancy queries
+├── space.types.ts                  # EncounterSpace, EncounterCell, GridObject, CombatantPosition, …
+├── gridObject/                     # Default/spec helpers for runtime object behavior (procedural + authored kinds)
+├── space.helpers.ts                # Cell/distance/occupancy; getEncounterGridObjects, find/move grid objects
 ├── creation/                       # Space factories
-├── placement/                      # Placements, spawn replacement, obstacles
+├── placement/                      # Placements, spawn replacement, placeRandomGridObject (legacy placeRandomGridObstacle)
 ├── rendering/                      # Grid occupant token presentation
 ├── selectors/                      # State-level selectors, GridViewModel, movement
-├── sight/                          # Line of sight: supercover line + hasLineOfSight / cellBlocksSight
-└── __tests__/                      # Mirrors creation, placement, rendering, selectors, sight (+ space.helpers.test)
+├── sight/                          # Supercover line + hasLineOfSight, cellBlocksSight (raw), cellOpaqueToSight
+├── spatial/                        # Edge segment crossing; movement BFS (reachability, shortest path ft)
+└── __tests__/                      # Mirrors creation, placement, rendering, selectors, sight, `spatial/` regression tests (+ space.helpers.test)
 ```
 
 ## 3. Current Functionality
@@ -31,15 +40,21 @@ packages/mechanics/src/combat/space/
 
 `createSquareGridSpace` generates a rectangular `EncounterSpace` with mode `'square-grid'`, a configurable `cellFeet` scale (default 5ft), and `width * height` cells. Each cell has an `(x, y)` coordinate and a string `id` of the form `c-{x}-{y}`.
 
-When an encounter is started from setup, the app may call **`placeRandomGridObstacle`** immediately after `createSquareGridSpace`. That inserts **exactly one** random obstruction on an **open** cell, records it in **`EncounterSpace.obstacles`** (`GridObstacle`: `kind` `tree` | `pillar`, `cellId`, and stub booleans `blocksLineOfSight` / `blocksMovement` for future rules), and sets the chosen cell’s **`kind`** to **`blocking`** with blocking flags so placement and AoE origin checks stay aligned.
+When an encounter is started from setup, the app calls **`placeRandomGridObject`** immediately after `createSquareGridSpace`. That inserts **exactly one** random procedural object on an **open** cell, appends a **`GridObject`** to **`EncounterSpace.gridObjects`** (with `proceduralPlacementKind` `tree` | `pillar`, runtime flags from `defaultsForProceduralKind`, and **`isMovable: false`**), and sets the chosen cell’s **`kind`** to **`blocking`** with blocking flags so placement and AoE origin checks stay aligned.
 
-**Environment → obstacle kind (first pass):**
+**`placeRandomGridObstacle`** remains as a **deprecated** alias that delegates to **`placeRandomGridObject`**; new code should not depend on it.
+
+**Environment → procedural kind (first pass):**
 
 - `indoors` → pillar  
 - `outdoors` → tree  
 - `mixed` and `other` → pillar (neutral default until richer mapping exists)
 
-**Timing note:** Obstacles are chosen **before** `generateInitialPlacements` runs (combatants are not on the grid yet). The implementation only avoids cells already listed in `obstacles`; it does not reserve cells against future token positions beyond marking the cell as impassable.
+**Reading placed objects:** Use **`getEncounterGridObjects(space)`** in `space.helpers.ts`. It returns **`gridObjects`** when that array is non-empty; otherwise it maps legacy **`EncounterSpace.obstacles`** (`GridObstacle`, deprecated) into **`GridObject`** so older persisted state still works.
+
+**Timing note:** Objects are chosen **before** `generateInitialPlacements` runs (combatants are not on the grid yet). The implementation avoids cells already occupied by **`gridObjects` or legacy `obstacles`**; it does not reserve cells against future token positions beyond marking the cell as impassable.
+
+**Object-anchored effects:** Attached emanations with **`anchorMode === 'object'`** store **`BattlefieldEffectAnchor`** `{ kind: 'object', objectId }` where **`objectId`** is a **`GridObject.id`**. **`resolveBattlefieldEffectOriginCellId`** uses the live object position (**`findGridObjectById`**). **`moveGridObjectInEncounterState`** applies a cell move and runs **`reconcileBattlefieldEffectAnchors`** (deprecated alias: **`moveGridObstacleInEncounterState`**).
 
 ### Distance
 
@@ -62,15 +77,15 @@ When an encounter is started from setup, the app may call **`placeRandomGridObst
 
 ### Grid view model
 
-`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries **`isActive`**, **`isSelectedTarget`**, **`isWithinSelectedActionRange`** (Chebyshev distance from the active combatant to that cell within the selected action’s `rangeFt` — distance only, not full targeting validity), **`isLegalTargetForSelectedAction`**, **`isHostileLegalTargetForSelectedAction`**, **`isHostileSelectedTargetPulse`**, and **`isReachable`**, plus **`obstacleKind` / `obstacleLabel`** when the cell has an entry in `space.obstacles`. Token styling uses **`occupantIsDefeated`** (dimmed token when HP ≤ 0) and **`occupantRendersToken`**: the avatar/token is drawn only when the occupant has **battlefield presence** (see below). The active encounter grid uses **token-first** emphasis (rings, pulses) for turn and targeting; it does **not** apply a full-board tint for “in range” distance.
+`selectGridViewModel` flattens `EncounterSpace` + `CombatantPosition[]` into a flat `GridCellViewModel[]` for UI rendering. Each cell carries **`isActive`**, **`isSelectedTarget`**, **`isWithinSelectedActionRange`** (Chebyshev distance from the active combatant to that cell within the selected action’s `rangeFt` — distance only, not full targeting validity), **`isLegalTargetForSelectedAction`**, **`isHostileLegalTargetForSelectedAction`**, **`isHostileSelectedTargetPulse`**, and **`isReachable`**, plus **`obstacleKind` / `obstacleLabel`** when **`getEncounterGridObjects`** reports an object on that cell. **`obstacleKind`** is typed as **`GridObjectPlacementKindKey`** (procedural `tree` | `pillar` or an authored **`LocationPlacedObjectKindId`**); **`obstacleLabel`** comes from `gridObjectPlacementKindDisplayLabel`. Token styling uses **`occupantIsDefeated`** (dimmed token when HP ≤ 0) and **`occupantRendersToken`**: the avatar/token is drawn only when the occupant has **battlefield presence** (see below). The active encounter grid uses **token-first** emphasis (rings, pulses) for turn and targeting; it does **not** apply a full-board tint for “in range” distance.
 
 The `showReachable` option is driven by movement budget (`movementRemaining > 0`) and UI mode (movement highlights are suppressed during AoE origin placement) so reachable cells can highlight without an explicit movement mode.
 
-**Movement rejection helper:** `getMoveRejectionReason(state, combatantId, targetCellId)` returns short labels such as `Out of range`, `Cell occupied`, or `Blocked` when a move would fail, for anchored status text (not tooltips on cells).
+**Movement rejection helper:** `getMoveRejectionReason(state, combatantId, targetCellId)` returns short labels for illegal hover / status text: **`Terrain blocked`** (destination cell not enterable), **`No path`** (no legal route with the graph rules), **`Out of range`** (shortest path exists but exceeds `movementRemaining`), **`Cell occupied`**. UI may map **`Terrain blocked`** to a generic “Blocked” string.
 
 **Grid hover status:** `deriveGridHoverStatusMessage` (encounter helpers) composes a single line for illegal hover (movement, creature targeting, or invalid AoE origin) to show under the encounter header.
 
-**Grid cell visuals:** The tactical grid is rendered by **`CombatGrid`** (`src/features/combat/components/grid/CombatGrid.tsx`); the encounter feature exposes a thin **`EncounterGrid`** wrapper that forwards the same props. Cell fill and movement outlines come from `getCellVisualState` and `getCellVisualSx` in `src/features/combat/components/grid/cellVisualState.ts` and `cellVisualStyles.ts`. **Overlay precedence** (highest first): blocked tile → placement (invalid hover, selected, cast-range band) → AoE (invalid origin hover, locked origin, area template) → **AoE cast-range band** (cells within spell cast distance when no higher-priority AoE tint applies) → default paper. **Movement** (reachable border / green fill / illegal-move hover) is applied after that stack. The AoE cast-range band is modeled as a first-class overlay kind; its style entry uses the same paper fill as open ground (matching prior behavior) while still participating in precedence so **movement fill suppression** on those cells is explicit in the resolver, not a separate ad hoc suppression flag in the component. Persistent auras or emanations can extend the same overlay list later.
+**Grid cell visuals:** The tactical grid is rendered by **`CombatGrid`** (`src/features/combat/components/grid/CombatGrid.tsx`). Active encounter play wires it from **`useEncounterActivePlaySurface`**; `src/features/encounter/components/index.ts` may re-export **`CombatGrid` as `EncounterGrid`** as an alias only. Cell fill and movement outlines come from `getCellVisualState` and `getCellVisualSx` in `src/features/combat/components/grid/cellVisualState.ts` and `cellVisualStyles.ts`. **Overlay precedence** (highest first): blocked tile → placement (invalid hover, selected, cast-range band) → AoE (invalid origin hover, locked origin, area template) → **AoE cast-range band** (cells within spell cast distance when no higher-priority AoE tint applies) → default paper. **Movement** (reachable border / green fill / illegal-move hover) is applied after that stack. The AoE cast-range band is modeled as a first-class overlay kind; its style entry uses the same paper fill as open ground (matching prior behavior) while still participating in precedence so **movement fill suppression** on those cells is explicit in the resolver, not a separate ad hoc suppression flag in the component. Persistent auras or emanations can extend the same overlay list later.
 
 ### Battlefield presence, occupancy, and return placement (mechanics linkage)
 
@@ -96,8 +111,9 @@ When a **`spawn`** effect creates new combatants that **replace** an existing to
 `sight/space.sight.ts` implements **binary** line of sight on the square grid for shared use by spells, ranged/thrown attacks, and any feature that needs “can I draw a line?” — not spell-specific.
 
 - **Line geometry:** The segment runs between **cell centers** of the source and target cells `(x+0.5, y+0.5)`. The set of cells visited is a **grid supercover** using an **Amanatides & Woo–style DDA** (each unit cell the segment intersects). When a ray hits a **corner** between two cells, the tie branch steps **diagonally** so both grid steps are included.
-- **Blocking:** `cellBlocksSight(space, cellId)` is the **only** resolver for opaque sight blockers; it reads `EncounterCell.blocksSight`. **Intermediate** cells on the path may block; **source and target cells do not** block their own endpoints (occupants on those squares do not apply blocking in this first pass).
-- **API:** `hasLineOfSight(space, fromCellId, toCellId)`; `traceLineOfSightCells` is mainly for tests and debugging.
+- **Interior opacity:** **Intermediate** cells (not source or target **as cell interiors**) use **`cellOpaqueToSight`**: raw `EncounterCell.blocksSight` via **`cellBlocksSight`**, **plus** any **`GridObject`** on that cell with **`blocksLineOfSight`**. Source/target cell **centers** are not treated as opaque interiors; a **segment** into the target can still be blocked by an **`EncounterEdge`**.
+- **Edges:** Consecutive cells on the path are checked with **`segmentSightBlocked`** (`spatial/edgeCrossing.ts`). Orthogonal steps use the edge between the two cells (if absent, the boundary is open). **Diagonal** steps use a **strict corner rule for rays**: sight is blocked if **either** supporting orthogonal segment would block sight. **Movement** diagonals do **not** use this rule — they use **orthogonal decomposition** in `movementReachability.ts` (see §3 Movement). **Window** example: an edge may set **`blocksMovement: true`** and **`blocksSight: false`** (blocks walking through the sill, not the sight line).
+- **API:** `hasLineOfSight(space, fromCellId, toCellId)`; `traceLineOfSightCells` is mainly for tests and debugging. Raw flag read: **`cellBlocksSight`**; composed interior: **`cellOpaqueToSight`**.
 - **Targeting:** `canSeeForTargeting` delegates to `canPerceiveTargetOccupantForCombat` (`visibility/combatant-pair-visibility.ts`): condition-based sight (e.g. blinded, invisible), `lineOfSightClear` → `hasLineOfSight` when a grid exists, then **occupant** visibility from `perception.resolve.ts` (heavy obscurement, magical darkness, etc.). **Cover** for attack modifiers is still separate; binary LoS here does not replace perception’s “can you see the creature in that cell?”
 
 ### Movement
@@ -109,11 +125,19 @@ When a **`spawn`** effect creates new combatants that **replace** an existing to
 - **`getEffectiveGroundMovementBudgetFt`** (`packages/mechanics/src/combat/state/battlefield/battlefield-spatial-movement-modifiers.ts`) applies **`floor(baseSpeed × product)`**, where the product comes from overlapping **attached sphere auras** (`EncounterState.attachedAuraInstances`) whose spells define **`modifier`** effects with **`target: 'speed'`** and **`mode: 'multiply'`** (e.g. Spirit Guardians `0.5`). Overlap uses the same geometry as aura rendering; the aura **source** and **`unaffectedCombatantIds`** are skipped; defeated combatants and same-side suppression follow **`battlefield-attached-aura-shared`** rules.
 - **`turnContext.movementSpentThisTurn`** accumulates feet moved; after each move, **`movementRemaining = max(0, effectiveMax − spent)`** so entering or leaving an aura mid-turn updates the budget without double-counting.
 
-When no context is passed, behavior remains **remaining − distance** (legacy/tests).
+When no context is passed, **`movementRemaining`** is reduced by the **shortest legal path length in feet** (`minMovementCostFtToCell`), not Chebyshev distance alone — going around a wall costs more than a straight-line metric when the direct segment is blocked.
 
 Turn start resets movement via **`createCombatantTurnResources`** in **`shared.ts`**: when **`advanceEncounterTurn`** / **`createEncounterState`** supply spell lookup (same object shape as interval resolution), the initial **`movementRemaining`** uses the same **effective** budget for the combatant’s position at turn start.
 
-`selectCellsWithinDistance` returns cell IDs within movement range using Chebyshev distance. `canMoveTo` is the single predicate combining distance, budget, cell passability, and occupancy.
+**Movement reachability (not LoS):** **`spatial/movementReachability.ts`** performs **breadth-first search** over **king-adjacent** cells (8 directions). **Orthogonal** steps: **`cellMovementBlockedForEntering`** on the destination cell, and the crossed **`EncounterEdge`** must not have **`blocksMovement`** (via **`orthogonalMovementEdgeBlocked`**). **Diagonal** steps: legal only if **at least one** of the two orthogonal two-step routes **`from → orth1 → to`** or **`from → orth2 → to`** is fully legal (each leg uses the same orthogonal rules; the intermediate cell must not be occupied by another token). This allows routing around corners when a real two-step path exists, and blocks “cutting through” wall-separated areas when **neither** decomposition is legal. **`segmentMovementBlocked`** in `edgeCrossing.ts` is **orthogonal-only** — diagonal **walking** is **not** decided by a single coarse edge test from `from`.
+
+**API contract (do not bypass):** use **`movementStepLegal`** for one king-step; **`minMovementCostFtToCell`** for shortest cost / existence; **`cellsReachableWithinMovementBudget`** for reachable highlights. **`selectCellsWithinDistance`**, **`canMoveTo`**, and **`moveCombatant`** go through these primitives.
+
+**`minMovementCostFtToCell`** returns the **shortest** route cost in feet (each orthogonal or diagonal step costs one **`cellFeet`**). **`cellsReachableWithinMovementBudget`** collects all cells reachable within **`movementRemaining`**. **`selectCellsWithinDistance`** and **`canMoveTo`** use this BFS; **`moveCombatant`** deducts the shortest-path cost. **`placeCombatant`**, **`isValidSingleCellPlacementPick`**, **`validateSingleCellPlacement`**, and **`isValidAoeOriginCell`** still use **`cellMovementBlockedForEntering`** only for destination validity (not graph search).
+
+Regression coverage for movement vs LoS edge cases lives in **`__tests__/spatial/spatial-movement-los-regression.test.ts`** (and related `movementReachability` / `sight` tests).
+
+**Transitional source-of-truth:** resolution still reads **`EncounterCell`** flags (e.g. `blocksMovement`, `blocksSight`, `kind`), **`GridObject`** on **`EncounterSpace.gridObjects`**, and **`EncounterEdge`**. Denormalized cell flags are **compatibility** inputs from some legacy/hydration paths — they are not documented as the sole long-term authority when edges or grid objects also describe the same feature.
 
 ### Character speed
 
@@ -123,12 +147,12 @@ Characters default to 30ft ground speed (`stats.speeds = { ground: 30 }`) in `bu
 
 These are intentional simplifications for the current milestone, not bugs:
 
-- **Distance-based cell selection is geometric only.** `selectCellsWithinDistance` ignores walls, terrain costs, and blockers. Sufficient for generated open grids. Named distinctly from future `selectPathReachableCells`.
+- **Uniform step costs only.** Reachability BFS treats each king-move as one **`cellFeet`**; **`EncounterCell.movementCost`** / difficult terrain multipliers are not applied yet.
 - **`targeting.rangeFt` is a single resolved scalar.** No long-range disadvantage, area templates, cone/line targeting, or minimum range. `CombatantAttackRange` carries `longFt` for future disadvantage rules, but the roll modifier is not wired.
 - **Character speed is hardcoded 30ft.** No race/species-based speeds. Refined when race modeling is added.
 - **Opportunity attacks (domain legality).** `reactions/opportunity-attack.ts` evaluates leave-reach (spatial) separately from sight: `canReactorPerceiveDepartingOccupantForOpportunityAttack` delegates to `canPerceiveTargetOccupantForCombat` (combat `viewerRole: 'pc'`, not DM omniscience). Movement resolution does not auto-spend reactions; callers use `getOpportunityAttackLegalityDenialReason` / `getCombatantIdsEligibleForOpportunityAttackAgainstMover` after `moveCombatant` when wiring OA UI or prompts.
 - **No Disengage or Dash actions.** Dash would double `movementRemaining`; Disengage would suppress opportunity attacks. `CombatActionCost.movementFeet` exists for future action costs.
-- **Pathfinding** is still geometric / not path-aware for movement highlights. **Ray-based LOS** exists for targeting (`hasLineOfSight`); **cover bonuses** and **obscurement** are still deferred.
+- **Cover bonuses** and **obscurement** for attacks are still deferred beyond binary LoS / perception.
 - **No large creature footprints.** `CombatantPosition.size` exists as a seam but is not consumed by placement, movement, or range validation.
 - **`EncounterCell.movementCost` is not consumed.** The field exists for future difficult terrain but `moveCombatant` does not read it.
 
@@ -140,7 +164,7 @@ These are intentional simplifications for the current milestone, not bugs:
 
 ### Geometric vs path-aware reachability
 
-Current naming intentionally distinguishes *in-range by metric* (`selectCellsWithinDistance`) from *actually pathable/reachable* (future `selectPathReachableCells`). Authored maps will require path-aware reachability and likely LOS-aware targeting as separate concerns. These three -- pathfinding, LOS, and range metric -- are easy to accidentally blur together.
+**Targeting range** (`rangeFt`) still uses **Chebyshev** distance for “in range” — not movement pathfinding. **Movement** uses BFS shortest-path feet on the grid. **LoS** uses **supercover + segments** only (`hasLineOfSight`). Those three — range metric, movement route, LoS ray — stay separate; the UI should not assume they coincide near walls.
 
 ### Split movement model extensibility
 
@@ -154,16 +178,28 @@ Current naming intentionally distinguishes *in-range by metric* (`selectCellsWit
 
 | Type | Location | Purpose |
 |------|----------|---------|
-| `EncounterSpace` | `space.types.ts` | Grid definition: cells, optional `obstacles`, scale, dimensions |
-| `GridObstacle` | `space.types.ts` | Obstruction record: kind, cellId, future blocking flags |
+| `EncounterSpace` | `space.types.ts` | Grid definition: cells, optional **`gridObjects`**, optional deprecated **`obstacles`**, scale, dimensions |
+| `GridObject` | `space.types.ts` | Runtime placed object: `cellId`, blocking / LoS / `coverKind`, **`isMovable`**, optional `authoredPlaceKindId` or `proceduralPlacementKind` |
+| `GridObstacle` | `space.types.ts` | **Deprecated.** Legacy obstruction shape; use **`GridObject`** — read via **`getEncounterGridObjects`** |
 | `EncounterCell` | `space.types.ts` | Single cell: position, kind, terrain tags |
 | `CombatantPosition` | `space.types.ts` | Links combatant to cell |
 | `CombatantAttackRange` | `combatant.types.ts` | Discriminated union: melee (rangeFt) or ranged (normalFt, longFt) |
-| `GridCellViewModel` | `selectors/space.selectors.ts` | UI-ready cell with highlight flags; includes **`occupantRendersToken`**, **`occupantIsDefeated`** |
+| `GridCellViewModel` | `selectors/space.selectors.ts` | UI-ready cell with highlight flags; includes **`occupantRendersToken`**, **`occupantIsDefeated`**, **`obstacleKind`** / **`obstacleLabel`** (from grid objects) |
 | `GridViewModel` | `selectors/space.selectors.ts` | Complete grid for rendering |
+| `getEncounterGridObjects` | `space.helpers.ts` | Canonical list: **`gridObjects`** or legacy **`obstacles`** mapped to **`GridObject`** |
+| `placeRandomGridObject` | `placement/placeRandomGridObstacle.ts` | Procedural single-object placement into **`gridObjects`** |
 | `placeCombatant` | `selectors/space.selectors.ts` | Authoritative placement update: filter prior row, append `{ combatantId, cellId }` for passable cells |
 | `moveCombatant` | `selectors/space.selectors.ts` | Validates move; updates `movementRemaining` and `placements`; optional 4th arg **`BattlefieldSpellContext`** for spatial speed reconciliation |
+| `moveGridObjectInEncounterState` | `auras/battlefield-effect-anchor-reconciliation.ts` | Moves a grid object and runs **`reconcileBattlefieldEffectAnchors`** (replaces deprecated **`moveGridObstacleInEncounterState`**) |
 | `getEffectiveGroundMovementBudgetFt` | `combat/state/battlefield/battlefield-spatial-movement-modifiers.ts` | Effective movement cap from base speed × attached-aura speed multipliers (current overlap) |
 | `applyGridSpawnReplacementFromTarget` | `placement/applyGridSpawnReplacement.ts` | Transfers tactical `placements` from a spawn target to new combatant(s) (replacement / corpse→minion) |
 | `hasLineOfSight` | `sight/space.sight.ts` | Binary LoS along supercover segment between cell centers |
-| `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move'` UI mode |
+| `movementStepLegal` | `spatial/movementReachability.ts` | One king-step; diagonal requires legal orthogonal decomposition |
+| `minMovementCostFtToCell` | `spatial/movementReachability.ts` | Shortest-path feet; `undefined` if unreachable |
+| `cellsReachableWithinMovementBudget` | `spatial/movementReachability.ts` | BFS reachable set within budget |
+| `segmentSightBlocked` | `spatial/edgeCrossing.ts` | Edge-based sight segment (strict diagonal for rays) |
+| `orthogonalMovementEdgeBlocked` | `spatial/edgeCrossing.ts` | Movement blocked on one orthogonal edge crossing |
+| `getMoveRejectionReason` | `selectors/space.selectors.ts` | `Terrain blocked` / `No path` / `Out of range` / `Cell occupied` |
+| `GridInteractionMode` | `encounter-interaction.types.ts` | `'select-target' \| 'move' \| 'aoe-place' \| 'single-cell-place' \| 'object-anchor-select'` |
+| `EncounterAuthoringPresentation` | `space.types.ts` | Serialized **presentation-only** authored map: paths, edges, cell/region fills, **`authoredObjectRenderItems`** (optional). Ignored by combat resolution. |
+| `LocationMapAuthoredObjectRenderItem` | `shared/domain/locations/map/locationMapAuthoredObjectRender.types.ts` | One cell-anchored authored object for display; derived from map `cellEntries`. |

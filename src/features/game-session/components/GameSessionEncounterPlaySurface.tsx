@@ -217,11 +217,12 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     () =>
       deriveEncounterPresentationGridPerceptionInput({
         encounterState: encounter.encounterState,
-        simulatorViewerMode: 'active-combatant',
+        /** DM seat: omniscient grid tokens + cell presentation; players use active combatant POV. */
+        simulatorViewerMode: viewerRole === 'dm' ? 'dm' : 'active-combatant',
         activeCombatantId: encounter.activeCombatantId,
         presentationSelectedCombatantId: null,
       }),
-    [encounter.encounterState, encounter.activeCombatantId],
+    [encounter.encounterState, encounter.activeCombatantId, viewerRole],
   )
 
   const prevActiveCombatantId = useRef(encounter.activeCombatantId)

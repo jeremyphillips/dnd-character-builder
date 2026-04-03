@@ -1,5 +1,4 @@
 import type { EncounterEnvironmentBaseline } from '@/features/mechanics/domain/environment'
-import type { GridSizePreset } from '@/shared/domain/grid/gridPresets'
 
 import type { OpponentRosterEntry } from '../../types'
 
@@ -25,17 +24,12 @@ export type EncounterSetupEnvironmentPolicy = {
   environmentDefaults: EncounterEnvironmentBaseline
 }
 
-export type EncounterSetupGridPolicy = {
-  gridSizePresetDefault: GridSizePreset
-}
-
 /**
- * Policy-driven **defaults** for encounter setup (roster seeds, environment/grid starting values).
+ * Policy-driven **defaults** for encounter setup (roster seeds, environment starting values).
  * Simulator uses {@link SIMULATOR_ENCOUNTER_SETUP_POLICY}. A future GameSession DM flow can swap
  * defaults without forking setup UI; player lobby UI stays a separate concern.
  */
 export type EncounterSetupPolicy = {
   roster: EncounterSetupRosterPolicy
   environment: EncounterSetupEnvironmentPolicy
-  grid: EncounterSetupGridPolicy
 }

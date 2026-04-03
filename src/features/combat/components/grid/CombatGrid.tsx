@@ -19,6 +19,7 @@ import { DEFEATED_PARTICIPATION_OPACITY } from '@/features/mechanics/domain/comb
 import { getCellVisualState, mergePerceptionIntoCellVisualState } from './cellVisualState'
 import { getCellVisualSx, mergeAuthoringMapUnderlayIntoCellSx } from './cellVisualStyles'
 import { CombatGridAuthoringOverlay } from './CombatGridAuthoringOverlay'
+import { filterAuthoredObjectRenderItemsForGrid } from './combatGridAuthoredObjects'
 
 const BASE_CELL_SIZE = 48
 const HOVER_DELAY_MS = 350
@@ -217,6 +218,15 @@ export function CombatGrid({
   const viewerCellId = grid.perception?.viewerCellId
   const viewerCombatantId = grid.perception?.viewerCombatantId
 
+  const visibleAuthoredObjectItems = useMemo(
+    () =>
+      filterAuthoredObjectRenderItemsForGrid(
+        grid.cells,
+        grid.authoringPresentation?.authoredObjectRenderItems,
+      ),
+    [grid.cells, grid.authoringPresentation?.authoredObjectRenderItems],
+  )
+
   return (
     <Box
       {...panPointerHandlers}
@@ -265,6 +275,7 @@ export function CombatGrid({
               <CombatGridAuthoringOverlay
                 theme={theme}
                 authoringPresentation={grid.authoringPresentation}
+                authoredObjectRenderItems={visibleAuthoredObjectItems}
                 columns={grid.columns}
                 rows={grid.rows}
                 cellPx={cellSizePx}
@@ -390,7 +401,11 @@ export function CombatGrid({
                       pointerEvents: 'none',
                     }}
                   >
-                    {cell.obstacleKind === 'tree' ? 'T' : 'P'}
+                    {cell.obstacleKind === 'tree'
+                      ? 'T'
+                      : cell.obstacleKind === 'pillar'
+                        ? 'P'
+                        : (cell.obstacleLabel?.charAt(0).toUpperCase() ?? '·')}
                   </Typography>
                 )}
               </Box>

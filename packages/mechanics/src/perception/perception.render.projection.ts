@@ -14,7 +14,7 @@
  * the canonical pipeline. DM role forces this flag off (omniscient tactical art).
  */
 
-import { getCellForCombatant, gridDistanceFt } from '@/features/mechanics/domain/combat/space'
+import { getCellForCombatant, gridDistanceFt, hasLineOfSight } from '@/features/mechanics/domain/combat/space'
 import type { EncounterState } from '@/features/mechanics/domain/combat/state/types/encounter-state.types'
 
 import { resolveWorldEnvironmentFromEncounterState } from '../environment/environment.resolve'
@@ -41,6 +41,11 @@ export type OccupantTokenVisibility = 'all' | 'none' | 'self-only'
 export type EncounterGridCellRenderState = {
   occupantTokenVisibility: OccupantTokenVisibility
   showObstacleGlyph: boolean
+  /**
+   * Authored map object icons (furniture, etc.) on this cell. Same policy as {@link showObstacleGlyph}:
+   * DM always true; PC follows `canPerceiveObjects` and blind-veil rules.
+   */
+  showAuthoredMapObjects: boolean
   /**
    * When set, may replace tactical base fills (see `mergePerceptionIntoCellVisualState` in `features/combat/components/grid/cellVisualState.ts`;
    * immersed PCs may also replace `aoe-cast-range` / `placement-cast-range` band fills). Presentation-only.
@@ -149,6 +154,7 @@ export function projectGridCellRenderState(params: {
     return {
       occupantTokenVisibility: 'all',
       showObstacleGlyph: true,
+      showAuthoredMapObjects: true,
       perceptionBaseFillKind: null,
       suppressTemplateBoundary: false,
     }
@@ -168,6 +174,7 @@ export function projectGridCellRenderState(params: {
   return {
     occupantTokenVisibility,
     showObstacleGlyph,
+    showAuthoredMapObjects: showObstacleGlyph,
     perceptionBaseFillKind,
     suppressTemplateBoundary: perception.suppressTemplateBoundary,
   }
@@ -243,8 +250,19 @@ export function buildCellPerceptionRenderState(
     distanceViewerToTargetFt,
   })
 
+  /** Spatial LoS (walls, opaque objects, edges) is not part of lighting-only {@link resolveViewerPerceptionForCell}. */
+  const losClearForObjects =
+    input.viewerRole !== 'pc' ||
+    !state.space ||
+    targetCellId === slice.viewerCellId ||
+    hasLineOfSight(state.space, slice.viewerCellId, targetCellId)
+  const perceptionForObjects: typeof perception =
+    losClearForObjects || !perception.canPerceiveObjects
+      ? perception
+      : { ...perception, canPerceiveObjects: false }
+
   return projectGridCellRenderState({
-    perception,
+    perception: perceptionForObjects,
     targetWorld,
     viewerWorld,
     battlefield: slice.battlefieldRender,

@@ -8,6 +8,8 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 **Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
+**Authored base-map layer order (square editor and combat underlay should match intent):** cell fills / region tint → **paths** → **edges** → **authored object icons** (cell-anchored). The path/edge SVG overlay is stacked **below** the cell grid (`SquareMapAuthoringSvgOverlay` z-order under `GridEditor`) so object icons inside cells remain visible. Object display rules align with `deriveLocationMapAuthoredObjectRenderItems` / `LocationMapAuthoredObjectRenderItem` in `shared/domain` (see `locationMapAuthoredObjectRender.helpers.ts`).
+
 ### Location map authored model (reference)
 
 **What is persisted** on `LocationMap` (sparse, map-owned):
@@ -222,7 +224,7 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 
 1. **`suppressCanvasPanOnCells`** — in **place** mode and **draw → path** mode, cell `pointerdown`/`pointerup` events call `stopPropagation` so the canvas pan handler never starts a drag from cell clicks.
 2. **Window-level `pointerup` safety net** — `useCanvasPan` registers a `window` `pointerup` listener that clears drag state even when a child stops propagation, preventing stranded `isDragging` / grabbing cursor.
-3. **`hasDragMoved` guard** — `LocationGridAuthoringSection` checks `hasDragMoved()` before dispatching `onCellClick`, matching the pattern used by `EncounterGrid`. This blocks accidental cell actions from drag gestures that started outside cells.
+3. **`hasDragMoved` guard** — `LocationGridAuthoringSection` checks `hasDragMoved()` before dispatching `onCellClick`, matching the pattern used by the tactical grid (`CombatGrid` in active encounter play). This blocks accidental cell actions from drag gestures that started outside cells.
 
 **Remaining scope:** switching to `pointerup`-based placement (instead of browser `click`) with a movement threshold would further improve reliability on trackpads. This is deferred.
 

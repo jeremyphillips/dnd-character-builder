@@ -143,6 +143,5 @@ export type {
   EncounterSetupPolicy,
   EncounterSetupRosterPolicy,
   EncounterSetupEnvironmentPolicy,
-  EncounterSetupGridPolicy,
 } from './setup'
 export { SIMULATOR_ENCOUNTER_SETUP_POLICY } from './setup'

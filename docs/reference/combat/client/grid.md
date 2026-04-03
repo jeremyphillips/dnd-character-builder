@@ -1,27 +1,17 @@
-# Combat Grid vs Encounter Grid
+# Combat Grid vs encounter orchestration
 
 ## Purpose
 
 This document defines the intended boundary between:
 
-- reusable `CombatGrid`
-- Encounter-owned `EncounterGrid`
-
-This is one of the most important UI boundaries in the combat refactor.
+- reusable **`CombatGrid`** (`src/features/combat/components/grid/CombatGrid.tsx`)
+- encounter feature **orchestration** around the grid (not a second grid implementation)
 
 ## Why the split exists
 
-The original grid implementation lived under Encounter, which made sense initially.
+The tactical renderer should be broadly reusable and must not import Encounter routes, context, or setup workflow. Encounter-specific wiring (view model, pan/zoom, hover, interaction modes, token popover) lives in **`useEncounterActivePlaySurface`**, which composes **`CombatGrid`** directly.
 
-As the system grows, the grid needs to be split because:
-
-- the renderer is broadly reusable
-- Encounter should not own every combat-facing UI primitive
-- the grid is a core combat UI surface that may be reused elsewhere
-- server-authoritative architecture later benefits from a clean renderer boundary
-
-The goal is not to create a hyper-generic grid framework.
-The goal is to create a **truly Encounter-independent grid renderer**.
+There is **no** separate `EncounterGrid.tsx` component file: the encounter barrel may re-export **`CombatGrid` as `EncounterGrid`** for backwards-compatible imports only.
 
 ## `CombatGrid` owns
 
@@ -37,19 +27,12 @@ The goal is to create a **truly Encounter-independent grid renderer**.
 
 `CombatGrid` should be reusable by another combat-oriented client surface in principle.
 
-## `EncounterGrid` owns
+## Encounter orchestration owns
 
-`EncounterGrid` should remain Encounter-owned and act as a thin wrapper/adaptor.
+**`useEncounterActivePlaySurface`** (and route parents) should own:
 
-It should own:
-
-- adapting Encounter state/props into `CombatGrid` props
-- connecting feature-specific callbacks
-- feature-level selection/target state wiring
-- keeping parent route/screen churn minimal
-- any necessary compatibility with the existing Encounter surface
-
-The goal is for `EncounterGrid` to stop being the primary renderer.
+- supplying the grid view model and callbacks (pan/zoom, hover, token popover renderer, interaction flags)
+- feature-specific orchestration around the grid (selected actor/target, modals, drawers, DM workflow) — **not** inside `CombatGrid`
 
 ## What `CombatGrid` must not own
 
@@ -57,12 +40,12 @@ The goal is for `EncounterGrid` to stop being the primary renderer.
 
 - `EncounterRuntimeContext`
 - Encounter route types
-- Encounter hooks
+- Encounter hooks (except through props from parents)
 - setup workflow types
 - modal/drawer orchestration
 - campaign/route param logic
 
-If the grid still needs those, the boundary is wrong and the wrapper needs to absorb more.
+If the grid still needs those, the boundary is wrong and the **orchestration layer** needs to absorb more.
 
 ## Prop contract guidance
 
@@ -93,23 +76,23 @@ should live with the grid renderer if they are truly generic renderer concerns.
 
 If parts of them are Encounter-specific, they should be split rather than moved wholesale.
 
-## Wrapper philosophy
+## Authored base map vs tactical overlays
 
-`EncounterGrid` should be as thin as reasonably possible, but not thinner.
+`CombatGrid` draws **tactical** cell state from `GridCellViewModel` (`getCellVisualState`, `getCellVisualSx` — movement, AoE, placement bands, perception). **Under** that, when `authoringPresentation` is present, `CombatGridAuthoringOverlay` renders the **authored location map** chrome only (presentation; not mechanics):
 
-It is acceptable for the wrapper to retain:
-- feature adaptation logic
-- some compatibility mapping
-- minor glue needed to preserve external API stability
+1. **Paths** and **edges** (SVG strokes).
+2. **Authored object icons** — cell-anchored glyphs from `EncounterAuthoringPresentation.authoredObjectRenderItems` (same canonical shape as `LocationMapAuthoredObjectRenderItem` in `shared/domain/locations/map/`), derived by `deriveLocationMapAuthoredObjectRenderItems` when building the presentation blob.
 
-It is not acceptable for the wrapper to still secretly contain most of the real renderer behavior.
+**Derive vs render:** Pure lists and geometry live in `shared/domain`; MUI icons, SVG smoothing, and z-order live in feature components (`CombatGridAuthoringOverlay`, `LocationMapAuthoredObjectIconsLayer`, `pathOverlayRendering.ts`).
+
+**Not the same as:** runtime `GridObject` rows or the small **obstacle letter** glyph (`obstacleLabel` / T–P) on cells — those reflect encounter mechanics and stay separate from authored map icons.
 
 ## Success criteria
 
 The grid split is successful when:
 
 - `CombatGrid` can render without Encounter imports
-- `EncounterGrid` is primarily adaptation/wrapping code
+- encounter orchestration (`useEncounterActivePlaySurface`) supplies props and callbacks — not a duplicate grid component
 - parent route code changes remain reasonably small
 - grid-local visual helpers move with the reusable renderer where appropriate
 - another combat-oriented surface could reuse `CombatGrid` in principle

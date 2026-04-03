@@ -5,6 +5,7 @@
  * - `LOCATION_SCALE_RANK_ORDER_LEGACY` + `locationScale.rules.ts` — generic structural ranking.
  * - `locationScale.policy.ts` — parent/child assignment when saving a location.
  * - This module — what may be *linked from* or *placed on* a map cell for a *host* location/map.
+ *   Building composes floors and hosts no cell objects; floor is the tactical interior object host.
  * - `zones/mapZone.policy.ts` — painted **MapZone** kinds per host scale (area tool); not links.
  *
  * Linked targets are **navigable child locations only** (world → city/site, etc.). Region/subregion/district
@@ -103,8 +104,8 @@ export const ALLOWED_MAP_OBJECT_KINDS_BY_HOST_SCALE: Record<
   city: ['marker', 'obstacle'],
   district: ['marker', 'obstacle'],
   site: ['marker', 'obstacle', 'treasure'],
-  building: ['marker', 'obstacle', 'door', 'treasure', 'stairs'],
-  floor: ['marker', 'obstacle', 'door', 'treasure', 'stairs'],
+  building: [],
+  floor: ['obstacle', 'door', 'treasure', 'stairs'],
   room: ['marker', 'obstacle', 'door', 'treasure'],
 };
 

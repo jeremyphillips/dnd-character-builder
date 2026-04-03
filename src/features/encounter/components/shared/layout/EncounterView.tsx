@@ -24,7 +24,6 @@ export function EncounterView({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 104px)',
         mx: -4,
         mt: -3,
         mb: -4,

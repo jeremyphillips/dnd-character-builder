@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
+import { useTheme } from '@mui/material/styles'
+
 import { AppToast } from '@/ui/primitives'
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks'
 
+import { CombatGrid } from '@/features/combat/components/grid/CombatGrid'
 import { CombatPlayView } from '@/features/combat/components/CombatPlayView'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
@@ -30,7 +33,7 @@ import {
   isSelfCenteredAreaAction,
   resolveAttachedEmanationAnchorModeFromSelection,
 } from '../helpers/actions'
-import { findGridObstacleAtCell, formatGridCellLabel, getCellForCombatant } from '@/features/mechanics/domain/combat/space/space.helpers'
+import { findGridObjectAtCell, formatGridCellLabel, getCellForCombatant } from '@/features/mechanics/domain/combat/space/space.helpers'
 import {
   actionUsesGridCreatureTargeting,
   isValidAoeOriginCell,
@@ -40,11 +43,11 @@ import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,
   EncounterActiveSidebar,
-  EncounterGrid,
   OpponentCombatantActivePreviewCard,
   OpponentActionDrawer,
   useCloseCombatantActionDrawerOnActiveCombatantChange,
 } from '../components'
+import { getEncounterUiStateTheme } from '../ui/theme/encounterUiStateTheme'
 import type { CombatantActionDrawerProps } from '../components/active/drawers/CombatantActionDrawer'
 import { deriveGridHoverStatusMessage } from '../helpers/ui'
 import type { EncounterRuntimeContextValue } from '../routes/EncounterRuntimeContext'
@@ -172,6 +175,15 @@ export function useEncounterActivePlaySurface(
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
+  const theme = useTheme()
+  const playSurfaceHeaderOffset = useMemo(() => {
+    const u = getEncounterUiStateTheme(theme)
+    return {
+      activeHeaderOffsetCssVar: u.header.height.cssVarName,
+      activeHeaderOffsetFallbackPx: u.header.height.layoutFallbackPx,
+    }
+  }, [theme])
+
   const [toastPayload, setToastPayload] = useState<EncounterToastPresentation | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
   const toastOpenRef = useRef(false)
@@ -700,10 +712,10 @@ export function useEncounterActivePlaySurface(
         if (!capabilities?.canSelectAction) return
         const space = encounterState.space
         if (!space) return
-        const obstacle = findGridObstacleAtCell(space, cellId)
-        if (obstacle) {
+        const gridObject = findGridObjectAtCell(space, cellId)
+        if (gridObject) {
           setPlacementError(null)
-          setSelectedObjectAnchorId(obstacle.id)
+          setSelectedObjectAnchorId(gridObject.id)
         }
         return
       }
@@ -783,13 +795,15 @@ export function useEncounterActivePlaySurface(
     [interactionMode, setAoeHoverCellId, setSingleCellPlacementHoverCellId, setObjectAnchorHoverCellId],
   )
 
+  /** Reachable-cell / movement affordances only for the viewer who may act on the active turn (see `deriveEncounterCapabilities`). */
   const movementHighlightActive = useMemo(
     () =>
+      Boolean(capabilities?.canMoveActiveCombatant) &&
       (activeCombatant?.turnResources?.movementRemaining ?? 0) > 0 &&
       interactionMode !== 'aoe-place' &&
       interactionMode !== 'single-cell-place' &&
       interactionMode !== 'object-anchor-select',
-    [activeCombatant, interactionMode],
+    [capabilities?.canMoveActiveCombatant, activeCombatant, interactionMode],
   )
 
   const creatureTargetingActive = useMemo(() => {
@@ -908,6 +922,7 @@ export function useEncounterActivePlaySurface(
 
   return (
     <CombatPlayView
+      {...playSurfaceHeaderOffset}
       activeHeader={activeHeader}
       gridHoverStatusMessage={gridHoverStatusMessage}
       gameOverModal={
@@ -938,7 +953,7 @@ export function useEncounterActivePlaySurface(
       zoomControlProps={zoomControlProps}
       encounterGrid={
         gridViewModel ? (
-          <EncounterGrid
+          <CombatGrid
             grid={gridViewModel}
             zoom={zoom}
             pan={pan}

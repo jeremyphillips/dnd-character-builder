@@ -59,7 +59,7 @@ It owns:
 
 - reusable combat components
 - reusable combat renderer layers
-- the shared **active play** layout shell (**`CombatPlayView`**) — header/grid/sidebar/drawer **slots** — consumed by Encounter Simulator and GameSession **`/play`**, not simulator-only workflow
+- the shared **active play** layout shell (**`CombatPlayView`**) — header/grid/sidebar/drawer **slots** — consumed by Encounter Simulator and GameSession **`/play`**, not simulator-only workflow (layout metrics such as sticky header offset are **passed in via props** from encounter orchestration so `features/combat` does not import encounter theme modules)
 - client-only formatting/chips/tooltips
 - optional reusable combat UI hooks
 - wrappers around canonical state/results for display

@@ -7,11 +7,23 @@ import type {
   EncounterAuthoringPresentation,
   EncounterCell,
   EncounterSpace,
-  GridObstacleKind,
+  GridObjectPlacementKindKey,
 } from '../space.types'
-import { gridObstacleDisplayName } from '../placement/placeRandomGridObstacle'
-import { getCellById, getCellForCombatant, getOccupant, gridDistanceFt, isCellOccupied } from '../space.helpers'
+import { gridObjectPlacementKindDisplayLabel, gridObjectPlacementKindKey } from '../gridObject/gridObject.defaults'
+import {
+  cellMovementBlockedForEntering,
+  getCellById,
+  getCellForCombatant,
+  getEncounterGridObjects,
+  getOccupant,
+  gridDistanceFt,
+  isCellOccupied,
+} from '../space.helpers'
 import { hasLineOfSight } from '../sight/space.sight'
+import {
+  cellsReachableWithinMovementBudget,
+  minMovementCostFtToCell,
+} from '../spatial/movementReachability'
 import type { CombatantSide } from '@/features/mechanics/domain/combat/state/types/combatant.types'
 import {
   hasBattlefieldPresence,
@@ -99,8 +111,8 @@ export type GridCellViewModel = {
   occupantSide: CombatantSide | null
   /** From `CombatantInstance.portraitImageKey` — resolve URLs in UI only. */
   occupantPortraitImageKey: string | null
-  /** Obstruction on this cell (from `EncounterSpace.obstacles`), for labels / tooltips. */
-  obstacleKind: GridObstacleKind | null
+  /** Placed object on this cell (from `EncounterSpace.gridObjects` / legacy `obstacles`), for labels / tooltips. */
+  obstacleKind: GridObjectPlacementKindKey | null
   obstacleLabel: string | null
   isActive: boolean
   isSelectedTarget: boolean
@@ -176,7 +188,7 @@ export function isValidAoeOriginCell(
 ): boolean {
   if (!space) return false
   const cell = getCellById(space, originCellId)
-  if (!cell || cell.kind === 'wall' || cell.kind === 'blocking') return false
+  if (!cell || cellMovementBlockedForEntering(space, originCellId)) return false
   const d = gridDistanceFt(space, casterCellId, originCellId)
   return d !== undefined && d <= castRangeFt
 }
@@ -192,7 +204,7 @@ export function isValidSingleCellPlacementPick(
   req: { rangeFt: number; lineOfSightRequired: boolean; mustBeUnoccupied: boolean },
 ): boolean {
   const cell = getCellById(space, targetCellId)
-  if (!cell || cell.kind === 'wall' || cell.kind === 'blocking') return false
+  if (!cell || cellMovementBlockedForEntering(space, targetCellId)) return false
   const d = gridDistanceFt(space, casterCellId, targetCellId)
   if (d === undefined || d > req.rangeFt) return false
   if (req.lineOfSightRequired && !hasLineOfSight(space, casterCellId, targetCellId)) return false
@@ -303,9 +315,9 @@ export function selectGridViewModel(
           ? aoe.hoverCellId!
           : aoe.originCellId ?? null
 
-  const obstacleByCellId = new Map<string, GridObstacleKind>()
-  for (const o of space.obstacles ?? []) {
-    obstacleByCellId.set(o.cellId, o.kind)
+  const obstacleByCellId = new Map<string, GridObjectPlacementKindKey>()
+  for (const o of getEncounterGridObjects(space)) {
+    obstacleByCellId.set(o.cellId, gridObjectPlacementKindKey(o))
   }
 
   const combatantRoster = Object.values(state.combatantsById)
@@ -314,7 +326,7 @@ export function selectGridViewModel(
     const occupantId = getOccupant(placements, cell.id) ?? null
     const combatant = occupantId ? state.combatantsById[occupantId] ?? null : null
     const obstacleKind = obstacleByCellId.get(cell.id) ?? null
-    const obstacleLabel = obstacleKind != null ? gridObstacleDisplayName(obstacleKind) : null
+    const obstacleLabel = obstacleKind != null ? gridObjectPlacementKindDisplayLabel(obstacleKind) : null
 
     let withinSelectedActionRange = false
     if (rangeFt != null && activeCellId) {
@@ -423,7 +435,8 @@ export function selectGridViewModel(
     }
 
     const ap = space.authoringPresentation
-    const blockAuthoringUnderlay = cell.kind === 'wall' || cell.kind === 'blocking'
+    /** Only true walls skip floor/region paint; props and structural blocking still use map cell fills (e.g. stone_floor). */
+    const blockAuthoringUnderlay = cell.kind === 'wall'
     let authoringCellFillKind: string | undefined
     let authoringRegionColorKey: string | undefined
     if (ap && !blockAuthoringUnderlay) {
@@ -511,8 +524,7 @@ export function placeCombatant(
   if (!state.space || !state.placements) return state
 
   const cell = getCellById(state.space, cellId)
-  if (!cell) return state
-  if (cell.kind === 'wall' || cell.kind === 'blocking') return state
+  if (!cell || cellMovementBlockedForEntering(state.space, cellId)) return state
 
   const filtered = state.placements.filter((p) => p.combatantId !== combatantId)
   return reconcileBattlefieldEffectAnchors({
@@ -525,49 +537,40 @@ export function placeCombatant(
 // Movement
 // ---------------------------------------------------------------------------
 
-function isCellPassable(cell: EncounterCell): boolean {
-  return cell.kind !== 'wall' && cell.kind !== 'blocking'
-}
-
 /**
- * Geometric (Chebyshev) cells within `movementRemaining` distance.
- * Does NOT account for walls, terrain costs, or pathing -- purely metric.
- * Sufficient for generated open grids.
+ * Cells reachable within `movementRemaining` feet via legal king-move steps (adjacency BFS).
+ * Uses {@link cellsReachableWithinMovementBudget} — do not reimplement reachability or bypass
+ * {@link movementStepLegal} from `spatial/movementReachability.ts`.
  */
 export function selectCellsWithinDistance(
   state: EncounterState,
   combatantId: string,
 ): Set<string> {
-  const result = new Set<string>()
   const { space, placements } = state
-  if (!space || !placements) return result
+  if (!space || !placements) return new Set()
 
   const combatant = state.combatantsById[combatantId]
-  if (!combatant) return result
+  if (!combatant) return new Set()
 
   const movementRemaining = combatant.turnResources?.movementRemaining ?? 0
-  if (movementRemaining <= 0) return result
+  if (movementRemaining <= 0) return new Set()
 
   const currentCellId = getCellForCombatant(placements, combatantId)
-  if (!currentCellId) return result
+  if (!currentCellId) return new Set()
 
-  for (const cell of space.cells) {
-    if (cell.id === currentCellId) continue
-    if (!isCellPassable(cell)) continue
-    if (isCellOccupied(placements, cell.id)) continue
-
-    const dist = gridDistanceFt(space, currentCellId, cell.id)
-    if (dist !== undefined && dist <= movementRemaining) {
-      result.add(cell.id)
-    }
-  }
-
-  return result
+  return cellsReachableWithinMovementBudget(
+    space,
+    currentCellId,
+    movementRemaining,
+    placements,
+    combatantId,
+  )
 }
 
 /**
  * Single predicate: can the combatant move to the target cell?
- * Checks distance, movement remaining, cell validity, and occupancy.
+ * Checks movement remaining, destination terrain, occupancy, and shortest-path existence via
+ * {@link minMovementCostFtToCell} (same graph rules as reachability highlights).
  */
 export function canMoveTo(
   state: EncounterState,
@@ -584,21 +587,28 @@ export function canMoveTo(
   if (movementRemaining <= 0) return false
 
   const cell = getCellById(space, targetCellId)
-  if (!cell || !isCellPassable(cell)) return false
+  if (!cell || cellMovementBlockedForEntering(space, targetCellId)) return false
   if (isCellOccupied(placements, targetCellId)) return false
 
   const currentCellId = getCellForCombatant(placements, combatantId)
   if (!currentCellId) return false
 
-  const dist = gridDistanceFt(space, currentCellId, targetCellId)
-  if (dist === undefined) return false
-
-  return dist <= movementRemaining
+  const pathCostFt = minMovementCostFtToCell(
+    space,
+    currentCellId,
+    targetCellId,
+    placements,
+    combatantId,
+  )
+  return pathCostFt !== undefined && pathCostFt <= movementRemaining
 }
 
 /**
  * Short rejection label for an illegal move attempt, or `null` when the move would be valid
  * or movement budget is exhausted (caller should not surface status in that case).
+ *
+ * Distinct strings when useful for UI/debug: **`Terrain blocked`** (destination cell), **`No path`**
+ * (graph unreachable with legal steps), **`Out of range`** (path exists but exceeds budget).
  */
 export function getMoveRejectionReason(
   state: EncounterState,
@@ -615,16 +625,22 @@ export function getMoveRejectionReason(
   if (movementRemaining <= 0) return null
 
   const cell = getCellById(space, targetCellId)
-  if (!cell || !isCellPassable(cell)) return 'Blocked'
+  if (!cell || cellMovementBlockedForEntering(space, targetCellId)) return 'Terrain blocked'
 
   if (isCellOccupied(placements, targetCellId)) return 'Cell occupied'
 
   const currentCellId = getCellForCombatant(placements, combatantId)
   if (!currentCellId) return null
 
-  const dist = gridDistanceFt(space, currentCellId, targetCellId)
-  if (dist === undefined) return null
-  if (dist > movementRemaining) return 'Out of range'
+  const pathCostFt = minMovementCostFtToCell(
+    space,
+    currentCellId,
+    targetCellId,
+    placements,
+    combatantId,
+  )
+  if (pathCostFt === undefined) return 'No path'
+  if (pathCostFt > movementRemaining) return 'Out of range'
 
   return null
 }
@@ -647,7 +663,13 @@ export function moveCombatant(
 
   const { space, placements } = state
   const currentCellId = getCellForCombatant(placements!, combatantId)!
-  const dist = gridDistanceFt(space!, currentCellId, targetCellId)!
+  const dist = minMovementCostFtToCell(
+    space!,
+    currentCellId,
+    targetCellId,
+    placements!,
+    combatantId,
+  )!
 
   const combatant = state.combatantsById[combatantId]
   const filteredPlacements = placements!.filter((p) => p.combatantId !== combatantId)

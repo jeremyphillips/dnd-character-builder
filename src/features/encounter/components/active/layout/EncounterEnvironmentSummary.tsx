@@ -9,7 +9,7 @@ import {
   TERRAIN_MOVEMENT_TYPES,
   VISIBILITY_OBSCURED_LEVELS,
 } from '@/features/mechanics/domain/environment'
-import type { EnvironmentSetupValues } from '../../setup/options/EncounterEnvironmentSetup'
+import type { EnvironmentSetupValues } from '../../setup/simulator/SimulatorEncounterEnvironmentSetup'
 
 type EncounterEnvironmentSummaryProps = {
   values: EnvironmentSetupValues

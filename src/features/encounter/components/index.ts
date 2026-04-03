@@ -1,3 +1,8 @@
+/**
+ * Encounter-owned surfaces and workflow UI. Prefer importing combat primitives from
+ * `@/features/combat` (or `@/features/combat/components`) in new code — `CombatGrid as EncounterGrid`
+ * below is a backwards-compatible alias only, not a second grid implementation.
+ */
 export { SelectedEntitiesLane } from '@/ui/patterns'
 export { AllyRosterLane } from './setup/roster/AllyRosterLane'
 export { OpponentRosterLane } from './setup/roster/OpponentRosterLane'
@@ -14,14 +19,16 @@ export {
 } from '@/features/combat/components'
 export { EncounterView } from './shared/layout/EncounterView'
 export { EncounterSetupView } from './setup/layout/EncounterSetupView'
-export { EncounterSetupHeader } from './setup/layout/EncounterSetupHeader'
 export { EncounterActiveHeader } from './active/layout/EncounterActiveHeader'
 export { EncounterPresentationPovField } from './active/layout/EncounterPresentationPovField'
 export { EncounterActiveFooter } from './active/layout/EncounterActiveFooter'
 export type { InteractionMode } from './active/layout/EncounterActiveFooter'
 export type { GridInteractionMode } from '@/features/mechanics/domain/combat/selectors/interaction/encounter-interaction.types'
-export { EncounterEnvironmentSetup } from './setup/options/EncounterEnvironmentSetup'
-export type { EnvironmentSetupValues } from './setup/options/EncounterEnvironmentSetup'
+export type { EnvironmentSetupValues } from './setup/simulator/SimulatorEncounterEnvironmentSetup'
+export { SimulatorEncounterEnvironmentSetup } from './setup/simulator/SimulatorEncounterEnvironmentSetup'
+export { SimulatorEncounterBuildingLocation } from './setup/simulator/SimulatorEncounterBuildingLocation'
+export { SimulatorEncounterSetupSurface } from './setup/simulator/SimulatorEncounterSetupSurface'
+export type { SimulatorEncounterSetupSurfaceProps } from './setup/simulator/SimulatorEncounterSetupSurface'
 export { EncounterEnvironmentSummary } from './active/layout/EncounterEnvironmentSummary'
 export { AllyCombatantSetupPreviewCard } from './setup/roster/AllyCombatantSetupPreviewCard'
 export { OpponentCombatantSetupPreviewCard } from './setup/roster/OpponentCombatantSetupPreviewCard'
@@ -43,10 +50,7 @@ export {
 } from '@/features/combat/components'
 export { CombatLogPanel } from './active/combat-log/CombatLogPanel'
 export { EncounterActiveSidebar } from './active/grid/EncounterActiveSidebar'
-export { EncounterGrid } from './active/grid/EncounterGrid'
-export { EncounterGridSetup } from './setup/options/EncounterGridSetup'
-export { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets'
-export type { GridSizePreset } from '@/shared/domain/grid/gridPresets'
+export { CombatGrid as EncounterGrid } from '@/features/combat/components'
 export { ActionRow } from './active/action-row/ActionRow'
 /** Temporary alias (Phase 3C). Prefer `CombatActionRowBase` from `@/features/combat/components`. */
 export {

@@ -12,6 +12,15 @@ import type { GridCell } from './GridEditor';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/locationEditorRail.types';
 
+/**
+ * Per-cell overlay for region tint, linked-location icon, and authored object icons.
+ *
+ * **Duplication note:** Object icons here read `draft.objectsByCellId` directly. Combat and shared serialization
+ * use `deriveLocationMapAuthoredObjectRenderItems` / `deriveLocationMapAuthoredObjectRenderItemsFromObjectsByCellId`
+ * (`shared/domain/locations/map/locationMapAuthoredObjectRender.helpers.ts`) so the **same** kinds and ids render
+ * consistently; a future pass may pass pre-derived `LocationMapAuthoredObjectRenderItem[]` from the parent to avoid
+ * two code paths.
+ */
 type LocationMapCellAuthoringOverlayProps = {
   cell: GridCell;
   draft: LocationGridDraftState;

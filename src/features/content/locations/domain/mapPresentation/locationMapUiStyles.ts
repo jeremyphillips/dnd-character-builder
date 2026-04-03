@@ -2,11 +2,15 @@ import { alpha, type Theme } from '@mui/material/styles';
 
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 
+// ---------------------------------------------------------------------------
+// Static tokens (widths, opacities, font knobs)
+// Layering: `colorPrimitives` → `mapColors` → this file (how features are drawn).
+// No theme resolution here.
+// ---------------------------------------------------------------------------
+
 /**
- * Static map presentation tokens (widths, opacities). Theme colors are resolved via
+ * Static map presentation tokens. Theme colors are resolved via
  * `resolveLocationMapUiStyles`.
- *
- * Layering: `colorPrimitives` → `mapColors` → this file (how features are drawn).
  */
 export const locationMapUiStyleTokens = {
   region: {
@@ -43,7 +47,9 @@ export const locationMapUiStyleTokens = {
     pathEndpointOutlinePx: 2,
     placeHoverPreviewOutlinePx: 2,
   },
-  /** Placed-object glyphs in tactical cells and map authoring overlay (MUI icon or letter fallback). */
+
+  // --- Placed-object mini-subsystem (tactical cell + authoring overlay glyphs) ---
+  /** MUI icon or letter fallback; sizing differs by tactical vs overlay surface. */
   placedObject: {
     /** Multiplier on `palette.action.active` for icon fill. */
     iconAlpha: 1,
@@ -57,9 +63,34 @@ export const locationMapUiStyleTokens = {
   },
 } as const;
 
+export type LocationMapUiStyleTokens = typeof locationMapUiStyleTokens;
+
+// ---------------------------------------------------------------------------
+// Resolved types — output shape of `resolveLocationMapUiStyles`
+// ---------------------------------------------------------------------------
+
+/** One surface (tactical grid vs map overlay) for icon + typography fallback. */
+export type LocationMapPlacedObjectVariantResolvedStyles = {
+  icon: {
+    color: string;
+    fontSizePx: number;
+    widthPx: number;
+    heightPx: number;
+    display: 'block';
+  };
+  fallback: {
+    color: string;
+    fontWeight: number;
+    lineHeight: number;
+    fontSizeRem: string;
+    typographyVariant: 'h6' | 'body1';
+    userSelect: 'none';
+  };
+};
+
 export type LocationMapUiResolvedStyles = {
-  tokens: typeof locationMapUiStyleTokens;
-  region: (typeof locationMapUiStyleTokens)['region'];
+  tokens: LocationMapUiStyleTokens;
+  region: LocationMapUiStyleTokens['region'];
   path: {
     stroke: string;
     defaultStrokeWidthPx: number;
@@ -97,36 +128,108 @@ export type LocationMapUiResolvedStyles = {
   };
 };
 
-export type LocationMapPlacedObjectVariantResolvedStyles = {
-  icon: {
-    color: string;
-    fontSizePx: number;
-    widthPx: number;
-    heightPx: number;
-    display: 'block';
-  };
-  fallback: {
-    color: string;
-    fontWeight: number;
-    lineHeight: number;
-    fontSizeRem: string;
-    typographyVariant: 'h6' | 'body1';
-    userSelect: 'none';
-  };
-};
+// ---------------------------------------------------------------------------
+// Concern-specific resolvers (internal)
+// ---------------------------------------------------------------------------
 
-/**
- * Resolves theme-dependent map chrome (strokes, highlights) using `locationMapUiStyleTokens`.
- */
+function resolveRegionStyles(
+  _theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['region'] {
+  return tokens.region;
+}
+
+function resolvePathStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['path'] {
+  return {
+    stroke: theme.palette.info.main,
+    defaultStrokeWidthPx: tokens.path.defaultStrokeWidthPx,
+    selectedStrokeWidthPx: tokens.path.selectedStrokeWidthPx,
+  };
+}
+
+function resolveEdgeCommittedStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['edgeCommittedStrokeByKind'] {
+  const edgeAlpha = tokens.edge.committedStrokeAlpha;
+  const strokeWidth = tokens.edge.committedStrokeWidthPx;
+  return {
+    wall: {
+      stroke: alpha(theme.palette.text.primary, edgeAlpha),
+      strokeWidth,
+    },
+    window: {
+      stroke: alpha(theme.palette.info.main, edgeAlpha),
+      strokeWidth,
+      strokeDasharray: tokens.edge.windowDasharray,
+    },
+    door: {
+      stroke: alpha(theme.palette.warning.main, edgeAlpha),
+      strokeWidth,
+    },
+  };
+}
+
+function resolveEdgeBoundaryPaintStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['edgeBoundaryPaint'] {
+  return {
+    stroke: theme.palette.primary.main,
+    strokeWidthPx: tokens.edge.boundaryPaintStrokeWidthPx,
+    opacity: tokens.edge.boundaryPaintOpacity,
+  };
+}
+
+function resolveEdgeHoverStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['edgeHover'] {
+  return {
+    strokeErase: theme.palette.error.main,
+    strokePlace: theme.palette.primary.light,
+    strokeWidthPx: tokens.edge.hoverStrokeWidthPx,
+    opacity: tokens.edge.hoverOpacity,
+    dasharray: tokens.edge.hoverDasharray,
+  };
+}
+
+function resolveCellStyles(
+  _theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['cell'] {
+  return {
+    placeAnchorOutlinePx: tokens.cell.placeAnchorOutlinePx,
+    pathEndpointOutlinePx: tokens.cell.pathEndpointOutlinePx,
+    placeHoverPreviewOutlinePx: tokens.cell.placeHoverPreviewOutlinePx,
+  };
+}
+
+function resolveRegionSelectedOutlineStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['regionSelectedOutline'] {
+  return {
+    stroke: theme.palette.primary.main,
+    strokeWidthPx: tokens.region.selectedBoundaryStrokeWidthPx,
+  };
+}
+
+// --- Placed-object: icon + fallback letter (tactical vs overlay) ---
+
 function resolvePlacedObjectVariantStyles(
   theme: Theme,
+  tokens: LocationMapUiStyleTokens,
   variant: 'tactical' | 'overlay',
 ): LocationMapPlacedObjectVariantResolvedStyles {
-  const t = locationMapUiStyleTokens.placedObject;
-  const sizePx = t.iconSizePx[variant];
-  const iconColor = alpha(theme.palette.action.active, t.iconAlpha);
-  const fallbackColor = alpha(theme.palette.text.secondary, t.fallbackTextAlpha);
-  const fontRem = t.fallbackFontSizeRem[variant];
+  const po = tokens.placedObject;
+  const sizePx = po.iconSizePx[variant];
+  const iconColor = alpha(theme.palette.action.active, po.iconAlpha);
+  const fallbackColor = alpha(theme.palette.text.secondary, po.fallbackTextAlpha);
+  const fontRem = po.fallbackFontSizeRem[variant];
   return {
     icon: {
       color: iconColor,
@@ -137,68 +240,44 @@ function resolvePlacedObjectVariantStyles(
     },
     fallback: {
       color: fallbackColor,
-      fontWeight: t.fallbackFontWeight,
-      lineHeight: t.fallbackLineHeight,
+      fontWeight: po.fallbackFontWeight,
+      lineHeight: po.fallbackLineHeight,
       fontSizeRem: `${fontRem}rem`,
-      typographyVariant: t.fallbackTypographyVariant[variant],
+      typographyVariant: po.fallbackTypographyVariant[variant],
       userSelect: 'none',
     },
   };
 }
 
-export function resolveLocationMapUiStyles(theme: Theme): LocationMapUiResolvedStyles {
-  const t = locationMapUiStyleTokens;
-  const edgeAlpha = t.edge.committedStrokeAlpha;
-
-  const edgeCommittedStrokeByKind: LocationMapUiResolvedStyles['edgeCommittedStrokeByKind'] = {
-    wall: {
-      stroke: alpha(theme.palette.text.primary, edgeAlpha),
-      strokeWidth: t.edge.committedStrokeWidthPx,
-    },
-    window: {
-      stroke: alpha(theme.palette.info.main, edgeAlpha),
-      strokeWidth: t.edge.committedStrokeWidthPx,
-      strokeDasharray: t.edge.windowDasharray,
-    },
-    door: {
-      stroke: alpha(theme.palette.warning.main, edgeAlpha),
-      strokeWidth: t.edge.committedStrokeWidthPx,
-    },
+function resolvePlacedObjectStyles(
+  theme: Theme,
+  tokens: LocationMapUiStyleTokens,
+): LocationMapUiResolvedStyles['placedObject'] {
+  return {
+    tactical: resolvePlacedObjectVariantStyles(theme, tokens, 'tactical'),
+    overlay: resolvePlacedObjectVariantStyles(theme, tokens, 'overlay'),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Public resolver
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves theme-dependent map chrome (strokes, highlights) using `locationMapUiStyleTokens`.
+ */
+export function resolveLocationMapUiStyles(theme: Theme): LocationMapUiResolvedStyles {
+  const tokens = locationMapUiStyleTokens;
 
   return {
-    tokens: t,
-    region: t.region,
-    path: {
-      stroke: theme.palette.info.main,
-      defaultStrokeWidthPx: t.path.defaultStrokeWidthPx,
-      selectedStrokeWidthPx: t.path.selectedStrokeWidthPx,
-    },
-    edgeCommittedStrokeByKind,
-    edgeBoundaryPaint: {
-      stroke: theme.palette.primary.main,
-      strokeWidthPx: t.edge.boundaryPaintStrokeWidthPx,
-      opacity: t.edge.boundaryPaintOpacity,
-    },
-    edgeHover: {
-      strokeErase: theme.palette.error.main,
-      strokePlace: theme.palette.primary.light,
-      strokeWidthPx: t.edge.hoverStrokeWidthPx,
-      opacity: t.edge.hoverOpacity,
-      dasharray: t.edge.hoverDasharray,
-    },
-    cell: {
-      placeAnchorOutlinePx: t.cell.placeAnchorOutlinePx,
-      pathEndpointOutlinePx: t.cell.pathEndpointOutlinePx,
-      placeHoverPreviewOutlinePx: t.cell.placeHoverPreviewOutlinePx,
-    },
-    regionSelectedOutline: {
-      stroke: theme.palette.primary.main,
-      strokeWidthPx: t.region.selectedBoundaryStrokeWidthPx,
-    },
-    placedObject: {
-      tactical: resolvePlacedObjectVariantStyles(theme, 'tactical'),
-      overlay: resolvePlacedObjectVariantStyles(theme, 'overlay'),
-    },
+    tokens,
+    region: resolveRegionStyles(theme, tokens),
+    path: resolvePathStyles(theme, tokens),
+    edgeCommittedStrokeByKind: resolveEdgeCommittedStyles(theme, tokens),
+    edgeBoundaryPaint: resolveEdgeBoundaryPaintStyles(theme, tokens),
+    edgeHover: resolveEdgeHoverStyles(theme, tokens),
+    cell: resolveCellStyles(theme, tokens),
+    regionSelectedOutline: resolveRegionSelectedOutlineStyles(theme, tokens),
+    placedObject: resolvePlacedObjectStyles(theme, tokens),
   };
 }

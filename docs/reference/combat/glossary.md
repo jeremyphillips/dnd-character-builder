@@ -28,6 +28,8 @@ Usually refers to:
 
 The Encounter Simulator is a consumer of combat. It is **not** **GameSession** (see below).
 
+**Tactical space (simulator start):** **Start combat** resolves **`EncounterSpace`** with the same **map-first** contract as game-session combat: choose a **map host** (first **floor** under the **building** selected in setup), then **`listLocationMaps`** → default **encounter-grid** map → **`buildEncounterSpaceFromLocationMap`** (`src/features/game-session/combat/buildEncounterSpaceFromLocationMap.ts`); if none, a **10×10** fallback square grid tied to that floor (or a generic fallback when no host). Shared picks live in **`encounterSpaceResolution.ts`**; the async entry point is **`resolveEncounterSpaceForSimulatorStart`** (`src/features/game-session/combat/resolveEncounterSpaceForSimulatorStart.ts`). The old **grid size preset** UI is not used for simulator start.
+
 ## GameSession
 Campaign-scoped **live-play session** container: DM-facing setup, **lobby**, **`/play`**, lifecycle status. Implemented under `src/features/game-session` (distinct from calendar Sessions and from the Encounter Simulator). See [game-session.md](./game-session.md).
 

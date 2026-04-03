@@ -14,8 +14,10 @@ import {
 } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
@@ -35,19 +37,19 @@ import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiv
 import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
 import type { GridInteractionMode } from '../domain'
 import { AppPageHeader } from '@/ui/patterns'
+import type { SelectEntityOption } from '@/ui/patterns'
+import type { Location } from '@/features/content/locations/domain/types'
+import { listCampaignLocations } from '@/features/content/locations/domain/repo/locationRepo'
+import { resolveEncounterSpaceForSimulatorStart } from '@/features/game-session/combat/resolveEncounterSpaceForSimulatorStart'
 import {
   OpponentRosterLane,
   AllyRosterLane,
   SelectEncounterAllyModal,
   SelectEncounterOpponentModal,
   EncounterEditModal,
-  GRID_SIZE_PRESETS,
   type EnvironmentSetupValues,
-  type GridSizePreset,
 } from '../components'
 import { isAreaGridAction } from '../helpers/actions'
-import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
-import { placeRandomGridObject } from '@/features/mechanics/domain/combat/space/placement/placeRandomGridObstacle'
 
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 
@@ -79,6 +81,72 @@ function useEncounterRuntimeValue() {
     }
     return out
   }, [party, npcs])
+
+  const [locations, setLocations] = useState<Location[]>([])
+  const [locationsLoading, setLocationsLoading] = useState(false)
+  const [buildingLocationIds, setBuildingLocationIds] = useState<string[]>([])
+  const [startEncounterPending, setStartEncounterPending] = useState(false)
+  const [startEncounterError, setStartEncounterError] = useState<string | null>(null)
+
+  const defaultBuildingSeededRef = useRef(false)
+  const prevCampaignIdRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (!campaignId) return
+    let cancelled = false
+    setLocationsLoading(true)
+    listCampaignLocations(campaignId)
+      .then((locs) => {
+        if (!cancelled) setLocations(locs)
+      })
+      .catch(() => {
+        if (!cancelled) setLocations([])
+      })
+      .finally(() => {
+        if (!cancelled) setLocationsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [campaignId])
+
+  useEffect(() => {
+    if (prevCampaignIdRef.current !== campaignId) {
+      prevCampaignIdRef.current = campaignId
+      defaultBuildingSeededRef.current = false
+      setBuildingLocationIds([])
+    }
+  }, [campaignId])
+
+  const sortedBuildings = useMemo(() => {
+    const buildings = locations.filter((l) => l.scale === 'building')
+    return [...buildings].sort((a, b) => {
+      const ao = a.sortOrder ?? 0
+      const bo = b.sortOrder ?? 0
+      if (ao !== bo) return ao - bo
+      return String(a.name).localeCompare(String(b.name))
+    })
+  }, [locations])
+
+  useEffect(() => {
+    if (!campaignId || locations.length === 0) return
+    if (buildingLocationIds.length > 0) return
+    if (defaultBuildingSeededRef.current) return
+    const first = sortedBuildings[0]
+    if (first) setBuildingLocationIds([first.id])
+    defaultBuildingSeededRef.current = true
+  }, [campaignId, locations, buildingLocationIds.length, sortedBuildings])
+
+  const buildingSelectOptions: SelectEntityOption[] = useMemo(
+    () =>
+      sortedBuildings.map((l) => ({
+        id: l.id,
+        label: l.name,
+        subtitle: l.category,
+        imageKey: l.imageKey ?? null,
+      })),
+    [sortedBuildings],
+  )
 
   const runtimeIdCounter = useRef(0)
   const nextRuntimeId = (prefix: string) => {
@@ -232,9 +300,6 @@ function useEncounterRuntimeValue() {
   const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(() => ({
     ...encounterSetupPolicy.environment.environmentDefaults,
   }))
-  const [gridSizePreset, setGridSizePreset] = useState<GridSizePreset>(
-    encounterSetupPolicy.grid.gridSizePresetDefault,
-  )
   const [interactionMode, setInteractionMode] = useState<GridInteractionMode>('select-target')
   const [allyModalOpen, setAllyModalOpen] = useState(false)
   const [opponentModalOpen, setOpponentModalOpen] = useState(false)
@@ -332,6 +397,32 @@ function useEncounterRuntimeValue() {
 
   const canStartEncounter = selectedCombatants.length > 0 && unresolvedCombatantCount === 0
 
+  const handleSimulatorStartCombat = useCallback(async () => {
+    if (!campaignId || startEncounterPending || !canStartEncounter) return
+    setStartEncounterError(null)
+    setStartEncounterPending(true)
+    try {
+      const { space } = await resolveEncounterSpaceForSimulatorStart({
+        campaignId,
+        locations,
+        buildingLocationIds,
+      })
+      handleStartEncounter({ space, environmentBaseline: environmentSetup })
+    } catch (e) {
+      setStartEncounterError(e instanceof Error ? e.message : 'Could not start combat.')
+    } finally {
+      setStartEncounterPending(false)
+    }
+  }, [
+    campaignId,
+    startEncounterPending,
+    canStartEncounter,
+    locations,
+    buildingLocationIds,
+    handleStartEncounter,
+    environmentSetup,
+  ])
+
   // selectedActionLabel / selectedTargetLabel were consumed by the now-commented-out footer.
   // The route derives these directly when needed (e.g. CombatantActionDrawer).
 
@@ -387,6 +478,9 @@ function useEncounterRuntimeValue() {
     setupHeaderSubtitleParts.push(`Environment: ${environmentSummary}`)
   }
 
+  const startCombatDisabled =
+    !canStartEncounter || startEncounterPending || locationsLoading || !campaignId
+
   const setupHeader = (
     <Box
       sx={{
@@ -402,23 +496,25 @@ function useEncounterRuntimeValue() {
           <Button
             key="start-combat"
             variant="contained"
-            disabled={!canStartEncounter}
-            onClick={() => {
-              const preset = GRID_SIZE_PRESETS[gridSizePreset]
-              const base = createSquareGridSpace({
-                id: `grid-${Date.now()}`,
-                name: 'Combat Grid',
-                columns: preset.columns,
-                rows: preset.rows,
-              })
-              const space = placeRandomGridObject(base, environmentSetup.setting)
-              handleStartEncounter({ space, environmentBaseline: environmentSetup })
-            }}
+            disabled={startCombatDisabled}
+            onClick={() => void handleSimulatorStartCombat()}
           >
-            Start combat
+            {startEncounterPending ? (
+              <>
+                <CircularProgress color="inherit" size={18} sx={{ mr: 1 }} />
+                Starting…
+              </>
+            ) : (
+              'Start combat'
+            )}
           </Button>,
         ]}
       />
+      {startEncounterError ? (
+        <Alert severity="error" sx={{ mt: 2 }} onClose={() => setStartEncounterError(null)}>
+          {startEncounterError}
+        </Alert>
+      ) : null}
     </Box>
   )
 
@@ -464,6 +560,11 @@ function useEncounterRuntimeValue() {
     presentationViewerCombatantId: presentationGridPerceptionInput?.viewerCombatantId ?? null,
     capabilities,
     campaignId,
+    locations,
+    locationsLoading,
+    buildingLocationIds,
+    setBuildingLocationIds,
+    buildingSelectOptions,
     monstersById,
     characterPortraitById,
     allyOptions,
@@ -521,8 +622,6 @@ function useEncounterRuntimeValue() {
     handleMoveCombatant,
     environmentSetup,
     setEnvironmentSetup,
-    gridSizePreset,
-    setGridSizePreset,
     interactionMode,
     setInteractionMode,
     allyModalOpen,

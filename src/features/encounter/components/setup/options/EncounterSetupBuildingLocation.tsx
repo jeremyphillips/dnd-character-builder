@@ -20,7 +20,7 @@ export type EncounterSetupBuildingLocationProps = {
 }
 
 /**
- * Building-scale location picker for encounter setup (UI only; not yet wired into the simulator).
+ * Building-scale location picker for encounter setup (feeds map-host resolution for **Start combat**).
  * Mirrors {@link GameSessionBuildingLocationField} in game session setup.
  */
 export function EncounterSetupBuildingLocation({

@@ -1,22 +1,25 @@
 ---
 name: Simulator location map combat
-overview: Host integration only—simulator starts combat via the same map-first space contract as server/game session; remove grid-preset path entirely; shared pure helpers for parity. Not an encounter/combat architecture pass. Prerequisites done—see § Completed prerequisites.
+overview: Host integration only—simulator starts combat via the same map-first space contract as server/game session; remove grid-preset path entirely; shared pure helpers for parity; update docs/reference for simulator space resolution. Not an encounter/combat architecture pass. Prerequisites done—see § Completed prerequisites.
 todos:
+  - id: docs-reference
+    content: Update docs/reference (combat/game-session/simulator) for map-first simulator start and removed grid preset
+    status: completed
   - id: shared-helpers
     content: Add pickEncounterGridMap, resolveSimulatorMapHostLocationId (first floor), buildSimulatorFallbackEncounterSpace; refactor server resolver to use shared picks
-    status: pending
+    status: completed
   - id: lift-state
     content: Minimal lift—locations + buildingLocationIds + one-shot default-building into EncounterRuntimeContext for Start handler
-    status: pending
+    status: completed
   - id: async-start
     content: Async resolve + loading/double-submit guard/error without partial state; no placeRandomGridObject on fallback unless documented exception
-    status: pending
+    status: completed
   - id: remove-grid-preset
     content: Remove grid preset end-to-end—EncounterGridSetup, EncounterSetupView gridSetup, context, policy types, start handler
     status: pending
   - id: tests
     content: Unit tests for shared helpers + resolver; tsc + relevant suites
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -29,6 +32,7 @@ isProject: false
 | Simulator **host integration**: resolve tactical space the **same way** as [`resolveEncounterSpaceForGameSessionStart`](server/features/gameSession/services/resolveGameSessionCombatSpace.server.ts) (map-first, shared pure helpers). | Broad **encounter/combat architecture** (wrapper renames, `CombatPlayView` slot renames, export-barrel cleanup, splitting `useEncounterActivePlaySurface`). |
 | **Remove legacy grid preset** path completely (UI, context, policy, start handler)—no mixed preset + map behavior. | Game session UI changes unless importing shared helpers for consistency. |
 | **Minimal** lifted state in [`EncounterRuntimeContext`](src/features/encounter/routes/EncounterRuntimeContext.tsx) so the Start button can resolve space (see § Host vs runtime state). | Declaring permanent ownership of “all simulator setup state” by runtime context. |
+| **Documentation:** update relevant [`docs/reference`](docs/reference) files (combat client overview, game-session combat, glossary, or simulator-adjacent notes) so simulator **map-first** start and **no grid preset** are documented. | Rewriting unrelated docs. |
 
 Prerequisite UI-boundary work is **done** (CombatPlayView props, CombatGrid wiring, docs)—see [`architecture_encounter_combat_hosts.plan.md`](architecture_encounter_combat_hosts.plan.md).
 

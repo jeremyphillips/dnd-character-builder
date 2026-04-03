@@ -49,9 +49,6 @@ export {
 export { CombatLogPanel } from './active/combat-log/CombatLogPanel'
 export { EncounterActiveSidebar } from './active/grid/EncounterActiveSidebar'
 export { CombatGrid as EncounterGrid } from '@/features/combat/components'
-export { EncounterGridSetup } from './setup/options/EncounterGridSetup'
-export { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets'
-export type { GridSizePreset } from '@/shared/domain/grid/gridPresets'
 export { ActionRow } from './active/action-row/ActionRow'
 /** Temporary alias (Phase 3C). Prefer `CombatActionRowBase` from `@/features/combat/components`. */
 export {

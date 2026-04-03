@@ -2,7 +2,7 @@ import { DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE } from '@/features/mechanics/dom
 
 import type { EncounterSetupPolicy } from './encounter-setup-policy.types'
 
-/** Encounter Simulator: empty roster, standard baseline, medium grid — full manual setup on this DM-only surface. */
+/** Encounter Simulator: empty roster, standard baseline — full manual setup on this DM-only surface. */
 export const SIMULATOR_ENCOUNTER_SETUP_POLICY: EncounterSetupPolicy = {
   roster: {
     defaultSelectedAllyIds: [],
@@ -10,8 +10,5 @@ export const SIMULATOR_ENCOUNTER_SETUP_POLICY: EncounterSetupPolicy = {
   },
   environment: {
     environmentDefaults: DEFAULT_ENCOUNTER_ENVIRONMENT_BASELINE,
-  },
-  grid: {
-    gridSizePresetDefault: 'medium',
   },
 }

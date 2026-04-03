@@ -3,21 +3,18 @@ import Stack from '@mui/material/Stack'
 
 type EncounterSetupViewProps = {
   environmentSetup: React.ReactNode
-  gridSetup?: React.ReactNode
   allyLane: React.ReactNode
   opponentLane: React.ReactNode
 }
 
 export function EncounterSetupView({
   environmentSetup,
-  gridSetup,
   allyLane,
   opponentLane,
 }: EncounterSetupViewProps) {
   return (
     <Stack spacing={3} sx={{ width: '100%' }}>
       {environmentSetup}
-      {gridSetup}
 
       <Box
         sx={{

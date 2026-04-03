@@ -1,16 +1,11 @@
 /**
- * Encounter configuration (participants, environment, grid). DM/simulator-only surface — not player lobby.
+ * Encounter configuration (participants, environment, building for tactical maps). DM/simulator-only surface — not player lobby.
  */
-import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
-import type { Location } from '@/features/content/locations/domain/types'
-import { listCampaignLocations } from '@/features/content/locations/domain/repo/locationRepo'
-import type { SelectEntityOption } from '@/ui/patterns'
 import {
   AllyRosterLane,
   EncounterEnvironmentSetup,
-  EncounterGridSetup,
   EncounterSetupView,
   EncounterView,
   OpponentRosterLane,
@@ -24,10 +19,12 @@ export default function EncounterSetupRoute() {
     encounterState,
     campaignId,
     setupHeader,
+    locations,
+    buildingLocationIds,
+    setBuildingLocationIds,
+    buildingSelectOptions,
     environmentSetup,
     setEnvironmentSetup,
-    gridSizePreset,
-    setGridSizePreset,
     selectedAllyIds,
     setAllyModalOpen,
     handleResolvedCombatant,
@@ -44,37 +41,6 @@ export default function EncounterSetupRoute() {
     removeOpponentCombatant,
     addOpponentCopy,
   } = useEncounterRuntime()
-
-  const [locations, setLocations] = useState<Location[]>([])
-  const [buildingLocationIds, setBuildingLocationIds] = useState<string[]>([])
-
-  useEffect(() => {
-    if (!campaignId) return
-    let cancelled = false
-    listCampaignLocations(campaignId)
-      .then((locs) => {
-        if (!cancelled) setLocations(locs)
-      })
-      .catch(() => {
-        if (!cancelled) setLocations([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [campaignId])
-
-  const buildingSelectOptions: SelectEntityOption[] = useMemo(
-    () =>
-      locations
-        .filter((l) => l.scale === 'building')
-        .map((l) => ({
-          id: l.id,
-          label: l.name,
-          subtitle: l.category,
-          imageKey: l.imageKey ?? null,
-        })),
-    [locations],
-  )
 
   if (encounterState && campaignId) {
     return <Navigate to={campaignEncounterActivePath(campaignId)} replace />
@@ -98,7 +64,6 @@ export default function EncounterSetupRoute() {
             }
           />
         }
-        gridSetup={<EncounterGridSetup value={gridSizePreset} onChange={setGridSizePreset} />}
         allyLane={
           <AllyRosterLane
             selectedAllyIds={selectedAllyIds}

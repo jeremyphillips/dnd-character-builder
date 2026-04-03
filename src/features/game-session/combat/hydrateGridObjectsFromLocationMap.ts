@@ -1,9 +1,9 @@
 /**
  * Authored map cell objects → encounter {@link GridObject} hydration.
  *
- * **Cell blocking:** Flags applied here are **transitional compatibility** with {@link placeRandomGridObject}
- * (blocking cell when any grid object has `blocksMovement`). Long-term, blocking/LoS may be derived from
- * grid objects + edges + terrain in a dedicated pass — do not treat this merge as the final source of truth.
+ * **Cell blocking:** When any grid object on a cell has `blocksMovement`, the cell may be aligned to
+ * blocking flags for movement / AoE checks. Long-term, blocking/LoS may be derived from grid objects +
+ * edges + terrain in a dedicated pass — do not treat this merge as the final source of truth.
  */
 
 import { buildGridObjectFromAuthoredPlacedObject } from '@/features/mechanics/domain/combat/space/gridObject/gridObject.fromAuthored';
@@ -71,7 +71,7 @@ export function buildGridObjectsFromLocationMapCellEntries(map: LocationMapBase)
 
 /**
  * **Transitional:** For each cell that hosts at least one grid object with `blocksMovement`, align
- * {@link EncounterCell} flags with current {@link placeRandomGridObject} behavior so movement / AoE
+ * {@link EncounterCell} flags so movement / AoE
  * origin checks stay consistent. Does not downgrade cells already marked blocking for other reasons.
  */
 export function applyEncounterCellBlockingFlagsForAuthoredGridObjects(

@@ -8,7 +8,7 @@ import type { GridObject } from '../space.types';
  * combat/runtime fields via {@link resolveLocationPlacedObjectKindRuntimeDefaults} only.
  *
  * **Bridge contract:** UI labels, icons, and `linkedScale` remain in authored registry metadata (`getPlacedObjectMeta`) only;
- * do not copy them onto `GridObject`. Procedural-only props use `defaultsForProceduralKind` and `proceduralPlacementKind`.
+ * do not copy them onto `GridObject`.
  */
 export function buildGridObjectFromAuthoredPlacedObject(input: {
   id: string;

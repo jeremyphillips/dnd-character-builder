@@ -7,7 +7,7 @@ import type {
   EncounterAuthoringPresentation,
   EncounterCell,
   EncounterSpace,
-  GridObjectPlacementKindKey,
+  GridObjectAuthoredKindId,
 } from '../space.types'
 import { gridObjectPlacementKindDisplayLabel, gridObjectPlacementKindKey } from '../gridObject/gridObject.defaults'
 import {
@@ -111,8 +111,8 @@ export type GridCellViewModel = {
   occupantSide: CombatantSide | null
   /** From `CombatantInstance.portraitImageKey` — resolve URLs in UI only. */
   occupantPortraitImageKey: string | null
-  /** Placed object on this cell (from `EncounterSpace.gridObjects` / legacy `obstacles`), for labels / tooltips. */
-  obstacleKind: GridObjectPlacementKindKey | null
+  /** Authored placed-object kind on this cell (`EncounterSpace.gridObjects`), for labels / tooltips. */
+  obstacleKind: GridObjectAuthoredKindId | null
   obstacleLabel: string | null
   isActive: boolean
   isSelectedTarget: boolean
@@ -315,7 +315,7 @@ export function selectGridViewModel(
           ? aoe.hoverCellId!
           : aoe.originCellId ?? null
 
-  const obstacleByCellId = new Map<string, GridObjectPlacementKindKey>()
+  const obstacleByCellId = new Map<string, GridObjectAuthoredKindId>()
   for (const o of getEncounterGridObjects(space)) {
     obstacleByCellId.set(o.cellId, gridObjectPlacementKindKey(o))
   }

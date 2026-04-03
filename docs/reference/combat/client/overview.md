@@ -126,7 +126,7 @@ Phase 3 is primarily about establishing this layer.
 Examples:
 - shared primitive extraction
 - client presentation helper extraction
-- `CombatGrid` vs `EncounterGrid`
+- `CombatGrid` (renderer) vs encounter orchestration (`useEncounterActivePlaySurface`; optional barrel alias `EncounterGrid`)
 - panel leaves vs drawer shells
 - combat log display leaves vs shell modals/panels
 

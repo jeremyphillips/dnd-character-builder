@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 
+import { useTheme } from '@mui/material/styles'
+
 import { AppToast } from '@/ui/primitives'
 import { useCanvasZoom, useCanvasPan } from '@/ui/hooks'
 
+import { CombatGrid } from '@/features/combat/components/grid/CombatGrid'
 import { CombatPlayView } from '@/features/combat/components/CombatPlayView'
 
 import { areaTemplateRadiusFt } from '@/features/mechanics/domain/combat/resolution/action/action-targeting'
@@ -40,11 +43,11 @@ import {
   AllyCombatantActivePreviewCard,
   AllyActionDrawer,
   EncounterActiveSidebar,
-  EncounterGrid,
   OpponentCombatantActivePreviewCard,
   OpponentActionDrawer,
   useCloseCombatantActionDrawerOnActiveCombatantChange,
 } from '../components'
+import { getEncounterUiStateTheme } from '../ui/theme/encounterUiStateTheme'
 import type { CombatantActionDrawerProps } from '../components/active/drawers/CombatantActionDrawer'
 import { deriveGridHoverStatusMessage } from '../helpers/ui'
 import type { EncounterRuntimeContextValue } from '../routes/EncounterRuntimeContext'
@@ -172,6 +175,15 @@ export function useEncounterActivePlaySurface(
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
+  const theme = useTheme()
+  const playSurfaceHeaderOffset = useMemo(() => {
+    const u = getEncounterUiStateTheme(theme)
+    return {
+      activeHeaderOffsetCssVar: u.header.height.cssVarName,
+      activeHeaderOffsetFallbackPx: u.header.height.layoutFallbackPx,
+    }
+  }, [theme])
+
   const [toastPayload, setToastPayload] = useState<EncounterToastPresentation | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
   const toastOpenRef = useRef(false)
@@ -910,6 +922,7 @@ export function useEncounterActivePlaySurface(
 
   return (
     <CombatPlayView
+      {...playSurfaceHeaderOffset}
       activeHeader={activeHeader}
       gridHoverStatusMessage={gridHoverStatusMessage}
       gameOverModal={
@@ -940,7 +953,7 @@ export function useEncounterActivePlaySurface(
       zoomControlProps={zoomControlProps}
       encounterGrid={
         gridViewModel ? (
-          <EncounterGrid
+          <CombatGrid
             grid={gridViewModel}
             zoom={zoom}
             pan={pan}

@@ -35,7 +35,7 @@ Files under **`src/features/combat/**`** must **not** import from **`src/feature
 | [`avatar/CombatantAvatar.tsx`](../../src/features/combat/components/avatar/CombatantAvatar.tsx) | Token/portrait avatar; uses `presentation/resolveCombatantAvatarSrc`. |
 | [`cards/`](../../src/features/combat/components/cards/) | `CombatantPreviewCard`, `combatant-badges` (incl. `combatToneToAppBadgeTone`, chip rows), `CombatActionPreviewCard`. |
 | [`action-row/CombatActionRowBase.tsx`](../../src/features/combat/components/action-row/CombatActionRowBase.tsx) | Compact action row presentation (badges + optional footer link props). Router/campaign link construction stays in Encounter (`ActionRow`). |
-| [`grid/`](../../src/features/combat/components/grid/) | **`CombatGrid`** (tactical renderer), **`cellVisualState`**, **`cellVisualStyles`**, tests. Encounter exposes a thin **`EncounterGrid`** wrapper that forwards the same props. |
+| [`grid/`](../../src/features/combat/components/grid/) | **`CombatGrid`** (tactical renderer), **`cellVisualState`**, **`cellVisualStyles`**, tests. Active play composes **`CombatGrid`** from [`useEncounterActivePlaySurface`](../../src/features/encounter/hooks/useEncounterActivePlaySurface.tsx); the encounter barrel may re-export **`CombatGrid` as `EncounterGrid`** only as an alias. |
 | [`panels/`](../../src/features/combat/components/panels/) | Prop-driven drawer **panel leaves**: AoE placement, single-cell placement, spell caster options. Drawer shells stay in Encounter (`CombatantActionDrawer`, etc.). |
 | [`combat-log/`](../../src/features/combat/components/combat-log/) | **`CombatLogEntryGroup`**, **`PresentableEffectsList`**, **`PresentableEffectsHeaderChips`**. Log panel/modal shells stay in Encounter (`CombatLogPanel`, `CombatLogModal`). |
 
@@ -82,4 +82,4 @@ Reserved for reusable combat hooks that have **no** Encounter imports. May be em
 ## Related reference
 
 - [badges.md](./badges.md) — action vs condition badge pipelines (paths updated for mechanics + `features/combat`).
-- [space.md](./space.md), [environments.md](./environments.md) — grid / perception / `CombatGrid` vs `EncounterGrid`.
+- [space.md](./space.md), [environments.md](./environments.md) — grid / perception / `CombatGrid` and encounter orchestration (see [client/grid.md](./combat/client/grid.md)).

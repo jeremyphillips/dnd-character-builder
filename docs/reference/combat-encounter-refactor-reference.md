@@ -412,11 +412,12 @@ These remain encounter-owned.
 
 ## Grid split guidance
 
-**Phase 3D:** Generic grid rendering lives in **`CombatGrid`**; **`EncounterGrid`** is a thin wrapper that forwards the same props to **`CombatGrid`** (feature-owned import path for the active encounter screen).
+**Phase 3D (current):** Generic grid rendering lives in **`CombatGrid`**. The standalone **`EncounterGrid.tsx`** wrapper file was removed; active play imports **`CombatGrid`** directly from **`useEncounterActivePlaySurface`**. The encounter feature barrel may export **`CombatGrid` as `EncounterGrid`** for backwards-compatible import paths only.
 
 ```txt
 src/features/combat/components/grid/CombatGrid.tsx
-src/features/encounter/components/active/grid/EncounterGrid.tsx
+src/features/encounter/hooks/useEncounterActivePlaySurface.tsx   # composes CombatGrid
+src/features/encounter/components/index.ts                        # optional: CombatGrid as EncounterGrid
 ```
 
 Cell visual plumbing (`cellVisualState.ts`, `cellVisualStyles.ts`) lives under **`src/features/combat/components/grid/`**.
@@ -428,7 +429,7 @@ Cell visual plumbing (`cellVisualState.ts`, `cellVisualStyles.ts`) lives under *
 - callback-based interaction hooks
 - view-model-driven rendering
 
-### Encounter shell (routes / parents / `EncounterGrid` wrapper) should own
+### Encounter shell (routes / parents / `useEncounterActivePlaySurface`) should own
 
 - supplying the grid view model and callbacks (pan/zoom, hover, token popover renderer, interaction flags)
 - feature-specific orchestration around the grid (selected actor/target, modals, drawers, DM workflow) — **not** inside `CombatGrid`
@@ -588,7 +589,7 @@ This adapter should avoid leaking editor-facing concepts deep into combat runtim
 ### Phase 3 — Extract reusable client combat UI
 
 - extract avatar/card/badge/chip primitives
-- split `EncounterGrid` into generic renderer + encounter wrapper
+- split grid into **`CombatGrid`** (generic renderer) + encounter orchestration in **`useEncounterActivePlaySurface`** (wrapper file removed; optional barrel alias `EncounterGrid`)
 - split action/drawer **panel leaves** (under `src/features/combat/components/panels/`, etc.) from encounter **drawer shells** (`CombatantActionDrawer`, ally/opponent drawers)
 - split combat log **display leaves** (`src/features/combat/components/combat-log/`) from encounter **log shells** (`CombatLogPanel`, `CombatLogModal`)
 

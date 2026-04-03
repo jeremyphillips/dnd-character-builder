@@ -1,3 +1,8 @@
+/**
+ * Encounter-owned surfaces and workflow UI. Prefer importing combat primitives from
+ * `@/features/combat` (or `@/features/combat/components`) in new code — `CombatGrid as EncounterGrid`
+ * below is a backwards-compatible alias only, not a second grid implementation.
+ */
 export { SelectedEntitiesLane } from '@/ui/patterns'
 export { AllyRosterLane } from './setup/roster/AllyRosterLane'
 export { OpponentRosterLane } from './setup/roster/OpponentRosterLane'
@@ -43,7 +48,7 @@ export {
 } from '@/features/combat/components'
 export { CombatLogPanel } from './active/combat-log/CombatLogPanel'
 export { EncounterActiveSidebar } from './active/grid/EncounterActiveSidebar'
-export { EncounterGrid } from './active/grid/EncounterGrid'
+export { CombatGrid as EncounterGrid } from '@/features/combat/components'
 export { EncounterGridSetup } from './setup/options/EncounterGridSetup'
 export { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets'
 export type { GridSizePreset } from '@/shared/domain/grid/gridPresets'

@@ -224,7 +224,7 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 
 1. **`suppressCanvasPanOnCells`** — in **place** mode and **draw → path** mode, cell `pointerdown`/`pointerup` events call `stopPropagation` so the canvas pan handler never starts a drag from cell clicks.
 2. **Window-level `pointerup` safety net** — `useCanvasPan` registers a `window` `pointerup` listener that clears drag state even when a child stops propagation, preventing stranded `isDragging` / grabbing cursor.
-3. **`hasDragMoved` guard** — `LocationGridAuthoringSection` checks `hasDragMoved()` before dispatching `onCellClick`, matching the pattern used by `EncounterGrid`. This blocks accidental cell actions from drag gestures that started outside cells.
+3. **`hasDragMoved` guard** — `LocationGridAuthoringSection` checks `hasDragMoved()` before dispatching `onCellClick`, matching the pattern used by the tactical grid (`CombatGrid` in active encounter play). This blocks accidental cell actions from drag gestures that started outside cells.
 
 **Remaining scope:** switching to `pointerup`-based placement (instead of browser `click`) with a movement threshold would further improve reliability on trackpads. This is deferred.
 

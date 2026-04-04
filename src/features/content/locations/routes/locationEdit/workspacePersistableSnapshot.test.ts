@@ -7,6 +7,8 @@ import type { LocationContentItem } from '@/features/content/locations/domain/re
 
 import {
   buildHomebrewWorkspacePersistableParts,
+  buildMapWorkspacePersistablePayloadFromGridDraft,
+  mapWorkspacePersistableTokenFromGridDraft,
   serializeLocationWorkspacePersistableSnapshot,
 } from './workspacePersistableSnapshot';
 
@@ -125,8 +127,31 @@ describe('serializeLocationWorkspacePersistableSnapshot', () => {
   });
 });
 
+describe('mapWorkspacePersistablePayload (shared homebrew + system grid token)', () => {
+  it('token matches stableStringify of map slice from buildHomebrewWorkspacePersistableParts', () => {
+    const form = baseForm();
+    form.scale = 'world';
+    const draft = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0'] }],
+    };
+    const { mapBootstrapPayload } = buildHomebrewWorkspacePersistableParts(form, draft, [], null);
+    expect(mapWorkspacePersistableTokenFromGridDraft(draft)).toBe(stableStringify(mapBootstrapPayload));
+  });
+
+  it('buildMapWorkspacePersistablePayloadFromGridDraft matches mapBootstrapPayload from parts', () => {
+    const form = baseForm();
+    form.scale = 'world';
+    const draft = INITIAL_LOCATION_GRID_DRAFT;
+    const parts = buildHomebrewWorkspacePersistableParts(form, draft, [], null);
+    expect(buildMapWorkspacePersistablePayloadFromGridDraft(draft)).toEqual(parts.mapBootstrapPayload);
+  });
+});
+
 /**
  * Matrix: each row is a distinct persistable dimension; snapshot must change when only that dimension changes.
+ *
+ * **Slices covered:** location form (`form slice`), map authoring (`map slice`), building stair connections (`regression` row).
  */
 describe('workspacePersistableSnapshot matrix', () => {
   const worldForm = () => {

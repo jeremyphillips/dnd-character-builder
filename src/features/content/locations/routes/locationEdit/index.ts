@@ -5,6 +5,8 @@ export { useLocationEditSaveActions } from './useLocationEditSaveActions';
 export {
   buildHomebrewWorkspacePersistableParts,
   buildCampaignWorkspacePersistableParts,
+  buildMapWorkspacePersistablePayloadFromGridDraft,
+  mapWorkspacePersistableTokenFromGridDraft,
   serializeLocationWorkspacePersistableSnapshot,
 } from './workspacePersistableSnapshot';
 export type {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { stableStringify } from '@/features/content/locations/components/locationGridDraft.utils';
 import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
 import { LOCATION_FORM_DEFAULTS } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
@@ -9,6 +10,7 @@ import {
   buildSystemLocationWorkspaceAuthoringContract,
   getSystemPatchWorkspaceSaveGate,
 } from './locationWorkspaceAuthoringAdapters';
+import { mapWorkspacePersistableTokenFromGridDraft } from './workspacePersistableSnapshot';
 
 describe('buildHomebrewLocationWorkspaceAuthoringContract', () => {
   const loc = { source: 'campaign', scale: 'world' } as LocationContentItem;
@@ -77,6 +79,35 @@ describe('buildSystemLocationWorkspaceAuthoringContract', () => {
     });
     expect(c.canSave).toBe(false);
     expect(c.saveBlockReason).toMatch(/validation/i);
+  });
+
+  it('uses the same map persistable token as homebrew map assembly (cross-mode parity)', () => {
+    const patch = { foo: 'bar' };
+    const baseline = { baz: 1 };
+    const gridDraft = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      regionEntries: [{ id: 'r1', name: 'Z', colorKey: 'regionRed' as const }],
+    };
+    const gridDraftBaseline = structuredClone(INITIAL_LOCATION_GRID_DRAFT);
+    const c = buildSystemLocationWorkspaceAuthoringContract({
+      isPatchDriverDirty: false,
+      isGridDraftDirty: true,
+      patchDocument: patch,
+      patchBaseline: baseline,
+      gridDraft,
+      gridDraftBaseline,
+      validationApiRef: validationOk,
+    });
+    const expectedDraft = stableStringify({
+      patch,
+      grid: mapWorkspacePersistableTokenFromGridDraft(gridDraft),
+    });
+    const expectedPersisted = stableStringify({
+      patch: baseline,
+      grid: mapWorkspacePersistableTokenFromGridDraft(gridDraftBaseline),
+    });
+    expect(c.draftProjection).toBe(expectedDraft);
+    expect(c.persistedBaselineProjection).toBe(expectedPersisted);
   });
 });
 

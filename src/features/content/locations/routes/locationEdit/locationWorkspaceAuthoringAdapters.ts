@@ -1,9 +1,6 @@
 import type { RefObject } from 'react';
 
-import {
-  normalizedAuthoringPayloadFromGridDraft,
-  stableStringify,
-} from '@/features/content/locations/components/locationGridDraft.utils';
+import { stableStringify } from '@/features/content/locations/components/locationGridDraft.utils';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
 import type { LocationFormValues } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
@@ -12,17 +9,10 @@ import type { LocationVerticalStairConnection } from '@/shared/domain/locations'
 import { getHomebrewWorkspaceSaveBlockReason } from './homebrewWorkspaceSaveGate';
 import { isSystemLocationWorkspaceDirty } from './systemLocationWorkspaceDirty';
 import {
+  mapWorkspacePersistableTokenFromGridDraft,
   serializeLocationWorkspacePersistableSnapshot,
 } from './workspacePersistableSnapshot';
 import type { LocationWorkspaceAuthoringContract } from './locationWorkspaceAuthoringContract';
-
-function systemGridPersistableToken(draft: LocationGridDraftState): string {
-  const normalized = normalizedAuthoringPayloadFromGridDraft(draft);
-  return stableStringify({
-    excludedCellIds: [...draft.excludedCellIds].sort(),
-    ...normalized,
-  });
-}
 
 /**
  * Patch rail validation gate — mirrors {@link useSystemPatchActions} `savePatch` (validate before persist).
@@ -106,11 +96,11 @@ export function buildSystemLocationWorkspaceAuthoringContract(params: {
     saveBlockReason,
     draftProjection: stableStringify({
       patch: patchDocument,
-      grid: systemGridPersistableToken(gridDraft),
+      grid: mapWorkspacePersistableTokenFromGridDraft(gridDraft),
     }),
     persistedBaselineProjection: stableStringify({
       patch: patchBaseline,
-      grid: systemGridPersistableToken(gridDraftBaseline),
+      grid: mapWorkspacePersistableTokenFromGridDraft(gridDraftBaseline),
     }),
   };
 }

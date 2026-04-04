@@ -147,16 +147,23 @@ System entries (`source === 'system'`) are **not** saved through the homebrew `h
 
 `useLocationEditWorkspaceModel` memoizes **`serializeLocationWorkspacePersistableSnapshot(...)`** with dependencies on the full form watch result, `gridDraft`, `buildingStairConnections`, and `loc`. If profiling shows the snapshot as a hotspot, consider narrowing form subscriptions or caching normalized map slices only after measuring.
 
-### Adding persisted workspace state (checklist)
+### Adding persisted workspace state (participation checklist)
+
+**Assembly:** Declare new persistable data in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) — the module doc lists **location** vs **map** slices. `buildHomebrewWorkspacePersistableParts` / `serializeLocationWorkspacePersistableSnapshot` drive homebrew dirty + save; **`mapWorkspacePersistableTokenFromGridDraft`** must stay aligned with the map slice so **system** `draftProjection` / `persistedBaselineProjection` do not drift from homebrew map semantics.
 
 When you introduce new data that must be **saved** from this editor:
 
-1. Extend **`buildHomebrewWorkspacePersistableParts`** in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) (or the domain types it uses) so the snapshot includes the new field.
-2. Ensure **`handleHomebrewSubmit`** in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) persists it (should follow automatically if step 1 uses the shared builder).
-3. Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in `useLocationEditSaveActions`.
-4. Add a **test case** in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) under `workspacePersistableSnapshot matrix` (or a dedicated example) proving the snapshot changes when that field changes.
+1. **Homebrew snapshot + save** — Extend **`buildHomebrewWorkspacePersistableParts`** (and types such as `LocationFormValues` / `LocationGridDraftState` / building stairs as needed) so the snapshot includes the new field. **`handleHomebrewSubmit`** should follow automatically if it uses the shared builder.
+2. **Map-only fields** — Update the **full** map pipeline so dirty/save stay consistent:
+   - Normalization / wire shape: [`normalizedAuthoringPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts) and shared `normalizeLocationMapAuthoringFields` as applicable.
+   - Draft **comparison** (dirty): [`gridDraftPersistableEquals`](src/features/content/locations/components/locationGridDraft.utils.ts) — must reflect the same persistable meaning as the snapshot for map data.
+   - **System** map side: projections use **`mapWorkspacePersistableTokenFromGridDraft`** via [`locationWorkspaceAuthoringAdapters.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.ts); do **not** route system map dirty through the homebrew snapshot string (patch + grid baselines remain the system model).
+3. **Baselines** — Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts).
+4. **Tests** — Add a **matrix** row or focused case in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) proving the snapshot changes when that field changes; for map changes, cross-mode parity is covered in [`locationWorkspaceAuthoringAdapters.test.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.test.ts).
 
 **Whitespace:** `toLocationInput` and map normalization may trim strings; user-visible spacing-only edits might not dirty the snapshot—document behavior if you add fields where that matters.
+
+**Plan:** `.cursor/plans/location_workspace_persistable_slice_participation.plan.md` (persistable slice participation / shared map token).
 
 ### State ownership (authoring standard)
 
@@ -397,5 +404,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 10. **State ownership:** persistable rail edits must live in **`gridDraft` / location form / stairs** (see **State ownership (authoring standard)**). Plan: `.cursor/plans/location_workspace_dirty_state_4d54eedc.plan.md`.
 11. **Shared authoring contract:** extend editor-facing behavior via **`LocationWorkspaceAuthoringContract`** (`locationWorkspaceAuthoringContract.ts`); keep mode-specific persistence in adapters. Plan: `.cursor/plans/location_workspace_authoring_contract.plan.md`.
 12. **Debounced persistable fields:** use **`useDebouncedPersistableField`** + **`flushDebouncedPersistableFieldsRef`** + **`flushSync`** before save as in region metadata; see **Debounced persistable fields** above. Plan: `.cursor/plans/location_workspace_debounced_persistable_flush.plan.md`.
+13. **Persistable slice participation:** shared map assembly in **`buildMapWorkspacePersistablePayloadFromGridDraft`** / **`mapWorkspacePersistableTokenFromGridDraft`** ([`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts)); system adapters consume the same map token. See **Adding persisted workspace state** and plan: `.cursor/plans/location_workspace_persistable_slice_participation.plan.md`.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

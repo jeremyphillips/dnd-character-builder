@@ -10,6 +10,16 @@ import type { LocationInput } from '@/features/content/locations/domain/types';
 import type { LocationVerticalStairConnection } from '@/shared/domain/locations';
 
 /**
+ * **Homebrew persistable assembly** (this module)
+ *
+ * Slices that feed `buildHomebrewWorkspacePersistableParts` / `serializeLocationWorkspacePersistableSnapshot`:
+ * - **Location** — `toLocationInput(values)` plus {@link mergeBuildingProfileForSave} for building stair connections.
+ * - **Map** — {@link buildMapWorkspacePersistablePayloadFromGridDraft} (also {@link mapWorkspacePersistableTokenFromGridDraft} for system grid projections in `locationWorkspaceAuthoringAdapters.ts`).
+ *
+ * Map dirty comparison for both modes still uses `gridDraftPersistableEquals` in `locationGridDraft.utils.ts`; new map fields must stay aligned with normalization there and with `normalizedAuthoringPayloadFromGridDraft`.
+ */
+
+/**
  * Persistable location + map payload for **homebrew** location edit (`source === 'campaign'`) — **single source of truth** for:
  * - `locationRepo.updateEntry` input
  * - `bootstrapDefaultLocationMap` options
@@ -24,6 +34,25 @@ export type HomebrewWorkspacePersistableParts = {
 };
 
 /**
+ * Persistable **map** payload from grid draft: sorted `excludedCellIds` + normalized authoring fields.
+ * Used by homebrew save/bootstrap and by system workspace `draftProjection` / `persistedBaselineProjection` grid tokens — keep a single implementation.
+ */
+export function buildMapWorkspacePersistablePayloadFromGridDraft(
+  gridDraft: LocationGridDraftState,
+): HomebrewWorkspacePersistableParts['mapBootstrapPayload'] {
+  const normalized = normalizedAuthoringPayloadFromGridDraft(gridDraft);
+  return {
+    excludedCellIds: [...gridDraft.excludedCellIds].sort(),
+    ...normalized,
+  };
+}
+
+/** Stable string token for the map slice (for system contract projections and parity tests). */
+export function mapWorkspacePersistableTokenFromGridDraft(gridDraft: LocationGridDraftState): string {
+  return stableStringify(buildMapWorkspacePersistablePayloadFromGridDraft(gridDraft));
+}
+
+/**
  * Builds the same persistable location + map payloads used by save and dirty detection.
  * Keep in sync with {@link useLocationEditSaveActions} `handleHomebrewSubmit`.
  */
@@ -35,11 +64,7 @@ export function buildHomebrewWorkspacePersistableParts(
 ): HomebrewWorkspacePersistableParts {
   const input = toLocationInput(values);
   const locationInput = mergeBuildingProfileForSave(input, loc, buildingStairConnections);
-  const normalized = normalizedAuthoringPayloadFromGridDraft(gridDraft);
-  const mapBootstrapPayload: HomebrewWorkspacePersistableParts['mapBootstrapPayload'] = {
-    excludedCellIds: [...gridDraft.excludedCellIds].sort(),
-    ...normalized,
-  };
+  const mapBootstrapPayload = buildMapWorkspacePersistablePayloadFromGridDraft(gridDraft);
   return { locationInput, mapBootstrapPayload };
 }
 

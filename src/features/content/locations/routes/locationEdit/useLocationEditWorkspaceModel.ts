@@ -483,7 +483,7 @@ export function useLocationEditWorkspaceModel({
   const handleUpdateRegionEntry = useCallback(
     (
       regionId: string,
-      patch: Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>,
+      patch: Partial<Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>>,
     ) => {
       setGridDraft((prev) => {
         const cur = prev.regionEntries.find((r) => r.id === regionId);

@@ -1,73 +1,126 @@
-import Button from '@mui/material/Button';
+import { useEffect, useRef } from 'react';
+import { FormProvider, useForm, useWatch, type UseFormReset } from 'react-hook-form';
+
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { LOCATION_MAP_DEFAULT_REGION_NAME } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import { LOCATION_MAP_REGION_COLOR_KEYS } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
 import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
-import AppForm from '@/ui/patterns/form/AppForm';
 import FormSelectField from '@/ui/patterns/form/FormSelectField';
 import FormTextField from '@/ui/patterns/form/FormTextField';
 
-export type RegionMetadataFormValues = {
-  name: string;
-  description: string;
-  colorKey: LocationMapRegionColorKey;
-};
+import {
+  normalizeRegionDescriptionForDraft,
+  normalizeRegionNameForDraft,
+  regionMetadataToFormValues,
+  type RegionMetadataFormValues,
+  type RegionMetadataPersistablePatch,
+} from './regionMetadataDraftAdapter';
 
-type LocationMapRegionMetadataFormProps = {
-  region: LocationMapRegionAuthoringEntry;
-  onSubmitValues: (values: RegionMetadataFormValues) => void;
-  formId?: string;
-  submitLabel?: string;
-  /** When true (default), explains that panel Save applies to the map draft; header Save persists the campaign. */
-  showPersistHint?: boolean;
-};
+export type { RegionMetadataFormValues };
+
+const DESCRIPTION_SYNC_DEBOUNCE_MS = 300;
 
 const colorOptions = LOCATION_MAP_REGION_COLOR_KEYS.map((k) => ({ value: k, label: k }));
 
+type LocationMapRegionMetadataFormProps = {
+  region: LocationMapRegionAuthoringEntry;
+  /** Writes persistable fields into workspace `gridDraft.regionEntries` as the user edits. */
+  onPatchRegion: (patch: RegionMetadataPersistablePatch) => void;
+  formId?: string;
+  /** When true (default), explains draft vs header Save. */
+  showPersistHint?: boolean;
+};
+
 /**
- * Shared name / description / colorKey editor for authored map regions (Map rail + Selection).
+ * Name / description / colorKey for authored map regions. Persistable fields sync into workspace draft
+ * (no panel Submit required for dirty/header Save).
  */
 export function LocationMapRegionMetadataForm({
   region,
-  onSubmitValues,
+  onPatchRegion,
   formId,
-  submitLabel = 'Save',
   showPersistHint = true,
 }: LocationMapRegionMetadataFormProps) {
+  const patchRef = useRef(onPatchRegion);
+  patchRef.current = onPatchRegion;
+
+  const methods = useForm<RegionMetadataFormValues>({
+    defaultValues: regionMetadataToFormValues(region),
+  });
+  const { control, reset } = methods;
+
+  const resetRef = useRef<UseFormReset<RegionMetadataFormValues>>(reset);
+  resetRef.current = reset;
+
+  useEffect(() => {
+    resetRef.current(regionMetadataToFormValues(region));
+    // Only when switching regions — do not depend on `region` fields or we reset after every draft patch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- region.id only
+  }, [region.id]);
+
+  const description = useWatch({ control, name: 'description' });
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      patchRef.current({
+        description: normalizeRegionDescriptionForDraft(
+          description === undefined || description === null ? '' : String(description),
+        ),
+      });
+    }, DESCRIPTION_SYNC_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [description, region.id]);
+
+  const patchName = (raw: string) => {
+    patchRef.current({ name: normalizeRegionNameForDraft(raw) });
+  };
+
+  const patchColor = (raw: string) => {
+    patchRef.current({ colorKey: raw as LocationMapRegionColorKey });
+  };
+
   return (
-    <AppForm<RegionMetadataFormValues>
-      key={region.id}
-      id={formId}
-      defaultValues={{
-        name: region.name,
-        description: region.description ?? '',
-        colorKey: region.colorKey,
-      }}
-      onSubmit={(data) => {
-        onSubmitValues({
-          name: data.name.trim() || LOCATION_MAP_DEFAULT_REGION_NAME,
-          description: data.description.trim() === '' ? '' : data.description.trim(),
-          colorKey: data.colorKey,
-        });
-      }}
-    >
-      {showPersistHint ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-          Use the button below to apply changes to this region on the map draft. Use Save in the header to persist the
-          location and map to the campaign.
-        </Typography>
-      ) : null}
-      <FormTextField name="name" label="Name" required />
-      <FormTextField name="description" label="Description" multiline rows={3} />
-      <FormSelectField name="colorKey" label="Color" options={colorOptions} required />
-      <Stack direction="row" justifyContent="flex-end">
-        <Button type="submit" variant="contained" size="small">
-          {submitLabel}
-        </Button>
-      </Stack>
-    </AppForm>
+    <FormProvider {...methods}>
+      <form
+        id={formId}
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        noValidate
+      >
+        <Stack spacing={2}>
+          {showPersistHint ? (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Changes apply to the map draft as you edit. Use <strong>Save</strong> in the header to persist the
+              location and map to the campaign.
+            </Typography>
+          ) : null}
+          <FormTextField
+            name="name"
+            label="Name"
+            required
+            size="small"
+            onAfterChange={patchName}
+          />
+          <FormTextField
+            name="description"
+            label="Description"
+            multiline
+            rows={3}
+            size="small"
+          />
+          <FormSelectField
+            name="colorKey"
+            label="Color"
+            options={colorOptions}
+            required
+            size="small"
+            onAfterChange={patchColor}
+          />
+        </Stack>
+      </form>
+    </FormProvider>
   );
 }

@@ -17,7 +17,6 @@ import {
   type LocationCellAuthoringPanelProps,
 } from '../LocationCellAuthoringPanel';
 import { LocationMapRegionMetadataForm } from './LocationMapRegionMetadataForm';
-import type { RegionMetadataFormValues } from './LocationMapRegionMetadataForm';
 
 export type { StairWorkspaceInspect, StairPairingContext };
 
@@ -34,7 +33,7 @@ export type LocationEditorSelectionPanelProps = {
   regionEntries: readonly LocationMapRegionAuthoringEntry[];
   onUpdateRegionEntry: (
     regionId: string,
-    patch: Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>,
+    patch: Partial<Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>>,
   ) => void;
   /** Uses erase/delete draft path (same as Erase on that object); clears map selection when it matches. */
   onRemovePlacedObjectFromMap?: (cellId: string, objectId: string) => void;
@@ -87,14 +86,7 @@ export function LocationEditorSelectionPanel({
         <LocationMapRegionMetadataForm
           region={region}
           formId="location-map-region-metadata-selection"
-          submitLabel="Save"
-          onSubmitValues={(values: RegionMetadataFormValues) => {
-            onUpdateRegionEntry(region.id, {
-              name: values.name,
-              description: values.description.trim() === '' ? undefined : values.description.trim(),
-              colorKey: values.colorKey,
-            });
-          }}
+          onPatchRegion={(patch) => onUpdateRegionEntry(region.id, patch)}
         />
       );
     }

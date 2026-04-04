@@ -1,6 +1,6 @@
 ---
 name: Location workspace dirty state
-overview: Phases 1–4 are complete (snapshot + baseline, shared builder, tests/docs, system dirty helper + memo). **Follow-up:** § Refactor-first plan (Phases A–E) moves persistable nested-inspector edits into workspace-owned draft so header dirty/save does not depend on panel-local submit. Risks/gaps in § Remaining risks and gaps; contributor detail in docs/reference/location-workspace.md.
+overview: Phases 1–4 are complete (snapshot + baseline, shared builder, tests/docs, system dirty helper + memo). **Refactor follow-up:** Phase A (draft ownership inventory) is done; Phases B–E migrate nested inspectors — start with `LocationMapRegionMetadataForm`. See § Refactor-first plan. Contributor detail in docs/reference/location-workspace.md.
 todos:
   - id: snapshot-helper
     content: Add workspacePersistableSnapshot (form + normalized map + building stairs) aligned with save
@@ -34,10 +34,10 @@ todos:
     status: completed
   - id: refactor-phaseA-ownership-model
     content: "Refactor follow-up A: document workspace draft ownership; classify persistable vs ephemeral; migration list of nested inspectors"
-    status: pending
+    status: completed
   - id: refactor-phaseB-reference-inspector
     content: "Refactor follow-up B: migrate one representative nested inspector end-to-end to workspace draft"
-    status: pending
+    status: completed
   - id: refactor-phaseC-header-contract
     content: "Refactor follow-up C: header dirty/save from draft vs snapshot only; separate dirty from valid"
     status: pending
@@ -190,26 +190,47 @@ Keep this pass intentionally narrow.
 
 ### Phase A — establish the ownership model
 
-Define and document the new ownership boundary for workspace state.
+**Status: completed** (ownership note + migration list below).
 
-**Implementation goals:**
+#### Canonical workspace draft sources (campaign edit)
 
-- Identify the canonical workspace draft source(s) that represent persistable authoring state (for example `gridDraft` and any sibling draft slices if needed).
-- Classify current state into:
-  - persistable authoring state
-  - ephemeral UI state
-- Enumerate nested inspectors/panels that currently hold persistable edits locally until a panel Submit action.
+Persistable authoring for the campaign snapshot in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) is assembled from:
 
-**Deliverables:**
+| Source | Location | Serialized via |
+| ------ | -------- | -------------- |
+| **Location form** | `LocationFormValues` (React Hook Form in [`useLocationEditWorkspaceModel.ts`](src/features/content/locations/routes/locationEdit/useLocationEditWorkspaceModel.ts)) | `toLocationInput` |
+| **Map draft** | `LocationGridDraftState` (`gridDraft` / `gridDraftRef`) | `normalizedAuthoringPayloadFromGridDraft` + `excludedCellIds` + region/path/edge/cell data |
+| **Building stairs** | `buildingStairConnections` (state + ref) | Merged in `mergeBuildingProfileForSave` when `loc.scale === 'building'` |
 
-- A short ownership note in the plan describing which state belongs to workspace draft and which state may remain local.
-- A migration list of affected inspectors, ordered by risk / frequency of use.
+**System location patch:** map side still uses `gridDraft` vs baseline; metadata uses [`patchDriver`](src/features/content/shared/editor/patchDriver.ts) — not the campaign snapshot string.
 
-**Acceptance criteria:**
+#### Ephemeral UI state (must stay local)
 
-- There is a clear, shared rule for future work: persistable edits must not live only in local panel state.
+Examples: map editor **mode** and tool selection, **paint** `activePaint` / active region id for painting, **map selection** (`mapSelection`), rail **tab** (`railSection`), right-rail **open**, **zoom/pan**, async **picker loading** lists, **busy** flags on async actions. These are excluded from the persistable snapshot per [`locationGridDraft.utils.ts`](src/features/content/locations/components/locationGridDraft.utils.ts) / [`location-workspace.md`](docs/reference/location-workspace.md).
+
+#### Nested inspectors — audit (submit-to-commit vs draft-sync)
+
+| Inspector / area | Persistable path | Gap? |
+| ------------------ | ---------------- | ---- |
+| [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) (Selection → **region**) | **`onPatchRegion`** → `onUpdateRegionEntry` → `gridDraft.regionEntries` (name/color immediate; description debounced) | **Migrated (Phase B)** — [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts). |
+| [`LocationMapStairEndpointInspectForm`](src/features/content/locations/components/workspace/LocationMapSelectionInspectors.tsx) (stairs on floor) | `FormSelectField` **onAfterChange** → `onUpdateCellObjects` | No — updates `gridDraft` immediately. `AppForm` uses noop `onSubmit`; form is structural. |
+| [`StairPairingLinkForm`](src/features/content/locations/components/workspace/LocationMapSelectionInspectors.tsx) (building pairing) | **Link endpoints** button → async `onLink` | No — commits without a “Save” panel step; nested form state is picker UX only. |
+| [`LocationCellAuthoringPanel`](src/features/content/locations/components/LocationCellAuthoringPanel.tsx) | Callbacks → `onUpdateLinkedLocation` / `onUpdateCellObjects` | No — syncs to draft. |
+| Path / edge / object / edge-run inspectors | Remove / metadata actions via callbacks | No — draft updates inline. |
+| [`LocationMapEditorPaintMapPanel`](src/features/content/locations/components/mapEditor/LocationMapEditorPaintMapPanel.tsx) | Preset color / create region / navigate to edit | Color change uses handlers that update `gridDraft` (see route); full name/description intentionally deferred to Selection. |
+
+**Rule for future panels:** persistable fields → **`gridDraft`**, **location form**, or **building stair connections** (or patch document for system metadata) — not isolated `AppForm` state without syncing.
+
+#### Migration list (Phase B–D order)
+
+1. **P0 — [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx)** — **done (Phase B)**; reference pattern for future panels.
+2. *None others identified* in `components/workspace/` as of Phase A audit that buffer persistable data behind panel Submit only. Re-audit when adding new rail inspectors.
+
+**Acceptance criteria (Phase A):** satisfied — shared rule and ordered migration list are documented above and in [`location-workspace.md`](docs/reference/location-workspace.md).
 
 ### Phase B — refactor one representative inspector end-to-end
+
+**Status: completed** — [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) + [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts); [`FormTextField`](src/ui/patterns/form/FormTextField.tsx) gained optional `onAfterChange`.
 
 Choose the highest-value nested inspector that currently creates the dirty-state gap and use it as the reference implementation.
 

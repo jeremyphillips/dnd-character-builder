@@ -140,9 +140,17 @@ When you introduce new data that must be **saved** from this editor:
 
 ### Nested rail forms (submit-to-commit)
 
-Some inspectors use a **nested** form whose values apply only after a **panel Save** (e.g. [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx)). Until that submit runs, **`gridDraft`** is unchanged, so **`isWorkspaceDirty`** does not include those edits and the header Save will not persist them.
+**Region metadata (Selection → region):** [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) syncs **name** and **color** into `gridDraft.regionEntries` immediately; **description** syncs on a short debounce. Header **Save** / `isWorkspaceDirty` see those edits without a panel Submit. Helpers: [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts).
 
-The region metadata form shows a short hint: apply changes with the panel button, then use the **header Save** for the campaign. Prefer **sync-on-change** into `gridDraft` only if you need the header dirty state to track every keystroke (trade-off: more updates and potential merge conflicts with the nested form).
+Other inspectors that still use nested `AppForm` shells may use **noop** `onSubmit` only to host fields whose updates go through **`onAfterChange`** or similar (e.g. stair direction) — persistable data still flows through workspace draft callbacks.
+
+### Workspace draft ownership (Phase A)
+
+**Target rule (refactor follow-up):** anything that affects **saved** location or map data should live in workspace-owned draft state (`LocationFormValues`, `gridDraft`, building `stairConnections`, or system patch document) — not only in nested `AppForm` local state. **Ephemeral** UI (tool mode, selection chrome, zoom/pan, rail open, async picker loading) stays component-local.
+
+**Canonical sources** for the campaign persistable snapshot: see **Dirty state and Save (campaign edit)** and `buildCampaignWorkspacePersistableParts` in `routes/locationEdit/workspacePersistableSnapshot.ts`.
+
+**Phase B (reference inspector):** region metadata (above) uses [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts) for read/write normalization. Further migration order: `.cursor/plans/location_workspace_dirty_state_4d54eedc.plan.md` (Refactor-first plan).
 
 ---
 
@@ -325,5 +333,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 7. **Select mode / region hover:** resolver and grid chrome live under `domain/mapEditor/select-mode/` (`resolveSelectModeInteractiveTarget`, `buildSelectModeInteractiveTargetInput`, `resolveSelectModeRegionOrCellSelection`, `refineSelectModeClickAfterRegionDrill`, `locationMapSelectionHitTest`) plus `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
 8. **Persistable dirty snapshot:** when adding new state that is **saved** from this editor but not part of `LocationFormValues` or `gridDraft` (e.g. parallel `useState` merged in `handleCampaignSubmit`), extend **`buildCampaignWorkspacePersistableParts`** (shared by save + **`serializeLocationWorkspacePersistableSnapshot`**) and baseline updates in **`useLocationMapHydration`** / **`useLocationEditSaveActions`**. Tests: `workspacePersistableSnapshot.test.ts`.
 9. **System location edit:** dirty uses **`isSystemLocationWorkspaceDirty`** (`patchDriver.isDirty()` OR **`isGridDraftDirty`**), not the campaign snapshot — see **Dirty state — system location patch** above. Tests: `systemLocationWorkspaceDirty.test.ts`.
+10. **Workspace draft ownership:** persistable rail edits should sync into **`gridDraft` / form / stairs** (see **Workspace draft ownership (Phase A)**). Phase B+ migrates nested submit-to-commit panels; plan: `.cursor/plans/location_workspace_dirty_state_4d54eedc.plan.md`.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

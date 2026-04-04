@@ -99,11 +99,11 @@ The workspace is composed of feature-owned components:
 
 ### Shared authoring contract (editor-facing)
 
-The **shared editor-facing contract** for dirty state, saveability, and projections is defined in TypeScript as **`LocationWorkspaceAuthoringContract`** (`routes/locationEdit/locationWorkspaceAuthoringContract.ts`). **Thin adapters** build that shape: **`buildHomebrewLocationWorkspaceAuthoringContract`** (full-draft snapshot vs baseline) and **`buildSystemLocationWorkspaceAuthoringContract`** (patch JSON + grid persistable token, combined dirty via `isSystemLocationWorkspaceDirty`). **`useLocationEditWorkspaceModel`** exposes **`authoringContract`** (or `null` when the entry is missing). Modes are **`system`** (patch-backed) vs **`homebrew`** (user-authored locations; persisted `source === 'campaign'` — the contract name is editor vocabulary). **Dirty** and **saveable** remain separate fields (`isDirty` / `canSave` / `saveBlockReason`). **Projections** (`draftProjection`, `persistedBaselineProjection`) are comparable views for tooling or future generic UI; homebrew uses the serialized persistable snapshot string; system uses `stableStringify({ patch, grid })` (see `locationWorkspaceAuthoringAdapters.ts`). Further UI wiring is tracked in `.cursor/plans/location_workspace_authoring_contract.plan.md` (Phase C).
+The **shared editor-facing contract** for dirty state, saveability, and projections is defined in TypeScript as **`LocationWorkspaceAuthoringContract`** (`routes/locationEdit/locationWorkspaceAuthoringContract.ts`). **Thin adapters** build that shape: **`buildHomebrewLocationWorkspaceAuthoringContract`** (full-draft snapshot vs baseline) and **`buildSystemLocationWorkspaceAuthoringContract`** (patch JSON + grid persistable token, combined dirty via `isSystemLocationWorkspaceDirty`). **`useLocationEditWorkspaceModel`** exposes **`authoringContract`** (or `null` when the entry is missing). **`LocationEditRoute`** passes **`authoringContract.isDirty`**, **`!canSave`** (as `saveDisabled`), and **`saveBlockReason`** into **`LocationEditCampaignWorkspace`** and **`LocationEditSystemPatchWorkspace`** / **`LocationEditorHeader`** so the shell does not branch on mode-specific persistence. Modes are **`system`** (patch-backed) vs **`homebrew`** (user-authored locations; persisted `source === 'campaign'` — the contract name is editor vocabulary). **Dirty** and **saveable** remain separate fields (`isDirty` / `canSave` / `saveBlockReason`). **Projections** (`draftProjection`, `persistedBaselineProjection`) are comparable views for tooling or future generic UI; homebrew uses the serialized persistable snapshot string; system uses `stableStringify({ patch, grid })` (see `locationWorkspaceAuthoringAdapters.ts`).
 
 ### Dirty state and Save (campaign edit)
 
-The header **Save** button is driven by **`isWorkspaceDirty`** from `useLocationEditWorkspaceModel`, not React Hook Form’s `isDirty` alone. **Dirty** means the **persistable workspace snapshot** differs from the last baseline.
+The header **Save** button is driven by **`authoringContract.isDirty`** (homebrew mode) from the shared contract, not React Hook Form’s `isDirty` alone. The model still exposes **`isWorkspaceDirty`** as an alias for that homebrew dirty flag. **Dirty** means the **persistable workspace snapshot** differs from the last baseline.
 
 **Single source of truth:** **`buildCampaignWorkspacePersistableParts`** (`routes/locationEdit/workspacePersistableSnapshot.ts`) builds the same **`locationInput`** (for `locationRepo.updateEntry`) and **`mapBootstrapPayload`** (for `bootstrapDefaultLocationMap`) that **`handleCampaignSubmit`** uses. **`serializeLocationWorkspacePersistableSnapshot`** stringifies those parts for dirty comparison, so save and dirty cannot drift.
 
@@ -120,23 +120,23 @@ These are **separate** concepts:
 
 | Concept | Meaning |
 | ------- | ------- |
-| **Dirty** (`isWorkspaceDirty`) | The persistable workspace snapshot differs from the last baseline — unsaved work. |
-| **Saveable** (`campaignWorkspaceCanSave`) | The same **gates** as [`handleCampaignSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getCampaignWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/campaignWorkspaceSaveGate.ts) — e.g. campaign **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/mapAuthoring/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
+| **Dirty** (`authoringContract.isDirty` in homebrew mode; alias **`isWorkspaceDirty`** on the model) | The persistable workspace snapshot differs from the last baseline — unsaved work. |
+| **Saveable** (`authoringContract.canSave`; aliases **`campaignWorkspaceCanSave`** on the model) | The same **gates** as [`handleCampaignSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getCampaignWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/campaignWorkspaceSaveGate.ts) — e.g. campaign **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/mapAuthoring/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
 
-The header **Save** button uses **`saveDisabled={!campaignWorkspaceCanSave}`** in addition to the usual **not dirty** / **saving** rules. A draft can be **dirty** while **not** saveable (e.g. invalid grid columns); Save stays disabled until the block reason is cleared. When blocked, [`LocationEditorHeader`](src/features/content/locations/components/workspace/LocationEditorHeader.tsx) can show a **tooltip** (`saveDisabledReason`) explaining why.
+The header **Save** button uses **`saveDisabled={!authoringContract.canSave}`** (via **`LocationEditRoute`**) in addition to the usual **not dirty** / **saving** rules. A draft can be **dirty** while **not** saveable (e.g. invalid grid columns); Save stays disabled until the block reason is cleared. When blocked, [`LocationEditorHeader`](src/features/content/locations/components/workspace/LocationEditorHeader.tsx) can show a **tooltip** (`saveDisabledReason` from **`authoringContract.saveBlockReason`**) explaining why.
 
 ### Dirty state — system location patch
 
-System entries (`source === 'system'`) are **not** saved through the campaign `handleCampaignSubmit` pipeline. The header **Save** button uses a **two-part** dirty rule in [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx):
+System entries (`source === 'system'`) are **not** saved through the campaign `handleCampaignSubmit` pipeline. **Header dirty/saveability** still flows through **`authoringContract`** (system mode). Under the hood the contract uses a **two-part** dirty rule:
 
 | Input | Meaning |
 | ----- | ------- |
 | **`patchDriver.isDirty()`** | The JSON **patch document** managed by [`patchDriver`](src/features/content/shared/editor/patchDriver.ts) differs from the loaded system entry (location metadata / patch fields). |
 | **`isGridDraftDirty`** | Same as campaign: `!gridDraftPersistableEquals(gridDraft, gridDraftBaseline)` — authored **map** cells, paths, edges, regions, etc., changed vs hydrate/save baseline. |
 
-**Combined:** `isSystemLocationWorkspaceDirty(patchDriver.isDirty(), isGridDraftDirty)` in [`systemLocationWorkspaceDirty.ts`](src/features/content/locations/routes/locationEdit/systemLocationWorkspaceDirty.ts). Either side can enable Save.
+**Combined:** `isSystemLocationWorkspaceDirty(patchDriver.isDirty(), isGridDraftDirty)` in [`systemLocationWorkspaceDirty.ts`](src/features/content/locations/routes/locationEdit/systemLocationWorkspaceDirty.ts). Either side can enable Save. **Save blocking** (e.g. patch rail `validateAll`) is exposed as **`authoringContract.canSave`** / **`saveBlockReason`** on the system adapter.
 
-**Not used for system edit:** `isWorkspaceDirty` / `serializeLocationWorkspacePersistableSnapshot` / `workspacePersistBaseline` — those are for **campaign** locations and `toLocationInput` + map bootstrap. Do not replace the system branch with the campaign snapshot unless product requires one unified model (would need patch state folded into a snapshot).
+**Not used for system dirty semantics:** the campaign **`serializeLocationWorkspacePersistableSnapshot`** / **`workspacePersistBaseline`** pipeline — those are for **homebrew** (`toLocationInput` + map bootstrap). Do not replace the system branch with the campaign snapshot unless product requires one unified model (would need patch state folded into a snapshot).
 
 ### Performance (campaign snapshot)
 
@@ -155,7 +155,7 @@ When you introduce new data that must be **saved** from this editor:
 
 ### State ownership (authoring standard)
 
-Persistable authoring state for campaign edit lives in **workspace-owned** structures: `LocationFormValues` (RHF), `LocationGridDraftState` (`gridDraft`), building stair connections, and related route-held state. **Header dirty** (`isWorkspaceDirty`) and **Save** compare and persist that model — not private panel-local buffers.
+Persistable authoring state for campaign edit lives in **workspace-owned** structures: `LocationFormValues` (RHF), `LocationGridDraftState` (`gridDraft`), building stair connections, and related route-held state. **Header dirty** (`authoringContract` / `isWorkspaceDirty` for homebrew) and **Save** compare and persist that model — not private panel-local buffers.
 
 | Rule | Meaning |
 | ---- | ------- |

@@ -30,7 +30,7 @@ import {
   type BuildingWorkspaceFloorItem,
 } from '@/features/content/locations/domain/building/buildingWorkspaceFloors';
 
-import { isSystemLocationWorkspaceDirty, useLocationEditWorkspaceModel } from './locationEdit';
+import { useLocationEditWorkspaceModel } from './locationEdit';
 
 const FORM_ID = 'location-edit-form';
 
@@ -120,12 +120,9 @@ export default function LocationEditRoute() {
     saving,
     success,
     errors,
-    isWorkspaceDirty,
-    campaignWorkspaceCanSave,
-    campaignWorkspaceSaveBlockReason,
+    authoringContract,
     gridDraft,
     setGridDraft,
-    isGridDraftDirty,
     railSection,
     setRailSection,
     rightRailOpen,
@@ -379,7 +376,9 @@ export default function LocationEditRoute() {
         locationPatched={loc.patched}
         ancestryBreadcrumbs={ancestryBreadcrumbs}
         saving={saving}
-        dirty={isSystemLocationWorkspaceDirty(driver.isDirty(), isGridDraftDirty)}
+        dirty={authoringContract?.isDirty ?? false}
+        saveDisabled={!authoringContract?.canSave}
+        saveDisabledReason={authoringContract?.saveBlockReason ?? null}
         errors={errors}
         success={success}
         rightRailOpen={rightRailOpen}
@@ -408,15 +407,15 @@ export default function LocationEditRoute() {
       headerTitle={loc.name}
       ancestryBreadcrumbs={ancestryBreadcrumbs}
       saving={saving}
-      dirty={isWorkspaceDirty}
+      dirty={authoringContract?.isDirty ?? false}
       errors={errors}
       success={success}
       rightRailOpen={rightRailOpen}
       onToggleRightRail={() => setRightRailOpen((o) => !o)}
       onSaveClick={handleCampaignFormSaveClick}
       onBack={handleBack}
-      saveDisabled={!campaignWorkspaceCanSave}
-      saveDisabledReason={campaignWorkspaceSaveBlockReason}
+      saveDisabled={!authoringContract?.canSave}
+      saveDisabledReason={authoringContract?.saveBlockReason ?? null}
       canDelete={canDelete}
       onRequestDelete={() => void handleRequestDelete()}
       deleteLoading={deleting}

@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: authoring-contract-phaseC-wire-ui
     content: "Phase C: header/workspace entry points consume contract; reduce mode leakage"
-    status: pending
+    status: completed
   - id: authoring-contract-phaseD-vocabulary
     content: "Phase D: internal campaign→homebrew renames; preserve storage-facing stability"
     status: pending

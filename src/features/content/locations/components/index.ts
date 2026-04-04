@@ -20,6 +20,7 @@ export type {
   LocationGridDraftState,
 } from './locationGridDraft.types'
 export {
+  buildPersistableMapPayloadFromGridDraft,
   gridDraftPersistableEquals,
   normalizedAuthoringPayloadFromGridDraft,
 } from './locationGridDraft.utils';

@@ -26,3 +26,7 @@ export {
   buildSystemLocationWorkspaceAuthoringContract,
   getSystemPatchWorkspaceSaveGate,
 } from './locationWorkspaceAuthoringAdapters';
+export {
+  LOCATION_WORKSPACE_NORMALIZATION,
+} from './locationWorkspaceNormalizationPolicy';
+export type { LocationWorkspaceNormalizationPolicy } from './locationWorkspaceNormalizationPolicy';

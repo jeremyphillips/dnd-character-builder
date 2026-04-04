@@ -1,5 +1,5 @@
 import {
-  normalizedAuthoringPayloadFromGridDraft,
+  buildPersistableMapPayloadFromGridDraft,
   stableStringify,
 } from '@/features/content/locations/components/locationGridDraft.utils';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
@@ -16,7 +16,7 @@ import type { LocationVerticalStairConnection } from '@/shared/domain/locations'
  * - **Location** — `toLocationInput(values)` plus {@link mergeBuildingProfileForSave} for building stair connections.
  * - **Map** — {@link buildMapWorkspacePersistablePayloadFromGridDraft} (also {@link mapWorkspacePersistableTokenFromGridDraft} for system grid projections in `locationWorkspaceAuthoringAdapters.ts`).
  *
- * Map dirty comparison for both modes still uses `gridDraftPersistableEquals` in `locationGridDraft.utils.ts`; new map fields must stay aligned with normalization there and with `normalizedAuthoringPayloadFromGridDraft`.
+ * Map dirty comparison uses the same payload as save: `gridDraftPersistableEquals` delegates to {@link buildPersistableMapPayloadFromGridDraft} in `locationGridDraft.utils.ts`. See `locationWorkspaceNormalizationPolicy.ts` and `docs/reference/location-workspace.md`.
  */
 
 /**
@@ -28,9 +28,7 @@ import type { LocationVerticalStairConnection } from '@/shared/domain/locations'
 export type HomebrewWorkspacePersistableParts = {
   locationInput: LocationInput;
   /** Pass to `bootstrapDefaultLocationMap` as the last argument (`options`). */
-  mapBootstrapPayload: {
-    excludedCellIds: string[];
-  } & ReturnType<typeof normalizedAuthoringPayloadFromGridDraft>;
+  mapBootstrapPayload: ReturnType<typeof buildPersistableMapPayloadFromGridDraft>;
 };
 
 /**
@@ -40,11 +38,7 @@ export type HomebrewWorkspacePersistableParts = {
 export function buildMapWorkspacePersistablePayloadFromGridDraft(
   gridDraft: LocationGridDraftState,
 ): HomebrewWorkspacePersistableParts['mapBootstrapPayload'] {
-  const normalized = normalizedAuthoringPayloadFromGridDraft(gridDraft);
-  return {
-    excludedCellIds: [...gridDraft.excludedCellIds].sort(),
-    ...normalized,
-  };
+  return buildPersistableMapPayloadFromGridDraft(gridDraft);
 }
 
 /** Stable string token for the map slice (for system contract projections and parity tests). */

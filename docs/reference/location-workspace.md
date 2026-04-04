@@ -113,9 +113,34 @@ The header **Save** button is driven by **`authoringContract.isDirty`** (homebre
 **Single source of truth:** **`buildHomebrewWorkspacePersistableParts`** (`routes/locationEdit/workspacePersistableSnapshot.ts`; deprecated alias `buildCampaignWorkspacePersistableParts`) builds the same **`locationInput`** (for `locationRepo.updateEntry`) and **`mapBootstrapPayload`** (for `bootstrapDefaultLocationMap`) that **`handleHomebrewSubmit`** uses. **`serializeLocationWorkspacePersistableSnapshot`** stringifies those parts for dirty comparison, so save and dirty cannot drift.
 
 - **Location slice:** `toLocationInput(form values)`, with building saves merging `buildingProfile` and **`stairConnections`** when `loc` is a campaign building.
-- **Map slice:** sorted `excludedCellIds` plus `normalizedAuthoringPayloadFromGridDraft` (same normalization as `gridDraftPersistableEquals`).
+- **Map slice:** `buildPersistableMapPayloadFromGridDraft` in `locationGridDraft.utils.ts` — sorted `excludedCellIds`, wire-normalized authoring fields (`normalizeLocationMapAuthoringFields` / `normalizeRegionAuthoringEntry`), and **stable-sorted** `pathEntries` / `edgeEntries` / `regionEntries` by id. **`gridDraftPersistableEquals`** compares `stableStringify` of that same payload (no compare-vs-save drift).
 
 The **baseline** string is set after successful map hydration and after a successful homebrew save. Until the first baseline is recorded, Save stays disabled (not dirty).
+
+### Normalization policy (dirty vs save)
+
+**Review anchor:** grep `LOCATION_WORKSPACE_NORMALIZATION` in `locationWorkspaceNormalizationPolicy.ts`.
+
+**Taxonomy** (per persistable field or slice):
+
+| Policy | Meaning |
+|--------|---------|
+| **normalized for compare and save** | One shaped value feeds both dirty snapshot and save/bootstrap. **Default.** |
+| **normalized for save only** | Compare uses a rawer value; save cleans up. **Rare** — document why. |
+| **raw / whitespace-significant** | Dirty when spacing or formatting changes; save preserves it. |
+| **custom** | Special rules — document compare and save in one place. |
+
+**Current slices (homebrew)**
+
+| Slice | Policy | Where declared / implemented |
+|-------|--------|------------------------------|
+| Location form (name, description, building profile strings, labels) | normalized for compare and save | `toLocationInput` + form registry `parse` (`getNameDescriptionFieldSpecs`, `locationForm.mappers.ts`) |
+| Map persistable payload | normalized for compare and save | `buildPersistableMapPayloadFromGridDraft`; shared with `gridDraftPersistableEquals` and `serializeLocationWorkspacePersistableSnapshot` map half |
+| Building stair connections | normalized for compare and save | `mergeBuildingProfileForSave` in `workspacePersistableSnapshot.ts` |
+
+**Whitespace:** Trimming and region row normalization are **intentional** for the fields above — spacing-only edits often do **not** dirty the workspace. Do not rely on “whatever a mapper happens to trim” without updating this table and `LOCATION_WORKSPACE_NORMALIZATION`.
+
+**Future raw / whitespace-significant field:** Add an explicit `parse`/mapper path (identity or custom rules), set policy to **raw** or **custom** in `LOCATION_WORKSPACE_NORMALIZATION`, add a matrix row in `workspacePersistableSnapshot.test.ts`, and document the rule here. Until then, treat **region description** and **object labels** as **trimmed** at persistence boundaries (`normalizeRegionAuthoringEntry`, `cellDraftToCellEntries`).
 
 The three right-rail tabs (**Location**, **Map**, **Selection**) are not separate dirty stores: they all feed the shared form, `LocationGridDraftState`, and (for buildings) stair-connection state. **Map-only** UI such as toolbar mode, paint selection, and `mapSelection` is not part of the persistable snapshot (see `locationGridDraft.utils.ts`).
 
@@ -155,13 +180,14 @@ When you introduce new data that must be **saved** from this editor:
 
 1. **Homebrew snapshot + save** — Extend **`buildHomebrewWorkspacePersistableParts`** (and types such as `LocationFormValues` / `LocationGridDraftState` / building stairs as needed) so the snapshot includes the new field. **`handleHomebrewSubmit`** should follow automatically if it uses the shared builder.
 2. **Map-only fields** — Update the **full** map pipeline so dirty/save stay consistent:
-   - Normalization / wire shape: [`normalizedAuthoringPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts) and shared `normalizeLocationMapAuthoringFields` as applicable.
-   - Draft **comparison** (dirty): [`gridDraftPersistableEquals`](src/features/content/locations/components/locationGridDraft.utils.ts) — must reflect the same persistable meaning as the snapshot for map data.
+   - Normalization / wire shape: [`buildPersistableMapPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts) (built on [`normalizedAuthoringPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts)) and shared `normalizeLocationMapAuthoringFields` as applicable.
+   - Draft **comparison** (dirty): [`gridDraftPersistableEquals`](src/features/content/locations/components/locationGridDraft.utils.ts) — delegates to the same payload as save; must not diverge from the snapshot map slice.
    - **System** map side: projections use **`mapWorkspacePersistableTokenFromGridDraft`** via [`locationWorkspaceAuthoringAdapters.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.ts); do **not** route system map dirty through the homebrew snapshot string (patch + grid baselines remain the system model).
 3. **Baselines** — Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts).
 4. **Tests** — Add a **matrix** row or focused case in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) proving the snapshot changes when that field changes; for map changes, cross-mode parity is covered in [`locationWorkspaceAuthoringAdapters.test.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.test.ts).
+5. **Normalization** — Does whitespace/formatting matter for this field? Which policy row (**normalized for compare and save**, **save only**, **raw**, **custom**)? Update [`LOCATION_WORKSPACE_NORMALIZATION`](src/features/content/locations/routes/locationEdit/locationWorkspaceNormalizationPolicy.ts) and the **Normalization policy** table in this doc. Add a focused test for spacing-only vs semantic edits.
 
-**Whitespace / normalization:** `toLocationInput` and map normalization may trim strings; spacing-only edits might not dirty the snapshot. Treat that as **policy**, not accident — declare compare vs save behavior for new fields; see [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md) (planned work) and the plan bundle [README](.cursor/plans/location-workspace/README.md).
+**Whitespace / normalization:** See **Normalization policy (dirty vs save)** above and `LOCATION_WORKSPACE_NORMALIZATION` in `locationWorkspaceNormalizationPolicy.ts`. Plan archive: [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md).
 
 **Plan (slice participation):** `.cursor/plans/location-workspace/location_workspace_persistable_slice_participation.plan.md` (shared map token / assembly).
 
@@ -405,6 +431,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 11. **Shared authoring contract:** extend editor-facing behavior via **`LocationWorkspaceAuthoringContract`** (`locationWorkspaceAuthoringContract.ts`); keep mode-specific persistence in adapters. Plan: `.cursor/plans/location-workspace/location_workspace_authoring_contract.plan.md`.
 12. **Debounced persistable fields:** use **`useDebouncedPersistableField`** + **`flushDebouncedPersistableFieldsRef`** + **`flushSync`** before save as in region metadata; see **Debounced persistable fields** above. Plan: `.cursor/plans/location-workspace/location_workspace_debounced_persistable_flush.plan.md`.
 13. **Persistable slice participation:** shared map assembly in **`buildMapWorkspacePersistablePayloadFromGridDraft`** / **`mapWorkspacePersistableTokenFromGridDraft`** ([`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts)); system adapters consume the same map token. See **Adding persisted workspace state** and plan: `.cursor/plans/location-workspace/location_workspace_persistable_slice_participation.plan.md`.
-14. **Normalization policy (dirty vs save):** explicit rules for trim/compare vs save — [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md). Bundle: [.cursor/plans/location-workspace/README.md](.cursor/plans/location-workspace/README.md).
+14. **Normalization policy (dirty vs save):** **Normalization policy (dirty vs save)** section above; `LOCATION_WORKSPACE_NORMALIZATION` in [`locationWorkspaceNormalizationPolicy.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceNormalizationPolicy.ts). Plan archive: [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md).
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

@@ -1,127 +1,92 @@
 ---
 name: Location workspace normalization policy
-overview: Define explicit normalization rules for persistable workspace dirty/save (compare vs save, whitespace intent). Audit current trim/map/location mappers; document policy; add focused tests. No DB schema or persistence-strategy change.
+overview: Make dirty/save normalization explicit for persistable workspace state. Audit compare/save shaping, define a lightweight normalization policy artifact, preserve intentional spacing-insensitive behavior, document extension rules, and add focused tests. No DB schema or persistence-strategy changes.
 todos:
-  - id: audit-normalization
-    content: Audit toLocationInput, map/grid normalizers, snapshot vs save paths; document per-field/slice behavior
-    status: pending
-  - id: policy-shape
-    content: Introduce documented convention (table + helpers or normalize-for-compare vs normalize-for-save)
-    status: pending
-  - id: codify-current-behavior
-    content: Mark spacing-insensitive fields intentional; preserve behavior unless policy explicitly changes a field
-    status: pending
-  - id: tests
-    content: Tests for spacing-only dirty where policy says ignore; future raw-field pattern
-    status: pending
-  - id: docs-checklist
-    content: Extend docs/reference/location-workspace.md — contributor questions for new persistable fields
-    status: pending
+  - id: audit-current-behavior
+    content: Audit current compare/save normalization touchpoints and produce a concise inventory by persistable field/slice
+    status: completed
+  - id: choose-policy-artifact
+    content: Introduce one lightweight, grepable policy artifact for normalization rules (doc table and/or small helper module)
+    status: completed
+  - id: align-compare-save
+    content: Default fields/slices to one shared normalized form for compare+save unless a documented exception is required
+    status: completed
+  - id: codify-intent
+    content: Mark current spacing-insensitive behavior as intentional where preserved; define explicit path for raw/whitespace-significant fields
+    status: completed
+  - id: tests-and-checklist
+    content: Add focused tests and extend contributor checklist for new persistable fields/slices
+    status: completed
 isProject: true
 ---
 
-# Location workspace: normalization policy (dirty / save)
+# Location workspace: normalization policy (dirty / save) — **done**
 
-**Parent context:** [location_workspace_dirty_state_4d54eedc.plan.md](location_workspace_dirty_state_4d54eedc.plan.md) (snapshot + baseline), [location_workspace_persistable_slice_participation.plan.md](location_workspace_persistable_slice_participation.plan.md) (shared map assembly). **Reference doc:** [docs/reference/location-workspace.md](../../../docs/reference/location-workspace.md).
+**Parent context:** dirty/save snapshot alignment, shared authoring contract, persistable slice participation, and debounced persistable flush behavior are already in place. This pass closed the normalization policy gap.
 
-## Problem
+**Reference doc:** [docs/reference/location-workspace.md](../../../docs/reference/location-workspace.md) (**Normalization policy** subsection).
 
-Normalization and trimming in persistence paths can make **spacing-only** edits not dirty the workspace snapshot. That may be **intentional** (e.g. trimmed display names) or **accidental** for a future field where whitespace matters. Today the behavior is easy to misread in code review.
+**Implementation:**
 
-## Objective
+- **Policy artifact:** `LOCATION_WORKSPACE_NORMALIZATION` in [`locationWorkspaceNormalizationPolicy.ts`](../../../src/features/content/locations/routes/locationEdit/locationWorkspaceNormalizationPolicy.ts) (re-exported from [`locationEdit/index.ts`](../../../src/features/content/locations/routes/locationEdit/index.ts)).
+- **Single map payload:** [`buildPersistableMapPayloadFromGridDraft`](../../../src/features/content/locations/components/locationGridDraft.utils.ts) — used by [`gridDraftPersistableEquals`](../../../src/features/content/locations/components/locationGridDraft.utils.ts), [`buildMapWorkspacePersistablePayloadFromGridDraft`](../../../src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts), and homebrew snapshot serialization.
+- **Tests:** [`locationGridDraft.utils.test.ts`](../../../src/features/content/locations/components/locationGridDraft.utils.test.ts), [`workspacePersistableSnapshot.test.ts`](../../../src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts).
 
-Make normalization **explicit, field-aware, and documented** so contributors can answer:
+---
 
-- Which values are normalized before **dirty comparison**
-- Which before **save mapping**
-- Which preserve **raw whitespace / formatting**
-- **Where** those rules live
-- How to **extend** them safely
+## Audit inventory (persistable slice → behavior)
 
-## Constraints (non-negotiable)
+| Slice | Compare (dirty) | Save (persist) | Effective policy | Notes |
+|-------|-------------------|----------------|-------------------|--------|
+| **Location form** (`toLocationInput`) | `serializeLocationWorkspacePersistableSnapshot` → `toLocationInput` | Same via `buildHomebrewWorkspacePersistableParts` | **normalized for compare and save** | Name/description trimmed via form registry `parse` (`getNameDescriptionFieldSpecs`). Building profile strings trimmed in `toLocationInput`. |
+| **Map** | `stableStringify(buildPersistableMapPayloadFromGridDraft(a))` vs baseline snapshot (same map half) | `handleHomebrewSubmit` / bootstrap uses same `buildMapWorkspacePersistablePayloadFromGridDraft` | **normalized for compare and save** | `normalizeLocationMapAuthoringFields` + `normalizeRegionAuthoringEntry`; `cellDraftToCellEntries` trims object labels; path/edge/region arrays **sorted by id** in `buildPersistableMapPayloadFromGridDraft`. |
+| **System grid dirty** | `gridDraftPersistableEquals` | N/A (patch path separate) | **normalized for compare and save** | Map token in `buildSystemLocationWorkspaceAuthoringContract` uses `mapWorkspacePersistableTokenFromGridDraft` — same `buildPersistableMapPayloadFromGridDraft` shape. |
+| **Building stairs** | `mergeBuildingProfileForSave` in snapshot | Same | **normalized for compare and save** | Structural merge; no string trim. |
 
-- No DB schema change, no persisted storage shape change
+**Exception:** None — no split compare-vs-save paths for current fields.
+
+**Future raw field:** Document in `LOCATION_WORKSPACE_NORMALIZATION` + reference doc; use explicit parse/identity; add regression test.
+
+---
+
+## Objective (original)
+
+Define and codify an explicit normalization policy for persistable workspace fields/slices so contributors can answer, for any persistable value:
+
+- what representation is used for **dirty comparison**
+- what representation is used for **save mapping**
+- whether whitespace/formatting is **insignificant** or **meaningful**
+- where that rule is declared
+- how future fields extend the rule safely
+
+The goal is not to remove all normalization. The goal is to make normalization **intentional, visible, and reviewable**.
+
+## Core rule
+
+Default to **one shared normalized form** for both:
+
+- workspace dirty comparison
+- save payload construction
+
+Only allow compare-vs-save divergence when there is a **documented field/slice-specific reason**.
+
+## Constraints (unchanged)
+
+- No DB schema change
+- No persisted storage shape change
+- No persistence-strategy rewrite
 - No unrelated workspace/tool redesign
-- Keep **`LocationWorkspaceAuthoringContract`** and **system vs homebrew** strategies as today
-- Prefer **explicit, boring** rules over implicit trim scattered in mappers
-
-## Design rule (required taxonomy)
-
-For each persistable field or slice, declare policy in one of:
-
-| Policy | Meaning |
-|--------|--------|
-| **normalized for compare and save** | Same shaping for `isDirty` snapshot and `handleHomebrewSubmit` (typical default for trimmed strings) |
-| **normalized for save only** | Compare uses rawer input; save applies cleanup (rare; document why) |
-| **raw / whitespace-significant** | Dirty if spacing changes; save persists formatting |
-| **custom** | Document compare + save behavior in one place |
-
-Avoid “whatever `toLocationInput` happens to do” as the only description.
-
-## Implementation goals
-
-### 1. Audit current normalization points
-
-Trace behavior that affects **homebrew** `serializeLocationWorkspacePersistableSnapshot` vs **save** (`buildHomebrewWorkspacePersistableParts`, `handleHomebrewSubmit`) and **map** `normalizedAuthoringPayloadFromGridDraft` / `gridDraftPersistableEquals` / shared `normalizeLocationMapAuthoringFields`.
-
-Produce a short **inventory** (table or bullet list): field/slice → trim/normalize sites → current effective dirty/save behavior.
-
-**Likely touchpoints (verify in repo):**
-
-- [`toLocationInput`](../../../src/features/content/locations/domain) and related location form mapping
-- [`workspacePersistableSnapshot.ts`](../../../src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts)
-- [`locationGridDraft.utils.ts`](../../../src/features/content/locations/components/locationGridDraft.utils.ts) (`normalizedAuthoringPayloadFromGridDraft`, `gridDraftPersistableEquals`)
-- Shared [`normalizeLocationMapAuthoringFields`](../../../shared/domain/locations) (or equivalent)
-
-### 2. Policy shape (lightweight)
-
-Choose one **visible** structure (not a heavy framework), for example:
-
-- **`docs/reference/location-workspace.md`** subsection **Normalization policy** with a table of persistable fields/slices and their policy row; **or**
-- Small **`locationWorkspaceNormalizationPolicy.ts`** (or section in `workspacePersistableSnapshot.ts`) exporting named helpers **`normalizeForWorkspaceCompare`** / **`normalizeForSave`** only where compare ≠ save; **or**
-- Field-level JSDoc `@workspacePersist` tags pointing to the doc table
-
-Pick the smallest approach that keeps rules **grepable** and **reviewable**.
-
-### 3. Compare vs save separation
-
-Where compare and save **must** differ, implement **two** explicit functions (or two clearly named code paths) and document why. Default: **one** normalized form feeds both snapshot and save (matches current “no drift” goal from dirty-state work).
-
-### 4. Preserve acceptable current behavior
-
-Do **not** churn product behavior for fields where **ignoring spacing-only edits** is desired. **Codify** that as **normalized for compare and save** (or equivalent) in the policy table.
-
-### 5. Contributor checklist
-
-Extend **[Adding persisted workspace state](../../../docs/reference/location-workspace.md)** (or adjacent section) so new fields must answer:
-
-- Does whitespace matter?
-- Compare policy vs save policy?
-- Where declared?
-- Which test covers spacing / normalization?
-
-## Suggested tests
-
-- At least one **intentional** case: spacing-only change on a **trimmed** field does **not** dirty (or does not change snapshot), matching declared policy
-- One **documented** pattern for a **raw** field (can be hypothetical fixture if no production field yet) so future slices have a template
-- Stability: snapshot string and save payload still align for shared normalization path
-
-Avoid large snapshot golden-file churn.
-
-## Acceptance criteria
-
-- [ ] Normalization affecting dirty/save is **documented**, not only implied by mappers
-- [ ] Current persistable fields/slices have a **declared** rule in the chosen policy artifact
-- [ ] Spacing-only behavior is **intentional** (ignored or preserved), not ambiguous
-- [ ] Extension path for whitespace-sensitive fields is clear
-- [ ] No DB migration; system/homebrew persistence strategies unchanged
+- Keep shared workspace authoring contract intact
+- Keep system vs homebrew strategies intact
+- Prefer explicit, boring rules over implicit trim scattered through mappers
 
 ## Non-goals
 
-- No migration, no schema rename
-- No persistence strategy rewrite
-- No broad editor redesign
-- No default of “everything raw” unless product requires it
+- no DB migration
+- no schema rename
+- no persistence strategy rewrite
+- no broad editor redesign
+- no default move to “everything raw” unless product explicitly requires it
 
 ## Related plans (this directory)
 

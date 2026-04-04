@@ -75,6 +75,42 @@ describe('serializeLocationWorkspacePersistableSnapshot', () => {
     expect(before).not.toBe(after);
   });
 
+  it('does not change snapshot when name differs only by outer whitespace (trim policy)', () => {
+    const form = baseForm();
+    form.scale = 'world';
+    form.name = '  My Place  ';
+    const spaced = serializeLocationWorkspacePersistableSnapshot(
+      form,
+      INITIAL_LOCATION_GRID_DRAFT,
+      [],
+      null,
+    );
+    form.name = 'My Place';
+    const trimmed = serializeLocationWorkspacePersistableSnapshot(
+      form,
+      INITIAL_LOCATION_GRID_DRAFT,
+      [],
+      null,
+    );
+    expect(spaced).toBe(trimmed);
+  });
+
+  it('map slice: region name spacing-only does not change snapshot (aligned with save normalization)', () => {
+    const form = baseForm();
+    form.scale = 'world';
+    const draftLoose = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      regionEntries: [{ id: 'r1', name: '  Zone  ', colorKey: 'regionRed' }],
+    };
+    const draftTight = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      regionEntries: [{ id: 'r1', name: 'Zone', colorKey: 'regionRed' }],
+    };
+    expect(
+      serializeLocationWorkspacePersistableSnapshot(form, draftLoose, [], null),
+    ).toBe(serializeLocationWorkspacePersistableSnapshot(form, draftTight, [], null));
+  });
+
   it('changes when map cell fill changes', () => {
     const form = baseForm();
     form.scale = 'world';

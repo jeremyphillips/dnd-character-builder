@@ -124,6 +124,8 @@ export default function LocationEditRoute() {
     handleEraseCell,
     handleRemovePlacedObject,
     handleRemovePathFromMap,
+    handleRemoveEdgeFromMap,
+    handleRemoveEdgeRunFromMap,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,
@@ -194,6 +196,8 @@ export default function LocationEditRoute() {
       onUpdateRegionEntry={handleUpdateRegionEntry}
       onRemovePlacedObjectFromMap={handleRemovePlacedObject}
       onRemovePathFromMap={handleRemovePathFromMap}
+      onRemoveEdgeFromMap={handleRemoveEdgeFromMap}
+      onRemoveEdgeRunFromMap={handleRemoveEdgeRunFromMap}
       cellPanelProps={{
         selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: mapHostLocationId,

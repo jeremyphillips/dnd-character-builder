@@ -117,6 +117,45 @@ function applyRemovePathFromDraft(prev: LocationGridDraftState, pathId: string):
     : next;
 }
 
+function sameEdgeIdSet(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  const sb = new Set(b);
+  return a.every((id) => sb.has(id));
+}
+
+/** Single boundary edge removal (same as Erase on that edge / Delete when that edge is selected). */
+function applyRemoveEdgeFromDraft(prev: LocationGridDraftState, edgeId: string): LocationGridDraftState {
+  const next = applyEraseTargetToDraft(
+    prev,
+    { type: 'edge', edgeId },
+    '',
+    () => crypto.randomUUID(),
+  );
+  const clearSelection =
+    prev.mapSelection.type === 'edge' && prev.mapSelection.edgeId === edgeId;
+  return clearSelection
+    ? { ...next, mapSelection: { type: 'none' }, selectedCellId: null }
+    : next;
+}
+
+/** Removes every segment in a straight run (same as Delete when an edge-run is selected). */
+function applyRemoveEdgeRunFromDraft(
+  prev: LocationGridDraftState,
+  edgeIdsToRemove: readonly string[],
+): LocationGridDraftState {
+  const remove = new Set(edgeIdsToRemove);
+  const next: LocationGridDraftState = {
+    ...prev,
+    edgeEntries: prev.edgeEntries.filter((ent) => !remove.has(ent.edgeId)),
+  };
+  const clearSelection =
+    prev.mapSelection.type === 'edge-run' &&
+    sameEdgeIdSet(prev.mapSelection.edgeIds, edgeIdsToRemove);
+  return clearSelection
+    ? { ...next, mapSelection: { type: 'none' }, selectedCellId: null }
+    : next;
+}
+
 function applyDeleteForMapSelection(prev: LocationGridDraftState): LocationGridDraftState | null {
   const ms = prev.mapSelection;
   if (ms.type === 'object') {
@@ -126,22 +165,10 @@ function applyDeleteForMapSelection(prev: LocationGridDraftState): LocationGridD
     return applyRemovePathFromDraft(prev, ms.pathId);
   }
   if (ms.type === 'edge') {
-    const next = applyEraseTargetToDraft(
-      prev,
-      { type: 'edge', edgeId: ms.edgeId },
-      '',
-      () => crypto.randomUUID(),
-    );
-    return { ...next, mapSelection: { type: 'none' }, selectedCellId: null };
+    return applyRemoveEdgeFromDraft(prev, ms.edgeId);
   }
   if (ms.type === 'edge-run') {
-    const remove = new Set(ms.edgeIds);
-    return {
-      ...prev,
-      edgeEntries: prev.edgeEntries.filter((ent) => !remove.has(ent.edgeId)),
-      mapSelection: { type: 'none' },
-      selectedCellId: null,
-    };
+    return applyRemoveEdgeRunFromDraft(prev, ms.edgeIds);
   }
   return null;
 }
@@ -715,6 +742,14 @@ export function useLocationEditWorkspaceModel({
     setGridDraft((prev) => applyRemovePathFromDraft(prev, pathId));
   }, []);
 
+  const handleRemoveEdgeFromMap = useCallback((edgeId: string) => {
+    setGridDraft((prev) => applyRemoveEdgeFromDraft(prev, edgeId));
+  }, []);
+
+  const handleRemoveEdgeRunFromMap = useCallback((edgeIds: readonly string[]) => {
+    setGridDraft((prev) => applyRemoveEdgeRunFromDraft(prev, edgeIds));
+  }, []);
+
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
       if (mapEditor.mode === 'place' && mapEditor.activePlace) {
@@ -924,6 +959,8 @@ export function useLocationEditWorkspaceModel({
     handleEraseCell,
     handleRemovePlacedObject,
     handleRemovePathFromMap,
+    handleRemoveEdgeFromMap,
+    handleRemoveEdgeRunFromMap,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,

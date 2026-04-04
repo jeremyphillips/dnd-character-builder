@@ -1,4 +1,10 @@
-import { useCallback, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import {
+  useCallback,
+  useState,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from 'react';
 import type { UseFormGetValues, UseFormHandleSubmit, UseFormReset } from 'react-hook-form';
 
 import {
@@ -24,7 +30,7 @@ import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystem
 import type { PatchDriver } from '@/features/content/shared/editor/patchDriver';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
 import type { Location } from '@/features/content/locations/domain/types';
-import type { LocationScaleId } from '@/shared/domain/locations';
+import type { LocationScaleId, LocationVerticalStairConnection } from '@/shared/domain/locations';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 
 type Feedback = {
@@ -51,6 +57,9 @@ type UseLocationEditSaveActionsParams = {
   floorChildren: BuildingWorkspaceFloorItem[];
   onFloorCreated: () => void;
   setActiveFloorId: (id: string | null) => void;
+  /** Canonical stair pairings for building saves; merged into `buildingProfile.stairConnections`. */
+  buildingStairConnectionsRef: RefObject<LocationVerticalStairConnection[]>;
+  setBuildingStairConnections: Dispatch<SetStateAction<LocationVerticalStairConnection[]>>;
 };
 
 export function useLocationEditSaveActions({
@@ -71,6 +80,8 @@ export function useLocationEditSaveActions({
   floorChildren,
   onFloorCreated,
   setActiveFloorId,
+  buildingStairConnectionsRef,
+  setBuildingStairConnections,
 }: UseLocationEditSaveActionsParams) {
   const [addingFloor, setAddingFloor] = useState(false);
 
@@ -99,7 +110,17 @@ export function useLocationEditSaveActions({
       try {
         const draft = gridDraftRef.current;
         const input = toLocationInput(values);
+        if (isBuilding) {
+          input.buildingProfile = {
+            ...(loc.buildingProfile ?? {}),
+            ...(input.buildingProfile ?? {}),
+            stairConnections: buildingStairConnectionsRef.current,
+          };
+        }
         const updated = await locationRepo.updateEntry(campaignId, locationId, input);
+        if (isBuilding) {
+          setBuildingStairConnections(updated.buildingProfile?.stairConnections ?? []);
+        }
         const mapLocationId = isBuilding ? activeFloorId! : locationId;
         const mapBootstrapName = isBuilding
           ? locations.find((l) => l.id === activeFloorId)?.name ?? 'Floor'
@@ -144,6 +165,8 @@ export function useLocationEditSaveActions({
       setSaving,
       setSuccess,
       setErrors,
+      buildingStairConnectionsRef,
+      setBuildingStairConnections,
     ],
   );
 

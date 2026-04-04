@@ -195,6 +195,9 @@ export default function LocationEditRoute() {
     gridRows,
     gridGeometry,
     locations,
+    buildingStairConnections,
+    handleLinkStairPair,
+    handleUnlinkStairEndpoint,
   } = model;
 
   const ancestryBreadcrumbs = (
@@ -222,6 +225,17 @@ export default function LocationEditRoute() {
     locations,
     mapHostLocationId,
   });
+
+  const stairPairingContext =
+    isBuildingWorkspace && activeFloorId && campaignId
+      ? {
+          connections: buildingStairConnections,
+          campaignId,
+          locations,
+          onLink: handleLinkStairPair,
+          onUnlink: handleUnlinkStairEndpoint,
+        }
+      : undefined;
 
   const mapAuthoringPanel = (
     <Stack spacing={2}>
@@ -263,6 +277,7 @@ export default function LocationEditRoute() {
     <LocationEditorSelectionPanel
       selection={gridDraft.mapSelection}
       stairWorkspaceInspect={stairWorkspaceInspect}
+      stairPairingContext={stairPairingContext}
       pathEntries={gridDraft.pathEntries}
       edgeEntries={gridDraft.edgeEntries}
       regionEntries={gridDraft.regionEntries}

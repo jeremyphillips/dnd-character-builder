@@ -3,6 +3,8 @@
  * Used when `scale === 'building'`; complements `scale` / `category`, does not replace them.
  */
 
+import type { LocationVerticalStairConnection } from './locationBuildingStairConnection.types';
+
 /** Reference to an NPC or player character for ownership / staffing. */
 export type LocationEntityRef = {
   kind: 'npc' | 'character';
@@ -94,4 +96,9 @@ export type LocationBuildingProfile = {
 
   factionId?: string;
   notes?: string;
+  /**
+   * Canonical **paired** stair connections between floor maps under this building.
+   * Source of truth for stair pairing; see {@link LocationVerticalStairConnection}. **Traversal** is TODO.
+   */
+  stairConnections?: LocationVerticalStairConnection[];
 };

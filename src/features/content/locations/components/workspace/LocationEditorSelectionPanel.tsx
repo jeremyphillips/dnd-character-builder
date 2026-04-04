@@ -9,6 +9,7 @@ import {
   LocationMapEdgeRunInspector,
   LocationMapObjectInspector,
   LocationMapPathInspector,
+  type StairPairingContext,
   type StairWorkspaceInspect,
 } from './LocationMapSelectionInspectors';
 import {
@@ -18,7 +19,7 @@ import {
 import { LocationMapRegionMetadataForm } from './LocationMapRegionMetadataForm';
 import type { RegionMetadataFormValues } from './LocationMapRegionMetadataForm';
 
-export type { StairWorkspaceInspect };
+export type { StairWorkspaceInspect, StairPairingContext };
 
 export type LocationEditorSelectionPanelProps = {
   selection: LocationMapSelection;
@@ -26,6 +27,8 @@ export type LocationEditorSelectionPanelProps = {
   cellPanelProps: LocationCellAuthoringPanelProps;
   /** Sibling floors for stair target picker; current floor id for link status. */
   stairWorkspaceInspect: StairWorkspaceInspect;
+  /** Building edit: canonical stair connections + link/unlink handlers. */
+  stairPairingContext?: StairPairingContext;
   pathEntries: readonly LocationMapPathAuthoringEntry[];
   edgeEntries: readonly LocationMapEdgeAuthoringEntry[];
   regionEntries: readonly LocationMapRegionAuthoringEntry[];
@@ -50,6 +53,7 @@ export function LocationEditorSelectionPanel({
   selection,
   cellPanelProps,
   stairWorkspaceInspect,
+  stairPairingContext,
   pathEntries,
   edgeEntries,
   regionEntries,
@@ -112,6 +116,7 @@ export function LocationEditorSelectionPanel({
           onRemovePlacedObjectFromMap={onRemovePlacedObjectFromMap}
           hostScale={cellPanelProps.hostScale}
           stairWorkspaceInspect={stairWorkspaceInspect}
+          stairPairingContext={stairPairingContext}
         />
       );
     case 'edge':

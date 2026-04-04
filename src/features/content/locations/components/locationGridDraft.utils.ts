@@ -20,7 +20,8 @@ function sortEdgeEntriesForCompare(d: LocationGridDraftState) {
   return [...edgeEntriesForCompare(d)].sort((x, y) => x.edgeId.localeCompare(y.edgeId));
 }
 
-function stableStringify(value: unknown): string {
+/** Deterministic JSON-like string for deep equality (sorted object keys). */
+export function stableStringify(value: unknown): string {
   if (value === undefined) return 'undefined';
   if (value === null || typeof value !== 'object') {
     return JSON.stringify(value) as string;

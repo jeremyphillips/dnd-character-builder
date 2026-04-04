@@ -120,7 +120,7 @@ export default function LocationEditRoute() {
     saving,
     success,
     errors,
-    isDirty,
+    isWorkspaceDirty,
     gridDraft,
     setGridDraft,
     isGridDraftDirty,
@@ -406,7 +406,7 @@ export default function LocationEditRoute() {
       headerTitle={loc.name}
       ancestryBreadcrumbs={ancestryBreadcrumbs}
       saving={saving}
-      dirty={isDirty || isGridDraftDirty}
+      dirty={isWorkspaceDirty}
       errors={errors}
       success={success}
       rightRailOpen={rightRailOpen}

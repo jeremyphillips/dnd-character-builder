@@ -26,6 +26,7 @@ import type { LocationContentItem } from '@/features/content/locations/domain/re
 import { normalizedAuthoringPayloadFromGridDraft } from '@/features/content/locations/components/locationGridDraft.utils';
 import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
+import { serializeLocationWorkspacePersistableSnapshot } from '@/features/content/locations/routes/locationEdit/workspacePersistableSnapshot';
 import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystemPatchActions';
 import type { PatchDriver } from '@/features/content/shared/editor/patchDriver';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
@@ -60,6 +61,7 @@ type UseLocationEditSaveActionsParams = {
   /** Canonical stair pairings for building saves; merged into `buildingProfile.stairConnections`. */
   buildingStairConnectionsRef: RefObject<LocationVerticalStairConnection[]>;
   setBuildingStairConnections: Dispatch<SetStateAction<LocationVerticalStairConnection[]>>;
+  setWorkspacePersistBaseline: (snapshot: string) => void;
 };
 
 export function useLocationEditSaveActions({
@@ -82,6 +84,7 @@ export function useLocationEditSaveActions({
   setActiveFloorId,
   buildingStairConnectionsRef,
   setBuildingStairConnections,
+  setWorkspacePersistBaseline,
 }: UseLocationEditSaveActionsParams) {
   const [addingFloor, setAddingFloor] = useState(false);
 
@@ -144,6 +147,17 @@ export function useLocationEditSaveActions({
           ...pickMapGridFormValues(values),
         });
         setGridDraftBaseline(structuredClone(gridDraftRef.current));
+        const stairConnectionsForSnapshot = isBuilding
+          ? (updated.buildingProfile?.stairConnections ?? [])
+          : buildingStairConnectionsRef.current;
+        setWorkspacePersistBaseline(
+          serializeLocationWorkspacePersistableSnapshot(
+            getValues(),
+            gridDraftRef.current,
+            stairConnectionsForSnapshot,
+            loc,
+          ),
+        );
         setSuccess(true);
       } catch (e) {
         setErrors([
@@ -161,12 +175,14 @@ export function useLocationEditSaveActions({
       locations,
       gridDraftRef,
       setGridDraftBaseline,
+      getValues,
       reset,
       setSaving,
       setSuccess,
       setErrors,
       buildingStairConnectionsRef,
       setBuildingStairConnections,
+      setWorkspacePersistBaseline,
     ],
   );
 

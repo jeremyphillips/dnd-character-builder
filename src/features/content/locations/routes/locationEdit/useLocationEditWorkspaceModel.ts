@@ -89,6 +89,7 @@ import { patchFloorStairConnectionIdOnDefaultMap } from '@/features/content/loca
 
 import { useLocationMapHydration } from './useLocationMapHydration';
 import { useLocationEditSaveActions } from './useLocationEditSaveActions';
+import { serializeLocationWorkspacePersistableSnapshot } from './workspacePersistableSnapshot';
 
 /**
  * Remove the current map selection from the draft when it is a deletable entity.
@@ -214,7 +215,6 @@ export function useLocationEditWorkspaceModel({
     watch,
     getValues,
     handleSubmit,
-    formState: { isDirty },
   } = methods;
 
   const {
@@ -237,6 +237,7 @@ export function useLocationEditWorkspaceModel({
   const [gridDraftBaseline, setGridDraftBaseline] = useState<LocationGridDraftState>(() =>
     structuredClone(INITIAL_LOCATION_GRID_DRAFT),
   );
+  const [workspacePersistBaseline, setWorkspacePersistBaseline] = useState<string | null>(null);
   const isGridDraftDirty = useMemo(
     () => !gridDraftPersistableEquals(gridDraft, gridDraftBaseline),
     [gridDraft, gridDraftBaseline],
@@ -373,8 +374,16 @@ export function useLocationEditWorkspaceModel({
     if (!valid) {
       setGridDraft(INITIAL_LOCATION_GRID_DRAFT);
       setGridDraftBaseline(structuredClone(INITIAL_LOCATION_GRID_DRAFT));
+      setWorkspacePersistBaseline(
+        serializeLocationWorkspacePersistableSnapshot(
+          getValues(),
+          INITIAL_LOCATION_GRID_DRAFT,
+          buildingStairConnectionsRef.current,
+          loc,
+        ),
+      );
     }
-  }, [gridColumns, gridRows]);
+  }, [gridColumns, gridRows, getValues, loc]);
 
   useEffect(() => {
     if (!gridPreset) return;
@@ -391,9 +400,23 @@ export function useLocationEditWorkspaceModel({
     loc,
     activeFloorId,
     setValue,
+    getValues,
     setGridDraft,
     setGridDraftBaseline,
+    buildingStairConnectionsRef,
+    setWorkspacePersistBaseline,
   });
+
+  const watchAll = watch();
+  const currentWorkspaceSnapshot = serializeLocationWorkspacePersistableSnapshot(
+    watchAll,
+    gridDraft,
+    buildingStairConnections,
+    loc,
+  );
+  const isWorkspaceDirty =
+    workspacePersistBaseline !== null &&
+    currentWorkspaceSnapshot !== workspacePersistBaseline;
 
   const fieldConfigs = useMemo(
     () =>
@@ -676,6 +699,7 @@ export function useLocationEditWorkspaceModel({
     setActiveFloorId,
     buildingStairConnectionsRef,
     setBuildingStairConnections,
+    setWorkspacePersistBaseline,
   });
 
   const {
@@ -1042,7 +1066,7 @@ export function useLocationEditWorkspaceModel({
     saving,
     success,
     errors,
-    isDirty,
+    isWorkspaceDirty,
     gridDraft,
     setGridDraft,
     isGridDraftDirty,

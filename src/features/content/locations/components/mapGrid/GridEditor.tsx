@@ -6,6 +6,7 @@ import {
 } from 'react';
 import Box from '@mui/material/Box';
 import { makeGridCellId } from '@/shared/domain/grid';
+import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import {
   GRID_CELL_BORDER_COLOR,
   GRID_CELL_BORDER_COLOR_HOVER,
@@ -160,10 +161,8 @@ export default function GridEditor({
               cursor: disabled ? 'default' : 'pointer',
               fontSize: '0.65rem',
               lineHeight: 1.2,
-              color: excluded ? 'text.secondary' : 'text.primary',
-              boxShadow: selected
-                ? (theme) => gridCellSelectedShadow(theme)
-                : undefined,
+              color: excluded ? 'rgba(0,0,0,0.45)' : colorPrimitives.black,
+              boxShadow: selected ? gridCellSelectedShadow() : undefined,
               '&:hover': disabled || !allowHover
                 ? undefined
                 : {

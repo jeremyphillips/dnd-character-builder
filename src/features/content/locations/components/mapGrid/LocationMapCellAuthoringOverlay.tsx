@@ -6,6 +6,7 @@ import { alpha } from '@mui/material/styles';
 import { getLocationMapObjectKindIcon, getLocationScaleMapIcon } from '@/features/content/locations/domain';
 import type { LocationMapUiResolvedStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
 import type { Location } from '@/features/content/locations/domain/types';
+import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { getMapRegionColor } from '@/app/theme/mapColors';
 
 import type { GridCell } from './GridEditor';
@@ -127,7 +128,7 @@ export function LocationMapCellAuthoringOverlay({
             >
               {createElement(getLocationScaleMapIcon(linked.scale), {
                 sx: iconSx,
-                color: 'action',
+                color: colorPrimitives.black,
                 'aria-hidden': true,
               })}
             </Box>
@@ -141,11 +142,11 @@ export function LocationMapCellAuthoringOverlay({
               sx={{
                 display: 'inline-flex',
                 lineHeight: 0,
-                outline: (theme) =>
+                outline:
                   selectHoverTarget.type === 'object' &&
                   selectHoverTarget.cellId === cell.cellId &&
                   selectHoverTarget.objectId === o.id
-                    ? `2px solid ${theme.palette.primary.main}`
+                    ? `2px solid ${colorPrimitives.blue[300]}`
                     : 'none',
                 outlineOffset: 2,
                 borderRadius: 0.5,
@@ -153,7 +154,7 @@ export function LocationMapCellAuthoringOverlay({
             >
               {createElement(getLocationMapObjectKindIcon(o.kind), {
                 sx: iconSx,
-                color: 'action',
+                color: colorPrimitives.black,
                 'aria-hidden': true,
               })}
             </Box>

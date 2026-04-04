@@ -78,7 +78,7 @@ If parts of them are Encounter-specific, they should be split rather than moved 
 
 ## Authored base map vs tactical overlays
 
-`CombatGrid` draws **tactical** cell state from `GridCellViewModel` (`getCellVisualState`, `getCellVisualSx` — movement, AoE, placement bands, perception). **Under** that, when `authoringPresentation` is present, `CombatGridAuthoringOverlay` renders the **authored location map** chrome only (presentation; not mechanics):
+`CombatGrid` draws **tactical** cell state from `GridCellViewModel` (`getCellVisualState`, `getCellVisualSx` — movement, AoE, placement bands, perception). When `authoringPresentation` is present, `CombatGridAuthoringOverlay` renders the **authored location map** chrome only (presentation; not mechanics) as an SVG layer **above** cell terrain fills (`z-index` above default cells, **below** blind veil and viewer-lifted cells):
 
 1. **Paths** and **edges** (SVG strokes).
 2. **Authored object icons** — cell-anchored glyphs from `EncounterAuthoringPresentation.authoredObjectRenderItems` (same canonical shape as `LocationMapAuthoredObjectRenderItem` in `shared/domain/locations/map/`), derived by `deriveLocationMapAuthoredObjectRenderItems` when building the presentation blob.

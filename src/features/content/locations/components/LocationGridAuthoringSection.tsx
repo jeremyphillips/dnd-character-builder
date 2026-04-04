@@ -33,6 +33,7 @@ import {
   type LocationMapActivePaintSelection,
   type LocationMapEditorMode,
 } from '@/features/content/locations/domain/mapEditor';
+import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { resolveCellFillSwatchColor } from '@/app/theme/mapColors';
 import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
 import type { Location } from '@/features/content/locations/domain/types';
@@ -872,16 +873,13 @@ export function LocationGridAuthoringSection({
             }
           : {}),
         '& .location-map-place-anchor-path': {
-          boxShadow: (t) =>
-            `inset 0 0 0 ${mapUi.cell.placeAnchorOutlinePx}px ${t.palette.primary.main}`,
+          boxShadow: `inset 0 0 0 ${mapUi.cell.placeAnchorOutlinePx}px ${colorPrimitives.blue[400]}`,
         },
         '& .location-map-path-endpoint': {
-          boxShadow: (t) =>
-            `inset 0 0 0 ${mapUi.cell.pathEndpointOutlinePx}px ${t.palette.info.main}`,
+          boxShadow: `inset 0 0 0 ${mapUi.cell.pathEndpointOutlinePx}px ${colorPrimitives.blue[300]}`,
         },
         '& .location-map-place-hover-preview': {
-          boxShadow: (t) =>
-            `inset 0 0 0 ${mapUi.cell.placeHoverPreviewOutlinePx}px ${t.palette.success.main}`,
+          boxShadow: `inset 0 0 0 ${mapUi.cell.placeHoverPreviewOutlinePx}px ${colorPrimitives.green[300]}`,
         },
       }}
     >

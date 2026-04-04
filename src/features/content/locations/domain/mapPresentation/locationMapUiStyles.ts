@@ -1,5 +1,6 @@
 import { alpha, type Theme } from '@mui/material/styles';
 
+import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 
 // ---------------------------------------------------------------------------
@@ -9,8 +10,8 @@ import type { LocationEdgeFeatureKindId } from '@/features/content/locations/dom
 // ---------------------------------------------------------------------------
 
 /**
- * Static map presentation tokens. Theme colors are resolved via
- * `resolveLocationMapUiStyles`.
+ * Static map presentation tokens. Resolved strokes/fills use `colorPrimitives` so map chrome does
+ * not follow MUI light/dark mode (`resolveLocationMapUiStyles` keeps a `Theme` parameter for call-site compatibility).
  */
 export const locationMapUiStyleTokens = {
   region: {
@@ -51,10 +52,10 @@ export const locationMapUiStyleTokens = {
   // --- Placed-object mini-subsystem (tactical cell + authoring overlay glyphs) ---
   /** MUI icon or letter fallback; sizing differs by tactical vs overlay surface. */
   placedObject: {
-    /** Multiplier on `palette.action.active` for icon fill. */
-    iconAlpha: 1,
-    /** Multiplier on `palette.text.secondary` for fallback letter. */
-    fallbackTextAlpha: 1,
+    /** Icon glyph fill — fixed ink, not theme mode. */
+    iconColor: colorPrimitives.black,
+    /** Fallback letter when no icon — muted ink. */
+    fallbackColor: alpha(colorPrimitives.black, 0.55),
     iconSizePx: { tactical: 28, overlay: 22 } as const,
     fallbackFontSizeRem: { tactical: 1.35, overlay: 1.1 } as const,
     fallbackFontWeight: 800,
@@ -117,7 +118,7 @@ export type LocationMapUiResolvedStyles = {
     pathEndpointOutlinePx: number;
     placeHoverPreviewOutlinePx: number;
   };
-  /** Selected region outer boundary (hex maps); theme primary for contrast on dark canvases. */
+  /** Selected region outer boundary (hex maps); fixed accent from `colorPrimitives`. */
   regionSelectedOutline: {
     stroke: string;
     strokeWidthPx: number;
@@ -140,11 +141,11 @@ function resolveRegionStyles(
 }
 
 function resolvePathStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['path'] {
   return {
-    stroke: theme.palette.info.main,
+    stroke: colorPrimitives.blue[300],
     defaultStrokeWidthPx: tokens.path.defaultStrokeWidthPx,
     selectedStrokeWidthPx: tokens.path.selectedStrokeWidthPx,
   };
@@ -156,46 +157,46 @@ function resolvePathStyles(
  * @remarks Edge facet vocabularies (material, window variant, …) are **not** consulted here yet.
  */
 function resolveEdgeCommittedStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['edgeCommittedStrokeByKind'] {
   const edgeAlpha = tokens.edge.committedStrokeAlpha;
   const strokeWidth = tokens.edge.committedStrokeWidthPx;
   return {
     wall: {
-      stroke: alpha(theme.palette.text.primary, edgeAlpha),
+      stroke: alpha(colorPrimitives.black, edgeAlpha),
       strokeWidth,
     },
     window: {
-      stroke: alpha(theme.palette.info.main, edgeAlpha),
+      stroke: alpha(colorPrimitives.blue[300], edgeAlpha),
       strokeWidth,
       strokeDasharray: tokens.edge.windowDasharray,
     },
     door: {
-      stroke: alpha(theme.palette.text.primary, edgeAlpha),
+      stroke: alpha(colorPrimitives.black, edgeAlpha),
       strokeWidth,
     },
   };
 }
 
 function resolveEdgeBoundaryPaintStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['edgeBoundaryPaint'] {
   return {
-    stroke: theme.palette.primary.main,
+    stroke: colorPrimitives.blue[400],
     strokeWidthPx: tokens.edge.boundaryPaintStrokeWidthPx,
     opacity: tokens.edge.boundaryPaintOpacity,
   };
 }
 
 function resolveEdgeHoverStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['edgeHover'] {
   return {
-    strokeErase: theme.palette.error.main,
-    strokePlace: theme.palette.primary.light,
+    strokeErase: colorPrimitives.red[300],
+    strokePlace: colorPrimitives.blue[100],
     strokeWidthPx: tokens.edge.hoverStrokeWidthPx,
     opacity: tokens.edge.hoverOpacity,
     dasharray: tokens.edge.hoverDasharray,
@@ -214,11 +215,11 @@ function resolveCellStyles(
 }
 
 function resolveRegionSelectedOutlineStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['regionSelectedOutline'] {
   return {
-    stroke: theme.palette.primary.main,
+    stroke: colorPrimitives.blue[300],
     strokeWidthPx: tokens.region.selectedBoundaryStrokeWidthPx,
   };
 }
@@ -226,14 +227,14 @@ function resolveRegionSelectedOutlineStyles(
 // --- Placed-object: icon + fallback letter (tactical vs overlay) ---
 
 function resolvePlacedObjectVariantStyles(
-  theme: Theme,
+  _theme: Theme,
   tokens: LocationMapUiStyleTokens,
   variant: 'tactical' | 'overlay',
 ): LocationMapPlacedObjectVariantResolvedStyles {
   const po = tokens.placedObject;
   const sizePx = po.iconSizePx[variant];
-  const iconColor = alpha(theme.palette.action.active, po.iconAlpha);
-  const fallbackColor = alpha(theme.palette.text.secondary, po.fallbackTextAlpha);
+  const iconColor = po.iconColor;
+  const fallbackColor = po.fallbackColor;
   const fontRem = po.fallbackFontSizeRem[variant];
   return {
     icon: {
@@ -269,7 +270,8 @@ function resolvePlacedObjectStyles(
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves theme-dependent map chrome (strokes, highlights) using `locationMapUiStyleTokens`.
+ * Resolves map chrome (strokes, highlights) using `locationMapUiStyleTokens` and `colorPrimitives`.
+ * The `theme` argument is retained for a stable API; it does not affect resolved colors.
  */
 export function resolveLocationMapUiStyles(theme: Theme): LocationMapUiResolvedStyles {
   const tokens = locationMapUiStyleTokens;

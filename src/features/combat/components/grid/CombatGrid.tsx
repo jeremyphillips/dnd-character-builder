@@ -399,6 +399,12 @@ export function CombatGrid({
               </Box>
             )
 
+            // `LocationMapAuthoredObjectIconsCellInline` wraps each authored icon in its own Tooltip.
+            // Do not wrap the whole cell — that would stack a second tooltip on the same hover.
+            if (cellAuthoredItems.length > 0) {
+              return <Fragment key={cell.cellId}>{cellBox}</Fragment>
+            }
+
             if (cell.placedObjectVisual && cell.perception?.showObstacleGlyph !== false) {
               return (
                 <Tooltip key={cell.cellId} title={cell.placedObjectVisual.tooltip} placement="top" arrow>

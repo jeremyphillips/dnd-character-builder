@@ -25,7 +25,8 @@ type CombatGridAuthoringOverlayProps = {
 /**
  * Read-only authored base map SVG: paths + edges only. Authored object icons render inside each
  * {@link CombatGrid} cell so they stack with tokens/obstacles (see `LocationMapAuthoredObjectIconsCellInline`).
- * Pointer-events none; keep this layer under tactical cells (paint order / z-index in parent).
+ * Pointer-events none; stacks above cell fills (`z-index` in parent) so edge strokes are visible;
+ * blind veil and viewer-lifted cells in `CombatGrid` sit above this layer.
  */
 export function CombatGridAuthoringOverlay({
   theme,
@@ -68,6 +69,7 @@ export function CombatGridAuthoringOverlay({
         top: 0,
         width: w,
         height: h,
+        zIndex: 2,
         pointerEvents: 'none',
       }}
     >

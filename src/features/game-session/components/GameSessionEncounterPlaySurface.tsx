@@ -15,12 +15,14 @@ import type { EncounterState } from '@/features/mechanics/domain/combat'
 import {
   deriveEncounterPresentationGridPerceptionInput,
   resolveSessionControlledCombatantIds,
+  resolveViewerSceneEncounterState,
   type EncounterViewerContext,
 } from '@/features/encounter/domain'
 import { isAreaGridAction } from '@/features/encounter/helpers/actions'
 import type { GridInteractionMode } from '@/features/encounter/domain'
 import { useEncounterState } from '@/features/encounter/hooks/useEncounterState'
 import { useEncounterGridViewModel } from '@/features/encounter/hooks/useEncounterGridViewModel'
+import { useEncounterSceneFocus } from '@/features/encounter/hooks/useEncounterSceneFocus'
 import { useEncounterCombatActiveHeader } from '@/features/encounter/hooks/useEncounterCombatActiveHeader'
 import { useEncounterActivePlaySurface } from '@/features/encounter/hooks/useEncounterActivePlaySurface'
 import type { EncounterContextPromptEnvironment } from '@/features/encounter/domain/encounterContextPrompt.types'
@@ -229,16 +231,23 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     [viewerRole, user?.id, controlledCombatantIds],
   )
 
+  /** Viewer-local: which tactical scene this client renders (Phase A default follows authoritative space). */
+  const [sceneFocus] = useEncounterSceneFocus()
+  const presentationEncounterState = useMemo(
+    () => resolveViewerSceneEncounterState(encounter.encounterState, sceneFocus),
+    [encounter.encounterState, sceneFocus],
+  )
+
   const presentationGridPerceptionInput = useMemo(
     () =>
       deriveEncounterPresentationGridPerceptionInput({
-        encounterState: encounter.encounterState,
+        encounterState: presentationEncounterState,
         /** DM seat: omniscient grid tokens + cell presentation; players use active combatant POV. */
         simulatorViewerMode: viewerRole === 'dm' ? 'dm' : 'active-combatant',
         activeCombatantId: encounter.activeCombatantId,
         presentationSelectedCombatantId: null,
       }),
-    [encounter.encounterState, encounter.activeCombatantId, viewerRole],
+    [presentationEncounterState, encounter.activeCombatantId, viewerRole],
   )
 
   const prevActiveCombatantId = useRef(encounter.activeCombatantId)
@@ -261,7 +270,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   }, [encounter.aoeStep, selectedAction, encounter.selectedCasterOptions])
 
   const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState: encounter.encounterState,
+    encounterState: presentationEncounterState,
     activeCombatantId: encounter.activeCombatantId,
     activeCombatant: encounter.activeCombatant,
     selectedAction,
@@ -323,6 +332,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   const playSurface = useEncounterActivePlaySurface(
     {
       encounterState: encounter.encounterState,
+      presentationEncounterState,
       viewerContext,
       capabilities,
       activeHeader,

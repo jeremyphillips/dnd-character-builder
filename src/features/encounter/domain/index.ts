@@ -145,3 +145,6 @@ export type {
   EncounterSetupEnvironmentPolicy,
 } from './setup'
 export { SIMULATOR_ENCOUNTER_SETUP_POLICY } from './setup'
+
+export { resolveViewerSceneEncounterState } from './resolveViewerSceneEncounterState'
+export type { SceneFocus, SceneFocusFollowPolicy } from './sceneFocus.types'

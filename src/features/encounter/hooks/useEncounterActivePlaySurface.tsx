@@ -54,6 +54,7 @@ import { deriveGridHoverStatusMessage } from '../helpers/ui'
 import type { EncounterRuntimeContextValue } from '../routes/EncounterRuntimeContext'
 import type { EncounterContextPromptEnvironment } from '../domain/encounterContextPrompt.types'
 import type { CombatIntent } from '@/features/mechanics/domain/combat'
+import type { EncounterState } from '@/features/mechanics/domain/combat'
 import { useEncounterContextPromptStrip } from './useEncounterContextPrompt'
 
 export type EncounterActivePlaySurfaceDeps = Pick<
@@ -115,6 +116,11 @@ export type EncounterActivePlaySurfaceDeps = Pick<
   /** Normalized inputs for contextual prompts (stairs, future portals/objectives). */
   contextualPromptEnvironment?: EncounterContextPromptEnvironment | null
   handleStairTraversal?: (intent: Extract<CombatIntent, { kind: 'stair-traversal' }>) => void
+  /**
+   * Grid-aligned view of encounter state (see {@link resolveViewerSceneEncounterState}). When omitted,
+   * defaults to `encounterState`. Mechanics / intents still use authoritative `encounterState` only.
+   */
+  presentationEncounterState?: EncounterState | null
 }
 
 function placementReasonMessage(reason: PlacementValidationReason): string {
@@ -192,9 +198,13 @@ export function useEncounterActivePlaySurface(
     contextualStripOverride,
     contextualPromptEnvironment,
     handleStairTraversal,
+    presentationEncounterState,
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
+  /** Scene the viewer sees on the tactical grid (defaults to authoritative encounter state). */
+  const sceneEncounterState = presentationEncounterState ?? encounterState
+
   const theme = useTheme()
   const playSurfaceHeaderOffset = useMemo(() => {
     const u = getEncounterUiStateTheme(theme)
@@ -353,9 +363,9 @@ export function useEncounterActivePlaySurface(
   ])
 
   const placementCellSummaryLabel = useMemo(() => {
-    if (!encounterState?.space || !selectedSingleCellPlacementCellId) return null
-    return formatGridCellLabel(encounterState.space, selectedSingleCellPlacementCellId)
-  }, [encounterState, selectedSingleCellPlacementCellId])
+    if (!sceneEncounterState?.space || !selectedSingleCellPlacementCellId) return null
+    return formatGridCellLabel(sceneEncounterState.space, selectedSingleCellPlacementCellId)
+  }, [sceneEncounterState, selectedSingleCellPlacementCellId])
 
   const targetCombatant = useMemo(() => {
     if (!encounterState || !selectedActionTargetId) return null
@@ -438,12 +448,12 @@ export function useEncounterActivePlaySurface(
 
       if (isAreaGridAction(action, initialOpts)) {
         setSelectedActionTargetId('')
-        if (!encounterState?.space || !encounterState.placements || !activeCombatantId || !action?.areaTemplate) {
+        if (!sceneEncounterState?.space || !sceneEncounterState.placements || !activeCombatantId || !action?.areaTemplate) {
           resetAoePlacement()
           return
         }
         if (isSelfCenteredAreaAction(action, initialOpts)) {
-          const cell = getCellForCombatant(encounterState.placements, activeCombatantId)
+          const cell = getCellForCombatant(sceneEncounterState.placements, activeCombatantId)
           if (cell) {
             setAoeOriginCellId(cell)
             setAoeStep('confirm')
@@ -464,6 +474,7 @@ export function useEncounterActivePlaySurface(
     [
       availableActions,
       encounterState,
+      sceneEncounterState,
       activeCombatantId,
       suppressSameSideHostile,
       setUnaffectedCombatantIds,
@@ -498,9 +509,9 @@ export function useEncounterActivePlaySurface(
       resetAoePlacement()
       setSelectedObjectAnchorId(null)
       setInteractionMode('object-anchor-select')
-    } else if (v === 'place') {
+    } else     if (v === 'place') {
       setInteractionMode('aoe-place')
-      if (encounterState?.space && encounterState.placements && activeCombatantId && action.areaTemplate) {
+      if (sceneEncounterState?.space && sceneEncounterState.placements && activeCombatantId && action.areaTemplate) {
         setAoeOriginCellId(null)
         setAoeStep('placing')
       }
@@ -509,8 +520,8 @@ export function useEncounterActivePlaySurface(
     selectedCasterOptions,
     selectedActionId,
     availableActions,
-    encounterState?.space,
-    encounterState?.placements,
+    sceneEncounterState?.space,
+    sceneEncounterState?.placements,
     activeCombatantId,
     resetAoePlacement,
     setAoeOriginCellId,
@@ -520,12 +531,12 @@ export function useEncounterActivePlaySurface(
   ])
 
   const aoeAffectedSummary = useMemo(() => {
-    if (!encounterState || !selectedAction?.areaTemplate || (aoeStep !== 'confirm' && aoeStep !== 'placing')) {
+    if (!sceneEncounterState || !selectedAction?.areaTemplate || (aoeStep !== 'confirm' && aoeStep !== 'placing')) {
       return { names: [] as string[], total: 0, overflow: 0 }
     }
     const r = areaTemplateRadiusFt(selectedAction.areaTemplate)
-    const space = encounterState.space
-    const placements = encounterState.placements
+    const space = sceneEncounterState.space
+    const placements = sceneEncounterState.placements
     let previewOrigin: string | null = null
     if (space && placements && activeCombatantId) {
       const casterCell = getCellForCombatant(placements, activeCombatantId)
@@ -545,7 +556,7 @@ export function useEncounterActivePlaySurface(
     if (!previewOrigin) {
       return { names: [] as string[], total: 0, overflow: 0 }
     }
-    const ids = selectCombatantIdsInAoeFootprint(encounterState, previewOrigin, r)
+    const ids = selectCombatantIdsInAoeFootprint(sceneEncounterState, previewOrigin, r)
     const roster = Object.values(encounterState.combatantsById)
     const names = ids
       .map((id) => {
@@ -557,7 +568,7 @@ export function useEncounterActivePlaySurface(
     const shown = names.slice(0, AFFECTED_NAME_MAX)
     const overflow = Math.max(0, total - shown.length)
     return { names: shown, total, overflow }
-  }, [encounterState, selectedAction, aoeOriginCellId, aoeHoverCellId, aoeStep, activeCombatantId])
+  }, [sceneEncounterState, encounterState, selectedAction, aoeOriginCellId, aoeHoverCellId, aoeStep, activeCombatantId])
 
   const canResolveAction = useMemo(
     () =>
@@ -707,12 +718,12 @@ export function useEncounterActivePlaySurface(
 
   const handleCellClick = useCallback(
     (cellId: string) => {
-      if (!encounterState || !activeCombatantId) return
+      if (!sceneEncounterState || !activeCombatantId) return
 
       if (interactionMode === 'single-cell-place') {
         if (!capabilities?.canSelectAction) return
-        const space = encounterState.space
-        const placements = encounterState.placements
+        const space = sceneEncounterState.space
+        const placements = sceneEncounterState.placements
         if (!space || !placements || !selectedAction) return
         const req = getSingleCellPlacementRequirement(selectedAction)
         if (!req) return
@@ -730,7 +741,7 @@ export function useEncounterActivePlaySurface(
 
       if (interactionMode === 'object-anchor-select') {
         if (!capabilities?.canSelectAction) return
-        const space = encounterState.space
+        const space = sceneEncounterState.space
         if (!space) return
         const gridObject = findGridObjectAtCell(space, cellId)
         if (gridObject) {
@@ -747,8 +758,8 @@ export function useEncounterActivePlaySurface(
         !isSelfCenteredAreaAction(selectedAction, selectedCasterOptions)
       ) {
         if (!capabilities?.canSelectAction) return
-        const space = encounterState.space
-        const placements = encounterState.placements
+        const space = sceneEncounterState.space
+        const placements = sceneEncounterState.placements
         if (!space || !placements) return
         const casterCell = getCellForCombatant(placements, activeCombatantId)
         const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
@@ -771,7 +782,7 @@ export function useEncounterActivePlaySurface(
         return
       }
 
-      const occupant = encounterState.placements?.find((p) => p.cellId === cellId)
+      const occupant = sceneEncounterState.placements?.find((p) => p.cellId === cellId)
       if (occupant) {
         if (!capabilities?.canSelectAction) return
         handleSelectTarget(occupant.combatantId)
@@ -782,6 +793,7 @@ export function useEncounterActivePlaySurface(
       }
     },
     [
+      sceneEncounterState,
       encounterState,
       activeCombatantId,
       aoeStep,
@@ -842,7 +854,7 @@ export function useEncounterActivePlaySurface(
   const gridHoverStatusMessage = useMemo(
     () =>
       deriveGridHoverStatusMessage({
-        encounterState,
+        encounterState: sceneEncounterState,
         activeCombatantId,
         activeCombatant,
         hoveredCellId:
@@ -858,7 +870,7 @@ export function useEncounterActivePlaySurface(
         interactionMode,
       }),
     [
-      encounterState,
+      sceneEncounterState,
       activeCombatantId,
       activeCombatant,
       aoeHoverCellId,

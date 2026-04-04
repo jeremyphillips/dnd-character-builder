@@ -32,7 +32,8 @@ import {
   type EncounterViewerContext,
 } from '../domain'
 import { SIMULATOR_ENCOUNTER_SETUP_POLICY } from '../domain/setup'
-import { useEncounterState, useEncounterOptions, useEncounterRoster } from '../hooks'
+import { resolveViewerSceneEncounterState } from '../domain'
+import { useEncounterState, useEncounterOptions, useEncounterRoster, useEncounterSceneFocus } from '../hooks'
 import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiveHeader'
 import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
 import type { GridInteractionMode } from '../domain'
@@ -275,6 +276,13 @@ function useEncounterRuntimeValue() {
     [simulatorViewerMode, presentationSelectedCombatantId],
   )
 
+  /** Viewer-local: which tactical scene the simulator play surface renders (Phase A default follows authoritative space). */
+  const [sceneFocus, setSceneFocus] = useEncounterSceneFocus()
+  const presentationEncounterState = useMemo(
+    () => resolveViewerSceneEncounterState(encounterState, sceneFocus),
+    [encounterState, sceneFocus],
+  )
+
   const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
     if (!campaignId) return null
     return {
@@ -292,12 +300,12 @@ function useEncounterRuntimeValue() {
   const presentationGridPerceptionInput = useMemo(
     () =>
       deriveEncounterPresentationGridPerceptionInput({
-        encounterState,
+        encounterState: presentationEncounterState,
         simulatorViewerMode,
         activeCombatantId,
         presentationSelectedCombatantId,
       }),
-    [encounterState, simulatorViewerMode, activeCombatantId, presentationSelectedCombatantId],
+    [presentationEncounterState, simulatorViewerMode, activeCombatantId, presentationSelectedCombatantId],
   )
 
   const handleStartEncounter = useCallback(
@@ -455,7 +463,7 @@ function useEncounterRuntimeValue() {
   }, [aoeStep, selectedAction, selectedCasterOptions])
 
   const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState,
+    encounterState: presentationEncounterState,
     activeCombatantId,
     activeCombatant,
     selectedAction,
@@ -567,6 +575,9 @@ function useEncounterRuntimeValue() {
 
   return {
     viewerContext,
+    sceneFocus,
+    setSceneFocus,
+    presentationEncounterState,
     /** Presentation POV (grid/sidebar/header); not turn ownership. */
     simulatorViewerMode,
     setSimulatorViewerMode,

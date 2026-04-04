@@ -15,6 +15,11 @@ import type { GridInteractionMode } from '../domain'
 import type { AoeStep } from '../helpers/actions'
 
 type UseEncounterGridViewModelArgs = {
+  /**
+   * Encounter state backing the grid VM — may be **presentation** state from
+   * `resolveViewerSceneEncounterState` when scene focus diverges from authoritative space (future).
+   * Mechanics / intents still use authoritative state only.
+   */
   encounterState: EncounterState | null
   activeCombatantId: string | null
   activeCombatant: CombatantInstance | null
@@ -32,6 +37,7 @@ type UseEncounterGridViewModelArgs = {
 
 /**
  * Shared grid view model + token presentation kinds for Encounter Simulator and GameSession play.
+ * Pass presentation encounter state when the viewer’s scene differs from authoritative `EncounterState` (Phase B+).
  */
 export function useEncounterGridViewModel({
   encounterState,

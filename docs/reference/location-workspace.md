@@ -61,9 +61,11 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 
 **Grid wiring:** `GridEditor` / `HexGridEditor` receive optional `selectHoverTarget` (`LocationMapSelection`) when the map editor is in **select** mode (`LocationGridAuthoringSection` passes it; other modes omit it so cells keep normal hover). **Square** grids: `handleSelectPointerMove` uses `resolveSquareCellIdFromGridLocalPx` in `shared/domain/grid/squareGridOverlayGeometry.ts` (re-exported from `squareGridMapOverlayGeometry.ts`) when `elementFromPoint` does not resolve a `[role="gridcell"]` (e.g. pointer in the inter-cell gap). **Hex** grids continue to use `resolveNearestHexCell` for that fallback.
 
-**Rendering note:** Grid cells use MUI `Box` with `component="button"`. When cell hover chrome is suppressed, `:hover` rules **mirror** the non-hover border/background so native `<button>` hover does not leak past the intended visual state.
+**Rendering note:** Grid cells use MUI `Box` with `component="button"`. When Select-mode hover is suppressed for a cell (region/path/object/edge winner), `GridEditor` applies **mirrored** `:hover` styles (same border/background as the idle state) so native `<button>` hover does not compete with the resolved target. Policy summary: `domain/mapEditor/select-mode/selectModeChrome.policy.ts` (`SELECT_MODE_CHROME_POLICY_DOC`).
 
-**Known gap:** Per-cell hover vs region emphasis can still misbehave in some cases — see **Open issues §4**.
+**Gesture vs pan:** `useCanvasPan` exposes `consumeClickSuppressionAfterPan()` — after a pan drag past the threshold, the next **click** on the map is ignored (`LocationGridAuthoringSection`, `CombatGrid`) so canvas navigation does not commit selection/placement.
+
+**Known gap:** Residual edge cases (timing, DOM vs geometry order) — see **Open issues §4**.
 
 ---
 
@@ -379,21 +381,21 @@ Map pan is implemented with `useCanvasPan` on the canvas wrapper. Three layers o
 
 1. **`suppressCanvasPanOnCells`** — in **place** mode and **draw → path** mode, cell `pointerdown`/`pointerup` events call `stopPropagation` so the canvas pan handler never starts a drag from cell clicks.
 2. **Window-level `pointerup` safety net** — `useCanvasPan` registers a `window` `pointerup` listener that clears drag state even when a child stops propagation, preventing stranded `isDragging` / grabbing cursor.
-3. **`hasDragMoved` guard** — `LocationGridAuthoringSection` checks `hasDragMoved()` before dispatching `onCellClick`, matching the pattern used by the tactical grid (`CombatGrid` in active encounter play). This blocks accidental cell actions from drag gestures that started outside cells.
+3. **`consumeClickSuppressionAfterPan`** — `useCanvasPan` sets a one-shot suppress flag when a pan gesture exceeds the drag threshold; `LocationGridAuthoringSection` and `CombatGrid` consume it in cell **click** handlers so a drag release does not commit selection or placement. The movement threshold matches pan drag recognition (default 3px).
 
-**Remaining scope:** switching to `pointerup`-based placement (instead of browser `click`) with a movement threshold would further improve reliability on trackpads. This is deferred.
+**Remaining scope:** optional `pointerup`-based placement for non–Select tools on trackpads can build on the same hook.
 
 ### 3. Path chain preview responsiveness
 
 The smooth curve preview (hover → smooth Catmull-Rom spline) recalculates the full chain curve on every pointer move. On long chains or slower machines this can feel choppy. A potential optimization would be to cache the committed portion of the chain curve and only recompute the last 2–3 segments when the hover cell changes.
 
-### 4. Region vs cell hover chrome (follow-up)
+### 4. Region vs cell hover chrome (hardened; edge cases remain)
 
-**Intent:** In **Select** mode, when the resolved **hover winner** is a **region** (or path, edge, object, etc.), grid **cells** should not show the usual per-cell hover treatment (primary border / dimmed fill) as if the cell were the primary target. Cell-level hover should read as active mainly when the winner is **`cell`** for that `cellId`.
+**Intent:** In **Select** mode, one **primary** hover target drives feedback: `selectHoverTarget` from `resolveSelectModeInteractiveTarget`. Cell-level hover chrome applies only when the winner is `{ type: 'cell', cellId }` for that cell (`shouldApplyCellHoverChrome`). When the winner is region/path/edge/object, cells do not take the primary hover treatment; `GridEditor` mirrors idle styles on `:hover` for those cells so native button hover does not compete.
 
-**In place today:** `selectHoverTarget` from `resolveSelectModeInteractiveTarget`, `shouldApplyCellHoverChrome` / `shouldApplyCellSelectedChrome` (`mapGridCellVisualState.ts`), interior priority **region before linked** (`resolveSelectModeAfterPathEdgeHits`), square `anchorCellId` fallback (`resolveSquareCellIdFromGridLocalPx`), and explicit `:hover` style mirroring on grid cell buttons when chrome is suppressed.
+**In place:** `resolveSelectModeAfterPathEdgeHits` interior priority (objects → linked → **region** → bare cell), `mapGridCellVisualState.ts`, `selectModeChrome.policy.ts`, and gap fallback for pointer-in-gap (`resolveSquareCellIdFromGridLocalPx` / `resolveNearestHexCell`).
 
-**Still open:** Reports that region hover and cell hover can both read as active in some situations, or that behavior feels inconsistent (e.g. timing vs React updates, remaining edge cases in DOM vs geometry hit order, or native control styling). **Defer deeper fixes** until revisited; extend the resolver and `mapGridCellVisualState` helpers rather than scattering one-off conditions in JSX.
+**Still open:** Rare timing or hit-order glitches — extend the resolver/helpers rather than one-off JSX.
 
 ---
 
@@ -415,7 +417,7 @@ Zoom and pan behavior is shared between the location editor and encounter active
 | Export | Role |
 |--------|------|
 | `useCanvasZoom` | Zoom state, `zoomIn`/`zoomOut`/`zoomReset`, `zoomControlProps` spread for `ZoomControl`, `wheelContainerRef` (non-passive listener for Ctrl/Cmd + scroll / trackpad pinch). `bindResetPan` coordinates pan reset with zoom reset. |
-| `useCanvasPan` | Pan state, pointer drag handlers (`pointerHandlers` spread), `isDragging`, `hasDragMoved()` (distinguishes click from drag), `resetPan`. Includes a window-level `pointerup` listener so drag state is always cleared even when children stop propagation. |
+| `useCanvasPan` | Pan state, pointer drag handlers (`pointerHandlers` spread), `isDragging`, `consumeClickSuppressionAfterPan()` (suppress the next click after a pan drag), `hasDragMoved()`, `resetPan`. Window-level `pointerup` clears drag state when children stop propagation. |
 | `CanvasPoint` | Shared type `{ x: number; y: number }`. |
 
 Both hooks are used at the route level; derived values are passed down to canvas/grid components as props.

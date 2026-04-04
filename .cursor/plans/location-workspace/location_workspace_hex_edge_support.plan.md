@@ -121,11 +121,13 @@ Before implementation, document which option is being chosen and why.
 
 Fill this **after** the audit (`audit-current-hex-edge-behavior`) and **before** `implement-supported-or-constrained-path`. No implementation work until this block is completed.
 
-| Field | Value |
-|-------|--------|
-| **Chosen option** | **B** — explicit constrained support |
+
+| Field                          | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chosen option**              | **B** — explicit constrained support                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Rationale (audit findings)** | Full hex edge support requires hex boundary geometry, SVG overlay, and hit-testing beyond square `edgeEntriesToSegmentGeometrySquare` / `useSquareEdgeBoundaryPaint`. Current code already hides edge draw tools on hex and skips edge picking when `isHex`. Remaining gaps: stored `edgeEntries` invisible with no user messaging; erase could still remove edges via `resolveEraseTargetAtCell` square adjacency without visible feedback; edge selection could persist when switching grid to hex. Option B closes those gaps without a multi-week geometry project. |
-| **Date or PR link** | 2026-04 |
+| **Date or PR link**            | 2026-04                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
 
 ### Acceptance gate for the chosen option
 

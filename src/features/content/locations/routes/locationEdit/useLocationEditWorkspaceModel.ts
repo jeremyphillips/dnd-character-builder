@@ -259,7 +259,7 @@ export function useLocationEditWorkspaceModel({
   buildingStairConnectionsRef.current = buildingStairConnections;
 
   const { zoom, zoomControlProps, wheelContainerRef, bindResetPan } = useCanvasZoom();
-  const { pan, isDragging, hasDragMoved, pointerHandlers, resetPan } = useCanvasPan();
+  const { pan, isDragging, consumeClickSuppressionAfterPan, pointerHandlers, resetPan } = useCanvasPan();
   useEffect(() => {
     bindResetPan(resetPan);
   }, [bindResetPan, resetPan]);
@@ -1163,7 +1163,7 @@ export function useLocationEditWorkspaceModel({
     wheelContainerRef,
     pan,
     isDragging,
-    hasDragMoved,
+    consumeClickSuppressionAfterPan,
     pointerHandlers,
     isSystem,
     isBuildingWorkspace,

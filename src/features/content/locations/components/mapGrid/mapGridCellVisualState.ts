@@ -4,6 +4,8 @@ import type { LocationMapSelection } from '@/features/content/locations/componen
  * Whether the grid cell at `cellId` should show default `:hover` background/border chrome
  * (the dimmed hover treatment on the cell button / hex ring).
  *
+ * **Policy:** see `SELECT_MODE_CHROME_POLICY_DOC` in `selectModeChrome.policy.ts`.
+ *
  * **Select mode:** pass `selectHoverTarget` from {@link resolveSelectModeInteractiveTarget} /
  * pointer resolution. Cell-level hover applies only when the hover **winner** is `cell` for this
  * `cellId`. When the winner is region, object, path, or edge, returns `false` so the cell does

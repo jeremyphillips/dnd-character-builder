@@ -162,7 +162,7 @@ export default function LocationEditRoute() {
     wheelContainerRef,
     pan,
     isDragging,
-    hasDragMoved,
+    consumeClickSuppressionAfterPan,
     pointerHandlers,
     isSystem,
     isBuildingWorkspace,
@@ -345,7 +345,7 @@ export default function LocationEditRoute() {
       onEraseEdge={handleEraseEdge}
       suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
       placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
-      hasDragMoved={hasDragMoved}
+      consumeClickSuppressionAfterPan={consumeClickSuppressionAfterPan}
     />
   ) : null;
 

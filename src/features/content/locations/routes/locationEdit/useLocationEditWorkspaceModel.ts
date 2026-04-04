@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
@@ -31,6 +31,7 @@ import {
   getPlacePaletteItemsForScale,
   resolveDrawSelectionToAction,
   resolvePlacedKindToAction,
+  applyEraseTargetToDraft,
   resolveEraseTargetAtCell,
   useLocationMapEditorState,
 } from '@/features/content/locations/domain';
@@ -44,7 +45,6 @@ import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDe
 import {
   canPlaceObjectKindOnHostScale,
   getAllowedLinkedLocationOptions,
-  removePathChainSegment,
   type LocationScaleId,
 } from '@/shared/domain/locations';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
@@ -78,6 +78,73 @@ import {
 
 import { useLocationMapHydration } from './useLocationMapHydration';
 import { useLocationEditSaveActions } from './useLocationEditSaveActions';
+
+/**
+ * Remove the current map selection from the draft when it is a deletable entity.
+ * Object/edge reuse {@link applyEraseTargetToDraft} (same mutations as Erase tool for those targets).
+ * Whole-path removal is Select-only (Erase removes one segment via {@link resolveEraseTargetAtCell}).
+ */
+function applyRemovePlacedObjectToDraft(
+  prev: LocationGridDraftState,
+  cellId: string,
+  objectId: string,
+): LocationGridDraftState {
+  const next = applyEraseTargetToDraft(
+    prev,
+    { type: 'object', cellId, objectId },
+    cellId,
+    () => crypto.randomUUID(),
+  );
+  const clearSelection =
+    prev.mapSelection.type === 'object' &&
+    prev.mapSelection.cellId === cellId &&
+    prev.mapSelection.objectId === objectId;
+  return clearSelection
+    ? { ...next, mapSelection: { type: 'none' }, selectedCellId: null }
+    : next;
+}
+
+/** Whole-path removal (same as Delete when a path is selected; Erase removes one segment). */
+function applyRemovePathFromDraft(prev: LocationGridDraftState, pathId: string): LocationGridDraftState {
+  const next: LocationGridDraftState = {
+    ...prev,
+    pathEntries: prev.pathEntries.filter((p) => p.id !== pathId),
+  };
+  const clearSelection =
+    prev.mapSelection.type === 'path' && prev.mapSelection.pathId === pathId;
+  return clearSelection
+    ? { ...next, mapSelection: { type: 'none' }, selectedCellId: null }
+    : next;
+}
+
+function applyDeleteForMapSelection(prev: LocationGridDraftState): LocationGridDraftState | null {
+  const ms = prev.mapSelection;
+  if (ms.type === 'object') {
+    return applyRemovePlacedObjectToDraft(prev, ms.cellId, ms.objectId);
+  }
+  if (ms.type === 'path') {
+    return applyRemovePathFromDraft(prev, ms.pathId);
+  }
+  if (ms.type === 'edge') {
+    const next = applyEraseTargetToDraft(
+      prev,
+      { type: 'edge', edgeId: ms.edgeId },
+      '',
+      () => crypto.randomUUID(),
+    );
+    return { ...next, mapSelection: { type: 'none' }, selectedCellId: null };
+  }
+  if (ms.type === 'edge-run') {
+    const remove = new Set(ms.edgeIds);
+    return {
+      ...prev,
+      edgeEntries: prev.edgeEntries.filter((ent) => !remove.has(ent.edgeId)),
+      mapSelection: { type: 'none' },
+      selectedCellId: null,
+    };
+  }
+  return null;
+}
 
 export type UseLocationEditWorkspaceModelParams = {
   locationId: string | undefined;
@@ -126,7 +193,7 @@ export function useLocationEditWorkspaceModel({
     INITIAL_LOCATION_GRID_DRAFT,
   );
   const gridDraftRef = useRef(gridDraft);
-  useEffect(() => {
+  useLayoutEffect(() => {
     gridDraftRef.current = gridDraft;
   }, [gridDraft]);
   const [gridDraftBaseline, setGridDraftBaseline] = useState<LocationGridDraftState>(() =>
@@ -476,6 +543,23 @@ export function useLocationEditWorkspaceModel({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [mapEditor.mode, mapEditor.setPathAnchorCellId]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const t = e.target;
+      if (t instanceof HTMLElement) {
+        if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      }
+      if (mapEditor.mode !== 'select') return;
+      const next = applyDeleteForMapSelection(gridDraftRef.current);
+      if (!next) return;
+      e.preventDefault();
+      setGridDraft(next);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mapEditor.mode]);
+
   const linkModalSelectOptions = useMemo(() => {
     if (!campaignId || !loc || loc.source !== 'campaign') return [];
     const p = mapEditor.pendingPlacement;
@@ -565,6 +649,22 @@ export function useLocationEditWorkspaceModel({
     return validateLocationChange({ campaignId, locationId, mode: 'delete' });
   }, [campaignId, locationId]);
 
+  /**
+   * Header Delete: with Select tool + map entity selected, remove it from the draft.
+   * Otherwise validate and open delete-location confirmation.
+   */
+  const handleRequestDelete = useCallback(async () => {
+    if (mapEditor.mode === 'select') {
+      const next = applyDeleteForMapSelection(gridDraft);
+      if (next) {
+        setGridDraft(next);
+        return;
+      }
+    }
+    const result = await handleValidateDelete();
+    if (result.allowed) setDeleteConfirmOpen(true);
+  }, [mapEditor.mode, gridDraft, handleValidateDelete]);
+
   const handleBack = useCallback(
     () => navigate(`/campaigns/${campaignId}/world/locations`),
     [navigate, campaignId],
@@ -601,49 +701,19 @@ export function useLocationEditWorkspaceModel({
       setGridDraft((prev) => {
         const target = resolveEraseTargetAtCell(cellId, prev, cols, rows);
         if (!target) return prev;
-        if (target.type === 'edge') {
-          return {
-            ...prev,
-            edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== target.edgeId),
-          };
-        }
-        if (target.type === 'object') {
-          const objs = prev.objectsByCellId[target.cellId] ?? [];
-          const nextObjs = objs.filter((o) => o.id !== target.objectId);
-          const nextMap = { ...prev.objectsByCellId };
-          if (nextObjs.length === 0) delete nextMap[target.cellId];
-          else nextMap[target.cellId] = nextObjs;
-          return { ...prev, objectsByCellId: nextMap };
-        }
-        if (target.type === 'path') {
-          return {
-            ...prev,
-            pathEntries: removePathChainSegment(
-              prev.pathEntries,
-              target.pathId,
-              cellId,
-              target.neighborCellId,
-              () => crypto.randomUUID(),
-            ),
-          };
-        }
-        if (target.type === 'fill') {
-          const nextFill = { ...prev.cellFillByCellId };
-          delete nextFill[cellId];
-          return { ...prev, cellFillByCellId: nextFill };
-        }
-        if (target.type === 'region') {
-          const nextRegion = { ...prev.regionIdByCellId };
-          delete nextRegion[cellId];
-          return { ...prev, regionIdByCellId: nextRegion };
-        }
-        const nextLinks = { ...prev.linkedLocationByCellId };
-        delete nextLinks[target.cellId];
-        return { ...prev, linkedLocationByCellId: nextLinks };
+        return applyEraseTargetToDraft(prev, target, cellId, () => crypto.randomUUID());
       });
     },
     [gridColumns, gridRows],
   );
+
+  const handleRemovePlacedObject = useCallback((cellId: string, objectId: string) => {
+    setGridDraft((prev) => applyRemovePlacedObjectToDraft(prev, cellId, objectId));
+  }, []);
+
+  const handleRemovePathFromMap = useCallback((pathId: string) => {
+    setGridDraft((prev) => applyRemovePathFromDraft(prev, pathId));
+  }, []);
 
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
@@ -847,10 +917,13 @@ export function useLocationEditWorkspaceModel({
     handleRemovePatch,
     handleDelete,
     handleValidateDelete,
+    handleRequestDelete,
     handleBack,
     handleUpdateLinkedLocation,
     handleUpdateCellObjects,
     handleEraseCell,
+    handleRemovePlacedObject,
+    handleRemovePathFromMap,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,

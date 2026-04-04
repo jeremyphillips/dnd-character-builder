@@ -28,6 +28,10 @@ export type LocationEditorSelectionPanelProps = {
     regionId: string,
     patch: Pick<LocationMapRegionAuthoringEntry, 'name' | 'description' | 'colorKey'>,
   ) => void;
+  /** Uses erase/delete draft path (same as Erase on that object); clears map selection when it matches. */
+  onRemovePlacedObjectFromMap?: (cellId: string, objectId: string) => void;
+  /** Removes the whole path chain (same as Delete when a path is selected). */
+  onRemovePathFromMap?: (pathId: string) => void;
 };
 
 /**
@@ -40,6 +44,8 @@ export function LocationEditorSelectionPanel({
   edgeEntries,
   regionEntries,
   onUpdateRegionEntry,
+  onRemovePlacedObjectFromMap,
+  onRemovePathFromMap,
 }: LocationEditorSelectionPanelProps) {
   switch (selection.type) {
     case 'none':
@@ -77,7 +83,13 @@ export function LocationEditorSelectionPanel({
       );
     }
     case 'path':
-      return <LocationMapPathInspector pathId={selection.pathId} pathEntries={pathEntries} />;
+      return (
+        <LocationMapPathInspector
+          pathId={selection.pathId}
+          pathEntries={pathEntries}
+          onRemovePathFromMap={onRemovePathFromMap}
+        />
+      );
     case 'object':
       return (
         <LocationMapObjectInspector
@@ -85,6 +97,7 @@ export function LocationEditorSelectionPanel({
           objectId={selection.objectId}
           objectsByCellId={cellPanelProps.objectsByCellId}
           onUpdateCellObjects={cellPanelProps.onUpdateCellObjects}
+          onRemovePlacedObjectFromMap={onRemovePlacedObjectFromMap}
         />
       );
     case 'edge':

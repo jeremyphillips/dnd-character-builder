@@ -20,6 +20,8 @@ export type LocationMapObjectInspectorProps = {
   objectId: string;
   objectsByCellId: Record<string, LocationCellObjectDraft[]>;
   onUpdateCellObjects: (cellId: string, objects: LocationCellObjectDraft[]) => void;
+  /** When set, “Remove from map” uses the same draft path as Erase (and clears selection when it matches). */
+  onRemovePlacedObjectFromMap?: (cellId: string, objectId: string) => void;
 };
 
 export function LocationMapObjectInspector({
@@ -27,6 +29,7 @@ export function LocationMapObjectInspector({
   objectId,
   objectsByCellId,
   onUpdateCellObjects,
+  onRemovePlacedObjectFromMap,
 }: LocationMapObjectInspectorProps) {
   const objs = objectsByCellId[cellId] ?? [];
   const obj = objs.find((o) => o.id === objectId);
@@ -70,6 +73,10 @@ export function LocationMapObjectInspector({
         color="error"
         variant="outlined"
         onClick={() => {
+          if (onRemovePlacedObjectFromMap) {
+            onRemovePlacedObjectFromMap(cellId, objectId);
+            return;
+          }
           const next = objs.filter((o) => o.id !== objectId);
           onUpdateCellObjects(cellId, next);
         }}
@@ -83,9 +90,15 @@ export function LocationMapObjectInspector({
 export type LocationMapPathInspectorProps = {
   pathId: string;
   pathEntries: readonly LocationMapPathAuthoringEntry[];
+  /** When set, “Remove from map” removes the whole chain (same as map Delete for paths). */
+  onRemovePathFromMap?: (pathId: string) => void;
 };
 
-export function LocationMapPathInspector({ pathId, pathEntries }: LocationMapPathInspectorProps) {
+export function LocationMapPathInspector({
+  pathId,
+  pathEntries,
+  onRemovePathFromMap,
+}: LocationMapPathInspectorProps) {
   const entry = pathEntries.find((p) => p.id === pathId);
   if (!entry) {
     return (
@@ -107,6 +120,19 @@ export function LocationMapPathInspector({ pathId, pathEntries }: LocationMapPat
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
         id: {pathId}
       </Typography>
+      {onRemovePathFromMap ? (
+        <>
+          <Divider />
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            onClick={() => onRemovePathFromMap(pathId)}
+          >
+            Remove from map
+          </Button>
+        </>
+      ) : null}
     </Stack>
   );
 }

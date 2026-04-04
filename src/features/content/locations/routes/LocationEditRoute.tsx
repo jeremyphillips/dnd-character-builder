@@ -117,10 +117,13 @@ export default function LocationEditRoute() {
     handleRemovePatch,
     handleDelete,
     handleValidateDelete,
+    handleRequestDelete,
     handleBack,
     handleUpdateLinkedLocation,
     handleUpdateCellObjects,
     handleEraseCell,
+    handleRemovePlacedObject,
+    handleRemovePathFromMap,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,
@@ -189,6 +192,8 @@ export default function LocationEditRoute() {
       edgeEntries={gridDraft.edgeEntries}
       regionEntries={gridDraft.regionEntries}
       onUpdateRegionEntry={handleUpdateRegionEntry}
+      onRemovePlacedObjectFromMap={handleRemovePlacedObject}
+      onRemovePathFromMap={handleRemovePathFromMap}
       cellPanelProps={{
         selectedCellId: selectedCellIdForMapSelection(gridDraft.mapSelection),
         hostLocationId: mapHostLocationId,
@@ -318,10 +323,7 @@ export default function LocationEditRoute() {
       onBack={handleBack}
       saveDisabled={isBuildingWorkspace && !activeFloorId}
       canDelete={canDelete}
-      onRequestDelete={async () => {
-        const result = await handleValidateDelete();
-        if (result.allowed) setDeleteConfirmOpen(true);
-      }}
+      onRequestDelete={() => void handleRequestDelete()}
       deleteLoading={deleting}
       buildingFloorStrip={
         isBuildingWorkspace

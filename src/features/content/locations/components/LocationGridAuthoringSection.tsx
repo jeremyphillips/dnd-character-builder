@@ -568,6 +568,8 @@ export function LocationGridAuthoringSection({
       }
       const next = resolveSelectModeInteractiveTarget({
         targetElement: top as HTMLElement | null,
+        clientX: e.clientX,
+        clientY: e.clientY,
         gx,
         gy,
         anchorCellId,
@@ -611,6 +613,8 @@ export function LocationGridAuthoringSection({
       setDraft((d) => {
         const resolved = resolveSelectModeInteractiveTarget({
           targetElement: e.target as HTMLElement,
+          clientX: e.clientX,
+          clientY: e.clientY,
           gx,
           gy,
           anchorCellId,
@@ -742,6 +746,8 @@ export function LocationGridAuthoringSection({
       setDraft((d) => {
         const resolved = resolveSelectModeInteractiveTarget({
           targetElement: e.target as HTMLElement,
+          clientX: e.clientX,
+          clientY: e.clientY,
           gx: 0,
           gy: 0,
           anchorCellId: cell.cellId,
@@ -763,6 +769,8 @@ export function LocationGridAuthoringSection({
     setDraft((d) => {
       const resolved = resolveSelectModeInteractiveTarget({
         targetElement: e.target as HTMLElement,
+        clientX: e.clientX,
+        clientY: e.clientY,
         gx,
         gy,
         anchorCellId: cell.cellId,

@@ -110,7 +110,22 @@ The **baseline** string is set after successful map hydration and after a succes
 
 The three right-rail tabs (**Location**, **Map**, **Selection**) are not separate dirty stores: they all feed the shared form, `LocationGridDraftState`, and (for buildings) stair-connection state. **Map-only** UI such as toolbar mode, paint selection, and `mapSelection` is not part of the persistable snapshot (see `locationGridDraft.utils.ts`).
 
-**System-location patch** (`LocationEditSystemPatchWorkspace`) still uses the patch driver’s dirty state plus map draft comparison; it does not use `isWorkspaceDirty`.
+### Dirty state — system location patch
+
+System entries (`source === 'system'`) are **not** saved through the campaign `handleCampaignSubmit` pipeline. The header **Save** button uses a **two-part** dirty rule in [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx):
+
+| Input | Meaning |
+| ----- | ------- |
+| **`patchDriver.isDirty()`** | The JSON **patch document** managed by [`patchDriver`](src/features/content/shared/editor/patchDriver.ts) differs from the loaded system entry (location metadata / patch fields). |
+| **`isGridDraftDirty`** | Same as campaign: `!gridDraftPersistableEquals(gridDraft, gridDraftBaseline)` — authored **map** cells, paths, edges, regions, etc., changed vs hydrate/save baseline. |
+
+**Combined:** `isSystemLocationWorkspaceDirty(patchDriver.isDirty(), isGridDraftDirty)` in [`systemLocationWorkspaceDirty.ts`](src/features/content/locations/routes/locationEdit/systemLocationWorkspaceDirty.ts). Either side can enable Save.
+
+**Not used for system edit:** `isWorkspaceDirty` / `serializeLocationWorkspacePersistableSnapshot` / `workspacePersistBaseline` — those are for **campaign** locations and `toLocationInput` + map bootstrap. Do not replace the system branch with the campaign snapshot unless product requires one unified model (would need patch state folded into a snapshot).
+
+### Performance (campaign snapshot)
+
+`useLocationEditWorkspaceModel` memoizes **`serializeLocationWorkspacePersistableSnapshot(...)`** with dependencies on the full form watch result, `gridDraft`, `buildingStairConnections`, and `loc`. If profiling shows the snapshot as a hotspot, consider narrowing form subscriptions or caching normalized map slices only after measuring.
 
 ### Adding persisted workspace state (checklist)
 
@@ -309,5 +324,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 6. **Path preview performance:** if the chain preview feels sluggish, consider caching the committed chain curve and only recomputing the tail segments on hover. See **Open issues §3**.
 7. **Select mode / region hover:** resolver and grid chrome live under `domain/mapEditor/select-mode/` (`resolveSelectModeInteractiveTarget`, `buildSelectModeInteractiveTargetInput`, `resolveSelectModeRegionOrCellSelection`, `refineSelectModeClickAfterRegionDrill`, `locationMapSelectionHitTest`) plus `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
 8. **Persistable dirty snapshot:** when adding new state that is **saved** from this editor but not part of `LocationFormValues` or `gridDraft` (e.g. parallel `useState` merged in `handleCampaignSubmit`), extend **`buildCampaignWorkspacePersistableParts`** (shared by save + **`serializeLocationWorkspacePersistableSnapshot`**) and baseline updates in **`useLocationMapHydration`** / **`useLocationEditSaveActions`**. Tests: `workspacePersistableSnapshot.test.ts`.
+9. **System location edit:** dirty uses **`isSystemLocationWorkspaceDirty`** (`patchDriver.isDirty()` OR **`isGridDraftDirty`**), not the campaign snapshot — see **Dirty state — system location patch** above. Tests: `systemLocationWorkspaceDirty.test.ts`.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

@@ -30,7 +30,7 @@ import {
   type BuildingWorkspaceFloorItem,
 } from '@/features/content/locations/domain/building/buildingWorkspaceFloors';
 
-import { useLocationEditWorkspaceModel } from './locationEdit';
+import { isSystemLocationWorkspaceDirty, useLocationEditWorkspaceModel } from './locationEdit';
 
 const FORM_ID = 'location-edit-form';
 
@@ -377,7 +377,7 @@ export default function LocationEditRoute() {
         locationPatched={loc.patched}
         ancestryBreadcrumbs={ancestryBreadcrumbs}
         saving={saving}
-        dirty={driver.isDirty() || isGridDraftDirty}
+        dirty={isSystemLocationWorkspaceDirty(driver.isDirty(), isGridDraftDirty)}
         errors={errors}
         success={success}
         rightRailOpen={rightRailOpen}

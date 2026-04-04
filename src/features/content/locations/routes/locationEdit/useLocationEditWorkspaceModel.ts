@@ -408,11 +408,15 @@ export function useLocationEditWorkspaceModel({
   });
 
   const watchAll = watch();
-  const currentWorkspaceSnapshot = serializeLocationWorkspacePersistableSnapshot(
-    watchAll,
-    gridDraft,
-    buildingStairConnections,
-    loc,
+  const currentWorkspaceSnapshot = useMemo(
+    () =>
+      serializeLocationWorkspacePersistableSnapshot(
+        watchAll,
+        gridDraft,
+        buildingStairConnections,
+        loc,
+      ),
+    [watchAll, gridDraft, buildingStairConnections, loc],
   );
   const isWorkspaceDirty =
     workspacePersistBaseline !== null &&

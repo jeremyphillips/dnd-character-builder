@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { locationRepo } from '@/features/content/locations/domain';
+import type { Location } from '@/features/content/locations/domain/types';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { VisibilityField } from '@/ui/patterns';
@@ -23,9 +24,70 @@ import {
   LocationMapEditorDrawPanel,
 } from '@/features/content/locations/components';
 
+import {
+  floorTabLabelFromIndex,
+  listFloorChildren,
+  type BuildingWorkspaceFloorItem,
+} from '@/features/content/locations/domain/building/buildingWorkspaceFloors';
+
 import { useLocationEditWorkspaceModel } from './locationEdit';
 
 const FORM_ID = 'location-edit-form';
+
+function buildStairWorkspaceInspect(args: {
+  isBuildingWorkspace: boolean;
+  activeFloorId: string | null;
+  floorChildren: BuildingWorkspaceFloorItem[];
+  loc: LocationContentItem;
+  locationId: string | undefined;
+  locations: Location[];
+  mapHostLocationId: string;
+}): { currentFloorLocationId: string; candidateTargetFloors: { id: string; label: string }[] } {
+  const {
+    isBuildingWorkspace,
+    activeFloorId,
+    floorChildren,
+    loc,
+    locationId,
+    locations,
+    mapHostLocationId,
+  } = args;
+
+  if (isBuildingWorkspace && activeFloorId) {
+    const sorted = floorChildren;
+    return {
+      currentFloorLocationId: activeFloorId,
+      candidateTargetFloors: sorted
+        .filter((f) => f.id !== activeFloorId)
+        .map((f) => {
+          const idx = sorted.findIndex((x) => x.id === f.id);
+          return {
+            id: f.id,
+            label: f.name?.trim() ? f.name : floorTabLabelFromIndex(idx),
+          };
+        }),
+    };
+  }
+  if (!isBuildingWorkspace && loc.scale === 'floor' && loc.parentId && locationId) {
+    const sorted = listFloorChildren(locations, loc.parentId);
+    return {
+      currentFloorLocationId: locationId,
+      candidateTargetFloors: sorted
+        .filter((f) => f.id !== locationId)
+        .map((f) => {
+          const idx = sorted.findIndex((x) => x.id === f.id);
+          return {
+            id: f.id,
+            label: f.name?.trim() ? f.name : floorTabLabelFromIndex(idx),
+          };
+        }),
+    };
+  }
+  return {
+    currentFloorLocationId: mapHostLocationId,
+    candidateTargetFloors: [],
+  };
+}
 
 export default function LocationEditRoute() {
   const { campaignId } = useActiveCampaign();
@@ -133,6 +195,9 @@ export default function LocationEditRoute() {
     gridRows,
     gridGeometry,
     locations,
+    buildingStairConnections,
+    handleLinkStairPair,
+    handleUnlinkStairEndpoint,
   } = model;
 
   const ancestryBreadcrumbs = (
@@ -150,6 +215,27 @@ export default function LocationEditRoute() {
   const mapHostScale = isBuildingWorkspace ? 'floor' : scaleForFormRules;
   const mapHostName = activeFloorName ?? loc.name;
   const buildingNeedsFloor = isBuildingWorkspace && floorChildren.length === 0;
+
+  const stairWorkspaceInspect = buildStairWorkspaceInspect({
+    isBuildingWorkspace,
+    activeFloorId,
+    floorChildren,
+    loc,
+    locationId,
+    locations,
+    mapHostLocationId,
+  });
+
+  const stairPairingContext =
+    isBuildingWorkspace && activeFloorId && campaignId
+      ? {
+          connections: buildingStairConnections,
+          campaignId,
+          locations,
+          onLink: handleLinkStairPair,
+          onUnlink: handleUnlinkStairEndpoint,
+        }
+      : undefined;
 
   const mapAuthoringPanel = (
     <Stack spacing={2}>
@@ -190,6 +276,8 @@ export default function LocationEditRoute() {
   const selectionPanel = (
     <LocationEditorSelectionPanel
       selection={gridDraft.mapSelection}
+      stairWorkspaceInspect={stairWorkspaceInspect}
+      stairPairingContext={stairPairingContext}
       pathEntries={gridDraft.pathEntries}
       edgeEntries={gridDraft.edgeEntries}
       regionEntries={gridDraft.regionEntries}

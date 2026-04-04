@@ -8,6 +8,7 @@ describe('authorCellIdToCombatCellId', () => {
   it('maps x,y ids to combat c-x-y', () => {
     expect(authorCellIdToCombatCellId('0,0')).toBe('c-0-0')
     expect(authorCellIdToCombatCellId('3,2')).toBe('c-3-2')
+    expect(authorCellIdToCombatCellId('11, 0')).toBe('c-11-0')
   })
 })
 

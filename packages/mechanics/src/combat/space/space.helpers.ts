@@ -1,4 +1,6 @@
+import type { EncounterState } from '../state/types'
 import type { EncounterSpace, EncounterCell, CombatantPosition, GridObject } from './space.types'
+import { resolvePlacementEncounterSpaceId } from './encounter-spaces'
 
 // ---------------------------------------------------------------------------
 // Cell lookups
@@ -23,25 +25,73 @@ export function getCellById(
 // Occupancy
 // ---------------------------------------------------------------------------
 
+/** Effective floor id for placement when {@link CombatantPosition.floorLocationId} is unset. */
+export function placementFloorLocationId(
+  p: CombatantPosition,
+  space: EncounterSpace,
+): string | null {
+  if (p.floorLocationId != null && p.floorLocationId !== '') return p.floorLocationId
+  return space.locationId ?? null
+}
+
+/**
+ * Whether this placement is on the given tactical space (multi-space: `encounterSpaceId` / registry;
+ * legacy: floor id on `EncounterSpace.locationId`).
+ */
+export function placementMatchesEncounterSpace(
+  state: EncounterState | undefined,
+  space: EncounterSpace,
+  p: CombatantPosition,
+): boolean {
+  const resolved = state
+    ? resolvePlacementEncounterSpaceId(state, p)
+    : p.encounterSpaceId != null && p.encounterSpaceId !== ''
+      ? p.encounterSpaceId
+      : null
+  if (resolved != null && resolved !== '') {
+    return resolved === space.id
+  }
+  const sid = space.locationId ?? null
+  if (sid == null) return true
+  return placementFloorLocationId(p, space) === sid
+}
+
+/** Placements on this tactical space. Pass `state` when `spacesById` / `encounterSpaceId` are in use. */
+export function placementsOnSpace(
+  space: EncounterSpace,
+  placements: CombatantPosition[],
+  state?: EncounterState,
+): CombatantPosition[] {
+  return placements.filter((p) => placementMatchesEncounterSpace(state, space, p))
+}
+
 export function getOccupant(
   placements: CombatantPosition[],
   cellId: string,
+  space?: EncounterSpace,
+  state?: EncounterState,
 ): string | undefined {
-  return placements.find((p) => p.cellId === cellId)?.combatantId
+  const list = space ? placementsOnSpace(space, placements, state) : placements
+  return list.find((p) => p.cellId === cellId)?.combatantId
 }
 
 export function getCellForCombatant(
   placements: CombatantPosition[],
   combatantId: string,
+  space?: EncounterSpace,
+  state?: EncounterState,
 ): string | undefined {
-  return placements.find((p) => p.combatantId === combatantId)?.cellId
+  const list = space ? placementsOnSpace(space, placements, state) : placements
+  return list.find((p) => p.combatantId === combatantId)?.cellId
 }
 
 export function isCellOccupied(
   placements: CombatantPosition[],
   cellId: string,
+  space?: EncounterSpace,
+  state?: EncounterState,
 ): boolean {
-  return placements.some((p) => p.cellId === cellId)
+  return getOccupant(placements, cellId, space, state) !== undefined
 }
 
 // ---------------------------------------------------------------------------
@@ -80,9 +130,10 @@ export function isWithinRange(
   combatantIdA: string,
   combatantIdB: string,
   rangeFt: number,
+  state?: EncounterState,
 ): boolean {
-  const cellA = getCellForCombatant(placements, combatantIdA)
-  const cellB = getCellForCombatant(placements, combatantIdB)
+  const cellA = getCellForCombatant(placements, combatantIdA, space, state)
+  const cellB = getCellForCombatant(placements, combatantIdB, space, state)
   if (!cellA || !cellB) return true
 
   const dist = gridDistanceFt(space, cellA, cellB)

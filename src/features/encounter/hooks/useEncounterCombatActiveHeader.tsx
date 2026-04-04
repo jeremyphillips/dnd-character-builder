@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 
 import { actionRequiresCreatureTargetForResolve } from '@/features/mechanics/domain/combat'
 import { getCombatantDisplayLabel } from '@/features/mechanics/domain/combat/state'
@@ -52,6 +52,8 @@ export type UseEncounterCombatActiveHeaderArgs = {
   monstersById: Record<string, Monster | undefined>
   spellsById: Record<string, Spell | undefined> | undefined
   suppressSameSideHostile: boolean
+  /** Phase C: scene focus + follow strip (see `EncounterSceneViewerControls`). */
+  sceneViewerSlot?: ReactNode
 }
 
 /**
@@ -83,6 +85,7 @@ export function useEncounterCombatActiveHeader({
   monstersById,
   spellsById,
   suppressSameSideHostile,
+  sceneViewerSlot,
 }: UseEncounterCombatActiveHeaderArgs) {
   const encounterCombatantRoster = useMemo(
     () => (encounterState ? Object.values(encounterState.combatantsById) : []),
@@ -256,6 +259,16 @@ export function useEncounterCombatActiveHeader({
     encounterHeaderViewerPolicy,
   ])
 
+  const resourcesExhausted = useMemo(() => {
+    if (!activeCombatant?.turnResources) return true
+    const tr = activeCombatant.turnResources
+    return (
+      tr.actionAvailable === false &&
+      tr.bonusActionAvailable === false &&
+      tr.movementRemaining === 0
+    )
+  }, [activeCombatant])
+
   const canOpenActionsDrawer =
     Boolean(capabilities?.canSelectAction) && availableActions.length > 0
 
@@ -288,7 +301,6 @@ export function useEncounterCombatActiveHeader({
         monstersById={monstersById}
         turnResources={activeCombatant.turnResources ?? null}
         baseMovementFt={baseMovementFt}
-        directive={encounterHeaderModel.directive}
         endTurnEmphasis={encounterHeaderModel.endTurnEmphasis}
         canOpenActions={canOpenActionsDrawer}
         onOpenActions={() => setActionDrawerOpen(true)}
@@ -301,8 +313,14 @@ export function useEncounterCombatActiveHeader({
         perceptionFeedback={perceptionUiFeedback}
         nextCombatantPresentationKind={nextCombatantPresentationKind}
         toolbarVariant={viewerContext.mode === 'session' ? 'session' : 'simulator'}
+        sceneViewerSlot={sceneViewerSlot}
       />
     ) : undefined
 
-  return { activeHeader, capabilities }
+  return {
+    activeHeader,
+    capabilities,
+    encounterDirective: encounterHeaderModel.directive,
+    contextStripTitleTone: resourcesExhausted ? ('warning' as const) : ('default' as const),
+  }
 }

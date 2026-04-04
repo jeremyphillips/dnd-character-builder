@@ -1,6 +1,6 @@
 // import EditIcon from '@mui/icons-material/Edit'
 // import RestartAltIcon from '@mui/icons-material/RestartAlt'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 
 import { useTheme } from '@mui/material/styles'
 
@@ -51,7 +51,6 @@ export type EncounterActiveHeaderProps = {
   monstersById: Record<string, Monster | undefined>
   turnResources: CombatantTurnResources | null
   baseMovementFt: number
-  directive: string
   endTurnEmphasis: EndTurnEmphasis
   /** When false, the Actions control is hidden (e.g. action and bonus action both spent). */
   canOpenActions: boolean
@@ -72,6 +71,8 @@ export type EncounterActiveHeaderProps = {
   perceptionFeedback?: EncounterPerceptionUiFeedback | null
   /** Next combatant’s viewer presentation (strict POV); null when N/A. */
   nextCombatantPresentationKind?: ViewerCombatantPresentationKind | null
+  /** Phase C: local scene focus + follow controls (session + simulator). */
+  sceneViewerSlot?: ReactNode
 }
 
 export function EncounterActiveHeader({
@@ -85,7 +86,6 @@ export function EncounterActiveHeader({
   monstersById,
   turnResources,
   baseMovementFt,
-  directive,
   endTurnEmphasis,
   canOpenActions,
   onOpenActions,
@@ -98,6 +98,7 @@ export function EncounterActiveHeader({
   perceptionFeedback,
   nextCombatantPresentationKind = null,
   toolbarVariant = 'simulator',
+  sceneViewerSlot,
 }: EncounterActiveHeaderProps) {
   const theme = useTheme()
   const encounterUiStateTheme = useMemo(() => getEncounterUiStateTheme(theme), [theme])
@@ -106,7 +107,6 @@ export function EncounterActiveHeader({
   const showSimulatorChrome = toolbarVariant === 'simulator'
   const move = turnResources?.movementRemaining ?? 0
   const headerRootRef = useRef<HTMLDivElement>(null)
-  const resourcesExhausted = !turnResources || (turnResources.actionAvailable === false && turnResources.bonusActionAvailable === false && turnResources.movementRemaining === 0)
   const actionBonusBadges = useMemo(() => {
     if (!turnResources || !activeCombatant) return null
     const { actionDefs, bonusDefs } = partitionCombatantActionBuckets(activeCombatant.actions)
@@ -159,6 +159,7 @@ export function EncounterActiveHeader({
         boxSizing: headerBar.boxSizing,
       }}
     >
+      {sceneViewerSlot}
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={2}
@@ -293,19 +294,6 @@ export function EncounterActiveHeader({
             justifyContent: 'center',
           }}
         >
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontWeight: 700,
-              lineHeight: 1.35,
-              textAlign: { xs: 'left', md: 'right' },
-              color: resourcesExhausted
-                ? encounterUiStateTheme.header.chrome.directive.resourcesExhaustedTextColor
-                : 'inherit',
-            }}
-          >
-            {directive}
-          </Typography>
           <Stack
             direction="row"
             spacing={1}

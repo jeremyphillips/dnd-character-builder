@@ -15,6 +15,11 @@ import type { GridInteractionMode } from '../domain'
 import type { AoeStep } from '../helpers/actions'
 
 type UseEncounterGridViewModelArgs = {
+  /**
+   * Encounter state backing the grid VM — may be **presentation** state from
+   * `resolveViewerSceneEncounterState` when scene focus diverges from authoritative space (future).
+   * Mechanics / intents still use authoritative state only.
+   */
   encounterState: EncounterState | null
   activeCombatantId: string | null
   activeCombatant: CombatantInstance | null
@@ -32,6 +37,7 @@ type UseEncounterGridViewModelArgs = {
 
 /**
  * Shared grid view model + token presentation kinds for Encounter Simulator and GameSession play.
+ * Pass presentation encounter state when the viewer’s scene differs from authoritative `EncounterState` (Phase B+).
  */
 export function useEncounterGridViewModel({
   encounterState,
@@ -70,7 +76,11 @@ export function useEncounterGridViewModel({
     if (!encounterState?.space || !encounterState.placements || !activeCombatantId) return null
     if (!selectedAction || !isAreaGridAction(selectedAction, selectedCasterOptions) || aoeStep === 'none')
       return null
-    const casterCellId = getCellForCombatant(encounterState.placements, activeCombatantId)
+    const casterCellId = getCellForCombatant(
+      encounterState.placements,
+      activeCombatantId,
+      encounterState.space,
+    )
     if (!casterCellId || !selectedAction.areaTemplate) return null
     const castRangeFt = selectedAction.targeting?.rangeFt ?? 0
     const areaRadiusFt = areaTemplateRadiusFt(selectedAction.areaTemplate)
@@ -98,7 +108,11 @@ export function useEncounterGridViewModel({
     if (!selectedAction) return null
     const req = getSingleCellPlacementRequirement(selectedAction)
     if (!req) return null
-    const casterCellId = getCellForCombatant(encounterState.placements, activeCombatantId)
+    const casterCellId = getCellForCombatant(
+      encounterState.placements,
+      activeCombatantId,
+      encounterState.space,
+    )
     if (!casterCellId) return null
     return {
       casterCellId,

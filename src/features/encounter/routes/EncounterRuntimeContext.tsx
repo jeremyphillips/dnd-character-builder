@@ -32,7 +32,9 @@ import {
   type EncounterViewerContext,
 } from '../domain'
 import { SIMULATOR_ENCOUNTER_SETUP_POLICY } from '../domain/setup'
-import { useEncounterState, useEncounterOptions, useEncounterRoster } from '../hooks'
+import { resolveViewerSceneEncounterState } from '../domain'
+import { EncounterSceneViewerControls } from '../components/active/scene/EncounterSceneViewerControls'
+import { useEncounterState, useEncounterOptions, useEncounterRoster, useEncounterSceneViewer } from '../hooks'
 import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiveHeader'
 import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
 import type { GridInteractionMode } from '../domain'
@@ -54,6 +56,7 @@ import { isAreaGridAction } from '../helpers/actions'
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
+import type { EncounterContextPromptEnvironment } from '../domain/encounterContextPrompt.types'
 
 function useEncounterRuntimeValue() {
   /** Setup defaults + edit flags; simulator uses {@link SIMULATOR_ENCOUNTER_SETUP_POLICY}. */
@@ -212,6 +215,7 @@ function useEncounterRuntimeValue() {
     handleResolveAction,
     handleResetEncounter: handleResetEncounterBase,
     handleMoveCombatant,
+    handleStairTraversal,
     registerCombatLogAppended,
     aoeStep,
     setAoeStep,
@@ -273,15 +277,58 @@ function useEncounterRuntimeValue() {
     [simulatorViewerMode, presentationSelectedCombatantId],
   )
 
+  const { followMode, setFollowMode, sceneFocus, setSceneFocus } = useEncounterSceneViewer({
+    encounterState,
+    controlledCombatantIds: [],
+    selectedActionTargetId,
+    presentationSelectedCombatantId,
+    activeCombatantId,
+    viewerRole: 'dm',
+    hostMode: 'simulator',
+  })
+
+  const presentationEncounterState = useMemo(
+    () => resolveViewerSceneEncounterState(encounterState, sceneFocus),
+    [encounterState, sceneFocus],
+  )
+
+  const sceneViewerSlot = useMemo(
+    () =>
+      encounterState ? (
+        <EncounterSceneViewerControls
+          encounterState={encounterState}
+          sceneFocus={sceneFocus}
+          setSceneFocus={setSceneFocus}
+          followMode={followMode}
+          setFollowMode={setFollowMode}
+        />
+      ) : null,
+    [encounterState, sceneFocus, setSceneFocus, followMode, setFollowMode],
+  )
+
+  const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
+    if (!campaignId) return null
+    return {
+      campaignId,
+      locations,
+      locationContext: {
+        buildingId: buildingLocationIds[0] ?? null,
+        locationId: encounterState?.space?.locationId ?? null,
+        floorId: encounterState?.space?.locationId ?? null,
+      },
+      encounterState,
+    }
+  }, [campaignId, locations, buildingLocationIds, encounterState])
+
   const presentationGridPerceptionInput = useMemo(
     () =>
       deriveEncounterPresentationGridPerceptionInput({
-        encounterState,
+        encounterState: presentationEncounterState,
         simulatorViewerMode,
         activeCombatantId,
         presentationSelectedCombatantId,
       }),
-    [encounterState, simulatorViewerMode, activeCombatantId, presentationSelectedCombatantId],
+    [presentationEncounterState, simulatorViewerMode, activeCombatantId, presentationSelectedCombatantId],
   )
 
   const handleStartEncounter = useCallback(
@@ -439,7 +486,7 @@ function useEncounterRuntimeValue() {
   }, [aoeStep, selectedAction, selectedCasterOptions])
 
   const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState,
+    encounterState: presentationEncounterState,
     activeCombatantId,
     activeCombatant,
     selectedAction,
@@ -518,7 +565,7 @@ function useEncounterRuntimeValue() {
     </Box>
   )
 
-  const { activeHeader, capabilities } = useEncounterCombatActiveHeader({
+  const { activeHeader, capabilities, encounterDirective, contextStripTitleTone } = useEncounterCombatActiveHeader({
     encounterState,
     activeCombatant,
     availableActions,
@@ -544,6 +591,7 @@ function useEncounterRuntimeValue() {
     monstersById,
     spellsById: catalog.spellsById,
     suppressSameSideHostile,
+    sceneViewerSlot,
   })
 
   // activeFooter commented out -- action resolution now handled by CombatantActionDrawer
@@ -551,6 +599,11 @@ function useEncounterRuntimeValue() {
 
   return {
     viewerContext,
+    sceneFocus,
+    setSceneFocus,
+    followMode,
+    setFollowMode,
+    presentationEncounterState,
     /** Presentation POV (grid/sidebar/header); not turn ownership. */
     simulatorViewerMode,
     setSimulatorViewerMode,
@@ -559,6 +612,8 @@ function useEncounterRuntimeValue() {
     presentationGridPerceptionInput,
     presentationViewerCombatantId: presentationGridPerceptionInput?.viewerCombatantId ?? null,
     capabilities,
+    encounterDirective,
+    contextStripTitleTone,
     campaignId,
     locations,
     locationsLoading,
@@ -648,6 +703,8 @@ function useEncounterRuntimeValue() {
     handleStartEncounter,
     handleResetEncounter,
     registerCombatLogAppended,
+    contextualPromptEnvironment,
+    handleStairTraversal,
   }
 }
 

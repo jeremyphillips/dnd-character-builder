@@ -1,6 +1,10 @@
 /**
  * Authored map cell objects → encounter {@link GridObject} hydration.
  *
+ * **Stairs:** Registry defaults make stairs **non-blocking** so tokens can occupy the stair cell;
+ * vertical traversal is driven by session/orchestration + canonical stair links, not by blocking props.
+ * Optional `stairEndpoint` on {@link LocationMapCellObjectEntry} is for authoring/linking only here.
+ *
  * **Cell blocking:** When any grid object on a cell has `blocksMovement`, the cell may be aligned to
  * blocking flags for movement / AoE checks. Long-term, blocking/LoS may be derived from grid objects +
  * edges + terrain in a dedicated pass — do not treat this merge as the final source of truth.

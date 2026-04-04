@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import Alert from '@mui/material/Alert'
@@ -15,16 +15,22 @@ import type { EncounterState } from '@/features/mechanics/domain/combat'
 import {
   deriveEncounterPresentationGridPerceptionInput,
   resolveSessionControlledCombatantIds,
+  resolveViewerSceneEncounterState,
   type EncounterViewerContext,
 } from '@/features/encounter/domain'
 import { isAreaGridAction } from '@/features/encounter/helpers/actions'
 import type { GridInteractionMode } from '@/features/encounter/domain'
 import { useEncounterState } from '@/features/encounter/hooks/useEncounterState'
+import { EncounterSceneViewerControls } from '@/features/encounter/components/active/scene/EncounterSceneViewerControls'
 import { useEncounterGridViewModel } from '@/features/encounter/hooks/useEncounterGridViewModel'
+import { useEncounterSceneViewer } from '@/features/encounter/hooks/useEncounterSceneViewer'
 import { useEncounterCombatActiveHeader } from '@/features/encounter/hooks/useEncounterCombatActiveHeader'
 import { useEncounterActivePlaySurface } from '@/features/encounter/hooks/useEncounterActivePlaySurface'
+import type { EncounterContextPromptEnvironment } from '@/features/encounter/domain/encounterContextPrompt.types'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 
+import type { Location } from '@/features/content/locations/domain/types'
+import { listCampaignLocations } from '@/features/content/locations/domain/repo/locationRepo'
 import type { GameSession } from '../domain/game-session.types'
 import { summarizeEncounterSpaceForLog } from '../combat/buildEncounterSpaceFromLocationMap'
 import { campaignGameSessionLobbyPath } from '../routes/gameSessionPaths'
@@ -74,6 +80,19 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   }, [party, npcs])
 
   const monstersById = catalog.monstersById
+
+  const [campaignLocations, setCampaignLocations] = useState<Location[]>([])
+
+  useEffect(() => {
+    if (!campaignId) return
+    let cancelled = false
+    void listCampaignLocations(campaignId).then((locs) => {
+      if (!cancelled) setCampaignLocations(locs)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [campaignId])
 
   const [persisted, setPersisted] = useState<Awaited<ReturnType<typeof fetchPersistedCombatSession>> | null>(
     null,
@@ -213,16 +232,45 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     [viewerRole, user?.id, controlledCombatantIds],
   )
 
+  const { followMode, setFollowMode, sceneFocus, setSceneFocus } = useEncounterSceneViewer({
+    encounterState: encounter.encounterState,
+    controlledCombatantIds,
+    selectedActionTargetId: encounter.selectedActionTargetId,
+    presentationSelectedCombatantId: null,
+    activeCombatantId: encounter.activeCombatantId,
+    viewerRole,
+    hostMode: 'session',
+  })
+
+  const presentationEncounterState = useMemo(
+    () => resolveViewerSceneEncounterState(encounter.encounterState, sceneFocus),
+    [encounter.encounterState, sceneFocus],
+  )
+
+  const sceneViewerSlot: ReactNode = useMemo(
+    () =>
+      encounter.encounterState ? (
+        <EncounterSceneViewerControls
+          encounterState={encounter.encounterState}
+          sceneFocus={sceneFocus}
+          setSceneFocus={setSceneFocus}
+          followMode={followMode}
+          setFollowMode={setFollowMode}
+        />
+      ) : null,
+    [encounter.encounterState, sceneFocus, setSceneFocus, followMode, setFollowMode],
+  )
+
   const presentationGridPerceptionInput = useMemo(
     () =>
       deriveEncounterPresentationGridPerceptionInput({
-        encounterState: encounter.encounterState,
+        encounterState: presentationEncounterState,
         /** DM seat: omniscient grid tokens + cell presentation; players use active combatant POV. */
         simulatorViewerMode: viewerRole === 'dm' ? 'dm' : 'active-combatant',
         activeCombatantId: encounter.activeCombatantId,
         presentationSelectedCombatantId: null,
       }),
-    [encounter.encounterState, encounter.activeCombatantId, viewerRole],
+    [presentationEncounterState, encounter.activeCombatantId, viewerRole],
   )
 
   const prevActiveCombatantId = useRef(encounter.activeCombatantId)
@@ -245,7 +293,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
   }, [encounter.aoeStep, selectedAction, encounter.selectedCasterOptions])
 
   const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState: encounter.encounterState,
+    encounterState: presentationEncounterState,
     activeCombatantId: encounter.activeCombatantId,
     activeCombatant: encounter.activeCombatant,
     selectedAction,
@@ -266,7 +314,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     }
   }, [campaignId, navigate, session.id])
 
-  const { activeHeader, capabilities } = useEncounterCombatActiveHeader({
+  const { activeHeader, capabilities, encounterDirective, contextStripTitleTone } = useEncounterCombatActiveHeader({
     encounterState: encounter.encounterState,
     activeCombatant: encounter.activeCombatant,
     availableActions: encounter.availableActions,
@@ -292,11 +340,23 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     monstersById,
     spellsById: catalog.spellsById,
     suppressSameSideHostile,
+    sceneViewerSlot,
   })
+
+  const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
+    if (!campaignId) return null
+    return {
+      campaignId,
+      locations: campaignLocations,
+      locationContext: session.location,
+      encounterState: encounter.encounterState,
+    }
+  }, [campaignId, campaignLocations, session.location, encounter.encounterState])
 
   const playSurface = useEncounterActivePlaySurface(
     {
       encounterState: encounter.encounterState,
+      presentationEncounterState,
       viewerContext,
       capabilities,
       activeHeader,
@@ -342,6 +402,10 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
       setObjectAnchorHoverCellId: encounter.setObjectAnchorHoverCellId,
       suppressSameSideHostile,
       spellsById: catalog.spellsById,
+      encounterDirective,
+      contextStripTitleTone,
+      contextualPromptEnvironment,
+      handleStairTraversal: encounter.handleStairTraversal,
     },
     { setupPathWhenEmpty: null },
   )

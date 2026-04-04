@@ -22,10 +22,10 @@ todos:
     status: completed
   - id: phase3-tests-matrix-docs-checklist
     content: Expand snapshot test matrix; add contributor checklist in location-workspace.md
-    status: pending
+    status: completed
   - id: phase3-nested-forms-ux
     content: Decide and document/implement nested submit-to-commit rail forms (e.g. region metadata)
-    status: pending
+    status: completed
   - id: phase4-system-patch-parity
     content: Document or unify system patch dirty rules vs campaign snapshot
     status: pending

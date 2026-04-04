@@ -12,6 +12,28 @@ import {
 
 const baseForm = () => structuredClone(LOCATION_FORM_DEFAULTS);
 
+const buildingLoc = {
+  source: 'campaign',
+  scale: 'building',
+  buildingProfile: {},
+} as unknown as LocationContentItem;
+
+const sampleStairConnection = {
+  id: 'c1',
+  kind: 'stairs' as const,
+  buildingLocationId: 'b1',
+  endpointA: {
+    floorLocationId: 'f1',
+    cellId: '0,0',
+    objectId: 'o1',
+  },
+  endpointB: {
+    floorLocationId: 'f2',
+    cellId: '1,1',
+    objectId: 'o2',
+  },
+};
+
 describe('serializeLocationWorkspacePersistableSnapshot', () => {
   it('is stable for identical inputs', () => {
     const form = baseForm();
@@ -72,39 +94,18 @@ describe('serializeLocationWorkspacePersistableSnapshot', () => {
   it('changes when building stair connections change (building loc)', () => {
     const form = baseForm();
     form.scale = 'building';
-    const loc = {
-      source: 'campaign',
-      scale: 'building',
-      buildingProfile: {},
-    } as unknown as LocationContentItem;
 
     const empty = serializeLocationWorkspacePersistableSnapshot(
       form,
       INITIAL_LOCATION_GRID_DRAFT,
       [],
-      loc,
+      buildingLoc,
     );
     const withConn = serializeLocationWorkspacePersistableSnapshot(
       form,
       INITIAL_LOCATION_GRID_DRAFT,
-      [
-        {
-          id: 'c1',
-          kind: 'stairs',
-          buildingLocationId: 'b1',
-          endpointA: {
-            floorLocationId: 'f1',
-            cellId: '0,0',
-            objectId: 'o1',
-          },
-          endpointB: {
-            floorLocationId: 'f2',
-            cellId: '1,1',
-            objectId: 'o2',
-          },
-        },
-      ],
-      loc,
+      [sampleStairConnection],
+      buildingLoc,
     );
     expect(empty).not.toBe(withConn);
   });
@@ -121,5 +122,87 @@ describe('serializeLocationWorkspacePersistableSnapshot', () => {
     expect(serializeLocationWorkspacePersistableSnapshot(form, INITIAL_LOCATION_GRID_DRAFT, [], null)).toBe(
       stableStringify({ location: parts.locationInput, map: parts.mapBootstrapPayload }),
     );
+  });
+});
+
+/**
+ * Matrix: each row is a distinct persistable dimension; snapshot must change when only that dimension changes.
+ */
+describe('workspacePersistableSnapshot matrix', () => {
+  const worldForm = () => {
+    const f = baseForm();
+    f.scale = 'world';
+    return f;
+  };
+
+  const snap = (
+    form: ReturnType<typeof baseForm>,
+    draft: typeof INITIAL_LOCATION_GRID_DRAFT,
+    stairs: readonly (typeof sampleStairConnection)[] = [],
+    loc: LocationContentItem | null = null,
+  ) => serializeLocationWorkspacePersistableSnapshot(form, draft, stairs, loc);
+
+  it('form slice: name change (world scale omits category in LocationInput)', () => {
+    const f = worldForm();
+    const base = snap(f, INITIAL_LOCATION_GRID_DRAFT);
+    f.name = `${f.name}-edited`;
+    expect(snap(f, INITIAL_LOCATION_GRID_DRAFT)).not.toBe(base);
+  });
+
+  it('map slice: object metadata (label) on a cell', () => {
+    const f = worldForm();
+    const emptyObjs = { ...INITIAL_LOCATION_GRID_DRAFT };
+    const withLabel = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      objectsByCellId: {
+        '0,0': [{ id: 'obj-1', kind: 'marker' as const, label: 'Pin A' }],
+      },
+    };
+    expect(snap(f, emptyObjs)).not.toBe(snap(f, withLabel));
+  });
+
+  it('map slice: pathEntries', () => {
+    const f = worldForm();
+    const noPath = { ...INITIAL_LOCATION_GRID_DRAFT };
+    const withPath = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      pathEntries: [{ id: 'p1', kind: 'road' as const, cellIds: ['0,0', '1,0'] }],
+    };
+    expect(snap(f, noPath)).not.toBe(snap(f, withPath));
+  });
+
+  it('map slice: edgeEntries', () => {
+    const f = worldForm();
+    const noEdge = { ...INITIAL_LOCATION_GRID_DRAFT };
+    const withEdge = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      edgeEntries: [{ edgeId: 'between:0,0|0,1', kind: 'wall' as const }],
+    };
+    expect(snap(f, noEdge)).not.toBe(snap(f, withEdge));
+  });
+
+  it('map slice: regionEntries', () => {
+    const f = worldForm();
+    const noRegion = { ...INITIAL_LOCATION_GRID_DRAFT };
+    const withRegion = {
+      ...INITIAL_LOCATION_GRID_DRAFT,
+      regionEntries: [
+        {
+          id: 'r1',
+          name: 'Zone',
+          colorKey: 'regionRed',
+        },
+      ],
+    };
+    expect(snap(f, noRegion)).not.toBe(snap(f, withRegion));
+  });
+
+  it('regression: building stair connections only (grid unchanged)', () => {
+    const f = baseForm();
+    f.scale = 'building';
+    const draft = INITIAL_LOCATION_GRID_DRAFT;
+    const without = snap(f, draft, [], buildingLoc);
+    const withStairs = snap(f, draft, [sampleStairConnection], buildingLoc);
+    expect(without).not.toBe(withStairs);
   });
 });

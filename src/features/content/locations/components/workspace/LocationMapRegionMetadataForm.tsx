@@ -1,5 +1,6 @@
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
 import { LOCATION_MAP_DEFAULT_REGION_NAME } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import { LOCATION_MAP_REGION_COLOR_KEYS } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
@@ -20,6 +21,8 @@ type LocationMapRegionMetadataFormProps = {
   onSubmitValues: (values: RegionMetadataFormValues) => void;
   formId?: string;
   submitLabel?: string;
+  /** When true (default), explains that panel Save applies to the map draft; header Save persists the campaign. */
+  showPersistHint?: boolean;
 };
 
 const colorOptions = LOCATION_MAP_REGION_COLOR_KEYS.map((k) => ({ value: k, label: k }));
@@ -32,6 +35,7 @@ export function LocationMapRegionMetadataForm({
   onSubmitValues,
   formId,
   submitLabel = 'Save',
+  showPersistHint = true,
 }: LocationMapRegionMetadataFormProps) {
   return (
     <AppForm<RegionMetadataFormValues>
@@ -50,6 +54,12 @@ export function LocationMapRegionMetadataForm({
         });
       }}
     >
+      {showPersistHint ? (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          Use the button below to apply changes to this region on the map draft. Use Save in the header to persist the
+          location and map to the campaign.
+        </Typography>
+      ) : null}
       <FormTextField name="name" label="Name" required />
       <FormTextField name="description" label="Description" multiline rows={3} />
       <FormSelectField name="colorKey" label="Color" options={colorOptions} required />

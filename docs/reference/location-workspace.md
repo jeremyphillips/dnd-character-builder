@@ -112,6 +112,23 @@ The three right-rail tabs (**Location**, **Map**, **Selection**) are not separat
 
 **System-location patch** (`LocationEditSystemPatchWorkspace`) still uses the patch driver’s dirty state plus map draft comparison; it does not use `isWorkspaceDirty`.
 
+### Adding persisted workspace state (checklist)
+
+When you introduce new data that must be **saved** from this editor:
+
+1. Extend **`buildCampaignWorkspacePersistableParts`** in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) (or the domain types it uses) so the snapshot includes the new field.
+2. Ensure **`handleCampaignSubmit`** in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) persists it (should follow automatically if step 1 uses the shared builder).
+3. Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in `useLocationEditSaveActions`.
+4. Add a **test case** in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) under `workspacePersistableSnapshot matrix` (or a dedicated example) proving the snapshot changes when that field changes.
+
+**Whitespace:** `toLocationInput` and map normalization may trim strings; user-visible spacing-only edits might not dirty the snapshot—document behavior if you add fields where that matters.
+
+### Nested rail forms (submit-to-commit)
+
+Some inspectors use a **nested** form whose values apply only after a **panel Save** (e.g. [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx)). Until that submit runs, **`gridDraft`** is unchanged, so **`isWorkspaceDirty`** does not include those edits and the header Save will not persist them.
+
+The region metadata form shows a short hint: apply changes with the panel button, then use the **header Save** for the campaign. Prefer **sync-on-change** into `gridDraft` only if you need the header dirty state to track every keystroke (trade-off: more updates and potential merge conflicts with the nested form).
+
 ---
 
 ## Map editor toolbar and related UI

@@ -1,6 +1,6 @@
 // import EditIcon from '@mui/icons-material/Edit'
 // import RestartAltIcon from '@mui/icons-material/RestartAlt'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 
 import { useTheme } from '@mui/material/styles'
 
@@ -71,6 +71,8 @@ export type EncounterActiveHeaderProps = {
   perceptionFeedback?: EncounterPerceptionUiFeedback | null
   /** Next combatant’s viewer presentation (strict POV); null when N/A. */
   nextCombatantPresentationKind?: ViewerCombatantPresentationKind | null
+  /** Phase C: local scene focus + follow controls (session + simulator). */
+  sceneViewerSlot?: ReactNode
 }
 
 export function EncounterActiveHeader({
@@ -96,6 +98,7 @@ export function EncounterActiveHeader({
   perceptionFeedback,
   nextCombatantPresentationKind = null,
   toolbarVariant = 'simulator',
+  sceneViewerSlot,
 }: EncounterActiveHeaderProps) {
   const theme = useTheme()
   const encounterUiStateTheme = useMemo(() => getEncounterUiStateTheme(theme), [theme])
@@ -156,6 +159,7 @@ export function EncounterActiveHeader({
         boxSizing: headerBar.boxSizing,
       }}
     >
+      {sceneViewerSlot}
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={2}

@@ -13,8 +13,8 @@
  */
 
 /**
- * How the viewer’s camera could track combatants (future UX; Phase A leaves behavior as today).
- * Wired when follow modes are implemented.
+ * Legacy alias — prefer `SceneViewerFollowMode` (`sceneViewer.types.ts`) for new code.
+ * @deprecated
  */
 export type SceneFocusFollowPolicy =
   | 'manual'
@@ -34,13 +34,12 @@ export type SceneFocus =
       followPolicy?: SceneFocusFollowPolicy
     }
   /**
-   * Future: viewer pins the grid to a specific tactical scene while authoritative state may
-   * still describe another space (e.g. after another player moves floors). Requires
-   * `EncounterSpace` resolution from cache or multi-space encounter data — TODO.
+   * Viewer explicitly focuses a tactical scene from {@link EncounterState.spacesById} (Phase C+).
+   * Presentation layer filters placements to this scene; authoritative state is unchanged.
    */
   | {
       kind: 'pinnedScene'
       encounterSpaceId: string
-      /** Host location (floor, exterior cell, etc.) for loading/cache keys — TODO refine. */
-      sceneLocationId: string
+      /** Optional campaign location key for labels (e.g. floor id). */
+      sceneLocationId?: string | null
     }

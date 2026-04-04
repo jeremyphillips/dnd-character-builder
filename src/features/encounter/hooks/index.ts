@@ -3,6 +3,7 @@ export { useEncounterRoster } from './useEncounterRoster'
 export { useEncounterState } from './useEncounterState'
 export { useEncounterGridViewModel } from './useEncounterGridViewModel'
 export { useEncounterSceneFocus, DEFAULT_SCENE_FOCUS } from './useEncounterSceneFocus'
+export { useEncounterSceneViewer, type UseEncounterSceneViewerArgs } from './useEncounterSceneViewer'
 export {
   useEncounterActivePlaySurface,
   type EncounterActivePlaySurfaceDeps,

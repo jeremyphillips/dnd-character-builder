@@ -147,4 +147,6 @@ export type {
 export { SIMULATOR_ENCOUNTER_SETUP_POLICY } from './setup'
 
 export { resolveViewerSceneEncounterState } from './resolveViewerSceneEncounterState'
+export { buildPresentationEncounterStateForFocusedSpace } from './buildPresentationEncounterStateForFocusedSpace'
 export type { SceneFocus, SceneFocusFollowPolicy } from './sceneFocus.types'
+export type { SceneViewerFollowMode } from './sceneViewer.types'

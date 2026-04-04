@@ -1,5 +1,6 @@
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 
+import { buildPresentationEncounterStateForFocusedSpace } from './buildPresentationEncounterStateForFocusedSpace'
 import type { SceneFocus } from './sceneFocus.types'
 
 /**
@@ -9,9 +10,8 @@ import type { SceneFocus } from './sceneFocus.types'
  * - **Authoritative** `EncounterState` from mechanics / hydration is always the truth for
  *   combat resolution, intents, and persistence (including multi-space `spacesById` + per-placement
  *   `encounterSpaceId` when present).
- * - **Presentation** state may diverge when `sceneFocus` pins a different tactical space than
- *   `authoritative.space` (future); Phase A returns the authoritative state unchanged for
- *   `followEncounterSpace`.
+ * - **`pinnedScene`** — presentation uses that space from `spacesById` and filters placements to that scene.
+ * - **`followEncounterSpace`** — presentation matches transitional `authoritative.space` (legacy single-grid).
  *
  * Callers should pass the result into grid view models, scene-aligned perception, and other
  * **display-only** paths — not into `applyCombatIntent` / persisted intent pipelines.
@@ -25,8 +25,9 @@ export function resolveViewerSceneEncounterState(
   switch (sceneFocus.kind) {
     case 'followEncounterSpace':
       return authoritative
-    case 'pinnedScene':
-      // TODO: swap `space` (and possibly filter placements) when pinned snapshot / cache exists.
-      return authoritative
+    case 'pinnedScene': {
+      if (!sceneFocus.encounterSpaceId) return authoritative
+      return buildPresentationEncounterStateForFocusedSpace(authoritative, sceneFocus.encounterSpaceId)
+    }
   }
 }

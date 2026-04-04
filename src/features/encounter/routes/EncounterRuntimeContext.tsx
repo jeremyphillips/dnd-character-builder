@@ -33,7 +33,8 @@ import {
 } from '../domain'
 import { SIMULATOR_ENCOUNTER_SETUP_POLICY } from '../domain/setup'
 import { resolveViewerSceneEncounterState } from '../domain'
-import { useEncounterState, useEncounterOptions, useEncounterRoster, useEncounterSceneFocus } from '../hooks'
+import { EncounterSceneViewerControls } from '../components/active/scene/EncounterSceneViewerControls'
+import { useEncounterState, useEncounterOptions, useEncounterRoster, useEncounterSceneViewer } from '../hooks'
 import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiveHeader'
 import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
 import type { GridInteractionMode } from '../domain'
@@ -276,11 +277,33 @@ function useEncounterRuntimeValue() {
     [simulatorViewerMode, presentationSelectedCombatantId],
   )
 
-  /** Viewer-local: which tactical scene the simulator play surface renders (Phase A default follows authoritative space). */
-  const [sceneFocus, setSceneFocus] = useEncounterSceneFocus()
+  const { followMode, setFollowMode, sceneFocus, setSceneFocus } = useEncounterSceneViewer({
+    encounterState,
+    controlledCombatantIds: [],
+    selectedActionTargetId,
+    presentationSelectedCombatantId,
+    activeCombatantId,
+    viewerRole: 'dm',
+    hostMode: 'simulator',
+  })
+
   const presentationEncounterState = useMemo(
     () => resolveViewerSceneEncounterState(encounterState, sceneFocus),
     [encounterState, sceneFocus],
+  )
+
+  const sceneViewerSlot = useMemo(
+    () =>
+      encounterState ? (
+        <EncounterSceneViewerControls
+          encounterState={encounterState}
+          sceneFocus={sceneFocus}
+          setSceneFocus={setSceneFocus}
+          followMode={followMode}
+          setFollowMode={setFollowMode}
+        />
+      ) : null,
+    [encounterState, sceneFocus, setSceneFocus, followMode, setFollowMode],
   )
 
   const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
@@ -568,6 +591,7 @@ function useEncounterRuntimeValue() {
     monstersById,
     spellsById: catalog.spellsById,
     suppressSameSideHostile,
+    sceneViewerSlot,
   })
 
   // activeFooter commented out -- action resolution now handled by CombatantActionDrawer
@@ -577,6 +601,8 @@ function useEncounterRuntimeValue() {
     viewerContext,
     sceneFocus,
     setSceneFocus,
+    followMode,
+    setFollowMode,
     presentationEncounterState,
     /** Presentation POV (grid/sidebar/header); not turn ownership. */
     simulatorViewerMode,

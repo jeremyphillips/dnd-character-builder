@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import Alert from '@mui/material/Alert'
@@ -21,8 +21,9 @@ import {
 import { isAreaGridAction } from '@/features/encounter/helpers/actions'
 import type { GridInteractionMode } from '@/features/encounter/domain'
 import { useEncounterState } from '@/features/encounter/hooks/useEncounterState'
+import { EncounterSceneViewerControls } from '@/features/encounter/components/active/scene/EncounterSceneViewerControls'
 import { useEncounterGridViewModel } from '@/features/encounter/hooks/useEncounterGridViewModel'
-import { useEncounterSceneFocus } from '@/features/encounter/hooks/useEncounterSceneFocus'
+import { useEncounterSceneViewer } from '@/features/encounter/hooks/useEncounterSceneViewer'
 import { useEncounterCombatActiveHeader } from '@/features/encounter/hooks/useEncounterCombatActiveHeader'
 import { useEncounterActivePlaySurface } from '@/features/encounter/hooks/useEncounterActivePlaySurface'
 import type { EncounterContextPromptEnvironment } from '@/features/encounter/domain/encounterContextPrompt.types'
@@ -231,11 +232,33 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     [viewerRole, user?.id, controlledCombatantIds],
   )
 
-  /** Viewer-local: which tactical scene this client renders (Phase A default follows authoritative space). */
-  const [sceneFocus] = useEncounterSceneFocus()
+  const { followMode, setFollowMode, sceneFocus, setSceneFocus } = useEncounterSceneViewer({
+    encounterState: encounter.encounterState,
+    controlledCombatantIds,
+    selectedActionTargetId: encounter.selectedActionTargetId,
+    presentationSelectedCombatantId: null,
+    activeCombatantId: encounter.activeCombatantId,
+    viewerRole,
+    hostMode: 'session',
+  })
+
   const presentationEncounterState = useMemo(
     () => resolveViewerSceneEncounterState(encounter.encounterState, sceneFocus),
     [encounter.encounterState, sceneFocus],
+  )
+
+  const sceneViewerSlot: ReactNode = useMemo(
+    () =>
+      encounter.encounterState ? (
+        <EncounterSceneViewerControls
+          encounterState={encounter.encounterState}
+          sceneFocus={sceneFocus}
+          setSceneFocus={setSceneFocus}
+          followMode={followMode}
+          setFollowMode={setFollowMode}
+        />
+      ) : null,
+    [encounter.encounterState, sceneFocus, setSceneFocus, followMode, setFollowMode],
   )
 
   const presentationGridPerceptionInput = useMemo(
@@ -317,6 +340,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     monstersById,
     spellsById: catalog.spellsById,
     suppressSameSideHostile,
+    sceneViewerSlot,
   })
 
   const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {

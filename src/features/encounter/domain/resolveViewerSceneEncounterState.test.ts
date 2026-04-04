@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createEncounterState } from '@/features/mechanics/domain/combat/state'
+import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 import type { CombatantInstance } from '@/features/mechanics/domain/combat'
 
@@ -30,7 +31,8 @@ function baseCombatant(id: string, side: CombatantInstance['side']): CombatantIn
 
 function minimalEncounter(): EncounterState {
   const combatants = [baseCombatant('pc-1', 'party'), baseCombatant('m-1', 'enemies')]
-  const base = createEncounterState(combatants, { rng: () => 0.5 })
+  const space = createSquareGridSpace({ id: 'test-space', name: 'Test', columns: 8, rows: 8 })
+  const base = createEncounterState(combatants, { rng: () => 0.5, space })
   return {
     ...base,
     initiativeOrder: combatants.map((c) => c.instanceId),
@@ -51,13 +53,18 @@ describe('resolveViewerSceneEncounterState', () => {
     expect(resolveViewerSceneEncounterState(auth, focus)).toBe(auth)
   })
 
-  it('returns authoritative state for pinnedScene until cache/multi-space exists (Phase A stub)', () => {
+  it('pinnedScene returns presentation slice for the focused encounter space id', () => {
     const auth = minimalEncounter()
+    const spaceId = auth.space?.id
+    if (!spaceId) throw new Error('expected space')
     const focus: SceneFocus = {
       kind: 'pinnedScene',
-      encounterSpaceId: 'space-1',
-      sceneLocationId: 'loc-1',
+      encounterSpaceId: spaceId,
+      sceneLocationId: null,
     }
-    expect(resolveViewerSceneEncounterState(auth, focus)).toBe(auth)
+    const pres = resolveViewerSceneEncounterState(auth, focus)
+    expect(pres).not.toBe(auth)
+    expect(pres?.space?.id).toBe(spaceId)
+    expect(pres?.placements?.length).toBe(auth.placements?.length)
   })
 })

@@ -4,10 +4,10 @@ overview: Shared **editor-facing** workspace contract; **system** (patch) + **ho
 todos:
   - id: authoring-contract-phaseA-surface
     content: "Phase A: define shared contract (types/interface + shared vs mode-specific note)"
-    status: pending
+    status: completed
   - id: authoring-contract-phaseB-adapters
     content: "Phase B: thin system + homebrew adapters; same editor surface"
-    status: pending
+    status: completed
   - id: authoring-contract-phaseC-wire-ui
     content: "Phase C: header/workspace entry points consume contract; reduce mode leakage"
     status: pending

@@ -89,8 +89,12 @@ import { patchFloorStairConnectionIdOnDefaultMap } from '@/features/content/loca
 
 import { useLocationMapHydration } from './useLocationMapHydration';
 import { useLocationEditSaveActions } from './useLocationEditSaveActions';
-import { getCampaignWorkspaceSaveBlockReason } from './campaignWorkspaceSaveGate';
 import { serializeLocationWorkspacePersistableSnapshot } from './workspacePersistableSnapshot';
+import type { LocationWorkspaceAuthoringContract } from './locationWorkspaceAuthoringContract';
+import {
+  buildHomebrewLocationWorkspaceAuthoringContract,
+  buildSystemLocationWorkspaceAuthoringContract,
+} from './locationWorkspaceAuthoringAdapters';
 
 /**
  * Remove the current map selection from the draft when it is a deletable entity.
@@ -409,25 +413,6 @@ export function useLocationEditWorkspaceModel({
   });
 
   const watchAll = watch();
-  const currentWorkspaceSnapshot = useMemo(
-    () =>
-      serializeLocationWorkspacePersistableSnapshot(
-        watchAll,
-        gridDraft,
-        buildingStairConnections,
-        loc,
-      ),
-    [watchAll, gridDraft, buildingStairConnections, loc],
-  );
-  const isWorkspaceDirty =
-    workspacePersistBaseline !== null &&
-    currentWorkspaceSnapshot !== workspacePersistBaseline;
-
-  const campaignWorkspaceSaveBlockReason = useMemo(
-    () => getCampaignWorkspaceSaveBlockReason(loc, activeFloorId, watchAll),
-    [loc, activeFloorId, watchAll],
-  );
-  const campaignWorkspaceCanSave = campaignWorkspaceSaveBlockReason === null;
 
   const fieldConfigs = useMemo(
     () =>
@@ -689,6 +674,54 @@ export function useLocationEditWorkspaceModel({
   );
 
   const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
+
+  const authoringContract = useMemo((): LocationWorkspaceAuthoringContract | null => {
+    if (!loc) return null;
+    if (loc.source === 'system') {
+      if (!driver) return null;
+      return buildSystemLocationWorkspaceAuthoringContract({
+        isPatchDriverDirty: driver.isDirty(),
+        isGridDraftDirty,
+        patchDocument: driver.getPatch(),
+        patchBaseline: initialPatch,
+        gridDraft,
+        gridDraftBaseline,
+        validationApiRef,
+      });
+    }
+    if (loc.source === 'campaign') {
+      return buildHomebrewLocationWorkspaceAuthoringContract({
+        loc,
+        activeFloorId,
+        values: watchAll,
+        gridDraft,
+        buildingStairConnections,
+        workspacePersistBaseline,
+      });
+    }
+    return null;
+  }, [
+    loc,
+    driver,
+    initialPatch,
+    isGridDraftDirty,
+    gridDraft,
+    gridDraftBaseline,
+    validationApiRef,
+    activeFloorId,
+    watchAll,
+    buildingStairConnections,
+    workspacePersistBaseline,
+  ]);
+
+  const isWorkspaceDirty = Boolean(
+    authoringContract?.mode === 'homebrew' && authoringContract.isDirty,
+  );
+
+  const campaignWorkspaceSaveBlockReason =
+    authoringContract?.mode === 'homebrew' ? authoringContract.saveBlockReason : null;
+
+  const campaignWorkspaceCanSave = campaignWorkspaceSaveBlockReason === null;
 
   const saveActions = useLocationEditSaveActions({
     campaignId,
@@ -1080,6 +1113,7 @@ export function useLocationEditWorkspaceModel({
     isWorkspaceDirty,
     campaignWorkspaceCanSave,
     campaignWorkspaceSaveBlockReason,
+    authoringContract,
     gridDraft,
     setGridDraft,
     isGridDraftDirty,

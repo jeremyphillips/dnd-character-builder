@@ -47,7 +47,7 @@ Presentation is split so hex/terrain colors, overlay rules, and grid chrome stay
 | **Primitives & map colors** | `src/app/theme/colorPrimitives.ts`, `mapColors.ts` | Hex scales; terrain swatches (`baseMapSwatchColors`); region preset colors (`baseMapRegionColors`). |
 | **Map UI tokens** | `domain/mapPresentation/locationMapUiStyles.ts` | Stroke widths, opacities, SVG/path/edge emphasis, region overlay placeholders; `resolveLocationMapUiStyles(theme)` for palette-dependent strokes. |
 | **Grid cells** | `components/mapGrid/gridCellStyles.ts` | `gridCellPalette` (MUI paths for borders/backgrounds) and selected inset shadow — shared by `GridEditor` / `HexGridEditor`. |
-| **Cell hover / selection chrome (Select mode)** | `components/mapGrid/mapGridCellVisualState.ts` | Pure helpers `shouldApplyCellHoverChrome`, `shouldApplyCellSelectedChrome`; re-exported from `components/mapGrid/index.ts`. |
+| **Cell hover / selection chrome (Select mode)** | `components/mapGrid/mapGridCellVisualState.ts` | Pure helpers `shouldApplyCellHoverChrome`, `isSelectHoverChromeSuppressed`, `shouldApplyCellSelectedChrome`; re-exported from `components/mapGrid/index.ts`. |
 
 App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should go through these modules rather than ad hoc values in components. See [color-theming.md](./color-theming.md) and [locations.md](./locations.md) (grid renderers + styling parity).
 
@@ -391,7 +391,7 @@ The smooth curve preview (hover → smooth Catmull-Rom spline) recalculates the 
 
 ### 4. Region vs cell hover chrome (hardened; edge cases remain)
 
-**Intent:** In **Select** mode, one **primary** hover target drives feedback: `selectHoverTarget` from `resolveSelectModeInteractiveTarget`. Cell-level hover chrome applies only when the winner is `{ type: 'cell', cellId }` for that cell (`shouldApplyCellHoverChrome`). When the winner is region/path/edge/object, cells do not take the primary hover treatment; `GridEditor` mirrors idle styles on `:hover` for those cells so native button hover does not compete.
+**Intent:** In **Select** mode, one **primary** hover target drives feedback: `selectHoverTarget` from `resolveSelectModeInteractiveTarget`. Cell-level hover chrome applies only when the winner is `{ type: 'cell', cellId }` for that cell (`shouldApplyCellHoverChrome`). When the winner is region/path/edge/object, cells do not take the primary hover treatment; **`GridEditor` and `HexGridEditor`** mirror idle styles on `:hover` for those cells (`isSelectHoverChromeSuppressed`) so native button hover does not compete. Square and hex use the same suppression rule; only the mirrored visuals differ (square border/fill vs hex ring/inner fill).
 
 **In place:** `resolveSelectModeAfterPathEdgeHits` interior priority (objects → linked → **region** → bare cell), `mapGridCellVisualState.ts`, `selectModeChrome.policy.ts`, and gap fallback for pointer-in-gap (`resolveSquareCellIdFromGridLocalPx` / `resolveNearestHexCell`).
 

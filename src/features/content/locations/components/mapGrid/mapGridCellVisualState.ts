@@ -34,6 +34,27 @@ export function shouldApplyCellHoverChrome(
 }
 
 /**
+ * Select mode: when there is a non-`none` hover winner and this cell is **not** the cell-level
+ * hover target, enhanced cell `:hover` chrome is suppressed; callers should mirror idle border/fill
+ * on `:hover` so native `<button>` styling does not compete with region/path/object emphasis.
+ *
+ * **Policy:** see `SELECT_MODE_CHROME_POLICY_DOC`. Used by {@link GridEditor} and
+ * {@link HexGridEditor} for equivalent feedback.
+ */
+export function isSelectHoverChromeSuppressed(
+  cellId: string,
+  selectHoverTarget: LocationMapSelection | undefined,
+  disabled: boolean,
+): boolean {
+  return (
+    !disabled &&
+    selectHoverTarget !== undefined &&
+    selectHoverTarget.type !== 'none' &&
+    !shouldApplyCellHoverChrome(cellId, selectHoverTarget)
+  );
+}
+
+/**
  * Whether the cell should show **selected** chrome (border, fill, inset shadow) as the map’s
  * cell-level selection. Matches {@link selectedCellIdForMapSelection}: only `cell` and `object`
  * selections set a `selectedCellId`; region/path/edge do not.

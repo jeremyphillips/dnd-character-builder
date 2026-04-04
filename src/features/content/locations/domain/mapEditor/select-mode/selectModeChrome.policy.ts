@@ -11,9 +11,9 @@
  * `path`, `edge`, `object`, or `edge-run`, cell-level hover is disabled so cells do not visually
  * compete with SVG/region emphasis. When hover is `{ type: 'none' }`, cell hover chrome is off.
  *
- * **Mirrored `:hover`** — {@link GridEditor} applies base border/background on `:hover` when Select
- * mode suppresses cell hover for that cell, so native `<button>` hover does not flash a competing
- * treatment (see `selectHoverChromeSuppressed`).
+ * **Mirrored `:hover`** — {@link GridEditor} and {@link HexGridEditor} apply base border/background
+ * (square) or ring/fill (hex) on `:hover` when {@link isSelectHoverChromeSuppressed} is true, so
+ * native `<button>` hover does not flash a competing treatment.
  *
  * **Selection chrome** — {@link shouldApplyCellSelectedChrome}: only `cell` and `object`
  * selections set `selectedCellId`; region/path/edge selections do not highlight a grid cell as

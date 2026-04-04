@@ -15,6 +15,7 @@ import {
 } from './gridCellStyles';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/locationEditorRail.types';
 import {
+  isSelectHoverChromeSuppressed,
   shouldApplyCellHoverChrome,
   shouldApplyCellSelectedChrome,
 } from './mapGridCellVisualState';
@@ -106,12 +107,11 @@ export default function GridEditor({
         const excluded = excludedSet.has(cellId);
         const fillBg = getCellBackgroundColor?.(cell);
         const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTargetProp);
-        /** Select mode: when hover winner is not `none` and not this cell, mirror base styles on :hover so native button hover does not compete with region/path/etc. */
-        const selectHoverChromeSuppressed =
-          !disabled &&
-          selectHoverTargetProp !== undefined &&
-          selectHoverTargetProp.type !== 'none' &&
-          !allowHover;
+        const selectHoverChromeSuppressed = isSelectHoverChromeSuppressed(
+          cellId,
+          selectHoverTargetProp,
+          !!disabled,
+        );
         const baseBorderColor = selected
           ? gridCellPalette.border.selected
           : excluded

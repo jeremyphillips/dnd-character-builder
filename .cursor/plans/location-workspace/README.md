@@ -11,5 +11,6 @@ Related Cursor plans for the **location editor workspace** (dirty/save, authorin
 | [location_workspace_normalization_policy.plan.md](location_workspace_normalization_policy.plan.md) | Explicit normalization policy for dirty vs save semantics |
 | [location_workspace_hex_edge_support.plan.md](location_workspace_hex_edge_support.plan.md) | **Child (done):** Option B constrained hex edges — alert + erase guard + selection clear; decision record filled |
 | [location_workspace_select_mode_interaction_hardening.plan.md](location_workspace_select_mode_interaction_hardening.plan.md) | **Child (done):** Select mode — pan vs click, region vs cell chrome; interaction semantics only |
+| [location_workspace_hex_hover_parity_followup.plan.md](location_workspace_hex_hover_parity_followup.plan.md) | **Child (done):** Hex `HexGridEditor` — mirror square suppressed-hover idle `:hover` parity |
 
 **Canonical reference doc:** [docs/reference/location-workspace.md](../../../docs/reference/location-workspace.md).

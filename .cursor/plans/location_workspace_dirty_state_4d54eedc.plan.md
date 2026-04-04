@@ -1,6 +1,6 @@
 ---
 name: Location workspace dirty state
-overview: Phases 1–4 + refactor A–**E** complete (dirty snapshot, state ownership in docs/reference/location-workspace.md). **Follow-up plan:** [location_workspace_authoring_contract.plan.md](location_workspace_authoring_contract.plan.md) (shared editor contract, system vs homebrew adapters).
+overview: Phases 1–4 + refactor A–**E** complete (dirty snapshot, state ownership in docs/reference/location-workspace.md). **Follow-up plans:** [location_workspace_authoring_contract.plan.md](location_workspace_authoring_contract.plan.md) (shared editor contract, system vs homebrew adapters); [location_workspace_debounced_persistable_flush.plan.md](location_workspace_debounced_persistable_flush.plan.md) (debounced persistable flush-on-boundary; region description first).
 todos:
   - id: snapshot-helper
     content: Add workspacePersistableSnapshot (form + normalized map + building stairs) aligned with save

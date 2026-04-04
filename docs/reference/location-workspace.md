@@ -1,10 +1,10 @@
 # Location editor workspace (reference)
 
-This document describes the **full-width create/edit shell** for campaign locations: layout components under `components/workspace/`, **building + floor** editing, and **shared canvas** hooks used by the map editor. For the broader locations domain (mental model, shared `grid/` and `locations/` packages, validation, server layout), see [locations.md](./locations.md).
+This document describes the **full-width create/edit shell** for locations in a campaign: layout components under `components/workspace/`, **building + floor** editing, and **shared canvas** hooks used by the map editor. For the broader locations domain (mental model, shared `grid/` and `locations/` packages, validation, server layout), see [locations.md](./locations.md).
 
 Location create and edit routes render inside a full-width workspace via `AuthMainFocus` layout mode, triggered by `isAuthMainFocusPath` in `src/app/layouts/auth/auth-main-path.ts`.
 
-**Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). At persistence and API boundaries, `normalizeLocationMapAuthoringFields` / `normalizeLocationMapBaseAuthoring` (`shared/domain/locations/map/locationMapAuthoring.normalize.ts`) ensure `cellEntries`, `pathEntries`, and `edgeEntries` are always arrays (never `undefined`), including server `toDoc`, client `locationMapRepo` responses, `bootstrapDefaultLocationMap`, and save/load paths in `LocationEditRoute` (full-width UI is composed through `LocationEditCampaignWorkspace` or `LocationEditSystemPatchWorkspace`; see **Workspace layout**).
+**Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). At persistence and API boundaries, `normalizeLocationMapAuthoringFields` / `normalizeLocationMapBaseAuthoring` (`shared/domain/locations/map/locationMapAuthoring.normalize.ts`) ensure `cellEntries`, `pathEntries`, and `edgeEntries` are always arrays (never `undefined`), including server `toDoc`, client `locationMapRepo` responses, `bootstrapDefaultLocationMap`, and save/load paths in `LocationEditRoute` (full-width UI is composed through **`LocationEditHomebrewWorkspace`** or **`LocationEditSystemPatchWorkspace`**; `LocationEditCampaignWorkspace` remains as a **deprecated** alias for the homebrew shell — see **Workspace layout**).
 
 **Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
@@ -71,7 +71,7 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 
 | Area | Purpose |
 |------|---------|
-| `src/features/content/locations/routes/` | Create and edit routes compose the workspace; `LocationEditRoute` uses `locationEdit/` hooks (`useLocationEditWorkspaceModel`, `useLocationMapHydration`, `useLocationEditSaveActions`) then branches to `LocationEditCampaignWorkspace` vs `LocationEditSystemPatchWorkspace`. Detail views stay content-width. |
+| `src/features/content/locations/routes/` | Create and edit routes compose the workspace; `LocationEditRoute` uses `locationEdit/` hooks (`useLocationEditWorkspaceModel`, `useLocationMapHydration`, `useLocationEditSaveActions`) then branches to **`LocationEditHomebrewWorkspace`** vs `LocationEditSystemPatchWorkspace`. Detail views stay content-width. |
 | `components/workspace/` | Map-first editor shell — see below. |
 | `components/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. SVG layers: `mapGrid/mapAuthoring/SquareMapAuthoringSvgOverlay` (paths + edges + boundary-paint preview) and `HexMapAuthoringSvgOverlay` (paths + hex region outlines). Select-mode resolver input: `domain/mapEditor/select-mode/` (`buildSelectModeInteractiveTargetInput`, `resolveSelectModeInteractiveTarget`). |
 
@@ -83,7 +83,8 @@ The workspace is composed of feature-owned components:
 
 | Component | Role |
 |-----------|------|
-| `LocationEditCampaignWorkspace` | **Campaign edit** (including building + floor): wraps `FormProvider`, optional `BuildingFloorStrip` + map column, `LocationEditorWorkspace`, location form + visibility in the rail, `LocationMapEditorLinkedLocationModal`, delete `ConfirmModal`. |
+| `LocationEditHomebrewWorkspace` | **Homebrew (user-authored) edit** — persisted `source === 'campaign'` (including building + floor): wraps `FormProvider`, optional `BuildingFloorStrip` + map column, `LocationEditorWorkspace`, location form + visibility in the rail, `LocationMapEditorLinkedLocationModal`, delete `ConfirmModal`. |
+| `LocationEditCampaignWorkspace` | **Deprecated** alias of `LocationEditHomebrewWorkspace` (`onCampaignSubmit` → `onHomebrewSubmit`). Prefer the homebrew name in new code. |
 | `LocationEditSystemPatchWorkspace` | **System-location patch:** `LocationEditorWorkspace` with patch header and patch-driven location panel (no `FormProvider`). |
 | `LocationEditorWorkspace` | Outer flex column: header slot + body row (canvas + right rail). Body row capped at `calc(100vh - headerHeight)`. |
 | `LocationEditorHeader` | Sticky header: title, ancestry breadcrumbs, global save button, right-rail toggle, optional actions (e.g. delete). |
@@ -95,50 +96,54 @@ The workspace is composed of feature-owned components:
 | `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
 | `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`, `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (map toolbar), plus `LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX` and `LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX` when those tools are active. |
 
-**Edit route composition:** `LocationEditRoute` loads the entry, then calls **`useLocationEditWorkspaceModel`** (`routes/locationEdit/useLocationEditWorkspaceModel.ts`) for form state, grid draft, map editor, palettes, canvas zoom/pan, and handlers. **Hydration** (`useLocationMapHydration`) wraps `hydrateDefaultLocationMapState` for non-building vs building-floor maps. **Save / patch / add floor** (`useLocationEditSaveActions`) centralizes campaign submit, `useSystemPatchActions`, and floor creation. The route still builds `mapAuthoringPanel`, `selectionPanel`, and `mapCanvasColumn` JSX and passes them into `LocationEditCampaignWorkspace` or `LocationEditSystemPatchWorkspace`.
+**Edit route composition:** `LocationEditRoute` loads the entry, then calls **`useLocationEditWorkspaceModel`** (`routes/locationEdit/useLocationEditWorkspaceModel.ts`) for form state, grid draft, map editor, palettes, canvas zoom/pan, and handlers. **Hydration** (`useLocationMapHydration`) wraps `hydrateDefaultLocationMapState` for non-building vs building-floor maps. **Save / patch / add floor** (`useLocationEditSaveActions`) centralizes **homebrew** submit (`handleHomebrewSubmit`), `useSystemPatchActions`, and floor creation. The route still builds `mapAuthoringPanel`, `selectionPanel`, and `mapCanvasColumn` JSX and passes them into **`LocationEditHomebrewWorkspace`** or `LocationEditSystemPatchWorkspace`.
 
 ### Shared authoring contract (editor-facing)
 
-The **shared editor-facing contract** for dirty state, saveability, and projections is defined in TypeScript as **`LocationWorkspaceAuthoringContract`** (`routes/locationEdit/locationWorkspaceAuthoringContract.ts`). **Thin adapters** build that shape: **`buildHomebrewLocationWorkspaceAuthoringContract`** (full-draft snapshot vs baseline) and **`buildSystemLocationWorkspaceAuthoringContract`** (patch JSON + grid persistable token, combined dirty via `isSystemLocationWorkspaceDirty`). **`useLocationEditWorkspaceModel`** exposes **`authoringContract`** (or `null` when the entry is missing). **`LocationEditRoute`** passes **`authoringContract.isDirty`**, **`!canSave`** (as `saveDisabled`), and **`saveBlockReason`** into **`LocationEditCampaignWorkspace`** and **`LocationEditSystemPatchWorkspace`** / **`LocationEditorHeader`** so the shell does not branch on mode-specific persistence. Modes are **`system`** (patch-backed) vs **`homebrew`** (user-authored locations; persisted `source === 'campaign'` — the contract name is editor vocabulary). **Dirty** and **saveable** remain separate fields (`isDirty` / `canSave` / `saveBlockReason`). **Projections** (`draftProjection`, `persistedBaselineProjection`) are comparable views for tooling or future generic UI; homebrew uses the serialized persistable snapshot string; system uses `stableStringify({ patch, grid })` (see `locationWorkspaceAuthoringAdapters.ts`).
+The **shared editor-facing contract** for dirty state, saveability, and projections is defined in TypeScript as **`LocationWorkspaceAuthoringContract`** (`routes/locationEdit/locationWorkspaceAuthoringContract.ts`). **Thin adapters** build that shape: **`buildHomebrewLocationWorkspaceAuthoringContract`** (full-draft snapshot vs baseline) and **`buildSystemLocationWorkspaceAuthoringContract`** (patch JSON + grid persistable token, combined dirty via `isSystemLocationWorkspaceDirty`). **`useLocationEditWorkspaceModel`** exposes **`authoringContract`** (or `null` when the entry is missing). **`LocationEditRoute`** passes **`authoringContract.isDirty`**, **`!canSave`** (as `saveDisabled`), and **`saveBlockReason`** into **`LocationEditHomebrewWorkspace`** and **`LocationEditSystemPatchWorkspace`** / **`LocationEditorHeader`** so the shell does not branch on mode-specific persistence. Modes are **`system`** (patch-backed) vs **`homebrew`** (user-authored locations; persisted `source === 'campaign'` — the contract name is editor vocabulary). **Dirty** and **saveable** remain separate fields (`isDirty` / `canSave` / `saveBlockReason`). **Projections** (`draftProjection`, `persistedBaselineProjection`) are comparable views for tooling or future generic UI; homebrew uses the serialized persistable snapshot string; system uses `stableStringify({ patch, grid })` (see `locationWorkspaceAuthoringAdapters.ts`).
 
-### Dirty state and Save (campaign edit)
+### Vocabulary: `homebrew` vs storage `campaign`
+
+In **editor and workspace code**, prefer **homebrew** for user-authored location editing (full-document / snapshot semantics, `LocationWorkspaceAuthoringMode` `'homebrew'`). On the **wire and in persisted documents**, locations still use **`source === 'campaign'`** — that field name is **not** renamed in this architecture pass. Types and helpers such as **`HomebrewWorkspacePersistableParts`**, **`buildHomebrewWorkspacePersistableParts`**, **`getHomebrewWorkspaceSaveBlockReason`**, and **`LocationEditHomebrewWorkspace`** reflect the editor concept; **`CampaignWorkspacePersistableParts`**, **`getCampaignWorkspaceSaveBlockReason`**, and **`LocationEditCampaignWorkspace`** remain as **deprecated** aliases where a compatibility shim is useful.
+
+### Dirty state and Save (homebrew edit)
 
 The header **Save** button is driven by **`authoringContract.isDirty`** (homebrew mode) from the shared contract, not React Hook Form’s `isDirty` alone. The model still exposes **`isWorkspaceDirty`** as an alias for that homebrew dirty flag. **Dirty** means the **persistable workspace snapshot** differs from the last baseline.
 
-**Single source of truth:** **`buildCampaignWorkspacePersistableParts`** (`routes/locationEdit/workspacePersistableSnapshot.ts`) builds the same **`locationInput`** (for `locationRepo.updateEntry`) and **`mapBootstrapPayload`** (for `bootstrapDefaultLocationMap`) that **`handleCampaignSubmit`** uses. **`serializeLocationWorkspacePersistableSnapshot`** stringifies those parts for dirty comparison, so save and dirty cannot drift.
+**Single source of truth:** **`buildHomebrewWorkspacePersistableParts`** (`routes/locationEdit/workspacePersistableSnapshot.ts`; deprecated alias `buildCampaignWorkspacePersistableParts`) builds the same **`locationInput`** (for `locationRepo.updateEntry`) and **`mapBootstrapPayload`** (for `bootstrapDefaultLocationMap`) that **`handleHomebrewSubmit`** uses. **`serializeLocationWorkspacePersistableSnapshot`** stringifies those parts for dirty comparison, so save and dirty cannot drift.
 
 - **Location slice:** `toLocationInput(form values)`, with building saves merging `buildingProfile` and **`stairConnections`** when `loc` is a campaign building.
 - **Map slice:** sorted `excludedCellIds` plus `normalizedAuthoringPayloadFromGridDraft` (same normalization as `gridDraftPersistableEquals`).
 
-The **baseline** string is set after successful map hydration and after a successful campaign save. Until the first baseline is recorded, Save stays disabled (not dirty).
+The **baseline** string is set after successful map hydration and after a successful homebrew save. Until the first baseline is recorded, Save stays disabled (not dirty).
 
 The three right-rail tabs (**Location**, **Map**, **Selection**) are not separate dirty stores: they all feed the shared form, `LocationGridDraftState`, and (for buildings) stair-connection state. **Map-only** UI such as toolbar mode, paint selection, and `mapSelection` is not part of the persistable snapshot (see `locationGridDraft.utils.ts`).
 
-### Dirty vs saveable (campaign header)
+### Dirty vs saveable (homebrew header)
 
 These are **separate** concepts:
 
 | Concept | Meaning |
 | ------- | ------- |
 | **Dirty** (`authoringContract.isDirty` in homebrew mode; alias **`isWorkspaceDirty`** on the model) | The persistable workspace snapshot differs from the last baseline — unsaved work. |
-| **Saveable** (`authoringContract.canSave`; aliases **`campaignWorkspaceCanSave`** on the model) | The same **gates** as [`handleCampaignSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getCampaignWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/campaignWorkspaceSaveGate.ts) — e.g. campaign **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/mapAuthoring/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
+| **Saveable** (`authoringContract.canSave`; primary **`homebrewWorkspaceCanSave`** on the model; deprecated alias `campaignWorkspaceCanSave`) | The same **gates** as [`handleHomebrewSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getHomebrewWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/homebrewWorkspaceSaveGate.ts) (deprecated re-export `getCampaignWorkspaceSaveBlockReason` from `campaignWorkspaceSaveGate.ts`) — e.g. **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/mapAuthoring/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
 
 The header **Save** button uses **`saveDisabled={!authoringContract.canSave}`** (via **`LocationEditRoute`**) in addition to the usual **not dirty** / **saving** rules. A draft can be **dirty** while **not** saveable (e.g. invalid grid columns); Save stays disabled until the block reason is cleared. When blocked, [`LocationEditorHeader`](src/features/content/locations/components/workspace/LocationEditorHeader.tsx) can show a **tooltip** (`saveDisabledReason` from **`authoringContract.saveBlockReason`**) explaining why.
 
 ### Dirty state — system location patch
 
-System entries (`source === 'system'`) are **not** saved through the campaign `handleCampaignSubmit` pipeline. **Header dirty/saveability** still flows through **`authoringContract`** (system mode). Under the hood the contract uses a **two-part** dirty rule:
+System entries (`source === 'system'`) are **not** saved through the homebrew `handleHomebrewSubmit` pipeline. **Header dirty/saveability** still flows through **`authoringContract`** (system mode). Under the hood the contract uses a **two-part** dirty rule:
 
 | Input | Meaning |
 | ----- | ------- |
 | **`patchDriver.isDirty()`** | The JSON **patch document** managed by [`patchDriver`](src/features/content/shared/editor/patchDriver.ts) differs from the loaded system entry (location metadata / patch fields). |
-| **`isGridDraftDirty`** | Same as campaign: `!gridDraftPersistableEquals(gridDraft, gridDraftBaseline)` — authored **map** cells, paths, edges, regions, etc., changed vs hydrate/save baseline. |
+| **`isGridDraftDirty`** | Same as homebrew map semantics: `!gridDraftPersistableEquals(gridDraft, gridDraftBaseline)` — authored **map** cells, paths, edges, regions, etc., changed vs hydrate/save baseline. |
 
 **Combined:** `isSystemLocationWorkspaceDirty(patchDriver.isDirty(), isGridDraftDirty)` in [`systemLocationWorkspaceDirty.ts`](src/features/content/locations/routes/locationEdit/systemLocationWorkspaceDirty.ts). Either side can enable Save. **Save blocking** (e.g. patch rail `validateAll`) is exposed as **`authoringContract.canSave`** / **`saveBlockReason`** on the system adapter.
 
 **Not used for system dirty semantics:** the campaign **`serializeLocationWorkspacePersistableSnapshot`** / **`workspacePersistBaseline`** pipeline — those are for **homebrew** (`toLocationInput` + map bootstrap). Do not replace the system branch with the campaign snapshot unless product requires one unified model (would need patch state folded into a snapshot).
 
-### Performance (campaign snapshot)
+### Performance (homebrew snapshot)
 
 `useLocationEditWorkspaceModel` memoizes **`serializeLocationWorkspacePersistableSnapshot(...)`** with dependencies on the full form watch result, `gridDraft`, `buildingStairConnections`, and `loc`. If profiling shows the snapshot as a hotspot, consider narrowing form subscriptions or caching normalized map slices only after measuring.
 
@@ -146,8 +151,8 @@ System entries (`source === 'system'`) are **not** saved through the campaign `h
 
 When you introduce new data that must be **saved** from this editor:
 
-1. Extend **`buildCampaignWorkspacePersistableParts`** in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) (or the domain types it uses) so the snapshot includes the new field.
-2. Ensure **`handleCampaignSubmit`** in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) persists it (should follow automatically if step 1 uses the shared builder).
+1. Extend **`buildHomebrewWorkspacePersistableParts`** in [`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts) (or the domain types it uses) so the snapshot includes the new field.
+2. Ensure **`handleHomebrewSubmit`** in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) persists it (should follow automatically if step 1 uses the shared builder).
 3. Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in `useLocationEditSaveActions`.
 4. Add a **test case** in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) under `workspacePersistableSnapshot matrix` (or a dedicated example) proving the snapshot changes when that field changes.
 
@@ -155,7 +160,7 @@ When you introduce new data that must be **saved** from this editor:
 
 ### State ownership (authoring standard)
 
-Persistable authoring state for campaign edit lives in **workspace-owned** structures: `LocationFormValues` (RHF), `LocationGridDraftState` (`gridDraft`), building stair connections, and related route-held state. **Header dirty** (`authoringContract` / `isWorkspaceDirty` for homebrew) and **Save** compare and persist that model — not private panel-local buffers.
+Persistable authoring state for homebrew edit lives in **workspace-owned** structures: `LocationFormValues` (RHF), `LocationGridDraftState` (`gridDraft`), building stair connections, and related route-held state. **Header dirty** (`authoringContract` / `isWorkspaceDirty` for homebrew) and **Save** compare and persist that model — not private panel-local buffers.
 
 | Rule | Meaning |
 | ---- | ------- |
@@ -166,19 +171,38 @@ Persistable authoring state for campaign edit lives in **workspace-owned** struc
 
 **When to use local state vs workspace draft (checklist)**
 
-- **Workspace draft / form / snapshot:** anything that should appear in `buildCampaignWorkspacePersistableParts` / `serializeLocationWorkspacePersistableSnapshot` or `handleCampaignSubmit` output — including map cells, paths, edges, regions, placed objects, location fields, building stairs.
+- **Workspace draft / form / snapshot:** anything that should appear in `buildHomebrewWorkspacePersistableParts` / `serializeLocationWorkspacePersistableSnapshot` or `handleHomebrewSubmit` output — including map cells, paths, edges, regions, placed objects, location fields, building stairs.
 - **Local state only:** UI that would be wrong to save (tool mode, selection, zoom, rail tab, transient modal fields) or derived UI lists (e.g. stair options fetched for a picked floor).
 
 **Concrete examples (current inspectors)**
 
-1. **Region metadata (Selection → region):** [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) uses RHF for field UX; **`onPatchRegion`** writes through [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts) into **`gridDraft.regionEntries`** as the user edits (description debounced). No separate “apply” step for persistable data.
+1. **Region metadata (Selection → region):** [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) uses RHF for field UX; **`onPatchRegion(regionId, patch)`** writes through [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts) into **`gridDraft.regionEntries`**. **Description** uses [`useDebouncedPersistableField`](src/ui/hooks/useDebouncedPersistableField.ts) for typing ergonomics, with **flush** on region change (`useLayoutEffect`), rail tab unmount, and via **`flushDebouncedPersistableFieldsRef`** before header Save (wrapped in **`flushSync`** in [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx) so `gridDraftRef` matches before submit). No separate “apply” step for persistable data.
 2. **Stair pairing / stair endpoint:** [`LocationMapSelectionInspectors.tsx`](src/features/content/locations/components/workspace/LocationMapSelectionInspectors.tsx) uses **`FormProvider` + `useForm`** for controlled fields and **`onAfterChange`** / **Link endpoints** to update **`gridDraft`** (e.g. `onUpdateCellObjects`). RHF handles inputs; **persistable** updates are immediate draft writes, not a nested HTML form submit to the workspace.
 
 **Rails using RHF:** Nested `FormProvider` is fine for validation and controlled fields. The rule is that **persistable** values must not be gated on `handleSubmit` / panel Submit — they flow into **`gridDraft` / location form / stairs** through explicit callbacks or subscriptions.
 
-#### Historical context (migration Phases B–D)
+### Debounced persistable fields (flush-on-boundary)
 
-The nested **submit-to-commit** persistable gap (region metadata only) was removed in Phase B; Phase D re-audited Selection / map rails and removed noop `AppForm` wrappers from stair inspectors in favor of `FormProvider`. Inventory for that migration:
+Free-text fields may **debounce** writes into **`gridDraft`** so typing stays responsive. Any such field must **flush** the latest buffered value before destructive transitions (header **Save**, changing **region** selection, leaving the **Selection** tab, **unmount**), or the persistable snapshot can miss the last edit.
+
+- **Hook:** [`useDebouncedPersistableField`](src/ui/hooks/useDebouncedPersistableField.ts) — `flush()`, `cancelPendingTimer()`, debounced `onCommit`.
+- **Workspace registration:** [`useLocationEditWorkspaceModel`](src/features/content/locations/routes/locationEdit/useLocationEditWorkspaceModel.ts) exposes **`flushDebouncedPersistableFieldsRef`**; [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) registers its **`flush`** when mounted (region selection).
+- **Save:** [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx) runs the registered flush inside **`flushSync`** before **`handleHomebrewFormSaveClick`** / **`handlePatchSave`** so **`gridDraftRef`** is up to date for the save pipeline.
+
+### Contributor rules (workspace authoring)
+
+- Extend **`LocationWorkspaceAuthoringContract`** intentionally when adding editor-facing behavior (dirty, saveability, projections); surface it through **`authoringContract`** on **`useLocationEditWorkspaceModel`** and **`LocationEditRoute`**.
+- Keep **mode-specific** persistence inside the **adapters** and save hooks (`buildHomebrewLocationWorkspaceAuthoringContract`, `buildSystemLocationWorkspaceAuthoringContract`, `useLocationEditSaveActions`), not in one-off header branches.
+- Keep **persistable** state in workspace-owned **`gridDraft`**, RHF values, building stairs, and the **patch driver** for system — not isolated panel `useState` that only flushes on Save.
+- Do **not** assume system and homebrew persistence work the same internally: system is **patch JSON + grid baseline**; homebrew is **full snapshot** + `locationRepo.updateEntry` / `bootstrapDefaultLocationMap`.
+- Keep **dirty** and **saveable** separate (`isDirty` vs `canSave` / `saveBlockReason`).
+- Prefer **homebrew** names in new TypeScript; retain **`source === 'campaign'`** at persistence and API boundaries unless a wire-format migration explicitly changes it.
+
+**Why two persistence strategies:** System locations are platform-defined; the app stores overrides as a **patch** while sharing the same map authoring UX. User-authored locations are normal campaign content; saves align a **serialized baseline** with `handleHomebrewSubmit`. This is a **code architecture** distinction — not a request to merge DB schemas.
+
+#### Historical context (dirty-state migration Phases B–D)
+
+The nested **submit-to-commit** persistable gap (region metadata only) was removed in Phase B; a later Phase D re-audited Selection / map rails and removed noop `AppForm` wrappers from stair inspectors in favor of `FormProvider`. Inventory for that migration:
 
 | Slice | Persistable path | Notes |
 | ----- | ---------------- | ----- |
@@ -339,7 +363,7 @@ The smooth curve preview (hover → smooth Catmull-Rom spline) recalculates the 
 For **`scale === building`** (campaign edit only), the editor is **building-centric** but **maps live on floor children**, not on the building record:
 
 - **Floors** are separate locations: `scale: floor`, `parentId` = building id. Each floor has its own default map (normal persistence — no merged multi-floor document).
-- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip), rendered inside **`LocationEditCampaignWorkspace`** when `scale === building`. Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor's grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
+- **UI:** a **`BuildingFloorStrip`** sits under the header in the canvas column (full-width strip), rendered inside **`LocationEditHomebrewWorkspace`** when `scale === building`. Tabs show **Floor 1**, **Floor 2**, … (labels from sorted order); **+ Add floor** creates the next floor + bootstraps its map. Only **one** floor's grid is mounted at a time (`activeFloorId` in route state; URL stays `/locations/:buildingId/edit`).
 - **Save** updates the **building** location (metadata, etc.) and **bootstraps the active floor's** map. If there are no floors yet, save is disabled until at least one floor exists.
 - **Code:** helpers in `domain/building/buildingWorkspaceFloors.ts`; branching in `LocationEditRoute.tsx` (map load/save keyed by `activeFloorId`, `hostScale: 'floor'` for grid authoring). Out of scope for this pass: basement labels, floor reorder/delete UX, stacked canvases.
 
@@ -361,16 +385,17 @@ Both hooks are used at the route level; derived values are passed down to canvas
 
 ## Pointers for the next agent (workspace)
 
-1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are `LocationEditCampaignWorkspace` and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
+1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** (deprecated alias `LocationEditCampaignWorkspace`) and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
 4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
 5. **Edge authoring:** edge logic lives under `domain/mapEditor/edge/` with tests in `domain/mapEditor/__tests__/edge/`; grid wiring uses `useSquareEdgeBoundaryPaint` in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
 6. **Path preview performance:** if the chain preview feels sluggish, consider caching the committed chain curve and only recomputing the tail segments on hover. See **Open issues §3**.
 7. **Select mode / region hover:** resolver and grid chrome live under `domain/mapEditor/select-mode/` (`resolveSelectModeInteractiveTarget`, `buildSelectModeInteractiveTargetInput`, `resolveSelectModeRegionOrCellSelection`, `refineSelectModeClickAfterRegionDrill`, `locationMapSelectionHitTest`) plus `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
-8. **Persistable dirty snapshot:** when adding new state that is **saved** from this editor but not part of `LocationFormValues` or `gridDraft` (e.g. parallel `useState` merged in `handleCampaignSubmit`), extend **`buildCampaignWorkspacePersistableParts`** (shared by save + **`serializeLocationWorkspacePersistableSnapshot`**) and baseline updates in **`useLocationMapHydration`** / **`useLocationEditSaveActions`**. Tests: `workspacePersistableSnapshot.test.ts`.
-9. **System location edit:** dirty uses **`isSystemLocationWorkspaceDirty`** (`patchDriver.isDirty()` OR **`isGridDraftDirty`**), not the campaign snapshot — see **Dirty state — system location patch** above. Tests: `systemLocationWorkspaceDirty.test.ts`.
+8. **Persistable dirty snapshot:** when adding new state that is **saved** from this editor but not part of `LocationFormValues` or `gridDraft` (e.g. parallel `useState` merged in `handleHomebrewSubmit`), extend **`buildHomebrewWorkspacePersistableParts`** (shared by save + **`serializeLocationWorkspacePersistableSnapshot`**) and baseline updates in **`useLocationMapHydration`** / **`useLocationEditSaveActions`**. Tests: `workspacePersistableSnapshot.test.ts`.
+9. **System location edit:** dirty uses **`isSystemLocationWorkspaceDirty`** (`patchDriver.isDirty()` OR **`isGridDraftDirty`**), not the homebrew snapshot — see **Dirty state — system location patch** above. Tests: `systemLocationWorkspaceDirty.test.ts`.
 10. **State ownership:** persistable rail edits must live in **`gridDraft` / location form / stairs** (see **State ownership (authoring standard)**). Plan: `.cursor/plans/location_workspace_dirty_state_4d54eedc.plan.md`.
 11. **Shared authoring contract:** extend editor-facing behavior via **`LocationWorkspaceAuthoringContract`** (`locationWorkspaceAuthoringContract.ts`); keep mode-specific persistence in adapters. Plan: `.cursor/plans/location_workspace_authoring_contract.plan.md`.
+12. **Debounced persistable fields:** use **`useDebouncedPersistableField`** + **`flushDebouncedPersistableFieldsRef`** + **`flushSync`** before save as in region metadata; see **Debounced persistable fields** above. Plan: `.cursor/plans/location_workspace_debounced_persistable_flush.plan.md`.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

@@ -1,3 +1,4 @@
+import type { MutableRefObject } from 'react';
 import Typography from '@mui/material/Typography';
 
 import type { LocationMapEdgeAuthoringEntry, LocationMapPathAuthoringEntry } from '@/shared/domain/locations';
@@ -43,6 +44,8 @@ export type LocationEditorSelectionPanelProps = {
   onRemoveEdgeFromMap?: (edgeId: string) => void;
   /** All segments in the selected straight run (same as Delete for edge-run). */
   onRemoveEdgeRunFromMap?: (edgeIds: readonly string[]) => void;
+  /** Debounced persistable fields (e.g. region description) register flush here for Save / boundaries. */
+  debouncedPersistableFlushRef?: MutableRefObject<(() => void) | null>;
 };
 
 /**
@@ -61,6 +64,7 @@ export function LocationEditorSelectionPanel({
   onRemovePathFromMap,
   onRemoveEdgeFromMap,
   onRemoveEdgeRunFromMap,
+  debouncedPersistableFlushRef,
 }: LocationEditorSelectionPanelProps) {
   switch (selection.type) {
     case 'none':
@@ -86,7 +90,8 @@ export function LocationEditorSelectionPanel({
         <LocationMapRegionMetadataForm
           region={region}
           formId="location-map-region-metadata-selection"
-          onPatchRegion={(patch) => onUpdateRegionEntry(region.id, patch)}
+          onPatchRegion={(regionId, patch) => onUpdateRegionEntry(regionId, patch)}
+          debouncedPersistableFlushRef={debouncedPersistableFlushRef}
         />
       );
     }

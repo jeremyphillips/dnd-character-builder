@@ -1,3 +1,5 @@
+export { LocationEditHomebrewWorkspace } from './LocationEditHomebrewWorkspace'
+export type { LocationEditHomebrewWorkspaceProps } from './LocationEditHomebrewWorkspace'
 export { LocationEditCampaignWorkspace } from './LocationEditCampaignWorkspace'
 export type { LocationEditCampaignWorkspaceProps } from './LocationEditCampaignWorkspace'
 export { LocationEditSystemPatchWorkspace } from './LocationEditSystemPatchWorkspace'

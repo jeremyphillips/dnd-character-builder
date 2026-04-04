@@ -21,7 +21,7 @@ export type LocationEditSystemPatchWorkspaceProps = {
   ancestryBreadcrumbs: ReactNode;
   saving: boolean;
   dirty: boolean;
-  /** Same contract as campaign edit: block Save when false (e.g. patch validation). */
+  /** Same contract as homebrew edit: block Save when false (e.g. patch validation). */
   saveDisabled?: boolean;
   saveDisabledReason?: string | null;
   errors: ValidationError[];

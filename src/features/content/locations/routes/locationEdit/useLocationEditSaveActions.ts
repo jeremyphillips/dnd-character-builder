@@ -23,9 +23,9 @@ import type { BuildingWorkspaceFloorItem } from '@/features/content/locations/do
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
 import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
-import { getCampaignWorkspaceSaveBlockReason } from '@/features/content/locations/routes/locationEdit/campaignWorkspaceSaveGate';
+import { getHomebrewWorkspaceSaveBlockReason } from '@/features/content/locations/routes/locationEdit/homebrewWorkspaceSaveGate';
 import {
-  buildCampaignWorkspacePersistableParts,
+  buildHomebrewWorkspacePersistableParts,
   serializeLocationWorkspacePersistableSnapshot,
 } from '@/features/content/locations/routes/locationEdit/workspacePersistableSnapshot';
 import { useSystemPatchActions } from '@/features/content/shared/hooks/useSystemPatchActions';
@@ -89,10 +89,10 @@ export function useLocationEditSaveActions({
 }: UseLocationEditSaveActionsParams) {
   const [addingFloor, setAddingFloor] = useState(false);
 
-  const handleCampaignSubmit = useCallback(
+  const handleHomebrewSubmit = useCallback(
     async (values: LocationFormValues) => {
       if (!campaignId || !locationId || !loc) return;
-      const blockReason = getCampaignWorkspaceSaveBlockReason(loc, activeFloorId, values);
+      const blockReason = getHomebrewWorkspaceSaveBlockReason(loc, activeFloorId, values);
       if (blockReason) {
         setErrors([{ path: '', code: 'VALIDATION', message: blockReason }]);
         return;
@@ -103,7 +103,7 @@ export function useLocationEditSaveActions({
       setErrors([]);
       try {
         const draft = gridDraftRef.current;
-        const { locationInput, mapBootstrapPayload } = buildCampaignWorkspacePersistableParts(
+        const { locationInput, mapBootstrapPayload } = buildHomebrewWorkspacePersistableParts(
           values,
           draft,
           buildingStairConnectionsRef.current,
@@ -172,9 +172,9 @@ export function useLocationEditSaveActions({
     ],
   );
 
-  const handleCampaignFormSaveClick = useCallback(() => {
-    void handleSubmit(handleCampaignSubmit)();
-  }, [handleSubmit, handleCampaignSubmit]);
+  const handleHomebrewFormSaveClick = useCallback(() => {
+    void handleSubmit(handleHomebrewSubmit)();
+  }, [handleSubmit, handleHomebrewSubmit]);
 
   const handleAddFloor = useCallback(async () => {
     if (!campaignId || !locationId || !loc || loc.source !== 'campaign' || loc.scale !== 'building') {
@@ -211,7 +211,7 @@ export function useLocationEditSaveActions({
         gridCellUnit: v.gridCellUnit || getDefaultCellUnitForScale('floor'),
         gridGeometry: getDefaultGeometryForScale('floor'),
       };
-      const { mapBootstrapPayload: newFloorMapPayload } = buildCampaignWorkspacePersistableParts(
+      const { mapBootstrapPayload: newFloorMapPayload } = buildHomebrewWorkspacePersistableParts(
         bootstrapValues,
         INITIAL_LOCATION_GRID_DRAFT,
         [],
@@ -259,8 +259,12 @@ export function useLocationEditSaveActions({
 
   return {
     addingFloor,
-    handleCampaignSubmit,
-    handleCampaignFormSaveClick,
+    handleHomebrewSubmit,
+    handleHomebrewFormSaveClick,
+    /** @deprecated Use `handleHomebrewSubmit`. */
+    handleCampaignSubmit: handleHomebrewSubmit,
+    /** @deprecated Use `handleHomebrewFormSaveClick`. */
+    handleCampaignFormSaveClick: handleHomebrewFormSaveClick,
     handleAddFloor,
     handlePatchSave,
     handleRemovePatch,

@@ -675,6 +675,9 @@ export function useLocationEditWorkspaceModel({
 
   const validationApiRef = useRef<{ validateAll: () => boolean } | null>(null);
 
+  /** Region metadata (and future debounced persistable fields) register `flush` here for Save / boundaries. */
+  const flushDebouncedPersistableFieldsRef = useRef<(() => void) | null>(null);
+
   const authoringContract = useMemo((): LocationWorkspaceAuthoringContract | null => {
     if (!loc) return null;
     if (loc.source === 'system') {
@@ -718,10 +721,10 @@ export function useLocationEditWorkspaceModel({
     authoringContract?.mode === 'homebrew' && authoringContract.isDirty,
   );
 
-  const campaignWorkspaceSaveBlockReason =
+  const homebrewWorkspaceSaveBlockReason =
     authoringContract?.mode === 'homebrew' ? authoringContract.saveBlockReason : null;
 
-  const campaignWorkspaceCanSave = campaignWorkspaceSaveBlockReason === null;
+  const homebrewWorkspaceCanSave = homebrewWorkspaceSaveBlockReason === null;
 
   const saveActions = useLocationEditSaveActions({
     campaignId,
@@ -748,6 +751,8 @@ export function useLocationEditWorkspaceModel({
 
   const {
     addingFloor,
+    handleHomebrewSubmit,
+    handleHomebrewFormSaveClick,
     handleCampaignSubmit,
     handleCampaignFormSaveClick,
     handleAddFloor,
@@ -1111,8 +1116,12 @@ export function useLocationEditWorkspaceModel({
     success,
     errors,
     isWorkspaceDirty,
-    campaignWorkspaceCanSave,
-    campaignWorkspaceSaveBlockReason,
+    homebrewWorkspaceCanSave,
+    homebrewWorkspaceSaveBlockReason,
+    /** @deprecated Use `homebrewWorkspaceCanSave`. */
+    campaignWorkspaceCanSave: homebrewWorkspaceCanSave,
+    /** @deprecated Use `homebrewWorkspaceSaveBlockReason`. */
+    campaignWorkspaceSaveBlockReason: homebrewWorkspaceSaveBlockReason,
     authoringContract,
     gridDraft,
     setGridDraft,
@@ -1166,8 +1175,13 @@ export function useLocationEditWorkspaceModel({
     policyCharacters,
     driver,
     validationApiRef,
+    flushDebouncedPersistableFieldsRef,
     hasExistingPatch,
+    handleHomebrewSubmit,
+    handleHomebrewFormSaveClick,
+    /** @deprecated Use `handleHomebrewSubmit`. */
     handleCampaignSubmit,
+    /** @deprecated Use `handleHomebrewFormSaveClick`. */
     handleCampaignFormSaveClick,
     handleAddFloor,
     handlePatchSave,

@@ -6,7 +6,7 @@ import { LOCATION_FORM_DEFAULTS } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 
 import {
-  buildCampaignWorkspacePersistableParts,
+  buildHomebrewWorkspacePersistableParts,
   serializeLocationWorkspacePersistableSnapshot,
 } from './workspacePersistableSnapshot';
 
@@ -110,10 +110,10 @@ describe('serializeLocationWorkspacePersistableSnapshot', () => {
     expect(empty).not.toBe(withConn);
   });
 
-  it('serialize matches stableStringify of buildCampaignWorkspacePersistableParts', () => {
+  it('serialize matches stableStringify of buildHomebrewWorkspacePersistableParts', () => {
     const form = baseForm();
     form.scale = 'world';
-    const parts = buildCampaignWorkspacePersistableParts(
+    const parts = buildHomebrewWorkspacePersistableParts(
       form,
       INITIAL_LOCATION_GRID_DRAFT,
       [],

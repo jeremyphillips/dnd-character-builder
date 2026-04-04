@@ -9,7 +9,7 @@ import type { LocationFormValues } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 import type { LocationVerticalStairConnection } from '@/shared/domain/locations';
 
-import { getCampaignWorkspaceSaveBlockReason } from './campaignWorkspaceSaveGate';
+import { getHomebrewWorkspaceSaveBlockReason } from './homebrewWorkspaceSaveGate';
 import { isSystemLocationWorkspaceDirty } from './systemLocationWorkspaceDirty';
 import {
   serializeLocationWorkspacePersistableSnapshot,
@@ -62,7 +62,7 @@ export function buildHomebrewLocationWorkspaceAuthoringContract(params: {
     buildingStairConnections,
     loc,
   );
-  const saveBlockReason = getCampaignWorkspaceSaveBlockReason(loc, activeFloorId, values);
+  const saveBlockReason = getHomebrewWorkspaceSaveBlockReason(loc, activeFloorId, values);
   const isDirty =
     workspacePersistBaseline !== null && draftSnapshot !== workspacePersistBaseline;
 

@@ -13,10 +13,10 @@ todos:
     status: completed
   - id: authoring-contract-phaseD-vocabulary
     content: "Phase D: internal campaign→homebrew renames; preserve storage-facing stability"
-    status: pending
+    status: completed
   - id: authoring-contract-phaseE-docs
     content: "Phase E: docs — contract, adapters, vocabulary, contributor rules"
-    status: pending
+    status: completed
   - id: authoring-contract-tests
     content: "Tests: contract shape per adapter; dirty/saveability; header via contract; no-regression"
     status: pending

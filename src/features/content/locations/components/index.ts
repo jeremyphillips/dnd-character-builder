@@ -24,6 +24,7 @@ export {
   normalizedAuthoringPayloadFromGridDraft,
 } from './locationGridDraft.utils';
 export {
+  LocationEditHomebrewWorkspace,
   LocationEditCampaignWorkspace,
   LocationEditSystemPatchWorkspace,
   LocationEditorWorkspace,
@@ -43,6 +44,7 @@ export {
   LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
 } from './workspace'
 export type {
+  LocationEditHomebrewWorkspaceProps,
   LocationEditCampaignWorkspaceProps,
   LocationEditSystemPatchWorkspaceProps,
   LocationEditorRailSection,

@@ -10,12 +10,12 @@ import type { LocationInput } from '@/features/content/locations/domain/types';
 import type { LocationVerticalStairConnection } from '@/shared/domain/locations';
 
 /**
- * Persistable location + map payload for campaign edit — **single source of truth** for:
+ * Persistable location + map payload for **homebrew** location edit (`source === 'campaign'`) — **single source of truth** for:
  * - `locationRepo.updateEntry` input
  * - `bootstrapDefaultLocationMap` options
  * - dirty snapshot stringification
  */
-export type CampaignWorkspacePersistableParts = {
+export type HomebrewWorkspacePersistableParts = {
   locationInput: LocationInput;
   /** Pass to `bootstrapDefaultLocationMap` as the last argument (`options`). */
   mapBootstrapPayload: {
@@ -25,18 +25,18 @@ export type CampaignWorkspacePersistableParts = {
 
 /**
  * Builds the same persistable location + map payloads used by save and dirty detection.
- * Keep in sync with {@link useLocationEditSaveActions} `handleCampaignSubmit`.
+ * Keep in sync with {@link useLocationEditSaveActions} `handleHomebrewSubmit`.
  */
-export function buildCampaignWorkspacePersistableParts(
+export function buildHomebrewWorkspacePersistableParts(
   values: LocationFormValues,
   gridDraft: LocationGridDraftState,
   buildingStairConnections: readonly LocationVerticalStairConnection[],
   loc: LocationContentItem | null,
-): CampaignWorkspacePersistableParts {
+): HomebrewWorkspacePersistableParts {
   const input = toLocationInput(values);
   const locationInput = mergeBuildingProfileForSave(input, loc, buildingStairConnections);
   const normalized = normalizedAuthoringPayloadFromGridDraft(gridDraft);
-  const mapBootstrapPayload: CampaignWorkspacePersistableParts['mapBootstrapPayload'] = {
+  const mapBootstrapPayload: HomebrewWorkspacePersistableParts['mapBootstrapPayload'] = {
     excludedCellIds: [...gridDraft.excludedCellIds].sort(),
     ...normalized,
   };
@@ -44,7 +44,7 @@ export function buildCampaignWorkspacePersistableParts(
 }
 
 /**
- * Single persistable string for campaign location edit: merged location input (as saved) + map bootstrap payload.
+ * Single persistable string for homebrew location edit: merged location input (as saved) + map bootstrap payload.
  */
 export function serializeLocationWorkspacePersistableSnapshot(
   values: LocationFormValues,
@@ -52,7 +52,7 @@ export function serializeLocationWorkspacePersistableSnapshot(
   buildingStairConnections: readonly LocationVerticalStairConnection[],
   loc: LocationContentItem | null,
 ): string {
-  const { locationInput, mapBootstrapPayload } = buildCampaignWorkspacePersistableParts(
+  const { locationInput, mapBootstrapPayload } = buildHomebrewWorkspacePersistableParts(
     values,
     gridDraft,
     buildingStairConnections,
@@ -78,3 +78,9 @@ function mergeBuildingProfileForSave(
     },
   };
 }
+
+/** @deprecated Use {@link HomebrewWorkspacePersistableParts}. */
+export type CampaignWorkspacePersistableParts = HomebrewWorkspacePersistableParts;
+
+/** @deprecated Use {@link buildHomebrewWorkspacePersistableParts}. */
+export const buildCampaignWorkspacePersistableParts = buildHomebrewWorkspacePersistableParts;

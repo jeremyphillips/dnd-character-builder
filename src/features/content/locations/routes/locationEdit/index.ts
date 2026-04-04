@@ -3,11 +3,17 @@ export type { UseLocationEditWorkspaceModelParams } from './useLocationEditWorks
 export { useLocationMapHydration } from './useLocationMapHydration';
 export { useLocationEditSaveActions } from './useLocationEditSaveActions';
 export {
+  buildHomebrewWorkspacePersistableParts,
   buildCampaignWorkspacePersistableParts,
   serializeLocationWorkspacePersistableSnapshot,
 } from './workspacePersistableSnapshot';
-export type { CampaignWorkspacePersistableParts } from './workspacePersistableSnapshot';
+export type {
+  HomebrewWorkspacePersistableParts,
+  CampaignWorkspacePersistableParts,
+} from './workspacePersistableSnapshot';
 export { isSystemLocationWorkspaceDirty } from './systemLocationWorkspaceDirty';
+export { getHomebrewWorkspaceSaveBlockReason } from './homebrewWorkspaceSaveGate';
+/** @deprecated Use `getHomebrewWorkspaceSaveBlockReason` from `./homebrewWorkspaceSaveGate`. */
 export { getCampaignWorkspaceSaveBlockReason } from './campaignWorkspaceSaveGate';
 export type {
   LocationWorkspaceAuthoringContract,

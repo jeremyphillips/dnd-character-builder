@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -13,7 +15,7 @@ import { VisibilityField } from '@/ui/patterns';
 import { AppAlert } from '@/ui/primitives';
 import {
   LocationGridAuthoringSection,
-  LocationEditCampaignWorkspace,
+  LocationEditHomebrewWorkspace,
   LocationEditSystemPatchWorkspace,
   LocationEditorMapCanvasColumn,
   LocationEditorSelectionPanel,
@@ -170,9 +172,10 @@ export default function LocationEditRoute() {
     policyCharacters,
     driver,
     validationApiRef,
+    flushDebouncedPersistableFieldsRef,
     hasExistingPatch,
-    handleCampaignSubmit,
-    handleCampaignFormSaveClick,
+    handleHomebrewSubmit,
+    handleHomebrewFormSaveClick,
     handleAddFloor,
     handlePatchSave,
     handleRemovePatch,
@@ -236,6 +239,20 @@ export default function LocationEditRoute() {
         }
       : undefined;
 
+  const handleHeaderSaveHomebrew = useCallback(() => {
+    flushSync(() => {
+      flushDebouncedPersistableFieldsRef.current?.();
+    });
+    handleHomebrewFormSaveClick();
+  }, [handleHomebrewFormSaveClick]);
+
+  const handleHeaderSavePatch = useCallback(() => {
+    flushSync(() => {
+      flushDebouncedPersistableFieldsRef.current?.();
+    });
+    handlePatchSave();
+  }, [handlePatchSave]);
+
   const mapAuthoringPanel = (
     <Stack spacing={2}>
       {mapEditor.mode === 'place' ? (
@@ -280,6 +297,7 @@ export default function LocationEditRoute() {
       pathEntries={gridDraft.pathEntries}
       edgeEntries={gridDraft.edgeEntries}
       regionEntries={gridDraft.regionEntries}
+      debouncedPersistableFlushRef={flushDebouncedPersistableFieldsRef}
       onUpdateRegionEntry={handleUpdateRegionEntry}
       onRemovePlacedObjectFromMap={handleRemovePlacedObject}
       onRemovePathFromMap={handleRemovePathFromMap}
@@ -383,7 +401,7 @@ export default function LocationEditRoute() {
         success={success}
         rightRailOpen={rightRailOpen}
         onToggleRightRail={() => setRightRailOpen((o) => !o)}
-        onSave={handlePatchSave}
+        onSave={handleHeaderSavePatch}
         onBack={handleBack}
         fieldConfigs={fieldConfigs}
         patchDriver={driver}
@@ -400,10 +418,10 @@ export default function LocationEditRoute() {
   }
 
   return (
-    <LocationEditCampaignWorkspace
+    <LocationEditHomebrewWorkspace
       form={methods}
       formId={FORM_ID}
-      onCampaignSubmit={handleCampaignSubmit}
+      onHomebrewSubmit={handleHomebrewSubmit}
       headerTitle={loc.name}
       ancestryBreadcrumbs={ancestryBreadcrumbs}
       saving={saving}
@@ -412,7 +430,7 @@ export default function LocationEditRoute() {
       success={success}
       rightRailOpen={rightRailOpen}
       onToggleRightRail={() => setRightRailOpen((o) => !o)}
-      onSaveClick={handleCampaignFormSaveClick}
+      onSaveClick={handleHeaderSaveHomebrew}
       onBack={handleBack}
       saveDisabled={!authoringContract?.canSave}
       saveDisabledReason={authoringContract?.saveBlockReason ?? null}

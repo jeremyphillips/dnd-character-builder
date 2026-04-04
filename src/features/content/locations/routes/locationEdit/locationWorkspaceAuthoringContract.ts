@@ -33,9 +33,9 @@ export type LocationWorkspaceAuthoringMode = 'system' | 'homebrew';
  * **Shared (this interface):** mode, dirty, save gating, optional projections for debugging or future
  * generic UI, and the invariant that save block reasons explain `!canSave`.
  *
- * **Mode-specific (implementations, not unified here):** patch JSON vs `CampaignWorkspacePersistableParts`,
+ * **Mode-specific (implementations, not unified here):** patch JSON vs `HomebrewWorkspacePersistableParts`,
  * how baselines are recorded after hydrate/save, and the concrete save entry points
- * (`handlePatchSave` vs `handleCampaignSubmit`).
+ * (`handlePatchSave` vs `handleHomebrewSubmit`).
  */
 export interface LocationWorkspaceAuthoringContract {
   readonly mode: LocationWorkspaceAuthoringMode;
@@ -55,7 +55,7 @@ export interface LocationWorkspaceAuthoringContract {
 
   /**
    * Human-readable reason save is disabled, or `null` when `canSave` is true.
-   * (E.g. homebrew: `getCampaignWorkspaceSaveBlockReason`; system may use patch validation until wired.)
+   * (E.g. homebrew: `getHomebrewWorkspaceSaveBlockReason`; system may use patch validation until wired.)
    */
   readonly saveBlockReason: string | null;
 

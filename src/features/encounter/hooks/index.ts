@@ -8,6 +8,10 @@ export {
   type UseEncounterActivePlaySurfaceOptions,
 } from './useEncounterActivePlaySurface'
 export {
+  useEncounterContextPromptStrip,
+  type UseEncounterContextPromptArgs,
+} from './useEncounterContextPrompt'
+export {
   useEncounterCombatActiveHeader,
   type UseEncounterCombatActiveHeaderArgs,
 } from './useEncounterCombatActiveHeader'

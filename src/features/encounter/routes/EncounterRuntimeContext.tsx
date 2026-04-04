@@ -54,6 +54,7 @@ import { isAreaGridAction } from '../helpers/actions'
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
+import type { EncounterContextPromptEnvironment } from '../domain/encounterContextPrompt.types'
 
 function useEncounterRuntimeValue() {
   /** Setup defaults + edit flags; simulator uses {@link SIMULATOR_ENCOUNTER_SETUP_POLICY}. */
@@ -212,6 +213,7 @@ function useEncounterRuntimeValue() {
     handleResolveAction,
     handleResetEncounter: handleResetEncounterBase,
     handleMoveCombatant,
+    handleStairTraversal,
     registerCombatLogAppended,
     aoeStep,
     setAoeStep,
@@ -272,6 +274,20 @@ function useEncounterRuntimeValue() {
     }),
     [simulatorViewerMode, presentationSelectedCombatantId],
   )
+
+  const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
+    if (!campaignId) return null
+    return {
+      campaignId,
+      locations,
+      locationContext: {
+        buildingId: buildingLocationIds[0] ?? null,
+        locationId: encounterState?.space?.locationId ?? null,
+        floorId: encounterState?.space?.locationId ?? null,
+      },
+      encounterState,
+    }
+  }, [campaignId, locations, buildingLocationIds, encounterState])
 
   const presentationGridPerceptionInput = useMemo(
     () =>
@@ -650,6 +666,8 @@ function useEncounterRuntimeValue() {
     handleStartEncounter,
     handleResetEncounter,
     registerCombatLogAppended,
+    contextualPromptEnvironment,
+    handleStairTraversal,
   }
 }
 

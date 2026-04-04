@@ -52,6 +52,9 @@ import { getEncounterUiStateTheme } from '../ui/theme/encounterUiStateTheme'
 import type { CombatantActionDrawerProps } from '../components/active/drawers/CombatantActionDrawer'
 import { deriveGridHoverStatusMessage } from '../helpers/ui'
 import type { EncounterRuntimeContextValue } from '../routes/EncounterRuntimeContext'
+import type { EncounterContextPromptEnvironment } from '../domain/encounterContextPrompt.types'
+import type { CombatIntent } from '@/features/mechanics/domain/combat'
+import { useEncounterContextPromptStrip } from './useEncounterContextPrompt'
 
 export type EncounterActivePlaySurfaceDeps = Pick<
   EncounterRuntimeContextValue,
@@ -105,10 +108,13 @@ export type EncounterActivePlaySurfaceDeps = Pick<
   | 'contextStripTitleTone'
 > & {
   /**
-   * When set (non-null), replaces the default directive strip — e.g. stair traversal affordance.
-   * Omitted/`null` shows turn/movement guidance from {@link encounterDirective}.
+   * Rare escape hatch: fully replace the under-header strip (debug, one-off experiments).
+   * Standard contextual interactions use {@link contextualPromptEnvironment} instead.
    */
   contextualStripOverride?: ReactNode | null
+  /** Normalized inputs for contextual prompts (stairs, future portals/objectives). */
+  contextualPromptEnvironment?: EncounterContextPromptEnvironment | null
+  handleStairTraversal?: (intent: Extract<CombatIntent, { kind: 'stair-traversal' }>) => void
 }
 
 function placementReasonMessage(reason: PlacementValidationReason): string {
@@ -184,6 +190,8 @@ export function useEncounterActivePlaySurface(
     encounterDirective,
     contextStripTitleTone,
     contextualStripOverride,
+    contextualPromptEnvironment,
+    handleStairTraversal,
   }: EncounterActivePlaySurfaceDeps,
   options?: UseEncounterActivePlaySurfaceOptions,
 ) {
@@ -879,16 +887,25 @@ export function useEncounterActivePlaySurface(
     [encounterState, spellsById, suppressSameSideHostile],
   )
 
-  /** Unified under-header strip: optional host override (e.g. stairs) or default turn/movement directive. */
+  const contextualPromptStrip = useEncounterContextPromptStrip({
+    env: contextualPromptEnvironment ?? null,
+    viewerRole: viewerContext.viewerRole ?? 'dm',
+    capabilities,
+    activeCombatantMovementRemainingFt: activeCombatant?.turnResources?.movementRemaining ?? 0,
+    handleStairTraversal,
+  })
+
+  /** Unified under-header strip: exceptional override → shared contextual prompts → default directive. */
   const contextualStrip = useMemo(() => {
     if (contextualStripOverride != null) return contextualStripOverride
+    if (contextualPromptStrip != null) return contextualPromptStrip
     return (
       <EncounterContextPrompt
         title={encounterDirective}
         titleTone={contextStripTitleTone}
       />
     )
-  }, [contextualStripOverride, encounterDirective, contextStripTitleTone])
+  }, [contextualStripOverride, contextualPromptStrip, encounterDirective, contextStripTitleTone])
 
   if (!encounterState) {
     if (options?.setupPathWhenEmpty) return <Navigate to={options.setupPathWhenEmpty} replace />

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import StairsIcon from '@mui/icons-material/Stairs'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import Alert from '@mui/material/Alert'
@@ -13,7 +12,6 @@ import { useCharacters } from '@/features/character/hooks'
 import { fetchPersistedCombatSession } from '@/features/combat/api/combatSessionApi'
 import type { OpponentRosterEntry } from '@/features/encounter/types'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
-import { getCellForCombatant } from '@/features/mechanics/domain/combat/space/space.helpers'
 import {
   deriveEncounterPresentationGridPerceptionInput,
   resolveSessionControlledCombatantIds,
@@ -25,15 +23,13 @@ import { useEncounterState } from '@/features/encounter/hooks/useEncounterState'
 import { useEncounterGridViewModel } from '@/features/encounter/hooks/useEncounterGridViewModel'
 import { useEncounterCombatActiveHeader } from '@/features/encounter/hooks/useEncounterCombatActiveHeader'
 import { useEncounterActivePlaySurface } from '@/features/encounter/hooks/useEncounterActivePlaySurface'
-import { EncounterContextPrompt } from '@/features/encounter/components'
+import type { EncounterContextPromptEnvironment } from '@/features/encounter/domain/encounterContextPrompt.types'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
 
 import type { Location } from '@/features/content/locations/domain/types'
 import { listCampaignLocations } from '@/features/content/locations/domain/repo/locationRepo'
-import { STAIR_TRAVERSAL_MOVEMENT_COST_FT } from '@/shared/domain/locations/transitions/stairTraversal.constants'
 import type { GameSession } from '../domain/game-session.types'
 import { summarizeEncounterSpaceForLog } from '../combat/buildEncounterSpaceFromLocationMap'
-import { resolveGameSessionStairTraversalPayload } from '../combat/resolveGameSessionStairTraversalPayload'
 import { campaignGameSessionLobbyPath } from '../routes/gameSessionPaths'
 import { useGameSessionSync } from '../routes/GameSessionSyncContext'
 import { resolveGameSessionEncounterSeat } from '../utils/resolveGameSessionEncounterSeat'
@@ -314,77 +310,15 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     suppressSameSideHostile,
   })
 
-  const [stairPayloadRes, setStairPayloadRes] = useState<
-    Awaited<ReturnType<typeof resolveGameSessionStairTraversalPayload>> | null
-  >(null)
-
-  /** Ensures stair eligibility re-resolves when the mover steps onto a stair cell (not only on encounter ref churn). */
-  const activeCombatantCellId = useMemo(() => {
-    const es = encounter.encounterState
-    if (!es?.space || !es.activeCombatantId || !es.placements?.length) return null
-    return getCellForCombatant(es.placements, es.activeCombatantId, es.space)
-  }, [encounter.encounterState?.placements, encounter.encounterState?.space, encounter.encounterState?.activeCombatantId])
-
-  useEffect(() => {
-    let cancelled = false
-    if (!campaignId || !encounter.encounterState || campaignLocations.length === 0) {
-      setStairPayloadRes(null)
-      return
-    }
-    void resolveGameSessionStairTraversalPayload({
+  const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
+    if (!campaignId) return null
+    return {
       campaignId,
-      session,
       locations: campaignLocations,
+      locationContext: session.location,
       encounterState: encounter.encounterState,
-    }).then((r) => {
-      if (!cancelled) setStairPayloadRes(r)
-    })
-    return () => {
-      cancelled = true
     }
-  }, [
-    campaignId,
-    session,
-    campaignLocations,
-    encounter.encounterState,
-    encounter.activeCombatantId,
-    activeCombatantCellId,
-  ])
-
-  const contextualStripOverride = useMemo(() => {
-    if (!stairPayloadRes?.ok || viewerRole === 'observer') return null
-    const moveRemain = encounter.activeCombatant?.turnResources?.movementRemaining ?? 0
-    const controlsActive = Boolean(capabilities?.canMoveActiveCombatant)
-    const canAfford = moveRemain >= STAIR_TRAVERSAL_MOVEMENT_COST_FT
-    const canUse = controlsActive && canAfford
-    return (
-      <EncounterContextPrompt
-        title="Use stairs"
-        subtitle={stairPayloadRes.destinationFloorLabel}
-        icon={<StairsIcon fontSize="small" color="action" aria-hidden />}
-        primaryAction={{
-          label: 'Go',
-          onClick: () => encounter.handleStairTraversal(stairPayloadRes.intent),
-        }}
-        disabled={!canUse}
-        unavailableReason={
-          canUse
-            ? null
-            : !controlsActive
-              ? viewerRole === 'dm'
-                ? 'Only the controlling player can move this combatant.'
-                : 'You cannot control this combatant right now.'
-              : `Need at least ${STAIR_TRAVERSAL_MOVEMENT_COST_FT} ft of movement remaining to use stairs.`
-        }
-      />
-    )
-  }, [
-    stairPayloadRes,
-    viewerRole,
-    capabilities?.canMoveActiveCombatant,
-    encounter.activeCombatant?.turnResources?.movementRemaining,
-    encounter,
-  ])
+  }, [campaignId, campaignLocations, session.location, encounter.encounterState])
 
   const playSurface = useEncounterActivePlaySurface(
     {
@@ -436,7 +370,8 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
       spellsById: catalog.spellsById,
       encounterDirective,
       contextStripTitleTone,
-      contextualStripOverride,
+      contextualPromptEnvironment,
+      handleStairTraversal: encounter.handleStairTraversal,
     },
     { setupPathWhenEmpty: null },
   )

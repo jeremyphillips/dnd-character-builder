@@ -41,7 +41,7 @@ import { LocationMapCellAuthoringOverlay } from '../mapGrid/LocationMapCellAutho
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 
 import type { LocationGridDraftState } from '../authoring/draft/locationGridDraft.types';
-import { selectedCellIdForMapSelection } from './rightRail/types';
+import { selectedCellIdForMapSelection } from './rightRail/locationEditorRail.helpers';
 import { SQUARE_GRID_GAP_PX } from '../authoring/geometry/squareGridMapOverlayGeometry';
 import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers';
 import { pathEntriesToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';

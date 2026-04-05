@@ -81,7 +81,7 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 
 ## Workspace layout (`components/workspace/`)
 
-**Subfolders (ownership):** `header/`, `canvas/`, `leftTools/` (with `paint/` and `draw/` barrels), `rightRail/` with **`types/`**, **`selection/`**, **`adapters/`**, **`panels/`** (mode Map-rail panels + **cell inspector** `LocationCellAuthoringPanel`), **`linkedLocation/`** (linked-location placement modal), plus rail shell and tabs at `rightRail/` root. `rightRail/__tests__/` holds rail-local tests. `setup/` holds the location create setup dialog. Top-level workspace files include the edit shells, `LocationEditorWorkspace`, **`LocationGridAuthoringSection`** (workspace-level map authoring orchestrator), and `BuildingFloorStrip`. **Authoring helpers** live under **`components/authoring/draft/`** (grid draft types + persist/compare utilities) and **`components/authoring/geometry/`** (overlay geometry and path-rendering adapters). **`components/index.ts`** re-exports map toolbar and rail panels from **`workspace/leftTools`** and **`workspace/rightRail/...`**.
+**Subfolders (ownership):** `header/`, `canvas/`, `leftTools/` (with `paint/` and `draw/` barrels), `rightRail/` with **`types/`** (type-only: `LocationEditorRailSection`, `LocationMapSelection`), **`locationEditorRail.helpers.ts`** (pure helpers: `selectedCellIdForMapSelection`, `mapSelectionEqual`, `shouldAutoSwitchRailToMapForMode` — shared with grid and domain select-mode), **`selection/`**, **`adapters/`**, **`panels/`** (mode Map-rail panels + **cell inspector** `LocationCellAuthoringPanel`), **`linkedLocation/`** (linked-location placement modal), plus rail shell and tabs at `rightRail/` root. `rightRail/__tests__/` holds rail-local tests (e.g. `locationEditorRail.helpers.test.ts`). `setup/` holds the location create setup dialog. Top-level workspace files include the edit shells, `LocationEditorWorkspace`, **`LocationGridAuthoringSection`** (workspace-level map authoring orchestrator), and `BuildingFloorStrip`. **Authoring helpers** live under **`components/authoring/draft/`** (grid draft types + persist/compare utilities) and **`components/authoring/geometry/`** (overlay geometry and path-rendering adapters). **`components/index.ts`** re-exports map toolbar and rail panels from **`workspace/leftTools`** and **`workspace/rightRail/...`**.
 
 The workspace is composed of feature-owned components:
 
@@ -233,6 +233,14 @@ Free-text fields may **debounce** writes into **`gridDraft`** so typing stays re
 - Do **not** assume system and homebrew persistence work the same internally: system is **patch JSON + grid baseline**; homebrew is **full snapshot** + `locationRepo.updateEntry` / `bootstrapDefaultLocationMap`.
 - Keep **dirty** and **saveable** separate (`isDirty` vs `canSave` / `saveBlockReason`).
 - Prefer **homebrew** names in new TypeScript; retain **`source === 'campaign'`** at persistence and API boundaries unless a wire-format migration explicitly changes it.
+
+#### Imports and barrels (ongoing rule)
+
+This is **not** a separate project — it is how we keep navigation honest as the feature grows.
+
+- **Prefer narrow imports** for **new** code: import from the **defining module** (or a small, purpose-specific barrel such as `rightRail/types` for types-only) instead of reaching through multiple aggregate barrels when a direct path is clear.
+- **Avoid growing** [`domain/index.ts`](../../src/features/content/locations/domain/index.ts) with new re-exports unless there is a **real public-surface** reason (stable API for callers outside `locations/`).
+- **Do not add** new broad “compatibility” barrels whose main job is to re-export large slices of the tree; prefer **explicit entry points** and **documented** public surfaces.
 
 **Why two persistence strategies:** System locations are platform-defined; the app stores overrides as a **patch** while sharing the same map authoring UX. User-authored locations are normal campaign content; saves align a **serialized baseline** with `handleHomebrewSubmit`. This is a **code architecture** distinction — not a request to merge DB schemas.
 
@@ -414,6 +422,7 @@ Smooth path **preview** (hover → full Catmull-Rom chain recompute on move) is 
 | Linked-location modal options | `routes/locationEdit/locationEditLinkModalOptions.ts` |
 | Map / Selection rail panel UI | `routes/locationEdit/locationEditWorkspaceRailPanels.tsx` |
 | `components/authoring` vs `domain/authoring` | Comment on `components/authoring/index.ts` |
+| **`rightRail/types/` vs `locationEditorRail.helpers.ts`** | **Done:** `types/` is **type-only**; map-selection / rail chrome helpers live in **`rightRail/locationEditorRail.helpers.ts`** (tests: `rightRail/__tests__/locationEditorRail.helpers.test.ts`). |
 
 ### Optional follow-ups (skip unless the code still feels noisy)
 
@@ -423,8 +432,7 @@ These are **deliberately non-blocking**. Prefer **readability and ownership** ov
 |------|-------------------------|
 | **Further slicing of `useLocationEditWorkspaceModel`** | Only if an extraction has a **clear seam**, **stable name**, and makes the main hook **easier to reason about** — e.g. palette memo wiring, keyboard Delete for map selection, or other self-contained blocks. Avoid a tangle of peer hooks/helpers with unclear ownership. **Stair** logic already lives in `useLocationEditBuildingStairHandlers`. |
 | **One-line doc pointer here for `components/authoring` vs `domain/authoring`** | Only if contributors still confuse the boundary after the `components/authoring/index.ts` comment. This section partially serves that role. |
-| **`rightRail/types/`** | Split or rename if **types** and **helpers** stay mixed under a **misleading** folder name and the cost of import churn is acceptable. |
-| **Barrel hygiene** | Prefer **narrow imports** for new code; avoid unnecessary growth of `domain/index.ts` re-exports. |
+| **Barrel hygiene** | Adopted as an **ongoing rule** — see **Contributor rules → Imports and barrels** above (narrow imports; do not expand `domain/index.ts` or add broad compatibility barrels without a real public-surface reason). |
 | **`locationGridAuthoring/` subfolder under `workspace/`** | **Do not** add just because the plan sketched it. Add only if flat `workspace/` stays hard to navigate **and** a **real ownership cluster** appears. Otherwise keep colocated files with explicit names next to `LocationGridAuthoringSection.tsx`. |
 
 ### Watch items (ongoing)
@@ -435,6 +443,7 @@ These are **deliberately non-blocking**. Prefer **readability and ownership** ov
 | **`LocationGridAuthoringSection`** | Still the main grid host; local extractions should stay **named by concern** (modes, overlays, pointers), not arbitrary fragments. |
 | **Orchestration vs domain** | Route/session glue stays in `routes/locationEdit/`; reusable editor semantics belong in `domain/authoring/editor/`. Do not move domain rules into `components/workspace/` just to shrink files. |
 | **Ownership reorg (folders)** | Broader subtree layout under `components/workspace/` is tracked separately — [.cursor/plans/location-workspace/location_workspace_ownership_reorg.plan.md](../../.cursor/plans/location-workspace/location_workspace_ownership_reorg.plan.md). |
+| **Barrels / `domain/index.ts`** | Same as **Imports and barrels** under **Contributor rules** — watch for creep when adding features. |
 
 ---
 
@@ -521,5 +530,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 14. **Normalization policy (dirty vs save):** **Normalization policy (dirty vs save)** section above; `LOCATION_WORKSPACE_NORMALIZATION` in [`locationWorkspaceNormalizationPolicy.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceNormalizationPolicy.ts). Plan archive: [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md).
 15. **Object authoring roadmap** (`location_workspace_object_authoring_*`): parent [.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md); Phase 1–4 child plans in [.cursor/plans/location-workspace/](../../.cursor/plans/location-workspace/). Registry vs placement vs persistence vs UI layers; coordinate with **Map editor toolbar** above; do not mix in dirty/save scope unless a child plan explicitly includes it.
 16. **Orchestration cleanup (optional):** colocated extractions and non-blocking follow-ups — **Maintenance — orchestration cleanup** above; plan [.cursor/plans/location_workspace_cleanup_94269d45.plan.md](../../.cursor/plans/location_workspace_cleanup_94269d45.plan.md).
+17. **Imports and barrels:** **Contributor rules → Imports and barrels**; `rightRail/types` is types-only, helpers in `rightRail/locationEditorRail.helpers.ts`.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

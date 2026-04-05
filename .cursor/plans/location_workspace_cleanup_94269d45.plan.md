@@ -266,12 +266,9 @@ If an extraction does not clearly pass the “easier to reason about” test, **
 
 ### `rightRail/types` and barrel hygiene (Phase 5 polish)
 
-**Cleanup polish, not a prerequisite** for the main plan.
+**`rightRail/types` — done:** types live under **`rightRail/types/`** (`LocationEditorRailSection`, `LocationMapSelection`); helpers are **`rightRail/locationEditorRail.helpers.ts`** (`selectedCellIdForMapSelection`, `mapSelectionEqual`, `shouldAutoSwitchRailToMapForMode`). See [docs/reference/location-workspace.md](../../docs/reference/location-workspace.md).
 
-- **Split [rightRail/types/](src/features/content/locations/components/workspace/rightRail/types/)** if **types** and **helpers** remain mixed under a **misleading** folder name—only when the rename/split **reduces confusion** at acceptable cost (import churn).
-- **Barrel hygiene:** Prefer **narrow imports** for new code; avoid **unnecessary growth** of [domain/index.ts](src/features/content/locations/domain/index.ts) (re-export surface).
-
-**Worth doing only if** naming or ownership still feels **misleading** after the main cleanup—not as a default chore.
+**Barrel hygiene — ongoing rule (not a one-off project):** Prefer **narrow imports** for new code; avoid **unnecessary growth** of [domain/index.ts](src/features/content/locations/domain/index.ts) and new broad compatibility-style barrels unless there is a **real public-surface** reason. Documented in **location-workspace.md** (Contributor rules → Imports and barrels).
 
 ---
 

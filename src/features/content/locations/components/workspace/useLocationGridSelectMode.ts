@@ -11,11 +11,8 @@ import {
   type LocationMapEditorMode,
 } from '@/features/content/locations/domain/authoring/editor';
 import type { LocationGridDraftState } from '../authoring/draft/locationGridDraft.types';
-import {
-  mapSelectionEqual,
-  selectedCellIdForMapSelection,
-  type LocationMapSelection,
-} from './rightRail/types';
+import type { LocationMapSelection } from './rightRail/types';
+import { mapSelectionEqual, selectedCellIdForMapSelection } from './rightRail/locationEditorRail.helpers';
 import {
   resolveSquareAnchorCellIdForSelectPx,
   SQUARE_GRID_GAP_PX,

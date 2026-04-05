@@ -95,7 +95,7 @@ The workspace is composed of feature-owned components:
 | `LocationEditorSelectionPanel` | Selection section dispatcher: cell / object / path / edge inspectors from authored map data; region remains a placeholder. |
 | `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
 | `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
-| `locationEditor.constants.ts` | Re-exports layout values from **`locationEditorWorkspaceUiTokens`** (`domain/mapPresentation/locationEditorWorkspaceUiTokens.ts`). Legacy names `LOCATION_EDITOR_*` remain for callers; paint/draw trays share **`mapToolTrayWidthPx`**. |
+| `locationEditorWorkspaceUiTokens` | Static layout pixels for the location editor shell (header height, right rail width, map toolbar, unified tool tray). Defined in **`domain/mapPresentation/locationEditorWorkspaceUiTokens.ts`**; also re-exported from **`components/workspace/index.ts`** and **`components/index.ts`**. **`resolveLeftMapChromeWidthPx`** lives in the same module. |
 
 **Edit route composition:** `LocationEditRoute` loads the entry, then calls **`useLocationEditWorkspaceModel`** (`routes/locationEdit/useLocationEditWorkspaceModel.ts`) for form state, grid draft, map editor, palettes, canvas zoom/pan, and handlers. **Hydration** (`useLocationMapHydration`) wraps `hydrateDefaultLocationMapState` for non-building vs building-floor maps. **Save / patch / add floor** (`useLocationEditSaveActions`) centralizes **homebrew** submit (`handleHomebrewSubmit`), `useSystemPatchActions`, and floor creation. The route still builds `mapAuthoringPanel`, `selectionPanel`, and `mapCanvasColumn` JSX and passes them into **`LocationEditHomebrewWorkspace`** or `LocationEditSystemPatchWorkspace`.
 
@@ -264,7 +264,7 @@ The long-term direction is a **registry-driven** object authoring system: **tool
 | | |
 |---|---|
 | **File** | `src/features/content/locations/components/mapEditor/LocationMapEditorToolbar.tsx` |
-| **Width** | `locationEditorWorkspaceUiTokens.mapToolbarWidthPx` (see `locationEditor.constants.ts` re-export) |
+| **Width** | `locationEditorWorkspaceUiTokens.mapToolbarWidthPx` |
 | **Control** | MUI vertical `ToggleButtonGroup` (exclusive), icon-only buttons |
 
 **Modes** (`LocationMapEditorMode` in `domain/mapEditor/types/locationMapEditor.types.ts`):
@@ -464,7 +464,7 @@ Both hooks are used at the route level; derived values are passed down to canvas
 
 ## Pointers for the next agent (workspace)
 
-1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Layout pixel tokens: **`locationEditorWorkspaceUiTokens`** in `domain/mapPresentation/` (re-exported from `locationEditor.constants.ts`). Do not add workspace layout logic to the generic content template system.
+1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Layout pixel tokens: **`locationEditorWorkspaceUiTokens`** in `domain/mapPresentation/locationEditorWorkspaceUiTokens.ts` (re-exported from the locations `components` barrel). Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
 4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.

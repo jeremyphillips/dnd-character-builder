@@ -11,7 +11,7 @@ import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined'
 
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types'
 import { AppAlert } from '@/ui/primitives'
-import { LOCATION_EDITOR_HEADER_HEIGHT_PX } from './locationEditor.constants'
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens'
 
 type LocationEditorHeaderProps = {
   title: string
@@ -61,8 +61,8 @@ export function LocationEditorHeader({
   return (
     <Box
       sx={{
-        height: LOCATION_EDITOR_HEADER_HEIGHT_PX,
-        minHeight: LOCATION_EDITOR_HEADER_HEIGHT_PX,
+        height: locationEditorWorkspaceUiTokens.headerHeightPx,
+        minHeight: locationEditorWorkspaceUiTokens.headerHeightPx,
         display: 'flex',
         alignItems: 'center',
         px: 2,

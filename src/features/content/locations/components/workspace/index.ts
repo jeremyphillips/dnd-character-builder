@@ -29,9 +29,4 @@ export { LocationAncestryBreadcrumbs } from './LocationAncestryBreadcrumbs'
 export {
   locationEditorWorkspaceUiTokens,
   resolveLeftMapChromeWidthPx,
-  LOCATION_EDITOR_HEADER_HEIGHT_PX,
-  LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX,
-  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
-  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
-} from './locationEditor.constants'
+} from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens'

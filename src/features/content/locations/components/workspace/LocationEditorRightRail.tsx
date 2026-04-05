@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Box from '@mui/material/Box'
-import { LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX } from './locationEditor.constants'
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens'
 
 type LocationEditorRightRailProps = {
   children: ReactNode
@@ -11,7 +11,7 @@ type LocationEditorRightRailProps = {
 export function LocationEditorRightRail({
   children,
   open = true,
-  width = LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX,
+  width = locationEditorWorkspaceUiTokens.rightRailWidthPx,
 }: LocationEditorRightRailProps) {
   return (
     <Box

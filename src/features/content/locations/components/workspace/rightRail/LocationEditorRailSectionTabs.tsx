@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 
 import { AppTabs, AppTab } from '@/ui/patterns';
 
-import type { LocationEditorRailSection } from './types/locationEditorRail.types';
+import type { LocationEditorRailSection } from './types';
 
 const SECTIONS: LocationEditorRailSection[] = ['location', 'map', 'selection'];
 

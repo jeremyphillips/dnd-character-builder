@@ -1,8 +1,8 @@
 import {
   buildPersistableMapPayloadFromGridDraft,
   stableStringify,
-} from '@/features/content/locations/components/locationGridDraft.utils';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
+} from '@/features/content/locations/components/authoring/draft/locationGridDraft.utils';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import type { LocationFormValues } from '@/features/content/locations/domain';
 import { toLocationInput } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';

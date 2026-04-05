@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import type { LocationMapEdgeAuthoringEntry, LocationMapPathAuthoringEntry } from '@/shared/domain/locations';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 
-import type { LocationMapSelection } from '../types/locationEditorRail.types';
+import type { LocationMapSelection } from '../types';
 import {
   LocationMapEdgeInspector,
   LocationMapEdgeRunInspector,
@@ -16,7 +16,7 @@ import {
 import {
   LocationCellAuthoringPanel,
   type LocationCellAuthoringPanelProps,
-} from '../../../LocationCellAuthoringPanel';
+} from '../panels/LocationCellAuthoringPanel';
 import { LocationMapRegionMetadataForm } from './LocationMapRegionMetadataForm';
 
 export type { StairWorkspaceInspect, StairPairingContext };

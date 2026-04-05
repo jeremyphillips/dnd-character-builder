@@ -12,11 +12,11 @@ import type { FieldConfig } from '@/ui/patterns/form/form.types';
 import {
   LocationMapEditorLinkedLocationModal,
   type LocationMapEditorLinkedLocationModalProps,
-} from './rightRail/panels';
+} from './rightRail/linkedLocation';
 
 import type { BuildingFloorStripProps } from './BuildingFloorStrip';
 import { BuildingFloorStrip } from './BuildingFloorStrip';
-import type { LocationEditorRailSection } from './rightRail/types/locationEditorRail.types';
+import type { LocationEditorRailSection } from './rightRail/types';
 import { LocationEditorHeader } from './header/LocationEditorHeader';
 import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
 import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';

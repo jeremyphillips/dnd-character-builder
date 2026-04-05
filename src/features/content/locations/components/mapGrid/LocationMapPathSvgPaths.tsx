@@ -1,5 +1,5 @@
 import type { LocationMapUiResolvedStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
 type PathSvgItem = {
   pathId: string;

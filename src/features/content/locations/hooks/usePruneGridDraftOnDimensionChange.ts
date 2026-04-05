@@ -5,8 +5,8 @@ import {
   pruneCellKeyedRecordForGrid,
   pruneExcludedCellIdsForGrid,
 } from '@/features/content/locations/domain/mapAuthoring/gridLayoutDraft';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
-import { selectedCellIdForMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import { selectedCellIdForMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 import { isSquareEdgeIdInBoundsForGrid } from '@/shared/domain/grid/gridEdgeIds';
 
 export function usePruneGridDraftOnDimensionChange(

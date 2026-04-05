@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   INITIAL_LOCATION_GRID_DRAFT,
   type LocationGridDraftState,
-} from '@/features/content/locations/components/locationGridDraft.types';
+} from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import { LOCATION_FORM_DEFAULTS } from '@/features/content/locations/domain';
 
 import { serializeLocationWorkspacePersistableSnapshot } from './workspacePersistableSnapshot';

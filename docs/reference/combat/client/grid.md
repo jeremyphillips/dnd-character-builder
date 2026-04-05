@@ -84,7 +84,7 @@ If parts of them are Encounter-specific, they should be split rather than moved 
 1. **Paths** and **edges** (SVG strokes).
 2. **Authored object icons** — cell-anchored glyphs from `EncounterAuthoringPresentation.authoredObjectRenderItems` (same canonical shape as `LocationMapAuthoredObjectRenderItem` in `shared/domain/locations/map/`), derived by `deriveLocationMapAuthoredObjectRenderItems` when building the presentation blob.
 
-**Derive vs render:** Pure lists and geometry live in `shared/domain`; MUI icons, SVG smoothing, and z-order live in feature components (`CombatGridAuthoringOverlay`, `LocationMapAuthoredObjectIconsLayer`, `pathOverlayRendering.ts`).
+**Derive vs render:** Pure lists and geometry live in `shared/domain`; MUI icons, SVG smoothing, and z-order live in feature components (`CombatGridAuthoringOverlay`, `LocationMapAuthoredObjectIconsLayer`, `components/authoring/geometry/pathOverlayRendering.ts`).
 
 **Not the same as:** runtime `GridObject` rows or **placed-object** visuals (`placedObjectVisual` / `PlacedObjectCellVisualDisplay` in tactical cells) — those reflect encounter mechanics and stay separate from authored map SVG underlay icons, though both use **`resolvePlacedObjectCellVisual`** for icon/label consistency.
 

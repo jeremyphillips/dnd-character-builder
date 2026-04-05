@@ -21,8 +21,8 @@ import {
 } from '@/features/content/locations/domain';
 import type { BuildingWorkspaceFloorItem } from '@/features/content/locations/domain/building/buildingWorkspaceFloors';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
-import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
+import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import { getHomebrewWorkspaceSaveBlockReason } from '@/features/content/locations/routes/locationEdit/homebrewWorkspaceSaveGate';
 import {
   buildHomebrewWorkspacePersistableParts,

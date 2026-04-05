@@ -14,8 +14,8 @@ import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { getMapRegionColor } from '@/app/theme/mapColors';
 
 import type { GridCell } from './GridEditor';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
 /**
  * Per-cell overlay for region tint, linked-location icon, and authored object icons.

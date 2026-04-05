@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 
 import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens';
-import { hexCellCenterPx, hexOverlayDimensions } from '@/features/content/locations/components/hexGridMapOverlayGeometry';
-import { squareCellCenterPx, SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/squareGridMapOverlayGeometry';
+import { hexCellCenterPx, hexOverlayDimensions } from '@/features/content/locations/components/authoring/geometry/hexGridMapOverlayGeometry';
+import { squareCellCenterPx, SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
 
 const GRID_GAP_PX = SQUARE_GRID_GAP_PX;
 const MIN_CELL_PX = 24;

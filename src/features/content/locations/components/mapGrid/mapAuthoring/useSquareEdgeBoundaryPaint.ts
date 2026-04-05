@@ -11,7 +11,7 @@ import {
   type ResolvedEdgeTarget,
 } from '@/features/content/locations/domain/mapEditor';
 
-import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/squareGridMapOverlayGeometry';
+import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
 
 const GRID_GAP_PX = SQUARE_GRID_GAP_PX;
 

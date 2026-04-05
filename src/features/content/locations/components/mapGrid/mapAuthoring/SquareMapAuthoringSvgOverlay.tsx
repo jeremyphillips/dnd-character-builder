@@ -2,11 +2,11 @@ import type { EdgeSegmentGeometry } from '@/shared/domain/locations/map/location
 
 import type { LocationMapUiResolvedStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
 import type { ResolvedEdgeTarget } from '@/features/content/locations/domain/mapEditor';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 import {
   squareEdgeSegmentPxFromEdgeId,
   SQUARE_GRID_GAP_PX,
-} from '@/features/content/locations/components/squareGridMapOverlayGeometry';
+} from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
 import { LocationMapPathSvgPaths } from '@/features/content/locations/components/mapGrid/LocationMapPathSvgPaths';
 
 type PathSvgItem = { pathId: string; kind: string; d: string };

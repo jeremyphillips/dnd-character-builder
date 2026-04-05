@@ -1,8 +1,8 @@
 import { useEffect, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 
-import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
+import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import type { LocationFormValues } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 import type { LocationVerticalStairConnection } from '@/shared/domain/locations';

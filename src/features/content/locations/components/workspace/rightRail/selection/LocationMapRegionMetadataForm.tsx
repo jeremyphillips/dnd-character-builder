@@ -19,7 +19,7 @@ import {
   regionMetadataToFormValues,
   type RegionMetadataFormValues,
   type RegionMetadataPersistablePatch,
-} from '../adapters/regionMetadataDraftAdapter';
+} from '../adapters';
 
 export type { RegionMetadataFormValues };
 

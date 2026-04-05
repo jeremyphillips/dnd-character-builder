@@ -9,7 +9,7 @@ import { ConditionalFormRenderer } from '@/ui/patterns';
 import type { FieldConfig } from '@/ui/patterns/form/form.types';
 import { AppBadge } from '@/ui/primitives';
 
-import type { LocationEditorRailSection } from './rightRail/types/locationEditorRail.types';
+import type { LocationEditorRailSection } from './rightRail/types';
 import { LocationEditorHeader } from './header/LocationEditorHeader';
 import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
 import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';

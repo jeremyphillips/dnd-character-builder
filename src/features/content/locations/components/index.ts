@@ -1,30 +1,32 @@
 export { LocationSummaryCard } from './cards'
 export type { LocationSummaryCardProps } from './cards'
-export { LocationGridAuthoringSection } from './LocationGridAuthoringSection'
-export { LocationCellAuthoringPanel } from './LocationCellAuthoringPanel'
-export type { LocationCellAuthoringPanelProps } from './LocationCellAuthoringPanel'
+export { LocationGridAuthoringSection } from './workspace/LocationGridAuthoringSection'
+export { LocationCellAuthoringPanel } from './workspace/rightRail/panels'
+export type { LocationCellAuthoringPanelProps } from './workspace/rightRail/panels'
 export {
   LocationMapEditorToolbar,
   LocationMapEditorToolTrayShell,
   LocationMapEditorPaintTray,
-  LocationMapEditorPaintMapPanel,
   LocationMapEditorDrawTray,
+} from './workspace/leftTools'
+export {
+  LocationMapEditorPaintMapPanel,
   LocationMapEditorDrawPanel,
   LocationMapEditorPlacePanel,
-  LocationMapEditorLinkedLocationModal,
-} from './mapEditor';
+} from './workspace/rightRail/panels'
+export { LocationMapEditorLinkedLocationModal } from './workspace/rightRail/linkedLocation'
 export {
   INITIAL_LOCATION_GRID_DRAFT,
-} from './locationGridDraft.types'
+} from './authoring/draft/locationGridDraft.types'
 export type {
   LocationCellObjectDraft,
   LocationGridDraftState,
-} from './locationGridDraft.types'
+} from './authoring/draft/locationGridDraft.types'
 export {
   buildPersistableMapPayloadFromGridDraft,
   gridDraftPersistableEquals,
   normalizedAuthoringPayloadFromGridDraft,
-} from './locationGridDraft.utils';
+} from './authoring/draft/locationGridDraft.utils'
 export {
   LocationEditHomebrewWorkspace,
   LocationEditSystemPatchWorkspace,

@@ -13,13 +13,13 @@ import {
   gridCellPalette,
   gridCellSelectedShadow,
 } from './gridCellStyles';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 import {
   isSelectHoverChromeSuppressed,
   shouldApplyCellHoverChrome,
   shouldApplyCellSelectedChrome,
 } from './mapGridCellVisualState';
-import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/squareGridMapOverlayGeometry';
+import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
 
 export type GridCell = {
   cellId: string;

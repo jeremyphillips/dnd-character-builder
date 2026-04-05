@@ -1,5 +1,5 @@
 import type { EdgeSegmentGeometry, LineSegment2D, PathPolylineGeometry, Point2D } from '@/shared/domain/locations/map/locationMapGeometry.types';
-import { sampleSmoothPathCenterlineForPicking } from '@/features/content/locations/components/pathOverlayRendering';
+import { sampleSmoothPathCenterlineForPicking } from '@/features/content/locations/components/authoring/geometry/pathOverlayRendering';
 
 /**
  * Squared distance from P to the closest point on segment AB (clamped to the segment).

@@ -22,7 +22,7 @@ import {
 } from '@/shared/domain/locations';
 import type { LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
 
-import type { LocationCellObjectDraft } from './locationGridDraft.types';
+import type { LocationCellObjectDraft } from '../../../authoring/draft/locationGridDraft.types';
 
 function buildLocationByIdMap(locations: Location[]): Map<string, Location> {
   return new Map(locations.map((l) => [l.id, l]));

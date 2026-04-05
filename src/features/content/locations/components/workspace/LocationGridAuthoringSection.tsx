@@ -40,31 +40,31 @@ import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/
 import type { Location } from '@/features/content/locations/domain/types';
 import { useLocationAuthoringGridLayout } from '@/features/content/locations/hooks/useLocationAuthoringGridLayout';
 import { usePruneGridDraftOnDimensionChange } from '@/features/content/locations/hooks/usePruneGridDraftOnDimensionChange';
-import { hexBoundarySegmentsForRegionCells } from './hexRegionBoundaryForAuthoring';
-import { HexMapAuthoringSvgOverlay } from './mapGrid/mapAuthoring/HexMapAuthoringSvgOverlay';
-import { SquareMapAuthoringSvgOverlay } from './mapGrid/mapAuthoring/SquareMapAuthoringSvgOverlay';
-import { useSquareEdgeBoundaryPaint } from './mapGrid/mapAuthoring/useSquareEdgeBoundaryPaint';
-import { LocationMapCellAuthoringOverlay } from './mapGrid/LocationMapCellAuthoringOverlay';
+import { hexBoundarySegmentsForRegionCells } from '../authoring/geometry/hexRegionBoundaryForAuthoring';
+import { HexMapAuthoringSvgOverlay } from '../mapGrid/mapAuthoring/HexMapAuthoringSvgOverlay';
+import { SquareMapAuthoringSvgOverlay } from '../mapGrid/mapAuthoring/SquareMapAuthoringSvgOverlay';
+import { useSquareEdgeBoundaryPaint } from '../mapGrid/mapAuthoring/useSquareEdgeBoundaryPaint';
+import { LocationMapCellAuthoringOverlay } from '../mapGrid/LocationMapCellAuthoringOverlay';
 
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
 
-import type { LocationGridDraftState } from './locationGridDraft.types';
+import type { LocationGridDraftState } from '../authoring/draft/locationGridDraft.types';
 import {
   mapSelectionEqual,
   selectedCellIdForMapSelection,
   type LocationMapSelection,
-} from './workspace/rightRail/types/locationEditorRail.types';
+} from './rightRail/types';
 import {
   resolveSquareAnchorCellIdForSelectPx,
   SQUARE_GRID_GAP_PX,
-} from './squareGridMapOverlayGeometry';
+} from '../authoring/geometry/squareGridMapOverlayGeometry';
 import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers';
 import {
   pathEntriesToPolylineGeometry,
   pathEntryToPolylineGeometry,
 } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
-import { resolveNearestHexCell } from './hexGridMapOverlayGeometry';
-import { polylinePoint2DToSmoothSvgPath } from './pathOverlayRendering';
+import { resolveNearestHexCell } from '../authoring/geometry/hexGridMapOverlayGeometry';
+import { polylinePoint2DToSmoothSvgPath } from '../authoring/geometry/pathOverlayRendering';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 

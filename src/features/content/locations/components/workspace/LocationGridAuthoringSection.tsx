@@ -8,7 +8,6 @@ import {
   type MouseEvent as ReactMouseEvent,
   type SetStateAction,
 } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -50,6 +49,7 @@ import { resolveNearestHexCell } from '../authoring/geometry/hexGridMapOverlayGe
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { buildHexAuthoringRegionBoundarySegments } from './locationGridAuthoringHexRegionOverlays';
 import { buildLocationGridPathSvgPreviewData } from './locationGridAuthoringPathSvgPreview';
+import { useLocationGridAuthoringCellPointers } from './useLocationGridAuthoringCellPointers';
 import { useLocationGridPaintStroke } from './useLocationGridPaintStroke';
 import { useLocationGridSelectMode } from './useLocationGridSelectMode';
 
@@ -141,9 +141,6 @@ export function LocationGridAuthoringSection({
       rows > 0,
     [cols, rows],
   );
-
-  const placeObjectStrokeActive = useRef(false);
-  const placeObjectStrokeSeen = useRef<Set<string>>(new Set());
 
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -351,21 +348,6 @@ export function LocationGridAuthoringSection({
     setDraft,
   });
 
-  const endPlaceObjectStroke = useCallback(() => {
-    placeObjectStrokeActive.current = false;
-    placeObjectStrokeSeen.current.clear();
-  }, []);
-
-  useEffect(() => {
-    const onWindowPointerUp = () => {
-      if (paintStrokeActive.current) endPaintStroke();
-      if (placeObjectStrokeActive.current) endPlaceObjectStroke();
-      if (edgeStrokeActive.current) commitEdgeStroke();
-    };
-    window.addEventListener('pointerup', onWindowPointerUp);
-    return () => window.removeEventListener('pointerup', onWindowPointerUp);
-  }, [endPaintStroke, endPlaceObjectStroke, commitEdgeStroke, edgeStrokeActive]);
-
   const paintStrokeOrEraseFill =
     mapEditorMode === 'paint' || mapEditorMode === 'erase';
 
@@ -383,115 +365,35 @@ export function LocationGridAuthoringSection({
     !placeObjectStrokeMode &&
     placePathAnchorCellId != null;
 
-  const handleCellPointerDownForGrid = useCallback(
-    (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
-      if (paintStrokeOrEraseFill) {
-        handlePaintPointerDown(e, cell);
-        return;
-      }
-      if (placeObjectStrokeMode) {
-        e.stopPropagation();
-        placeObjectStrokeActive.current = true;
-        placeObjectStrokeSeen.current = new Set();
-        if (!placeObjectStrokeSeen.current.has(cell.cellId)) {
-          placeObjectStrokeSeen.current.add(cell.cellId);
-          onPlaceCellClick?.(cell.cellId);
-        }
-        return;
-      }
-      if (placePathPlacement) {
-        e.stopPropagation();
-        return;
-      }
-      if (suppressEdgePlacePan) {
-        e.stopPropagation();
-      }
-    },
-    [
-      paintStrokeOrEraseFill,
-      handlePaintPointerDown,
-      placeObjectStrokeMode,
-      onPlaceCellClick,
-      placePathPlacement,
-      suppressEdgePlacePan,
-    ],
-  );
+  const {
+    placeObjectStrokeActive,
+    endPlaceObjectStroke,
+    handleCellPointerDownForGrid,
+    handleCellPointerEnterForGrid,
+    handleCellPointerUpForGrid,
+    handlePlacePathEdgePointerMove,
+  } = useLocationGridAuthoringCellPointers({
+    paintStrokeOrEraseFill,
+    handlePaintPointerDown,
+    handlePaintPointerEnter,
+    handlePaintPointerUp,
+    placeObjectStrokeMode,
+    placePathPlacement,
+    suppressEdgePlacePan,
+    onPlaceCellClick,
+    resolveHexCellFromClient,
+    setPlaceHoverCellId,
+  });
 
-  const updatePlaceHoverFromPointerClient = useCallback(
-    (clientX: number, clientY: number) => {
-      const top = document.elementFromPoint(clientX, clientY);
-      const cellEl = top?.closest('[role="gridcell"]');
-      const directId = cellEl?.getAttribute('data-cell-id') ?? null;
-      const next = directId ?? resolveHexCellFromClient(clientX, clientY);
-      setPlaceHoverCellId((prev) => (prev === next ? prev : next));
-    },
-    [resolveHexCellFromClient],
-  );
-
-  const handlePlacePathEdgePointerMove = useCallback(
-    (e: ReactPointerEvent<HTMLElement>) => {
-      if (!placePathPlacement) return;
-      updatePlaceHoverFromPointerClient(e.clientX, e.clientY);
-    },
-    [placePathPlacement, updatePlaceHoverFromPointerClient],
-  );
-
-  const handleCellPointerEnterForGrid = useCallback(
-    (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
-      if (paintStrokeOrEraseFill) {
-        handlePaintPointerEnter(e, cell);
-        return;
-      }
-      if (placePathPlacement) {
-        e.stopPropagation();
-        setPlaceHoverCellId(cell.cellId);
-        return;
-      }
-      if (!placeObjectStrokeActive.current || !placeObjectStrokeMode) return;
-      if (e.buttons !== 1) return;
-      e.stopPropagation();
-      if (placeObjectStrokeSeen.current.has(cell.cellId)) return;
-      placeObjectStrokeSeen.current.add(cell.cellId);
-      onPlaceCellClick?.(cell.cellId);
-    },
-    [
-      paintStrokeOrEraseFill,
-      handlePaintPointerEnter,
-      placePathPlacement,
-      placeObjectStrokeMode,
-      onPlaceCellClick,
-    ],
-  );
-
-  const handleCellPointerUpForGrid = useCallback(
-    (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => {
-      void cell;
-      if (paintStrokeOrEraseFill) {
-        handlePaintPointerUp(e);
-        return;
-      }
-      if (placeObjectStrokeActive.current && placeObjectStrokeMode) {
-        e.stopPropagation();
-        endPlaceObjectStroke();
-        return;
-      }
-      if (placePathPlacement) {
-        e.stopPropagation();
-        return;
-      }
-      if (suppressEdgePlacePan) {
-        e.stopPropagation();
-      }
-    },
-    [
-      paintStrokeOrEraseFill,
-      handlePaintPointerUp,
-      placeObjectStrokeMode,
-      endPlaceObjectStroke,
-      placePathPlacement,
-      suppressEdgePlacePan,
-    ],
-  );
+  useEffect(() => {
+    const onWindowPointerUp = () => {
+      if (paintStrokeActive.current) endPaintStroke();
+      if (placeObjectStrokeActive.current) endPlaceObjectStroke();
+      if (edgeStrokeActive.current) commitEdgeStroke();
+    };
+    window.addEventListener('pointerup', onWindowPointerUp);
+    return () => window.removeEventListener('pointerup', onWindowPointerUp);
+  }, [endPaintStroke, endPlaceObjectStroke, commitEdgeStroke, edgeStrokeActive]);
 
   const onCellClick = (cell: GridCell, e: ReactMouseEvent<HTMLElement>) => {
     if (consumeClickSuppressionAfterPan?.()) return;

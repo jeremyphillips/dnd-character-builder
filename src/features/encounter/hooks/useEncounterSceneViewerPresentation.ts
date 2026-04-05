@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { createElement, useMemo, type ReactNode } from 'react'
 
 import type { EncounterSessionSeat } from '@/features/mechanics/domain/combat/selectors/capabilities/encounter-capabilities.types'
 
@@ -27,6 +27,9 @@ export function resolveEncounterSceneViewerControlsVisibility(
  * presentation {@link EncounterState}, and the optional header slot for {@link EncounterSceneViewerControls}.
  *
  * Session and simulator hosts both use this so orchestration and visibility policy stay in sync.
+ *
+ * This file is `.ts` (not `.tsx`) so Vite resolves extensionless imports to a real module: some setups
+ * resolve `useEncounterSceneViewerPresentation` to `.ts` before `.tsx`, which 404s if only `.tsx` exists.
  */
 export function useEncounterSceneViewerPresentation(args: UseEncounterSceneViewerArgs): {
   followMode: ReturnType<typeof useEncounterSceneViewer>['followMode']
@@ -51,15 +54,15 @@ export function useEncounterSceneViewerPresentation(args: UseEncounterSceneViewe
 
   const sceneViewerSlot = useMemo(
     () =>
-      args.encounterState && canRenderSceneViewerControls ? (
-        <EncounterSceneViewerControls
-          encounterState={args.encounterState}
-          sceneFocus={sceneFocus}
-          setSceneFocus={setSceneFocus}
-          followMode={followMode}
-          setFollowMode={setFollowMode}
-        />
-      ) : null,
+      args.encounterState && canRenderSceneViewerControls
+        ? createElement(EncounterSceneViewerControls, {
+            encounterState: args.encounterState,
+            sceneFocus,
+            setSceneFocus,
+            followMode,
+            setFollowMode,
+          })
+        : null,
     [
       args.encounterState,
       canRenderSceneViewerControls,

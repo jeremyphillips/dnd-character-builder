@@ -145,4 +145,4 @@ Details: [local-dispatch.md](./local-dispatch.md) — intents, `applyCombatInten
 
 ## GameSession `/play` (shared shell, session policy)
 
-**GameSession** (`src/features/game-session`) composes the same **`CombatPlayView`** shell for live table play. Turn-level affordances (movement, end turn, etc.) depend on **viewer seat** and **controlled combatants**, not on this package’s components alone—see [encounter-viewer-permissions.md](./encounter-viewer-permissions.md).
+**GameSession** (`src/features/game-session`) composes the same **`CombatPlayView`** shell for live table play. Turn-level affordances (movement, end turn, etc.) depend on **viewer seat** and **controlled combatants**, not on this package’s components alone—see [encounter-viewer-permissions.md](./encounter-viewer-permissions.md). For how **grid perception / presentation POV** is composed for session vs simulator (and where policy lives in code), see [perception-pov.md](./perception-pov.md).

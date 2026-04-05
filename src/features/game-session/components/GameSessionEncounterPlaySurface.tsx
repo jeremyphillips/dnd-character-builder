@@ -13,8 +13,10 @@ import { fetchPersistedCombatSession } from '@/features/combat/api/combatSession
 import type { OpponentRosterEntry } from '@/features/encounter/types'
 import type { EncounterState } from '@/features/mechanics/domain/combat'
 import {
+  buildEncounterPresentationGridPerceptionInputArgs,
   deriveEncounterPresentationGridPerceptionInput,
   resolveSessionControlledCombatantIds,
+  sessionEncounterPresentationSimulatorViewerMode,
   type EncounterViewerContext,
 } from '@/features/encounter/domain'
 import { isAreaGridAction } from '@/features/encounter/helpers/actions'
@@ -218,16 +220,18 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     })
   }, [encounter.encounterState, viewerRole, playerCharacterId])
 
+  const sessionPresentationViewerMode = sessionEncounterPresentationSimulatorViewerMode(viewerRole)
+
   const viewerContext: EncounterViewerContext = useMemo(
     () => ({
       mode: 'session',
       viewerRole,
       viewerUserId: user?.id ?? null,
-      simulatorViewerMode: 'active-combatant',
+      simulatorViewerMode: sessionPresentationViewerMode,
       presentationSelectedCombatantId: null,
       controlledCombatantIds,
     }),
-    [viewerRole, user?.id, controlledCombatantIds],
+    [viewerRole, user?.id, controlledCombatantIds, sessionPresentationViewerMode],
   )
 
   const { presentationEncounterState, sceneViewerSlot } = useEncounterSceneViewerPresentation({
@@ -242,13 +246,14 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
 
   const presentationGridPerceptionInput = useMemo(
     () =>
-      deriveEncounterPresentationGridPerceptionInput({
-        encounterState: presentationEncounterState,
-        /** DM seat: omniscient grid tokens + cell presentation; players use active combatant POV. */
-        simulatorViewerMode: viewerRole === 'dm' ? 'dm' : 'active-combatant',
-        activeCombatantId: encounter.activeCombatantId,
-        presentationSelectedCombatantId: null,
-      }),
+      deriveEncounterPresentationGridPerceptionInput(
+        buildEncounterPresentationGridPerceptionInputArgs({
+          hostMode: 'session',
+          viewerRole,
+          encounterState: presentationEncounterState,
+          activeCombatantId: encounter.activeCombatantId,
+        }),
+      ),
     [presentationEncounterState, encounter.activeCombatantId, viewerRole],
   )
 
@@ -310,7 +315,7 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     combatantViewerPresentationKindById,
     presentationGridPerceptionInput,
     viewerContext,
-    simulatorViewerMode: 'active-combatant',
+    simulatorViewerMode: sessionPresentationViewerMode,
     onSimulatorViewerModeChange: () => {},
     handleNextTurn: encounter.handleNextTurn,
     handleResetEncounter,

@@ -27,6 +27,7 @@ import { formatMonsterIdentityLine } from '@/features/content/monsters/formatter
 import { buildMonsterModalStats } from '@/features/combat/presentation'
 import { ATMOSPHERE_TAGS } from '@/features/mechanics/domain/environment'
 import {
+  buildEncounterPresentationGridPerceptionInputArgs,
   deriveEncounterPresentationGridPerceptionInput,
   type EncounterSimulatorViewerMode,
   type EncounterViewerContext,
@@ -308,12 +309,15 @@ function useEncounterRuntimeValue() {
 
   const presentationGridPerceptionInput = useMemo(
     () =>
-      deriveEncounterPresentationGridPerceptionInput({
-        encounterState: presentationEncounterState,
-        simulatorViewerMode,
-        activeCombatantId,
-        presentationSelectedCombatantId,
-      }),
+      deriveEncounterPresentationGridPerceptionInput(
+        buildEncounterPresentationGridPerceptionInputArgs({
+          hostMode: 'simulator',
+          encounterState: presentationEncounterState,
+          activeCombatantId,
+          simulatorViewerMode,
+          presentationSelectedCombatantId,
+        }),
+      ),
     [presentationEncounterState, simulatorViewerMode, activeCombatantId, presentationSelectedCombatantId],
   )
 

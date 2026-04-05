@@ -35,6 +35,15 @@ Hosts (`GameSessionEncounterPlaySurface`, `EncounterRuntimeContext`) should not 
 
 For session, **`sessionEncounterPresentationSimulatorViewerMode(viewerRole)`** returns the same mode string used in `EncounterViewerContext.simulatorViewerMode` and in `useEncounterCombatActiveHeader`’s `simulatorViewerMode` prop, so header copy (`deriveEncounterPerceptionUiFeedback`) and the grid stay consistent.
 
+### Runtime interaction and presentation seams
+
+These are **composition** helpers (not perception derivation); they live next to perception docs because they sit on the same host → grid/header path:
+
+- **`useEncounterRuntimeInteractionMode`** — shared policy for grid `interactionMode` (`select-target` vs `aoe-place`): reset when the active combatant changes, and keep mode aligned with AOE resolution step and area actions (`isAreaGridAction`). Session and simulator hosts both use this hook so targeting behavior does not drift.
+- **`useEncounterRuntimePresentation`** — single seam that runs **`useEncounterGridViewModel`** then **`useEncounterCombatActiveHeader`** with a typed **`EncounterRuntimePresentationInput`**. Additional play-shell outputs can be added to this hook’s return type without renaming it.
+
+**Still host-local:** persistence and revision sync, seat resolution, simulator roster/setup and environment, `viewerContext` / POV policy inputs, contextual prompt environment, and (for the session shell) manual **`EncounterActivePlaySurfaceDeps`** wiring until a dedicated deps builder exists.
+
 ## Scene viewer vs perception POV
 
 These are related but separate:

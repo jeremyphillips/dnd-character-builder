@@ -14,7 +14,7 @@ import { isAreaGridAction } from '../helpers/actions'
 import type { GridInteractionMode } from '../domain'
 import type { AoeStep } from '../helpers/actions'
 
-type UseEncounterGridViewModelArgs = {
+export type UseEncounterGridViewModelArgs = {
   /**
    * Encounter state backing the grid VM — may be **presentation** state from
    * `resolveViewerSceneEncounterState` when scene focus diverges from authoritative space (future).

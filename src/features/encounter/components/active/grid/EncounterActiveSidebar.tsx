@@ -56,12 +56,12 @@ export function EncounterActiveSidebar({
         right: (theme) => theme.spacing(2),
         top: (theme) => {
           const { cssVarName, layoutFallbackPx } = getEncounterUiStateTheme(theme).header.height
-          return `calc(var(${cssVarName}, ${layoutFallbackPx}px) + ${theme.spacing(2)})`
+          return `calc(var(${cssVarName}, ${layoutFallbackPx}px) + ${theme.spacing(2)} + 120px)`
         },
         width: SIDEBAR_WIDTH,
         maxHeight: (theme) => {
           const { cssVarName, layoutFallbackPx } = getEncounterUiStateTheme(theme).header.height
-          return `calc(100vh - var(${cssVarName}, ${layoutFallbackPx}px) - ${theme.spacing(2)} - ${theme.spacing(2)})`
+          return `calc(100vh - var(${cssVarName}, ${layoutFallbackPx}px) - ${theme.spacing(2)} - ${theme.spacing(2)} - 120px)`
         },
         display: 'flex',
         flexDirection: 'column',

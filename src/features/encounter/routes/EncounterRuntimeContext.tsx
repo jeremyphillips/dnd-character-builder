@@ -33,10 +33,14 @@ import {
   type EncounterViewerContext,
 } from '../domain'
 import { SIMULATOR_ENCOUNTER_SETUP_POLICY } from '../domain/setup'
-import { useEncounterState, useEncounterOptions, useEncounterRoster, useEncounterSceneViewerPresentation } from '../hooks'
-import { useEncounterCombatActiveHeader } from '../hooks/useEncounterCombatActiveHeader'
-import { useEncounterGridViewModel } from '../hooks/useEncounterGridViewModel'
-import type { GridInteractionMode } from '../domain'
+import {
+  useEncounterState,
+  useEncounterOptions,
+  useEncounterRoster,
+  useEncounterSceneViewerPresentation,
+  useEncounterRuntimeInteractionMode,
+  useEncounterRuntimePresentation,
+} from '../hooks'
 import { AppPageHeader } from '@/ui/patterns'
 import type { SelectEntityOption } from '@/ui/patterns'
 import type { Location } from '@/features/content/locations/domain/types'
@@ -50,8 +54,6 @@ import {
   EncounterEditModal,
   type EnvironmentSetupValues,
 } from '../components'
-import { isAreaGridAction } from '../helpers/actions'
-
 import type { CombatantPortraitEntry } from '../helpers/combatants'
 
 import { campaignEncounterActivePath, campaignEncounterSetupPath } from './encounterPaths'
@@ -337,7 +339,6 @@ function useEncounterRuntimeValue() {
   const [environmentSetup, setEnvironmentSetup] = useState<EnvironmentSetupValues>(() => ({
     ...encounterSetupPolicy.environment.environmentDefaults,
   }))
-  const [interactionMode, setInteractionMode] = useState<GridInteractionMode>('select-target')
   const [allyModalOpen, setAllyModalOpen] = useState(false)
   const [opponentModalOpen, setOpponentModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -420,17 +421,17 @@ function useEncounterRuntimeValue() {
     [opponentOptions, handleOpponentSelectionChange],
   )
 
-  const prevActiveCombatantId = useRef(activeCombatantId)
-  if (prevActiveCombatantId.current !== activeCombatantId) {
-    prevActiveCombatantId.current = activeCombatantId
-    if (interactionMode !== 'select-target') setInteractionMode('select-target')
-  }
+  const selectedAction = useMemo(
+    () => availableActions.find((a) => a.id === selectedActionId) ?? null,
+    [availableActions, selectedActionId],
+  )
 
-  useEffect(() => {
-    if (aoeStep === 'none' && interactionMode === 'aoe-place') {
-      setInteractionMode('select-target')
-    }
-  }, [aoeStep, interactionMode])
+  const { interactionMode, setInteractionMode } = useEncounterRuntimeInteractionMode({
+    activeCombatantId,
+    aoeStep,
+    selectedAction,
+    selectedCasterOptions,
+  })
 
   const canStartEncounter = selectedCombatants.length > 0 && unresolvedCombatantCount === 0
 
@@ -459,37 +460,6 @@ function useEncounterRuntimeValue() {
     handleStartEncounter,
     environmentSetup,
   ])
-
-  // selectedActionLabel / selectedTargetLabel were consumed by the now-commented-out footer.
-  // The route derives these directly when needed (e.g. CombatantActionDrawer).
-
-  const selectedAction = useMemo(
-    () => availableActions.find((a) => a.id === selectedActionId) ?? null,
-    [availableActions, selectedActionId],
-  )
-
-  useEffect(() => {
-    if (aoeStep === 'none') return
-    if (isAreaGridAction(selectedAction, selectedCasterOptions)) {
-      setInteractionMode('aoe-place')
-    }
-  }, [aoeStep, selectedAction, selectedCasterOptions])
-
-  const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState: presentationEncounterState,
-    activeCombatantId,
-    activeCombatant,
-    selectedAction,
-    selectedActionTargetId,
-    selectedCasterOptions,
-    aoeStep,
-    aoeHoverCellId,
-    aoeOriginCellId,
-    interactionMode,
-    singleCellPlacementHoverCellId,
-    selectedSingleCellPlacementCellId,
-    presentationGridPerceptionInput: presentationGridPerceptionInput ?? undefined,
-  })
 
   // turnResources was consumed by the now-commented-out footer.
   // activeCombatant.turnResources is still accessible directly via the context.
@@ -555,34 +525,37 @@ function useEncounterRuntimeValue() {
     </Box>
   )
 
-  const { activeHeader, capabilities, encounterDirective, contextStripTitleTone } = useEncounterCombatActiveHeader({
-    encounterState,
-    activeCombatant,
-    availableActions,
-    selectedActionId,
-    selectedAction,
-    selectedCasterOptions,
-    aoeStep,
-    aoeOriginCellId,
-    selectedActionTargetId,
-    selectedSingleCellPlacementCellId,
-    selectedObjectAnchorId,
-    interactionMode,
-    gridViewModel,
-    combatantViewerPresentationKindById,
-    presentationGridPerceptionInput,
-    viewerContext,
-    simulatorViewerMode,
-    onSimulatorViewerModeChange: handleSimulatorViewerModeChange,
-    handleNextTurn,
-    handleResetEncounter,
-    setActionDrawerOpen,
-    onEditEncounter: () => setEditModalOpen(true),
-    monstersById,
-    spellsById: catalog.spellsById,
-    suppressSameSideHostile,
-    sceneViewerSlot,
-  })
+  const { gridViewModel, combatantViewerPresentationKindById, activeHeader, capabilities, encounterDirective, contextStripTitleTone } =
+    useEncounterRuntimePresentation({
+      presentationEncounterState,
+      encounterState,
+      activeCombatantId,
+      activeCombatant,
+      selectedAction,
+      selectedActionTargetId,
+      selectedCasterOptions,
+      aoeStep,
+      aoeHoverCellId,
+      aoeOriginCellId,
+      interactionMode,
+      singleCellPlacementHoverCellId,
+      selectedSingleCellPlacementCellId,
+      presentationGridPerceptionInput: presentationGridPerceptionInput ?? undefined,
+      availableActions,
+      selectedActionId,
+      selectedObjectAnchorId,
+      viewerContext,
+      simulatorViewerMode,
+      onSimulatorViewerModeChange: handleSimulatorViewerModeChange,
+      handleNextTurn,
+      handleResetEncounter,
+      setActionDrawerOpen,
+      onEditEncounter: () => setEditModalOpen(true),
+      monstersById,
+      spellsById: catalog.spellsById,
+      suppressSameSideHostile,
+      sceneViewerSlot,
+    })
 
   // activeFooter commented out -- action resolution now handled by CombatantActionDrawer
   const activeFooter = undefined

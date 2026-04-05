@@ -19,12 +19,10 @@ import {
   sessionEncounterPresentationSimulatorViewerMode,
   type EncounterViewerContext,
 } from '@/features/encounter/domain'
-import { isAreaGridAction } from '@/features/encounter/helpers/actions'
-import type { GridInteractionMode } from '@/features/encounter/domain'
 import { useEncounterState } from '@/features/encounter/hooks/useEncounterState'
-import { useEncounterGridViewModel } from '@/features/encounter/hooks/useEncounterGridViewModel'
 import { useEncounterSceneViewerPresentation } from '@/features/encounter/hooks/useEncounterSceneViewerPresentation'
-import { useEncounterCombatActiveHeader } from '@/features/encounter/hooks/useEncounterCombatActiveHeader'
+import { useEncounterRuntimeInteractionMode } from '@/features/encounter/hooks/useEncounterRuntimeInteractionMode'
+import { useEncounterRuntimePresentation } from '@/features/encounter/hooks/useEncounterRuntimePresentation'
 import { useEncounterActivePlaySurface } from '@/features/encounter/hooks/useEncounterActivePlaySurface'
 import type { EncounterContextPromptEnvironment } from '@/features/encounter/domain/encounterContextPrompt.types'
 import type { CombatantPortraitEntry } from '@/features/encounter/helpers/combatants'
@@ -195,13 +193,19 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     persistedCombat,
   })
 
-  const [interactionMode, setInteractionMode] = useState<GridInteractionMode>('select-target')
   const [actionDrawerOpen, setActionDrawerOpen] = useState(false)
 
   const selectedAction = useMemo(
     () => encounter.availableActions.find((a) => a.id === encounter.selectedActionId) ?? null,
     [encounter.availableActions, encounter.selectedActionId],
   )
+
+  const { interactionMode, setInteractionMode } = useEncounterRuntimeInteractionMode({
+    activeCombatantId: encounter.activeCombatantId,
+    aoeStep: encounter.aoeStep,
+    selectedAction,
+    selectedCasterOptions: encounter.selectedCasterOptions,
+  })
 
   const { viewerRole, playerCharacterId } = useMemo(
     () =>
@@ -257,75 +261,43 @@ export function GameSessionEncounterPlaySurface({ session }: { session: GameSess
     [presentationEncounterState, encounter.activeCombatantId, viewerRole],
   )
 
-  const prevActiveCombatantId = useRef(encounter.activeCombatantId)
-  if (prevActiveCombatantId.current !== encounter.activeCombatantId) {
-    prevActiveCombatantId.current = encounter.activeCombatantId
-    if (interactionMode !== 'select-target') setInteractionMode('select-target')
-  }
-
-  useEffect(() => {
-    if (encounter.aoeStep === 'none' && interactionMode === 'aoe-place') {
-      setInteractionMode('select-target')
-    }
-  }, [encounter.aoeStep, interactionMode])
-
-  useEffect(() => {
-    if (encounter.aoeStep === 'none') return
-    if (isAreaGridAction(selectedAction, encounter.selectedCasterOptions)) {
-      setInteractionMode('aoe-place')
-    }
-  }, [encounter.aoeStep, selectedAction, encounter.selectedCasterOptions])
-
-  const { gridViewModel, combatantViewerPresentationKindById } = useEncounterGridViewModel({
-    encounterState: presentationEncounterState,
-    activeCombatantId: encounter.activeCombatantId,
-    activeCombatant: encounter.activeCombatant,
-    selectedAction,
-    selectedActionTargetId: encounter.selectedActionTargetId,
-    selectedCasterOptions: encounter.selectedCasterOptions,
-    aoeStep: encounter.aoeStep,
-    aoeHoverCellId: encounter.aoeHoverCellId,
-    aoeOriginCellId: encounter.aoeOriginCellId,
-    interactionMode,
-    singleCellPlacementHoverCellId: encounter.singleCellPlacementHoverCellId,
-    selectedSingleCellPlacementCellId: encounter.selectedSingleCellPlacementCellId,
-    presentationGridPerceptionInput: presentationGridPerceptionInput ?? undefined,
-  })
-
   const handleResetEncounter = useCallback(() => {
     if (campaignId) {
       navigate(campaignGameSessionLobbyPath(campaignId, session.id))
     }
   }, [campaignId, navigate, session.id])
 
-  const { activeHeader, capabilities, encounterDirective, contextStripTitleTone } = useEncounterCombatActiveHeader({
-    encounterState: encounter.encounterState,
-    activeCombatant: encounter.activeCombatant,
-    availableActions: encounter.availableActions,
-    selectedActionId: encounter.selectedActionId,
-    selectedAction,
-    selectedCasterOptions: encounter.selectedCasterOptions,
-    aoeStep: encounter.aoeStep,
-    aoeOriginCellId: encounter.aoeOriginCellId,
-    selectedActionTargetId: encounter.selectedActionTargetId,
-    selectedSingleCellPlacementCellId: encounter.selectedSingleCellPlacementCellId,
-    selectedObjectAnchorId: encounter.selectedObjectAnchorId,
-    interactionMode,
-    gridViewModel,
-    combatantViewerPresentationKindById,
-    presentationGridPerceptionInput,
-    viewerContext,
-    simulatorViewerMode: sessionPresentationViewerMode,
-    onSimulatorViewerModeChange: () => {},
-    handleNextTurn: encounter.handleNextTurn,
-    handleResetEncounter,
-    setActionDrawerOpen,
-    onEditEncounter: () => {},
-    monstersById,
-    spellsById: catalog.spellsById,
-    suppressSameSideHostile,
-    sceneViewerSlot,
-  })
+  const { gridViewModel, combatantViewerPresentationKindById, activeHeader, capabilities, encounterDirective, contextStripTitleTone } =
+    useEncounterRuntimePresentation({
+      presentationEncounterState,
+      encounterState: encounter.encounterState,
+      activeCombatantId: encounter.activeCombatantId,
+      activeCombatant: encounter.activeCombatant,
+      selectedAction,
+      selectedActionTargetId: encounter.selectedActionTargetId,
+      selectedCasterOptions: encounter.selectedCasterOptions,
+      aoeStep: encounter.aoeStep,
+      aoeHoverCellId: encounter.aoeHoverCellId,
+      aoeOriginCellId: encounter.aoeOriginCellId,
+      interactionMode,
+      singleCellPlacementHoverCellId: encounter.singleCellPlacementHoverCellId,
+      selectedSingleCellPlacementCellId: encounter.selectedSingleCellPlacementCellId,
+      presentationGridPerceptionInput: presentationGridPerceptionInput ?? undefined,
+      availableActions: encounter.availableActions,
+      selectedActionId: encounter.selectedActionId,
+      selectedObjectAnchorId: encounter.selectedObjectAnchorId,
+      viewerContext,
+      simulatorViewerMode: sessionPresentationViewerMode,
+      onSimulatorViewerModeChange: () => {},
+      handleNextTurn: encounter.handleNextTurn,
+      handleResetEncounter,
+      setActionDrawerOpen,
+      onEditEncounter: () => {},
+      monstersById,
+      spellsById: catalog.spellsById,
+      suppressSameSideHostile,
+      sceneViewerSlot,
+    })
 
   const contextualPromptEnvironment = useMemo((): EncounterContextPromptEnvironment | null => {
     if (!campaignId) return null

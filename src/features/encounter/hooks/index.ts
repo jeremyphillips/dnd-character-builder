@@ -9,6 +9,16 @@ export {
   resolveEncounterSceneViewerControlsVisibility,
 } from './useEncounterSceneViewerPresentation'
 export {
+  useEncounterRuntimeInteractionMode,
+  type UseEncounterRuntimeInteractionModeArgs,
+} from './useEncounterRuntimeInteractionMode'
+export {
+  useEncounterRuntimePresentation,
+  type EncounterRuntimePresentationInput,
+  type EncounterRuntimePresentationResult,
+} from './useEncounterRuntimePresentation'
+export type { UseEncounterGridViewModelArgs } from './useEncounterGridViewModel'
+export {
   useEncounterActivePlaySurface,
   type EncounterActivePlaySurfaceDeps,
   type UseEncounterActivePlaySurfaceOptions,

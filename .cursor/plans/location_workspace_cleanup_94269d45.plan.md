@@ -175,7 +175,7 @@ Do **not** split the file into fragments that still require hopping across many 
 
 **Keep persistence seams concentrated:** Authoring contract assembly, hydration, and save coordination stay tied to [useLocationEditSaveActions.ts](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) / [useLocationMapHydration.ts](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) patterns—do not scatter baseline/save logic across new files without reason.
 
-**Domain vs route:** Pure rules that are **editor-global** and testable without route → `**domain/authoring/editor/`**. Glue that needs `loc`, campaign, system vs homebrew → `**routes/locationEdit/**`.
+**Domain vs route:** Pure rules that are **editor-global** and testable without route → `**domain/authoring/editor/`**. Glue that needs `loc`, campaign, system vs homebrew → `**routes/locationEdit/`**.
 
 ---
 
@@ -271,7 +271,7 @@ When a milestone lands, add a row to [.cursor/plans/location-workspace/README.md
 
 ## Acceptance checklist (refinement complete)
 
-- Plan is explicit about `**components/workspace`**, `**routes/locationEdit**`, and `**domain/authoring/editor**` (see [Ownership boundaries](#ownership-boundaries-use-when-deciding-where-code-lives)).
+- Plan is explicit about `**components/workspace`**, `**routes/locationEdit`**, and `**domain/authoring/editor**` (see [Ownership boundaries](#ownership-boundaries-use-when-deciding-where-code-lives)).
 - Phases 1–2 are framed around **concern-based decomposition**, not line-count reduction alone.
 - Phase 3 is clearly **workspace panel / rail assembly** ownership, with the route retaining route-only concerns.
 - **Non-goals** block feature work and unrelated migrations from sneaking into this pass.

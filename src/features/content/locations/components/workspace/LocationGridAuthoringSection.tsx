@@ -21,14 +21,10 @@ import {
 } from '@/features/content/locations/components/mapGrid';
 import type { GridGeometryId } from '@/shared/domain/grid/gridGeometry';
 import { LOCATION_CELL_FILL_KIND_META } from '@/features/content/locations/domain/model/map/locationCellFill.types';
-import {
-  buildSelectModeInteractiveTargetInput,
-  buildSelectModeInteractiveTargetInputSkipGeometry,
-  refineSelectModeClickAfterRegionDrill,
-  resolveSelectModeInteractiveTarget,
-  type LocationMapActiveDrawSelection,
-  type LocationMapActivePaintSelection,
-  type LocationMapEditorMode,
+import type {
+  LocationMapActiveDrawSelection,
+  LocationMapActivePaintSelection,
+  LocationMapEditorMode,
 } from '@/features/content/locations/domain/authoring/editor';
 import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { resolveCellFillSwatchColor } from '@/app/theme/mapColors';
@@ -44,15 +40,8 @@ import { LocationMapCellAuthoringOverlay } from '../mapGrid/LocationMapCellAutho
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 
 import type { LocationGridDraftState } from '../authoring/draft/locationGridDraft.types';
-import {
-  mapSelectionEqual,
-  selectedCellIdForMapSelection,
-  type LocationMapSelection,
-} from './rightRail/types';
-import {
-  resolveSquareAnchorCellIdForSelectPx,
-  SQUARE_GRID_GAP_PX,
-} from '../authoring/geometry/squareGridMapOverlayGeometry';
+import { selectedCellIdForMapSelection } from './rightRail/types';
+import { SQUARE_GRID_GAP_PX } from '../authoring/geometry/squareGridMapOverlayGeometry';
 import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers';
 import { pathEntriesToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
 import { resolveNearestHexCell } from '../authoring/geometry/hexGridMapOverlayGeometry';
@@ -60,6 +49,7 @@ import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locati
 import { buildHexAuthoringRegionBoundarySegments } from './locationGridAuthoringHexRegionOverlays';
 import { buildLocationGridPathSvgPreviewData } from './locationGridAuthoringPathSvgPreview';
 import { useLocationGridPaintStroke } from './useLocationGridPaintStroke';
+import { useLocationGridSelectMode } from './useLocationGridSelectMode';
 
 type LocationGridAuthoringSectionProps = {
   gridColumns: string;
@@ -153,16 +143,7 @@ export function LocationGridAuthoringSection({
   const placeObjectStrokeActive = useRef(false);
   const placeObjectStrokeSeen = useRef<Set<string>>(new Set());
 
-  const [selectHoverTarget, setSelectHoverTarget] = useState<LocationMapSelection>({
-    type: 'none',
-  });
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (mapEditorMode !== 'select') {
-      setSelectHoverTarget({ type: 'none' });
-    }
-  }, [mapEditorMode]);
 
   const edgePlaceActive = mapEditorMode === 'draw' && activeDraw?.category === 'edge';
   const edgeEraseActive = mapEditorMode === 'erase';
@@ -198,6 +179,52 @@ export function LocationGridAuthoringSection({
     activeDraw,
     onEdgeStrokeCommit,
     onEraseEdge,
+  });
+
+  const pathPickPolys = useMemo(() => {
+    return pathEntriesToPolylineGeometry(draft.pathEntries, (cid) => cellCenterPx(cid));
+  }, [draft.pathEntries, cellCenterPx]);
+
+  const edgePickGeoms = useMemo(() => {
+    if (!squareGridGeometry || isHex) return null;
+    return edgeEntriesToSegmentGeometrySquare(
+      draft.edgeEntries,
+      squareGridGeometry.cellPx,
+      SQUARE_GRID_GAP_PX,
+    );
+  }, [draft.edgeEntries, squareGridGeometry, isHex]);
+
+  const resolveHexCellFromClient = useCallback(
+    (clientX: number, clientY: number): string | null => {
+      if (!isHex || !gridContainerRef.current || !hexGridGeometry) return null;
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const gx = clientX - rect.left;
+      const gy = clientY - rect.top;
+      return resolveNearestHexCell(gx, gy, cols, rows, hexGridGeometry.hexSize);
+    },
+    [isHex, hexGridGeometry, cols, rows],
+  );
+
+  const {
+    selectHoverTarget,
+    handleSelectPointerMove,
+    handleSelectGridContainerClick,
+    onSelectModeCellClick,
+  } = useLocationGridSelectMode({
+    mapEditorMode,
+    validPreview,
+    draft,
+    setDraft,
+    pathPickPolys,
+    edgePickGeoms,
+    isHex,
+    squareGridGeometry,
+    cols,
+    rows,
+    gridContainerRef,
+    resolveHexCellFromClient,
+    consumeClickSuppressionAfterPan,
+    onCellFocusRail,
   });
 
   const hexSelectedRegionBoundarySegments = useMemo(
@@ -258,19 +285,6 @@ export function LocationGridAuthoringSection({
   /** Committed edge features (square grid only): shared geometry layer → SVG lines below. */
   const committedEdgeSegmentGeometry = useMemo(() => {
     if (!squareGridGeometry || isHex) return [];
-    return edgeEntriesToSegmentGeometrySquare(
-      draft.edgeEntries,
-      squareGridGeometry.cellPx,
-      SQUARE_GRID_GAP_PX,
-    );
-  }, [draft.edgeEntries, squareGridGeometry, isHex]);
-
-  const pathPickPolys = useMemo(() => {
-    return pathEntriesToPolylineGeometry(draft.pathEntries, (cid) => cellCenterPx(cid));
-  }, [draft.pathEntries, cellCenterPx]);
-
-  const edgePickGeoms = useMemo(() => {
-    if (!squareGridGeometry || isHex) return null;
     return edgeEntriesToSegmentGeometrySquare(
       draft.edgeEntries,
       squareGridGeometry.cellPx,
@@ -400,123 +414,6 @@ export function LocationGridAuthoringSection({
     ],
   );
 
-  const resolveHexCellFromClient = useCallback(
-    (clientX: number, clientY: number): string | null => {
-      if (!isHex || !gridContainerRef.current || !hexGridGeometry) return null;
-      const rect = gridContainerRef.current.getBoundingClientRect();
-      const gx = clientX - rect.left;
-      const gy = clientY - rect.top;
-      return resolveNearestHexCell(gx, gy, cols, rows, hexGridGeometry.hexSize);
-    },
-    [isHex, hexGridGeometry, cols, rows],
-  );
-
-  const handleSelectPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLElement>) => {
-      if (mapEditorMode !== 'select' || !validPreview) return;
-      if (!gridContainerRef.current) return;
-      const rect = gridContainerRef.current.getBoundingClientRect();
-      const gx = e.clientX - rect.left;
-      const gy = e.clientY - rect.top;
-      const top = document.elementFromPoint(e.clientX, e.clientY);
-      const cellEl = top?.closest('[role="gridcell"]');
-      const anchorCellId =
-        cellEl?.getAttribute('data-cell-id') ??
-        resolveHexCellFromClient(e.clientX, e.clientY) ??
-        (!isHex && squareGridGeometry
-          ? resolveSquareAnchorCellIdForSelectPx(
-              gx,
-              gy,
-              squareGridGeometry.cellPx,
-              cols,
-              rows,
-              SQUARE_GRID_GAP_PX,
-            )
-          : null);
-      if (!anchorCellId) {
-        setSelectHoverTarget((prev) =>
-          mapSelectionEqual(prev, { type: 'none' }) ? prev : { type: 'none' },
-        );
-        return;
-      }
-      const next = resolveSelectModeInteractiveTarget({
-        targetElement: top as HTMLElement | null,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        gx,
-        gy,
-        anchorCellId,
-        ...buildSelectModeInteractiveTargetInput(draft, pathPickPolys, edgePickGeoms, isHex),
-      });
-      setSelectHoverTarget((prev) => (mapSelectionEqual(prev, next) ? prev : next));
-    },
-    [
-      mapEditorMode,
-      validPreview,
-      draft,
-      pathPickPolys,
-      edgePickGeoms,
-      isHex,
-      squareGridGeometry,
-      cols,
-      rows,
-      resolveHexCellFromClient,
-    ],
-  );
-
-  const handleSelectGridContainerClick = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      if (mapEditorMode !== 'select' || !validPreview) return;
-      if (consumeClickSuppressionAfterPan?.()) return;
-      if (isHex) return;
-      if ((e.target as HTMLElement).closest('[role="gridcell"]')) return;
-      if (!gridContainerRef.current || !squareGridGeometry) return;
-      const rect = gridContainerRef.current.getBoundingClientRect();
-      const gx = e.clientX - rect.left;
-      const gy = e.clientY - rect.top;
-      const anchorCellId = resolveSquareAnchorCellIdForSelectPx(
-        gx,
-        gy,
-        squareGridGeometry.cellPx,
-        cols,
-        rows,
-        SQUARE_GRID_GAP_PX,
-      );
-      if (!anchorCellId) return;
-      setDraft((d) => {
-        const resolved = resolveSelectModeInteractiveTarget({
-          targetElement: e.target as HTMLElement,
-          clientX: e.clientX,
-          clientY: e.clientY,
-          gx,
-          gy,
-          anchorCellId,
-          ...buildSelectModeInteractiveTargetInput(d, pathPickPolys, edgePickGeoms, isHex),
-        });
-        const ms = refineSelectModeClickAfterRegionDrill(resolved, d.mapSelection, anchorCellId);
-        return {
-          ...d,
-          mapSelection: ms,
-          selectedCellId: selectedCellIdForMapSelection(ms),
-        };
-      });
-      onCellFocusRail?.();
-    },
-    [
-      mapEditorMode,
-      validPreview,
-      consumeClickSuppressionAfterPan,
-      isHex,
-      squareGridGeometry,
-      cols,
-      rows,
-      pathPickPolys,
-      edgePickGeoms,
-      setDraft,
-      onCellFocusRail,
-    ],
-  );
-
   const updatePlaceHoverFromPointerClient = useCallback(
     (clientX: number, clientY: number) => {
       const top = document.elementFromPoint(clientX, clientY);
@@ -615,48 +512,7 @@ export function LocationGridAuthoringSection({
     if (mapEditorMode !== 'select') {
       return;
     }
-    if (!gridContainerRef.current) {
-      setDraft((d) => {
-        const resolved = resolveSelectModeInteractiveTarget({
-          targetElement: e.target as HTMLElement,
-          clientX: e.clientX,
-          clientY: e.clientY,
-          gx: 0,
-          gy: 0,
-          anchorCellId: cell.cellId,
-          ...buildSelectModeInteractiveTargetInputSkipGeometry(d, isHex),
-        });
-        const ms = refineSelectModeClickAfterRegionDrill(resolved, d.mapSelection, cell.cellId);
-        return {
-          ...d,
-          mapSelection: ms,
-          selectedCellId: selectedCellIdForMapSelection(ms),
-        };
-      });
-      onCellFocusRail?.();
-      return;
-    }
-    const rect = gridContainerRef.current.getBoundingClientRect();
-    const gx = e.clientX - rect.left;
-    const gy = e.clientY - rect.top;
-    setDraft((d) => {
-      const resolved = resolveSelectModeInteractiveTarget({
-        targetElement: e.target as HTMLElement,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        gx,
-        gy,
-        anchorCellId: cell.cellId,
-        ...buildSelectModeInteractiveTargetInput(d, pathPickPolys, edgePickGeoms, isHex),
-      });
-      const ms = refineSelectModeClickAfterRegionDrill(resolved, d.mapSelection, cell.cellId);
-      return {
-        ...d,
-        mapSelection: ms,
-        selectedCellId: selectedCellIdForMapSelection(ms),
-      };
-    });
-    onCellFocusRail?.();
+    onSelectModeCellClick(cell, e);
   };
 
   const handleHexFallbackClick = useCallback(

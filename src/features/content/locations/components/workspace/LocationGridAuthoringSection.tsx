@@ -20,7 +20,6 @@ import {
   type GridCell,
 } from '@/features/content/locations/components/mapGrid';
 import type { GridGeometryId } from '@/shared/domain/grid/gridGeometry';
-import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { LOCATION_CELL_FILL_KIND_META } from '@/features/content/locations/domain/model/map/locationCellFill.types';
 import {
   buildSelectModeInteractiveTargetInput,
@@ -59,14 +58,10 @@ import {
   SQUARE_GRID_GAP_PX,
 } from '../authoring/geometry/squareGridMapOverlayGeometry';
 import { edgeEntriesToSegmentGeometrySquare } from '@/shared/domain/locations/map/locationMapEdgeGeometry.helpers';
-import {
-  pathEntriesToPolylineGeometry,
-  pathEntryToPolylineGeometry,
-} from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
+import { pathEntriesToPolylineGeometry } from '@/shared/domain/locations/map/locationMapPathPolyline.helpers';
 import { resolveNearestHexCell } from '../authoring/geometry/hexGridMapOverlayGeometry';
-import { polylinePoint2DToSmoothSvgPath } from '../authoring/geometry/pathOverlayRendering';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
-import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
+import { buildLocationGridPathSvgPreviewData } from './locationGridAuthoringPathSvgPreview';
 
 type LocationGridAuthoringSectionProps = {
   gridColumns: string;
@@ -238,86 +233,29 @@ export function LocationGridAuthoringSection({
   const activePathKind: LocationMapPathKindId | null =
     activeDraw?.category === 'path' ? activeDraw.kind : null;
 
-  const pathSvgData = useMemo(() => {
-    const chains = draft.pathEntries.map((pe) => ({
-      id: pe.id,
-      kind: pe.kind,
-      cells: [...pe.cellIds],
-    }));
-    if (chains.length === 0 && !placePathAnchorCellId) return [];
-
-    let extendIdx = -1;
-    let extendCell: string | null = null;
-    let prepend = false;
-
-    if (placePathAnchorCellId && placeHoverCellId && placePathAnchorCellId !== placeHoverCellId) {
-      const pa = parseGridCellId(placePathAnchorCellId);
-      const pb = parseGridCellId(placeHoverCellId);
-      if (pa && pb) {
-        const geom = (gridGeometry === 'hex' ? 'hex' : 'square') as 'square' | 'hex';
-        const neighbors = getNeighborPoints({ geometry: geom, columns: cols, rows }, pa);
-        if (neighbors.some((n) => n.x === pb.x && n.y === pb.y)) {
-          for (let i = 0; i < chains.length; i++) {
-            const c = chains[i];
-            if (c.cells[c.cells.length - 1] === placePathAnchorCellId) {
-              extendIdx = i;
-              extendCell = placeHoverCellId;
-              break;
-            }
-            if (c.cells[0] === placePathAnchorCellId) {
-              extendIdx = i;
-              extendCell = placeHoverCellId;
-              prepend = true;
-              break;
-            }
-          }
-          if (extendIdx < 0) {
-            extendCell = placeHoverCellId;
-          }
-        }
-      }
-    }
-
-    const centerFn = (cellId: string) => cellCenterPx(cellId);
-    const result: { pathId: string; kind: LocationMapPathKindId; d: string }[] = [];
-
-    for (let i = 0; i < chains.length; i++) {
-      let cells = chains[i].cells;
-      if (i === extendIdx && extendCell) {
-        cells = prepend ? [extendCell, ...cells] : [...cells, extendCell];
-      }
-      const poly = pathEntryToPolylineGeometry(
-        { id: chains[i].id, kind: chains[i].kind, cellIds: cells },
-        centerFn,
-      );
-      if (!poly) continue;
-      result.push({
-        pathId: chains[i].id,
-        kind: poly.kind,
-        d: polylinePoint2DToSmoothSvgPath(poly.points),
-      });
-    }
-
-    if (extendIdx < 0 && extendCell && placePathAnchorCellId) {
-      const previewPoly = pathEntryToPolylineGeometry(
-        {
-          id: 'preview',
-          kind: activePathKind ?? 'road',
-          cellIds: [placePathAnchorCellId, extendCell],
-        },
-        centerFn,
-      );
-      if (previewPoly) {
-        result.push({
-          pathId: '__preview__',
-          kind: previewPoly.kind,
-          d: polylinePoint2DToSmoothSvgPath(previewPoly.points),
-        });
-      }
-    }
-
-    return result;
-  }, [draft.pathEntries, placePathAnchorCellId, placeHoverCellId, cellCenterPx, gridGeometry, cols, rows, activePathKind]);
+  const pathSvgData = useMemo(
+    () =>
+      buildLocationGridPathSvgPreviewData({
+        pathEntries: draft.pathEntries,
+        placePathAnchorCellId,
+        placeHoverCellId,
+        cellCenterPx,
+        gridGeometry,
+        cols,
+        rows,
+        activePathKind,
+      }),
+    [
+      draft.pathEntries,
+      placePathAnchorCellId,
+      placeHoverCellId,
+      cellCenterPx,
+      gridGeometry,
+      cols,
+      rows,
+      activePathKind,
+    ],
+  );
 
   /** Committed edge features (square grid only): shared geometry layer → SVG lines below. */
   const committedEdgeSegmentGeometry = useMemo(() => {

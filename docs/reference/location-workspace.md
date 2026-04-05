@@ -6,7 +6,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 **Canonical map authoring on the wire:** path kinds use `LOCATION_MAP_PATH_KIND_IDS` (`road` | `river`); edge kinds use `LOCATION_MAP_EDGE_KIND_IDS` (`wall` | `window` | `door`). Persisted `LocationMap` fields include `pathEntries` (per-chain `id`, `kind`, ordered `cellIds`) and `edgeEntries` (`edgeId`, `kind`). At persistence and API boundaries, `normalizeLocationMapAuthoringFields` / `normalizeLocationMapBaseAuthoring` (`shared/domain/locations/map/locationMapAuthoring.normalize.ts`) ensure `cellEntries`, `pathEntries`, and `edgeEntries` are always arrays (never `undefined`), including server `toDoc`, client `locationMapRepo` responses, `bootstrapDefaultLocationMap`, and save/load paths in `LocationEditRoute` (full-width UI is composed through **`LocationEditHomebrewWorkspace`** or **`LocationEditSystemPatchWorkspace`** — see **Workspace layout**).
 
-**Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
+**Geometry vs rendering:** Canonical authored→geometry lives in shared: `pathEntriesToPolylineGeometry` / `pathEntryToPolylineGeometry` compose `pathEntryToCenterlinePoints` into `Point2D[]` polylines (`locationMapPathPolyline.helpers.ts`); square **edge** boundaries use `edgeEntriesToSegmentGeometrySquare` (`locationMapEdgeGeometry.helpers.ts`, square only). Square pixel layout (`squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx`, …) is in `shared/domain/grid/squareGridOverlayGeometry.ts` and re-exported from `components/authoring/geometry/squareGridMapOverlayGeometry.ts`. **Renderer adapters** (non-canonical): `polylinePoint2DToSmoothSvgPath` and `pathEntriesToSvgPaths` in `components/authoring/geometry/pathOverlayRendering.ts` apply Catmull-Rom smoothing and SVG `d` strings only—do not add grid math there.
 
 **Authored base-map layer order (square editor and combat underlay should match intent):** cell fills / region tint → **paths** → **edges** → **authored object icons** (cell-anchored). The path/edge SVG overlay is stacked **below** the cell grid (`SquareMapAuthoringSvgOverlay` z-order under `GridEditor`) so object icons inside cells remain visible. Object display rules align with `deriveLocationMapAuthoredObjectRenderItems` / `LocationMapAuthoredObjectRenderItem` in `shared/domain` (see `locationMapAuthoredObjectRender.helpers.ts`).
 
@@ -36,7 +36,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 - **Authoring types:** `shared/domain/locations/map/locationMap.types.ts` (`LocationMapAuthoringContent`, path/edge/cell entry shapes).
 - **Normalization at boundaries:** `locationMapAuthoring.normalize.ts`.
 - **Derived geometry (pixels, polylines, segments):** `locationMapPathPolyline.helpers.ts`, `locationMapEdgeGeometry.helpers.ts`, `squareGridOverlayGeometry.ts` / `hexGridMapOverlayGeometry.ts` as appropriate.
-- **Feature SVG / smoothing:** `pathOverlayRendering.ts` and components such as `LocationGridAuthoringSection`.
+- **Feature SVG / smoothing:** `components/authoring/geometry/pathOverlayRendering.ts` and components such as `LocationGridAuthoringSection`.
 
 ### Location map styling
 
@@ -45,7 +45,7 @@ Presentation is split so hex/terrain colors, overlay rules, and grid chrome stay
 | Layer | Where | Role |
 |--------|--------|------|
 | **Primitives & map colors** | `src/app/theme/colorPrimitives.ts`, `mapColors.ts` | Hex scales; terrain swatches (`baseMapSwatchColors`); region preset colors (`baseMapRegionColors`). |
-| **Map UI tokens** | `domain/mapPresentation/locationMapUiStyles.ts` | Stroke widths, opacities, SVG/path/edge emphasis, region overlay placeholders; `resolveLocationMapUiStyles(theme)` for palette-dependent strokes. |
+| **Map UI tokens** | `domain/presentation/map/locationMapUiStyles.ts` | Stroke widths, opacities, SVG/path/edge emphasis, region overlay placeholders; `resolveLocationMapUiStyles(theme)` for palette-dependent strokes. |
 | **Grid cells** | `components/mapGrid/gridCellStyles.ts` | `gridCellPalette` (MUI paths for borders/backgrounds) and selected inset shadow — shared by `GridEditor` / `HexGridEditor`. |
 | **Cell hover / selection chrome (Select mode)** | `components/mapGrid/mapGridCellVisualState.ts` | Pure helpers `shouldApplyCellHoverChrome`, `isSelectHoverChromeSuppressed`, `shouldApplyCellSelectedChrome`; re-exported from `components/mapGrid/index.ts`. |
 
@@ -53,15 +53,15 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 
 ### Select mode: interactive targets and cell chrome
 
-**Unified resolver:** `domain/mapEditor/select-mode/resolveSelectModeInteractiveTarget.ts` is the single entry for **Select**-mode hover and click targeting. Priority: **DOM** hit on map object (`[data-map-object-id]`) → **DOM** hit on linked-location icon (`[data-map-linked-cell]`) → **square** edge geometry → **path** polyline → **draft interior** via `resolveSelectModeAfterPathEdgeHits`.
+**Unified resolver:** `domain/authoring/editor/selectMode/resolveSelectModeInteractiveTarget.ts` is the single entry for **Select**-mode hover and click targeting. Priority: **DOM** hit on map object (`[data-map-object-id]`) → **DOM** hit on linked-location icon (`[data-map-linked-cell]`) → **square** edge geometry → **path** polyline → **draft interior** via `resolveSelectModeAfterPathEdgeHits`.
 
 **Interior resolution** (`resolveSelectModeRegionOrCellSelection.ts` — `resolveSelectModeAfterPathEdgeHits`): after path/edge misses, **map objects → region assignment → linked location → bare cell**. Region is ordered **before** linked so that hovering the **cell interior** (not the link icon) treats the **region** as the primary target; that drives `selectHoverTarget` in `LocationGridAuthoringSection` and keeps cell-level hover chrome off unless the winner is actually **`cell`**. Direct pointer hits on the link icon still resolve to `{ type: 'cell' }` via the DOM branch first.
 
 **Region drill-in (click only):** `refineSelectModeClickAfterRegionDrill` — if the base resolver returns the **same** region as the current map selection, the next click becomes a **cell** selection. Not applied to hover.
 
-**Grid wiring:** `GridEditor` / `HexGridEditor` receive optional `selectHoverTarget` (`LocationMapSelection`) when the map editor is in **select** mode (`LocationGridAuthoringSection` passes it; other modes omit it so cells keep normal hover). **Square** grids: `handleSelectPointerMove` uses `resolveSquareCellIdFromGridLocalPx` in `shared/domain/grid/squareGridOverlayGeometry.ts` (re-exported from `squareGridMapOverlayGeometry.ts`) when `elementFromPoint` does not resolve a `[role="gridcell"]` (e.g. pointer in the inter-cell gap). **Hex** grids continue to use `resolveNearestHexCell` for that fallback.
+**Grid wiring:** `GridEditor` / `HexGridEditor` receive optional `selectHoverTarget` (`LocationMapSelection`) when the map editor is in **select** mode (`LocationGridAuthoringSection` passes it; other modes omit it so cells keep normal hover). **Square** grids: `handleSelectPointerMove` uses `resolveSquareCellIdFromGridLocalPx` in `shared/domain/grid/squareGridOverlayGeometry.ts` (re-exported from `components/authoring/geometry/squareGridMapOverlayGeometry.ts`) when `elementFromPoint` does not resolve a `[role="gridcell"]` (e.g. pointer in the inter-cell gap). **Hex** grids continue to use `resolveNearestHexCell` for that fallback.
 
-**Rendering note:** Grid cells use MUI `Box` with `component="button"`. When Select-mode hover is suppressed for a cell (region/path/object/edge winner), `GridEditor` applies **mirrored** `:hover` styles (same border/background as the idle state) so native `<button>` hover does not compete with the resolved target. Policy summary: `domain/mapEditor/select-mode/selectModeChrome.policy.ts` (`SELECT_MODE_CHROME_POLICY_DOC`).
+**Rendering note:** Grid cells use MUI `Box` with `component="button"`. When Select-mode hover is suppressed for a cell (region/path/object/edge winner), `GridEditor` applies **mirrored** `:hover` styles (same border/background as the idle state) so native `<button>` hover does not compete with the resolved target. Policy summary: `domain/authoring/editor/selectMode/selectModeChrome.policy.ts` (`SELECT_MODE_CHROME_POLICY_DOC`).
 
 **Gesture vs pan:** `useCanvasPan` exposes `consumeClickSuppressionAfterPan()` — after a pan drag past the threshold, the next **click** on the map is ignored (`LocationGridAuthoringSection`, `CombatGrid`) so canvas navigation does not commit selection/placement.
 
@@ -75,11 +75,13 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 |------|---------|
 | `src/features/content/locations/routes/` | Create and edit routes compose the workspace; `LocationEditRoute` uses `locationEdit/` hooks (`useLocationEditWorkspaceModel`, `useLocationMapHydration`, `useLocationEditSaveActions`) then branches to **`LocationEditHomebrewWorkspace`** vs `LocationEditSystemPatchWorkspace`. Detail views stay content-width. |
 | `components/workspace/` | Map-first editor shell — see below. |
-| `components/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. SVG layers: `mapGrid/mapAuthoring/SquareMapAuthoringSvgOverlay` (paths + edges + boundary-paint preview) and `HexMapAuthoringSvgOverlay` (paths + hex region outlines). Select-mode resolver input: `domain/mapEditor/select-mode/` (`buildSelectModeInteractiveTargetInput`, `resolveSelectModeInteractiveTarget`). |
+| `components/workspace/LocationGridAuthoringSection.tsx` | Interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` by geometry. SVG layers: `mapGrid/authoring/SquareMapAuthoringSvgOverlay` (paths + edges + boundary-paint preview) and `HexMapAuthoringSvgOverlay` (paths + hex region outlines). Select-mode resolver input: `domain/authoring/editor/selectMode/` (`buildSelectModeInteractiveTargetInput`, `resolveSelectModeInteractiveTarget`). |
 
 ---
 
 ## Workspace layout (`components/workspace/`)
+
+**Subfolders (ownership):** `header/`, `canvas/`, `leftTools/` (with `paint/` and `draw/` barrels), `rightRail/` with **`types/`**, **`selection/`**, **`adapters/`**, **`panels/`** (mode Map-rail panels + **cell inspector** `LocationCellAuthoringPanel`), **`linkedLocation/`** (linked-location placement modal), plus rail shell and tabs at `rightRail/` root. `rightRail/__tests__/` holds rail-local tests. `setup/` holds the location create setup dialog. Top-level workspace files include the edit shells, `LocationEditorWorkspace`, **`LocationGridAuthoringSection`** (workspace-level map authoring orchestrator), and `BuildingFloorStrip`. **Authoring helpers** live under **`components/authoring/draft/`** (grid draft types + persist/compare utilities) and **`components/authoring/geometry/`** (overlay geometry and path-rendering adapters). **`components/index.ts`** re-exports map toolbar and rail panels from **`workspace/leftTools`** and **`workspace/rightRail/...`**.
 
 The workspace is composed of feature-owned components:
 
@@ -95,7 +97,7 @@ The workspace is composed of feature-owned components:
 | `LocationEditorSelectionPanel` | Selection section dispatcher: cell / object / path / edge inspectors from authored map data; region remains a placeholder. |
 | `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
 | `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
-| `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`, `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (map toolbar), plus `LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX` and `LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX` when those tools are active. |
+| `locationEditorWorkspaceUiTokens` | Static layout pixels for the location editor shell (header height, right rail width, map toolbar, unified tool tray). Defined in **`domain/presentation/map/locationEditorWorkspaceUiTokens.ts`**; also re-exported from **`components/workspace/index.ts`** and **`components/index.ts`**. **`resolveLeftMapChromeWidthPx`** lives in the same module. |
 
 **Edit route composition:** `LocationEditRoute` loads the entry, then calls **`useLocationEditWorkspaceModel`** (`routes/locationEdit/useLocationEditWorkspaceModel.ts`) for form state, grid draft, map editor, palettes, canvas zoom/pan, and handlers. **Hydration** (`useLocationMapHydration`) wraps `hydrateDefaultLocationMapState` for non-building vs building-floor maps. **Save / patch / add floor** (`useLocationEditSaveActions`) centralizes **homebrew** submit (`handleHomebrewSubmit`), `useSystemPatchActions`, and floor creation. The route still builds `mapAuthoringPanel`, `selectionPanel`, and `mapCanvasColumn` JSX and passes them into **`LocationEditHomebrewWorkspace`** or `LocationEditSystemPatchWorkspace`.
 
@@ -114,7 +116,7 @@ The header **Save** button is driven by **`authoringContract.isDirty`** (homebre
 **Single source of truth:** **`buildHomebrewWorkspacePersistableParts`** (`routes/locationEdit/workspacePersistableSnapshot.ts`) builds the same **`locationInput`** (for `locationRepo.updateEntry`) and **`mapBootstrapPayload`** (for `bootstrapDefaultLocationMap`) that **`handleHomebrewSubmit`** uses. **`serializeLocationWorkspacePersistableSnapshot`** stringifies those parts for dirty comparison, so save and dirty cannot drift.
 
 - **Location slice:** `toLocationInput(form values)`, with building saves merging `buildingProfile` and **`stairConnections`** when `loc` is a campaign building.
-- **Map slice:** `buildPersistableMapPayloadFromGridDraft` in `locationGridDraft.utils.ts` — sorted `excludedCellIds`, wire-normalized authoring fields (`normalizeLocationMapAuthoringFields` / `normalizeRegionAuthoringEntry`), and **stable-sorted** `pathEntries` / `edgeEntries` / `regionEntries` by id. **`gridDraftPersistableEquals`** compares `stableStringify` of that same payload (no compare-vs-save drift).
+- **Map slice:** `buildPersistableMapPayloadFromGridDraft` in `authoring/draft/locationGridDraft.utils.ts` — sorted `excludedCellIds`, wire-normalized authoring fields (`normalizeLocationMapAuthoringFields` / `normalizeRegionAuthoringEntry`), and **stable-sorted** `pathEntries` / `edgeEntries` / `regionEntries` by id. **`gridDraftPersistableEquals`** compares `stableStringify` of that same payload (no compare-vs-save drift).
 
 The **baseline** string is set after successful map hydration and after a successful homebrew save. Until the first baseline is recorded, Save stays disabled (not dirty).
 
@@ -143,7 +145,7 @@ The **baseline** string is set after successful map hydration and after a succes
 
 **Future raw / whitespace-significant field:** Add an explicit `parse`/mapper path (identity or custom rules), set policy to **raw** or **custom** in `LOCATION_WORKSPACE_NORMALIZATION`, add a matrix row in `workspacePersistableSnapshot.test.ts`, and document the rule here. Until then, treat **region description** and **object labels** as **trimmed** at persistence boundaries (`normalizeRegionAuthoringEntry`, `cellDraftToCellEntries`).
 
-The three right-rail tabs (**Location**, **Map**, **Selection**) are not separate dirty stores: they all feed the shared form, `LocationGridDraftState`, and (for buildings) stair-connection state. **Map-only** UI such as toolbar mode, paint selection, and `mapSelection` is not part of the persistable snapshot (see `locationGridDraft.utils.ts`).
+The three right-rail tabs (**Location**, **Map**, **Selection**) are not separate dirty stores: they all feed the shared form, `LocationGridDraftState`, and (for buildings) stair-connection state. **Map-only** UI such as toolbar mode, paint selection, and `mapSelection` is not part of the persistable snapshot (see `authoring/draft/locationGridDraft.utils.ts`).
 
 ### Dirty vs saveable (homebrew header)
 
@@ -152,9 +154,9 @@ These are **separate** concepts:
 | Concept | Meaning |
 | ------- | ------- |
 | **Dirty** (`authoringContract.isDirty` in homebrew mode; alias **`isWorkspaceDirty`** on the model) | The persistable workspace snapshot differs from the last baseline — unsaved work. |
-| **Saveable** (`authoringContract.canSave`; **`homebrewWorkspaceCanSave`** on the model) | The same **gates** as [`handleHomebrewSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getHomebrewWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/homebrewWorkspaceSaveGate.ts) — e.g. **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/mapAuthoring/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
+| **Saveable** (`authoringContract.canSave`; **`homebrewWorkspaceCanSave`** on the model) | The same **gates** as [`handleHomebrewSubmit`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts) before persistence: see [`getHomebrewWorkspaceSaveBlockReason`](src/features/content/locations/routes/locationEdit/homebrewWorkspaceSaveGate.ts) — e.g. **building** locations need an **active floor**; [`validateGridBootstrap`](src/features/content/locations/domain/authoring/map/bootstrapDefaultLocationMap.ts) must pass for grid bootstrap fields. |
 
-The header **Save** button uses **`saveDisabled={!authoringContract.canSave}`** (via **`LocationEditRoute`**) in addition to the usual **not dirty** / **saving** rules. A draft can be **dirty** while **not** saveable (e.g. invalid grid columns); Save stays disabled until the block reason is cleared. When blocked, [`LocationEditorHeader`](src/features/content/locations/components/workspace/LocationEditorHeader.tsx) can show a **tooltip** (`saveDisabledReason` from **`authoringContract.saveBlockReason`**) explaining why.
+The header **Save** button uses **`saveDisabled={!authoringContract.canSave}`** (via **`LocationEditRoute`**) in addition to the usual **not dirty** / **saving** rules. A draft can be **dirty** while **not** saveable (e.g. invalid grid columns); Save stays disabled until the block reason is cleared. When blocked, [`LocationEditorHeader`](src/features/content/locations/components/workspace/header/LocationEditorHeader.tsx) can show a **tooltip** (`saveDisabledReason` from **`authoringContract.saveBlockReason`**) explaining why.
 
 ### Dirty state — system location patch
 
@@ -181,8 +183,8 @@ When you introduce new data that must be **saved** from this editor:
 
 1. **Homebrew snapshot + save** — Extend **`buildHomebrewWorkspacePersistableParts`** (and types such as `LocationFormValues` / `LocationGridDraftState` / building stairs as needed) so the snapshot includes the new field. **`handleHomebrewSubmit`** should follow automatically if it uses the shared builder.
 2. **Map-only fields** — Update the **full** map pipeline so dirty/save stay consistent:
-   - Normalization / wire shape: [`buildPersistableMapPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts) (built on [`normalizedAuthoringPayloadFromGridDraft`](src/features/content/locations/components/locationGridDraft.utils.ts)) and shared `normalizeLocationMapAuthoringFields` as applicable.
-   - Draft **comparison** (dirty): [`gridDraftPersistableEquals`](src/features/content/locations/components/locationGridDraft.utils.ts) — delegates to the same payload as save; must not diverge from the snapshot map slice.
+   - Normalization / wire shape: [`buildPersistableMapPayloadFromGridDraft`](src/features/content/locations/components/authoring/draft/locationGridDraft.utils.ts) (built on [`normalizedAuthoringPayloadFromGridDraft`](src/features/content/locations/components/authoring/draft/locationGridDraft.utils.ts)) and shared `normalizeLocationMapAuthoringFields` as applicable.
+   - Draft **comparison** (dirty): [`gridDraftPersistableEquals`](src/features/content/locations/components/authoring/draft/locationGridDraft.utils.ts) — delegates to the same payload as save; must not diverge from the snapshot map slice.
    - **System** map side: projections use **`mapWorkspacePersistableTokenFromGridDraft`** via [`locationWorkspaceAuthoringAdapters.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.ts); do **not** route system map dirty through the homebrew snapshot string (patch + grid baselines remain the system model).
 3. **Baselines** — Update **baseline** callers if the new state is **not** already covered by existing hydration/save paths: [`useLocationMapHydration.ts`](src/features/content/locations/routes/locationEdit/useLocationMapHydration.ts) (after load) and post-save baseline in [`useLocationEditSaveActions.ts`](src/features/content/locations/routes/locationEdit/useLocationEditSaveActions.ts).
 4. **Tests** — Add a **matrix** row or focused case in [`workspacePersistableSnapshot.test.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.test.ts) proving the snapshot changes when that field changes; for map changes, cross-mode parity is covered in [`locationWorkspaceAuthoringAdapters.test.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceAuthoringAdapters.test.ts).
@@ -210,8 +212,8 @@ Persistable authoring state for homebrew edit lives in **workspace-owned** struc
 
 **Concrete examples (current inspectors)**
 
-1. **Region metadata (Selection → region):** [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) uses RHF for field UX; **`onPatchRegion(regionId, patch)`** writes through [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/regionMetadataDraftAdapter.ts) into **`gridDraft.regionEntries`**. **Description** uses [`useDebouncedPersistableField`](src/ui/hooks/useDebouncedPersistableField.ts) for typing ergonomics, with **flush** on region change (`useLayoutEffect`), rail tab unmount, and via **`flushDebouncedPersistableFieldsRef`** before header Save (wrapped in **`flushSync`** in [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx) so `gridDraftRef` matches before submit). No separate “apply” step for persistable data.
-2. **Stair pairing / stair endpoint:** [`LocationMapSelectionInspectors.tsx`](src/features/content/locations/components/workspace/LocationMapSelectionInspectors.tsx) uses **`FormProvider` + `useForm`** for controlled fields and **`onAfterChange`** / **Link endpoints** to update **`gridDraft`** (e.g. `onUpdateCellObjects`). RHF handles inputs; **persistable** updates are immediate draft writes, not a nested HTML form submit to the workspace.
+1. **Region metadata (Selection → region):** [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/rightRail/selection/LocationMapRegionMetadataForm.tsx) uses RHF for field UX; **`onPatchRegion(regionId, patch)`** writes through [`regionMetadataDraftAdapter.ts`](src/features/content/locations/components/workspace/rightRail/adapters/regionMetadataDraftAdapter.ts) into **`gridDraft.regionEntries`**. **Description** uses [`useDebouncedPersistableField`](src/ui/hooks/useDebouncedPersistableField.ts) for typing ergonomics, with **flush** on region change (`useLayoutEffect`), rail tab unmount, and via **`flushDebouncedPersistableFieldsRef`** before header Save (wrapped in **`flushSync`** in [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx) so `gridDraftRef` matches before submit). No separate “apply” step for persistable data.
+2. **Stair pairing / stair endpoint:** [`LocationMapSelectionInspectors.tsx`](src/features/content/locations/components/workspace/rightRail/selection/LocationMapSelectionInspectors.tsx) uses **`FormProvider` + `useForm`** for controlled fields and **`onAfterChange`** / **Link endpoints** to update **`gridDraft`** (e.g. `onUpdateCellObjects`). RHF handles inputs; **persistable** updates are immediate draft writes, not a nested HTML form submit to the workspace.
 
 **Rails using RHF:** Nested `FormProvider` is fine for validation and controlled fields. The rule is that **persistable** values must not be gated on `handleSubmit` / panel Submit — they flow into **`gridDraft` / location form / stairs** through explicit callbacks or subscriptions.
 
@@ -220,7 +222,7 @@ Persistable authoring state for homebrew edit lives in **workspace-owned** struc
 Free-text fields may **debounce** writes into **`gridDraft`** so typing stays responsive. Any such field must **flush** the latest buffered value before destructive transitions (header **Save**, changing **region** selection, leaving the **Selection** tab, **unmount**), or the persistable snapshot can miss the last edit.
 
 - **Hook:** [`useDebouncedPersistableField`](src/ui/hooks/useDebouncedPersistableField.ts) — `flush()`, `cancelPendingTimer()`, debounced `onCommit`.
-- **Workspace registration:** [`useLocationEditWorkspaceModel`](src/features/content/locations/routes/locationEdit/useLocationEditWorkspaceModel.ts) exposes **`flushDebouncedPersistableFieldsRef`**; [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/LocationMapRegionMetadataForm.tsx) registers its **`flush`** when mounted (region selection).
+- **Workspace registration:** [`useLocationEditWorkspaceModel`](src/features/content/locations/routes/locationEdit/useLocationEditWorkspaceModel.ts) exposes **`flushDebouncedPersistableFieldsRef`**; [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/rightRail/selection/LocationMapRegionMetadataForm.tsx) registers its **`flush`** when mounted (region selection).
 - **Save:** [`LocationEditRoute.tsx`](src/features/content/locations/routes/LocationEditRoute.tsx) runs the registered flush inside **`flushSync`** before **`handleHomebrewFormSaveClick`** / **`handlePatchSave`** so **`gridDraftRef`** is up to date for the save pipeline.
 
 ### Contributor rules (workspace authoring)
@@ -253,15 +255,21 @@ Plan archive: `.cursor/plans/location-workspace/location_workspace_dirty_state_4
 
 When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEditRoute.tsx`; panels are wired from the route into the active workspace shell), the canvas column includes **map editor chrome** to the left of `LocationEditorCanvas`: a vertical toolbar and, depending on mode, a slim **paint** swatch column and/or **draw** kind column.
 
+### Object authoring UX modernization (roadmap)
+
+**Parent roadmap:** [.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md) (also indexed from [.cursor/plans/location-workspace/README.md](../../.cursor/plans/location-workspace/README.md)). Plans share the prefix `location_workspace_object_authoring_*`.
+
+The long-term direction is a **registry-driven** object authoring system: **toolbar palette** (with category/group presentation), explicit **loaded** placement state, **variants**, **edge placement** for doors/windows (and similar), and **rail-first** inspection/configuration after placement — without collapsing palette grouping into the persisted map model. Implementation is **phased** (palette foundation → variants → edge placement → config/editing); until those child plans land, behavior remains as documented below (`LocationMapEditorPlacePanel` in the Map rail, `getPlacePaletteItemsForScale`, etc.). That plan is **explicitly** scoped to object authoring UX and registry/placement boundaries; it does **not** subsume dirty/save work or a full shell redesign. **Phase 1 (palette foundation):** [.cursor/plans/location-workspace/location_workspace_object_authoring_phase1_palette_foundation.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_phase1_palette_foundation.plan.md). **Phase 2 (variants):** [.cursor/plans/location-workspace/location_workspace_object_authoring_phase2_variants.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_phase2_variants.plan.md). **Phase 3 (edge placement, placeholder):** [.cursor/plans/location-workspace/location_workspace_object_authoring_phase3_edge_placement.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_phase3_edge_placement.plan.md). **Phase 4 (config and editing, placeholder):** [.cursor/plans/location-workspace/location_workspace_object_authoring_phase4_config_editing.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_phase4_config_editing.plan.md).
+
 ### `LocationMapEditorToolbar`
 
 | | |
 |---|---|
-| **File** | `src/features/content/locations/components/mapEditor/LocationMapEditorToolbar.tsx` |
-| **Width** | `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (`locationEditor.constants.ts`) |
+| **File** | `src/features/content/locations/components/workspace/leftTools/LocationMapEditorToolbar.tsx` |
+| **Width** | `locationEditorWorkspaceUiTokens.mapToolbarWidthPx` |
 | **Control** | MUI vertical `ToggleButtonGroup` (exclusive), icon-only buttons |
 
-**Modes** (`LocationMapEditorMode` in `domain/mapEditor/types/locationMapEditor.types.ts`):
+**Modes** (`LocationMapEditorMode` in `domain/authoring/editor/types/locationMapEditor.types.ts`):
 
 | Mode | Purpose |
 |------|---------|
@@ -273,7 +281,7 @@ When the map grid is shown in create/edit (`showMapGridAuthoring` in `LocationEd
 
 **State hook:** `useLocationMapEditorState` holds `mode`, `activePaint`, `activePlace`, `activeDraw`, `pathAnchorCellId` (for **Draw → path**), and `pendingPlacement` for the linked-location modal. Leaving **place** clears place selection and pending placement; leaving **draw** clears draw selection and path anchor.
 
-**Layout:** `LocationEditRoute` sets `leftMapChromeWidthPx` to `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` plus paint and/or draw tray widths when those modes are active. Passed to `LocationGridAuthoringSection` as `leftChromeWidthPx`.
+**Layout:** `useLocationEditWorkspaceModel` sets `leftMapChromeWidthPx` via **`resolveLeftMapChromeWidthPx`**: whenever map editor chrome is on, it reserves **toolbar + unified tool tray** width in grid layout math so cell sizing does not reflow when switching modes or opening trays (trays overlay the canvas). Passed to `LocationGridAuthoringSection` as `leftChromeWidthPx`.
 
 ### Related components
 
@@ -300,9 +308,9 @@ Paths (roads, rivers) use a **cell-chain** interaction model that works on both 
 5. **Continue clicking** adjacent cells to grow the chain. The entire chain renders as one smooth Catmull-Rom spline.
 6. **End the chain** by pressing **Escape**, clicking the current anchor cell, or switching tools.
 
-**Smooth curve rendering:** all committed path segments plus the hover-cell preview are rendered as a single SVG `<path>` per chain using Catmull-Rom to cubic Bézier interpolation (`chainToSmoothSvgPath` in `pathOverlayRendering.ts`). The `pathSvgData` memo in `LocationGridAuthoringSection` extends the active chain with the hover cell so the preview is visually seamless with committed segments.
+**Smooth curve rendering:** all committed path segments plus the hover-cell preview are rendered as a single SVG `<path>` per chain using Catmull-Rom to cubic Bézier interpolation (`chainToSmoothSvgPath` in `authoring/geometry/pathOverlayRendering.ts`). The `pathSvgData` memo in `LocationGridAuthoringSection` extends the active chain with the hover cell so the preview is visually seamless with committed segments.
 
-**Hex click-gap handling:** hex cells use CSS `clip-path` for hexagonal shapes, which can leave narrow dead zones between cells. `resolveNearestHexCell` (in `hexGridMapOverlayGeometry.ts`) resolves pointer positions to the nearest hex center, used by both the fallback click handler and the hover resolver to ensure clicks and previews work even when the pointer lands between cells.
+**Hex click-gap handling:** hex cells use CSS `clip-path` for hexagonal shapes, which can leave narrow dead zones between cells. `resolveNearestHexCell` (in `authoring/geometry/hexGridMapOverlayGeometry.ts`) resolves pointer positions to the nearest hex center, used by both the fallback click handler and the hover resolver to ensure clicks and previews work even when the pointer lands between cells.
 
 **Adjacency:** consecutive cells in an authored path chain are geometry-aware. Both the client (`handleAuthoringCellClick` in **Draw** mode in `LocationEditRoute.tsx`, `pathSvgData` memo) and the server-side validation (`validatePathEntriesStructure` in `locationMapFeatures.validation.ts`) use `getNeighborPoints` from `shared/domain/grid/gridHelpers.ts`, which handles both square orthogonal neighbors and hex offset-column neighbors.
 
@@ -312,9 +320,9 @@ Paths (roads, rivers) use a **cell-chain** interaction model that works on both 
 
 | Module | Exports |
 |--------|---------|
-| `components/pathOverlayRendering.ts` | `pathEntriesToSvgPaths` (path chains → SVG `d` strings), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier) |
-| `components/hexGridMapOverlayGeometry.ts` | `hexCellCenterPx`, `hexOverlayDimensions`, `resolveNearestHexCell` |
-| `components/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx` (grid-local point → cell id; gaps return null) |
+| `components/authoring/geometry/pathOverlayRendering.ts` | `pathEntriesToSvgPaths` (path chains → SVG `d` strings), `chainToSmoothSvgPath` (Catmull-Rom to cubic Bézier) |
+| `components/authoring/geometry/hexGridMapOverlayGeometry.ts` | `hexCellCenterPx`, `hexOverlayDimensions`, `resolveNearestHexCell` |
+| `components/authoring/geometry/squareGridMapOverlayGeometry.ts` | `squareCellCenterPx`, `squareEdgeSegmentPxFromEdgeId`, `resolveSquareCellIdFromGridLocalPx` (grid-local point → cell id; gaps return null) |
 | `shared/domain/grid/gridHelpers.ts` | `getNeighborPoints` (geometry-aware: square + hex offset-column) |
 | `shared/domain/locations/map/locationMapFeatures.validation.ts` | `validatePathEntriesStructure` (accepts `geometry` param) |
 | `shared/domain/locations/map/locationMapPathAuthoring.helpers.ts` | `removePathChainSegment` (erase one step along a chain) |
@@ -339,10 +347,10 @@ Edges (walls, windows, doors) use a **boundary-paint** interaction model on **sq
 
 | Module | Exports |
 |--------|---------|
-| `domain/mapEditor/edge/edgeAuthoring.ts` | `resolveNearestCellEdgeSide`, `resolveEdgeTargetFromGridPosition`, `applyEdgeStrokeToDraft` (replace/no-op rules), `shouldAcceptStrokeEdge` (axis lock + collinearity + adjacency), `areEdgesAdjacent`, `getSquareEdgeOrientation`, types `ResolvedEdgeTarget`, `EdgeOrientation` |
-| `squareGridMapOverlayGeometry.ts` | `squareEdgeSegmentPxFromEdgeId` for rendering committed and preview edges |
-| `domain/mapEditor/erase/resolveEraseTarget.ts` | `resolveEraseTargetAtCell` (priority stack); `resolveEraseEdgeByEdgeId` for precise edge-only erase |
-| `LocationGridAuthoringSection` | Composes **`useSquareEdgeBoundaryPaint`** (`mapGrid/mapAuthoring/useSquareEdgeBoundaryPaint.ts`) for capture-phase edge place/erase + stroke state; **`SquareMapAuthoringSvgOverlay`** for preview and committed segments |
+| `domain/authoring/editor/edge/edgeAuthoring.ts` | `resolveNearestCellEdgeSide`, `resolveEdgeTargetFromGridPosition`, `applyEdgeStrokeToDraft` (replace/no-op rules), `shouldAcceptStrokeEdge` (axis lock + collinearity + adjacency), `areEdgesAdjacent`, `getSquareEdgeOrientation`, types `ResolvedEdgeTarget`, `EdgeOrientation` |
+| `authoring/geometry/squareGridMapOverlayGeometry.ts` | `squareEdgeSegmentPxFromEdgeId` for rendering committed and preview edges |
+| `domain/authoring/editor/erase/resolveEraseTarget.ts` | `resolveEraseTargetAtCell` (priority stack); `resolveEraseEdgeByEdgeId` for precise edge-only erase |
+| `LocationGridAuthoringSection` | Composes **`useSquareEdgeBoundaryPaint`** (`mapGrid/authoring/useSquareEdgeBoundaryPaint.ts`) for capture-phase edge place/erase + stroke state; **`SquareMapAuthoringSvgOverlay`** for preview and committed segments |
 
 **Stroke constraint rules (`shouldAcceptStrokeEdge`):**
 1. **Axis lock** — the initial click locks the axis (horizontal or vertical). Subsequent edges must match unless Shift is held.
@@ -458,13 +466,13 @@ Both hooks are used at the route level; derived values are passed down to canvas
 
 ## Pointers for the next agent (workspace)
 
-1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
+1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Layout pixel tokens: **`locationEditorWorkspaceUiTokens`** in `domain/presentation/map/locationEditorWorkspaceUiTokens.ts` (re-exported from the locations `components` barrel). Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
-4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.
-5. **Edge authoring:** edge logic lives under `domain/mapEditor/edge/` with tests in `domain/mapEditor/__tests__/edge/`; grid wiring uses `useSquareEdgeBoundaryPaint` in `LocationGridAuthoringSection.tsx`. Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
+4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `authoring/geometry/pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `authoring/geometry/hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `authoring/geometry/__tests__/pathOverlayRendering.test.ts` and `authoring/geometry/__tests__/hexGridMapOverlayGeometry.test.ts`.
+5. **Edge authoring:** edge logic lives under `domain/authoring/editor/edge/` with tests in `domain/authoring/editor/__tests__/edge/`; grid wiring uses `useSquareEdgeBoundaryPaint` in [`LocationGridAuthoringSection.tsx`](src/features/content/locations/components/workspace/LocationGridAuthoringSection.tsx). Before changing behavior, read **Edge authoring** and **Open issues** above (hex edge gap).
 6. **Path preview performance:** deferred unless profiling or user pain justifies work — see **Open issues §3** and **Performance — workspace snapshot** (path preview called out as out-of-scope there).
-7. **Select mode / region hover:** resolver and grid chrome live under `domain/mapEditor/select-mode/` (`resolveSelectModeInteractiveTarget`, `buildSelectModeInteractiveTargetInput`, `resolveSelectModeRegionOrCellSelection`, `refineSelectModeClickAfterRegionDrill`, `locationMapSelectionHitTest`) plus `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
+7. **Select mode / region hover:** resolver and grid chrome live under `domain/authoring/editor/selectMode/` (`resolveSelectModeInteractiveTarget`, `buildSelectModeInteractiveTargetInput`, `resolveSelectModeRegionOrCellSelection`, `refineSelectModeClickAfterRegionDrill`, `locationMapSelectionHitTest`) plus `mapGridCellVisualState.ts`. See **Location map styling → Select mode** and **Open issues §4** before changing hover behavior.
 8. **Persistable dirty snapshot:** when adding new state that is **saved** from this editor but not part of `LocationFormValues` or `gridDraft` (e.g. parallel `useState` merged in `handleHomebrewSubmit`), extend **`buildHomebrewWorkspacePersistableParts`** (shared by save + **`serializeLocationWorkspacePersistableSnapshot`**) and baseline updates in **`useLocationMapHydration`** / **`useLocationEditSaveActions`**. Tests: `workspacePersistableSnapshot.test.ts`.
 9. **System location edit:** dirty uses **`isSystemLocationWorkspaceDirty`** (`patchDriver.isDirty()` OR **`isGridDraftDirty`**), not the homebrew snapshot — see **Dirty state — system location patch** above. Tests: `systemLocationWorkspaceDirty.test.ts`.
 10. **State ownership:** persistable rail edits must live in **`gridDraft` / location form / stairs** (see **State ownership (authoring standard)**). Plan: `.cursor/plans/location-workspace/location_workspace_dirty_state_4d54eedc.plan.md`.
@@ -472,5 +480,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 12. **Debounced persistable fields:** use **`useDebouncedPersistableField`** + **`flushDebouncedPersistableFieldsRef`** + **`flushSync`** before save as in region metadata; see **Debounced persistable fields** above. Plan: `.cursor/plans/location-workspace/location_workspace_debounced_persistable_flush.plan.md`.
 13. **Persistable slice participation:** shared map assembly in **`buildMapWorkspacePersistablePayloadFromGridDraft`** / **`mapWorkspacePersistableTokenFromGridDraft`** ([`workspacePersistableSnapshot.ts`](src/features/content/locations/routes/locationEdit/workspacePersistableSnapshot.ts)); system adapters consume the same map token. See **Adding persisted workspace state** and plan: `.cursor/plans/location-workspace/location_workspace_persistable_slice_participation.plan.md`.
 14. **Normalization policy (dirty vs save):** **Normalization policy (dirty vs save)** section above; `LOCATION_WORKSPACE_NORMALIZATION` in [`locationWorkspaceNormalizationPolicy.ts`](src/features/content/locations/routes/locationEdit/locationWorkspaceNormalizationPolicy.ts). Plan archive: [.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md](.cursor/plans/location-workspace/location_workspace_normalization_policy.plan.md).
+15. **Object authoring roadmap** (`location_workspace_object_authoring_*`): parent [.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md](../../.cursor/plans/location-workspace/location_workspace_object_authoring_roadmap.plan.md); Phase 1–4 child plans in [.cursor/plans/location-workspace/](../../.cursor/plans/location-workspace/). Registry vs placement vs persistence vs UI layers; coordinate with **Map editor toolbar** above; do not mix in dirty/save scope unless a child plan explicitly includes it.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [locations.md](./locations.md) (section *Pointers for the next agent*).

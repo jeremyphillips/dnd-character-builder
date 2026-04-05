@@ -7,8 +7,8 @@ import {
   listLocationMaps,
   type LocationFormValues,
 } from '@/features/content/locations/domain';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
-import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import { normalizeLocationMapAuthoringFields } from '@/shared/domain/locations';
 import type { LocationScaleId } from '@/shared/domain/locations';
 

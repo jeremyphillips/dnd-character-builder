@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Box from '@mui/material/Box'
-import { LOCATION_EDITOR_HEADER_HEIGHT_PX } from './locationEditor.constants'
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens'
 
 type LocationEditorWorkspaceProps = {
   header: ReactNode
@@ -19,7 +19,7 @@ export function LocationEditorWorkspace({
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
-        height: `calc(100vh - ${LOCATION_EDITOR_HEADER_HEIGHT_PX}px)`,
+        height: `calc(100vh - ${locationEditorWorkspaceUiTokens.headerHeightPx}px)`,
       }}
     >
       {header}
@@ -29,7 +29,7 @@ export function LocationEditorWorkspace({
           flex: 1,
           overflow: 'hidden',
           height: '100%',
-          minHeight: `calc(100vh - ${LOCATION_EDITOR_HEADER_HEIGHT_PX}px)`,
+          minHeight: `calc(100vh - ${locationEditorWorkspaceUiTokens.headerHeightPx}px)`,
         }}
       >
         {canvas}

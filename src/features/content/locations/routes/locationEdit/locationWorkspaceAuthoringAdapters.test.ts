@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { stableStringify } from '@/features/content/locations/components/locationGridDraft.utils';
-import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/locationGridDraft.types';
+import { stableStringify } from '@/features/content/locations/components/authoring/draft/locationGridDraft.utils';
+import { INITIAL_LOCATION_GRID_DRAFT } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import { LOCATION_FORM_DEFAULTS } from '@/features/content/locations/domain';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 

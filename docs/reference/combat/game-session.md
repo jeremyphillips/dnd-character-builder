@@ -65,3 +65,4 @@ Finer-grained UX (e.g. 409 retry polish, server-side catalog injection) may stil
 - Persisted combat client API: `src/features/combat/api/combatSessionApi.ts`
 - Combat architecture (layers): [architecture.md](./architecture.md)
 - Where code belongs: [ownership-boundaries.md](./ownership-boundaries.md)
+- Presentation perception / grid POV policy (session vs simulator): [client/perception-pov.md](./client/perception-pov.md)

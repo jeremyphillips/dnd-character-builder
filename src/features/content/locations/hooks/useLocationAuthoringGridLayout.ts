@@ -1,11 +1,8 @@
 import { useCallback, useMemo } from 'react';
 
-import {
-  LOCATION_EDITOR_HEADER_HEIGHT_PX,
-  LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX,
-} from '@/features/content/locations/components/workspace/locationEditor.constants';
-import { hexCellCenterPx, hexOverlayDimensions } from '@/features/content/locations/components/hexGridMapOverlayGeometry';
-import { squareCellCenterPx, SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/squareGridMapOverlayGeometry';
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens';
+import { hexCellCenterPx, hexOverlayDimensions } from '@/features/content/locations/components/authoring/geometry/hexGridMapOverlayGeometry';
+import { squareCellCenterPx, SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
 
 const GRID_GAP_PX = SQUARE_GRID_GAP_PX;
 const MIN_CELL_PX = 24;
@@ -22,10 +19,10 @@ export function useLocationAuthoringGridLayout(
     if (!validPreview) return { width: 0, hexCellPx: 0 };
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const canvasH = vh - LOCATION_EDITOR_HEADER_HEIGHT_PX - CANVAS_INSET_PX * 2;
+    const canvasH = vh - locationEditorWorkspaceUiTokens.headerHeightPx - CANVAS_INSET_PX * 2;
     const canvasW =
       vw -
-      LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX -
+      locationEditorWorkspaceUiTokens.rightRailWidthPx -
       CANVAS_INSET_PX * 2 -
       leftChromeWidthPx;
 

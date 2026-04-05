@@ -5,17 +5,17 @@ import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 
 import { getLocationScaleMapIcon } from '@/features/content/locations/domain';
-import { PlacedObjectCellVisualDisplay } from '@/features/content/locations/domain/mapPresentation/PlacedObjectCellVisualDisplay';
-import { resolvePlacedObjectCellVisualFromRenderItem } from '@/features/content/locations/domain/mapPresentation/resolvePlacedObjectCellVisual';
-import type { LocationMapUiResolvedStyles } from '@/features/content/locations/domain/mapPresentation/locationMapUiStyles';
-import type { Location } from '@/features/content/locations/domain/types';
+import { PlacedObjectCellVisualDisplay } from '@/features/content/locations/domain/presentation/map/PlacedObjectCellVisualDisplay';
+import { resolvePlacedObjectCellVisualFromRenderItem } from '@/features/content/locations/domain/presentation/map/resolvePlacedObjectCellVisual';
+import type { LocationMapUiResolvedStyles } from '@/features/content/locations/domain/presentation/map/locationMapUiStyles';
+import type { Location } from '@/features/content/locations/domain/model/location';
 import { mapCellObjectEntryToAuthoredRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.helpers';
 import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { getMapRegionColor } from '@/app/theme/mapColors';
 
 import type { GridCell } from './GridEditor';
-import type { LocationGridDraftState } from '@/features/content/locations/components/locationGridDraft.types';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/locationEditorRail.types';
+import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
 /**
  * Per-cell overlay for region tint, linked-location icon, and authored object icons.

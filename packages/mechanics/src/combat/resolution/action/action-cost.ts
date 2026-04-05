@@ -5,18 +5,22 @@ import {
   type CombatantTurnResources,
 } from '../../state'
 
+/** Persisted or adapter-built actions may omit `cost`; treat as no action-economy spend. */
+const EMPTY_COST: CombatActionCost = {}
+
 export function spendActionCost(
   resources: CombatantTurnResources,
-  cost: CombatActionCost,
+  cost: CombatActionCost | undefined,
 ): CombatantTurnResources {
+  const c = cost ?? EMPTY_COST
   return {
     ...resources,
-    actionAvailable: cost.action ? false : resources.actionAvailable,
-    bonusActionAvailable: cost.bonusAction ? false : resources.bonusActionAvailable,
-    reactionAvailable: cost.reaction ? false : resources.reactionAvailable,
+    actionAvailable: c.action ? false : resources.actionAvailable,
+    bonusActionAvailable: c.bonusAction ? false : resources.bonusActionAvailable,
+    reactionAvailable: c.reaction ? false : resources.reactionAvailable,
     movementRemaining:
-      cost.movementFeet != null
-        ? Math.max(0, resources.movementRemaining - cost.movementFeet)
+      c.movementFeet != null
+        ? Math.max(0, resources.movementRemaining - c.movementFeet)
         : resources.movementRemaining,
   }
 }
@@ -27,12 +31,13 @@ export function getCombatantTurnResources(combatant: CombatantInstance): Combata
 
 export function canSpendActionCost(
   resources: CombatantTurnResources,
-  cost: CombatActionCost,
+  cost: CombatActionCost | undefined,
 ): boolean {
-  if (cost.action && !resources.actionAvailable) return false
-  if (cost.bonusAction && !resources.bonusActionAvailable) return false
-  if (cost.reaction && !resources.reactionAvailable) return false
-  if (cost.movementFeet != null && resources.movementRemaining < cost.movementFeet) return false
+  const c = cost ?? EMPTY_COST
+  if (c.action && !resources.actionAvailable) return false
+  if (c.bonusAction && !resources.bonusActionAvailable) return false
+  if (c.reaction && !resources.reactionAvailable) return false
+  if (c.movementFeet != null && resources.movementRemaining < c.movementFeet) return false
   return true
 }
 

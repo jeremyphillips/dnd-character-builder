@@ -9,15 +9,17 @@ import type { LocationFormValues } from '@/features/content/locations/domain';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
 import { ConditionalFormRenderer, ConfirmModal } from '@/ui/patterns';
 import type { FieldConfig } from '@/ui/patterns/form/form.types';
-import type { LocationMapEditorLinkedLocationModalProps } from '@/features/content/locations/components/mapEditor/LocationMapEditorLinkedLocationModal';
-import { LocationMapEditorLinkedLocationModal } from '@/features/content/locations/components/mapEditor/LocationMapEditorLinkedLocationModal';
+import {
+  LocationMapEditorLinkedLocationModal,
+  type LocationMapEditorLinkedLocationModalProps,
+} from './rightRail/linkedLocation';
 
 import type { BuildingFloorStripProps } from './BuildingFloorStrip';
 import { BuildingFloorStrip } from './BuildingFloorStrip';
-import type { LocationEditorRailSection } from './locationEditorRail.types';
-import { LocationEditorHeader } from './LocationEditorHeader';
-import { LocationEditorRailSectionTabs } from './LocationEditorRailSectionTabs';
-import { LocationEditorRightRail } from './LocationEditorRightRail';
+import type { LocationEditorRailSection } from './rightRail/types';
+import { LocationEditorHeader } from './header/LocationEditorHeader';
+import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
+import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';
 import { LocationEditorWorkspace } from './LocationEditorWorkspace';
 
 export type LocationEditHomebrewWorkspaceProps = {

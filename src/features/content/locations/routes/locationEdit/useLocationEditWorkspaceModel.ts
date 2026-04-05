@@ -62,13 +62,14 @@ import {
   LOCATION_MAP_DEFAULT_REGION_NAME,
   LOCATION_MAP_REGION_COLOR_KEYS,
 } from '@/shared/domain/locations/map/locationMapRegion.constants';
-import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
+import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
+import { resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens';
 import {
   applyEdgeStrokeToDraft,
   type LocationMapEditorMode,
   type LocationMapPaintState,
-} from '@/features/content/locations/domain/mapEditor';
-import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/mapContent/locationEdgeFeature.types';
+} from '@/features/content/locations/domain/authoring/editor';
+import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
@@ -78,15 +79,12 @@ import {
   selectedCellIdForMapSelection,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
-  LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
   type LocationCellObjectDraft,
   type LocationGridDraftState,
   type LocationEditorRailSection,
 } from '@/features/content/locations/components';
 
-import { patchFloorStairConnectionIdOnDefaultMap } from '@/features/content/locations/domain/building/patchFloorStairConnectionMap';
+import { patchFloorStairConnectionIdOnDefaultMap } from '@/features/content/locations/domain/model/building/patchFloorStairConnectionMap';
 
 import { useLocationMapHydration } from './useLocationMapHydration';
 import { useLocationEditSaveActions } from './useLocationEditSaveActions';
@@ -676,11 +674,10 @@ export function useLocationEditWorkspaceModel({
 
   const showMapEditorChrome = showMapGridAuthoring;
 
-  const leftMapChromeWidthPx = showMapEditorChrome
-    ? LOCATION_EDITOR_TOOLBAR_WIDTH_PX +
-      (mapEditor.mode === 'paint' ? LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX : 0) +
-      (mapEditor.mode === 'draw' ? LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX : 0)
-    : 0;
+  const leftMapChromeWidthPx = useMemo(
+    () => resolveLeftMapChromeWidthPx({ showMapEditorChrome }),
+    [showMapEditorChrome],
+  );
 
   const { policyValue, handlePolicyChange } = useAccessPolicyField<LocationFormValues>(watch, setValue);
 

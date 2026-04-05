@@ -148,5 +148,14 @@ export { SIMULATOR_ENCOUNTER_SETUP_POLICY } from './setup'
 
 export { resolveViewerSceneEncounterState } from './resolveViewerSceneEncounterState'
 export { buildPresentationEncounterStateForFocusedSpace } from './buildPresentationEncounterStateForFocusedSpace'
+export {
+  buildEncounterPresentationGridPerceptionInputArgs,
+  sessionEncounterPresentationSimulatorViewerMode,
+} from './buildEncounterPresentationGridPerceptionInputArgs'
+export type {
+  BuildEncounterPresentationGridPerceptionInputArgsOptions,
+  BuildEncounterPresentationGridPerceptionInputArgsSession,
+  BuildEncounterPresentationGridPerceptionInputArgsSimulator,
+} from './buildEncounterPresentationGridPerceptionInputArgs'
 export type { SceneFocus, SceneFocusFollowPolicy } from './sceneFocus.types'
 export type { SceneViewerFollowMode } from './sceneViewer.types'

@@ -37,9 +37,9 @@ export function CombatActionPreviewCard({
   }
 
   const costParts: string[] = []
-  if (action.cost.action) costParts.push('Action')
-  if (action.cost.bonusAction) costParts.push('Bonus Action')
-  if (action.cost.reaction) costParts.push('Reaction')
+  if (action.cost?.action) costParts.push('Action')
+  if (action.cost?.bonusAction) costParts.push('Bonus Action')
+  if (action.cost?.reaction) costParts.push('Reaction')
 
   const badges = deriveCombatActionBadges(action)
   const targetingLabel = action.targeting

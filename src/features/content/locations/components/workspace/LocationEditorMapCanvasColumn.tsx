@@ -16,6 +16,7 @@ import { LocationEditorCanvas } from './LocationEditorCanvas';
 import {
   LocationMapEditorDrawTray,
   LocationMapEditorPaintTray,
+  LocationMapEditorToolTrayShell,
   LocationMapEditorToolbar,
 } from '@/features/content/locations/components/mapEditor';
 
@@ -40,6 +41,7 @@ export type LocationEditorMapCanvasColumnProps = {
 
 /**
  * Shared map toolbar + optional paint/draw trays + zoom/pan canvas column for location edit routes.
+ * Left tool chrome overlays the map column so opening trays does not shift the canvas layout.
  */
 export function LocationEditorMapCanvasColumn({
   showMapEditorChrome,
@@ -59,6 +61,9 @@ export function LocationEditorMapCanvasColumn({
   zoomControlProps,
   children,
 }: LocationEditorMapCanvasColumnProps) {
+  const showPaintTray = mode === 'paint' && activePaint && paintPaletteItems.length > 0;
+  const showDrawTray = mode === 'draw' && drawPaletteItems.length > 0;
+
   return (
     <Box
       sx={{
@@ -71,23 +76,41 @@ export function LocationEditorMapCanvasColumn({
       }}
     >
       {showMapEditorChrome && (
-        <>
-          <LocationMapEditorToolbar mode={mode} onModeChange={onModeChange} />
-          {mode === 'paint' && activePaint && (
-            <LocationMapEditorPaintTray
-              items={paintPaletteItems}
-              activePaint={activePaint}
-              onPaintChange={onPaintChange}
-            />
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 2,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            pointerEvents: 'none',
+          }}
+        >
+          <Box sx={{ pointerEvents: 'auto', height: '100%' }}>
+            <LocationMapEditorToolbar mode={mode} onModeChange={onModeChange} />
+          </Box>
+          {showPaintTray && (
+            <LocationMapEditorToolTrayShell>
+              <LocationMapEditorPaintTray
+                items={paintPaletteItems}
+                activePaint={activePaint}
+                onPaintChange={onPaintChange}
+              />
+            </LocationMapEditorToolTrayShell>
           )}
-          {mode === 'draw' && (
-            <LocationMapEditorDrawTray
-              items={drawPaletteItems}
-              activeDraw={activeDraw}
-              onSelectDraw={onSelectDraw}
-            />
+          {showDrawTray && (
+            <LocationMapEditorToolTrayShell>
+              <LocationMapEditorDrawTray
+                items={drawPaletteItems}
+                activeDraw={activeDraw}
+                onSelectDraw={onSelectDraw}
+              />
+            </LocationMapEditorToolTrayShell>
           )}
-        </>
+        </Box>
       )}
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
         <LocationEditorCanvas

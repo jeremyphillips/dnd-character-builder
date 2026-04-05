@@ -10,7 +10,7 @@ import DrawIcon from '@mui/icons-material/Draw';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 import type { LocationMapEditorMode } from '@/features/content/locations/domain/mapEditor';
-import { LOCATION_EDITOR_TOOLBAR_WIDTH_PX } from '@/features/content/locations/components/workspace/locationEditor.constants';
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens';
 
 type LocationMapEditorToolbarProps = {
   mode: LocationMapEditorMode;
@@ -33,7 +33,7 @@ export function LocationMapEditorToolbar({ mode, onModeChange }: LocationMapEdit
   return (
     <Box
       sx={{
-        width: LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
+        width: locationEditorWorkspaceUiTokens.mapToolbarWidthPx,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',

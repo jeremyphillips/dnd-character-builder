@@ -1,4 +1,5 @@
 export { LocationMapEditorToolbar } from './LocationMapEditorToolbar';
+export { LocationMapEditorToolTrayShell } from './LocationMapEditorToolTrayShell';
 export { LocationMapEditorPaintTray } from './LocationMapEditorPaintTray';
 export { LocationMapEditorPaintMapPanel } from './LocationMapEditorPaintMapPanel';
 export { RegionPaintActiveRegionSelect } from './RegionPaintActiveRegionSelect';

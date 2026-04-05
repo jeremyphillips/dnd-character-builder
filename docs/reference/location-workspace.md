@@ -95,7 +95,7 @@ The workspace is composed of feature-owned components:
 | `LocationEditorSelectionPanel` | Selection section dispatcher: cell / object / path / edge inspectors from authored map data; region remains a placeholder. |
 | `LocationAncestryBreadcrumbs` | Builds a breadcrumb trail from `parentId` chain; used in the header. |
 | `BuildingFloorStrip` | **Building edit only:** floor tabs + add-floor control above the canvas (see **Building scale** below). |
-| `locationEditor.constants.ts` | Shared pixel constants: `LOCATION_EDITOR_HEADER_HEIGHT_PX`, `LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX`, `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (map toolbar), plus `LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX` and `LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX` when those tools are active. |
+| `locationEditor.constants.ts` | Re-exports layout values from **`locationEditorWorkspaceUiTokens`** (`domain/mapPresentation/locationEditorWorkspaceUiTokens.ts`). Legacy names `LOCATION_EDITOR_*` remain for callers; paint/draw trays share **`mapToolTrayWidthPx`**. |
 
 **Edit route composition:** `LocationEditRoute` loads the entry, then calls **`useLocationEditWorkspaceModel`** (`routes/locationEdit/useLocationEditWorkspaceModel.ts`) for form state, grid draft, map editor, palettes, canvas zoom/pan, and handlers. **Hydration** (`useLocationMapHydration`) wraps `hydrateDefaultLocationMapState` for non-building vs building-floor maps. **Save / patch / add floor** (`useLocationEditSaveActions`) centralizes **homebrew** submit (`handleHomebrewSubmit`), `useSystemPatchActions`, and floor creation. The route still builds `mapAuthoringPanel`, `selectionPanel`, and `mapCanvasColumn` JSX and passes them into **`LocationEditHomebrewWorkspace`** or `LocationEditSystemPatchWorkspace`.
 
@@ -264,7 +264,7 @@ The long-term direction is a **registry-driven** object authoring system: **tool
 | | |
 |---|---|
 | **File** | `src/features/content/locations/components/mapEditor/LocationMapEditorToolbar.tsx` |
-| **Width** | `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` (`locationEditor.constants.ts`) |
+| **Width** | `locationEditorWorkspaceUiTokens.mapToolbarWidthPx` (see `locationEditor.constants.ts` re-export) |
 | **Control** | MUI vertical `ToggleButtonGroup` (exclusive), icon-only buttons |
 
 **Modes** (`LocationMapEditorMode` in `domain/mapEditor/types/locationMapEditor.types.ts`):
@@ -279,7 +279,7 @@ The long-term direction is a **registry-driven** object authoring system: **tool
 
 **State hook:** `useLocationMapEditorState` holds `mode`, `activePaint`, `activePlace`, `activeDraw`, `pathAnchorCellId` (for **Draw → path**), and `pendingPlacement` for the linked-location modal. Leaving **place** clears place selection and pending placement; leaving **draw** clears draw selection and path anchor.
 
-**Layout:** `LocationEditRoute` sets `leftMapChromeWidthPx` to `LOCATION_EDITOR_TOOLBAR_WIDTH_PX` plus paint and/or draw tray widths when those modes are active. Passed to `LocationGridAuthoringSection` as `leftChromeWidthPx`.
+**Layout:** `useLocationEditWorkspaceModel` sets `leftMapChromeWidthPx` via **`resolveLeftMapChromeWidthPx`**: whenever map editor chrome is on, it reserves **toolbar + unified tool tray** width in grid layout math so cell sizing does not reflow when switching modes or opening trays (trays overlay the canvas). Passed to `LocationGridAuthoringSection` as `leftChromeWidthPx`.
 
 ### Related components
 
@@ -464,7 +464,7 @@ Both hooks are used at the route level; derived values are passed down to canvas
 
 ## Pointers for the next agent (workspace)
 
-1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Constants in `locationEditor.constants.ts`. Do not add workspace layout logic to the generic content template system.
+1. **Workspace layout changes:** modify components under `components/workspace/`; entry shells are **`LocationEditHomebrewWorkspace`** and `LocationEditSystemPatchWorkspace` (both wrap `LocationEditorWorkspace`). Layout pixel tokens: **`locationEditorWorkspaceUiTokens`** in `domain/mapPresentation/` (re-exported from `locationEditor.constants.ts`). Do not add workspace layout logic to the generic content template system.
 2. **Zoom/pan enhancements:** extend `useCanvasZoom` / `useCanvasPan` in `src/ui/hooks/`; both location and encounter features consume them. `ZoomControl` supports `positioning` prop (`'fixed'` default, `'absolute'` for container-relative).
 3. **Focus-mode routes:** add new full-width routes by extending the regex in `src/app/layouts/auth/auth-main-path.ts`.
 4. **Path authoring:** persisted model is `pathEntries` on `LocationMap` (ordered `cellIds` per chain). Chain-building UX lives in `LocationEditRoute.tsx` (`handleAuthoringCellClick` in **Draw** mode); smooth curve rendering in `pathOverlayRendering.ts` (`pathEntriesToSvgPaths`); hex geometry helpers in `hexGridMapOverlayGeometry.ts`. The `pathSvgData` memo in `LocationGridAuthoringSection` unifies committed and preview curves. Tests in `pathOverlayRendering.test.ts` and `hexGridMapOverlayGeometry.test.ts`.

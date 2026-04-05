@@ -1,8 +1,13 @@
-export const LOCATION_EDITOR_HEADER_HEIGHT_PX = 64;
-export const LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX = 380;
-/** Vertical map editor toolbar (select / paint / place / draw / erase). */
-export const LOCATION_EDITOR_TOOLBAR_WIDTH_PX = 50;
-/** Paint tray: Surface / Region toggle + swatches (approximate layout width). */
-export const LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX = 110;
-/** Kind column next to toolbar when Draw mode is active (matches legacy paint tray width). */
-export const LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX = 52;
+import { locationEditorWorkspaceUiTokens } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens';
+
+export { locationEditorWorkspaceUiTokens, resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens';
+
+const t = locationEditorWorkspaceUiTokens;
+
+export const LOCATION_EDITOR_HEADER_HEIGHT_PX = t.headerHeightPx;
+export const LOCATION_EDITOR_RIGHT_RAIL_WIDTH_PX = t.rightRailWidthPx;
+export const LOCATION_EDITOR_TOOLBAR_WIDTH_PX = t.mapToolbarWidthPx;
+/** @deprecated Prefer `locationEditorWorkspaceUiTokens.mapToolTrayWidthPx` — paint and draw share one tray width. */
+export const LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX = t.mapToolTrayWidthPx;
+/** @deprecated Prefer `locationEditorWorkspaceUiTokens.mapToolTrayWidthPx`. */
+export const LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX = t.mapToolTrayWidthPx;

@@ -7,8 +7,6 @@ import type {
   MapDrawPaletteItem,
 } from '@/features/content/locations/domain/mapEditor';
 
-import { LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX } from '@/features/content/locations/components/workspace/locationEditor.constants';
-
 type LocationMapEditorDrawTrayProps = {
   items: MapDrawPaletteItem[];
   activeDraw: LocationMapActiveDrawSelection;
@@ -38,18 +36,16 @@ export function LocationMapEditorDrawTray({
   return (
     <Box
       sx={{
-        width: LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
-        flexShrink: 0,
+        flex: 1,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         gap: 0.75,
         py: 0.5,
         pr: 0.5,
         pl: 0.25,
-        borderRight: 1,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
         alignItems: 'center',
+        overflow: 'auto',
       }}
     >
       {items.map((item) => {

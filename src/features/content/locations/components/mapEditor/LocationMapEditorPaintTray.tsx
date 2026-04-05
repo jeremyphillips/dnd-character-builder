@@ -12,10 +12,6 @@ import type {
   MapPaintPaletteItem,
 } from '@/features/content/locations/domain/mapEditor';
 import type { LocationCellFillKindId } from '@/features/content/locations/domain/mapContent/locationCellFill.types';
-import {
-  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
-} from '@/features/content/locations/components/workspace/locationEditor.constants';
 
 type LocationMapEditorPaintTrayProps = {
   items: MapPaintPaletteItem[];
@@ -52,26 +48,16 @@ export function LocationMapEditorPaintTray({
   return (
     <Box
       sx={{
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
-        zIndex: 1,
+        flex: 1,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
         py: 0.5,
         pr: 0.5,
         pl: 0.25,
-        width: LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-        minWidth: LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-        maxWidth: LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-        boxSizing: 'border-box',
-        borderRadius: 0,
-        borderRight: 1,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
         alignItems: 'stretch',
+        overflow: 'auto',
       }}
     >
       <ToggleButtonGroup

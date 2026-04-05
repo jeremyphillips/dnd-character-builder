@@ -63,6 +63,7 @@ import {
   LOCATION_MAP_REGION_COLOR_KEYS,
 } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/mapContent/locationMapRegionColors.types';
+import { resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/mapPresentation/locationEditorWorkspaceUiTokens';
 import {
   applyEdgeStrokeToDraft,
   type LocationMapEditorMode,
@@ -78,9 +79,6 @@ import {
   selectedCellIdForMapSelection,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
-  LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX,
-  LOCATION_EDITOR_TOOLBAR_WIDTH_PX,
   type LocationCellObjectDraft,
   type LocationGridDraftState,
   type LocationEditorRailSection,
@@ -676,11 +674,10 @@ export function useLocationEditWorkspaceModel({
 
   const showMapEditorChrome = showMapGridAuthoring;
 
-  const leftMapChromeWidthPx = showMapEditorChrome
-    ? LOCATION_EDITOR_TOOLBAR_WIDTH_PX +
-      (mapEditor.mode === 'paint' ? LOCATION_EDITOR_PAINT_TRAY_WIDTH_PX : 0) +
-      (mapEditor.mode === 'draw' ? LOCATION_EDITOR_DRAW_TRAY_WIDTH_PX : 0)
-    : 0;
+  const leftMapChromeWidthPx = useMemo(
+    () => resolveLeftMapChromeWidthPx({ showMapEditorChrome }),
+    [showMapEditorChrome],
+  );
 
   const { policyValue, handlePolicyChange } = useAccessPolicyField<LocationFormValues>(watch, setValue);
 

@@ -53,7 +53,7 @@ import {
   mapSelectionEqual,
   selectedCellIdForMapSelection,
   type LocationMapSelection,
-} from './workspace/rightRail/locationEditorRail.types';
+} from './workspace/rightRail/types/locationEditorRail.types';
 import {
   resolveSquareAnchorCellIdForSelectPx,
   SQUARE_GRID_GAP_PX,

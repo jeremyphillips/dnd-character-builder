@@ -13,7 +13,7 @@ import {
   gridCellPalette,
   gridCellSelectedShadow,
 } from './gridCellStyles';
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/locationEditorRail.types';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types/locationEditorRail.types';
 import {
   isSelectHoverChromeSuppressed,
   shouldApplyCellHoverChrome,

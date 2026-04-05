@@ -81,7 +81,7 @@ App-wide MUI theme (`palette`, etc.) still applies; map-specific tuning should g
 
 ## Workspace layout (`components/workspace/`)
 
-**Subfolders (ownership):** `header/` (header + ancestry breadcrumbs), `canvas/` (pan/zoom shell + map column), `leftTools/` (map toolbar + paint/draw trays), `rightRail/` (rail shell, tabs, selection panel, rail types, region metadata adapter, **`panels/`** for Map-rail place/draw/paint panels + linked-location modal), `setup/` (location create setup dialog). `rightRail/__tests__/` holds rail-local tests. Top-level files include the edit shells, `LocationEditorWorkspace`, `LocationGridAuthoringSection`, and `BuildingFloorStrip`. The **`components/mapEditor/`** barrel only re-exports left tools from `workspace/leftTools/` and rail panels from `workspace/rightRail/panels/` for stable import paths.
+**Subfolders (ownership):** `header/` (header + ancestry breadcrumbs), `canvas/` (pan/zoom shell + map column), `leftTools/` (map toolbar + paint/draw trays), `rightRail/` with **`types/`** (`locationEditorRail.types`), **`selection/`** (selection panel + inspectors + region metadata form), **`adapters/`** (region metadata draft adapter), **`panels/`** (Map-rail place/draw/paint + linked-location modal), plus rail shell and tabs at `rightRail/` root. `rightRail/__tests__/` holds rail-local tests. `setup/` holds the location create setup dialog. Top-level files include the edit shells, `LocationEditorWorkspace`, `LocationGridAuthoringSection`, and `BuildingFloorStrip`. The **`components/mapEditor/`** barrel re-exports left tools from `workspace/leftTools/` and rail panels from `workspace/rightRail/panels/` for stable import paths.
 
 The workspace is composed of feature-owned components:
 

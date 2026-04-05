@@ -16,7 +16,7 @@ import {
 
 import type { BuildingFloorStripProps } from './BuildingFloorStrip';
 import { BuildingFloorStrip } from './BuildingFloorStrip';
-import type { LocationEditorRailSection } from './rightRail/locationEditorRail.types';
+import type { LocationEditorRailSection } from './rightRail/types/locationEditorRail.types';
 import { LocationEditorHeader } from './header/LocationEditorHeader';
 import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
 import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';

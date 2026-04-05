@@ -113,20 +113,21 @@ export function formatDamageResistanceDebug(
 
 export function formatTurnResourceDebug(
   combatant: CombatantInstance,
-  cost: CombatActionCost,
+  cost: CombatActionCost | undefined,
 ): string[] {
   const lines: string[] = []
+  const actionCost = cost ?? {}
 
   for (const { ruleId, consequence: c } of getActiveConsequencesWithOrigin(combatant)) {
     if (c.kind === 'action_limit') {
-      if (c.cannotTakeActions && (cost.action || cost.bonusAction)) {
+      if (c.cannotTakeActions && (actionCost.action || actionCost.bonusAction)) {
         lines.push(`${ruleId} -> cannot take actions`)
       }
-      if (c.cannotTakeReactions && cost.reaction) {
+      if (c.cannotTakeReactions && actionCost.reaction) {
         lines.push(`${ruleId} -> cannot take reactions`)
       }
     }
-    if (c.kind === 'movement' && c.speedBecomesZero && cost.movementFeet) {
+    if (c.kind === 'movement' && c.speedBecomesZero && actionCost.movementFeet) {
       lines.push(`${ruleId} -> speed is zero`)
     }
   }

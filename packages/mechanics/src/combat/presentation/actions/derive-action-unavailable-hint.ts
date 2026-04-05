@@ -36,6 +36,7 @@ function deriveResourceHint(action: CombatActionDefinition): string {
   if (action.usage?.recharge && !action.usage.recharge.ready) {
     return 'Recharge not ready'
   }
-  if (action.cost.bonusAction) return 'Bonus action spent this turn'
-  return 'Action spent this turn'
+  if (action.cost?.bonusAction) return 'Bonus action spent this turn'
+  if (action.cost?.action) return 'Action spent this turn'
+  return 'Unavailable this turn'
 }

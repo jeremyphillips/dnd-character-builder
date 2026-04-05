@@ -11,8 +11,8 @@ export function partitionCombatantActionBuckets(
 ): { actionDefs: CombatActionDefinition[]; bonusDefs: CombatActionDefinition[] } {
   const list = actions ?? []
   return {
-    actionDefs: list.filter((a) => Boolean(a.cost.action && !a.cost.bonusAction)),
-    bonusDefs: list.filter((a) => Boolean(a.cost.bonusAction)),
+    actionDefs: list.filter((a) => Boolean(a.cost?.action && !a.cost?.bonusAction)),
+    bonusDefs: list.filter((a) => Boolean(a.cost?.bonusAction)),
   }
 }
 

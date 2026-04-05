@@ -128,6 +128,14 @@ Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/sc
 
 **Client-side change validation:** `src/features/content/locations/domain/validation/validateLocationChange.ts` coordinates UX constraints when editing.
 
+### `authoring` folders (disambiguation)
+
+Several folders use “authoring” in the name; they are **not** interchangeable:
+
+- **`domain/mapAuthoring/`** — Client map bootstrap, `cellDraftToCellEntries` / `cellEntriesToDraft`, `gridLayoutDraft` (prune cell keys when grid dimensions change).
+- **`components/authoring/`** — UI-adjacent helpers: **`draft/`** (grid draft types + persist/compare utilities), **`geometry/`** (hex/square overlay math and path SVG adapters).
+- **`components/mapGrid/authoring/`** — Grid subtree only: hex/square **SVG authoring overlays** and **`useSquareEdgeBoundaryPaint`** (square edge tooling).
+
 ---
 
 ## Client feature layout (`src/features/content/locations/`)
@@ -140,8 +148,9 @@ Under `shared/domain/locations/__tests__/`, mirroring source: e.g. `__tests__/sc
 | `domain/mapAuthoring/` | `bootstrapDefaultLocationMap` (client-side default map creation/update), `gridLayoutDraft` (prune cell keys when dimensions change), `cellAuthoringMappers` (draft ↔ `cellEntries`). Uses `getDefaultMapKindForScale` from shared domain to derive map kind. |
 | `domain/mapContent/` | Authored-map vocabulary, per-scale map content policy, presentation tokens (icon names, swatch keys, cell-fill meta). See **Shared vs feature** above. |
 | `domain/mapPresentation/` | `locationMapUiStyles`, `locationMapIconNameMap`, `locationMapDisplayIcons` — map chrome styling and semantic icon name → MUI resolution. |
-| `components/` | `LocationGridAuthoringSection` (interactive grid preview; dispatches to `GridEditor` or `HexGridEditor` based on scale geometry), cell modal, cards. |
-| `components/workspace/` | Map-first editor shell — [location-workspace.md](./location-workspace.md). |
+| `components/mapGrid/` | Shared **`GridEditor`** / **`HexGridEditor`**, cell/path/object layers, and **`mapGrid/authoring/`** (SVG overlays, square edge boundary-paint hook). |
+| `components/workspace/` | Full-width map editor shell, **`LocationGridAuthoringSection`** (workspace-level orchestrator; dispatches to `GridEditor` or `HexGridEditor`), rail/header/canvas — [location-workspace.md](./location-workspace.md). |
+| `components/` (other) | Cards, summaries, and presentation not covered above; prefer stable imports via `components/index.ts` where exported. |
 | `hooks/` | Campaign data, parent picker options, default world scale, dependent field effects. |
 
 Imports of shared vocabulary should prefer **`@/shared/domain/locations`** for scale constants, map constants, and policies.
@@ -174,7 +183,7 @@ Grid geometry is derived from `LOCATION_SCALE_FIELD_POLICY` — there is no user
 1. **Create route:** geometry is derived from `getDefaultGeometryForScale(scale)` when scale is selected. The dependent field sanitization (`sanitizeLocationFormValues`) auto-corrects geometry when scale changes.
 2. **Edit route:** geometry is seeded from the persisted map (`def.grid.geometry`). For legacy maps without a stored geometry, falls back to `getDefaultGeometryForScale(loc.scale)`.
 3. **Bootstrap:** `bootstrapDefaultLocationMap` threads geometry into the `grid` object saved to the database via `normalizeGridGeometryForScale`.
-4. **Rendering:** `LocationGridAuthoringSection` accepts a `gridGeometry` prop and renders `HexGridEditor` (hex) or `GridEditor` (square).
+4. **Rendering:** [`LocationGridAuthoringSection`](src/features/content/locations/components/workspace/LocationGridAuthoringSection.tsx) accepts a `gridGeometry` prop and renders `HexGridEditor` (hex) or `GridEditor` (square).
 
 **Persistence:** `LocationMapGrid.geometry` is optional on the shared type and on the Mongoose schema (`enum: ['square', 'hex']`, not required). Legacy maps without the field work unchanged — they render using the scale policy default.
 
@@ -185,6 +194,8 @@ Grid geometry is derived from `LOCATION_SCALE_FIELD_POLICY` — there is no user
 | `GridEditor` | Square grid — CSS grid layout, `aspectRatio: 1` cells. Used by encounters and square-scale locations. |
 | `HexGridEditor` | Hex grid — CSS `clip-path` hexagons, absolute positioning with odd-q offset layout. Used by hex-scale locations only. |
 | `gridCellStyles.ts` | `gridCellPalette` (border/background MUI paths), `gridCellSelectedShadow`, `gridCellSelectedInsetPx`. |
+| `authoring/` | SVG path/region overlays for the location editor (`HexMapAuthoringSvgOverlay`, `SquareMapAuthoringSvgOverlay`) and `useSquareEdgeBoundaryPaint` for square edge strokes. |
+| `__tests__/` | Grid-local tests (e.g. `mapGridCellVisualState` select-mode chrome). |
 
 Both renderers share the same callback shapes (`onCellClick`, `renderCellContent`, etc.) and cell identity convention (`makeGridCellId(x, y)` → `"x,y"`).
 

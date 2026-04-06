@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
-import { resolvePlacementCellClick } from '../../placement/placementRegistryResolver';
+import {
+  resolvePlacementCellClick,
+  resolvePlacementEdgeFeatureKind,
+} from '../../placement/placementRegistryResolver';
 
 describe('placementRegistryResolver', () => {
   it('resolves linked-content city on world to link pending', () => {
@@ -69,6 +72,32 @@ describe('placementRegistryResolver', () => {
       expect(r.objectDraft.kind).toBe('marker');
       expect(r.objectDraft.authoredPlaceKindId).toBe('building');
     }
+  });
+
+  it('resolves map-object door on floor to edge feature kind (Place tool)', () => {
+    const k = resolvePlacementEdgeFeatureKind(
+      { category: 'map-object', kind: 'door', variantId: 'single_wood' },
+      'floor',
+    );
+    expect(k).toBe('door');
+  });
+
+  it('resolves map-object window on floor to edge feature kind', () => {
+    expect(
+      resolvePlacementEdgeFeatureKind(
+        { category: 'map-object', kind: 'window', variantId: 'glass' },
+        'floor',
+      ),
+    ).toBe('window');
+  });
+
+  it('cell click placement is unsupported for edge families (edges use boundary targeting)', () => {
+    const r = resolvePlacementCellClick(
+      { category: 'map-object', kind: 'door', variantId: 'single_wood' },
+      'c-0-0',
+      'floor',
+    );
+    expect(r.kind).toBe('unsupported');
   });
 
   it('stairs spiral variant still appends stairs object with stairEndpoint', () => {

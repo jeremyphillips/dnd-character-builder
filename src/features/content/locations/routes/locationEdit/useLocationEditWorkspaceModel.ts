@@ -29,8 +29,10 @@ import {
   getGroupedDrawPaletteForScale,
   getPaintPaletteItemsForScale,
   getPlacePaletteItemsForScale,
+  getPlacementModeForFamily,
   resolveDrawSelectionToAction,
   resolvePlacementCellClick,
+  resolvePlacementEdgeFeatureKind,
   applyEraseTargetToDraft,
   resolveEraseTargetAtCell,
   computeHexEdgeConstraintPatch,
@@ -497,7 +499,25 @@ export function useLocationEditWorkspaceModel({
       canApplyRegionPaint(mapEditor.activePaint, gridDraft.regionEntries));
 
   const mapPlaceObjectDragStrokeEnabled =
-    mapEditor.mode === 'place' && mapEditor.activePlace?.category === 'map-object';
+    mapEditor.mode === 'place' &&
+    mapEditor.activePlace?.category === 'map-object' &&
+    getPlacementModeForFamily(mapEditor.activePlace.kind) === 'cell';
+
+  const placeEdgeAuthoringActive = useMemo(() => {
+    if (mapEditor.mode !== 'place') return false;
+    if (gridGeometry === 'hex') return false;
+    const ap = mapEditor.activePlace;
+    if (!ap || ap.category !== 'map-object') return false;
+    if (getPlacementModeForFamily(ap.kind) !== 'edge') return false;
+    return resolvePlacementEdgeFeatureKind(ap, mapHostScaleResolved) != null;
+  }, [mapEditor.mode, mapEditor.activePlace, gridGeometry, mapHostScaleResolved]);
+
+  const placeEdgeFeatureKind = useMemo((): LocationEdgeFeatureKindId | null => {
+    if (!placeEdgeAuthoringActive || !mapEditor.activePlace || mapEditor.activePlace.category !== 'map-object') {
+      return null;
+    }
+    return resolvePlacementEdgeFeatureKind(mapEditor.activePlace, mapHostScaleResolved);
+  }, [placeEdgeAuthoringActive, mapEditor.activePlace, mapHostScaleResolved]);
 
   useEffect(() => {
     mapEditor.setPathAnchorCellId(null);
@@ -773,6 +793,12 @@ export function useLocationEditWorkspaceModel({
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
       if (mapEditor.mode === 'place' && mapEditor.activePlace) {
+        if (
+          mapEditor.activePlace.category === 'map-object' &&
+          getPlacementModeForFamily(mapEditor.activePlace.kind) === 'edge'
+        ) {
+          return;
+        }
         const outcome = resolvePlacementCellClick(mapEditor.activePlace, cellId, mapHostScaleResolved);
         if (outcome.kind === 'unsupported') return;
         if (outcome.kind === 'link') {
@@ -863,10 +889,10 @@ export function useLocationEditWorkspaceModel({
       mapEditor.mode,
       mapEditor.activePlace,
       mapEditor.activeDraw,
+      mapHostScaleResolved,
       mapEditor.pathAnchorCellId,
       mapEditor.setPendingPlacement,
       mapEditor.setPathAnchorCellId,
-      mapHostScaleResolved,
       gridGeometry,
       gridColumns,
       gridRows,
@@ -948,6 +974,8 @@ export function useLocationEditWorkspaceModel({
     drawPaletteItems,
     mapPlaceSuppressesCanvasPanOnCells,
     mapPlaceObjectDragStrokeEnabled,
+    placeEdgeAuthoringActive,
+    placeEdgeFeatureKind,
     linkModalSelectOptions,
     showMapEditorChrome,
     leftMapChromeWidthPx,

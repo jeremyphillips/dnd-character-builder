@@ -6,6 +6,7 @@
 import type { LocationMapCellObjectEntry } from '@/shared/domain/locations/map/locationMap.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 import { canPlaceObjectKindOnHostScale } from '@/shared/domain/locations/map/locationMapPlacement.policy';
 import { LOCATION_MAP_STAIR_ENDPOINT_DEFAULT_DIRECTION } from '@/shared/domain/locations/map/locationMapStairEndpoint.types';
 
@@ -13,7 +14,11 @@ import type { LocationMapActivePlaceSelection } from '../types/locationMapEditor
 
 import { resolvePlacedKindToAction } from './resolvePlacedKindToAction';
 
-export { resolvePlacedKindToAction, type ResolvedPlacedKindAction } from './resolvePlacedKindToAction';
+export {
+  resolvePlacedKindToAction,
+  mapPlacedFamilyToEdgeFeatureKind,
+  type ResolvedPlacedKindAction,
+} from './resolvePlacedKindToAction';
 export {
   buildPersistedPlacedObjectPayload,
   type PersistedPlacedObjectPayload,
@@ -86,4 +91,16 @@ export function resolvePlacementCellClick(
     };
   }
   return { kind: 'unsupported' };
+}
+
+/**
+ * Edge placement (Place tool, `placementMode: 'edge'`) — maps armed `activePlace` to `edgeEntries[].kind`.
+ * Returns `null` when the selection is not an edge family or host scale disallows it.
+ */
+export function resolvePlacementEdgeFeatureKind(
+  activePlace: LocationMapActivePlaceSelection,
+  hostScale: LocationScaleId,
+): LocationEdgeFeatureKindId | null {
+  const res = resolvePlacedKindToAction(activePlace, hostScale);
+  return res.type === 'edge' ? res.edgeKind : null;
 }

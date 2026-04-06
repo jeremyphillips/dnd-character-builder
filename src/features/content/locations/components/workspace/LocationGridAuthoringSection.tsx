@@ -86,6 +86,9 @@ type LocationGridAuthoringSectionProps = {
   onEdgeStrokeCommit?: (edgeIds: string[], edgeKind: LocationEdgeFeatureKindId) => void;
   /** Erase a specific edge feature by canonical edgeId. */
   onEraseEdge?: (edgeId: string) => void;
+  /** Place tool: `placementMode: 'edge'` — boundary click commits via {@link onEdgeStrokeCommit} with this kind. */
+  placeEdgeAuthoringActive?: boolean;
+  placeEdgeFeatureKind?: LocationEdgeFeatureKindId | null;
   /**
    * When true with place mode, cell pointer events stop propagation so the map canvas
    * does not pan (same idea as paint / erase-fill strokes).
@@ -121,6 +124,8 @@ export function LocationGridAuthoringSection({
   activeDraw = null,
   onEdgeStrokeCommit,
   onEraseEdge,
+  placeEdgeAuthoringActive = false,
+  placeEdgeFeatureKind = null,
   suppressCanvasPanOnCells = false,
   placeObjectDragStrokeEnabled = false,
   consumeClickSuppressionAfterPan,
@@ -174,6 +179,8 @@ export function LocationGridAuthoringSection({
     cols,
     rows,
     edgePlaceActive,
+    placeEdgeAuthoringActive,
+    placeEdgeKind: placeEdgeFeatureKind,
     edgeEraseActive,
     activeDraw,
     onEdgeStrokeCommit,
@@ -356,6 +363,8 @@ export function LocationGridAuthoringSection({
     (mapEditorMode === 'place' ||
       (mapEditorMode === 'draw' && activeDraw?.category === 'path'));
 
+  const placeCellClickSuppressedForEdgeTool = placeEdgeAuthoringActive;
+
   const placeObjectStrokeMode =
     placeObjectDragStrokeEnabled && mapEditorMode === 'place';
 
@@ -379,7 +388,7 @@ export function LocationGridAuthoringSection({
     handlePaintPointerUp,
     placeObjectStrokeMode,
     placePathPlacement,
-    suppressEdgePlacePan,
+    suppressEdgePlacePan: suppressEdgePlacePan || placeCellClickSuppressedForEdgeTool,
     onPlaceCellClick,
     resolveHexCellFromClient,
     setPlaceHoverCellId,
@@ -399,6 +408,7 @@ export function LocationGridAuthoringSection({
     if (consumeClickSuppressionAfterPan?.()) return;
     if (mapEditorMode === 'place') {
       if (placeObjectStrokeMode) return;
+      if (placeEdgeAuthoringActive) return;
       onPlaceCellClick?.(cell.cellId);
       return;
     }
@@ -422,7 +432,7 @@ export function LocationGridAuthoringSection({
 
   const handleHexFallbackClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
-      if (!isHex || edgePlaceActive || placeObjectStrokeMode) return;
+      if (!isHex || edgePlaceActive || placeEdgeAuthoringActive || placeObjectStrokeMode) return;
       const hexGapPlaceOrPath =
         mapEditorMode === 'place' ||
         (mapEditorMode === 'draw' && activeDraw?.category === 'path');
@@ -438,6 +448,7 @@ export function LocationGridAuthoringSection({
       mapEditorMode,
       activeDraw,
       edgePlaceActive,
+      placeEdgeAuthoringActive,
       placeObjectStrokeMode,
       consumeClickSuppressionAfterPan,
       resolveHexCellFromClient,
@@ -538,7 +549,7 @@ export function LocationGridAuthoringSection({
         sx={{
           position: 'relative',
           width: gridSizePx.width,
-          ...((edgePlaceActive || edgeEraseActive) ? {
+          ...((edgePlaceActive || edgeEraseActive || placeEdgeAuthoringActive) ? {
             cursor: 'crosshair',
             '& *': { cursor: 'crosshair !important' },
           } : {}),
@@ -551,20 +562,20 @@ export function LocationGridAuthoringSection({
               : undefined
         }
         onPointerDownCapture={
-          edgePlaceActive || edgeEraseActive ? handleEdgePointerDown : undefined
+          edgePlaceActive || edgeEraseActive || placeEdgeAuthoringActive ? handleEdgePointerDown : undefined
         }
         onPointerMoveCapture={
-          edgePlaceActive || edgeEraseActive ? handleEdgePointerMove : undefined
+          edgePlaceActive || edgeEraseActive || placeEdgeAuthoringActive ? handleEdgePointerMove : undefined
         }
         onPointerUpCapture={
-          edgePlaceActive ? handleEdgePointerUp : undefined
+          edgePlaceActive || placeEdgeAuthoringActive ? handleEdgePointerUp : undefined
         }
         onPointerMove={(e) => {
           if (placePathPlacement) handlePlacePathEdgePointerMove(e);
           if (mapEditorMode === 'select' && validPreview) handleSelectPointerMove(e);
         }}
         onPointerLeave={() => {
-          if (edgePlaceActive || edgeEraseActive) handleEdgePointerLeave();
+          if (edgePlaceActive || edgeEraseActive || placeEdgeAuthoringActive) handleEdgePointerLeave();
           if (placePathPlacement) setPlaceHoverCellId(null);
           if (mapEditorMode === 'select') clearSelectHoverTarget();
         }}

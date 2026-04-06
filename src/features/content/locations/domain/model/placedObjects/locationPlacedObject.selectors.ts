@@ -6,6 +6,7 @@ import {
   PLACED_OBJECT_PALETTE_CATEGORY_LABELS,
   PLACED_OBJECT_PALETTE_CATEGORY_ORDER,
   type AuthoredPlacedObjectFamilyDefinition,
+  type AuthoredPlacedObjectPlacementMode,
   type AuthoredPlacedObjectInteraction,
   type AuthoredPlacedObjectVariantDefinition,
   type AuthoredPlacedObjectVariantPresentation,
@@ -129,6 +130,11 @@ export const LOCATION_PLACED_OBJECT_KIND_META = mapValuesStrict(
 
 export function getPlacedObjectDefinition(id: LocationPlacedObjectKindId): AuthoredPlacedObjectFamilyDefinition {
   return AUTHORED_PLACED_OBJECT_DEFINITIONS[id];
+}
+
+/** Registry `placementMode` — cell objects vs edge boundary features (`edgeEntries`). */
+export function getPlacementModeForFamily(kind: LocationPlacedObjectKindId): AuthoredPlacedObjectPlacementMode {
+  return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].placementMode;
 }
 
 /** Explicit palette category for toolbar grouping — not persisted map identity. */

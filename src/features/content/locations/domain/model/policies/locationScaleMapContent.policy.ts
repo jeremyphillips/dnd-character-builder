@@ -65,7 +65,8 @@ export const LOCATION_SCALE_MAP_CONTENT_POLICY: Record<
   floor: {
     cellFillKinds: ['stone_floor'],
     pathKinds: [],
-    edgeKinds: ['wall', 'window', 'door'],
+    /** Draw tool: wall boundary-paint only — doors/windows use Place (`placementMode: 'edge'`) on the same `edgeEntries` wire. */
+    edgeKinds: ['wall'],
     objectKinds: [...getPlacedObjectKindsForScale('floor')],
   },
   region: EMPTY_LOCATION_SCALE_MAP_CONTENT_POLICY,

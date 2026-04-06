@@ -21,6 +21,10 @@ export type UseSquareEdgeBoundaryPaintParams = {
   cols: number;
   rows: number;
   edgePlaceActive: boolean;
+  /** Place tool + `placementMode: 'edge'` — single-edge commits (no stroke extension), uses {@link placeEdgeKind}. */
+  placeEdgeAuthoringActive?: boolean;
+  /** Required when `placeEdgeAuthoringActive` — same as `edgeEntries[].kind`. */
+  placeEdgeKind?: LocationEdgeFeatureKindId | null;
   edgeEraseActive: boolean;
   activeDraw: LocationMapActiveDrawSelection | null | undefined;
   onEdgeStrokeCommit?: (edgeIds: string[], edgeKind: LocationEdgeFeatureKindId) => void;
@@ -49,11 +53,14 @@ export function useSquareEdgeBoundaryPaint({
   cols,
   rows,
   edgePlaceActive,
+  placeEdgeAuthoringActive = false,
+  placeEdgeKind = null,
   edgeEraseActive,
   activeDraw,
   onEdgeStrokeCommit,
   onEraseEdge,
 }: UseSquareEdgeBoundaryPaintParams): UseSquareEdgeBoundaryPaintResult {
+  const edgePaintActive = edgePlaceActive || placeEdgeAuthoringActive;
   const [edgeHoverTarget, setEdgeHoverTarget] = useState<ResolvedEdgeTarget | null>(null);
   const edgeStrokeActive = useRef(false);
   const edgeStrokeSeen = useRef<Set<string>>(new Set());
@@ -80,8 +87,12 @@ export function useSquareEdgeBoundaryPaint({
 
   const commitEdgeStroke = useCallback(() => {
     const ids = edgeStrokeEdgeIds.current;
-    if (ids.length > 0 && activeDraw?.category === 'edge') {
-      onEdgeStrokeCommit?.(ids, activeDraw.kind);
+    if (ids.length > 0) {
+      if (placeEdgeAuthoringActive && placeEdgeKind) {
+        onEdgeStrokeCommit?.(ids, placeEdgeKind);
+      } else if (activeDraw?.category === 'edge') {
+        onEdgeStrokeCommit?.(ids, activeDraw.kind);
+      }
     }
     edgeStrokeActive.current = false;
     edgeStrokeSeen.current.clear();
@@ -89,7 +100,7 @@ export function useSquareEdgeBoundaryPaint({
     edgeStrokeLockedAxis.current = null;
     edgeStrokeLastTarget.current = null;
     setEdgeStrokeSnapshot([]);
-  }, [activeDraw, onEdgeStrokeCommit]);
+  }, [activeDraw, onEdgeStrokeCommit, placeEdgeAuthoringActive, placeEdgeKind]);
 
   const resolveEdgeFromClient = useCallback(
     (clientX: number, clientY: number): ResolvedEdgeTarget | null => {
@@ -111,13 +122,15 @@ export function useSquareEdgeBoundaryPaint({
 
   const handleEdgePointerMove = useCallback(
     (e: ReactPointerEvent<HTMLElement>) => {
-      if (!edgePlaceActive && !edgeEraseActive) return;
+      if (!edgePaintActive && !edgeEraseActive) return;
       e.stopPropagation();
 
       const target = resolveEdgeFromClient(e.clientX, e.clientY);
       setEdgeHoverTarget((prev) =>
         prev?.edgeId === target?.edgeId ? prev : target,
       );
+
+      if (placeEdgeAuthoringActive) return;
 
       if (edgeStrokeActive.current && target) {
         if (edgeStrokeSeen.current.has(target.edgeId)) return;
@@ -140,13 +153,13 @@ export function useSquareEdgeBoundaryPaint({
         setEdgeStrokeSnapshot([...edgeStrokeEdgeIds.current]);
       }
     },
-    [edgePlaceActive, edgeEraseActive, resolveEdgeFromClient],
+    [edgePaintActive, edgeEraseActive, placeEdgeAuthoringActive, resolveEdgeFromClient],
   );
 
   const handleEdgePointerDown = useCallback(
     (e: ReactPointerEvent<HTMLElement>) => {
       e.stopPropagation();
-      if (edgePlaceActive) {
+      if (edgePlaceActive || placeEdgeAuthoringActive) {
         const target = resolveEdgeFromClient(e.clientX, e.clientY);
         if (!target) return;
         edgeStrokeActive.current = true;
@@ -164,7 +177,7 @@ export function useSquareEdgeBoundaryPaint({
         }
       }
     },
-    [edgePlaceActive, edgeEraseActive, resolveEdgeFromClient, onEraseEdge],
+    [edgePlaceActive, placeEdgeAuthoringActive, edgeEraseActive, resolveEdgeFromClient, onEraseEdge],
   );
 
   const handleEdgePointerUp = useCallback(

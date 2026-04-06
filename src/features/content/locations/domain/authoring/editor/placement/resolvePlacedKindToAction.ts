@@ -1,15 +1,26 @@
 import type { LocationMapObjectKindId } from '@/shared/domain/locations';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
+import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 
 import {
   getDefaultVariantIdForFamily,
+  getPlacedObjectDefinition,
   getPlacedObjectMeta,
   normalizeVariantIdForFamily,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import { buildPersistedPlacedObjectPayload } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.persistence';
 
 import type { LocationMapActivePlaceSelection } from '../types/locationMapEditor.types';
+
+/** Maps edge `placementMode` registry families to persisted `edgeEntries[].kind`. */
+export function mapPlacedFamilyToEdgeFeatureKind(
+  placedKind: LocationPlacedObjectKindId,
+): LocationEdgeFeatureKindId | null {
+  if (placedKind === 'door') return 'door';
+  if (placedKind === 'window') return 'window';
+  return null;
+}
 
 export type ResolvedPlacedKindAction =
   | {
@@ -21,6 +32,11 @@ export type ResolvedPlacedKindAction =
       type: 'object';
       objectKind: LocationMapObjectKindId;
       authoredPlaceKindId?: LocationPlacedObjectKindId;
+    }
+  | {
+      type: 'edge';
+      /** Same as `edgeEntries[].kind` — variant is resolver-only in Phase 3. */
+      edgeKind: LocationEdgeFeatureKindId;
     }
   | { type: 'unsupported'; reason?: string };
 
@@ -36,6 +52,21 @@ export function resolvePlacedKindToAction(
   }
   const placedKind = selection.kind;
   const resolvedVariantId = normalizeVariantIdForFamily(placedKind, selection.variantId);
+
+  const familyDef = getPlacedObjectDefinition(placedKind);
+  if (familyDef.placementMode === 'edge') {
+    const edgeKind = mapPlacedFamilyToEdgeFeatureKind(placedKind);
+    if (!edgeKind) {
+      return { type: 'unsupported', reason: 'no_edge_kind' };
+    }
+    const allowed = familyDef.allowedScales as readonly LocationScaleId[];
+    if (!allowed.includes(hostScale)) {
+      return { type: 'unsupported', reason: 'host_scale' };
+    }
+    void resolvedVariantId;
+    return { type: 'edge', edgeKind };
+  }
+
   if (placedKind === 'city' && hostScale === 'world') {
     return { type: 'link', objectKind: 'city', linkedScale: 'city' };
   }

@@ -124,10 +124,13 @@ export type AuthoredPlacedObjectVariantDefinition = {
   presentation?: AuthoredPlacedObjectVariantPresentation;
 };
 
+/** Cell-anchored vs boundary edge authoring — both use the same registry; edge families write `edgeEntries`. */
+export type AuthoredPlacedObjectPlacementMode = 'cell' | 'edge';
+
 export type AuthoredPlacedObjectFamilyDefinition = {
   /** Palette / toolbar grouping only — **not** persisted on the map. */
   category: PlacedObjectPaletteCategoryId;
-  placementMode: 'cell';
+  placementMode: AuthoredPlacedObjectPlacementMode;
   /** Host scales where this family is offered in the place palette. */
   allowedScales: readonly LocationScaleId[];
   /** Shared combat / spatial defaults for all variants in the family. */
@@ -347,6 +350,87 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         iconName: 'treasure',
         presentation: {
           form: 'pile',
+        },
+      },
+    },
+  },
+  door: {
+    category: 'structure',
+    placementMode: 'edge',
+    allowedScales: ['floor'],
+    defaultVariantId: 'single_wood',
+    runtime: {
+      blocksMovement: true,
+      blocksLineOfSight: true,
+      combatCoverKind: 'none',
+      isMovable: false,
+    },
+    variants: {
+      single_wood: {
+        label: 'Door',
+        description: 'Single-leaf wood door.',
+        iconName: 'door',
+        presentation: {
+          material: 'wood',
+          form: 'single-leaf',
+        },
+      },
+      double_wood: {
+        label: 'Double Door',
+        description: 'Double-leaf wood door.',
+        iconName: 'door',
+        presentation: {
+          material: 'wood',
+          form: 'double-leaf',
+        },
+      },
+    },
+  },
+  window: {
+    category: 'structure',
+    placementMode: 'edge',
+    allowedScales: ['floor'],
+    defaultVariantId: 'glass',
+    runtime: {
+      blocksMovement: true,
+      blocksLineOfSight: false,
+      combatCoverKind: 'none',
+      isMovable: false,
+    },
+    variants: {
+      bars: {
+        label: 'Barred Window',
+        description: 'Window opening secured with bars.',
+        iconName: 'window',
+        presentation: {
+          type: 'bars',
+        },
+      },
+      glass: {
+        label: 'Window',
+        description: 'Standard glass window.',
+        iconName: 'window',
+        presentation: {
+          material: 'glass',
+          type: 'plain',
+        },
+      },
+      stained_glass: {
+        label: 'Stained Glass Window',
+        description: 'Decorative stained glass window.',
+        iconName: 'window',
+        presentation: {
+          material: 'glass',
+          type: 'stained-glass',
+        },
+      },
+      shutters: {
+        label: 'Shuttered Window',
+        description: 'Window with wooden shutters.',
+        iconName: 'window',
+        presentation: {
+          material: 'wood',
+          type: 'shutters',
         },
       },
     },

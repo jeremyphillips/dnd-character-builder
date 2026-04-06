@@ -10,6 +10,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { Location } from '@/features/content/locations/domain/model/location';
+import { LOCATION_PLACED_OBJECT_KIND_META } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import {
   listStairObjectOptionsForFloor,
   parseStairObjectOptionValue,
@@ -625,12 +626,28 @@ export function LocationMapEdgeInspector({
     );
   }
 
+  const placeToolFamilyHint =
+    entry.kind === 'door' || entry.kind === 'window'
+      ? {
+          label:
+            entry.kind === 'door'
+              ? LOCATION_PLACED_OBJECT_KIND_META.door.label
+              : LOCATION_PLACED_OBJECT_KIND_META.window.label,
+        }
+      : null;
+
   return (
     <Stack spacing={1.5}>
       <Typography variant="subtitle2" fontWeight={600}>
         Boundary edge
       </Typography>
       <Chip size="small" label={entry.kind} variant="outlined" />
+      {placeToolFamilyHint ? (
+        <Typography variant="body2" color="text.secondary">
+          Place palette: {placeToolFamilyHint.label}. Variant choice is not stored on the map in this
+          phase — only the edge kind ({entry.kind}) is persisted.
+        </Typography>
+      ) : null}
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
         {edgeId}
       </Typography>

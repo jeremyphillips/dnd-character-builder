@@ -9,6 +9,7 @@
 export type {
   AuthoredObjectMaterial,
   AuthoredObjectShape,
+  AuthoredPlacedObjectPlacementMode,
   AuthoredPlacedObjectFamilyDefinition,
   AuthoredPlacedObjectInteraction,
   AuthoredPlacedObjectTransitionKind,
@@ -23,6 +24,7 @@ export { DEFAULT_PLACED_OBJECT_VARIANT_ID } from './locationPlacedObject.registr
 export {
   comparePlacedObjectPaletteCategories,
   getDefaultVariantIdForFamily,
+  getPlacementModeForFamily,
   getMapObjectKindIconName,
   getPlacedObjectDefinition,
   getPlacedObjectIconName,

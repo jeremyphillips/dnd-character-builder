@@ -19,6 +19,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import StairsIcon from '@mui/icons-material/Stairs';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import TerrainIcon from '@mui/icons-material/Terrain';
+import WindowIcon from '@mui/icons-material/Window';
 
 import { recordKeys } from '@/shared/domain/locations/map/locationMapRecordUtils';
 
@@ -52,6 +53,7 @@ export const LOCATION_MAP_OBJECT_ICON_COMPONENT_BY_NAME = {
   table: TableRestaurantIcon,
   treasure: Inventory2Icon,
   door: DoorFrontIcon,
+  window: WindowIcon,
   stairs: StairsIcon,
   tree: ForestIcon,
 } as const satisfies Record<string, LocationMapDisplayIconComponent>;

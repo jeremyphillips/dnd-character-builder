@@ -182,6 +182,8 @@ export default function LocationEditRoute() {
     drawPaletteItems,
     mapPlaceSuppressesCanvasPanOnCells,
     mapPlaceObjectDragStrokeEnabled,
+    placeEdgeAuthoringActive,
+    placeEdgeFeatureKind,
     linkModalSelectOptions,
     showMapEditorChrome,
     leftMapChromeWidthPx,
@@ -309,6 +311,8 @@ export default function LocationEditRoute() {
       activeDraw={mapEditor.activeDraw}
       onEdgeStrokeCommit={handleEdgeStrokeCommit}
       onEraseEdge={handleEraseEdge}
+      placeEdgeAuthoringActive={placeEdgeAuthoringActive}
+      placeEdgeFeatureKind={placeEdgeFeatureKind}
       suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
       placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
       consumeClickSuppressionAfterPan={consumeClickSuppressionAfterPan}

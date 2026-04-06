@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
@@ -10,7 +10,13 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { Location } from '@/features/content/locations/domain/model/location';
-import { LOCATION_PLACED_OBJECT_KIND_META } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+import {
+  getPlacedObjectMeta,
+  getPlacedObjectPaletteCategoryId,
+  getPlacedObjectPaletteCategoryLabel,
+  LOCATION_PLACED_OBJECT_KIND_META,
+  parseLocationPlacedObjectKindId,
+} from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import {
   listStairObjectOptionsForFloor,
   parseStairObjectOptionValue,
@@ -36,6 +42,13 @@ import type { SelectOption } from '@/ui/patterns/form/form.types';
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 
 import type { LocationCellObjectDraft } from '../../../authoring/draft/locationGridDraft.types';
+
+import { PlacedObjectRailTemplate } from './PlacedObjectRailTemplate';
+import {
+  formatCellPlacementLine,
+  legacyMapObjectKindTitle,
+  shouldShowLinkedIdentityForPlacedObject,
+} from './placedObjectRail.helpers';
 
 /** Divider + “Remove from map” for map selection inspectors (shared styling). */
 function MapInspectorRemoveFromMapButton({ onClick }: { onClick: () => void }) {
@@ -436,6 +449,10 @@ export type LocationMapObjectInspectorProps = {
   /** When set, “Remove from map” uses the same draft path as Erase (and clears selection when it matches). */
   onRemovePlacedObjectFromMap?: (cellId: string, objectId: string) => void;
   hostScale: string;
+  /** Campaign locations — resolve linked cell → location name for linked-content display identity. */
+  locations: Location[];
+  /** One linked campaign location id per cell (same source as cell inspector). */
+  linkedLocationByCellId: Record<string, string | undefined>;
   stairWorkspaceInspect: StairWorkspaceInspect;
   /** Building edit: canonical stair pairing; omit outside building floor maps. */
   stairPairingContext?: StairPairingContext;
@@ -448,11 +465,19 @@ export function LocationMapObjectInspector({
   onUpdateCellObjects,
   onRemovePlacedObjectFromMap,
   hostScale,
+  locations,
+  linkedLocationByCellId,
   stairWorkspaceInspect,
   stairPairingContext,
 }: LocationMapObjectInspectorProps) {
   const objs = objectsByCellId[cellId] ?? [];
   const obj = objs.find((o) => o.id === objectId);
+
+  const locationById = useMemo(
+    () => new Map(locations.map((l) => [l.id, l] as const)),
+    [locations],
+  );
+
   if (!obj) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -460,6 +485,21 @@ export function LocationMapObjectInspector({
       </Typography>
     );
   }
+
+  const placedKind = parseLocationPlacedObjectKindId(obj.authoredPlaceKindId);
+  const linkedLocationId = linkedLocationByCellId[cellId];
+  const linkedLoc = linkedLocationId ? locationById.get(linkedLocationId) : undefined;
+  const showLinkedDisplayIdentity = shouldShowLinkedIdentityForPlacedObject(
+    placedKind,
+    linkedLocationId,
+    linkedLoc,
+  );
+
+  const categoryLabel = placedKind
+    ? getPlacedObjectPaletteCategoryLabel(getPlacedObjectPaletteCategoryId(placedKind))
+    : 'Object';
+  const objectTitle = placedKind ? getPlacedObjectMeta(placedKind).label : legacyMapObjectKindTitle(obj.kind);
+  const placementLine = formatCellPlacementLine(cellId);
 
   const showStairEndpointUi = obj.kind === 'stairs' && hostScale === 'floor';
   const validTargetFloorIds = stairWorkspaceInspect.candidateTargetFloors.map((f) => f.id);
@@ -484,84 +524,79 @@ export function LocationMapObjectInspector({
         })
       : null;
 
-  return (
-    <Stack spacing={2}>
-      <Box>
-        <Typography variant="subtitle2" fontWeight={600}>
-          Placed object
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-          Cell {cellId}
-        </Typography>
-      </Box>
-      <Chip size="small" label={obj.kind} variant="outlined" />
-      {showStairEndpointUi ? (
-        <>
-          <Box>
-            <Typography variant="subtitle2" fontWeight={600}>
-              Staircase endpoint
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              One endpoint on this floor. Paired connections are stored on the building; combat traversal is still TODO.
-            </Typography>
-          </Box>
-          {stairPairingContext && pairing ? (
-            <StairPairingControls
-              stairPairingContext={stairPairingContext}
-              stairWorkspaceInspect={stairWorkspaceInspect}
-              cellId={cellId}
-              objectId={objectId}
-              pairing={pairing}
-              onUpdateCellObjects={onUpdateCellObjects}
-              objs={objs}
-            />
-          ) : null}
-          {linkStatus !== null ? (
-            <Chip
-              size="small"
-              label={STAIR_LINK_STATUS_LABEL[linkStatus]}
-              color={linkStatus === 'linked' ? 'success' : linkStatus === 'invalid' ? 'error' : 'default'}
-              variant="outlined"
-            />
-          ) : null}
-          <LocationMapStairEndpointInspectForm
-            key={`${cellId}-${objectId}`}
+  const stairMetadata =
+    showStairEndpointUi ? (
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="subtitle2" fontWeight={600}>
+            Staircase endpoint
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            One endpoint on this floor. Paired connections are stored on the building; combat traversal is still TODO.
+          </Typography>
+        </Box>
+        {stairPairingContext && pairing ? (
+          <StairPairingControls
+            stairPairingContext={stairPairingContext}
+            stairWorkspaceInspect={stairWorkspaceInspect}
             cellId={cellId}
             objectId={objectId}
-            objs={objs}
-            stairEndpoint={obj.stairEndpoint}
-            stairWorkspaceInspect={stairWorkspaceInspect}
+            pairing={pairing}
             onUpdateCellObjects={onUpdateCellObjects}
-            hideLegacyTargetFloor={Boolean(stairPairingContext)}
+            objs={objs}
           />
-        </>
-      ) : null}
-      <TextField
-        label="Label"
-        size="small"
-        value={obj.label ?? ''}
-        onChange={(e) => {
-          const next = objs.map((o) =>
-            o.id === objectId ? { ...o, label: e.target.value } : o,
-          );
-          onUpdateCellObjects(cellId, next);
-        }}
-        fullWidth
-      />
-      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-        id: {objectId}
-      </Typography>
-      <MapInspectorRemoveFromMapButton
-        onClick={() => {
-          if (onRemovePlacedObjectFromMap) {
-            onRemovePlacedObjectFromMap(cellId, objectId);
-            return;
-          }
-          const next = objs.filter((o) => o.id !== objectId);
-          onUpdateCellObjects(cellId, next);
-        }}
-      />
-    </Stack>
+        ) : null}
+        {linkStatus !== null ? (
+          <Chip
+            size="small"
+            label={STAIR_LINK_STATUS_LABEL[linkStatus]}
+            color={linkStatus === 'linked' ? 'success' : linkStatus === 'invalid' ? 'error' : 'default'}
+            variant="outlined"
+          />
+        ) : null}
+        <LocationMapStairEndpointInspectForm
+          key={`${cellId}-${objectId}`}
+          cellId={cellId}
+          objectId={objectId}
+          objs={objs}
+          stairEndpoint={obj.stairEndpoint}
+          stairWorkspaceInspect={stairWorkspaceInspect}
+          onUpdateCellObjects={onUpdateCellObjects}
+          hideLegacyTargetFloor={Boolean(stairPairingContext)}
+        />
+      </Stack>
+    ) : null;
+
+  const labelField = showLinkedDisplayIdentity ? undefined : (
+    <TextField
+      label="Label"
+      size="small"
+      value={obj.label ?? ''}
+      onChange={(e) => {
+        const next = objs.map((o) => (o.id === objectId ? { ...o, label: e.target.value } : o));
+        onUpdateCellObjects(cellId, next);
+      }}
+      fullWidth
+    />
+  );
+
+  return (
+    <PlacedObjectRailTemplate
+      categoryLabel={categoryLabel}
+      objectTitle={objectTitle}
+      placementLine={placementLine}
+      metadata={stairMetadata ?? undefined}
+      linkedDisplayName={showLinkedDisplayIdentity && linkedLoc ? linkedLoc.name : undefined}
+      labelField={labelField}
+      onRemoveFromMap={() => {
+        if (onRemovePlacedObjectFromMap) {
+          onRemovePlacedObjectFromMap(cellId, objectId);
+          return;
+        }
+        const next = objs.filter((o) => o.id !== objectId);
+        onUpdateCellObjects(cellId, next);
+      }}
+    />
   );
 }
 
@@ -626,35 +661,35 @@ export function LocationMapEdgeInspector({
     );
   }
 
-  const placeToolFamilyHint =
-    entry.kind === 'door' || entry.kind === 'window'
-      ? {
-          label:
-            entry.kind === 'door'
-              ? LOCATION_PLACED_OBJECT_KIND_META.door.label
-              : LOCATION_PLACED_OBJECT_KIND_META.window.label,
-        }
-      : null;
+  const isDoorOrWindow = entry.kind === 'door' || entry.kind === 'window';
+  const objectTitle = isDoorOrWindow
+    ? entry.kind === 'door'
+      ? LOCATION_PLACED_OBJECT_KIND_META.door.label
+      : LOCATION_PLACED_OBJECT_KIND_META.window.label
+    : 'Wall';
+  const categoryLabel = isDoorOrWindow
+    ? getPlacedObjectPaletteCategoryLabel(getPlacedObjectPaletteCategoryId(entry.kind))
+    : 'Structure';
+  const placementLine = `Edge ${edgeId}`;
+
+  const metadata = isDoorOrWindow ? (
+    <Typography variant="body2" color="text.secondary">
+      Variant choice is not stored on the map in this phase — only the edge kind ({entry.kind}) is persisted.
+    </Typography>
+  ) : (
+    <Typography variant="body2" color="text.secondary">
+      Boundary wall segment.
+    </Typography>
+  );
 
   return (
-    <Stack spacing={1.5}>
-      <Typography variant="subtitle2" fontWeight={600}>
-        Boundary edge
-      </Typography>
-      <Chip size="small" label={entry.kind} variant="outlined" />
-      {placeToolFamilyHint ? (
-        <Typography variant="body2" color="text.secondary">
-          Place palette: {placeToolFamilyHint.label}. Variant choice is not stored on the map in this
-          phase — only the edge kind ({entry.kind}) is persisted.
-        </Typography>
-      ) : null}
-      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
-        {edgeId}
-      </Typography>
-      <MapInspectorRemoveFromMapIfHandler
-        onRemove={onRemoveEdgeFromMap ? () => onRemoveEdgeFromMap(edgeId) : undefined}
-      />
-    </Stack>
+    <PlacedObjectRailTemplate
+      categoryLabel={categoryLabel}
+      objectTitle={objectTitle}
+      placementLine={placementLine}
+      metadata={metadata}
+      onRemoveFromMap={onRemoveEdgeFromMap ? () => onRemoveEdgeFromMap(edgeId) : undefined}
+    />
   );
 }
 
@@ -685,12 +720,18 @@ export function LocationMapEdgeRunInspector({
   anchorEdgeId,
   onRemoveEdgeRunFromMap,
 }: LocationMapEdgeRunInspectorProps) {
-  return (
-    <Stack spacing={1.5}>
-      <Typography variant="subtitle2" fontWeight={600}>
-        {edgeRunHumanLabel(kind, axis)}
-      </Typography>
-      <Chip size="small" label={kind} variant="outlined" />
+  const isDoorOrWindow = kind === 'door' || kind === 'window';
+  const objectTitle = isDoorOrWindow
+    ? kind === 'door'
+      ? LOCATION_PLACED_OBJECT_KIND_META.door.label
+      : LOCATION_PLACED_OBJECT_KIND_META.window.label
+    : edgeRunHumanLabel(kind, axis);
+  const categoryLabel = isDoorOrWindow
+    ? getPlacedObjectPaletteCategoryLabel(getPlacedObjectPaletteCategoryId(kind))
+    : 'Structure';
+
+  const metadata = (
+    <Stack spacing={1}>
       <Typography variant="body2" color="text.secondary">
         {edgeIds.length} segment{edgeIds.length === 1 ? '' : 's'} on this straight run
       </Typography>
@@ -700,9 +741,16 @@ export function LocationMapEdgeRunInspector({
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
         Anchor: {anchorEdgeId}
       </Typography>
-      <MapInspectorRemoveFromMapIfHandler
-        onRemove={onRemoveEdgeRunFromMap ? () => onRemoveEdgeRunFromMap(edgeIds) : undefined}
-      />
     </Stack>
+  );
+
+  return (
+    <PlacedObjectRailTemplate
+      categoryLabel={categoryLabel}
+      objectTitle={objectTitle}
+      placementLine={`Straight run (${edgeIds.length} segment${edgeIds.length === 1 ? '' : 's'})`}
+      metadata={metadata}
+      onRemoveFromMap={onRemoveEdgeRunFromMap ? () => onRemoveEdgeRunFromMap(edgeIds) : undefined}
+    />
   );
 }

@@ -10,16 +10,18 @@ import type {
   LocationMapActivePlaceSelection,
   MapPlacePaletteItem,
 } from '@/features/content/locations/domain/authoring/editor';
+import { DEFAULT_AUTHORED_PLACE_VARIANT_ID } from '@/features/content/locations/domain/authoring/editor';
 
 function selectionKey(sel: LocationMapActivePlaceSelection): string | null {
   if (!sel) return null;
-  if (sel.category === 'linked-content') return `linked:${sel.kind}`;
-  return `object:${sel.kind}`;
+  const v = sel.variantId ?? DEFAULT_AUTHORED_PLACE_VARIANT_ID;
+  if (sel.category === 'linked-content') return `linked:${sel.kind}:${v}`;
+  return `object:${sel.kind}:${v}`;
 }
 
 function itemKey(item: MapPlacePaletteItem): string {
-  if (item.category === 'linked-content') return `linked:${item.kind}`;
-  return `object:${item.kind}`;
+  if (item.category === 'linked-content') return `linked:${item.kind}:${item.variantId}`;
+  return `object:${item.kind}:${item.variantId}`;
 }
 
 type LocationMapEditorPlacePanelProps = {
@@ -50,9 +52,9 @@ export function LocationMapEditorPlacePanel({
       : getLocationMapGlyphIconByName('marker');
     const onClick = () => {
       if (item.category === 'linked-content') {
-        onSelectPlace({ category: 'linked-content', kind: item.kind });
+        onSelectPlace({ category: 'linked-content', kind: item.kind, variantId: item.variantId });
       } else {
-        onSelectPlace({ category: 'map-object', kind: item.kind });
+        onSelectPlace({ category: 'map-object', kind: item.kind, variantId: item.variantId });
       }
     };
     return (

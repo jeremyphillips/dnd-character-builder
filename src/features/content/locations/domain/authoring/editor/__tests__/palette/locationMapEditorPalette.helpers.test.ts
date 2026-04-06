@@ -27,6 +27,8 @@ describe('locationMapEditorPalette.helpers', () => {
     expect(items.map((i) => i.kind)).toEqual(['city']);
     expect(items[0].label).toBe('City');
     expect(items[0].category).toBe('linked-content');
+    expect(items[0].familyId).toBe('city');
+    expect(items[0].variantId).toBe('default');
     if (items[0].category === 'linked-content') {
       expect(items[0].linkedScale).toBe('city');
     }

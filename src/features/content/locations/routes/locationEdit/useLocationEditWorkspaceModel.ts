@@ -30,7 +30,7 @@ import {
   getPaintPaletteItemsForScale,
   getPlacePaletteItemsForScale,
   resolveDrawSelectionToAction,
-  resolvePlacedKindToAction,
+  resolvePlacementCellClick,
   applyEraseTargetToDraft,
   resolveEraseTargetAtCell,
   computeHexEdgeConstraintPatch,
@@ -44,8 +44,6 @@ import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessP
 import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
 import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDeleteAction';
 import {
-  canPlaceObjectKindOnHostScale,
-  LOCATION_MAP_STAIR_ENDPOINT_DEFAULT_DIRECTION,
   type LocationScaleId,
   type LocationVerticalStairConnection,
 } from '@/shared/domain/locations';
@@ -775,42 +773,24 @@ export function useLocationEditWorkspaceModel({
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
       if (mapEditor.mode === 'place' && mapEditor.activePlace) {
-        const ap = mapEditor.activePlace;
-        const res = resolvePlacedKindToAction(ap, mapHostScaleResolved);
-        if (res.type === 'unsupported') return;
-        if (res.type === 'link') {
-          mapEditor.setPendingPlacement({
-            type: 'linked-location',
-            objectKind: res.objectKind,
-            hostScale: mapHostScaleResolved,
-            linkedScale: res.linkedScale,
-            targetCellId: cellId,
-          });
+        const outcome = resolvePlacementCellClick(mapEditor.activePlace, cellId, mapHostScaleResolved);
+        if (outcome.kind === 'unsupported') return;
+        if (outcome.kind === 'link') {
+          mapEditor.setPendingPlacement(outcome.pending);
           return;
         }
-        if (res.type === 'object') {
-          if (!canPlaceObjectKindOnHostScale(mapHostScaleResolved, res.objectKind)) return;
+        if (outcome.kind === 'append-object') {
           setGridDraft((prev) => {
-            const existing = prev.objectsByCellId[cellId] ?? [];
+            const existing = prev.objectsByCellId[outcome.cellId] ?? [];
             const obj: (typeof existing)[number] = {
               id: crypto.randomUUID(),
-              kind: res.objectKind,
-              ...(res.authoredPlaceKindId !== undefined
-                ? { authoredPlaceKindId: res.authoredPlaceKindId }
-                : {}),
-              ...(res.objectKind === 'stairs'
-                ? {
-                    stairEndpoint: {
-                      direction: LOCATION_MAP_STAIR_ENDPOINT_DEFAULT_DIRECTION,
-                    },
-                  }
-                : {}),
+              ...outcome.objectDraft,
             };
             return {
               ...prev,
               objectsByCellId: {
                 ...prev.objectsByCellId,
-                [cellId]: [...existing, obj],
+                [outcome.cellId]: [...existing, obj],
               },
             };
           });

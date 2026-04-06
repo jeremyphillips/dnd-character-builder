@@ -15,7 +15,6 @@ import {
   LocationEditorSelectionPanel,
   LocationMapEditorDrawPanel,
   LocationMapEditorPaintMapPanel,
-  LocationMapEditorPlacePanel,
   selectedCellIdForMapSelection,
 } from '@/features/content/locations/components';
 import type { LocationEditorSelectionPanelProps } from '@/features/content/locations/components/workspace/rightRail/selection/LocationEditorSelectionPanel';
@@ -35,6 +34,7 @@ export type LocationEditWorkspaceMapAuthoringRailPanelProps = {
     setActiveDraw: Dispatch<SetStateAction<LocationMapActiveDrawSelection>>;
     activePaint: LocationMapActivePaintSelection;
   };
+  /** Retained for future rail hints; place palette is toolbar-first (left tray). */
   placePaletteItems: MapPlacePaletteItem[];
   drawPaletteItems: MapDrawPaletteItem[];
   regionEntries: readonly LocationMapRegionAuthoringEntry[];
@@ -46,7 +46,7 @@ export type LocationEditWorkspaceMapAuthoringRailPanelProps = {
 
 export function LocationEditWorkspaceMapAuthoringRailPanel({
   mapEditor,
-  placePaletteItems,
+  placePaletteItems: _placePaletteItems,
   drawPaletteItems,
   regionEntries,
   onCreateRegion,
@@ -57,11 +57,10 @@ export function LocationEditWorkspaceMapAuthoringRailPanel({
   return (
     <Stack spacing={2}>
       {mapEditor.mode === 'place' ? (
-        <LocationMapEditorPlacePanel
-          items={placePaletteItems}
-          activePlace={mapEditor.activePlace}
-          onSelectPlace={mapEditor.setActivePlace}
-        />
+        <Typography variant="body2" color="text.secondary">
+          Choose what to place in the <strong>left toolbar</strong> (next to the map), then click cells on the map.
+          Use Selection to inspect or configure after placement.
+        </Typography>
       ) : mapEditor.mode === 'draw' ? (
         <LocationMapEditorDrawPanel
           items={drawPaletteItems}

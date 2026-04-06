@@ -9,10 +9,11 @@ import { LOCATION_PATH_FEATURE_KIND_META } from '@/features/content/locations/do
 import { getPlacedObjectPaletteOptionsForScale } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import type {
-  MapDrawPaletteItem,
-  MapPaintPaletteItem,
-  MapPlacePaletteItem,
+import {
+  DEFAULT_AUTHORED_PLACE_VARIANT_ID,
+  type MapDrawPaletteItem,
+  type MapPaintPaletteItem,
+  type MapPlacePaletteItem,
 } from '../types/locationMapEditor.types';
 
 /**
@@ -44,6 +45,8 @@ export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePa
       return {
         category: 'linked-content' as const,
         kind: opt.kind,
+        familyId: opt.kind,
+        variantId: DEFAULT_AUTHORED_PLACE_VARIANT_ID,
         label: opt.label,
         description: opt.description,
         iconName: opt.iconName,
@@ -53,6 +56,8 @@ export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePa
     return {
       category: 'map-object' as const,
       kind: opt.kind,
+      familyId: opt.kind,
+      variantId: DEFAULT_AUTHORED_PLACE_VARIANT_ID,
       label: opt.label,
       description: opt.description,
       iconName: opt.iconName,

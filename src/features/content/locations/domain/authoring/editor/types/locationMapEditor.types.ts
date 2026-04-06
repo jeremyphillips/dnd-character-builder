@@ -2,6 +2,9 @@ import type { LocationCellFillKindId } from '@/features/content/locations/domain
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+
+/** Default variant for Phase 1 single-row-per-family palette; Phase 2 adds explicit variant ids. */
+export const DEFAULT_AUTHORED_PLACE_VARIANT_ID = 'default' as const;
 import type { LocationMapGlyphIconName } from '@/features/content/locations/domain/presentation/map/locationMapIconNameMap';
 import type { LocationMapSwatchColorKey } from '@/features/content/locations/domain/model/map/locationMapSwatchColors.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
@@ -21,10 +24,13 @@ export type LocationMapActivePlaceSelection =
   | {
       category: 'linked-content';
       kind: LocationPlacedObjectKindId;
+      /** Registry variant id; Phase 1 uses {@link DEFAULT_AUTHORED_PLACE_VARIANT_ID} only. */
+      variantId?: string;
     }
   | {
       category: 'map-object';
       kind: LocationPlacedObjectKindId;
+      variantId?: string;
     }
   | null;
 
@@ -79,6 +85,9 @@ export type MapPlacePaletteItem =
   | {
       category: 'linked-content';
       kind: LocationPlacedObjectKindId;
+      /** Family id for registry (Phase 1: same as `kind`). */
+      familyId: LocationPlacedObjectKindId;
+      variantId: string;
       label: string;
       description?: string;
       iconName?: LocationMapGlyphIconName;
@@ -87,6 +96,8 @@ export type MapPlacePaletteItem =
   | {
       category: 'map-object';
       kind: LocationPlacedObjectKindId;
+      familyId: LocationPlacedObjectKindId;
+      variantId: string;
       label: string;
       description?: string;
       iconName?: LocationMapGlyphIconName;

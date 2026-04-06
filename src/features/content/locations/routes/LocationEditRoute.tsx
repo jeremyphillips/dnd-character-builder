@@ -340,11 +340,14 @@ export default function LocationEditRoute() {
       mode={mapEditor.mode}
       activePaint={mapEditor.activePaint}
       activeDraw={mapEditor.activeDraw}
+      activePlace={mapEditor.activePlace}
       paintPaletteItems={paintPaletteItems}
       drawPaletteItems={drawPaletteItems}
+      placePaletteItems={placePaletteItems}
       onPaintChange={handlePaintChange}
       onModeChange={handleMapEditorModeChange}
       onSelectDraw={mapEditor.setActiveDraw}
+      onSelectPlace={mapEditor.setActivePlace}
       zoom={zoom}
       pan={pan}
       panHandlers={pointerHandlers}

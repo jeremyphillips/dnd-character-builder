@@ -26,7 +26,7 @@ isProject: true
 # Object authoring Phase 2 — variants
 
 **Parent:** [location_workspace_object_authoring_roadmap.plan.md](location_workspace_object_authoring_roadmap.plan.md)  
-**Depends on:** [location_workspace_object_authoring_phase1_palette_foundation.plan.md](location_workspace_object_authoring_phase1_palette_foundation.plan.md) — family-first registry, **`placementRegistryResolver`** seam, loaded identity + context, toolbar drawer palette, click-to-place for cell objects.  
+**Depends on:** [location_workspace_object_authoring_phase1_palette_foundation.plan.md](location_workspace_object_authoring_phase1_palette_foundation.plan.md) — family-first registry, `**placementRegistryResolver`** seam, loaded identity + context, toolbar drawer palette, click-to-place for cell objects.  
 **Canonical reference:** [docs/reference/location-workspace.md](../../../docs/reference/location-workspace.md)
 
 **Role:** **Child plan (implementation)** — scoped to **Phase 2** of the object authoring roadmap.
@@ -35,7 +35,7 @@ isProject: true
 
 ## Objective
 
-Add **variant-aware object authoring** so the palette can represent **families** of placeables without overwhelming first-level UI: one base tile per family when appropriate, clear **variant count** affordances, **intentional** variant selection via a picker, **registry-driven** tooltips (family + variant), and **resolved placement intent** (family + variant identity) that feeds the **same** **`placementRegistryResolver`** + click-to-place pipeline as Phase 1.
+Add **variant-aware object authoring** so the palette can represent **families** of placeables without overwhelming first-level UI: one base tile per family when appropriate, clear **variant count** affordances, **intentional** variant selection via a picker, **registry-driven** tooltips (family + variant), and **resolved placement intent** (family + variant identity) that feeds the **same** `**placementRegistryResolver`** + click-to-place pipeline as Phase 1.
 
 ---
 
@@ -50,12 +50,12 @@ The parent plan sequences **palette foundation** before **variants** so registry
 This phase preserves the same separation as the parent:
 
 
-| Layer                 | Phase 2 responsibility                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| **Registry/domain**   | Kind, family/group, variant ids, defaults, per-variant metadata, tooltip fields                   |
-| **Placement model**   | Picker → loaded **family + variant** identity; **`placementRegistryResolver`** at place time to existing payloads |
-| **Persistence model** | What kind/variant ids (and defaults) are written on place; no UI-only “family” as source of truth |
-| **UI presentation**   | Count indicators, picker chrome, tooltip rendering — **reads** registry                           |
+| Layer                 | Phase 2 responsibility                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Registry/domain**   | Kind, family/group, variant ids, defaults, per-variant metadata, tooltip fields                                   |
+| **Placement model**   | Picker → loaded **family + variant** identity; `**placementRegistryResolver`** at place time to existing payloads |
+| **Persistence model** | What kind/variant ids (and defaults) are written on place; no UI-only “family” as source of truth                 |
+| **UI presentation**   | Count indicators, picker chrome, tooltip rendering — **reads** registry                                           |
 
 
 **Core principle:** Variants are a **registry/domain concept with presentation affordances**, not one-off UI branches. **Do not** let palette grouping become the persistence model.
@@ -66,8 +66,8 @@ This phase preserves the same separation as the parent:
 
 Phase 1 **locks** the following — Phase 2 **must extend** them, **not** replace or bypass:
 
-- **Registry:** **Family-first** top-level keys; explicit **`variants`** container; **category/group** presentation-only vs persisted identity; family-level shared **`runtime`** with optional future variant overrides.
-- **`placementRegistryResolver`:** Single seam from **family + variant identity** → **existing** authored cell payload shape.
+- **Registry:** **Family-first** top-level keys; explicit `**variants`** container; **category/group** presentation-only vs persisted identity; family-level shared `**runtime`** with optional future variant overrides.
+- `**placementRegistryResolver`:** Single seam from **family + variant identity** → **existing** authored cell payload shape.
 - **Loaded object state:** **Registry identity** (family + variant) **+** minimal placement context — **not** a second canonical copy of the full persisted cell payload as default.
 - **Palette:** Toolbar drawer consumes the **same** registry as any other placeable UI — **no** parallel placeable lists.
 
@@ -85,7 +85,7 @@ Phase 1 already commits to **one registry family** (top-level key) with **explic
 
 - **One palette row per family** maps to **one registry family** with a stable **family id** (the top-level key).
 - **Each variant** has a stable **variant id** scoped to that family (or globally unique if simpler — **pick one** in implementation and document).
-- **Persisted wire:** Placed objects continue to use **existing** `cellEntries` / object payload shapes; **`placementRegistryResolver`** maps **family + variant** → that payload. **Category/group** remains **not** part of persisted authored identity.
+- **Persisted wire:** Placed objects continue to use **existing** `cellEntries` / object payload shapes; `**placementRegistryResolver`** maps **family + variant** → that payload. **Category/group** remains **not** part of persisted authored identity.
 - **Explicit variants** support future **swatch/image** selection better than an implicit matrix of dimensions — Phase 2 may add presentation; **data** stays explicit per variant.
 - **Default variant:** Registry declares a **default variant id** when primary-click should place immediately; **or** explicit **no default** when opening a picker first is required.
 
@@ -166,7 +166,7 @@ Define **one** default pattern (document rare exceptions):
 
 ## Placement + persistence implications
 
-- **Loaded state** holds **resolved placement intent** as **registry identity**: **family id + variant id** (plus minimal placement context). It does **not** replace **`placementRegistryResolver`**; **on place**, the resolver produces the **current** cell payload.
+- **Loaded state** holds **resolved placement intent** as **registry identity**: **family id + variant id** (plus minimal placement context). It does **not** replace `**placementRegistryResolver`**; **on place**, the resolver produces the **current** cell payload.
 - **On place:** Resolver output / cell object payload must remain **stable** for **hydration** and **render** (`deriveLocationMapAuthoredObjectRenderItems` and friends); additive variant fields only with a **migration** story if needed.
 - **Migration:** Existing **single-variant** families remain **one default variant** in the registry — **no** extra picker overhead until multiple variants exist.
 - **Legacy authored maps:** Hydrated objects without variant ids use **defaults** or **legacy** mapping rules in resolver/registry — document in implementation.
@@ -178,13 +178,13 @@ Define **one** default pattern (document rare exceptions):
 ## Cross-cutting concerns (must be explicit)
 
 
-| Area                       | Questions to close                                                                    |
-| -------------------------- | ------------------------------------------------------------------------------------- |
+| Area                       | Questions to close                                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Loaded state semantics** | **Family + variant** identity in loaded state; how UI shows **which** variant is loaded; resolver still owns payload shape. |
-| **Default variant policy** | When required vs when picker-only; what primary-click does.                           |
-| **Registry extensibility** | New families add **data** only; no new palette component per family.                  |
-| **Tooltip consistency**    | Family vs variant overrides; single formatting path.                                  |
-| **Compatibility**          | Single-variant entries; legacy maps; no breaking wire changes without migration plan. |
+| **Default variant policy** | When required vs when picker-only; what primary-click does.                                                                 |
+| **Registry extensibility** | New families add **data** only; no new palette component per family.                                                        |
+| **Tooltip consistency**    | Family vs variant overrides; single formatting path.                                                                        |
+| **Compatibility**          | Single-variant entries; legacy maps; no breaking wire changes without migration plan.                                       |
 
 
 ---
@@ -218,7 +218,7 @@ Define **one** default pattern (document rare exceptions):
 - **Asset browser** / heavy preview pipelines — **prove** variant model first.
 - Collapse **category/group** UI into **persisted** shape.
 - **Plugin framework** — registry **types** + data, not a giant plugin system.
-- **Parallel registry** or **duplicate resolver** paths that bypass Phase 1 **`placementRegistryResolver`**.
+- **Parallel registry** or **duplicate resolver** paths that bypass Phase 1 `**placementRegistryResolver`**.
 
 ---
 
@@ -241,7 +241,7 @@ This child plan is **ready for implementation** when:
 2. **Grouped palette click** behavior is **defined** (default vs picker vs secondary affordance).
 3. **Popover vs modal** rules are **explicit** enough to implement.
 4. **Tooltips** are **registry-driven** with family/variant resolution rules.
-5. **Placement** flows through **loaded identity** → **`placementRegistryResolver`** → **click-to-place** without a second mapping layer.
+5. **Placement** flows through **loaded identity** → `**placementRegistryResolver`** → **click-to-place** without a second mapping layer.
 6. **Persistence** implications are **acknowledged**; resolver remains authoritative for payload shape; no deep editing scope creep.
 7. Phase 2 stays **separate** from **Edge placement (Phase 3)** and **Config/editing (Phase 4)**.
 
@@ -255,7 +255,7 @@ See YAML frontmatter: audit Phase 1, define variant model, design selection UX, 
 
 ## Relationship to Phase 1 (anti-drift)
 
-- Phase 1 provides **family-first registry**, **`variants`** (at least default path), **`placementRegistryResolver`**, and **loaded identity** semantics.
+- Phase 1 provides **family-first registry**, `**variants`** (at least default path), `**placementRegistryResolver**`, and **loaded identity** semantics.
 - Phase 2 **adds** grouped variant selection, counts, picker, and tooltip richness — **extending** the same registry and seam **rather than redesigning** them.
 
 ---

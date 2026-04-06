@@ -7,26 +7,36 @@
  */
 
 export type {
+  AuthoredObjectMaterial,
+  AuthoredObjectShape,
   AuthoredPlacedObjectFamilyDefinition,
   AuthoredPlacedObjectInteraction,
   AuthoredPlacedObjectTransitionKind,
   AuthoredPlacedObjectVariantDefinition,
-  DEFAULT_PLACED_OBJECT_VARIANT_ID,
+  AuthoredPlacedObjectVariantPresentation,
   LocationPlacedObjectKindId,
   PlacedObjectPaletteCategoryId,
 } from './locationPlacedObject.registry';
 
+export { DEFAULT_PLACED_OBJECT_VARIANT_ID } from './locationPlacedObject.registry';
+
 export {
   comparePlacedObjectPaletteCategories,
+  getDefaultVariantIdForFamily,
   getMapObjectKindIconName,
+  getPlacedObjectDefinition,
   getPlacedObjectIconName,
   getPlacedObjectMeta,
   getPlacedObjectPaletteCategoryId,
   getPlacedObjectPaletteCategoryLabel,
   getPlacedObjectPaletteOptionsForScale,
+  getPlacedObjectVariantPickerRowsForFamily,
+  getVariantCountForFamily,
   LOCATION_PLACED_OBJECT_KIND_IDS,
   LOCATION_PLACED_OBJECT_KIND_META,
+  normalizeVariantIdForFamily,
   parseLocationPlacedObjectKindId,
   type LocationPlacedObjectKindMeta,
   type PlacedObjectPaletteOption,
+  type PlacedObjectVariantPickerRow,
 } from './locationPlacedObject.selectors';

@@ -20,13 +20,26 @@ describe('placementRegistryResolver', () => {
 
   it('resolves floor table to append-object with payload', () => {
     const r = resolvePlacementCellClick(
-      { category: 'map-object', kind: 'table', variantId: 'default' },
+      { category: 'map-object', kind: 'table', variantId: 'rect_wood' },
       'c-1-1',
       'floor',
     );
     expect(r.kind).toBe('append-object');
     if (r.kind === 'append-object') {
       expect(r.cellId).toBe('c-1-1');
+      expect(r.objectDraft.kind).toBe('table');
+      expect(r.objectDraft.authoredPlaceKindId).toBe('table');
+    }
+  });
+
+  it('non-default table variant still maps to same wire payload (Phase 2 resolver-only variants)', () => {
+    const r = resolvePlacementCellClick(
+      { category: 'map-object', kind: 'table', variantId: 'circle_wood' },
+      'c-1-1',
+      'floor',
+    );
+    expect(r.kind).toBe('append-object');
+    if (r.kind === 'append-object') {
       expect(r.objectDraft.kind).toBe('table');
       expect(r.objectDraft.authoredPlaceKindId).toBe('table');
     }

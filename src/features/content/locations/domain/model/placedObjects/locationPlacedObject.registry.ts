@@ -1,7 +1,7 @@
 /**
  * Canonical **family-oriented** registry for authored map placed objects (place tool vocabulary).
  * Top-level keys are **family ids**; each family has explicit **palette category**, family-level **runtime**,
- * and explicit **variants** (Phase 1 uses a single `default` variant per family). Derive meta and palette via
+ * and explicit **variants** (Phase 2: `defaultVariantId` + a record of family-scoped variant ids). Derive meta and palette via
  * {@link ./locationPlacedObject.selectors}.
  */
 import type { GridObjectCoverKind } from '@/features/mechanics/domain/combat/space/space.types';
@@ -71,14 +71,36 @@ export const PLACED_OBJECT_PALETTE_CATEGORY_LABELS: Record<PlacedObjectPaletteCa
   vegetation: 'Vegetation',
 };
 
-/** Canonical default variant id for single-variant families (Phase 1). Phase 2 adds sibling variants. */
+/**
+ * Common variant **key** for single-variant families (`variants.default`). It is **not** the global default selector:
+ * that is always the family’s `defaultVariantId` field (e.g. `table` uses `rect_wood`).
+ */
 export const DEFAULT_PLACED_OBJECT_VARIANT_ID = 'default' as const;
 export type PlacedObjectDefaultVariantId = typeof DEFAULT_PLACED_OBJECT_VARIANT_ID;
 
+/**
+ * Authoring/editor/render hints — not mechanics truth (see family-level `runtime` on each registry family).
+ * Keep local to this registry until multiple families or domains reuse the same vocabulary; then consider extracting
+ * from `shared/domain` (deferred intentionally).
+ */
+export type AuthoredObjectMaterial = 'wood' | 'stone' | 'metal';
+
+export type AuthoredObjectShape = 'rectangle' | 'circle' | 'square';
+
+export type AuthoredPlacedObjectVariantPresentation = {
+  material?: AuthoredObjectMaterial;
+  shape?: AuthoredObjectShape;
+};
+
+/**
+ * Per-variant palette/render metadata. Core UI fields stay flat; structured hints live under `presentation`.
+ * `iconName` is the place-tool glyph id (`LocationMapGlyphIconName`), not persisted map object icon ids.
+ */
 export type AuthoredPlacedObjectVariantDefinition = {
   label: string;
   description?: string;
   iconName: LocationMapGlyphIconName;
+  presentation?: AuthoredPlacedObjectVariantPresentation;
 };
 
 export type AuthoredPlacedObjectFamilyDefinition = {
@@ -96,10 +118,14 @@ export type AuthoredPlacedObjectFamilyDefinition = {
    * Distinct from {@link AuthoredPlacedObjectRuntimeFields} spatial blocking.
    */
   interaction?: AuthoredPlacedObjectInteraction;
-  /** Explicit variant entries; Phase 1 uses `default` only for each family. */
-  variants: {
-    default: AuthoredPlacedObjectVariantDefinition;
-  };
+  /**
+   * **Only** source of truth for which variant is primary-selected in the palette — must equal a key in `variants`.
+   * Prefer **concrete** variant keys (`rect_wood`, …); do not add a redundant `variants.default` entry when this id
+   * already names the default row (see `table`).
+   */
+  defaultVariantId: string;
+  /** Family-scoped variant ids → concrete definitions only; wire mapping stays in placement resolver / persistence helpers. */
+  variants: Record<string, AuthoredPlacedObjectVariantDefinition>;
 };
 
 /** @deprecated Use {@link AuthoredPlacedObjectFamilyDefinition}. */
@@ -114,6 +140,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     placementMode: 'cell',
     allowedScales: ['world'],
     linkedScale: 'city',
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: true,
       blocksLineOfSight: true,
@@ -133,6 +160,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     placementMode: 'cell',
     allowedScales: ['city'],
     linkedScale: 'building',
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: true,
       blocksLineOfSight: true,
@@ -152,6 +180,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     placementMode: 'cell',
     allowedScales: ['city'],
     linkedScale: 'site',
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: true,
       blocksLineOfSight: true,
@@ -170,6 +199,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     category: 'vegetation',
     placementMode: 'cell',
     allowedScales: ['city'],
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: true,
       blocksLineOfSight: true,
@@ -188,6 +218,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     category: 'furniture',
     placementMode: 'cell',
     allowedScales: ['floor'],
+    defaultVariantId: 'rect_wood',
     runtime: {
       blocksMovement: false,
       blocksLineOfSight: false,
@@ -195,10 +226,23 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       isMovable: true,
     },
     variants: {
-      default: {
-        label: 'Table',
-        description: 'Furniture or surface.',
+      rect_wood: {
+        label: 'Rectangular Table (wood)',
+        description: 'Rectangular wood table.',
         iconName: 'table',
+        presentation: {
+          material: 'wood',
+          shape: 'rectangle',
+        },
+      },
+      circle_wood: {
+        label: 'Round Table (wood)',
+        description: 'Round wood table.',
+        iconName: 'table',
+        presentation: {
+          material: 'wood',
+          shape: 'circle',
+        },
       },
     },
   },
@@ -206,6 +250,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     category: 'structure',
     placementMode: 'cell',
     allowedScales: ['floor'],
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: false,
       blocksLineOfSight: false,
@@ -225,6 +270,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
     category: 'treasure',
     placementMode: 'cell',
     allowedScales: ['floor'],
+    defaultVariantId: 'default',
     runtime: {
       blocksMovement: true,
       blocksLineOfSight: true,

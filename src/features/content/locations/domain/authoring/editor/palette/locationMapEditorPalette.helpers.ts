@@ -12,12 +12,7 @@ import {
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import {
-  DEFAULT_AUTHORED_PLACE_VARIANT_ID,
-  type MapDrawPaletteItem,
-  type MapPaintPaletteItem,
-  type MapPlacePaletteItem,
-} from '../types/locationMapEditor.types';
+import type { MapDrawPaletteItem, MapPaintPaletteItem, MapPlacePaletteItem } from '../types/locationMapEditor.types';
 
 /**
  * Paint palette rows for surface fills — label + swatch from concrete fill meta.
@@ -49,7 +44,9 @@ export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePa
         category: 'linked-content' as const,
         kind: opt.kind,
         familyId: opt.kind,
-        variantId: DEFAULT_AUTHORED_PLACE_VARIANT_ID,
+        variantId: opt.defaultVariantId,
+        defaultVariantId: opt.defaultVariantId,
+        variantCount: opt.variantCount,
         paletteCategory: opt.paletteCategory,
         label: opt.label,
         description: opt.description,
@@ -61,7 +58,9 @@ export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePa
       category: 'map-object' as const,
       kind: opt.kind,
       familyId: opt.kind,
-      variantId: DEFAULT_AUTHORED_PLACE_VARIANT_ID,
+      variantId: opt.defaultVariantId,
+      defaultVariantId: opt.defaultVariantId,
+      variantCount: opt.variantCount,
       paletteCategory: opt.paletteCategory,
       label: opt.label,
       description: opt.description,

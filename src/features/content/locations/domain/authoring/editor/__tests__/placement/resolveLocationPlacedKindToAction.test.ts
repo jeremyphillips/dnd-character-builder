@@ -16,12 +16,17 @@ describe('resolvePlacedKindToAction', () => {
 
   it('linked-content city on world opens link', () => {
     expect(
-      resolvePlacedKindToAction({ category: 'linked-content', kind: 'city' }, 'world'),
+      resolvePlacedKindToAction(
+        { category: 'linked-content', kind: 'city', variantId: 'default' },
+        'world',
+      ),
     ).toEqual({ type: 'link', objectKind: 'city', linkedScale: 'city' });
   });
 
   it('map-object tree on city maps to marker with authoredPlaceKindId tree', () => {
-    expect(resolvePlacedKindToAction({ category: 'map-object', kind: 'tree' }, 'city')).toEqual({
+    expect(
+      resolvePlacedKindToAction({ category: 'map-object', kind: 'tree', variantId: 'default' }, 'city'),
+    ).toEqual({
       type: 'object',
       objectKind: 'marker',
       authoredPlaceKindId: 'tree',

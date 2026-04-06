@@ -2,7 +2,11 @@ import type { LocationMapObjectKindId } from '@/shared/domain/locations';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import { getPlacedObjectMeta } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+import {
+  getDefaultVariantIdForFamily,
+  getPlacedObjectMeta,
+  normalizeVariantIdForFamily,
+} from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import { buildPersistedPlacedObjectPayload } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.persistence';
 
 import type { LocationMapActivePlaceSelection } from '../types/locationMapEditor.types';
@@ -31,6 +35,7 @@ export function resolvePlacedKindToAction(
     return { type: 'unsupported', reason: 'invalid_place_selection' };
   }
   const placedKind = selection.kind;
+  const resolvedVariantId = normalizeVariantIdForFamily(placedKind, selection.variantId);
   if (placedKind === 'city' && hostScale === 'world') {
     return { type: 'link', objectKind: 'city', linkedScale: 'city' };
   }
@@ -40,7 +45,7 @@ export function resolvePlacedKindToAction(
   if (placedKind === 'site' && hostScale === 'city') {
     return { type: 'link', objectKind: 'site', linkedScale: 'site' };
   }
-  const payload = buildPersistedPlacedObjectPayload(placedKind, hostScale);
+  const payload = buildPersistedPlacedObjectPayload(placedKind, hostScale, resolvedVariantId);
   if (payload) {
     return {
       type: 'object',
@@ -77,7 +82,10 @@ export function resolveLocationPlacedKindToAction(
     'linkedScale' in meta && meta.linkedScale
       ? ('linked-content' as const)
       : ('map-object' as const);
-  const r = resolvePlacedKindToAction({ category: cat, kind: placedKind }, hostScale);
+  const r = resolvePlacedKindToAction(
+    { category: cat, kind: placedKind, variantId: getDefaultVariantIdForFamily(placedKind) },
+    hostScale,
+  );
   if (r.type === 'link') {
     return {
       kind: 'link-modal',

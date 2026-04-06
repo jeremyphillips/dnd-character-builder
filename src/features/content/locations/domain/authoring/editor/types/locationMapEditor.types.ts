@@ -6,7 +6,10 @@ import type {
   PlacedObjectPaletteCategoryId,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 
-/** Default variant for Phase 1 single-row-per-family palette; Phase 2 adds explicit variant ids. */
+/**
+ * Literal often used as registry `defaultVariantId` for single-variant families.
+ * Canonical default per family is the registry `defaultVariantId` field — do not assume the key is always `default`.
+ */
 export const DEFAULT_AUTHORED_PLACE_VARIANT_ID = 'default' as const;
 import type { LocationMapGlyphIconName } from '@/features/content/locations/domain/presentation/map/locationMapIconNameMap';
 import type { LocationMapSwatchColorKey } from '@/features/content/locations/domain/model/map/locationMapSwatchColors.types';
@@ -22,18 +25,20 @@ export type LocationMapEditorMode =
 /**
  * Discrete placement (linked child locations vs local map objects). Paths and edges use
  * {@link LocationMapActiveDrawSelection} under Draw mode.
+ *
+ * **`kind`** is the registry **family** id (top-level key) — alias “familyKey” in Phase 2 docs.
+ * **`variantId`** is family-scoped and must resolve via the registry (`normalizeVariantIdForFamily` at place time).
  */
 export type LocationMapActivePlaceSelection =
   | {
       category: 'linked-content';
       kind: LocationPlacedObjectKindId;
-      /** Registry variant id; Phase 1 uses {@link DEFAULT_AUTHORED_PLACE_VARIANT_ID} only. */
-      variantId?: string;
+      variantId: string;
     }
   | {
       category: 'map-object';
       kind: LocationPlacedObjectKindId;
-      variantId?: string;
+      variantId: string;
     }
   | null;
 
@@ -83,14 +88,17 @@ export type MapPaintPaletteItem = {
   swatchColorKey: LocationMapSwatchColorKey;
 };
 
-/** Place palette: linked content vs map objects only (policy + meta). */
+/** Place palette: linked content vs map objects only (policy + meta). One row per **family**. */
 export type MapPlacePaletteItem =
   | {
       category: 'linked-content';
       kind: LocationPlacedObjectKindId;
-      /** Family id for registry (Phase 1: same as `kind`). */
+      /** Family id for registry (same as `kind`). */
       familyId: LocationPlacedObjectKindId;
+      /** Primary-click variant (same as `defaultVariantId` on this row); Phase 2 keeps linked rows single-variant. */
       variantId: string;
+      defaultVariantId: string;
+      variantCount: number;
       /** Registry palette grouping — not persisted. */
       paletteCategory: PlacedObjectPaletteCategoryId;
       label: string;
@@ -103,7 +111,10 @@ export type MapPlacePaletteItem =
       kind: LocationPlacedObjectKindId;
       familyId: LocationPlacedObjectKindId;
       variantId: string;
+      defaultVariantId: string;
+      variantCount: number;
       paletteCategory: PlacedObjectPaletteCategoryId;
+      /** Label/icon for the default variant (primary tile). */
       label: string;
       description?: string;
       iconName?: LocationMapGlyphIconName;

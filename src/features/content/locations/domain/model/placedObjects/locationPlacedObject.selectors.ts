@@ -3,11 +3,12 @@ import { isValidLocationScaleId } from '@/shared/domain/locations/scale/location
 
 import {
   AUTHORED_PLACED_OBJECT_DEFINITIONS,
-  DEFAULT_PLACED_OBJECT_VARIANT_ID,
   PLACED_OBJECT_PALETTE_CATEGORY_LABELS,
   PLACED_OBJECT_PALETTE_CATEGORY_ORDER,
   type AuthoredPlacedObjectFamilyDefinition,
   type AuthoredPlacedObjectInteraction,
+  type AuthoredPlacedObjectVariantDefinition,
+  type AuthoredPlacedObjectVariantPresentation,
   type LocationPlacedObjectKindId,
   type LocationPlacedObjectKindRuntimeDefaults,
   type PlacedObjectPaletteCategoryId,
@@ -37,12 +38,81 @@ export type LocationPlacedObjectKindMeta = {
   linkedScale?: LocationScaleId;
 };
 
-function defaultVariantOf(family: AuthoredPlacedObjectFamilyDefinition) {
-  return family.variants[DEFAULT_PLACED_OBJECT_VARIANT_ID];
+function variantRecord(
+  family: AuthoredPlacedObjectFamilyDefinition,
+): Record<string, AuthoredPlacedObjectVariantDefinition> {
+  return family.variants as Record<string, AuthoredPlacedObjectVariantDefinition>;
+}
+
+function variantDefinitionForFamily(
+  family: AuthoredPlacedObjectFamilyDefinition,
+  variantId: string,
+): AuthoredPlacedObjectVariantDefinition | undefined {
+  return variantRecord(family)[variantId];
+}
+
+/**
+ * Sole registry source for the primary palette variant id — always use this (not a literal `variants.default` key).
+ * Resolution of label/icon/meta: `variants[getDefaultVariantIdForFamily(kind)]`.
+ */
+export function getDefaultVariantIdForFamily(kind: LocationPlacedObjectKindId): string {
+  return AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].defaultVariantId;
+}
+
+/** Count of variants in the family (for palette affordances). */
+export function getVariantCountForFamily(kind: LocationPlacedObjectKindId): number {
+  return recordKeys(variantRecord(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind])).length;
+}
+
+/**
+ * Resolves a family-scoped variant id to a registry definition, falling back to {@link getDefaultVariantIdForFamily}
+ * when missing or invalid.
+ */
+export function normalizeVariantIdForFamily(
+  kind: LocationPlacedObjectKindId,
+  variantId: string | undefined | null,
+): string {
+  const family = AUTHORED_PLACED_OBJECT_DEFINITIONS[kind];
+  if (variantId != null && variantDefinitionForFamily(family, variantId)) {
+    return variantId;
+  }
+  return family.defaultVariantId;
+}
+
+export type PlacedObjectVariantPickerRow = {
+  variantId: string;
+  label: string;
+  description?: string;
+  iconName: LocationMapGlyphIconName;
+  presentation?: AuthoredPlacedObjectVariantPresentation;
+};
+
+/** Rows for a family-only variant picker (registry order = object key order). */
+export function getPlacedObjectVariantPickerRowsForFamily(
+  kind: LocationPlacedObjectKindId,
+): readonly PlacedObjectVariantPickerRow[] {
+  const family = AUTHORED_PLACED_OBJECT_DEFINITIONS[kind];
+  const variants = variantRecord(family);
+  const ids = recordKeys(variants);
+  return ids.map((variantId) => {
+    const v = variants[variantId]!;
+    return {
+      variantId,
+      label: v.label,
+      description: v.description,
+      iconName: v.iconName,
+      ...(v.presentation !== undefined ? { presentation: v.presentation } : {}),
+    };
+  });
+}
+
+/** `variants[family.defaultVariantId]` — every variant entry is concrete; default is selected only via `defaultVariantId`. */
+function defaultVariantEntryOf(family: AuthoredPlacedObjectFamilyDefinition) {
+  return variantRecord(family)[family.defaultVariantId]!;
 }
 
 function toMeta(family: AuthoredPlacedObjectFamilyDefinition): LocationPlacedObjectKindMeta {
-  const v = defaultVariantOf(family);
+  const v = defaultVariantEntryOf(family);
   return {
     label: v.label,
     description: v.description,
@@ -98,8 +168,13 @@ export function getPlacedObjectInteraction(
   return 'interaction' in def ? def.interaction : undefined;
 }
 
-export function getPlacedObjectIconName(kind: LocationPlacedObjectKindId): LocationMapGlyphIconName {
-  return defaultVariantOf(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind]).iconName;
+export function getPlacedObjectIconName(
+  kind: LocationPlacedObjectKindId,
+  variantId?: string,
+): LocationMapGlyphIconName {
+  const family = AUTHORED_PLACED_OBJECT_DEFINITIONS[kind];
+  const id = normalizeVariantIdForFamily(kind, variantId);
+  return variantRecord(family)[id]!.iconName;
 }
 
 /** Persisted map cell object kind → object icon id (separate from authored place-tool glyphs). */
@@ -114,6 +189,8 @@ export type PlacedObjectPaletteOption = {
   iconName: LocationMapGlyphIconName;
   linkedScale?: LocationScaleId;
   paletteCategory: PlacedObjectPaletteCategoryId;
+  defaultVariantId: string;
+  variantCount: number;
 };
 
 /** Narrow DTOs for the place palette — derived from registry + `allowedScales` (via {@link getPlacedObjectKindsForScale}). */
@@ -123,13 +200,15 @@ export function getPlacedObjectPaletteOptionsForScale(
   const kinds = getPlacedObjectKindsForScale(scale);
   return kinds.map((kind) => {
     const family = getPlacedObjectDefinition(kind);
-    const v = defaultVariantOf(family);
+    const v = defaultVariantEntryOf(family);
     return {
       kind,
       label: v.label,
       description: v.description,
       iconName: v.iconName,
       paletteCategory: family.category,
+      defaultVariantId: family.defaultVariantId,
+      variantCount: getVariantCountForFamily(kind),
       ...(family.linkedScale !== undefined ? { linkedScale: family.linkedScale } : {}),
     };
   });
@@ -147,3 +226,5 @@ export function getPlacedObjectKindsForScale(scale: LocationScaleId): readonly L
   }
   return out;
 }
+
+export { DEFAULT_PLACED_OBJECT_VARIANT_ID } from './locationPlacedObject.registry';

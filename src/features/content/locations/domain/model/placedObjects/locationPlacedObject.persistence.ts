@@ -47,10 +47,15 @@ export function getAuthoredPlaceKindIdForPersistedPayload(
   return undefined;
 }
 
+/**
+ * @param _variantId — Family-scoped variant (Phase 2). Resolver-only; wire shape is unchanged until a future phase.
+ */
 export function buildPersistedPlacedObjectPayload(
   placedKind: LocationPlacedObjectKindId,
   hostScale: LocationScaleId,
+  _variantId?: string,
 ): PersistedPlacedObjectPayload | null {
+  void _variantId;
   const kind = mapPlacedObjectKindToPersistedMapObjectKind(placedKind, hostScale);
   if (kind === null) return null;
   const authoredPlaceKindId = getAuthoredPlaceKindIdForPersistedPayload(placedKind, kind);

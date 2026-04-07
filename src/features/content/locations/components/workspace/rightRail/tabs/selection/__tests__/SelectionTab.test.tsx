@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-import type { LocationCellAuthoringPanelProps } from '../../panels/LocationCellAuthoringPanel';
-import { LocationEditorSelectionPanel } from '../LocationEditorSelectionPanel';
-import type { StairWorkspaceInspect } from '../LocationMapSelectionInspectors';
+import type { CellSelectionInspectorProps } from '../inspectors/CellSelectionInspector';
+import { SelectionTab } from '../SelectionTab';
+import type { StairWorkspaceInspect } from '../inspectors/LocationMapSelectionInspectors';
 
 const theme = createTheme();
 
@@ -15,14 +15,14 @@ const stairWorkspaceInspect: StairWorkspaceInspect = {
 };
 
 type SelectionPanelTestOverrides = Omit<
-  Partial<ComponentProps<typeof LocationEditorSelectionPanel>>,
+  Partial<ComponentProps<typeof SelectionTab>>,
   'cellPanelProps'
 > & {
-  cellPanelProps?: Partial<LocationCellAuthoringPanelProps>;
+  cellPanelProps?: Partial<CellSelectionInspectorProps>;
 };
 
 function renderSelection(
-  selection: ComponentProps<typeof LocationEditorSelectionPanel>['selection'],
+  selection: ComponentProps<typeof SelectionTab>['selection'],
   overrides: SelectionPanelTestOverrides = {},
 ) {
   const {
@@ -34,7 +34,7 @@ function renderSelection(
     ...restOverrides
   } = overrides;
 
-  const cellPanelProps: LocationCellAuthoringPanelProps = {
+  const cellPanelProps: CellSelectionInspectorProps = {
     selectedCellId: null,
     hostScale: 'floor',
     locations: [],
@@ -48,7 +48,7 @@ function renderSelection(
 
   render(
     <ThemeProvider theme={theme}>
-      <LocationEditorSelectionPanel
+      <SelectionTab
         selection={selection}
         cellPanelProps={cellPanelProps}
         stairWorkspaceInspect={stairWorkspaceInspect}
@@ -62,7 +62,7 @@ function renderSelection(
   );
 }
 
-describe('LocationEditorSelectionPanel', () => {
+describe('SelectionTab', () => {
   it('none: prompts to select something', () => {
     renderSelection({ type: 'none' });
     expect(screen.getByText(/Select a cell, region, path, edge, or object on the map/i)).toBeInTheDocument();

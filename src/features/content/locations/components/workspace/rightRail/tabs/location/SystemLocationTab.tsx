@@ -1,0 +1,68 @@
+import type { MutableRefObject } from 'react';
+
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+
+import type { PatchDriver } from '@/features/content/shared/editor/patchDriver';
+import { ConditionalFormRenderer } from '@/ui/patterns';
+import type { FieldConfig } from '@/ui/patterns/form/form.types';
+import { AppBadge } from '@/ui/primitives';
+
+export type SystemLocationTabProps = {
+  locationName: string;
+  locationPatched?: boolean;
+  fieldConfigs: FieldConfig[];
+  patchDriver: PatchDriver;
+  validationApiRef: MutableRefObject<{ validateAll: () => boolean } | null>;
+  hasExistingPatch: boolean;
+  onRemovePatch: () => void;
+  saving: boolean;
+};
+
+/**
+ * System patch Location rail tab: patch driver + validation API unchanged from inline workspace.
+ */
+export function SystemLocationTab({
+  locationName,
+  locationPatched,
+  fieldConfigs,
+  patchDriver,
+  validationApiRef,
+  hasExistingPatch,
+  onRemovePatch,
+  saving,
+}: SystemLocationTabProps) {
+  return (
+    <Stack spacing={2}>
+      <Typography variant="subtitle1" fontWeight={600}>
+        Patching: {locationName}
+      </Typography>
+      {locationPatched ? <AppBadge label="Patched" tone="warning" size="small" /> : null}
+      <ConditionalFormRenderer
+        fields={fieldConfigs}
+        driver={{
+          kind: 'patch',
+          getValue: patchDriver.getValue,
+          setValue: patchDriver.setValue,
+          unsetValue: patchDriver.unsetValue,
+        }}
+        onValidationApi={(api) => {
+          validationApiRef.current = api;
+        }}
+      />
+      {hasExistingPatch ? (
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          onClick={onRemovePatch}
+          disabled={saving}
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          Remove patch
+        </Button>
+      ) : null}
+    </Stack>
+  );
+}

@@ -47,16 +47,16 @@ import type { SelectOption } from '@/ui/patterns/form/form.types';
 
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 
-import type { LocationCellObjectDraft } from '../../../authoring/draft/locationGridDraft.types';
+import type { LocationCellObjectDraft } from '../../../../../authoring/draft/locationGridDraft.types';
 
-import { PlacedObjectPresentationMetadataRows, PlacedObjectRailTemplate } from './PlacedObjectRailTemplate';
+import { PlacedObjectPresentationMetadataRows, PlacedObjectRailTemplate } from '../templates/SelectionRailTemplate';
 import {
   formatCellPlacementLine,
   formatEdgePlacementLine,
   legacyMapObjectKindTitle,
   presentationRowsFromPresentation,
   shouldShowLinkedIdentityForPlacedObject,
-} from './placedObjectRail.helpers';
+} from '../selectionRail.helpers';
 
 /** Label for the map link picker; keyed by registry `linkedScale` (target kind / tier). */
 function linkedTargetPickerFieldLabel(linkedScale: LocationScaleId): string {
@@ -493,6 +493,25 @@ export function LocationMapObjectInspector({
     [locations],
   );
 
+  const resolvedPlacedKind = obj ? resolvePlacedObjectKindForCellObject(obj) : null;
+  const linkedLocationId = linkedLocationByCellId[cellId];
+  const linkedLoc = linkedLocationId ? locationById.get(linkedLocationId) : undefined;
+  const linkedScaleTarget =
+    resolvedPlacedKind !== null
+      ? getPlacedObjectDefinition(resolvedPlacedKind).linkedScale
+      : undefined;
+  const linkedPickerOptions =
+    linkedScaleTarget !== undefined
+      ? buildLinkedLocationPickerOptions({
+          campaignId,
+          loc: hostEditLocation,
+          locations,
+          mapHostLocationIdResolved: mapHostLocationId,
+          mapHostScaleResolved: mapHostScale,
+          linkedScale: linkedScaleTarget,
+        })
+      : [];
+
   if (!obj) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -501,34 +520,6 @@ export function LocationMapObjectInspector({
     );
   }
 
-  const resolvedPlacedKind = resolvePlacedObjectKindForCellObject(obj);
-  const linkedLocationId = linkedLocationByCellId[cellId];
-  const linkedLoc = linkedLocationId ? locationById.get(linkedLocationId) : undefined;
-  const linkedScaleTarget =
-    resolvedPlacedKind !== null
-      ? getPlacedObjectDefinition(resolvedPlacedKind).linkedScale
-      : undefined;
-  const linkedPickerOptions = useMemo(
-    () =>
-      linkedScaleTarget
-        ? buildLinkedLocationPickerOptions({
-            campaignId,
-            loc: hostEditLocation,
-            locations,
-            mapHostLocationIdResolved: mapHostLocationId,
-            mapHostScaleResolved: mapHostScale,
-            linkedScale: linkedScaleTarget,
-          })
-        : [],
-    [
-      linkedScaleTarget,
-      campaignId,
-      hostEditLocation,
-      locations,
-      mapHostLocationId,
-      mapHostScale,
-    ],
-  );
   const showLinkedDisplayIdentity = shouldShowLinkedIdentityForPlacedObject(
     resolvedPlacedKind,
     linkedLocationId,

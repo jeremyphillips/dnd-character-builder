@@ -2,8 +2,8 @@ import {
   LocationEditorSelectionPanel,
   selectedCellIdForMapSelection,
 } from '@/features/content/locations/components';
-import type { LocationEditorSelectionPanelProps } from '@/features/content/locations/components/workspace/rightRail/selection/LocationEditorSelectionPanel';
-import type { LocationCellAuthoringPanelProps } from '@/features/content/locations/components/workspace/rightRail/panels/LocationCellAuthoringPanel';
+import type { LocationEditorSelectionPanelProps } from '@/features/content/locations/components/workspace/rightRail/tabs/selection/SelectionTab';
+import type { LocationCellAuthoringPanelProps } from '@/features/content/locations/components/workspace/rightRail/tabs/selection/inspectors/CellSelectionInspector';
 import type { LocationGridDraftState } from '@/features/content/locations/components/authoring/draft/locationGridDraft.types';
 import type { LocationContentItem } from '@/features/content/locations/domain/repo/locationRepo';
 

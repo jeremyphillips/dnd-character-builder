@@ -157,4 +157,3 @@ export function buildCellFillSelectionRailViewModel(
     metadataRows: cellFillPresentationRowsFromPresentation(resolved.variant.presentation),
   };
 }
-

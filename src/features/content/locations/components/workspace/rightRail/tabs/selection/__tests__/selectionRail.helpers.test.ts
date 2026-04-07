@@ -13,7 +13,7 @@ import {
   presentationRecordToMetadataRows,
   presentationRowsFromPresentation,
   shouldShowLinkedIdentityForPlacedObject,
-} from '../placedObjectRail.helpers';
+} from '../selectionRail.helpers';
 
 function loc(partial: Pick<Location, 'id' | 'name' | 'scale'>): Location {
   return partial as Location;

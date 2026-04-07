@@ -24,9 +24,9 @@ import {
   regionMetadataToFormValues,
   type RegionMetadataFormValues,
   type RegionMetadataPersistablePatch,
-} from '../adapters';
+} from '../../../adapters';
 
-import { SelectionRailIdentityBlock } from './PlacedObjectRailTemplate';
+import { SelectionRailIdentityBlock } from '../templates/SelectionRailTemplate';
 
 export type { RegionMetadataFormValues };
 

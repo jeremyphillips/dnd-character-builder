@@ -8,17 +8,17 @@ import type { LocationContentItem } from '@/features/content/locations/domain/re
 
 import type { LocationMapCellFillSelection } from '@/shared/domain/locations';
 
-import type { LocationCellObjectDraft } from '../../../authoring/draft/locationGridDraft.types';
+import type { LocationCellObjectDraft } from '../../../../../authoring/draft/locationGridDraft.types';
 
 import {
   PlacedObjectPresentationMetadataRows,
   PlacedObjectRailTemplate,
   SelectionRailIdentityBlock,
-} from '../selection/PlacedObjectRailTemplate';
+} from '../templates/SelectionRailTemplate';
 import {
   buildCellFillSelectionRailViewModel,
   formatCellPlacementLine,
-} from '../selection/placedObjectRail.helpers';
+} from '../selectionRail.helpers';
 
 function buildLocationByIdMap(locations: Location[]): Map<string, Location> {
   return new Map(locations.map((l) => [l.id, l]));
@@ -37,7 +37,7 @@ function formatAncestryDescription(loc: Location, byId: Map<string, Location>): 
   return segments.length ? segments.join(' → ') : undefined;
 }
 
-export type LocationCellAuthoringPanelProps = {
+export type CellSelectionInspectorProps = {
   selectedCellId: string | null;
   hostLocationId?: string;
   hostScale: string;
@@ -53,23 +53,21 @@ export type LocationCellAuthoringPanelProps = {
   onUpdateCellObjects: (cellId: string, objects: LocationCellObjectDraft[]) => void;
 };
 
+/** @deprecated Use {@link CellSelectionInspectorProps} */
+export type LocationCellAuthoringPanelProps = CellSelectionInspectorProps;
+
 /**
  * Empty-cell inspector: cell context only (coordinates, host map). Linking and cell-object editing belong on
  * placed-object selection and other tools — not the default Selection tab for a bare cell.
  */
-export function LocationCellAuthoringPanel({
+export function CellSelectionInspector({
   selectedCellId,
   hostLocationId,
   hostScale,
   hostName,
   locations,
-  linkedLocationByCellId: _linkedLocationByCellId,
-  objectsByCellId: _objectsByCellId,
   cellFillByCellId,
-  campaignId: _campaignId,
-  onUpdateLinkedLocation: _onUpdateLinkedLocation,
-  onUpdateCellObjects: _onUpdateCellObjects,
-}: LocationCellAuthoringPanelProps) {
+}: CellSelectionInspectorProps) {
   const byId = useMemo(() => buildLocationByIdMap(locations), [locations]);
 
   const hostCaption =
@@ -128,3 +126,6 @@ export function LocationCellAuthoringPanel({
     </Stack>
   );
 }
+
+/** @deprecated Use {@link CellSelectionInspector} */
+export const LocationCellAuthoringPanel = CellSelectionInspector;

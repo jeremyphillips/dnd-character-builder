@@ -6,10 +6,10 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { PresentationMetadataRow } from './placedObjectRail.helpers';
+import type { PresentationMetadataRow } from '../selectionRail.helpers';
 
 /** Key/value rows from registry `variant.presentation` (see {@link presentationRowsFromPresentation}). */
-export function PlacedObjectPresentationMetadataRows({ rows }: { rows: readonly PresentationMetadataRow[] }) {
+export function SelectionMetadataRows({ rows }: { rows: readonly PresentationMetadataRow[] }) {
   if (rows.length === 0) return null;
   return (
     <Stack spacing={0.5}>
@@ -25,7 +25,10 @@ export function PlacedObjectPresentationMetadataRows({ rows }: { rows: readonly 
   );
 }
 
-/** Shared top block: category → title → placement — used by placed-object template and empty-cell inspector. */
+/** @deprecated Use {@link SelectionMetadataRows} */
+export const PlacedObjectPresentationMetadataRows = SelectionMetadataRows;
+
+/** Shared top block: category → title → placement — used by selection template and empty-cell inspector. */
 export function SelectionRailIdentityBlock({
   categoryLabel,
   title,
@@ -58,7 +61,7 @@ export function SelectionRailIdentityBlock({
   );
 }
 
-export type PlacedObjectRailTemplateProps = {
+export type SelectionRailTemplateProps = {
   /** e.g. Furniture, Structure — registry / product grouping */
   categoryLabel: string;
   /** Primary type identity — Table, Door, Building, … */
@@ -79,11 +82,14 @@ export type PlacedObjectRailTemplateProps = {
   onRemoveFromMap?: () => void;
 };
 
+/** @deprecated Use {@link SelectionRailTemplateProps} */
+export type PlacedObjectRailTemplateProps = SelectionRailTemplateProps;
+
 /**
- * Shared selection-rail backbone for **all** placed authored objects (cell + edge).
- * See Phase 4 plan: category → object → placement → metadata → label / linked name → actions → remove.
+ * Shared selection-rail backbone for authored map entities (cell objects, edges, paths, fills).
+ * Order: category → object → placement → metadata → label / linked name → actions → remove.
  */
-export function PlacedObjectRailTemplate({
+export function SelectionRailTemplate({
   categoryLabel,
   objectTitle,
   placementLine,
@@ -92,7 +98,7 @@ export function PlacedObjectRailTemplate({
   labelField,
   actionsSlot,
   onRemoveFromMap,
-}: PlacedObjectRailTemplateProps) {
+}: SelectionRailTemplateProps) {
   return (
     <Stack spacing={2}>
       <SelectionRailIdentityBlock
@@ -124,3 +130,6 @@ export function PlacedObjectRailTemplate({
     </Stack>
   );
 }
+
+/** @deprecated Use {@link SelectionRailTemplate} */
+export const PlacedObjectRailTemplate = SelectionRailTemplate;

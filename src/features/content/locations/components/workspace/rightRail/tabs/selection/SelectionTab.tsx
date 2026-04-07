@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import type { LocationMapEdgeAuthoringEntry, LocationMapPathAuthoringEntry } from '@/shared/domain/locations';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 
-import type { LocationMapSelection } from '../types';
+import type { LocationMapSelection } from '../../types';
 import {
   LocationMapEdgeInspector,
   LocationMapEdgeRunInspector,
@@ -12,19 +12,19 @@ import {
   LocationMapPathInspector,
   type StairPairingContext,
   type StairWorkspaceInspect,
-} from './LocationMapSelectionInspectors';
+} from './inspectors/LocationMapSelectionInspectors';
 import {
-  LocationCellAuthoringPanel,
-  type LocationCellAuthoringPanelProps,
-} from '../panels/LocationCellAuthoringPanel';
-import { LocationMapRegionMetadataForm } from './LocationMapRegionMetadataForm';
+  CellSelectionInspector,
+  type CellSelectionInspectorProps,
+} from './inspectors/CellSelectionInspector';
+import { LocationMapRegionMetadataForm } from './inspectors/LocationMapRegionMetadataForm';
 
 export type { StairWorkspaceInspect, StairPairingContext };
 
-export type LocationEditorSelectionPanelProps = {
+export type SelectionTabProps = {
   selection: LocationMapSelection;
   /** Passed through for `cell` (same props the route already used for the cell inspector). */
-  cellPanelProps: LocationCellAuthoringPanelProps;
+  cellPanelProps: CellSelectionInspectorProps;
   /** Sibling floors for stair target picker; current floor id for link status. */
   stairWorkspaceInspect: StairWorkspaceInspect;
   /** Building edit: canonical stair connections + link/unlink handlers. */
@@ -57,10 +57,13 @@ export type LocationEditorSelectionPanelProps = {
   onBeginRegionPaintFromSelection?: (regionId: string) => void;
 };
 
+/** @deprecated Use {@link SelectionTabProps} */
+export type LocationEditorSelectionPanelProps = SelectionTabProps;
+
 /**
- * Right-rail **Selection** section: inspector for the current map selection.
+ * Right-rail **Selection** tab: inspector for the current map selection.
  */
-export function LocationEditorSelectionPanel({
+export function SelectionTab({
   selection,
   cellPanelProps,
   stairWorkspaceInspect,
@@ -77,7 +80,7 @@ export function LocationEditorSelectionPanel({
   onPatchEdgeEntry,
   debouncedPersistableFlushRef,
   onBeginRegionPaintFromSelection,
-}: LocationEditorSelectionPanelProps) {
+}: SelectionTabProps) {
   switch (selection.type) {
     case 'none':
       return (
@@ -87,7 +90,7 @@ export function LocationEditorSelectionPanel({
       );
     case 'cell':
       return (
-        <LocationCellAuthoringPanel {...cellPanelProps} selectedCellId={selection.cellId} />
+        <CellSelectionInspector {...cellPanelProps} selectedCellId={selection.cellId} />
       );
     case 'region': {
       const region = regionEntries.find((r) => r.id === selection.regionId);
@@ -171,3 +174,6 @@ export function LocationEditorSelectionPanel({
       );
   }
 }
+
+/** @deprecated Use {@link SelectionTab} */
+export const LocationEditorSelectionPanel = SelectionTab;

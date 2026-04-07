@@ -89,6 +89,35 @@ export function applyRemoveEdgeRunFromDraft(
     : next;
 }
 
+/**
+ * Drops the region from `regionEntries` and clears every cell assignment to that id in
+ * `regionIdByCellId` (Erase only clears one cell; this removes the authored region wholesale).
+ */
+export function applyRemoveRegionFromDraft(
+  prev: LocationGridDraftState,
+  regionId: string,
+): LocationGridDraftState {
+  const id = regionId.trim();
+  const nextRegionEntries = prev.regionEntries.filter((r) => r.id.trim() !== id);
+  const nextRegionIdByCellId = { ...prev.regionIdByCellId };
+  for (const cellId of Object.keys(nextRegionIdByCellId)) {
+    const rid = nextRegionIdByCellId[cellId];
+    if (rid !== undefined && rid.trim() === id) {
+      delete nextRegionIdByCellId[cellId];
+    }
+  }
+  const next: LocationGridDraftState = {
+    ...prev,
+    regionEntries: nextRegionEntries,
+    regionIdByCellId: nextRegionIdByCellId,
+  };
+  const clearSelection =
+    prev.mapSelection.type === 'region' && prev.mapSelection.regionId.trim() === id;
+  return clearSelection
+    ? { ...next, mapSelection: { type: 'none' }, selectedCellId: null }
+    : next;
+}
+
 export function applyDeleteForMapSelection(prev: LocationGridDraftState): LocationGridDraftState | null {
   const ms = prev.mapSelection;
   if (ms.type === 'object') {
@@ -102,6 +131,9 @@ export function applyDeleteForMapSelection(prev: LocationGridDraftState): Locati
   }
   if (ms.type === 'edge-run') {
     return applyRemoveEdgeRunFromDraft(prev, ms.edgeIds);
+  }
+  if (ms.type === 'region') {
+    return applyRemoveRegionFromDraft(prev, ms.regionId);
   }
   return null;
 }

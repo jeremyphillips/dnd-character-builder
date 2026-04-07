@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react
 import { FormProvider, useForm, useWatch, type UseFormReset } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -43,6 +45,8 @@ type LocationMapRegionMetadataFormProps = {
    * When set, the form registers `flush` here so the route can run it before header Save / other boundaries.
    */
   debouncedPersistableFlushRef?: MutableRefObject<(() => void) | null>;
+  /** Clears region from the map draft (entry + cell paint); same semantics as Selection Delete. */
+  onRemoveFromMap?: () => void;
 };
 
 /**
@@ -58,6 +62,7 @@ export function LocationMapRegionMetadataForm({
   formId,
   showPersistHint = true,
   debouncedPersistableFlushRef,
+  onRemoveFromMap,
 }: LocationMapRegionMetadataFormProps) {
   const patchRef = useRef(onPatchRegion);
   patchRef.current = onPatchRegion;
@@ -171,6 +176,14 @@ export function LocationMapRegionMetadataForm({
             size="small"
             onAfterChange={patchColor}
           />
+          {onRemoveFromMap ? (
+            <>
+              <Divider />
+              <Button size="small" color="error" variant="outlined" onClick={onRemoveFromMap}>
+                Remove from map
+              </Button>
+            </>
+          ) : null}
         </Stack>
       </Box>
     </FormProvider>

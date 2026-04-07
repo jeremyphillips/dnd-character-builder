@@ -90,6 +90,7 @@ import {
   applyRemoveEdgeFromDraft,
   applyRemoveEdgeRunFromDraft,
   applyRemovePathFromDraft,
+  applyRemoveRegionFromDraft,
 } from './mapSessionDraft.helpers';
 import { buildLocationEditLinkModalSelectOptions } from './locationEditLinkModalOptions';
 import { useLocationEditBuildingStairHandlers } from './useLocationEditBuildingStairHandlers';
@@ -790,6 +791,10 @@ export function useLocationEditWorkspaceModel({
     setGridDraft((prev) => applyRemoveEdgeRunFromDraft(prev, edgeIds));
   }, []);
 
+  const handleRemoveRegionFromMap = useCallback((regionId: string) => {
+    setGridDraft((prev) => applyRemoveRegionFromDraft(prev, regionId));
+  }, []);
+
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
       if (mapEditor.mode === 'place' && mapEditor.activePlace) {
@@ -1019,6 +1024,7 @@ export function useLocationEditWorkspaceModel({
     handleRemovePathFromMap,
     handleRemoveEdgeFromMap,
     handleRemoveEdgeRunFromMap,
+    handleRemoveRegionFromMap,
     handlePatchEdgeEntry,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,

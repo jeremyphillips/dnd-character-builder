@@ -278,6 +278,25 @@ describe('LocationEditorSelectionPanel', () => {
     expect(screen.getByText('Overlay region')).toBeInTheDocument();
   });
 
+  it('region: shows Remove from map when onRemoveRegionFromMap is provided', () => {
+    const onRemoveRegionFromMap = vi.fn();
+    renderSelection(
+      { type: 'region', regionId: 'reg-1' },
+      {
+        regionEntries: [
+          {
+            id: 'reg-1',
+            name: 'Harbor District',
+            description: '',
+            colorKey: 'regionBlue',
+          },
+        ],
+        onRemoveRegionFromMap,
+      },
+    );
+    expect(screen.getByRole('button', { name: 'Remove from map' })).toBeInTheDocument();
+  });
+
   it('edge-run: wall uses geometry-style run title', () => {
     const anchor = 'between:0,0|1,0';
     renderSelection({

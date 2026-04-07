@@ -44,6 +44,8 @@ export type LocationEditorSelectionPanelProps = {
   onRemoveEdgeFromMap?: (edgeId: string) => void;
   /** All segments in the selected straight run (same as Delete for edge-run). */
   onRemoveEdgeRunFromMap?: (edgeIds: readonly string[]) => void;
+  /** Removes the region entry and all cell assignments (same as Delete when a region is selected). */
+  onRemoveRegionFromMap?: (regionId: string) => void;
   /** Persisted edge row patch (e.g. label) — same draft as map save. */
   onPatchEdgeEntry?: (
     edgeId: string,
@@ -69,6 +71,7 @@ export function LocationEditorSelectionPanel({
   onRemovePathFromMap,
   onRemoveEdgeFromMap,
   onRemoveEdgeRunFromMap,
+  onRemoveRegionFromMap,
   onPatchEdgeEntry,
   debouncedPersistableFlushRef,
 }: LocationEditorSelectionPanelProps) {
@@ -98,6 +101,14 @@ export function LocationEditorSelectionPanel({
           formId="location-map-region-metadata-selection"
           onPatchRegion={(regionId, patch) => onUpdateRegionEntry(regionId, patch)}
           debouncedPersistableFlushRef={debouncedPersistableFlushRef}
+          onRemoveFromMap={
+            onRemoveRegionFromMap
+              ? () => {
+                  debouncedPersistableFlushRef?.current?.();
+                  onRemoveRegionFromMap(selection.regionId);
+                }
+              : undefined
+          }
         />
       );
     }

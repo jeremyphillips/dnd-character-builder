@@ -19,18 +19,13 @@ import {
   type GridCell,
 } from '@/features/content/locations/components/mapGrid';
 import type { GridGeometryId } from '@/shared/domain/grid/gridGeometry';
-import {
-  resolveCellFillVariant,
-  type LocationCellFillFamilyId,
-} from '@/features/content/locations/domain/model/map/locationCellFill.types';
+import { resolveCellFillPresentation } from '@/features/content/locations/domain/model/map/locationCellFill.types';
 import type {
   LocationMapActiveDrawSelection,
   LocationMapActivePaintSelection,
   LocationMapEditorMode,
 } from '@/features/content/locations/domain/authoring/editor';
 import { colorPrimitives } from '@/app/theme/colorPrimitives';
-import { resolveCellFillSwatchColor } from '@/app/theme/mapColors';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { resolveLocationMapUiStyles } from '@/features/content/locations/domain/presentation/map/locationMapUiStyles';
 import type { Location } from '@/features/content/locations/domain/model/location';
 import { useLocationAuthoringGridLayout } from '@/features/content/locations/hooks/useLocationAuthoringGridLayout';
@@ -340,10 +335,7 @@ export function LocationGridAuthoringSection({
     (cell: GridCell) => {
       const sel = draft.cellFillByCellId[cell.cellId];
       if (!sel) return undefined;
-      const { variant } = resolveCellFillVariant(sel.familyId as LocationCellFillFamilyId, sel.variantId);
-      const swatchColor = resolveCellFillSwatchColor(variant);
-      const imageUrl = variant.imageKey ? resolveImageUrl(variant.imageKey) : undefined;
-      return imageUrl != null ? { swatchColor, imageUrl } : { swatchColor };
+      return resolveCellFillPresentation(sel.familyId, sel.variantId);
     },
     [draft.cellFillByCellId],
   );

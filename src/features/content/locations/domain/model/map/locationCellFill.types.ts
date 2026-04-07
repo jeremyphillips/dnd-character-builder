@@ -31,3 +31,6 @@ export {
 } from '@/shared/domain/locations/map/authoredCellFillDefinitions';
 
 export type { LocationMapCellFillSelection } from '@/shared/domain/locations/map/locationMap.types';
+
+export type { ResolvedCellFillPresentation } from '@/shared/domain/locations/map/cellFillPresentation.resolve';
+export { resolveCellFillPresentation } from '@/shared/domain/locations/map/cellFillPresentation.resolve';

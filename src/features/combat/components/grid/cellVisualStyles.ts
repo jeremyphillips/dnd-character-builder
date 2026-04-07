@@ -1,18 +1,17 @@
 /**
  * Combat grid **cell visual** builder: maps tactical {@link CellVisualState} to cell `sx`, plus
- * authored map underlay merge. This is **domain-specific** tactical presentation — keep separate
- * from location authoring chrome (`mapGridAuthoringCellVisual.builder.ts`); do not merge the two pipelines.
+ * authored map underlay merge. Fill **data** (swatch + optional image) comes from
+ * {@link resolveCellFillPresentation}; tactical layering stays here — separate from authoring chrome
+ * (`mapGridAuthoringCellVisual.builder.ts`).
  */
 import type { Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import type { SystemStyleObject } from '@mui/system'
 import type { GridCellViewModel } from '@/features/mechanics/domain/combat/space/selectors/space.selectors'
 import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types'
-import {
-  resolveCellFillVariant,
-  type LocationCellFillFamilyId,
-} from '@/features/content/locations/domain/model/map/locationCellFill.types'
-import { getMapRegionColor, resolveCellFillSwatchColor } from '@/app/theme/mapColors'
+import type { LocationCellFillFamilyId } from '@/features/content/locations/domain/model/map/locationCellFill.types'
+import { resolveCellFillPresentation } from '@/shared/domain/locations/map/cellFillPresentation.resolve'
+import { getMapRegionColor } from '@/app/theme/mapColors'
 import type { CellBaseFillKind, CellMovementVisual, CellVisualState } from './cellVisualState'
 
 const CELL_TRANSITION = 'background-color 0.15s, box-shadow 0.15s, outline 0.15s' as const
@@ -127,20 +126,23 @@ export function mergeAuthoringMapUnderlayIntoCellSx(
   const regionKey = cell.authoringRegionColorKey
   if (!fillSel && !regionKey) return baseSx
 
-  const variantRow = fillSel
-    ? resolveCellFillVariant(fillSel.familyId as LocationCellFillFamilyId, fillSel.variantId).variant
+  const fillPresentation = fillSel
+    ? resolveCellFillPresentation(fillSel.familyId as LocationCellFillFamilyId, fillSel.variantId)
     : undefined
 
   let stacked: string = theme.palette.background.paper
-  if (variantRow) {
-    stacked = resolveCellFillSwatchColor(variantRow)
+  if (fillPresentation) {
+    stacked = fillPresentation.swatchColor
+    if (fillPresentation.imageUrl) {
+      stacked = `url(${fillPresentation.imageUrl}) center / cover no-repeat, ${stacked}`
+    }
   }
   if (regionKey) {
     const rc = getMapRegionColor(regionKey as LocationMapRegionColorKey)
     stacked = `linear-gradient(${alpha(rc, 0.22)}, ${alpha(rc, 0.22)}), ${stacked}`
   }
 
-  if (!variantRow && !regionKey) return baseSx
+  if (!fillPresentation && !regionKey) return baseSx
 
   return {
     ...baseSx,

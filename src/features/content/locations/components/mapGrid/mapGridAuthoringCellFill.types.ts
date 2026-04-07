@@ -1,10 +1,8 @@
 /**
- * Resolved **paint** for a map cell (swatch + optional image). Chrome policy stays in
- * {@link resolveAuthoringGridChrome}; image URLs are resolved by callers, not the chrome resolver.
+ * Alias for {@link ResolvedCellFillPresentation} — authoring grid chrome consumes the same fill data
+ * as combat underlay; composition stays in `mapGridAuthoringCellVisual.builder`.
  */
-export type AuthoringCellFillPresentation = {
-  /** Opaque swatch color (terrain / floor). */
-  swatchColor: string;
-  /** Optional texture; same fill-opacity rules apply to swatch + image together. */
-  imageUrl?: string | undefined;
-};
+export type {
+  ResolvedCellFillPresentation,
+  ResolvedCellFillPresentation as AuthoringCellFillPresentation,
+} from '@/shared/domain/locations/map/cellFillPresentation.resolve';

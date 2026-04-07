@@ -171,10 +171,8 @@ export default function LocationEditRoute() {
     mapEditor,
     handlePaintChange,
     handleUpdateRegionEntry,
-    handleCreateRegionPaint,
-    handleSelectActiveRegionPaint,
-    handleActiveRegionColorKeyChange,
-    handleEditRegionInSelection,
+    handleRegionPaintCell,
+    handleBeginRegionPaintFromSelection,
     handleMapEditorModeChange,
     focusSelectionRailSection,
     paintPaletteSections,
@@ -261,11 +259,6 @@ export default function LocationEditRoute() {
       mapEditor={mapEditor}
       placePaletteItems={placePaletteItems}
       drawPaletteItems={drawPaletteItems}
-      regionEntries={gridDraft.regionEntries}
-      onCreateRegion={handleCreateRegionPaint}
-      onSelectActiveRegion={handleSelectActiveRegionPaint}
-      onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
-      onEditRegionInSelection={handleEditRegionInSelection}
     />
   );
 
@@ -290,6 +283,7 @@ export default function LocationEditRoute() {
       onRemoveEdgeRunFromMap={handleRemoveEdgeRunFromMap}
       onRemoveRegionFromMap={handleRemoveRegionFromMap}
       onPatchEdgeEntry={handlePatchEdgeEntry}
+      onBeginRegionPaintFromSelection={handleBeginRegionPaintFromSelection}
     />
   );
 
@@ -320,6 +314,7 @@ export default function LocationEditRoute() {
       suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
       placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
       consumeClickSuppressionAfterPan={consumeClickSuppressionAfterPan}
+      onRegionPaintCell={handleRegionPaintCell}
     />
   ) : null;
 
@@ -350,6 +345,7 @@ export default function LocationEditRoute() {
       activeDraw={mapEditor.activeDraw}
       activePlace={mapEditor.activePlace}
       paintPaletteSections={paintPaletteSections}
+      regionEntries={gridDraft.regionEntries}
       drawPaletteItems={drawPaletteItems}
       placePaletteItems={placePaletteItems}
       onPaintChange={handlePaintChange}

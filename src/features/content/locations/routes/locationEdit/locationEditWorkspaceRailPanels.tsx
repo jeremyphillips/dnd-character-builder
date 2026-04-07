@@ -2,8 +2,6 @@ import type { Dispatch, SetStateAction } from 'react';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
-import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
 import type {
   LocationMapActiveDrawSelection,
   LocationMapActivePaintSelection,
@@ -38,22 +36,12 @@ export type LocationEditWorkspaceMapAuthoringRailPanelProps = {
   /** Retained for future rail hints; place palette is toolbar-first (left tray). */
   placePaletteItems: MapPlacePaletteItem[];
   drawPaletteItems: MapDrawPaletteItem[];
-  regionEntries: readonly LocationMapRegionAuthoringEntry[];
-  onCreateRegion: () => void;
-  onSelectActiveRegion: (regionId: string) => void;
-  onActiveRegionColorKeyChange: (colorKey: LocationMapRegionColorKey) => void;
-  onEditRegionInSelection: () => void;
 };
 
 export function LocationEditWorkspaceMapAuthoringRailPanel({
   mapEditor,
   placePaletteItems: _placePaletteItems,
   drawPaletteItems,
-  regionEntries,
-  onCreateRegion,
-  onSelectActiveRegion,
-  onActiveRegionColorKeyChange,
-  onEditRegionInSelection,
 }: LocationEditWorkspaceMapAuthoringRailPanelProps) {
   return (
     <Stack spacing={2}>
@@ -69,14 +57,7 @@ export function LocationEditWorkspaceMapAuthoringRailPanel({
           onSelectDraw={mapEditor.setActiveDraw}
         />
       ) : mapEditor.mode === 'paint' && mapEditor.activePaint ? (
-        <LocationMapEditorPaintMapPanel
-          paint={mapEditor.activePaint}
-          regionEntries={regionEntries}
-          onCreateRegion={onCreateRegion}
-          onSelectActiveRegion={onSelectActiveRegion}
-          onActiveRegionColorKeyChange={onActiveRegionColorKeyChange}
-          onEditRegionInSelection={onEditRegionInSelection}
-        />
+        <LocationMapEditorPaintMapPanel paint={mapEditor.activePaint} />
       ) : mapEditor.mode === 'erase' ? (
         <Typography variant="body2" color="text.secondary">
           Click a cell to remove the topmost feature (edge, object, path segment, link, or terrain fill). Drag across

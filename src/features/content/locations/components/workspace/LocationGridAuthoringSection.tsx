@@ -100,6 +100,8 @@ type LocationGridAuthoringSectionProps = {
   placeObjectDragStrokeEnabled?: boolean;
   /** From {@link useCanvasPan#consumeClickSuppressionAfterPan}; skip cell click after pan drag. */
   consumeClickSuppressionAfterPan?: () => boolean;
+  /** Paint mode region strokes: create/extend via workspace (draft + selection + rail). */
+  onRegionPaintCell?: (cellId: string) => void;
 };
 
 export function LocationGridAuthoringSection({
@@ -128,6 +130,7 @@ export function LocationGridAuthoringSection({
   suppressCanvasPanOnCells = false,
   placeObjectDragStrokeEnabled = false,
   consumeClickSuppressionAfterPan,
+  onRegionPaintCell,
 }: LocationGridAuthoringSectionProps) {
   void campaignId;
   void hostLocationId;
@@ -351,6 +354,7 @@ export function LocationGridAuthoringSection({
     activePaint,
     regionEntries: draft.regionEntries,
     setDraft,
+    onRegionPaintCell,
   });
 
   const paintStrokeOrEraseFill =

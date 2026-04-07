@@ -47,6 +47,8 @@ type LocationMapRegionMetadataFormProps = {
   debouncedPersistableFlushRef?: MutableRefObject<(() => void) | null>;
   /** Clears region from the map draft (entry + cell paint); same semantics as Selection Delete. */
   onRemoveFromMap?: () => void;
+  /** Enter region paint for this region (spatial edit); metadata stays in Selection. */
+  onEditRegionSpatially?: () => void;
 };
 
 /**
@@ -63,6 +65,7 @@ export function LocationMapRegionMetadataForm({
   showPersistHint = true,
   debouncedPersistableFlushRef,
   onRemoveFromMap,
+  onEditRegionSpatially,
 }: LocationMapRegionMetadataFormProps) {
   const patchRef = useRef(onPatchRegion);
   patchRef.current = onPatchRegion;
@@ -176,6 +179,11 @@ export function LocationMapRegionMetadataForm({
             size="small"
             onAfterChange={patchColor}
           />
+          {onEditRegionSpatially ? (
+            <Button variant="outlined" size="small" onClick={onEditRegionSpatially} sx={{ alignSelf: 'flex-start' }}>
+              Edit region
+            </Button>
+          ) : null}
           {onRemoveFromMap ? (
             <>
               <Divider />

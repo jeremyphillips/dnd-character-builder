@@ -16,7 +16,6 @@ import {
   buildBuildingSubtypeSelectOptions,
   buildCharacterEntityPickerOptions,
   canApplyRegionPaint,
-  shouldSwitchRailToMapForPaintDomain,
   upsertRegionEntry,
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
@@ -55,7 +54,6 @@ import {
   LOCATION_MAP_DEFAULT_REGION_NAME,
   LOCATION_MAP_REGION_COLOR_KEYS,
 } from '@/shared/domain/locations/map/locationMapRegion.constants';
-import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
 import { resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens';
 import {
   applyEdgeStrokeToDraft,
@@ -369,11 +367,8 @@ export function useLocationEditWorkspaceModel({
   const handlePaintChange = useCallback(
     (next: LocationMapPaintState) => {
       mapEditor.setActivePaint(next);
-      if (shouldSwitchRailToMapForPaintDomain(next.domain)) {
-        setRailSection('map');
-      }
     },
-    [mapEditor.setActivePaint, setRailSection],
+    [mapEditor.setActivePaint],
   );
 
   const handleUpdateRegionEntry = useCallback(
@@ -393,61 +388,68 @@ export function useLocationEditWorkspaceModel({
     [],
   );
 
-  const handleCreateRegionPaint = useCallback(() => {
-    const id = crypto.randomUUID();
-    const colorKey = LOCATION_MAP_REGION_COLOR_KEYS[0];
-    const name = LOCATION_MAP_DEFAULT_REGION_NAME;
-    setGridDraft((prev) => ({
-      ...prev,
-      regionEntries: upsertRegionEntry(prev.regionEntries, { id, colorKey, name }),
-    }));
-    mapEditor.setActivePaint((p) => (p ? { ...p, domain: 'region', activeRegionId: id } : p));
-    setRailSection('map');
-  }, [mapEditor.setActivePaint, setRailSection]);
+  const handleRegionPaintCell = useCallback(
+    (cellId: string) => {
+      const p = mapEditor.activePaint;
+      if (!p || p.domain !== 'region') return;
 
-  const handleSelectActiveRegionPaint = useCallback(
+      const ridTrim = p.activeRegionId?.trim() ?? '';
+      if (ridTrim) {
+        setGridDraft((prev) => {
+          const cur = prev.regionEntries.find((r) => r.id === ridTrim);
+          if (!cur) return prev;
+          return {
+            ...prev,
+            regionIdByCellId: { ...prev.regionIdByCellId, [cellId]: ridTrim },
+          };
+        });
+        return;
+      }
+
+      const colorKey = p.pendingRegionColorKey;
+      const newId = crypto.randomUUID();
+      setGridDraft((prev) => ({
+        ...prev,
+        regionEntries: upsertRegionEntry(prev.regionEntries, {
+          id: newId,
+          colorKey,
+          name: LOCATION_MAP_DEFAULT_REGION_NAME,
+        }),
+        regionIdByCellId: { ...prev.regionIdByCellId, [cellId]: newId },
+        mapSelection: { type: 'region', regionId: newId },
+        selectedCellId: selectedCellIdForMapSelection({
+          type: 'region',
+          regionId: newId,
+        }),
+      }));
+      mapEditor.setActivePaint((cur) =>
+        cur ? { ...cur, activeRegionId: newId, pendingRegionColorKey: colorKey } : cur,
+      );
+      setRailSection('selection');
+    },
+    [mapEditor.activePaint, mapEditor.setActivePaint, setGridDraft, setRailSection],
+  );
+
+  const handleBeginRegionPaintFromSelection = useCallback(
     (regionId: string) => {
-      mapEditor.setActivePaint((p) => {
-        if (!p) return p;
-        const trimmed = regionId.trim();
-        return {
-          ...p,
-          domain: 'region',
-          activeRegionId: trimmed === '' ? null : trimmed,
-        };
-      });
-      setRailSection('map');
-    },
-    [mapEditor.setActivePaint, setRailSection],
-  );
-
-  const handleActiveRegionColorKeyChange = useCallback(
-    (colorKey: LocationMapRegionColorKey) => {
-      const id = mapEditor.activePaint?.activeRegionId?.trim();
+      const id = regionId.trim();
       if (!id) return;
-      setGridDraft((prev) => {
-        const cur = prev.regionEntries.find((r) => r.id === id);
-        if (!cur) return prev;
-        return {
-          ...prev,
-          regionEntries: upsertRegionEntry(prev.regionEntries, { ...cur, colorKey }),
-        };
-      });
-    },
-    [mapEditor.activePaint?.activeRegionId],
-  );
+      const entry = gridDraft.regionEntries.find((r) => r.id === id);
+      if (!entry) return;
 
-  const handleEditRegionInSelection = useCallback(() => {
-    const id = mapEditor.activePaint?.activeRegionId?.trim();
-    if (!id) return;
-    const ms = { type: 'region' as const, regionId: id };
-    setGridDraft((prev) => ({
-      ...prev,
-      mapSelection: ms,
-      selectedCellId: selectedCellIdForMapSelection(ms),
-    }));
-    setRailSection('selection');
-  }, [mapEditor.activePaint?.activeRegionId]);
+      if (mapEditor.mode !== 'paint') {
+        mapEditor.setMode('paint');
+      }
+      mapEditor.setActivePaint({
+        domain: 'region',
+        selectedSurfaceFill: null,
+        activeRegionId: id,
+        pendingRegionColorKey: entry.colorKey,
+      });
+      setRailSection('selection');
+    },
+    [gridDraft.regionEntries, mapEditor.mode, mapEditor.setMode, mapEditor.setActivePaint],
+  );
 
   useEffect(() => {
     const p = mapEditor.activePaint;
@@ -959,10 +961,8 @@ export function useLocationEditWorkspaceModel({
     mapEditor,
     handlePaintChange,
     handleUpdateRegionEntry,
-    handleCreateRegionPaint,
-    handleSelectActiveRegionPaint,
-    handleActiveRegionColorKeyChange,
-    handleEditRegionInSelection,
+    handleRegionPaintCell,
+    handleBeginRegionPaintFromSelection,
     handleMapEditorModeChange,
     focusSelectionRailSection,
     paintPaletteSections,

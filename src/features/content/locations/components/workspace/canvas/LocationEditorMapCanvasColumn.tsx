@@ -11,6 +11,7 @@ import type {
   MapPaintPaletteSection,
   MapPlacePaletteItem,
 } from '@/features/content/locations/domain/authoring/editor';
+import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 import type { ZoomControlProps } from '@/ui/patterns';
 import type { CanvasPoint, UseCanvasPanReturn } from '@/ui/hooks';
 
@@ -30,6 +31,8 @@ export type LocationEditorMapCanvasColumnProps = {
   activeDraw: LocationMapActiveDrawSelection;
   activePlace: LocationMapActivePlaceSelection;
   paintPaletteSections: MapPaintPaletteSection[];
+  /** Region entries for tray swatch highlight when extending an existing region. */
+  regionEntries: readonly LocationMapRegionAuthoringEntry[];
   drawPaletteItems: MapDrawPaletteItem[];
   placePaletteItems: MapPlacePaletteItem[];
   onPaintChange: (next: LocationMapPaintState) => void;
@@ -56,6 +59,7 @@ export function LocationEditorMapCanvasColumn({
   activeDraw,
   activePlace,
   paintPaletteSections,
+  regionEntries,
   drawPaletteItems,
   placePaletteItems,
   onPaintChange,
@@ -107,6 +111,7 @@ export function LocationEditorMapCanvasColumn({
               <LocationMapEditorPaintTray
                 sections={paintPaletteSections}
                 activePaint={activePaint}
+                regionEntries={regionEntries}
                 onPaintChange={onPaintChange}
               />
             </LocationMapEditorToolTrayShell>

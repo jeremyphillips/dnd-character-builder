@@ -27,7 +27,6 @@ export function mapSelectionEqual(a: LocationMapSelection, b: LocationMapSelecti
 
 /**
  * Event-driven auto-switch: opening Place or Draw mode should focus the Map rail section.
- * Region paint switches the rail to Map when paint domain becomes `region` (see route `handlePaintChange`).
  */
 export function shouldAutoSwitchRailToMapForMode(mode: LocationMapEditorMode): boolean {
   return mode === 'place' || mode === 'draw';

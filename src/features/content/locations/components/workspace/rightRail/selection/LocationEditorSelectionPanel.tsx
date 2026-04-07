@@ -53,6 +53,8 @@ export type LocationEditorSelectionPanelProps = {
   ) => void;
   /** Debounced persistable fields (e.g. region description) register flush here for Save / boundaries. */
   debouncedPersistableFlushRef?: MutableRefObject<(() => void) | null>;
+  /** Switch to region paint for this region; Selection rail stays focused. */
+  onBeginRegionPaintFromSelection?: (regionId: string) => void;
 };
 
 /**
@@ -74,6 +76,7 @@ export function LocationEditorSelectionPanel({
   onRemoveRegionFromMap,
   onPatchEdgeEntry,
   debouncedPersistableFlushRef,
+  onBeginRegionPaintFromSelection,
 }: LocationEditorSelectionPanelProps) {
   switch (selection.type) {
     case 'none':
@@ -101,6 +104,11 @@ export function LocationEditorSelectionPanel({
           formId="location-map-region-metadata-selection"
           onPatchRegion={(regionId, patch) => onUpdateRegionEntry(regionId, patch)}
           debouncedPersistableFlushRef={debouncedPersistableFlushRef}
+          onEditRegionSpatially={
+            onBeginRegionPaintFromSelection
+              ? () => onBeginRegionPaintFromSelection(selection.regionId)
+              : undefined
+          }
           onRemoveFromMap={
             onRemoveRegionFromMap
               ? () => {

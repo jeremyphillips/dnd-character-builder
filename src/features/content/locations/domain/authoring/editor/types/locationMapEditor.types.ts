@@ -17,6 +17,7 @@ import type {
 export const DEFAULT_AUTHORED_PLACE_VARIANT_ID = 'default' as const;
 import type { LocationMapGlyphIconName } from '@/features/content/locations/domain/presentation/map/locationMapIconNameMap';
 import type { LocationMapSwatchColorKey } from '@/features/content/locations/domain/model/map/locationMapSwatchColors.types';
+import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
 export type LocationMapEditorMode =
@@ -60,7 +61,8 @@ export type LocationMapActiveDrawSelection =
 
 /**
  * Paint tool state: Surface (terrain fill) vs Region (authored region target).
- * Region metadata lives in draft `regionEntries`; paint state only holds `activeRegionId`.
+ * Region metadata lives in draft `regionEntries`; paint state holds `activeRegionId` and, when
+ * creating a region, `pendingRegionColorKey` until the first stroke commits.
  * `null` when the editor is not in Paint mode.
  */
 export type LocationMapPaintState = {
@@ -69,6 +71,11 @@ export type LocationMapPaintState = {
   selectedSurfaceFill: { familyId: LocationCellFillFamilyId; variantId: string } | null;
   /** Must match an id in draft `regionEntries` when painting regions. */
   activeRegionId: string | null;
+  /**
+   * When `domain === 'region'` and `activeRegionId` is null, first stroke creates a region with this
+   * preset color. When `activeRegionId` is set, kept in sync with the entry for tray highlight.
+   */
+  pendingRegionColorKey: LocationMapRegionColorKey;
 };
 
 export type LocationMapActivePaintSelection = LocationMapPaintState | null;

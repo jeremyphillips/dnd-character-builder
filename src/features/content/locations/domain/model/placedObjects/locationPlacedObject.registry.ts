@@ -96,7 +96,8 @@ export type PlacedObjectDefaultVariantId = typeof DEFAULT_PLACED_OBJECT_VARIANT_
  * Keep local to this registry until multiple families or domains reuse the same vocabulary; then consider extracting
  * from `shared/domain` (deferred intentionally).
  */
-export type AuthoredObjectMaterial = 'wood' | 'stone' | 'metal';
+/** Surface / frame material hints for icons and future rendering (windows may use `glass`). */
+export type AuthoredObjectMaterial = 'wood' | 'stone' | 'metal' | 'glass';
 
 export type AuthoredObjectShape = 'rectangle' | 'circle' | 'square';
 

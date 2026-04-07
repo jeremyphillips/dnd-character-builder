@@ -1,26 +1,21 @@
 /**
- * Edge feature kinds: content that lives on **cell boundaries** (walls, windows, doors).
+ * Edge feature kinds: content on **cell boundaries** (walls, windows, doors).
  *
- * Distinct from path strokes and from objects with a cell footprint.
+ * **Coarse vs authored (door/window):**
+ * - **`kind`** (`wall` | `door` | `window`) is the persisted coarse lane for `edgeEntries`, geometry, combat, SVG strokes, and draw policy.
+ * - **`wall`** — draw-tool / coarse boundary paint; see {@link LOCATION_EDGE_FEATURE_KIND_META} for draw-palette copy only.
+ * - **`door` / `window`** — authored-object semantics (variants, presentation, labels) live in **`AUTHORED_PLACED_OBJECT_DEFINITIONS`**
+ *   and **`resolveAuthoredEdgeInstance`**; instance state will live on **`LocationMapEdgeAuthoringEntry.state`** when shipped — **not** in this meta map.
  *
- * Future tool intent: dedicated **edge** tool; not paint-fill or place-object flows.
- *
- * **Base kinds** (`wall`, `window`, `door`) remain the persisted `edgeEntries[].kind` values.
- * Structured facet types live in `shared/.../locationEdgeFeature.facets.ts`; per-kind **supported**
- * facet lists on {@link LOCATION_EDGE_FEATURE_KIND_META} are for future variation, not current
- * instance data.
+ * **Structured facet types** (`LocationEdgeMaterialId`, etc.) remain in `shared/.../locationEdgeFeature.facets.ts` for future wall material
+ * or typed state; they are **not** duplicated as `supported*` lists on {@link LOCATION_EDGE_FEATURE_KIND_META}.
  */
 
-import type {
-  LocationDoorLockStateId,
-  LocationDoorWidthId,
-  LocationEdgeFeatureCategory,
-  LocationEdgeMaterialId,
-  LocationWindowVariantId,
-} from '@/shared/domain/locations/map/locationEdgeFeature.facets';
+import type { LocationEdgeFeatureCategory, LocationEdgeMaterialId } from '@/shared/domain/locations/map/locationEdgeFeature.facets';
 
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 
+/** Re-export facet vocabularies for callers that need them (e.g. future wall material UI). */
 export type {
   LocationDoorLockStateId,
   LocationDoorWidthId,
@@ -37,45 +32,31 @@ export type LocationEdgeFeatureKindId = LocationMapEdgeKindId;
 export { LOCATION_MAP_EDGE_KIND_IDS as LOCATION_EDGE_FEATURE_KIND_IDS } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 
 /**
- * Authoring metadata for a base edge kind, plus **optional** declarations of which facet values
- * that kind may support once instance-level facets exist.
+ * **Coarse** authoring metadata per base edge `kind` — labels/descriptions for tools that list kinds without the
+ * placed-object registry (today: **draw edge palette** via {@link getDrawEdgePaletteItemsForScale}).
  *
- * @remarks **TODO:** palette, SVG styling, and placement still key off `kind` + existing tokens
- * only; supported-facet arrays are **not** used for filtering or defaults in the UI yet.
+ * Door/window **variant**, lock, and instance semantics belong in the registry + persisted edge row — not here.
  */
 export type LocationEdgeFeatureKindMeta = {
   label: string;
   description?: string;
   /**
    * Optional grouping for future edge browser / filters.
-   * @remarks **TODO:** not read by current editor chrome.
+   * @remarks Not read by current editor chrome.
    */
   edgeCategory?: LocationEdgeFeatureCategory;
   /**
-   * Declared materials for `wall` when per-edge material is added to the model.
-   * @remarks **TODO:** not stored on `LocationMapEdgeAuthoringEntry` yet.
+   * Declared materials for `wall` when per-edge material is added to the model (coarse wall concern).
+   * @remarks Not stored on `LocationMapEdgeAuthoringEntry` yet.
    */
   supportedMaterials?: readonly LocationEdgeMaterialId[];
-  /**
-   * Declared window styles for `window` when variant facets are added.
-   * @remarks **TODO:** rendering uses base `window` kind only today.
-   */
-  supportedWindowVariants?: readonly LocationWindowVariantId[];
-  /**
-   * Declared lock states for `door` when persisted on edges.
-   * @remarks **TODO:** no lock state in encounter/build pipeline from edges yet.
-   */
-  supportedDoorLockStates?: readonly LocationDoorLockStateId[];
-  /**
-   * Declared widths for `door` when geometry respects them.
-   * @remarks **TODO:** passage logic still ignores width facets.
-   */
-  supportedDoorWidths?: readonly LocationDoorWidthId[];
 };
 
 /**
- * Labels and **future-facing** supported-facet declarations per base kind.
- * Keys must match {@link LOCATION_MAP_EDGE_KIND_IDS}.
+ * Per-kind copy for **coarse** edge features. Keys match {@link LOCATION_MAP_EDGE_KIND_IDS}.
+ *
+ * Door/window entries are **minimal** (label/description/category only) for policy-complete `Record` typing and any
+ * scale that lists those kinds in draw policy; **place** tool + inspectors use the authored-object registry instead.
  */
 export const LOCATION_EDGE_FEATURE_KIND_META = {
   wall: {
@@ -88,13 +69,10 @@ export const LOCATION_EDGE_FEATURE_KIND_META = {
     label: 'Window',
     description: 'Opening in a wall.',
     edgeCategory: 'opening',
-    supportedWindowVariants: ['glass', 'stained_glass', 'open', 'bars', 'shutters'] as const,
   },
   door: {
     label: 'Door',
     description: 'Passage or threshold on an edge.',
     edgeCategory: 'passage',
-    supportedDoorLockStates: ['unlocked', 'locked', 'barred'] as const,
-    supportedDoorWidths: ['single', 'double'] as const,
   },
 } as const satisfies Record<LocationEdgeFeatureKindId, LocationEdgeFeatureKindMeta>;

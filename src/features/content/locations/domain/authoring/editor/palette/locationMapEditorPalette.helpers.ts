@@ -90,7 +90,8 @@ export function getDrawPathPaletteItemsForScale(scale: LocationScaleId): MapDraw
 /**
  * Edge draw palette — label/description from {@link LOCATION_EDGE_FEATURE_KIND_META} only.
  *
- * @remarks **TODO:** does not surface facet options (`supportedMaterials`, etc.); base `kind` selection only.
+ * @remarks Base `kind` selection only (no per-kind facet UI). If policy ever lists `door`/`window` here again,
+ * consider sourcing copy from `AUTHORED_PLACED_OBJECT_DEFINITIONS` to avoid drift with the place tool.
  */
 export function getDrawEdgePaletteItemsForScale(scale: LocationScaleId): MapDrawPaletteItem[] {
   const kinds = getAllowedEdgeKindsForScale(scale);

@@ -82,10 +82,20 @@ export function useLocationGridSelectMode({
       const rect = gridContainerRef.current.getBoundingClientRect();
       const gx = e.clientX - rect.left;
       const gy = e.clientY - rect.top;
-      const top = document.elementFromPoint(e.clientX, e.clientY);
-      const cellEl = top?.closest('[role="gridcell"]');
+      const stack =
+        typeof document !== 'undefined' && typeof document.elementsFromPoint === 'function'
+          ? document.elementsFromPoint(e.clientX, e.clientY)
+          : [];
+      const top = stack[0] ?? null;
+      const cellEl =
+        top instanceof Element ? top.closest('[role="gridcell"]') : null;
+      const firstGridCellInStack = stack.find(
+        (n): n is HTMLElement =>
+          n instanceof HTMLElement && n.getAttribute('role') === 'gridcell',
+      );
       const anchorCellId =
         cellEl?.getAttribute('data-cell-id') ??
+        firstGridCellInStack?.getAttribute('data-cell-id') ??
         resolveHexCellFromClient(e.clientX, e.clientY) ??
         (!isHex && squareGridGeometry
           ? resolveSquareAnchorCellIdForSelectPx(
@@ -104,7 +114,7 @@ export function useLocationGridSelectMode({
         return;
       }
       const next = resolveSelectModeInteractiveTarget({
-        targetElement: top as HTMLElement | null,
+        targetElement: top instanceof HTMLElement ? top : null,
         clientX: e.clientX,
         clientY: e.clientY,
         gx,

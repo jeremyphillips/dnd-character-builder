@@ -22,8 +22,10 @@ import type { LocationMapSelection } from '@/features/content/locations/componen
 import { shouldApplyCellSelectedChrome } from './mapGridCellVisualState';
 import {
   buildHexAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
   hexAuthoringCellVisualClassNames,
 } from './mapGridAuthoringCellVisual.builder';
+import type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
 import GridCellHost from './GridCellHost';
 import GridCellVisual from './GridCellVisual';
 
@@ -39,7 +41,7 @@ export type HexGridEditorProps = {
   selectedCellId?: string | null;
   excludedCellIds?: string[];
   onCellClick?: (cell: HexGridCell, event: ReactMouseEvent<HTMLElement>) => void;
-  getCellBackgroundColor?: (cell: HexGridCell) => string | undefined;
+  getCellFillPresentation?: (cell: HexGridCell) => AuthoringCellFillPresentation | undefined;
   onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
   onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
   onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
@@ -62,7 +64,7 @@ export default function HexGridEditor({
   selectedCellId,
   excludedCellIds,
   onCellClick,
-  getCellBackgroundColor,
+  getCellFillPresentation,
   onCellPointerDown,
   onCellPointerEnter,
   onCellPointerUp,
@@ -122,13 +124,13 @@ export default function HexGridEditor({
 
         const strokePx = selected ? '2px' : '1px';
 
-        const fillBg = getCellBackgroundColor?.(cell);
+        const fillPresentation = getCellFillPresentation?.(cell);
 
-        const { outer, inner, hostHoverSx } = buildHexAuthoringCellVisualParts({
+        const { outer, innerShell, fillLayer, hostHoverSx } = buildHexAuthoringCellVisualParts({
           cellId,
           selected,
           excluded,
-          fillBg,
+          fillPresentation,
           disabled: !!disabled,
           selectHoverTarget: selectHoverTargetProp,
           strokePx,
@@ -172,36 +174,59 @@ export default function HexGridEditor({
           >
             {/* Outer ring is not `.grid-cell-visual` so host `:focus-visible` outlines the inner layer only. */}
             <Box className={hexAuthoringCellVisualClassNames.outer} sx={outer} />
-            <GridCellVisual omitLayoutFill className={hexAuthoringCellVisualClassNames.inner} sx={inner}>
-              {custom != null && custom !== false ? (
-                <Box
-                  sx={{
-                    boxSizing: 'border-box',
-                    width: '100%',
-                    maxWidth: '70%',
-                    minWidth: 0,
-                    height: '100%',
-                    minHeight: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {custom}
-                </Box>
-              ) : label != null && label !== '' ? (
-                <Box
-                  component="span"
-                  sx={{
-                    alignSelf: 'center',
-                    textAlign: 'center',
-                    wordBreak: 'break-word',
-                    maxWidth: '70%',
-                  }}
-                >
-                  {label}
-                </Box>
-              ) : null}
+            <GridCellVisual
+              omitLayoutFill
+              className={hexAuthoringCellVisualClassNames.inner}
+              sx={innerShell}
+              centerChildren={false}
+            >
+              <Box
+                className={GRID_CELL_AUTHORING_FILL_CLASS}
+                sx={fillLayer}
+                aria-hidden
+              />
+              <Box
+                sx={{
+                  position: 'relative',
+                  zIndex: 1,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 0,
+                  minWidth: 0,
+                }}
+              >
+                {custom != null && custom !== false ? (
+                  <Box
+                    sx={{
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      maxWidth: '70%',
+                      minWidth: 0,
+                      height: '100%',
+                      minHeight: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {custom}
+                  </Box>
+                ) : label != null && label !== '' ? (
+                  <Box
+                    component="span"
+                    sx={{
+                      alignSelf: 'center',
+                      textAlign: 'center',
+                      wordBreak: 'break-word',
+                      maxWidth: '70%',
+                    }}
+                  >
+                    {label}
+                  </Box>
+                ) : null}
+              </Box>
             </GridCellVisual>
           </GridCellHost>
         );

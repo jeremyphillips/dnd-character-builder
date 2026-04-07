@@ -1,75 +1,89 @@
 /**
- * Pure resolution of authoring grid cell **chrome colors** (border + terrain fill).
+ * Pure resolution of authoring grid cell **chrome** (border + fill layer opacity + opaque paint color).
  * Policy mirrors {@link mapGridCellVisualState}; geometry stays in the builder.
+ * Fill **presentation** (swatch + optional image) is separate — callers pass opaque `fillBg` here.
  */
-import { alpha } from '@mui/material/styles';
-
-import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
-
 import {
   GRID_CELL_BORDER_COLOR,
   GRID_CELL_BORDER_COLOR_HOVER,
   gridCellPalette,
 } from './gridCellStyles';
 
-export type AuthoringGridChromeColors = {
+export type AuthoringGridChromeLayer = {
   border: string;
-  fill: string;
+  /** Opacity for the whole fill layer (swatch + optional `backgroundImage`). */
+  fillOpacity: number;
+  /** Opaque tint; excluded cells use {@link gridCellPalette.background.excluded} at full opacity. */
+  fillPaintColor: string;
 };
 
 export type AuthoringGridChrome = {
-  /** Idle border + fill (non-hover). */
-  idle: AuthoringGridChromeColors;
-  /** On `:hover` when select-mode hover is suppressed for this cell — same as idle. */
-  hoverSuppressed: AuthoringGridChromeColors;
-  /** On `:hover` when this cell is the hover winner — terrain-tinted fill at hover opacity. */
-  hoverEmphasis: AuthoringGridChromeColors;
+  idle: AuthoringGridChromeLayer;
+  hoverSuppressed: AuthoringGridChromeLayer;
+  hoverEmphasis: AuthoringGridChromeLayer;
 };
 
 export type AuthoringGridChromeInput = {
   selected: boolean;
   excluded: boolean;
+  /** Opaque terrain swatch; falls back to {@link gridCellPalette.background.default}. */
   fillBg: string | undefined;
 };
 
 /**
- * Resolves border/fill for idle, hover-suppressed (mirror idle), and hover-emphasis states.
- * `fillBg` is the terrain tint; falls back to {@link gridCellPalette.background.default}.
+ * Resolves border + fill-layer opacity + opaque paint for idle, hover-suppressed, hover-emphasis.
  */
 export function resolveAuthoringGridChrome(
   input: AuthoringGridChromeInput,
 ): AuthoringGridChrome {
-  const fillBgColor = input.fillBg ?? gridCellPalette.background.default;
+  const fillBase = input.fillBg ?? gridCellPalette.background.default;
   const { selected, excluded } = input;
+
+  if (excluded) {
+    const idleBorder = selected
+      ? gridCellPalette.border.selected
+      : gridCellPalette.border.excluded;
+    const layer: AuthoringGridChromeLayer = {
+      border: idleBorder,
+      fillOpacity: 1,
+      fillPaintColor: gridCellPalette.background.excluded,
+    };
+    return {
+      idle: layer,
+      hoverSuppressed: layer,
+      hoverEmphasis: {
+        border: selected
+          ? gridCellPalette.border.selected
+          : GRID_CELL_BORDER_COLOR_HOVER,
+        fillOpacity: 1,
+        fillPaintColor: gridCellPalette.background.excluded,
+      },
+    };
+  }
 
   const idleBorder = selected
     ? gridCellPalette.border.selected
-    : excluded
-      ? gridCellPalette.border.excluded
-      : GRID_CELL_BORDER_COLOR;
+    : GRID_CELL_BORDER_COLOR;
 
-  const idleFill = selected
-    ? alpha(fillBgColor, gridCellPalette.background.fillOpacity.selected)
-    : excluded
-      ? gridCellPalette.background.excluded
-      : fillBgColor;
+  const idle: AuthoringGridChromeLayer = {
+    border: idleBorder,
+    fillPaintColor: fillBase,
+    fillOpacity: selected
+      ? gridCellPalette.background.fillOpacity.selected
+      : 1,
+  };
 
-  const idle: AuthoringGridChromeColors = { border: idleBorder, fill: idleFill };
-
-  const hoverEmphasisBorder = selected
-    ? gridCellPalette.border.selected
-    : GRID_CELL_BORDER_COLOR_HOVER;
-
-  const hoverEmphasisFill = excluded
-    ? gridCellPalette.background.excluded
-    : alpha(fillBgColor, gridCellPalette.background.fillOpacity.hover);
+  const hoverEmphasis: AuthoringGridChromeLayer = {
+    border: selected
+      ? gridCellPalette.border.selected
+      : GRID_CELL_BORDER_COLOR_HOVER,
+    fillPaintColor: fillBase,
+    fillOpacity: gridCellPalette.background.fillOpacity.hover,
+  };
 
   return {
     idle,
     hoverSuppressed: idle,
-    hoverEmphasis: {
-      border: hoverEmphasisBorder,
-      fill: hoverEmphasisFill,
-    },
+    hoverEmphasis,
   };
 }

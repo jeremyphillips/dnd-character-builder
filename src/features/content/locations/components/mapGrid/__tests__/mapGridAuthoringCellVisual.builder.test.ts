@@ -3,64 +3,65 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildHexAuthoringCellVisualParts,
-  buildSquareAuthoringCellVisualSx,
+  buildSquareAuthoringCellVisualParts,
 } from '../mapGridAuthoringCellVisual.builder';
 
-describe('buildSquareAuthoringCellVisualSx', () => {
+describe('buildSquareAuthoringCellVisualParts', () => {
   it('uses selected border and inset shadow when selected', () => {
-    const sx = buildSquareAuthoringCellVisualSx({
+    const { shell } = buildSquareAuthoringCellVisualParts({
       cellId: '0,0',
       selected: true,
       excluded: false,
-      fillBg: '#abc',
+      fillPresentation: { swatchColor: '#abc' },
       disabled: false,
       selectHoverTarget: undefined,
     });
-    expect(sx.borderColor).toBeDefined();
-    expect(sx.boxShadow).toMatch(/inset/);
+    expect(shell.borderColor).toBeDefined();
+    expect(shell.boxShadow).toMatch(/inset/);
   });
 
   it('uses excluded styling when excluded and not selected', () => {
-    const sx = buildSquareAuthoringCellVisualSx({
+    const { shell, fillLayer } = buildSquareAuthoringCellVisualParts({
       cellId: '0,0',
       selected: false,
       excluded: true,
-      fillBg: undefined,
+      fillPresentation: undefined,
       disabled: false,
       selectHoverTarget: undefined,
     });
-    expect(sx.borderStyle).toBe('dashed');
-    expect(sx.backgroundImage).toMatch(/repeating-linear-gradient/);
+    expect(shell.borderStyle).toBe('dashed');
+    expect(fillLayer.backgroundImage).toMatch(/repeating-linear-gradient/);
   });
 
   it('mirrors idle chrome on hover when select hover is suppressed for this cell', () => {
-    const sx = buildSquareAuthoringCellVisualSx({
+    const { shell } = buildSquareAuthoringCellVisualParts({
       cellId: '1,0',
       selected: false,
       excluded: false,
-      fillBg: undefined,
+      fillPresentation: undefined,
       disabled: false,
       selectHoverTarget: { type: 'cell', cellId: '0,0' },
     });
-    const hover = sx['&:hover'] as Record<string, unknown> | undefined;
+    const hover = shell['&:hover'] as Record<string, unknown> | undefined;
     expect(hover).toBeDefined();
     expect(hover?.borderColor).toBeDefined();
   });
 });
 
 describe('buildHexAuthoringCellVisualParts', () => {
-  it('returns outer, inner, and host hover sx keys for a typical cell', () => {
+  it('returns outer, inner shell, fill layer, and host hover sx keys for a typical cell', () => {
     const parts = buildHexAuthoringCellVisualParts({
       cellId: '0,0',
       selected: false,
       excluded: false,
-      fillBg: undefined,
+      fillPresentation: undefined,
       disabled: false,
       selectHoverTarget: undefined,
       strokePx: '1px',
     });
     expect(parts.outer.bgcolor).toBeDefined();
-    expect(parts.inner.clipPath).toMatch(/polygon/);
+    expect(parts.innerShell.clipPath).toMatch(/polygon/);
+    expect(parts.fillLayer).toBeDefined();
     expect(parts.hostHoverSx).toBeDefined();
   });
 });

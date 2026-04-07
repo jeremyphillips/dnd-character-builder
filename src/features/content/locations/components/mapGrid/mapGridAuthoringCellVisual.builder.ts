@@ -10,34 +10,70 @@ import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
 import { gridCellSelectedShadow } from './gridCellStyles';
+import type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
 import { resolveAuthoringGridChrome } from './mapGridAuthoringChrome.resolve';
 import {
   isSelectHoverChromeSuppressed,
   shouldApplyCellHoverChrome,
 } from './mapGridCellVisualState';
 
+/** Absolute fill layer (swatch + image) — shell `:hover` targets this class so opacity applies to the whole layer. */
+export const GRID_CELL_AUTHORING_FILL_CLASS = 'grid-cell-authoring-fill';
+
+const EXCLUDED_STRIPE =
+  'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)';
+
+function buildFillLayerBaseSx(args: {
+  chromeLayer: { fillOpacity: number; fillPaintColor: string };
+  excluded: boolean;
+  imageUrl: string | undefined;
+}): SystemStyleObject {
+  const { chromeLayer, excluded, imageUrl } = args;
+  return {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: 'none',
+    bgcolor: chromeLayer.fillPaintColor,
+    opacity: chromeLayer.fillOpacity,
+    ...(excluded
+      ? { backgroundImage: EXCLUDED_STRIPE }
+      : imageUrl
+        ? {
+            backgroundImage: `url(${imageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }
+        : {}),
+  };
+}
+
 export type SquareAuthoringCellVisualInput = {
   cellId: string;
   selected: boolean;
   excluded: boolean;
-  /** Terrain / authored fill under policy (selection + excluded still win in base colors). */
-  fillBg: string | undefined;
+  /** Swatch + optional image; `swatchColor` drives chrome + fill layer. */
+  fillPresentation: AuthoringCellFillPresentation | undefined;
   disabled: boolean;
   selectHoverTarget: LocationMapSelection | undefined;
 };
 
+export type SquareAuthoringCellVisualParts = {
+  shell: SystemStyleObject;
+  fillLayer: SystemStyleObject;
+};
+
 /**
- * Visible chrome for a **square** authoring cell (border, fill, hover, selected inset shadow).
- * Content centering is {@link GridCellVisual} `centerChildren` (default on); interactive shell stays on {@link GridCellHost}.
+ * Square cell: chrome shell (border, shadow) + absolute fill layer (opacity applies to swatch + image).
  */
-export function buildSquareAuthoringCellVisualSx(
+export function buildSquareAuthoringCellVisualParts(
   input: SquareAuthoringCellVisualInput,
-): SystemStyleObject {
+): SquareAuthoringCellVisualParts {
   const {
     cellId,
     selected,
     excluded,
-    fillBg,
+    fillPresentation,
     disabled,
     selectHoverTarget,
   } = input;
@@ -48,20 +84,34 @@ export function buildSquareAuthoringCellVisualSx(
     disabled,
   );
 
+  const fillBg = fillPresentation?.swatchColor;
+  const imageUrl = fillPresentation?.imageUrl;
   const chrome = resolveAuthoringGridChrome({ selected, excluded, fillBg });
-  const baseBorderColor = chrome.idle.border;
-  const baseBg = chrome.idle.fill;
 
-  return {
+  const fillLayer: SystemStyleObject = buildFillLayerBaseSx({
+    chromeLayer: chrome.idle,
+    excluded,
+    imageUrl,
+  });
+
+  const fillHoverTarget = `& .${GRID_CELL_AUTHORING_FILL_CLASS}`;
+
+  const shell: SystemStyleObject = {
     border: 1,
     borderRadius: 0.5,
-    borderColor: baseBorderColor,
+    borderColor: chrome.idle.border,
     borderStyle: excluded && !selected ? 'dashed' : 'solid',
-    bgcolor: baseBg,
-    backgroundImage: excluded
-      ? 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)'
-      : undefined,
-    p: 0.25,
+    bgcolor: 'transparent',
+    position: 'relative',
+    overflow: 'hidden',
+    flex: 1,
+    alignSelf: 'stretch',
+    minHeight: 0,
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
     fontSize: '0.65rem',
     lineHeight: 1.2,
     color: excluded ? 'rgba(0,0,0,0.45)' : colorPrimitives.black,
@@ -73,26 +123,30 @@ export function buildSquareAuthoringCellVisualSx(
         : selectHoverChromeSuppressed
           ? {
               borderColor: chrome.hoverSuppressed.border,
-              bgcolor: chrome.hoverSuppressed.fill,
               boxShadow: selected ? gridCellSelectedShadow() : undefined,
+              [fillHoverTarget]: {
+                opacity: chrome.hoverSuppressed.fillOpacity,
+                bgcolor: chrome.hoverSuppressed.fillPaintColor,
+              },
             }
           : {
               borderColor: chrome.hoverEmphasis.border,
-              bgcolor: chrome.hoverEmphasis.fill,
               boxShadow: selected ? gridCellSelectedShadow() : undefined,
+              [fillHoverTarget]: {
+                opacity: chrome.hoverEmphasis.fillOpacity,
+                bgcolor: chrome.hoverEmphasis.fillPaintColor,
+              },
             },
   };
+
+  return { shell, fillLayer };
 }
 
 export type HexAuthoringCellVisualParts = {
-  /** Outer hex ring (clipped); merged into {@link GridCellVisual} for the ring layer. */
   outer: SystemStyleObject;
-  /** Inner fill + content area; merged into the inner visual layer. */
-  inner: SystemStyleObject;
-  /**
-   * Hover uses the interactive host as the hover target (see `HexGridEditor` structure).
-   * Merge onto {@link GridCellHost} so ring + fill update together.
-   */
+  /** Inner host: clip + layout only; fill is a child layer. */
+  innerShell: SystemStyleObject;
+  fillLayer: SystemStyleObject;
   hostHoverSx: SystemStyleObject;
 };
 
@@ -100,7 +154,7 @@ export type HexAuthoringCellVisualInput = {
   cellId: string;
   selected: boolean;
   excluded: boolean;
-  fillBg: string | undefined;
+  fillPresentation: AuthoringCellFillPresentation | undefined;
   disabled: boolean;
   selectHoverTarget: LocationMapSelection | undefined;
   strokePx: string;
@@ -115,8 +169,10 @@ export const hexAuthoringCellVisualClassNames = {
   inner: HEX_INNER_CLASS,
 } as const;
 
+const innerFillHoverSelector = `.${HEX_INNER_CLASS} .${GRID_CELL_AUTHORING_FILL_CLASS}`;
+
 /**
- * Hex authoring chrome split into outer ring + inner fill, plus host-level `:hover` rules.
+ * Hex authoring: outer ring + inner shell + fill layer + host-level `:hover` rules.
  */
 export function buildHexAuthoringCellVisualParts(
   input: HexAuthoringCellVisualInput,
@@ -125,15 +181,21 @@ export function buildHexAuthoringCellVisualParts(
     cellId,
     selected,
     excluded,
-    fillBg,
+    fillPresentation,
     disabled,
     selectHoverTarget,
     strokePx,
   } = input;
 
+  const fillBg = fillPresentation?.swatchColor;
+  const imageUrl = fillPresentation?.imageUrl;
   const chrome = resolveAuthoringGridChrome({ selected, excluded, fillBg });
-  const outerRingColor = chrome.idle.border;
-  const innerFillColor = chrome.idle.fill;
+
+  const fillLayer: SystemStyleObject = buildFillLayerBaseSx({
+    chromeLayer: chrome.idle,
+    excluded,
+    imageUrl,
+  });
 
   const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTarget);
   const selectHoverChromeSuppressed = isSelectHoverChromeSuppressed(
@@ -145,22 +207,26 @@ export function buildHexAuthoringCellVisualParts(
   const outer: SystemStyleObject = {
     position: 'absolute',
     inset: 0,
-    bgcolor: outerRingColor,
+    bgcolor: chrome.idle.border,
     pointerEvents: 'none',
   };
 
-  const inner: SystemStyleObject = {
+  const innerShell: SystemStyleObject = {
     position: 'absolute',
     inset: strokePx,
     clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-    bgcolor: innerFillColor,
+    bgcolor: 'transparent',
     fontSize: '0.6rem',
     lineHeight: 1.2,
     color: excluded ? 'rgba(0,0,0,0.45)' : colorPrimitives.black,
-    backgroundImage: excluded
-      ? 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)'
-      : undefined,
     pointerEvents: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'stretch',
+    overflow: 'hidden',
+    minHeight: 0,
+    boxSizing: 'border-box',
   };
 
   const hostHoverSx: SystemStyleObject =
@@ -173,8 +239,9 @@ export function buildHexAuthoringCellVisualParts(
               [`&:hover:not(:disabled) .${HEX_OUTER_CLASS}`]: {
                 bgcolor: chrome.hoverSuppressed.border,
               },
-              [`&:hover:not(:disabled) .${HEX_INNER_CLASS}`]: {
-                bgcolor: chrome.hoverSuppressed.fill,
+              [`&:hover:not(:disabled) ${innerFillHoverSelector}`]: {
+                opacity: chrome.hoverSuppressed.fillOpacity,
+                bgcolor: chrome.hoverSuppressed.fillPaintColor,
               },
             }
           : allowHover
@@ -182,11 +249,12 @@ export function buildHexAuthoringCellVisualParts(
                 [`&:hover:not(:disabled) .${HEX_OUTER_CLASS}`]: {
                   bgcolor: chrome.hoverEmphasis.border,
                 },
-                [`&:hover:not(:disabled) .${HEX_INNER_CLASS}`]: {
-                  bgcolor: chrome.hoverEmphasis.fill,
+                [`&:hover:not(:disabled) ${innerFillHoverSelector}`]: {
+                  opacity: chrome.hoverEmphasis.fillOpacity,
+                  bgcolor: chrome.hoverEmphasis.fillPaintColor,
                 },
               }
             : {};
 
-  return { outer, inner, hostHoverSx };
+  return { outer, innerShell, fillLayer, hostHoverSx };
 }

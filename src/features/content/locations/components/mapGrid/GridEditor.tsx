@@ -9,7 +9,11 @@ import { makeGridCellId } from '@/shared/domain/grid';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 import { shouldApplyCellSelectedChrome } from './mapGridCellVisualState';
 import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
-import { buildSquareAuthoringCellVisualSx } from './mapGridAuthoringCellVisual.builder';
+import {
+  buildSquareAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
+} from './mapGridAuthoringCellVisual.builder';
+import type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
 import GridCellHost from './GridCellHost';
 import GridCellVisual from './GridCellVisual';
 
@@ -26,8 +30,8 @@ export type GridEditorProps = {
   /** Cells masked out of walkable layout (authoring); distinct from selection styling. */
   excludedCellIds?: string[];
   onCellClick?: (cell: GridCell, event: ReactMouseEvent<HTMLElement>) => void;
-  /** Optional whole-cell background (e.g. terrain fill); selection / excluded still win. */
-  getCellBackgroundColor?: (cell: GridCell) => string | undefined;
+  /** Optional cell fill (swatch + optional image); chrome applies fill opacity to the fill layer only. */
+  getCellFillPresentation?: (cell: GridCell) => AuthoringCellFillPresentation | undefined;
   onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
   onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
   onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
@@ -52,7 +56,7 @@ export default function GridEditor({
   selectedCellId,
   excludedCellIds,
   onCellClick,
-  getCellBackgroundColor,
+  getCellFillPresentation,
   onCellPointerDown,
   onCellPointerEnter,
   onCellPointerUp,
@@ -97,7 +101,16 @@ export default function GridEditor({
         const extraClass = getCellClassName?.(cell);
         const selected = shouldApplyCellSelectedChrome(selectedCellId, cellId);
         const excluded = excludedSet.has(cellId);
-        const fillBg = getCellBackgroundColor?.(cell);
+        const fillPresentation = getCellFillPresentation?.(cell);
+
+        const { shell, fillLayer } = buildSquareAuthoringCellVisualParts({
+          cellId,
+          selected,
+          excluded,
+          fillPresentation,
+          disabled: !!disabled,
+          selectHoverTarget: selectHoverTargetProp,
+        });
 
         return (
           <GridCellHost
@@ -137,34 +150,43 @@ export default function GridEditor({
               cursor: disabled ? 'default' : 'pointer',
             }}
           >
-            <GridCellVisual
-              sx={buildSquareAuthoringCellVisualSx({
-                cellId,
-                selected,
-                excluded,
-                fillBg,
-                disabled: !!disabled,
-                selectHoverTarget: selectHoverTargetProp,
-              })}
-            >
-              {custom != null && custom !== false ? (
-                <Box
-                  sx={{
-                    px: 0.25,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    maxWidth: '100%',
-                    minHeight: 0,
-                  }}
-                >
-                  {custom}
-                </Box>
-              ) : label != null && label !== '' ? (
-                <Box component="span" sx={{ px: 0.25, textAlign: 'center', wordBreak: 'break-word' }}>
-                  {label}
-                </Box>
-              ) : null}
+            <GridCellVisual sx={shell} centerChildren={false}>
+              <Box
+                className={GRID_CELL_AUTHORING_FILL_CLASS}
+                sx={fillLayer}
+                aria-hidden
+              />
+              <Box
+                sx={{
+                  position: 'relative',
+                  zIndex: 1,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 0,
+                  p: 0.25,
+                }}
+              >
+                {custom != null && custom !== false ? (
+                  <Box
+                    sx={{
+                      px: 0.25,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      maxWidth: '100%',
+                      minHeight: 0,
+                    }}
+                  >
+                    {custom}
+                  </Box>
+                ) : label != null && label !== '' ? (
+                  <Box component="span" sx={{ px: 0.25, textAlign: 'center', wordBreak: 'break-word' }}>
+                    {label}
+                  </Box>
+                ) : null}
+              </Box>
             </GridCellVisual>
           </GridCellHost>
         );

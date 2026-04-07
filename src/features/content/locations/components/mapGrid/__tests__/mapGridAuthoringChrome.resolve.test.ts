@@ -13,7 +13,8 @@ describe('resolveAuthoringGridChrome', () => {
     });
     expect(c.idle.border).toBe(gridCellPalette.border.selected);
     expect(c.hoverSuppressed).toEqual(c.idle);
-    expect(c.idle.fill).toMatch(/^rgba\(/);
+    expect(c.idle.fillPaintColor).toBe('#aabbcc');
+    expect(c.idle.fillOpacity).toBe(gridCellPalette.background.fillOpacity.selected);
   });
 
   it('hover emphasis on non-excluded cell uses hover fill opacity', () => {
@@ -22,17 +23,21 @@ describe('resolveAuthoringGridChrome', () => {
       excluded: false,
       fillBg: '#aabbcc',
     });
-    expect(c.hoverEmphasis.fill).toMatch(/^rgba\(/);
-    expect(c.idle.fill).toBe('#aabbcc');
+    expect(c.hoverEmphasis.fillOpacity).toBe(
+      gridCellPalette.background.fillOpacity.hover,
+    );
+    expect(c.idle.fillOpacity).toBe(1);
+    expect(c.idle.fillPaintColor).toBe('#aabbcc');
   });
 
-  it('excluded idle and hover emphasis use excluded fill', () => {
+  it('excluded idle and hover emphasis use excluded fill at full opacity', () => {
     const c = resolveAuthoringGridChrome({
       selected: false,
       excluded: true,
       fillBg: '#eee',
     });
-    expect(c.idle.fill).toBe(gridCellPalette.background.excluded);
-    expect(c.hoverEmphasis.fill).toBe(gridCellPalette.background.excluded);
+    expect(c.idle.fillPaintColor).toBe(gridCellPalette.background.excluded);
+    expect(c.idle.fillOpacity).toBe(1);
+    expect(c.hoverEmphasis.fillPaintColor).toBe(gridCellPalette.background.excluded);
   });
 });

@@ -335,12 +335,12 @@ export function LocationGridAuthoringSection({
     [placePathAnchorCellId, placeHoverCellId, pathEndpointCells],
   );
 
-  const getCellBackgroundColor = useCallback(
+  const getCellFillPresentation = useCallback(
     (cell: GridCell) => {
       const sel = draft.cellFillByCellId[cell.cellId];
       if (!sel) return undefined;
       const { variant } = resolveCellFillVariant(sel.familyId as LocationCellFillFamilyId, sel.variantId);
-      return resolveCellFillSwatchColor(variant);
+      return { swatchColor: resolveCellFillSwatchColor(variant) };
     },
     [draft.cellFillByCellId],
   );
@@ -482,7 +482,7 @@ export function LocationGridAuthoringSection({
     selectedCellId: selectedCellIdForMapSelection(draft.mapSelection),
     excludedCellIds: draft.excludedCellIds,
     onCellClick,
-    getCellBackgroundColor,
+    getCellFillPresentation,
     onCellPointerDown:
       paintStrokeOrEraseFill ||
       placeObjectStrokeMode ||

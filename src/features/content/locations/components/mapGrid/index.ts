@@ -14,9 +14,11 @@ export {
   shouldApplyCellHoverChrome,
   shouldApplyCellSelectedChrome,
 } from './mapGridCellVisualState';
+export type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
 export {
   buildHexAuthoringCellVisualParts,
-  buildSquareAuthoringCellVisualSx,
+  buildSquareAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
   hexAuthoringCellVisualClassNames,
 } from './mapGridAuthoringCellVisual.builder';
 export { default as GridCellHost } from './GridCellHost';

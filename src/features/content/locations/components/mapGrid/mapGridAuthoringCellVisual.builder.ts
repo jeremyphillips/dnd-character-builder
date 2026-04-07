@@ -1,20 +1,16 @@
 /**
  * Pure state → `sx` for location map authoring grid **cell chrome** (square + hex).
  * Tokens: {@link gridCellPalette}; policy: {@link mapGridCellVisualState}.
+ * Shared colors: {@link resolveAuthoringGridChrome}.
  * Host/visual DOM is composed in `GridEditor` / `HexGridEditor`; this module is presentation only.
  */
 import type { SystemStyleObject } from '@mui/system';
-import { alpha } from '@mui/material/styles';
 
 import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
-import {
-  GRID_CELL_BORDER_COLOR,
-  GRID_CELL_BORDER_COLOR_HOVER,
-  gridCellPalette,
-  gridCellSelectedShadow,
-} from './gridCellStyles';
+import { gridCellSelectedShadow } from './gridCellStyles';
+import { resolveAuthoringGridChrome } from './mapGridAuthoringChrome.resolve';
 import {
   isSelectHoverChromeSuppressed,
   shouldApplyCellHoverChrome,
@@ -52,19 +48,9 @@ export function buildSquareAuthoringCellVisualSx(
     disabled,
   );
 
-  const fillBgColor = fillBg ?? gridCellPalette.background.default;
-  
-  const baseBorderColor = selected
-    ? gridCellPalette.border.selected
-    : excluded
-      ? gridCellPalette.border.excluded
-      : GRID_CELL_BORDER_COLOR;
-
-  const baseBg = selected
-    ? alpha(fillBgColor, gridCellPalette.background.selectedOpacity)
-    : excluded
-      ? gridCellPalette.background.excluded
-      : fillBgColor ?? gridCellPalette.background.default;
+  const chrome = resolveAuthoringGridChrome({ selected, excluded, fillBg });
+  const baseBorderColor = chrome.idle.border;
+  const baseBg = chrome.idle.fill;
 
   return {
     border: 1,
@@ -86,19 +72,14 @@ export function buildSquareAuthoringCellVisualSx(
         ? undefined
         : selectHoverChromeSuppressed
           ? {
-              borderColor: baseBorderColor,
-              bgcolor: baseBg,
+              borderColor: chrome.hoverSuppressed.border,
+              bgcolor: chrome.hoverSuppressed.fill,
               boxShadow: selected ? gridCellSelectedShadow() : undefined,
             }
           : {
-              borderColor: selected
-                ? gridCellPalette.border.selected
-                : GRID_CELL_BORDER_COLOR_HOVER,
-              bgcolor: selected
-                ? gridCellPalette.background.selected
-                : excluded
-                  ? gridCellPalette.background.excluded
-                  : fillBgColor ?? gridCellPalette.background.hover,
+              borderColor: chrome.hoverEmphasis.border,
+              bgcolor: chrome.hoverEmphasis.fill,
+              boxShadow: selected ? gridCellSelectedShadow() : undefined,
             },
   };
 }
@@ -150,19 +131,9 @@ export function buildHexAuthoringCellVisualParts(
     strokePx,
   } = input;
 
-  const fillBgColor = fillBg ?? gridCellPalette.background.default;
-
-  const outerRingColor = selected
-    ? gridCellPalette.border.selected
-    : excluded
-      ? gridCellPalette.border.excluded
-      : gridCellPalette.border.default;
-
-  const innerFillColor = selected
-    ? alpha(fillBgColor, gridCellPalette.background.selectedOpacity)
-    : excluded
-      ? gridCellPalette.background.excluded
-      : fillBgColor
+  const chrome = resolveAuthoringGridChrome({ selected, excluded, fillBg });
+  const outerRingColor = chrome.idle.border;
+  const innerFillColor = chrome.idle.fill;
 
   const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTarget);
   const selectHoverChromeSuppressed = isSelectHoverChromeSuppressed(
@@ -199,22 +170,20 @@ export function buildHexAuthoringCellVisualParts(
         ? {}
         : selectHoverChromeSuppressed
           ? {
-              [`&:hover:not(:disabled) .${HEX_OUTER_CLASS}`]: { bgcolor: outerRingColor },
-              [`&:hover:not(:disabled) .${HEX_INNER_CLASS}`]: { bgcolor: innerFillColor },
+              [`&:hover:not(:disabled) .${HEX_OUTER_CLASS}`]: {
+                bgcolor: chrome.hoverSuppressed.border,
+              },
+              [`&:hover:not(:disabled) .${HEX_INNER_CLASS}`]: {
+                bgcolor: chrome.hoverSuppressed.fill,
+              },
             }
           : allowHover
             ? {
                 [`&:hover:not(:disabled) .${HEX_OUTER_CLASS}`]: {
-                  bgcolor: selected
-                    ? gridCellPalette.border.selected
-                    : gridCellPalette.border.hover,
+                  bgcolor: chrome.hoverEmphasis.border,
                 },
                 [`&:hover:not(:disabled) .${HEX_INNER_CLASS}`]: {
-                  bgcolor: selected
-                    ? gridCellPalette.background.selected
-                    : excluded
-                      ? gridCellPalette.background.excluded
-                      : fillBg ?? gridCellPalette.background.hover,
+                  bgcolor: chrome.hoverEmphasis.fill,
                 },
               }
             : {};

@@ -6,6 +6,7 @@
  */
 import type { CombatCoverKind } from '@/features/mechanics/domain/combat/space/space.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
+import type { MaterialId } from '@/shared/domain/materials';
 
 import type { LocationMapGlyphIconName } from '../map/locationMapIconNames';
 
@@ -96,8 +97,11 @@ export type PlacedObjectDefaultVariantId = typeof DEFAULT_PLACED_OBJECT_VARIANT_
  * Keep local to this registry until multiple families or domains reuse the same vocabulary; then consider extracting
  * from `shared/domain` (deferred intentionally).
  */
-/** Surface / frame material hints for icons and future rendering (windows may use `glass`). */
-export type AuthoredObjectMaterial = 'wood' | 'stone' | 'metal' | 'glass';
+/**
+ * Surface / frame material hints for icons and future rendering.
+ * Uses {@link MaterialId} where it exists; `metal` is allowed until/if it joins the canonical list.
+ */
+export type AuthoredObjectMaterial = Extract<MaterialId, 'wood' | 'stone' | 'glass'> | 'metal';
 
 export type AuthoredObjectShape = 'rectangle' | 'circle' | 'square';
 

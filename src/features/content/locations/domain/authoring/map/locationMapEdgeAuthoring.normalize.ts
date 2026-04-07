@@ -7,12 +7,14 @@ import {
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 
 /**
- * Registry-aware normalization for persisted edge rows (save pipeline, not speculative UI inference).
+ * Registry-aware normalization for persisted edge rows (save pipeline).
  *
- * - **Legacy** `{ edgeId, kind }` — unchanged.
- * - **Conflict** — valid `authoredPlaceKindId` for door/window wins: `kind` is repaired to match.
- * - **Invalid `variantId`** — stripped when not a key on the resolved family.
- * - **Invalid `authoredPlaceKindId` string** — stripped when not a known registry id.
+ * @see `./locationMapEdgeAuthoring.policy.md` — wall vs door/window, coarse vs authored consumers, run-group limits.
+ *
+ * **Door/window authored bundle:** `authoredPlaceKindId` + `variantId` are persisted **together** or **not at all**
+ * (after salvage). If registry `authoredPlaceKindId` is present but `variantId` is missing/invalid, **both** are
+ * removed → coarse opening row (`kind` + optional `label` / `state`). If `kind` is door/window with a **valid**
+ * `variantId` but no authored id, **`authoredPlaceKindId` is backfilled** from `kind` to complete the bundle.
  */
 export function normalizeEdgeAuthoringEntryForPersistence(
   entry: LocationMapEdgeAuthoringEntry,
@@ -42,9 +44,10 @@ export function normalizeEdgeAuthoringEntryForPersistence(
     authoredPlaceKindId = undefined;
   }
 
+  const familyFromCoarse: LocationPlacedObjectKindId | null =
+    kind === 'door' || kind === 'window' ? kind : null;
   const family: LocationPlacedObjectKindId | null =
-    parseLocationPlacedObjectKindId(authoredPlaceKindId) ??
-    (kind === 'door' || kind === 'window' ? kind : null);
+    parseLocationPlacedObjectKindId(authoredPlaceKindId) ?? familyFromCoarse;
 
   if (family != null && variantId != null && variantId !== '') {
     if (!isVariantIdValidForFamily(family, variantId)) {
@@ -52,6 +55,37 @@ export function normalizeEdgeAuthoringEntryForPersistence(
     }
   } else if (variantId != null && family == null) {
     variantId = undefined;
+  }
+
+  const hasRegistryAuthored =
+    parseLocationPlacedObjectKindId(authoredPlaceKindId) === 'door' ||
+    parseLocationPlacedObjectKindId(authoredPlaceKindId) === 'window';
+
+  const variantClean = variantId != null && variantId !== '' ? variantId : undefined;
+
+  if (kind === 'wall') {
+    authoredPlaceKindId = undefined;
+    variantId = undefined;
+  } else if (kind === 'door' || kind === 'window') {
+    const famAuthored = parseLocationPlacedObjectKindId(authoredPlaceKindId);
+    const openingFamily: LocationPlacedObjectKindId | null =
+      famAuthored === 'door' || famAuthored === 'window' ? famAuthored : kind;
+
+    const variantOkForOpening =
+      variantClean != null &&
+      openingFamily != null &&
+      (openingFamily === 'door' || openingFamily === 'window') &&
+      isVariantIdValidForFamily(openingFamily, variantClean);
+
+    if (hasRegistryAuthored && !variantOkForOpening) {
+      authoredPlaceKindId = undefined;
+      variantId = undefined;
+    } else if (!hasRegistryAuthored && variantOkForOpening) {
+      authoredPlaceKindId = kind;
+      variantId = variantClean;
+    } else if (!hasRegistryAuthored && variantClean != null && !variantOkForOpening) {
+      variantId = undefined;
+    }
   }
 
   const label =

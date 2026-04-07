@@ -11,7 +11,7 @@ describe('normalizeEdgeAuthoringEntryForPersistence', () => {
     expect(normalizeEdgeAuthoringEntryForPersistence(row)).toEqual(row);
   });
 
-  it('accepts aligned authored row', () => {
+  it('accepts aligned authored bundle (kind + authoredPlaceKindId + variantId)', () => {
     const row = {
       edgeId: 'between:0,0|1,0',
       kind: 'door' as const,
@@ -43,7 +43,7 @@ describe('normalizeEdgeAuthoringEntryForPersistence', () => {
     });
   });
 
-  it('strips invalid variant id consistently', () => {
+  it('strips authored bundle when variant is invalid — falls back to coarse opening row', () => {
     const row = {
       edgeId: 'between:0,0|1,0',
       kind: 'door' as const,
@@ -53,11 +53,10 @@ describe('normalizeEdgeAuthoringEntryForPersistence', () => {
     expect(normalizeEdgeAuthoringEntryForPersistence(row)).toEqual({
       edgeId: 'between:0,0|1,0',
       kind: 'door',
-      authoredPlaceKindId: 'door',
     });
   });
 
-  it('strips invalid authoredPlaceKindId string', () => {
+  it('backfills authoredPlaceKindId when invalid authored string was stripped but kind + variant are valid', () => {
     const row = {
       edgeId: 'between:0,0|1,0',
       kind: 'door' as const,
@@ -67,7 +66,32 @@ describe('normalizeEdgeAuthoringEntryForPersistence', () => {
     expect(normalizeEdgeAuthoringEntryForPersistence(row)).toEqual({
       edgeId: 'between:0,0|1,0',
       kind: 'door',
+      authoredPlaceKindId: 'door',
       variantId: 'single_wood',
+    });
+  });
+
+  it('strips authored bundle when authored is set but variant is missing', () => {
+    const row = {
+      edgeId: 'between:0,0|1,0',
+      kind: 'door' as const,
+      authoredPlaceKindId: 'door',
+    };
+    expect(normalizeEdgeAuthoringEntryForPersistence(row)).toEqual({
+      edgeId: 'between:0,0|1,0',
+      kind: 'door',
+    });
+  });
+
+  it('strips stray variant from wall-only rows', () => {
+    const row = {
+      edgeId: 'between:0,0|1,0',
+      kind: 'wall' as const,
+      variantId: 'single_wood',
+    };
+    expect(normalizeEdgeAuthoringEntryForPersistence(row)).toEqual({
+      edgeId: 'between:0,0|1,0',
+      kind: 'wall',
     });
   });
 

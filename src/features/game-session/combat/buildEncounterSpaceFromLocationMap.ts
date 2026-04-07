@@ -94,6 +94,7 @@ export function buildEncounterSpaceFromLocationMap(
   }
 
   const edges: EncounterEdge[] = []
+  /** Coarse `kind` only for tactical edges — see `locationMapEdgeAuthoring.policy.md` (no variant/state). */
   for (const e of map.edgeEntries ?? []) {
     const parsed = parseSquareEdgeId(e.edgeId)
     // Encounter edges are pairwise cell adjacency; outer-boundary (perimeter) segments are UI-only here.

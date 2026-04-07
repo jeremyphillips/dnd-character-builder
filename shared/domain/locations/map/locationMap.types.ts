@@ -94,9 +94,13 @@ export type LocationMapPathAuthoringEntry = {
  * One authored feature on a cell boundary segment. `edgeId` is canonical:
  * interior `between:cellA|cellB`, or outer map edge `perimeter:cellId|N|E|S|W`.
  *
- * - **`kind`** — required coarse category for compatibility (render, legacy, tooling).
- * - **`authoredPlaceKindId` / `variantId`** — registry identity when present; authoritative over coarse `kind` for authoring.
- * - **`label`** — optional placard label (parity with cell object `label`).
+ * - **`kind`** — required coarse category for compatibility (render, combat, tooling). **Walls** stay coarse-only.
+ * - **Door/window** — may persist registry **`authoredPlaceKindId`** + **`variantId`** together (save normalizes
+ *   all-or-nothing for openings; see app `locationMapEdgeAuthoring.policy.md`).
+ * - **`label`** — optional placard (parity with cell object `label`).
+ *
+ * **Consumers:** coarse readers (`edgeId` + `kind` only) vs authored-identity (`resolveAuthoredEdgeInstance` in the
+ * locations feature) — see `locationMapEdgeAuthoring.policy.md` next to the normalizer in that package.
  */
 export type LocationMapEdgeAuthoringEntry = {
   edgeId: string;

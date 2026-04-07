@@ -7,6 +7,9 @@ import { authorCellIdToCombatCellId } from './encounterMapCellIds'
 /**
  * Maps persisted location map authoring into a combat-serializable presentation payload.
  * Consumed by the combat grid for underlays and SVG chrome only.
+ *
+ * **Coarse edge policy:** `edgeEntries` here are **`{ edgeId, kind }` only** — no authored registry fields.
+ * See `src/features/content/locations/domain/authoring/map/locationMapEdgeAuthoring.policy.md`.
  */
 export function buildEncounterAuthoringPresentationFromLocationMap(
   map: LocationMapBase,

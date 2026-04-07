@@ -1,12 +1,12 @@
 /**
- * @file Hydration / precedence for edge-authored instances (inspector + previews).
+ * @file **Authored-identity** hydration for edge rows (see `locationMapEdgeAuthoring.policy.md`).
  *
- * ## Follow-up (not this slice)
- * - **Rich `state` editors** — bind discriminated {@link LocationMapEdgeAuthoringState} when gameplay/authoring fields ship.
- * - **Downstream consumers** — encounter build, combat, export: audit any logic that still keys only on coarse `kind`;
- *   prefer this helper or explicit documented fallback.
- * - **Cell `variantId` parity** — add optional `variantId` to {@link LocationMapCellObjectEntry} using the same
- *   registry validation patterns as edge rows.
+ * **Policy:** Any UI or logic that must reflect persisted `authoredPlaceKindId` / `variantId` / presentation for
+ * door/window must use this module — **coarse** consumers use only `edgeId` + `kind` (geometry, combat, SVG underlay).
+ *
+ * ## Follow-up
+ * - **`state`** — bind discriminated `LocationMapEdgeAuthoringState` when editor/gameplay fields ship.
+ * - **Cell `variantId` parity** — optional `variantId` on cell objects using the same registry patterns as edge rows.
  */
 
 import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations';

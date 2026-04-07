@@ -1,4 +1,6 @@
 import type { MouseEvent } from 'react';
+
+import { LocationMapEditorTrayScrollColumn } from '@/features/content/locations/components/workspace/leftTools/tray';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -46,20 +48,7 @@ export function LocationMapEditorPaintTray({
   };
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        py: 0.5,
-        pr: 0.5,
-        pl: 0.25,
-        alignItems: 'stretch',
-        overflow: 'auto',
-      }}
-    >
+    <LocationMapEditorTrayScrollColumn alignItems="stretch" gap={1}>
       <ToggleButtonGroup
         exclusive
         value={domain}
@@ -115,6 +104,6 @@ export function LocationMapEditorPaintTray({
           Use the Map panel for region tools.
         </Typography>
       )}
-    </Box>
+    </LocationMapEditorTrayScrollColumn>
   );
 }

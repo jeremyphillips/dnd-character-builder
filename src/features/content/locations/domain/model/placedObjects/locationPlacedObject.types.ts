@@ -43,6 +43,7 @@ export {
   normalizeVariantIdForFamily,
   parseLocationPlacedObjectKindId,
   resolvePlacedObjectKindForCellObject,
+  resolvePlacedObjectVariant,
   type LocationPlacedObjectKindMeta,
   type PlacedObjectPaletteOption,
   type PlacedObjectVariantPickerRow,

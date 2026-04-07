@@ -27,7 +27,7 @@ export type LocationMapEditorMode =
  * {@link LocationMapActiveDrawSelection} under Draw mode.
  *
  * **`kind`** is the registry **family** id (top-level key) — alias “familyKey” in Phase 2 docs.
- * **`variantId`** is family-scoped and must resolve via the registry (`normalizeVariantIdForFamily` at place time).
+ * **`variantId`** is family-scoped — resolve with `normalizeVariantIdForFamily` (id only) or `resolvePlacedObjectVariant` (full variant row) at place time / hydration.
  */
 export type LocationMapActivePlaceSelection =
   | {

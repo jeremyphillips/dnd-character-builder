@@ -12,6 +12,7 @@ import {
   LOCATION_PLACED_OBJECT_KIND_IDS,
   LOCATION_PLACED_OBJECT_KIND_META,
   normalizeVariantIdForFamily,
+  resolvePlacedObjectVariant,
 } from '../locationPlacedObject.selectors';
 
 describe('locationPlacedObject.selectors (registry-derived)', () => {
@@ -89,6 +90,20 @@ describe('locationPlacedObject.selectors (registry-derived)', () => {
     expect(normalizeVariantIdForFamily('treasure', 'default')).toBe('chest');
     expect(normalizeVariantIdForFamily('tree', 'default')).toBe('deciduous');
     expect(normalizeVariantIdForFamily('building', 'default')).toBe('residential');
+  });
+
+  it('normalizeVariantIdForFamily does not trim variant ids (whitespace-prefixed key is invalid)', () => {
+    expect(normalizeVariantIdForFamily('table', ' rect_wood')).toBe('rect_wood');
+  });
+
+  it('resolvePlacedObjectVariant returns resolved id and variant row; falls back like normalize', () => {
+    const ok = resolvePlacedObjectVariant('table', 'circle_wood');
+    expect(ok.resolvedVariantId).toBe('circle_wood');
+    expect(ok.variant.label).toBe('Round Table (wood)');
+
+    const fallback = resolvePlacedObjectVariant('table', 'bogus');
+    expect(fallback.resolvedVariantId).toBe('rect_wood');
+    expect(fallback.variant.label).toBe('Table');
   });
 
   it('variant picker rows surface presentation for consumers', () => {

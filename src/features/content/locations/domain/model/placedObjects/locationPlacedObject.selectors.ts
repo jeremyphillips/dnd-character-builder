@@ -1,5 +1,6 @@
 import type { LocationMapCellObjectEntry, LocationMapObjectKindId, LocationScaleId } from '@/shared/domain/locations';
 import { isValidLocationScaleId } from '@/shared/domain/locations/scale/locationScale.rules';
+import { resolveFamilyVariant } from '@/shared/domain/registry/familyVariantResolve';
 
 import {
   AUTHORED_PLACED_OBJECT_DEFINITIONS,
@@ -52,12 +53,16 @@ function variantDefinitionForFamily(
   return variantRecord(family)[variantId];
 }
 
-/** True when `variantId` exists in the family’s registry variants. */
+/** True when `variantId` is a key in the family’s `variants` map (not the same as {@link normalizeVariantIdForFamily}). */
 export function isVariantIdValidForFamily(kind: LocationPlacedObjectKindId, variantId: string): boolean {
-  return Boolean(variantDefinitionForFamily(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind], variantId));
+  return variantId in AUTHORED_PLACED_OBJECT_DEFINITIONS[kind].variants;
 }
 
-/** Presentation metadata for a concrete family + variant (persisted wire uses `variantId`). */
+/**
+ * Presentation metadata for a concrete family + variant (persisted wire uses `variantId`).
+ * Pass a **registry-valid** variant id for `kind` — this does **not** apply default-variant fallback.
+ * For persisted or possibly invalid ids, use {@link resolvePlacedObjectVariant} first.
+ */
 export function getPlacedObjectVariantPresentation(
   kind: LocationPlacedObjectKindId,
   variantId: string,
@@ -65,7 +70,11 @@ export function getPlacedObjectVariantPresentation(
   return variantDefinitionForFamily(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind], variantId)?.presentation;
 }
 
-/** Human label for a concrete variant (inspector object title when identity is known). */
+/**
+ * Human label for a concrete variant (inspector object title when identity is known).
+ * Pass a **registry-valid** variant id — no default fallback. Prefer {@link resolvePlacedObjectVariant} when the id
+ * may be missing or invalid.
+ */
 export function getPlacedObjectVariantLabel(kind: LocationPlacedObjectKindId, variantId: string): string | undefined {
   return variantDefinitionForFamily(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind], variantId)?.label;
 }
@@ -84,18 +93,25 @@ export function getVariantCountForFamily(kind: LocationPlacedObjectKindId): numb
 }
 
 /**
- * Resolves a family-scoped variant id to a registry definition, falling back to {@link getDefaultVariantIdForFamily}
- * when missing or invalid.
+ * Resolves a family-scoped variant id, falling back to {@link getDefaultVariantIdForFamily} when missing or invalid.
+ * Delegates to {@link resolveFamilyVariant}.
  */
 export function normalizeVariantIdForFamily(
   kind: LocationPlacedObjectKindId,
   variantId: string | undefined | null,
 ): string {
-  const family = AUTHORED_PLACED_OBJECT_DEFINITIONS[kind];
-  if (variantId != null && variantDefinitionForFamily(family, variantId)) {
-    return variantId;
-  }
-  return family.defaultVariantId;
+  return resolveFamilyVariant(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind], variantId).resolvedVariantId;
+}
+
+/**
+ * Resolves a placed-object family + optional requested variant id to the canonical variant row and id.
+ * Use when `variantId` may be missing, invalid, or from persisted wire data.
+ */
+export function resolvePlacedObjectVariant(
+  kind: LocationPlacedObjectKindId,
+  requestedVariantId: string | null | undefined,
+): { resolvedVariantId: string; variant: AuthoredPlacedObjectVariantDefinition } {
+  return resolveFamilyVariant(AUTHORED_PLACED_OBJECT_DEFINITIONS[kind], requestedVariantId);
 }
 
 /**
@@ -226,9 +242,7 @@ export function getPlacedObjectIconName(
   kind: LocationPlacedObjectKindId,
   variantId?: string,
 ): LocationMapGlyphIconName {
-  const family = AUTHORED_PLACED_OBJECT_DEFINITIONS[kind];
-  const id = normalizeVariantIdForFamily(kind, variantId);
-  return variantRecord(family)[id]!.iconName;
+  return resolvePlacedObjectVariant(kind, variantId).variant.iconName;
 }
 
 /** Persisted map cell object kind → object icon id (separate from authored place-tool glyphs). */

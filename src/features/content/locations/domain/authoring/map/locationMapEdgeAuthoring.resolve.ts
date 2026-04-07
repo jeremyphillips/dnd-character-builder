@@ -14,11 +14,9 @@ import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations';
 import {
   getPlacedObjectPaletteCategoryId,
   getPlacedObjectPaletteCategoryLabel,
-  getPlacedObjectVariantLabel,
-  getPlacedObjectVariantPresentation,
   LOCATION_PLACED_OBJECT_KIND_META,
-  normalizeVariantIdForFamily,
   parseLocationPlacedObjectKindId,
+  resolvePlacedObjectVariant,
   type LocationPlacedObjectKindId,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { AuthoredPlacedObjectVariantPresentation } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.registry';
@@ -57,9 +55,9 @@ export function resolveAuthoredEdgeInstance(entry: LocationMapEdgeAuthoringEntry
     entry.variantId == null;
 
   if (placedKind === 'door' || placedKind === 'window') {
-    const variantId = normalizeVariantIdForFamily(placedKind, entry.variantId);
-    const presentation = getPlacedObjectVariantPresentation(placedKind, variantId);
-    const variantLabel = getPlacedObjectVariantLabel(placedKind, variantId);
+    const { resolvedVariantId: variantId, variant } = resolvePlacedObjectVariant(placedKind, entry.variantId);
+    const presentation = variant.presentation;
+    const variantLabel = variant.label;
     const objectTitle =
       variantLabel ?? LOCATION_PLACED_OBJECT_KIND_META[placedKind].label;
     const categoryLabel = getPlacedObjectPaletteCategoryLabel(

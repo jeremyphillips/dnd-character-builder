@@ -1,6 +1,10 @@
 import { createElement, Fragment, useState, type MouseEvent } from 'react';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import Badge from '@mui/material/Badge';
+import {
+  LocationMapEditorTrayScrollColumn,
+  LocationMapEditorTraySectionHeading,
+} from '@/features/content/locations/components/workspace/leftTools/tray';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -63,20 +67,7 @@ export function LocationMapEditorPlaceTray({
   const closePicker = () => setVariantPicker(null);
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.75,
-        py: 0.5,
-        pr: 0.5,
-        pl: 0.25,
-        alignItems: 'center',
-        overflow: 'auto',
-      }}
-    >
+    <LocationMapEditorTrayScrollColumn>
       {items.map((item, index) => {
         const key = itemKey(item);
         const selected = isFamilyTileSelected(item, activePlace);
@@ -145,22 +136,10 @@ export function LocationMapEditorPlaceTray({
         return (
           <Fragment key={key}>
             {showSectionHeading ? (
-              <Typography
-                component="div"
-                variant="caption"
-                sx={{
-                  alignSelf: 'stretch',
-                  textAlign: 'center',
-                  color: 'text.secondary',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  lineHeight: 1.2,
-                  pt: index === 0 ? 0 : 0.75,
-                  px: 0.25,
-                }}
-              >
-                {getPlacedObjectPaletteCategoryLabel(item.paletteCategory)}
-              </Typography>
+              <LocationMapEditorTraySectionHeading
+                label={getPlacedObjectPaletteCategoryLabel(item.paletteCategory)}
+                padTop={index !== 0}
+              />
             ) : null}
             <Tooltip
               title={paletteTooltipTitle(item)}
@@ -287,6 +266,6 @@ export function LocationMapEditorPlaceTray({
           </List>
         </Popover>
       ) : null}
-    </Box>
+    </LocationMapEditorTrayScrollColumn>
   );
 }

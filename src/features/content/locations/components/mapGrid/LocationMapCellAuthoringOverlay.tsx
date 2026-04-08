@@ -5,7 +5,10 @@ import { alpha } from '@mui/material/styles';
 
 import { getLocationScaleMapIcon } from '@/features/content/locations/domain';
 import { cellObjectAnchorsCellLinkedLocation } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.selectors';
-import { PlacedObjectAuthoredIconRowStack } from '@/features/content/locations/domain/presentation/map/PlacedObjectAuthoredIconRowStack';
+import {
+  PlacedObjectAuthoredIconRowStack,
+  resolvePlacedObjectAuthoredIconRowStackMaxWidthPx,
+} from '@/features/content/locations/domain/presentation/map/PlacedObjectAuthoredIconRowStack';
 import { PlacedObjectCellVisualDisplay } from '@/features/content/locations/domain/presentation/map/PlacedObjectCellVisualDisplay';
 import {
   resolvePlacedObjectCellVisualFromRenderItem,
@@ -111,6 +114,30 @@ export function LocationMapCellAuthoringOverlay({
     gridCellUnit,
     squareCellPx,
   });
+  const objectCount = objs?.length ?? 0;
+  const rowChildCount =
+    (showStandaloneLinkedIcon ? 1 : 0) + objectCount + (showPlacePreview ? 1 : 0);
+  const multiItemRow = rowChildCount > 1;
+  let singleObjectLayoutWidthPx: number | null | undefined;
+  if (!multiItemRow && squareCellPx != null) {
+    if (objectCount === 1) {
+      const item = mapCellObjectEntryToAuthoredRenderItem(cell.cellId, objs![0]!);
+      singleObjectLayoutWidthPx = resolvePlacedObjectCellVisualFromRenderItem(
+        item,
+        footprintLayout ?? undefined,
+      ).layoutWidthPx;
+    } else if (showPlacePreview && placePreviewItem && objectCount === 0) {
+      singleObjectLayoutWidthPx = resolvePlacedObjectCellVisualFromRenderItem(
+        placePreviewItem,
+        footprintLayout ?? undefined,
+      ).layoutWidthPx;
+    }
+  }
+  const rowMaxWidthPx = resolvePlacedObjectAuthoredIconRowStackMaxWidthPx({
+    cellPx: squareCellPx,
+    multiItemRow,
+    singleObjectLayoutWidthPx,
+  });
   const iconSx = {
     fontSize: 22,
     width: 22,
@@ -132,6 +159,7 @@ export function LocationMapCellAuthoringOverlay({
       {hasIcons || showPlacePreview ? (
         <PlacedObjectAuthoredIconRowStack
           cellPx={squareCellPx}
+          maxWidthPx={rowMaxWidthPx}
           sx={{
             position: 'relative',
             zIndex: 1,

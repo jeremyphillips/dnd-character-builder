@@ -271,6 +271,12 @@ export function CombatGrid({
             const cellAuthoredItems = grid.authoringPresentation
               ? visibleAuthoredObjectItems.filter((it) => it.combatCellId === cell.cellId)
               : []
+            const showAuthoredObjectIcons = cellAuthoredItems.length > 0
+            /** Obstacle glyph from grid mechanics uses default kind art; skip when map-authored icons already render. */
+            const showTacticalPlacedObjectGlyph =
+              Boolean(cell.placedObjectVisual) &&
+              cell.perception?.showObstacleGlyph !== false &&
+              !showAuthoredObjectIcons
 
             const cellBox = (
               <GridCellHost
@@ -308,7 +314,7 @@ export function CombatGrid({
                 }}
               >
                 <GridCellVisual sx={cellVisualSx}>
-                  {cellAuthoredItems.length > 0 ? (
+                  {showAuthoredObjectIcons ? (
                     <LocationMapAuthoredObjectIconsCellInline
                       items={cellAuthoredItems}
                       cellPx={cellSizePx}
@@ -355,7 +361,7 @@ export function CombatGrid({
                       />
                     </Box>
                   )}
-                  {cell.placedObjectVisual && cell.perception?.showObstacleGlyph !== false ? (
+                  {showTacticalPlacedObjectGlyph && cell.placedObjectVisual ? (
                     <PlacedObjectCellVisualCentered
                       visual={cell.placedObjectVisual}
                       variant="tactical"
@@ -368,7 +374,7 @@ export function CombatGrid({
 
             // `LocationMapAuthoredObjectIconsCellInline` wraps each authored icon in its own Tooltip.
             // Do not wrap the whole cell — that would stack a second tooltip on the same hover.
-            if (cellAuthoredItems.length > 0) {
+            if (showAuthoredObjectIcons) {
               return <Fragment key={cell.cellId}>{cellBox}</Fragment>
             }
 

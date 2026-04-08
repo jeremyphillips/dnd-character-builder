@@ -23,6 +23,8 @@ export function PlacedObjectCellVisualDisplay({ visual, variant, mapUi }: Placed
   if (visual.showMapRaster && visual.mapImageUrl) {
     const w = visual.layoutWidthPx ?? st.icon.widthPx;
     const h = visual.layoutHeightPx ?? st.icon.heightPx;
+    const hasFootprintLayoutPx =
+      visual.layoutWidthPx != null && visual.layoutHeightPx != null;
     return (
       <Box
         component="img"
@@ -35,6 +37,7 @@ export function PlacedObjectCellVisualDisplay({ visual, variant, mapUi }: Placed
           display: st.icon.display,
           userSelect: 'none',
           pointerEvents: 'none',
+          ...(hasFootprintLayoutPx ? { flexShrink: 0 } : {}),
           ...(anchorTransform ? { transform: anchorTransform } : {}),
         }}
         aria-hidden

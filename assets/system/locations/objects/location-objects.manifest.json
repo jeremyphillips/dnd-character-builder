@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "strategy": "single-manifest-option-a",
-  "inputFingerprint": "51d785f3ac8148d89febe8e7fde1dc238f2381154fd858c3fe19b63438b8a1d7",
+  "inputFingerprint": "af61d8deb24488a392fbb442d45a86bee1f24616736acc6630ee83d116e6fd10",
   "objectsDir": "assets/system/locations/objects",
   "assets": {
     "door_double_wood": {
@@ -35,6 +35,34 @@
           "y": 0,
           "width": 1024,
           "height": 1024
+        }
+      }
+    },
+    "placeholder_no_art": {
+      "sourceFile": "placeholder-no-art.png",
+      "contentSha256": "84ac0ad8ad157bdcb80a492f8be9d09b986ab308cf4277df43060b074f477f40",
+      "map": {
+        "intrinsicSize": {
+          "width": 64,
+          "height": 64
+        },
+        "trim": {
+          "x": 0,
+          "y": 0,
+          "width": 64,
+          "height": 64
+        }
+      },
+      "preview": {
+        "intrinsicSize": {
+          "width": 64,
+          "height": 64
+        },
+        "trim": {
+          "x": 0,
+          "y": 0,
+          "width": 64,
+          "height": 64
         }
       }
     },

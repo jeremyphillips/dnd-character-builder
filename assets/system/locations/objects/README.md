@@ -29,3 +29,9 @@ After adding or replacing a PNG, run **`build:location-objects-manifest`** and c
 - Generator: `scripts/location-objects-assets/generateLocationObjectsManifest.ts`
 - Validator: `scripts/location-objects-assets/validateLocationObjectsManifest.ts`
 - Shared types: `shared/domain/locations/map/locationObjectsAssetManifest.types.ts`
+
+## Phase 2 (application)
+
+- **Registry** (`AUTHORED_PLACED_OBJECT_DEFINITIONS`) uses **`assetId`** per variant (no `iconName`).
+- **Runtime resolution:** `src/features/content/locations/domain/model/placedObjects/locationPlacedObjectRasterAssets.ts` — Vite `import.meta.glob` of `*.png` + manifest for preview/map URLs.
+- **Place palette / tray:** `previewImageUrl` on palette items; **in-map cell objects:** `<img>` via `resolvePlacedObjectCellVisual` + `PlacedObjectCellVisualDisplay`. **Edge** doors/windows still draw as vector segments on the map; tray uses preview PNGs only.

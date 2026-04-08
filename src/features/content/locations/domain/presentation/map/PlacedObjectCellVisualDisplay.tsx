@@ -1,15 +1,11 @@
 /**
- * Renders a placed object in a grid cell: MUI icon when {@link PlacedObjectCellVisual.showIcon},
- * otherwise a large centered fallback letter (no corner mini-labels).
+ * Renders a placed object in a grid cell: map raster image when available, else large fallback letter.
  */
-import { createElement } from 'react';
-
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import type { LocationMapUiResolvedStyles } from './locationMapUiStyles';
 import type { PlacedObjectCellVisual } from './resolvePlacedObjectCellVisual';
-import { getLocationMapGlyphIconByName } from './locationMapIconNameMap';
 
 export type PlacedObjectCellVisualDisplayProps = {
   visual: PlacedObjectCellVisual;
@@ -20,18 +16,23 @@ export type PlacedObjectCellVisualDisplayProps = {
 export function PlacedObjectCellVisualDisplay({ visual, variant, mapUi }: PlacedObjectCellVisualDisplayProps) {
   const st = mapUi.placedObject[variant];
 
-  if (visual.showIcon && visual.iconName) {
-    const IconComp = getLocationMapGlyphIconByName(visual.iconName);
-    return createElement(IconComp, {
-      sx: {
-        fontSize: st.icon.fontSizePx,
-        width: st.icon.widthPx,
-        height: st.icon.heightPx,
-        display: st.icon.display,
-        color: st.icon.color,
-      },
-      'aria-hidden': true,
-    });
+  if (visual.showMapRaster && visual.mapImageUrl) {
+    return (
+      <Box
+        component="img"
+        src={visual.mapImageUrl}
+        alt=""
+        sx={{
+          width: st.icon.widthPx,
+          height: st.icon.heightPx,
+          objectFit: 'contain',
+          display: st.icon.display,
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}
+        aria-hidden
+      />
+    );
   }
 
   return (

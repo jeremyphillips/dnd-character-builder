@@ -7,12 +7,12 @@ import {
 } from '../resolvePlacedObjectCellVisual';
 
 describe('resolvePlacedObjectCellVisualFromPlacedKind', () => {
-  it('resolves treasure to registry label and icon name', () => {
+  it('resolves treasure to registry label and map raster URL', () => {
     const v = resolvePlacedObjectCellVisualFromPlacedKind('treasure');
     expect(v.label).toBe('Treasure Chest');
     expect(v.tooltip).toBe('Treasure Chest');
-    expect(v.iconName).toBe('treasure');
-    expect(v.showIcon).toBe(true);
+    expect(v.mapImageUrl).toMatch(/\.png/);
+    expect(v.showMapRaster).toBe(true);
     expect(v.fallbackLetter).toBe('T');
   });
 });
@@ -26,7 +26,8 @@ describe('resolvePlacedObjectCellVisualFromRenderItem', () => {
       kind: 'marker',
       authoredPlaceKindId: 'treasure',
     });
-    expect(v.iconName).toBe('treasure');
+    expect(v.mapImageUrl).toMatch(/\.png/);
+    expect(v.showMapRaster).toBe(true);
     expect(v.label).toBe('Treasure Chest');
   });
 
@@ -37,7 +38,8 @@ describe('resolvePlacedObjectCellVisualFromRenderItem', () => {
       combatCellId: 'c-0-0',
       kind: 'treasure',
     });
-    expect(v.iconName).toBe('treasure');
+    expect(v.mapImageUrl).toMatch(/\.png/);
+    expect(v.showMapRaster).toBe(true);
     expect(v.label).toBe('Treasure');
   });
 });

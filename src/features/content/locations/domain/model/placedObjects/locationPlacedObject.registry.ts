@@ -12,8 +12,6 @@ import {
 } from '@/shared/domain/locations/location.constants';
 import type { MaterialId } from '@/shared/domain/materials';
 
-import type { LocationMapGlyphIconName } from '../map/locationMapIconNames';
-
 /**
  * Per-family spatial + tactical defaults for authored placed objects (hydrated to combat `GridObject`).
  *
@@ -124,12 +122,12 @@ export type AuthoredPlacedObjectVariantPresentation = {
 
 /**
  * Per-variant palette/render metadata. Core UI fields stay flat; structured hints live under `presentation`.
- * `iconName` is the place-tool glyph id (`LocationMapGlyphIconName`), not persisted map object icon ids.
+ * `assetId` keys `location-objects.manifest.json` (preview + optional map slice).
  */
 export type AuthoredPlacedObjectVariantDefinition = {
   label: string;
   description?: string;
-  iconName: LocationMapGlyphIconName;
+  assetId: string;
   presentation?: AuthoredPlacedObjectVariantPresentation;
 };
 
@@ -185,7 +183,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       default: {
         label: 'City',
         description: 'Settlement or major urban marker.',
-        iconName: 'map_city',
+        assetId: 'placeholder_no_art',
       },
     },
   },
@@ -204,7 +202,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       residential: {
         label: 'Building',
         description: 'Residential structure or home.',
-        iconName: 'map_building',
+        assetId: 'placeholder_no_art',
         presentation: {
           kind: 'residential',
         },
@@ -212,7 +210,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       civic: {
         label: 'Civic Building',
         description: 'Public, institutional, or community structure.',
-        iconName: 'map_building',
+        assetId: 'placeholder_no_art',
         presentation: {
           kind: 'civic',
         },
@@ -235,7 +233,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       default: {
         label: 'Site',
         description: 'Point of interest or minor location.',
-        iconName: 'map_site',
+        assetId: 'placeholder_no_art',
       },
     },
   },
@@ -254,7 +252,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       deciduous: {
         label: 'Tree',
         description: 'Broad-canopy deciduous tree.',
-        iconName: 'tree',
+        assetId: 'placeholder_no_art',
         presentation: {
           type: 'deciduous',
           size: 'medium',
@@ -263,7 +261,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       pine: {
         label: 'Pine Tree',
         description: 'Conifer or pine-like tree.',
-        iconName: 'tree',
+        assetId: 'placeholder_no_art',
         presentation: {
           type: 'conifer',
           size: 'medium',
@@ -286,7 +284,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       rect_wood: {
         label: 'Table',
         description: 'Rectangular wood table.',
-        iconName: 'table',
+        assetId: 'table_rect_wood_5x3',
         presentation: {
           material: 'wood',
           shape: 'rectangle',
@@ -295,7 +293,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       circle_wood: {
         label: 'Round Table (wood)',
         description: 'Round wood table.',
-        iconName: 'table',
+        assetId: 'placeholder_no_art',
         presentation: {
           material: 'wood',
           shape: 'circle',
@@ -319,7 +317,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       straight: {
         label: 'Stairs',
         description: 'Straight stair run for vertical circulation between levels.',
-        iconName: 'stairs',
+        assetId: 'stairs_straight',
         presentation: {
           form: 'straight',
         },
@@ -327,7 +325,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       spiral: {
         label: 'Spiral Stairs',
         description: 'Compact spiral stair for vertical circulation between levels.',
-        iconName: 'stairs',
+        assetId: 'stairs_spiral',
         presentation: {
           form: 'spiral',
         },
@@ -349,7 +347,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       chest: {
         label: 'Treasure Chest',
         description: 'Chest, coffer, or locked loot container.',
-        iconName: 'treasure',
+        assetId: 'treasure_chest',
         presentation: {
           form: 'chest',
         },
@@ -357,7 +355,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       hoard: {
         label: 'Hoard',
         description: 'Loose treasure pile, stash, or objective cache.',
-        iconName: 'treasure',
+        assetId: 'placeholder_no_art',
         presentation: {
           form: 'pile',
         },
@@ -379,7 +377,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       single_wood: {
         label: 'Door',
         description: 'Single-leaf wood door.',
-        iconName: 'door',
+        assetId: 'door_single_wood',
         presentation: {
           material: 'wood',
           form: 'single-leaf',
@@ -388,7 +386,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       double_wood: {
         label: 'Double Door',
         description: 'Double-leaf wood door.',
-        iconName: 'door',
+        assetId: 'door_double_wood',
         presentation: {
           material: 'wood',
           form: 'double-leaf',
@@ -411,7 +409,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       bars: {
         label: 'Barred Window',
         description: 'Window opening secured with bars.',
-        iconName: 'window',
+        assetId: 'window_bars',
         presentation: {
           type: 'bars',
         },
@@ -419,7 +417,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       glass: {
         label: 'Window',
         description: 'Standard glass window.',
-        iconName: 'window',
+        assetId: 'window_glass',
         presentation: {
           material: 'glass',
           type: 'plain',
@@ -428,7 +426,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       stained_glass: {
         label: 'Stained Glass Window',
         description: 'Decorative stained glass window.',
-        iconName: 'window',
+        assetId: 'window_stained_glass',
         presentation: {
           material: 'glass',
           type: 'stained-glass',
@@ -437,7 +435,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
       shutters: {
         label: 'Shuttered Window',
         description: 'Window with wooden shutters.',
-        iconName: 'window',
+        assetId: 'window_shutters',
         presentation: {
           material: 'wood',
           type: 'shutters',

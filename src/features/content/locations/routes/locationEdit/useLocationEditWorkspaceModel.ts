@@ -947,7 +947,7 @@ export function useLocationEditWorkspaceModel({
   }, []);
 
   const handlePatchEdgeEntry = useCallback(
-    (edgeId: string, patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label'>>) => {
+    (edgeId: string, patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label' | 'doorState'>>) => {
       setGridDraft((prev) => ({
         ...prev,
         edgeEntries: prev.edgeEntries.map((e) => (e.edgeId === edgeId ? { ...e, ...patch } : e)),

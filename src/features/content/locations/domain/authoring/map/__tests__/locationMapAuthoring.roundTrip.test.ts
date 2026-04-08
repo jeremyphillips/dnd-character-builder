@@ -70,6 +70,40 @@ describe('location map authoring round-trip', () => {
     );
   });
 
+  it('preserves doorState on door edge entries through draft-shaped normalization', () => {
+    const doorEdge = {
+      edgeId: 'between:1,1|1,2',
+      kind: 'door' as const,
+      authoredPlaceKindId: 'door',
+      variantId: 'single_wood',
+      doorState: { openState: 'open' as const, lockState: 'unlocked' as const },
+    };
+    const loaded = normalizeLocationMapAuthoringFields({
+      cellEntries: [],
+      pathEntries: [],
+      edgeEntries: [doorEdge],
+      regionEntries: [],
+    });
+    const draft = {
+      ...cellEntriesToDraft(loaded.cellEntries),
+      pathEntries: loaded.pathEntries,
+      edgeEntries: loaded.edgeEntries,
+      regionEntries: loaded.regionEntries,
+    };
+    const persistedShaped = normalizeLocationMapAuthoringFields({
+      cellEntries: cellDraftToCellEntries(
+        draft.linkedLocationByCellId,
+        draft.objectsByCellId,
+        draft.cellFillByCellId,
+        draft.regionIdByCellId,
+      ),
+      pathEntries: draft.pathEntries,
+      edgeEntries: draft.edgeEntries,
+      regionEntries: draft.regionEntries,
+    });
+    expect(persistedShaped.edgeEntries[0]?.doorState).toEqual(doorEdge.doorState);
+  });
+
   it('retains region entries with no cell references through save-shaped normalization', () => {
     const loaded = normalizeLocationMapAuthoringFields({
       cellEntries: [],

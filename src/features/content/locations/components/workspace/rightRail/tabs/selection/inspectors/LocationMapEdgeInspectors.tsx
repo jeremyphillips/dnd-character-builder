@@ -6,6 +6,7 @@ import { resolveAuthoredEdgeInstance } from '@/features/content/locations/domain
 
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants';
 
+import { DoorStateFields } from '../fields/DoorStateFields';
 import { EdgeLabelField } from '../fields/edgeLabelField';
 import {
   SelectionMetadataRows,
@@ -20,7 +21,7 @@ export type LocationMapEdgeInspectorProps = {
   onRemoveEdgeFromMap?: (edgeId: string) => void;
   onPatchEdgeEntry?: (
     edgeId: string,
-    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label'>>,
+    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label' | 'doorState'>>,
   ) => void;
 };
 
@@ -70,6 +71,22 @@ export function LocationMapEdgeInspector({
     />
   ) : undefined;
 
+  const doorStateFields =
+    resolved.placedKind === 'door' && resolved.effectiveDoorState != null ? (
+      <DoorStateFields
+        doorState={resolved.effectiveDoorState}
+        onChange={(next) => onPatchEdgeEntry?.(edgeId, { doorState: next })}
+      />
+    ) : null;
+
+  const fieldsBlock =
+    edgeLabelField != null || doorStateFields != null ? (
+      <Stack spacing={1.5}>
+        {edgeLabelField}
+        {doorStateFields}
+      </Stack>
+    ) : undefined;
+
   return (
     <SelectionRailTemplate
       categoryLabel={resolved.categoryLabel}
@@ -78,7 +95,7 @@ export function LocationMapEdgeInspector({
       metadata={metadata}
       onRemoveFromMap={onRemoveEdgeFromMap ? () => onRemoveEdgeFromMap(edgeId) : undefined}
     >
-      {edgeLabelField}
+      {fieldsBlock}
     </SelectionRailTemplate>
   );
 }
@@ -104,7 +121,7 @@ export type LocationMapEdgeRunInspectorProps = {
   onRemoveEdgeRunFromMap?: (edgeIds: readonly string[]) => void;
   onPatchEdgeEntry?: (
     edgeId: string,
-    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label'>>,
+    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label' | 'doorState'>>,
   ) => void;
 };
 
@@ -167,6 +184,23 @@ export function LocationMapEdgeRunInspector({
     />
   ) : undefined;
 
+  const doorStateFields =
+    resolved.placedKind === 'door' && resolved.effectiveDoorState != null ? (
+      <DoorStateFields
+        doorState={resolved.effectiveDoorState}
+        onChange={(next) => onPatchEdgeEntry?.(anchorEdgeId, { doorState: next })}
+        anchorScopeCaption={edgeIds.length > 1}
+      />
+    ) : null;
+
+  const fieldsBlockRun =
+    edgeLabelField != null || doorStateFields != null ? (
+      <Stack spacing={1.5}>
+        {edgeLabelField}
+        {doorStateFields}
+      </Stack>
+    ) : undefined;
+
   return (
     <SelectionRailTemplate
       categoryLabel={categoryLabel}
@@ -175,7 +209,7 @@ export function LocationMapEdgeRunInspector({
       metadata={metadataEdgeRun}
       onRemoveFromMap={onRemoveEdgeRunFromMap ? () => onRemoveEdgeRunFromMap(edgeIds) : undefined}
     >
-      {edgeLabelField}
+      {fieldsBlockRun}
     </SelectionRailTemplate>
   );
 }

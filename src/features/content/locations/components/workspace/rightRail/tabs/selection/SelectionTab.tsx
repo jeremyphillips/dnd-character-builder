@@ -49,7 +49,7 @@ export type SelectionTabProps = {
   /** Persisted edge row patch (e.g. label) — same draft as map save. */
   onPatchEdgeEntry?: (
     edgeId: string,
-    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label'>>,
+    patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label' | 'doorState'>>,
   ) => void;
   /** Persisted path metadata (name / description) — same draft as map save. */
   onPatchPathEntry?: (

@@ -9,7 +9,8 @@
  * - **Cell `variantId` parity** — optional `variantId` on cell objects using the same registry patterns as edge rows.
  */
 
-import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations';
+import type { LocationMapEdgeAuthoringEntry, ResolvedAuthoredDoorState } from '@/shared/domain/locations';
+import { sanitizeAuthoredDoorState } from '@/shared/domain/locations';
 
 import {
   getPlacedObjectPaletteCategoryId,
@@ -41,6 +42,8 @@ export type ResolvedAuthoredEdgeInstance = {
   legacyIdentityFallback: boolean;
   objectTitle: string;
   categoryLabel: string;
+  /** Set when {@link placedKind} is `door` — sanitized authoring defaults. */
+  effectiveDoorState?: ResolvedAuthoredDoorState;
 };
 
 export function resolveAuthoredEdgeInstance(entry: LocationMapEdgeAuthoringEntry): ResolvedAuthoredEdgeInstance {
@@ -72,6 +75,9 @@ export function resolveAuthoredEdgeInstance(entry: LocationMapEdgeAuthoringEntry
       legacyIdentityFallback,
       objectTitle,
       categoryLabel,
+      ...(placedKind === 'door'
+        ? { effectiveDoorState: sanitizeAuthoredDoorState(entry.doorState) }
+        : {}),
     };
   }
 

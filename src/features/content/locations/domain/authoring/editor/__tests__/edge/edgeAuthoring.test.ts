@@ -265,6 +265,59 @@ describe('applyEdgeStrokeToDraft', () => {
     );
     expect(result[0]?.variantId).toBe('double_wood');
   });
+
+  it('preserves doorState when re-stroking door with enriched', () => {
+    const existing = [
+      {
+        kind: 'door' as const,
+        edgeId: 'between:0,0|1,0',
+        authoredPlaceKindId: 'door',
+        variantId: 'single_wood',
+        doorState: { openState: 'open' as const, lockState: 'locked' as const },
+      },
+    ];
+    const result = applyEdgeStrokeToDraft(
+      existing,
+      ['between:0,0|1,0'],
+      'door',
+      { authoredPlaceKindId: 'door', variantId: 'double_wood' },
+    );
+    expect(result[0]?.doorState).toEqual({ openState: 'open', lockState: 'locked' });
+  });
+
+  it('drops doorState when painting wall over door', () => {
+    const existing = [
+      {
+        kind: 'door' as const,
+        edgeId: 'between:0,0|1,0',
+        authoredPlaceKindId: 'door',
+        variantId: 'single_wood',
+        doorState: { openState: 'open' as const, lockState: 'unlocked' as const },
+      },
+    ];
+    const result = applyEdgeStrokeToDraft(existing, ['between:0,0|1,0'], 'wall');
+    expect(result[0]).toEqual({ kind: 'wall', edgeId: 'between:0,0|1,0' });
+  });
+
+  it('drops doorState when painting window over door', () => {
+    const existing = [
+      {
+        kind: 'door' as const,
+        edgeId: 'between:0,0|1,0',
+        authoredPlaceKindId: 'door',
+        variantId: 'single_wood',
+        doorState: { openState: 'closed' as const, lockState: 'barred' as const },
+      },
+    ];
+    const result = applyEdgeStrokeToDraft(
+      existing,
+      ['between:0,0|1,0'],
+      'window',
+      { authoredPlaceKindId: 'window', variantId: 'glass' },
+    );
+    expect(result[0]?.doorState).toBeUndefined();
+    expect(result[0]?.kind).toBe('window');
+  });
 });
 
 // ---------------------------------------------------------------------------

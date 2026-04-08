@@ -8,6 +8,7 @@ import type { LocationMapRegionColorKey } from './locationMapRegion.constants';
 import type { LocationMapEdgeKindId } from './locationMapEdgeFeature.constants';
 import type { LocationMapPathKindId } from './locationMapPathFeature.constants';
 import type { LocationMapStairEndpointAuthoring } from './locationMapStairEndpoint.types';
+import type { AuthoredDoorState } from './locationMapDoorAuthoring.types';
 import type { LocationMapEdgeAuthoringState } from './locationMapEdgeAuthoring.types';
 import type { GridGeometryId } from '../../grid/gridGeometry';
 
@@ -122,6 +123,8 @@ export type LocationMapEdgeAuthoringEntry = {
   label?: string;
   /** Typed instance overrides — discriminated; optional until edited. */
   state?: LocationMapEdgeAuthoringState;
+  /** Door-only authored behavior (open/lock). Ignored when the row is not a door instance. */
+  doorState?: AuthoredDoorState;
 };
 
 /** Sparse map-level authored content split by primitive. */

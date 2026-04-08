@@ -1,3 +1,4 @@
+import { sanitizeAuthoredDoorState } from '@/shared/domain/locations';
 import type { LocationMapEdgeAuthoringEntry, LocationMapEdgeKindId } from '@/shared/domain/locations';
 
 import {
@@ -5,6 +6,8 @@ import {
   parseLocationPlacedObjectKindId,
   type LocationPlacedObjectKindId,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+
+import { isLocationMapEdgeEntryDoorInstance } from './locationMapEdgeDoorAuthoring';
 
 /**
  * Registry-aware normalization for persisted edge rows (save pipeline).
@@ -91,6 +94,18 @@ export function normalizeEdgeAuthoringEntryForPersistence(
   const label =
     entry.label != null && String(entry.label).trim() !== '' ? String(entry.label).trim() : undefined;
 
+  const candidate: LocationMapEdgeAuthoringEntry = {
+    edgeId: entry.edgeId,
+    kind,
+    ...(authoredPlaceKindId !== undefined ? { authoredPlaceKindId } : {}),
+    ...(variantId != null && variantId !== '' ? { variantId } : {}),
+    ...(label ? { label } : {}),
+    ...(entry.state !== undefined ? { state: entry.state } : {}),
+    ...(entry.doorState !== undefined ? { doorState: entry.doorState } : {}),
+  };
+
+  const isDoor = isLocationMapEdgeEntryDoorInstance(candidate);
+
   return {
     edgeId: entry.edgeId,
     kind,
@@ -98,6 +113,9 @@ export function normalizeEdgeAuthoringEntryForPersistence(
     ...(variantId != null && variantId !== '' ? { variantId } : {}),
     ...(label ? { label } : {}),
     ...(entry.state !== undefined ? { state: entry.state } : {}),
+    ...(isDoor && entry.doorState !== undefined
+      ? { doorState: sanitizeAuthoredDoorState(entry.doorState) }
+      : {}),
   };
 }
 

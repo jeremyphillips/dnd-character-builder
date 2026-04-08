@@ -90,4 +90,63 @@ describe('buildEncounterSpaceFromLocationMap', () => {
       ]),
     )
   })
+
+  it('door edge defaults to blocking movement and sight (closed)', () => {
+    const space = buildEncounterSpaceFromLocationMap({
+      mapHostLocationId: 'floor-loc-1',
+      map: {
+        id: 'map-door',
+        locationId: 'loc',
+        name: 'Hall',
+        kind: 'encounter-grid',
+        grid: { width: 2, height: 2, cellUnit: '5ft' },
+        layout: {},
+        edgeEntries: [
+          {
+            edgeId: 'between:0,0|1,0',
+            kind: 'door',
+            authoredPlaceKindId: 'door',
+            variantId: 'single_wood',
+          },
+        ],
+        cellEntries: [],
+        pathEntries: [],
+        regionEntries: [],
+      },
+    })
+
+    const doorEdge = space.edges?.find((e) => e.fromCellId === 'c-0-0' && e.toCellId === 'c-1-0')
+    expect(doorEdge?.blocksMovement).toBe(true)
+    expect(doorEdge?.blocksSight).toBe(true)
+  })
+
+  it('open door edge does not block movement or sight', () => {
+    const space = buildEncounterSpaceFromLocationMap({
+      mapHostLocationId: 'floor-loc-1',
+      map: {
+        id: 'map-door-open',
+        locationId: 'loc',
+        name: 'Hall',
+        kind: 'encounter-grid',
+        grid: { width: 2, height: 2, cellUnit: '5ft' },
+        layout: {},
+        edgeEntries: [
+          {
+            edgeId: 'between:0,0|1,0',
+            kind: 'door',
+            authoredPlaceKindId: 'door',
+            variantId: 'single_wood',
+            doorState: { openState: 'open', lockState: 'locked' },
+          },
+        ],
+        cellEntries: [],
+        pathEntries: [],
+        regionEntries: [],
+      },
+    })
+
+    const doorEdge = space.edges?.find((e) => e.fromCellId === 'c-0-0' && e.toCellId === 'c-1-0')
+    expect(doorEdge?.blocksMovement).toBe(false)
+    expect(doorEdge?.blocksSight).toBe(false)
+  })
 })

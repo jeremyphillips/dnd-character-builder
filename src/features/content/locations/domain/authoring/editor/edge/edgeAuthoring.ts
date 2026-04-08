@@ -198,9 +198,17 @@ function buildEdgeAuthoringEntryForStroke(
       authoredPlaceKindId: enriched.authoredPlaceKindId,
       variantId: enriched.variantId,
       ...(existing?.label?.trim() ? { label: existing.label } : {}),
+      ...(existing?.state !== undefined ? { state: existing.state } : {}),
+      ...(edgeKind === 'door' && existing?.doorState !== undefined ? { doorState: existing.doorState } : {}),
     };
   }
-  return { edgeId, kind: edgeKind };
+  return {
+    edgeId,
+    kind: edgeKind,
+    ...(existing?.label?.trim() ? { label: existing.label } : {}),
+    ...(existing?.state !== undefined ? { state: existing.state } : {}),
+    ...(edgeKind === 'door' && existing?.doorState !== undefined ? { doorState: existing.doorState } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -100,9 +100,10 @@ flowchart LR
 ## 6. Visual resolution (labels, URLs, layout)
 
 - **Module:** `domain/presentation/map/resolvePlacedObjectCellVisual.ts`
-- **`resolvePlacedObjectCellVisualFromRenderItem`:** maps render item + optional **`PlacedObjectCellVisualFootprintLayoutContext`** (`feetPerCell`, `cellPx`, `gapPx`, `applyPlacementAnchor`) → **`PlacedObjectCellVisual`** (raster URL, footprint size in px, **anchor offsets** for square placement).
+- **`resolvePlacedObjectCellVisualFromRenderItem`:** maps render item + optional **`PlacedObjectGeometryLayoutContext`** (built via `buildPlacedObjectGeometryLayoutContextFromAuthoring` / `buildPlacedObjectGeometryLayoutContextFromEncounter` in `shared/domain/locations/map/placedObjectGeometryLayoutContext.ts`; same shape as legacy **`PlacedObjectCellVisualFootprintLayoutContext`**) → **`PlacedObjectCellVisual`** (raster URL, footprint size in px, **anchor offsets** for square placement).
 - **Footprint math:** `shared/domain/locations/map/placedObjectFootprintLayout.ts`, `placedObjectPlacementAnchorLayout.ts`; **authoring `cellUnit`:** `resolveAuthoringCellUnitFeetPerCell` (`locationCellUnitAuthoring`).
 - **Display:** `PlacedObjectCellVisualDisplay.tsx` — `<img>` with **`object-fit: contain`** (`placedObjectMapSprite.constants.ts`).
+- **Geometry tests:** `domain/presentation/map/__tests__/resolvePlacedObjectCellVisual.geometry.test.ts` locks layout/anchor outputs for representative registry variants (large rect, circle, long rect).
 
 ### Multi-cell footprint layout and interaction risks
 
@@ -115,6 +116,8 @@ Registry **footprint** (feet) maps to a pixel layout box via **`computePlacedObj
 - **Stacking:** Z-order follows **cell render order**; large sprites can paint **over** adjacent terrain, paths, or icons in ways that feel arbitrary without a dedicated multi-cell layer policy.
 - **Combat:** Same resolver path; large sprites may crowd **tokens** or adjacent underlays.
 - **Sprite fit:** **`object-fit: contain`** still letterboxes art inside the layout box if PNG aspect ≠ footprint aspect — a large box does not guarantee a large painted sprite.
+
+**Surface vs resolver:** Workspace and encounter may differ in **overflow**, **clipping**, and **z-index** around the leaf; **layout width/height and anchor offsets** come only from the resolver + geometry context. Drift in painted pixels with the same context is a shell or asset issue, not footprint math.
 
 ---
 
@@ -146,5 +149,7 @@ Registry **footprint** (feet) maps to a pixel layout box via **`computePlacedObj
 | Placement resolver | `domain/authoring/editor/placement/placementRegistryResolver.ts` |
 | Render items | `shared/domain/locations/map/locationMapAuthoredObjectRender.helpers.ts` |
 | Resolve visual | `domain/presentation/map/resolvePlacedObjectCellVisual.ts`, `PlacedObjectCellVisualDisplay.tsx` |
+| Geometry context (factories) | `shared/domain/locations/map/placedObjectGeometryLayoutContext.ts` |
+| Resolver geometry tests | `domain/presentation/map/__tests__/resolvePlacedObjectCellVisual.geometry.test.ts` |
 | Editor overlay | `components/mapGrid/LocationMapCellAuthoringOverlay.tsx` |
 | Combat inline icons | `components/mapGrid/LocationMapAuthoredObjectIconsLayer.tsx` |

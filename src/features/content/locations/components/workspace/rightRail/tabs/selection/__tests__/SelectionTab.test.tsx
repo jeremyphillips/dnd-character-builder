@@ -248,15 +248,20 @@ describe('SelectionTab', () => {
     expect(screen.getByText('Boundary wall segment.')).toBeInTheDocument();
   });
 
-  it('path: mounts path inspector with Path title', () => {
+  it('path: mounts path inspector with Path category, kind as title, cell placement, name/description', () => {
+    const onPatchPathEntry = vi.fn();
     renderSelection(
       { type: 'path', pathId: 'path-1' },
       {
         pathEntries: [{ id: 'path-1', kind: 'road', cellIds: ['0,0', '1,0'] }],
+        onPatchPathEntry,
       },
     );
-    expect(screen.getByRole('heading', { name: 'Path' })).toBeInTheDocument();
-    expect(screen.getByText('Chain · 2 cells')).toBeInTheDocument();
+    expect(screen.getByText('Path')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Road' })).toBeInTheDocument();
+    expect(screen.getByText('Cell 0,0')).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.getByLabelText('Description')).toBeInTheDocument();
   });
 
   it('region: mounts region form with shared Map header and region name as title', () => {

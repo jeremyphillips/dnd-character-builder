@@ -49,7 +49,11 @@ import {
   type LocationScaleId,
   type LocationVerticalStairConnection,
 } from '@/shared/domain/locations';
-import type { LocationMapEdgeAuthoringEntry, LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
+import type {
+  LocationMapEdgeAuthoringEntry,
+  LocationMapPathAuthoringEntry,
+  LocationMapRegionAuthoringEntry,
+} from '@/shared/domain/locations';
 import { LOCATION_MAP_DEFAULT_REGION_NAME } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import { resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens';
 import {
@@ -952,6 +956,16 @@ export function useLocationEditWorkspaceModel({
     [],
   );
 
+  const handlePatchPathEntry = useCallback(
+    (pathId: string, patch: Partial<Pick<LocationMapPathAuthoringEntry, 'name' | 'description'>>) => {
+      setGridDraft((prev) => ({
+        ...prev,
+        pathEntries: prev.pathEntries.map((p) => (p.id === pathId ? { ...p, ...patch } : p)),
+      }));
+    },
+    [],
+  );
+
   return {
     campaignId,
     locationId,
@@ -1037,6 +1051,7 @@ export function useLocationEditWorkspaceModel({
     handleRemoveEdgeRunFromMap,
     handleRemoveRegionFromMap,
     handlePatchEdgeEntry,
+    handlePatchPathEntry,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,

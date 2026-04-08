@@ -10,6 +10,7 @@ import {
   formatCellPlacementLine,
   formatEdgePlacementLine,
   legacyMapObjectKindTitle,
+  pathKindDisplayTitle,
   presentationRecordToMetadataRows,
   presentationRowsFromPresentation,
   shouldShowLinkedIdentityForPlacedObject,
@@ -57,6 +58,13 @@ describe('legacyMapObjectKindTitle', () => {
   it('maps persisted map object kinds to display titles', () => {
     expect(legacyMapObjectKindTitle('stairs')).toBe('Stairs');
     expect(legacyMapObjectKindTitle('table')).toBe('Table');
+  });
+});
+
+describe('pathKindDisplayTitle', () => {
+  it('maps path kinds to Selection rail titles', () => {
+    expect(pathKindDisplayTitle('road')).toBe('Road');
+    expect(pathKindDisplayTitle('river')).toBe('River');
   });
 });
 

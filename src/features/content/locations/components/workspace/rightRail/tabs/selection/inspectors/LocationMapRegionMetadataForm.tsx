@@ -16,7 +16,6 @@ import {
 import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 import FormSelectField from '@/ui/patterns/form/FormSelectField';
-import FormTextField from '@/ui/patterns/form/FormTextField';
 
 import {
   normalizeRegionDescriptionForDraft,
@@ -26,6 +25,7 @@ import {
   type RegionMetadataPersistablePatch,
 } from '../../../adapters';
 
+import { RailNameDescriptionFormFields } from '../fields/railNameDescriptionFields';
 import { SelectionRailIdentityBlock } from '../templates/SelectionRailTemplate';
 
 export type { RegionMetadataFormValues };
@@ -163,20 +163,7 @@ export function LocationMapRegionMetadataForm({
               location and map to the campaign.
             </Typography>
           ) : null}
-          <FormTextField
-            name="name"
-            label="Name"
-            required
-            size="small"
-            onAfterChange={patchName}
-          />
-          <FormTextField
-            name="description"
-            label="Description"
-            multiline
-            rows={3}
-            size="small"
-          />
+          <RailNameDescriptionFormFields nameRequired onNameAfterChange={patchName} />
           <FormSelectField
             name="colorKey"
             label="Color"

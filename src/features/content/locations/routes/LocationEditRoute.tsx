@@ -203,6 +203,7 @@ export default function LocationEditRoute() {
     handleRemoveEdgeRunFromMap,
     handleRemoveRegionFromMap,
     handlePatchEdgeEntry,
+    handlePatchPathEntry,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,
@@ -273,6 +274,7 @@ export default function LocationEditRoute() {
       onRemoveEdgeRunFromMap={handleRemoveEdgeRunFromMap}
       onRemoveRegionFromMap={handleRemoveRegionFromMap}
       onPatchEdgeEntry={handlePatchEdgeEntry}
+      onPatchPathEntry={handlePatchPathEntry}
       onBeginRegionPaintFromSelection={handleBeginRegionPaintFromSelection}
     />
   );

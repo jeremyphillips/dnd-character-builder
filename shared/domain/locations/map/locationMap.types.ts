@@ -94,6 +94,10 @@ export type LocationMapPathAuthoringEntry = {
   id: string;
   kind: LocationMapPathKindId;
   cellIds: string[];
+  /** Optional display name (roads, rivers). */
+  name?: string;
+  /** Optional longer description. */
+  description?: string;
 };
 
 /**

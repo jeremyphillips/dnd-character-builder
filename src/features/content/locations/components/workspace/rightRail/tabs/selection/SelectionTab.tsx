@@ -51,6 +51,11 @@ export type SelectionTabProps = {
     edgeId: string,
     patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label'>>,
   ) => void;
+  /** Persisted path metadata (name / description) — same draft as map save. */
+  onPatchPathEntry?: (
+    pathId: string,
+    patch: Partial<Pick<LocationMapPathAuthoringEntry, 'name' | 'description'>>,
+  ) => void;
   /** Debounced persistable fields (e.g. region description) register flush here for Save / boundaries. */
   debouncedPersistableFlushRef?: MutableRefObject<(() => void) | null>;
   /** Switch to region paint for this region; Selection rail stays focused. */
@@ -75,6 +80,7 @@ export function SelectionTab({
   onRemoveEdgeRunFromMap,
   onRemoveRegionFromMap,
   onPatchEdgeEntry,
+  onPatchPathEntry,
   debouncedPersistableFlushRef,
   onBeginRegionPaintFromSelection,
 }: SelectionTabProps) {
@@ -126,6 +132,7 @@ export function SelectionTab({
           pathId={selection.pathId}
           pathEntries={pathEntries}
           onRemovePathFromMap={onRemovePathFromMap}
+          onPatchPathEntry={onPatchPathEntry}
         />
       );
     case 'object':

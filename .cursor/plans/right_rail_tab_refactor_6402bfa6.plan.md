@@ -1,6 +1,6 @@
 ---
 name: Right rail tab refactor
-overview: "Complete: `tabs/location` + `tabs/selection`, `SelectionTab`, `CellSelectionInspector`, `SelectionRailTemplate` + children API, `location-workspace.md`, shim removal, **split map inspectors**, **`tabs/selection/fields/`**, and **`tabs/selection/viewModels/`** (`SelectionRailViewModel`, `buildCellFillSelectionRailViewModel` exemplar)."
+overview: "Complete: `tabs/location` + `tabs/selection`, `SelectionTab`, `CellSelectionInspector`, `SelectionRailTemplate` + children API, `location-workspace.md`, shim removal, **split map inspectors**, **`tabs/selection/fields/`**, **`tabs/selection/viewModels/`**, and **path inspector + `railNameDescriptionFields` + `onPatchPathEntry`** (see follow-up section)."
 todos:
   - id: scaffold-tabs
     content: Create rightRail/tabs/location and tabs/selection; git-mv selection/*, panels/Cell panel, and tests with import fixes + rightRail/index + workspace/components barrels
@@ -31,6 +31,9 @@ todos:
     status: completed
   - id: view-models
     content: Add shared SelectionRailViewModel type where useful; keep exemplar builders (e.g. cell fill); do not require every inspector to adopt buildX
+    status: completed
+  - id: path-inspector-name-description
+    content: "Optional: Shared name+description fields module in fields/; path inspector parity + pathEntries + onPatchPathEntry; replace LocationMapRegionMetadataForm inline name/description with shared module (preserve RHF/debounce/adapter behavior)"
     status: completed
 isProject: false
 ---
@@ -298,3 +301,40 @@ flowchart TB
 - After each **build sequence** phase: run rail-focused tests and fix imports before the next phase.
 - Run existing tests: `rightRail/__tests__/LocationEditorRailSectionTabs.test.tsx`, `tabs/selection/__tests__/SelectionTab.test.tsx`, `tabs/selection/__tests__/selectionRail.helpers.test.ts`, `regionMetadataDraftAdapter.test.ts` if imports change.
 - Quick manual smoke: Selection tab for `none`, `cell` (empty + fill), `object`, `path`, `edge`, `edge-run`, `region`; Location tab homebrew + system patch (submit + patch save still behave as before).
+
+---
+
+## Follow-up — Path inspector + reusable name/description (optional)
+
+**Scope:** Keep **simple** — one treatment for **all** paths (kinds today are only `road` | `river` in [`LocationMapPathAuthoringEntry`](shared/domain/locations/map/locationMap.types.ts); **walls** are edge features, not path kinds).
+
+**Region refactor (same initiative):** After introducing the shared **`tabs/selection/fields/`** name + description module(s), **replace** the current **inline** name and description field implementation in [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/rightRail/tabs/selection/inspectors/LocationMapRegionMetadataForm.tsx) with that module. **Do not** change persistence semantics: keep the existing **RHF** form boundary, **`regionMetadataDraftAdapter`**, **`useDebouncedPersistableField`** for description (if present), and **flush** registration — only swap **presentational** field rows so region and path share one UI building block.
+
+### Target UX (Selection → path)
+
+- **Category** slot: **`Path`** (not “Map”).
+- **Title** slot: human label for **`entry.kind`** (e.g. River / Road), not a generic “Path” title.
+- **Placement** slot: reuse **`formatCellPlacementLine`** from [`selectionRail.helpers.ts`](src/features/content/locations/components/workspace/rightRail/tabs/selection/selectionRail.helpers.ts) for a single representative cell (e.g. first in `cellIds`) — same “cell string” family as objects/cell fill.
+- **Remove** the kind **Chip** badge from metadata; kind identity moves to **title**.
+- **Name + description** fields for **every** path (same rules for all current kinds). Compose as **`children`** (or `metadata`) of [`SelectionRailTemplate`](src/features/content/locations/components/workspace/rightRail/tabs/selection/templates/SelectionRailTemplate.tsx).
+
+### Architecture fit
+
+- **Shell:** Fits **`SelectionRailTemplate`** + existing helpers; **no** need for placed-object **registry** / `presentationRowsFromPresentation` unless paths later get registry variants.
+- **Optional** `buildPathSelectionRailViewModel` in [`viewModels/`](src/features/content/locations/components/workspace/rightRail/tabs/selection/viewModels/) — parity with cell-fill exemplar only if it reduces duplication.
+
+### Data model and wiring (required for persisted name/description)
+
+- Today `LocationMapPathAuthoringEntry` is `{ id, kind, cellIds }` only — **no** `name` / `description`.
+- Extend the **shared type**, **`gridDraft.pathEntries`** ([`locationGridDraft.types.ts`](src/features/content/locations/components/authoring/draft/locationGridDraft.types.ts)), **normalize/validation**, and **save/API** paths (same class of change as edge `label` or region fields).
+- **Selection rail:** add **`onPatchPathEntry(pathId, patch)`** (mirror [`onPatchEdgeEntry`](src/features/content/locations/components/workspace/rightRail/tabs/selection/SelectionTab.tsx)) from workspace → [`SelectionTab`](src/features/content/locations/components/workspace/rightRail/tabs/selection/SelectionTab.tsx) → [`LocationMapPathInspector`](src/features/content/locations/components/workspace/rightRail/tabs/selection/inspectors/LocationMapPathInspector.tsx).
+
+### Modular name + description (`fields/`)
+
+- Extract a **presentational** module under **`tabs/selection/fields/`** (e.g. `RailNameDescriptionFields` or `PathNameDescriptionFields`) — two string fields, labels, optional multiline for description, optional helper text.
+- **Reuse** across any inspector that uses `SelectionRailTemplate`: pass **values + callbacks** from the parent; compose inside **`children`** (same pattern as [`EdgeLabelField`](src/features/content/locations/components/workspace/rightRail/tabs/selection/fields/edgeLabelField.tsx)).
+- **Region adoption:** **`LocationMapRegionMetadataForm`** stops duplicating name/description **TextField** (or equivalent) markup; it **imports** the shared fields component and wires **`Controller`** / **`register`** / debounced description to the same form values and **`onPatchRegion`** flow as today.
+- **Persistence is not generic:** path updates **`gridDraft.pathEntries`**; region uses [`LocationMapRegionMetadataForm`](src/features/content/locations/components/workspace/rightRail/tabs/selection/inspectors/LocationMapRegionMetadataForm.tsx) + [`regionMetadataDraftAdapter`](src/features/content/locations/components/workspace/rightRail/adapters/regionMetadataDraftAdapter.ts). Shared module = **UI + local control**; each inspector keeps **patch adapter / flush** semantics.
+- **Debouncing:** If description should match region UX (flush before save), reuse **`useDebouncedPersistableField`** or register flush like region metadata — see [`location-workspace.md`](docs/reference/location-workspace.md) debounced persistable section.
+
+**Todo mapping:** `path-inspector-name-description` (frontmatter).

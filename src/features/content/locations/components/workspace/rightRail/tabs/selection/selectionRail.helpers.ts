@@ -5,6 +5,7 @@ import {
   type LocationPlacedObjectKindId,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationMapObjectKindId } from '@/shared/domain/locations';
+import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import type { AuthoredCellFillVariantPresentation } from '@/shared/domain/locations/map/authoredCellFillDefinitions';
 import type { LocationCellFillCategory } from '@/shared/domain/locations/map/locationMapCellFill.facets';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
@@ -56,6 +57,20 @@ const LEGACY_MAP_OBJECT_KIND_TITLE: Record<LocationMapObjectKindId, string> = {
 /** Title when `authoredPlaceKindId` is missing (legacy / non-palette rows). */
 export function legacyMapObjectKindTitle(kind: LocationMapObjectKindId): string {
   return LEGACY_MAP_OBJECT_KIND_TITLE[kind] ?? kind;
+}
+
+/** Human title for map path kind (road / river) in the Selection rail. */
+export function pathKindDisplayTitle(kind: LocationMapPathKindId): string {
+  switch (kind) {
+    case 'road':
+      return 'Road';
+    case 'river':
+      return 'River';
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
 }
 
 /**

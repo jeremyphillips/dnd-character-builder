@@ -4,15 +4,13 @@ import {
   getPlacedObjectDefinition,
   type LocationPlacedObjectKindId,
 } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
-import type { LocationMapCellFillSelection, LocationMapObjectKindId } from '@/shared/domain/locations';
-import {
-  type AuthoredCellFillVariantPresentation,
-  getAuthoredCellFillFamilyDefinition,
-  resolveCellFillVariant,
-} from '@/shared/domain/locations/map/authoredCellFillDefinitions';
+import type { LocationMapObjectKindId } from '@/shared/domain/locations';
+import type { AuthoredCellFillVariantPresentation } from '@/shared/domain/locations/map/authoredCellFillDefinitions';
 import type { LocationCellFillCategory } from '@/shared/domain/locations/map/locationMapCellFill.facets';
 import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { parseSquareEdgeId } from '@/shared/domain/grid/gridEdgeIds';
+
+import type { PresentationMetadataRow } from './viewModels/selectionRailViewModel.types';
 
 function cellPlacementFragment(cellId: string): string {
   const p = parseGridCellId(cellId);
@@ -75,8 +73,6 @@ export function shouldShowLinkedIdentityForPlacedObject(
   return linkedLoc.scale === def.linkedScale;
 }
 
-export type PresentationMetadataRow = { label: string; value: string };
-
 function formatPresentationKey(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
@@ -134,26 +130,5 @@ export function cellFillCategoryToSectionLabel(category: LocationCellFillCategor
   }
 }
 
-export type CellFillSelectionRailViewModel = {
-  categoryLabel: string;
-  title: string;
-  placementLine: string;
-  metadataRows: PresentationMetadataRow[];
-};
-
-/**
- * Resolved display model for the Selection tab cell-fill inspector (shared rail template).
- */
-export function buildCellFillSelectionRailViewModel(
-  cellId: string,
-  fill: LocationMapCellFillSelection,
-): CellFillSelectionRailViewModel {
-  const family = getAuthoredCellFillFamilyDefinition(fill.familyId);
-  const resolved = resolveCellFillVariant(fill.familyId, fill.variantId);
-  return {
-    categoryLabel: cellFillCategoryToSectionLabel(family.category),
-    title: resolved.variant.label,
-    placementLine: formatCellPlacementLine(cellId),
-    metadataRows: cellFillPresentationRowsFromPresentation(resolved.variant.presentation),
-  };
-}
+export type { PresentationMetadataRow, SelectionRailViewModel, CellFillSelectionRailViewModel } from './viewModels/selectionRailViewModel.types';
+export { buildCellFillSelectionRailViewModel } from './viewModels/buildCellFillSelectionRailViewModel';

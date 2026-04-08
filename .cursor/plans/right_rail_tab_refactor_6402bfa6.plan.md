@@ -1,6 +1,6 @@
 ---
 name: Right rail tab refactor
-overview: "Complete: `tabs/location` + `tabs/selection`, `SelectionTab`, `CellSelectionInspector`, `SelectionRailTemplate` + children API, `location-workspace.md`, shim removal, **split map inspectors** (`LocationMapObjectInspector`, `LocationMapPathInspector`, `LocationMapEdgeInspectors`, `selectionInspectorTypes`, `inspectors/index`), and **`tabs/selection/fields/`** (linked picker, stair endpoint/pairing UI, edge label + small label modules)."
+overview: "Complete: `tabs/location` + `tabs/selection`, `SelectionTab`, `CellSelectionInspector`, `SelectionRailTemplate` + children API, `location-workspace.md`, shim removal, **split map inspectors**, **`tabs/selection/fields/`**, and **`tabs/selection/viewModels/`** (`SelectionRailViewModel`, `buildCellFillSelectionRailViewModel` exemplar)."
 todos:
   - id: scaffold-tabs
     content: Create rightRail/tabs/location and tabs/selection; git-mv selection/*, panels/Cell panel, and tests with import fixes + rightRail/index + workspace/components barrels
@@ -31,7 +31,7 @@ todos:
     status: completed
   - id: view-models
     content: Add shared SelectionRailViewModel type where useful; keep exemplar builders (e.g. cell fill); do not require every inspector to adopt buildX
-    status: pending
+    status: completed
 isProject: false
 ---
 

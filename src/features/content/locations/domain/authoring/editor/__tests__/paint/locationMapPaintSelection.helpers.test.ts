@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
-import { LOCATION_MAP_DEFAULT_REGION_NAME } from '@/shared/domain/locations/map/locationMapRegion.constants';
+import {
+  LOCATION_MAP_DEFAULT_REGION_NAME,
+  LOCATION_MAP_REGION_COLOR_KEYS,
+} from '@/shared/domain/locations/map/locationMapRegion.constants';
 
 import {
   canApplyAnyPaintStroke,
@@ -18,32 +21,26 @@ const sampleRegions: LocationMapRegionAuthoringEntry[] = [
   },
 ];
 
+const pending = LOCATION_MAP_REGION_COLOR_KEYS[0];
+
 describe('locationMapPaintSelection.helpers', () => {
   it('createInitialPaintState starts in surface with no active region', () => {
     const s = createInitialPaintState();
     expect(s.domain).toBe('surface');
-    expect(s.surfaceFillKind).toBeNull();
+    expect(s.selectedSurfaceFill).toBeNull();
     expect(s.activeRegionId).toBeNull();
+    expect(s.pendingRegionColorKey).toBe(pending);
   });
 
-  it('canApplyRegionPaint requires domain region and a matching region entry', () => {
+  it('canApplyRegionPaint requires domain region and extend or create intent', () => {
     expect(canApplyRegionPaint(null, sampleRegions)).toBe(false);
     expect(
       canApplyRegionPaint(
         {
           domain: 'region',
-          surfaceFillKind: null,
+          selectedSurfaceFill: null,
           activeRegionId: null,
-        },
-        sampleRegions,
-      ),
-    ).toBe(false);
-    expect(
-      canApplyRegionPaint(
-        {
-          domain: 'region',
-          surfaceFillKind: null,
-          activeRegionId: 'r1',
+          pendingRegionColorKey: pending,
         },
         sampleRegions,
       ),
@@ -52,8 +49,20 @@ describe('locationMapPaintSelection.helpers', () => {
       canApplyRegionPaint(
         {
           domain: 'region',
-          surfaceFillKind: null,
+          selectedSurfaceFill: null,
+          activeRegionId: 'r1',
+          pendingRegionColorKey: pending,
+        },
+        sampleRegions,
+      ),
+    ).toBe(true);
+    expect(
+      canApplyRegionPaint(
+        {
+          domain: 'region',
+          selectedSurfaceFill: null,
           activeRegionId: 'missing',
+          pendingRegionColorKey: pending,
         },
         sampleRegions,
       ),
@@ -65,8 +74,9 @@ describe('locationMapPaintSelection.helpers', () => {
       canApplyAnyPaintStroke(
         {
           domain: 'surface',
-          surfaceFillKind: 'water',
+          selectedSurfaceFill: { familyId: 'water', variantId: 'shallow' },
           activeRegionId: null,
+          pendingRegionColorKey: pending,
         },
         sampleRegions,
       ),
@@ -75,8 +85,9 @@ describe('locationMapPaintSelection.helpers', () => {
       canApplyAnyPaintStroke(
         {
           domain: 'region',
-          surfaceFillKind: null,
+          selectedSurfaceFill: null,
           activeRegionId: 'r1',
+          pendingRegionColorKey: pending,
         },
         sampleRegions,
       ),

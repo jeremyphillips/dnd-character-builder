@@ -2,21 +2,15 @@ import type { ReactNode } from 'react';
 import { FormProvider, type UseFormReturn } from 'react-hook-form';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 
 import type { LocationFormValues } from '@/features/content/locations/domain';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
-import { ConditionalFormRenderer, ConfirmModal } from '@/ui/patterns';
+import { ConfirmModal } from '@/ui/patterns';
 import type { FieldConfig } from '@/ui/patterns/form/form.types';
-import {
-  LocationMapEditorLinkedLocationModal,
-  type LocationMapEditorLinkedLocationModalProps,
-} from './rightRail/linkedLocation';
-
 import type { BuildingFloorStripProps } from './BuildingFloorStrip';
 import { BuildingFloorStrip } from './BuildingFloorStrip';
 import type { LocationEditorRailSection } from './rightRail/types';
+import { LocationTab } from './rightRail/tabs/location/LocationTab';
 import { LocationEditorHeader } from './header/LocationEditorHeader';
 import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
 import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';
@@ -53,9 +47,7 @@ export type LocationEditHomebrewWorkspaceProps = {
   showFloorRailHint: boolean;
   floorRailHintLabel?: string | null;
   policyPanel: ReactNode | null;
-  mapAuthoringPanel: ReactNode;
   selectionPanel: ReactNode;
-  linkedLocationModal: LocationMapEditorLinkedLocationModalProps;
   deleteConfirm: {
     open: boolean;
     loading: boolean;
@@ -92,9 +84,7 @@ export function LocationEditHomebrewWorkspace({
   showFloorRailHint,
   floorRailHintLabel,
   policyPanel,
-  mapAuthoringPanel,
   selectionPanel,
-  linkedLocationModal,
   deleteConfirm,
 }: LocationEditHomebrewWorkspaceProps) {
   const canvas =
@@ -167,31 +157,21 @@ export function LocationEditHomebrewWorkspace({
               section={railSection}
               onSectionChange={onRailSectionChange}
               locationPanel={
-                <Stack spacing={2}>
-                  {showFloorRailHint ? (
-                    <Typography variant="caption" color="text.secondary">
-                      Map and cells: {floorRailHintLabel ?? 'Floor'} (save updates this floor).
-                    </Typography>
-                  ) : null}
-                  <form
-                    key="location-form"
-                    id={formId}
-                    onSubmit={form.handleSubmit(onHomebrewSubmit)}
-                    noValidate
-                  >
-                    <ConditionalFormRenderer fields={fieldConfigs} />
-                  </form>
-                  {policyPanel}
-                </Stack>
+                <LocationTab
+                  form={form}
+                  formId={formId}
+                  onHomebrewSubmit={onHomebrewSubmit}
+                  fieldConfigs={fieldConfigs}
+                  showFloorRailHint={showFloorRailHint}
+                  floorRailHintLabel={floorRailHintLabel}
+                  policyPanel={policyPanel}
+                />
               }
-              mapPanel={mapAuthoringPanel}
               selectionPanel={selectionPanel}
             />
           </LocationEditorRightRail>
         }
       />
-
-      <LocationMapEditorLinkedLocationModal {...linkedLocationModal} />
 
       <ConfirmModal
         open={deleteConfirm.open}

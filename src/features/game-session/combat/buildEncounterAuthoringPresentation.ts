@@ -7,19 +7,25 @@ import { authorCellIdToCombatCellId } from './encounterMapCellIds'
 /**
  * Maps persisted location map authoring into a combat-serializable presentation payload.
  * Consumed by the combat grid for underlays and SVG chrome only.
+ *
+ * **Coarse edge policy:** `edgeEntries` here are **`{ edgeId, kind }` only** — no authored registry fields.
+ * See `src/features/content/locations/domain/authoring/map/locationMapEdgeAuthoring.policy.md`.
  */
 export function buildEncounterAuthoringPresentationFromLocationMap(
   map: LocationMapBase,
 ): EncounterAuthoringPresentation {
-  const cellFillByCombatCellId: Record<string, string> = {}
+  const cellFillByCombatCellId: Record<string, { familyId: string; variantId: string }> = {}
   const regionColorKeyByCombatCellId: Record<string, string> = {}
 
   const regionMeta = new Map(map.regionEntries.map((r) => [r.id, r.colorKey]))
 
   for (const e of map.cellEntries ?? []) {
     const combatId = authorCellIdToCombatCellId(e.cellId)
-    if (e.cellFillKind) {
-      cellFillByCombatCellId[combatId] = e.cellFillKind
+    if (e.cellFill) {
+      cellFillByCombatCellId[combatId] = {
+        familyId: e.cellFill.familyId,
+        variantId: e.cellFill.variantId,
+      }
     }
     if (e.regionId) {
       const ck = regionMeta.get(e.regionId)

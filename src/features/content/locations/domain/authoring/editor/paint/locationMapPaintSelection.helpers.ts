@@ -1,32 +1,31 @@
-import type { LocationCellFillKindId } from '@/features/content/locations/domain/model/map/locationCellFill.types';
 import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
+import { LOCATION_MAP_REGION_COLOR_KEYS } from '@/shared/domain/locations/map/locationMapRegion.constants';
 
 import type { LocationMapActivePaintSelection, LocationMapPaintState } from '../types/locationMapEditor.types';
 
 export function createInitialPaintState(): LocationMapPaintState {
   return {
     domain: 'surface',
-    surfaceFillKind: null,
+    selectedSurfaceFill: null,
     activeRegionId: null,
+    pendingRegionColorKey: LOCATION_MAP_REGION_COLOR_KEYS[0],
   };
 }
 
 /**
- * Terrain stroke applies only in Surface paint domain with a chosen fill swatch.
+ * Active surface selection for terrain paint (family + variant from registry).
  */
-export function getActiveSurfaceFillKind(
+export function getActiveSurfaceFillSelection(
   selection: LocationMapActivePaintSelection,
-): LocationCellFillKindId | null {
+): LocationMapPaintState['selectedSurfaceFill'] {
   if (!selection || selection.domain !== 'surface') {
     return null;
   }
-  return selection.surfaceFillKind;
+  return selection.selectedSurfaceFill;
 }
 
-export function canApplySurfaceTerrainPaint(
-  selection: LocationMapActivePaintSelection,
-): boolean {
-  return getActiveSurfaceFillKind(selection) != null;
+export function canApplySurfaceTerrainPaint(selection: LocationMapActivePaintSelection): boolean {
+  return getActiveSurfaceFillSelection(selection) != null;
 }
 
 export function resolveActiveRegionEntry(
@@ -47,7 +46,10 @@ export function canApplyRegionPaint(
   if (!selection || selection.domain !== 'region') {
     return false;
   }
-  return resolveActiveRegionEntry(regionEntries, selection.activeRegionId) != null;
+  if (resolveActiveRegionEntry(regionEntries, selection.activeRegionId) != null) {
+    return true;
+  }
+  return selection.activeRegionId == null && selection.pendingRegionColorKey != null;
 }
 
 /** Surface stroke or region stroke (paint tool). */

@@ -1,9 +1,11 @@
 /**
  * Square-grid only: derived "edge run" selection for Select mode.
  *
- * Persistence stays atomic per boundary; this module groups contiguous same-kind
- * segments on one straight boundary line for inspection. Hex edge-run grouping
- * is intentionally not implemented.
+ * **Persistence** is per `edgeId` row. **Run grouping** is a **selection affordance** only: contiguous segments
+ * share the same coarse **`kind`** (`e.kind`); it does **not** group by `variantId` — adjacent same-kind segments
+ * with different variants may still form one run. Richer run semantics are deferred (see `locationMapEdgeAuthoring.policy.md`).
+ *
+ * Hex edge-run grouping is intentionally not implemented.
  */
 import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations';
 

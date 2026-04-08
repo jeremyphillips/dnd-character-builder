@@ -14,3 +14,16 @@ export {
   shouldApplyCellHoverChrome,
   shouldApplyCellSelectedChrome,
 } from './mapGridCellVisualState';
+export type {
+  AuthoringCellFillPresentation,
+  ResolvedCellFillPresentation,
+} from './mapGridAuthoringCellFill.types';
+export {
+  buildHexAuthoringCellVisualParts,
+  buildSquareAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
+  hexAuthoringCellVisualClassNames,
+} from './mapGridAuthoringCellVisual.builder';
+export { default as GridCellHost } from './GridCellHost';
+export { gridCellHostButtonResetSx } from './gridCellHost.sx';
+export { default as GridCellVisual, GRID_CELL_VISUAL_CLASS } from './GridCellVisual';

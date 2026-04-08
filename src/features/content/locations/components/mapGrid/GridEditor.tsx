@@ -6,20 +6,16 @@ import {
 } from 'react';
 import Box from '@mui/material/Box';
 import { makeGridCellId } from '@/shared/domain/grid';
-import { colorPrimitives } from '@/app/theme/colorPrimitives';
-import {
-  GRID_CELL_BORDER_COLOR,
-  GRID_CELL_BORDER_COLOR_HOVER,
-  gridCellPalette,
-  gridCellSelectedShadow,
-} from './gridCellStyles';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
-import {
-  isSelectHoverChromeSuppressed,
-  shouldApplyCellHoverChrome,
-  shouldApplyCellSelectedChrome,
-} from './mapGridCellVisualState';
+import { shouldApplyCellSelectedChrome } from './mapGridCellVisualState';
 import { SQUARE_GRID_GAP_PX } from '@/features/content/locations/components/authoring/geometry/squareGridMapOverlayGeometry';
+import {
+  buildSquareAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
+} from './mapGridAuthoringCellVisual.builder';
+import type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
+import GridCellHost from './GridCellHost';
+import GridCellVisual from './GridCellVisual';
 
 export type GridCell = {
   cellId: string;
@@ -34,8 +30,8 @@ export type GridEditorProps = {
   /** Cells masked out of walkable layout (authoring); distinct from selection styling. */
   excludedCellIds?: string[];
   onCellClick?: (cell: GridCell, event: ReactMouseEvent<HTMLElement>) => void;
-  /** Optional whole-cell background (e.g. terrain fill); selection / excluded still win. */
-  getCellBackgroundColor?: (cell: GridCell) => string | undefined;
+  /** Optional cell fill (swatch + optional image); chrome applies fill opacity to the fill layer only. */
+  getCellFillPresentation?: (cell: GridCell) => AuthoringCellFillPresentation | undefined;
   onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
   onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
   onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: GridCell) => void;
@@ -46,8 +42,8 @@ export type GridEditorProps = {
   className?: string;
   disabled?: boolean;
   /**
-   * Select-mode hover winner from map hit-testing. When set, cell `:hover` chrome follows
-   * {@link shouldApplyCellHoverChrome}; omit in other modes so all cells keep normal hover.
+   * Select-mode hover winner from map hit-testing. When set, cell `:hover` chrome is coordinated
+   * with map hit-testing; omit in other modes so all cells keep normal hover.
    */
   selectHoverTarget?: LocationMapSelection;
   /** When true, grid root uses `cursor: default` so inter-cell gutters inherit it (not `pointer`). */
@@ -60,7 +56,7 @@ export default function GridEditor({
   selectedCellId,
   excludedCellIds,
   onCellClick,
-  getCellBackgroundColor,
+  getCellFillPresentation,
   onCellPointerDown,
   onCellPointerEnter,
   onCellPointerUp,
@@ -105,29 +101,21 @@ export default function GridEditor({
         const extraClass = getCellClassName?.(cell);
         const selected = shouldApplyCellSelectedChrome(selectedCellId, cellId);
         const excluded = excludedSet.has(cellId);
-        const fillBg = getCellBackgroundColor?.(cell);
-        const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTargetProp);
-        const selectHoverChromeSuppressed = isSelectHoverChromeSuppressed(
+        const fillPresentation = getCellFillPresentation?.(cell);
+
+        const { shell, fillLayer } = buildSquareAuthoringCellVisualParts({
           cellId,
-          selectHoverTargetProp,
-          !!disabled,
-        );
-        const baseBorderColor = selected
-          ? gridCellPalette.border.selected
-          : excluded
-            ? gridCellPalette.border.excluded
-            : GRID_CELL_BORDER_COLOR;
-        const baseBg = selected
-          ? gridCellPalette.background.selected
-          : excluded
-            ? gridCellPalette.background.excluded
-            : fillBg ?? gridCellPalette.background.default;
+          selected,
+          excluded,
+          fillPresentation,
+          disabled: !!disabled,
+          selectHoverTarget: selectHoverTargetProp,
+        });
 
         return (
-          <Box
+          <GridCellHost
             key={cellId}
-            component="button"
-            type="button"
+            interactive
             role="gridcell"
             data-cell-id={cellId}
             aria-selected={selected}
@@ -154,64 +142,53 @@ export default function GridEditor({
               aspectRatio: '1',
               minWidth: 0,
               minHeight: 0,
-              border: 1,
-              borderRadius: 0.5,
-              borderColor: baseBorderColor,
-              borderStyle: excluded && !selected ? 'dashed' : 'solid',
-              bgcolor: baseBg,
-              backgroundImage: excluded
-                ? 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)'
-                : undefined,
+              width: '100%',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              p: 0.25,
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              justifyContent: 'stretch',
               cursor: disabled ? 'default' : 'pointer',
-              fontSize: '0.65rem',
-              lineHeight: 1.2,
-              color: excluded ? 'rgba(0,0,0,0.45)' : colorPrimitives.black,
-              boxShadow: selected ? gridCellSelectedShadow() : undefined,
-              '&:hover': disabled
-                ? undefined
-                : selectHoverTargetProp?.type === 'none'
-                  ? undefined
-                  : selectHoverChromeSuppressed
-                    ? {
-                        borderColor: baseBorderColor,
-                        bgcolor: baseBg,
-                        boxShadow: selected ? gridCellSelectedShadow() : undefined,
-                      }
-                    : {
-                        borderColor: selected
-                          ? gridCellPalette.border.selected
-                          : GRID_CELL_BORDER_COLOR_HOVER,
-                        bgcolor: selected
-                          ? gridCellPalette.background.selected
-                          : excluded
-                            ? gridCellPalette.background.excluded
-                            : fillBg ?? gridCellPalette.background.hover,
-                      },
             }}
           >
-            {custom != null && custom !== false ? (
+            <GridCellVisual sx={shell} centerChildren={false}>
+              <Box
+                className={GRID_CELL_AUTHORING_FILL_CLASS}
+                sx={fillLayer}
+                aria-hidden
+              />
               <Box
                 sx={{
-                  px: 0.25,
+                  position: 'relative',
+                  zIndex: 1,
+                  flex: 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  maxWidth: '100%',
                   minHeight: 0,
+                  p: 0.25,
                 }}
               >
-                {custom}
+                {custom != null && custom !== false ? (
+                  <Box
+                    sx={{
+                      px: 0.25,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      maxWidth: '100%',
+                      minHeight: 0,
+                    }}
+                  >
+                    {custom}
+                  </Box>
+                ) : label != null && label !== '' ? (
+                  <Box component="span" sx={{ px: 0.25, textAlign: 'center', wordBreak: 'break-word' }}>
+                    {label}
+                  </Box>
+                ) : null}
               </Box>
-            ) : label != null && label !== '' ? (
-              <Box component="span" sx={{ px: 0.25, textAlign: 'center', wordBreak: 'break-word' }}>
-                {label}
-              </Box>
-            ) : null}
-          </Box>
+            </GridCellVisual>
+          </GridCellHost>
         );
       })}
     </Box>

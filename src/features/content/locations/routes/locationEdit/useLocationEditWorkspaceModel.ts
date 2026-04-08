@@ -16,7 +16,6 @@ import {
   buildBuildingSubtypeSelectOptions,
   buildCharacterEntityPickerOptions,
   canApplyRegionPaint,
-  shouldSwitchRailToMapForPaintDomain,
   upsertRegionEntry,
   applyScaleToLocationFormUiPolicy,
   buildLocationFormUiPolicy,
@@ -27,9 +26,12 @@ import {
   useLocationFormCampaignData,
   useLocationFormDependentFieldEffects,
   getGroupedDrawPaletteForScale,
-  getPaintPaletteItemsForScale,
+  getPaintPaletteSectionsForScale,
   getPlacePaletteItemsForScale,
+  getPlacementModeForFamily,
   resolveDrawSelectionToAction,
+  resolvePlacementCellClick,
+  resolvePlacementEdgeFeatureKind,
   resolvePlacedKindToAction,
   applyEraseTargetToDraft,
   resolveEraseTargetAtCell,
@@ -44,17 +46,15 @@ import { useAccessPolicyField } from '@/features/content/shared/hooks/useAccessP
 import { usePatchDriverState } from '@/features/content/shared/hooks/usePatchDriverState';
 import { useEntryDeleteAction } from '@/features/content/shared/hooks/useEntryDeleteAction';
 import {
-  canPlaceObjectKindOnHostScale,
-  LOCATION_MAP_STAIR_ENDPOINT_DEFAULT_DIRECTION,
   type LocationScaleId,
   type LocationVerticalStairConnection,
 } from '@/shared/domain/locations';
-import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
-import {
-  LOCATION_MAP_DEFAULT_REGION_NAME,
-  LOCATION_MAP_REGION_COLOR_KEYS,
-} from '@/shared/domain/locations/map/locationMapRegion.constants';
-import type { LocationMapRegionColorKey } from '@/features/content/locations/domain/model/map/locationMapRegionColors.types';
+import type {
+  LocationMapEdgeAuthoringEntry,
+  LocationMapPathAuthoringEntry,
+  LocationMapRegionAuthoringEntry,
+} from '@/shared/domain/locations';
+import { LOCATION_MAP_DEFAULT_REGION_NAME } from '@/shared/domain/locations/map/locationMapRegion.constants';
 import { resolveLeftMapChromeWidthPx } from '@/features/content/locations/domain/presentation/map/locationEditorWorkspaceUiTokens';
 import {
   applyEdgeStrokeToDraft,
@@ -67,7 +67,6 @@ import { parseGridCellId } from '@/shared/domain/grid/gridCellIds';
 import { getNeighborPoints } from '@/shared/domain/grid/gridHelpers';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import {
-  shouldAutoSwitchRailToMapForMode,
   selectedCellIdForMapSelection,
   INITIAL_LOCATION_GRID_DRAFT,
   gridDraftPersistableEquals,
@@ -75,6 +74,12 @@ import {
   type LocationGridDraftState,
   type LocationEditorRailSection,
 } from '@/features/content/locations/components';
+import {
+  draftPatchForEdgeStrokeFirstEdge,
+  draftPatchForLinkedCell,
+  draftPatchForPath,
+  draftPatchForPlacedObject,
+} from '@/features/content/locations/routes/locationEdit/postAuthoringSelection.helpers';
 
 import { useLocationMapHydration } from './useLocationMapHydration';
 import { useLocationEditSaveActions } from './useLocationEditSaveActions';
@@ -89,9 +94,8 @@ import {
   applyRemoveEdgeFromDraft,
   applyRemoveEdgeRunFromDraft,
   applyRemovePathFromDraft,
-  applyRemovePlacedObjectToDraft,
+  applyRemoveRegionFromDraft,
 } from './mapSessionDraft.helpers';
-import { buildLocationEditLinkModalSelectOptions } from './locationEditLinkModalOptions';
 import { useLocationEditBuildingStairHandlers } from './useLocationEditBuildingStairHandlers';
 
 export type UseLocationEditWorkspaceModelParams = {
@@ -369,11 +373,8 @@ export function useLocationEditWorkspaceModel({
   const handlePaintChange = useCallback(
     (next: LocationMapPaintState) => {
       mapEditor.setActivePaint(next);
-      if (shouldSwitchRailToMapForPaintDomain(next.domain)) {
-        setRailSection('map');
-      }
     },
-    [mapEditor.setActivePaint, setRailSection],
+    [mapEditor.setActivePaint],
   );
 
   const handleUpdateRegionEntry = useCallback(
@@ -393,61 +394,68 @@ export function useLocationEditWorkspaceModel({
     [],
   );
 
-  const handleCreateRegionPaint = useCallback(() => {
-    const id = crypto.randomUUID();
-    const colorKey = LOCATION_MAP_REGION_COLOR_KEYS[0];
-    const name = LOCATION_MAP_DEFAULT_REGION_NAME;
-    setGridDraft((prev) => ({
-      ...prev,
-      regionEntries: upsertRegionEntry(prev.regionEntries, { id, colorKey, name }),
-    }));
-    mapEditor.setActivePaint((p) => (p ? { ...p, domain: 'region', activeRegionId: id } : p));
-    setRailSection('map');
-  }, [mapEditor.setActivePaint, setRailSection]);
+  const handleRegionPaintCell = useCallback(
+    (cellId: string) => {
+      const p = mapEditor.activePaint;
+      if (!p || p.domain !== 'region') return;
 
-  const handleSelectActiveRegionPaint = useCallback(
+      const ridTrim = p.activeRegionId?.trim() ?? '';
+      if (ridTrim) {
+        setGridDraft((prev) => {
+          const cur = prev.regionEntries.find((r) => r.id === ridTrim);
+          if (!cur) return prev;
+          return {
+            ...prev,
+            regionIdByCellId: { ...prev.regionIdByCellId, [cellId]: ridTrim },
+          };
+        });
+        return;
+      }
+
+      const colorKey = p.pendingRegionColorKey;
+      const newId = crypto.randomUUID();
+      setGridDraft((prev) => ({
+        ...prev,
+        regionEntries: upsertRegionEntry(prev.regionEntries, {
+          id: newId,
+          colorKey,
+          name: LOCATION_MAP_DEFAULT_REGION_NAME,
+        }),
+        regionIdByCellId: { ...prev.regionIdByCellId, [cellId]: newId },
+        mapSelection: { type: 'region', regionId: newId },
+        selectedCellId: selectedCellIdForMapSelection({
+          type: 'region',
+          regionId: newId,
+        }),
+      }));
+      mapEditor.setActivePaint((cur) =>
+        cur ? { ...cur, activeRegionId: newId, pendingRegionColorKey: colorKey } : cur,
+      );
+      setRailSection('selection');
+    },
+    [mapEditor.activePaint, mapEditor.setActivePaint, setGridDraft, setRailSection],
+  );
+
+  const handleBeginRegionPaintFromSelection = useCallback(
     (regionId: string) => {
-      mapEditor.setActivePaint((p) => {
-        if (!p) return p;
-        const trimmed = regionId.trim();
-        return {
-          ...p,
-          domain: 'region',
-          activeRegionId: trimmed === '' ? null : trimmed,
-        };
-      });
-      setRailSection('map');
-    },
-    [mapEditor.setActivePaint, setRailSection],
-  );
-
-  const handleActiveRegionColorKeyChange = useCallback(
-    (colorKey: LocationMapRegionColorKey) => {
-      const id = mapEditor.activePaint?.activeRegionId?.trim();
+      const id = regionId.trim();
       if (!id) return;
-      setGridDraft((prev) => {
-        const cur = prev.regionEntries.find((r) => r.id === id);
-        if (!cur) return prev;
-        return {
-          ...prev,
-          regionEntries: upsertRegionEntry(prev.regionEntries, { ...cur, colorKey }),
-        };
-      });
-    },
-    [mapEditor.activePaint?.activeRegionId],
-  );
+      const entry = gridDraft.regionEntries.find((r) => r.id === id);
+      if (!entry) return;
 
-  const handleEditRegionInSelection = useCallback(() => {
-    const id = mapEditor.activePaint?.activeRegionId?.trim();
-    if (!id) return;
-    const ms = { type: 'region' as const, regionId: id };
-    setGridDraft((prev) => ({
-      ...prev,
-      mapSelection: ms,
-      selectedCellId: selectedCellIdForMapSelection(ms),
-    }));
-    setRailSection('selection');
-  }, [mapEditor.activePaint?.activeRegionId]);
+      if (mapEditor.mode !== 'paint') {
+        mapEditor.setMode('paint');
+      }
+      mapEditor.setActivePaint({
+        domain: 'region',
+        selectedSurfaceFill: null,
+        activeRegionId: id,
+        pendingRegionColorKey: entry.colorKey,
+      });
+      setRailSection('selection');
+    },
+    [gridDraft.regionEntries, mapEditor.mode, mapEditor.setMode, mapEditor.setActivePaint],
+  );
 
   useEffect(() => {
     const p = mapEditor.activePaint;
@@ -462,19 +470,21 @@ export function useLocationEditWorkspaceModel({
   const handleMapEditorModeChange = useCallback(
     (mode: LocationMapEditorMode) => {
       setMapEditorMode(mode);
-      if (shouldAutoSwitchRailToMapForMode(mode)) {
-        setRailSection('map');
-      }
     },
     [setMapEditorMode],
   );
+
+  /** After drag-place across cells, focus Selection once (no tab churn per cell). */
+  const handlePlaceObjectStrokeEnd = useCallback(() => {
+    setRailSection('selection');
+  }, [setRailSection]);
 
   const focusSelectionRailSection = useCallback(() => {
     setRailSection('selection');
   }, []);
 
-  const paintPaletteItems = useMemo(
-    () => getPaintPaletteItemsForScale(mapHostScaleResolved),
+  const paintPaletteSections = useMemo(
+    () => getPaintPaletteSectionsForScale(mapHostScaleResolved),
     [mapHostScaleResolved],
   );
 
@@ -499,7 +509,25 @@ export function useLocationEditWorkspaceModel({
       canApplyRegionPaint(mapEditor.activePaint, gridDraft.regionEntries));
 
   const mapPlaceObjectDragStrokeEnabled =
-    mapEditor.mode === 'place' && mapEditor.activePlace?.category === 'map-object';
+    mapEditor.mode === 'place' &&
+    mapEditor.activePlace?.category === 'map-object' &&
+    getPlacementModeForFamily(mapEditor.activePlace.kind) === 'cell';
+
+  const placeEdgeAuthoringActive = useMemo(() => {
+    if (mapEditor.mode !== 'place') return false;
+    if (gridGeometry === 'hex') return false;
+    const ap = mapEditor.activePlace;
+    if (!ap || ap.category !== 'map-object') return false;
+    if (getPlacementModeForFamily(ap.kind) !== 'edge') return false;
+    return resolvePlacementEdgeFeatureKind(ap, mapHostScaleResolved) != null;
+  }, [mapEditor.mode, mapEditor.activePlace, gridGeometry, mapHostScaleResolved]);
+
+  const placeEdgeFeatureKind = useMemo((): LocationEdgeFeatureKindId | null => {
+    if (!placeEdgeAuthoringActive || !mapEditor.activePlace || mapEditor.activePlace.category !== 'map-object') {
+      return null;
+    }
+    return resolvePlacementEdgeFeatureKind(mapEditor.activePlace, mapHostScaleResolved);
+  }, [placeEdgeAuthoringActive, mapEditor.activePlace, mapHostScaleResolved]);
 
   useEffect(() => {
     mapEditor.setPathAnchorCellId(null);
@@ -548,26 +576,6 @@ export function useLocationEditWorkspaceModel({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [mapEditor.mode]);
-
-  const linkModalSelectOptions = useMemo(
-    () =>
-      buildLocationEditLinkModalSelectOptions({
-        campaignId,
-        loc,
-        locations,
-        mapHostLocationIdResolved,
-        mapHostScaleResolved,
-        pendingPlacement: mapEditor.pendingPlacement,
-      }),
-    [
-      campaignId,
-      loc,
-      locations,
-      mapHostLocationIdResolved,
-      mapHostScaleResolved,
-      mapEditor.pendingPlacement,
-    ],
-  );
 
   const showMapEditorChrome = showMapGridAuthoring;
 
@@ -710,8 +718,18 @@ export function useLocationEditWorkspaceModel({
         const nextLinks = { ...prev.linkedLocationByCellId };
         if (linkedId) nextLinks[cellId] = linkedId;
         else delete nextLinks[cellId];
-        return { ...prev, linkedLocationByCellId: nextLinks };
+        if (!linkedId) {
+          return { ...prev, linkedLocationByCellId: nextLinks };
+        }
+        return {
+          ...prev,
+          linkedLocationByCellId: nextLinks,
+          ...draftPatchForLinkedCell(cellId),
+        };
       });
+      if (linkedId) {
+        setRailSection('selection');
+      }
     },
     [],
   );
@@ -749,7 +767,7 @@ export function useLocationEditWorkspaceModel({
     handleLinkStairPair,
     handleUnlinkStairEndpoint,
   } = useLocationEditBuildingStairHandlers({
-    campaignId,
+    campaignId: campaignId ?? undefined,
     isBuildingWorkspace,
     activeFloorId,
     locationId,
@@ -772,48 +790,41 @@ export function useLocationEditWorkspaceModel({
     setGridDraft((prev) => applyRemoveEdgeRunFromDraft(prev, edgeIds));
   }, []);
 
+  const handleRemoveRegionFromMap = useCallback((regionId: string) => {
+    setGridDraft((prev) => applyRemoveRegionFromDraft(prev, regionId));
+  }, []);
+
   const handleAuthoringCellClick = useCallback(
     (cellId: string) => {
       if (mapEditor.mode === 'place' && mapEditor.activePlace) {
-        const ap = mapEditor.activePlace;
-        const res = resolvePlacedKindToAction(ap, mapHostScaleResolved);
-        if (res.type === 'unsupported') return;
-        if (res.type === 'link') {
-          mapEditor.setPendingPlacement({
-            type: 'linked-location',
-            objectKind: res.objectKind,
-            hostScale: mapHostScaleResolved,
-            linkedScale: res.linkedScale,
-            targetCellId: cellId,
-          });
+        if (
+          mapEditor.activePlace.category === 'map-object' &&
+          getPlacementModeForFamily(mapEditor.activePlace.kind) === 'edge'
+        ) {
           return;
         }
-        if (res.type === 'object') {
-          if (!canPlaceObjectKindOnHostScale(mapHostScaleResolved, res.objectKind)) return;
+        const outcome = resolvePlacementCellClick(mapEditor.activePlace, cellId, mapHostScaleResolved);
+        if (outcome.kind === 'unsupported') return;
+        if (outcome.kind === 'append-object') {
+          const newObjectId = crypto.randomUUID();
           setGridDraft((prev) => {
-            const existing = prev.objectsByCellId[cellId] ?? [];
+            const existing = prev.objectsByCellId[outcome.cellId] ?? [];
             const obj: (typeof existing)[number] = {
-              id: crypto.randomUUID(),
-              kind: res.objectKind,
-              ...(res.authoredPlaceKindId !== undefined
-                ? { authoredPlaceKindId: res.authoredPlaceKindId }
-                : {}),
-              ...(res.objectKind === 'stairs'
-                ? {
-                    stairEndpoint: {
-                      direction: LOCATION_MAP_STAIR_ENDPOINT_DEFAULT_DIRECTION,
-                    },
-                  }
-                : {}),
+              id: newObjectId,
+              ...outcome.objectDraft,
             };
             return {
               ...prev,
               objectsByCellId: {
                 ...prev.objectsByCellId,
-                [cellId]: [...existing, obj],
+                [outcome.cellId]: [...existing, obj],
               },
+              ...draftPatchForPlacedObject(outcome.cellId, newObjectId),
             };
           });
+          if (!mapPlaceObjectDragStrokeEnabled) {
+            setRailSection('selection');
+          }
         }
         return;
       }
@@ -862,46 +873,70 @@ export function useLocationEditWorkspaceModel({
               pathEntries: prev.pathEntries.map((p) =>
                 p.id === extendId ? { ...p, cellIds: [...p.cellIds, cellId] } : p,
               ),
+              ...draftPatchForPath(extendId),
             };
           }
+          const pathId = crypto.randomUUID();
           return {
             ...prev,
             pathEntries: [
               ...prev.pathEntries,
               {
-                id: crypto.randomUUID(),
+                id: pathId,
                 kind: pathKind,
                 cellIds: [anchor, cellId],
               },
             ],
+            ...draftPatchForPath(pathId),
           };
         });
         mapEditor.setPathAnchorCellId(cellId);
+        setRailSection('selection');
       }
     },
     [
       mapEditor.mode,
       mapEditor.activePlace,
       mapEditor.activeDraw,
-      mapEditor.pathAnchorCellId,
-      mapEditor.setPendingPlacement,
-      mapEditor.setPathAnchorCellId,
       mapHostScaleResolved,
+      mapEditor.pathAnchorCellId,
+      mapEditor.setPathAnchorCellId,
       gridGeometry,
       gridColumns,
       gridRows,
+      mapPlaceObjectDragStrokeEnabled,
+      setRailSection,
     ],
   );
 
   const handleEdgeStrokeCommit = useCallback(
     (edgeIds: string[], edgeKind: LocationEdgeFeatureKindId) => {
       if (edgeIds.length === 0) return;
+      let enriched: { authoredPlaceKindId: string; variantId: string } | undefined;
+      if (placeEdgeAuthoringActive && mapEditor.activePlace) {
+        const res = resolvePlacedKindToAction(mapEditor.activePlace, mapHostScaleResolved);
+        if (res.type === 'edge') {
+          enriched = { authoredPlaceKindId: res.placedKind, variantId: res.variantId };
+        }
+      }
+      const edgeSelectionPatch =
+        gridGeometry !== 'hex' ? draftPatchForEdgeStrokeFirstEdge(edgeIds) : null;
       setGridDraft((prev) => ({
         ...prev,
-        edgeEntries: applyEdgeStrokeToDraft(prev.edgeEntries, edgeIds, edgeKind),
+        edgeEntries: applyEdgeStrokeToDraft(prev.edgeEntries, edgeIds, edgeKind, enriched),
+        ...(edgeSelectionPatch ?? {}),
       }));
+      if (edgeSelectionPatch) {
+        setRailSection('selection');
+      }
     },
-    [],
+    [
+      placeEdgeAuthoringActive,
+      mapEditor.activePlace,
+      mapHostScaleResolved,
+      gridGeometry,
+      setRailSection,
+    ],
   );
 
   const handleEraseEdge = useCallback((edgeId: string) => {
@@ -910,6 +945,26 @@ export function useLocationEditWorkspaceModel({
       edgeEntries: prev.edgeEntries.filter((e) => e.edgeId !== edgeId),
     }));
   }, []);
+
+  const handlePatchEdgeEntry = useCallback(
+    (edgeId: string, patch: Partial<Pick<LocationMapEdgeAuthoringEntry, 'label' | 'doorState'>>) => {
+      setGridDraft((prev) => ({
+        ...prev,
+        edgeEntries: prev.edgeEntries.map((e) => (e.edgeId === edgeId ? { ...e, ...patch } : e)),
+      }));
+    },
+    [],
+  );
+
+  const handlePatchPathEntry = useCallback(
+    (pathId: string, patch: Partial<Pick<LocationMapPathAuthoringEntry, 'name' | 'description'>>) => {
+      setGridDraft((prev) => ({
+        ...prev,
+        pathEntries: prev.pathEntries.map((p) => (p.id === pathId ? { ...p, ...patch } : p)),
+      }));
+    },
+    [],
+  );
 
   return {
     campaignId,
@@ -957,18 +1012,18 @@ export function useLocationEditWorkspaceModel({
     mapEditor,
     handlePaintChange,
     handleUpdateRegionEntry,
-    handleCreateRegionPaint,
-    handleSelectActiveRegionPaint,
-    handleActiveRegionColorKeyChange,
-    handleEditRegionInSelection,
+    handleRegionPaintCell,
+    handleBeginRegionPaintFromSelection,
     handleMapEditorModeChange,
+    handlePlaceObjectStrokeEnd,
     focusSelectionRailSection,
-    paintPaletteItems,
+    paintPaletteSections,
     placePaletteItems,
     drawPaletteItems,
     mapPlaceSuppressesCanvasPanOnCells,
     mapPlaceObjectDragStrokeEnabled,
-    linkModalSelectOptions,
+    placeEdgeAuthoringActive,
+    placeEdgeFeatureKind,
     showMapEditorChrome,
     leftMapChromeWidthPx,
     policyValue,
@@ -994,6 +1049,9 @@ export function useLocationEditWorkspaceModel({
     handleRemovePathFromMap,
     handleRemoveEdgeFromMap,
     handleRemoveEdgeRunFromMap,
+    handleRemoveRegionFromMap,
+    handlePatchEdgeEntry,
+    handlePatchPathEntry,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,

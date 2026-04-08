@@ -1,7 +1,13 @@
 import type { LocationMapBase } from '@/shared/domain/locations/map/locationMap.types'
 
+import { isLocationMapEdgeEntryDoorInstance } from '@/features/content/locations/domain/authoring/map/locationMapEdgeDoorAuthoring'
+import {
+  resolveDoorRuntimeFromState,
+  resolveLocationPlacedObjectKindRuntimeDefaults,
+} from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.runtime'
 import { buildEncounterAuthoringPresentationFromLocationMap } from './buildEncounterAuthoringPresentation'
 import type { LocationMapEdgeKindId } from '@/shared/domain/locations/map/locationMapEdgeFeature.constants'
+import type { LocationMapEdgeAuthoringEntry } from '@/shared/domain/locations'
 import { createSquareGridSpace } from '@/features/mechanics/domain/combat/space/creation/createSquareGridSpace'
 import type { EncounterEdge, EncounterSpace } from '@/features/mechanics/domain/combat/space'
 
@@ -11,6 +17,7 @@ import {
   buildGridObjectsFromLocationMapCellEntries,
 } from './hydrateGridObjectsFromLocationMap'
 import { parseSquareEdgeId } from '@/shared/domain/grid/gridEdgeIds'
+import { sanitizeAuthoredDoorState } from '@/shared/domain/locations/map/locationMapDoorAuthoring.helpers'
 
 export { authorCellIdToCombatCellId } from './encounterMapCellIds'
 
@@ -22,21 +29,34 @@ function cellUnitToCombatCellFeet(cellUnit: unknown): 5 | 10 {
   return 5
 }
 
+const DOOR_BASE_RUNTIME = resolveLocationPlacedObjectKindRuntimeDefaults('door')
+
 function edgeToEncounterEdge(
   fromCombat: string,
   toCombat: string,
   kind: LocationMapEdgeKindId,
+  mapEntry?: LocationMapEdgeAuthoringEntry,
 ): EncounterEdge {
   switch (kind) {
-    case 'door':
+    case 'door': {
+      const doorState = sanitizeAuthoredDoorState(
+        mapEntry != null && isLocationMapEdgeEntryDoorInstance(mapEntry) ? mapEntry.doorState : undefined,
+      )
+      const rt = resolveDoorRuntimeFromState(DOOR_BASE_RUNTIME, {
+        openState: doorState.openState,
+        lockState: doorState.lockState,
+      })
       return {
         fromCellId: fromCombat,
         toCellId: toCombat,
         kind: 'door',
         bidirectional: true,
-        blocksMovement: false,
-        blocksSight: false,
+        blocksMovement: rt.blocksMovement,
+        blocksSight: rt.blocksLineOfSight,
+        mapEdgeId: mapEntry?.edgeId,
+        doorState,
       }
+    }
     case 'window':
       return {
         fromCellId: fromCombat,
@@ -94,6 +114,7 @@ export function buildEncounterSpaceFromLocationMap(
   }
 
   const edges: EncounterEdge[] = []
+  /** Coarse `kind` only for tactical edges — see `locationMapEdgeAuthoring.policy.md` (no variant/state). */
   for (const e of map.edgeEntries ?? []) {
     const parsed = parseSquareEdgeId(e.edgeId)
     // Encounter edges are pairwise cell adjacency; outer-boundary (perimeter) segments are UI-only here.
@@ -102,7 +123,7 @@ export function buildEncounterSpaceFromLocationMap(
     const fromCombat = authorCellIdToCombatCellId(a)
     const toCombat = authorCellIdToCombatCellId(b)
     if (!byId.has(fromCombat) || !byId.has(toCombat)) continue
-    edges.push(edgeToEncounterEdge(fromCombat, toCombat, e.kind))
+    edges.push(edgeToEncounterEdge(fromCombat, toCombat, e.kind, e))
   }
 
   const gridObjects = buildGridObjectsFromLocationMapCellEntries(map)

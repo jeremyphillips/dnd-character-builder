@@ -26,10 +26,7 @@ import {
   type BuildingWorkspaceFloorItem,
 } from '@/features/content/locations/domain/model/building/buildingWorkspaceFloors';
 
-import {
-  LocationEditWorkspaceMapAuthoringRailPanel,
-  LocationEditWorkspaceSelectionRailPanel,
-} from './locationEdit/locationEditWorkspaceRailPanels';
+import { LocationEditWorkspaceSelectionRailPanel } from './locationEdit/locationEditWorkspaceRailPanels';
 import { useLocationEditWorkspaceModel } from './locationEdit';
 
 const FORM_ID = 'location-edit-form';
@@ -171,18 +168,18 @@ export default function LocationEditRoute() {
     mapEditor,
     handlePaintChange,
     handleUpdateRegionEntry,
-    handleCreateRegionPaint,
-    handleSelectActiveRegionPaint,
-    handleActiveRegionColorKeyChange,
-    handleEditRegionInSelection,
+    handleRegionPaintCell,
+    handleBeginRegionPaintFromSelection,
     handleMapEditorModeChange,
+    handlePlaceObjectStrokeEnd,
     focusSelectionRailSection,
-    paintPaletteItems,
+    paintPaletteSections,
     placePaletteItems,
     drawPaletteItems,
     mapPlaceSuppressesCanvasPanOnCells,
     mapPlaceObjectDragStrokeEnabled,
-    linkModalSelectOptions,
+    placeEdgeAuthoringActive,
+    placeEdgeFeatureKind,
     showMapEditorChrome,
     leftMapChromeWidthPx,
     policyValue,
@@ -204,6 +201,9 @@ export default function LocationEditRoute() {
     handleRemovePathFromMap,
     handleRemoveEdgeFromMap,
     handleRemoveEdgeRunFromMap,
+    handleRemoveRegionFromMap,
+    handlePatchEdgeEntry,
+    handlePatchPathEntry,
     handleAuthoringCellClick,
     handleEdgeStrokeCommit,
     handleEraseEdge,
@@ -253,19 +253,6 @@ export default function LocationEditRoute() {
         }
       : undefined;
 
-  const mapAuthoringPanel = (
-    <LocationEditWorkspaceMapAuthoringRailPanel
-      mapEditor={mapEditor}
-      placePaletteItems={placePaletteItems}
-      drawPaletteItems={drawPaletteItems}
-      regionEntries={gridDraft.regionEntries}
-      onCreateRegion={handleCreateRegionPaint}
-      onSelectActiveRegion={handleSelectActiveRegionPaint}
-      onActiveRegionColorKeyChange={handleActiveRegionColorKeyChange}
-      onEditRegionInSelection={handleEditRegionInSelection}
-    />
-  );
-
   const selectionPanel = (
     <LocationEditWorkspaceSelectionRailPanel
       gridDraft={gridDraft}
@@ -273,6 +260,7 @@ export default function LocationEditRoute() {
       mapHostScale={mapHostScale}
       mapHostName={mapHostName}
       campaignId={campaignId ?? undefined}
+      hostEditLocation={loc}
       locations={locations}
       onUpdateLinkedLocation={handleUpdateLinkedLocation}
       onUpdateCellObjects={handleUpdateCellObjects}
@@ -284,6 +272,10 @@ export default function LocationEditRoute() {
       onRemovePathFromMap={handleRemovePathFromMap}
       onRemoveEdgeFromMap={handleRemoveEdgeFromMap}
       onRemoveEdgeRunFromMap={handleRemoveEdgeRunFromMap}
+      onRemoveRegionFromMap={handleRemoveRegionFromMap}
+      onPatchEdgeEntry={handlePatchEdgeEntry}
+      onPatchPathEntry={handlePatchPathEntry}
+      onBeginRegionPaintFromSelection={handleBeginRegionPaintFromSelection}
     />
   );
 
@@ -309,9 +301,13 @@ export default function LocationEditRoute() {
       activeDraw={mapEditor.activeDraw}
       onEdgeStrokeCommit={handleEdgeStrokeCommit}
       onEraseEdge={handleEraseEdge}
+      placeEdgeAuthoringActive={placeEdgeAuthoringActive}
+      placeEdgeFeatureKind={placeEdgeFeatureKind}
       suppressCanvasPanOnCells={mapPlaceSuppressesCanvasPanOnCells}
       placeObjectDragStrokeEnabled={mapPlaceObjectDragStrokeEnabled}
+      onPlaceObjectStrokeEnd={handlePlaceObjectStrokeEnd}
       consumeClickSuppressionAfterPan={consumeClickSuppressionAfterPan}
+      onRegionPaintCell={handleRegionPaintCell}
     />
   ) : null;
 
@@ -340,11 +336,15 @@ export default function LocationEditRoute() {
       mode={mapEditor.mode}
       activePaint={mapEditor.activePaint}
       activeDraw={mapEditor.activeDraw}
-      paintPaletteItems={paintPaletteItems}
+      activePlace={mapEditor.activePlace}
+      paintPaletteSections={paintPaletteSections}
+      regionEntries={gridDraft.regionEntries}
       drawPaletteItems={drawPaletteItems}
+      placePaletteItems={placePaletteItems}
       onPaintChange={handlePaintChange}
       onModeChange={handleMapEditorModeChange}
       onSelectDraw={mapEditor.setActiveDraw}
+      onSelectPlace={mapEditor.setActivePlace}
       zoom={zoom}
       pan={pan}
       panHandlers={pointerHandlers}
@@ -380,7 +380,6 @@ export default function LocationEditRoute() {
         railSection={railSection}
         onRailSectionChange={setRailSection}
         mapCanvasColumn={mapCanvasColumn}
-        mapAuthoringPanel={mapAuthoringPanel}
         selectionPanel={selectionPanel}
       />
     );
@@ -433,27 +432,7 @@ export default function LocationEditRoute() {
           />
         ) : null
       }
-      mapAuthoringPanel={mapAuthoringPanel}
       selectionPanel={selectionPanel}
-      linkedLocationModal={{
-        open: mapEditor.pendingPlacement != null,
-        pending: mapEditor.pendingPlacement!,
-        options: linkModalSelectOptions,
-        onConfirm: (linkedLocationId) => {
-          const p = mapEditor.pendingPlacement;
-          if (!p || p.type !== 'linked-location') return;
-          const cellId = p.targetCellId;
-          setGridDraft((prev) => ({
-            ...prev,
-            linkedLocationByCellId: {
-              ...prev.linkedLocationByCellId,
-              [cellId]: linkedLocationId,
-            },
-          }));
-          mapEditor.setPendingPlacement(null);
-        },
-        onCancel: () => mapEditor.setPendingPlacement(null),
-      }}
       deleteConfirm={{
         open: deleteConfirmOpen,
         loading: deleting,

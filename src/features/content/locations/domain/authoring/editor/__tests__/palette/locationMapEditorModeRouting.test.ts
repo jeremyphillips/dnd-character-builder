@@ -19,8 +19,9 @@ describe('map editor mode palette routing', () => {
     expect(d.every((i) => i.category === 'path')).toBe(true);
   });
 
-  it('Draw palette for floor includes edges', () => {
+  it('Draw palette for floor includes wall edge only (doors/windows use Place)', () => {
     const d = getGroupedDrawPaletteForScale('floor');
-    expect(d.some((i) => i.category === 'edge')).toBe(true);
+    const edges = d.filter((i) => i.category === 'edge');
+    expect(edges.map((e) => e.kind)).toEqual(['wall']);
   });
 });

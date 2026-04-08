@@ -1,11 +1,15 @@
 /**
- * Generic scale ordering helpers.
- * Rank comparisons use `LOCATION_SCALE_RANK_ORDER_LEGACY` so legacy persisted scales sort correctly.
- * Parent *eligibility* uses explicit policy in `locationScale.policy.ts`, not rank alone.
+ * Scale helpers: **which id means what**, ordering, and broadness — not form field policy.
+ *
+ * - **`isContentLocationScaleId`** — first-class **new authoring** content scales only (`world`…`room`).
+ * - **`isLegacyMapZoneLocationScaleId`** — `region` / `subregion` / `district` persisted as scale (compatibility).
+ * - **`isValidLocationScaleId`** — any member of `LOCATION_SCALE_IDS_WITH_LEGACY` (API/DB persistence union).
+ * - **Rank** (`locationScaleRank`, `getLocationScaleRank`) uses `LOCATION_SCALE_RANK_ORDER_LEGACY` **only** for
+ *   stable sort/compare of persisted rows — not for parent validation (use `locationScale.policy.ts`).
  */
 import {
   CONTENT_LOCATION_SCALE_IDS,
-  LEGACY_MAP_ZONE_LOCATION_SCALE_IDS,
+  LOCATION_MAP_ZONE_KIND_IDS,
   LOCATION_SCALE_RANK_ORDER_LEGACY,
 } from '../location.constants';
 import type {
@@ -18,7 +22,7 @@ import { isAllowedParentScale } from './locationScale.policy';
 const LEGACY_RANK = LOCATION_SCALE_RANK_ORDER_LEGACY as readonly string[];
 
 const CONTENT_SET = new Set<string>(CONTENT_LOCATION_SCALE_IDS as readonly string[]);
-const LEGACY_ZONE_SET = new Set<string>(LEGACY_MAP_ZONE_LOCATION_SCALE_IDS as readonly string[]);
+const LEGACY_ZONE_SET = new Set<string>(LOCATION_MAP_ZONE_KIND_IDS as readonly string[]);
 
 export function isContentLocationScaleId(scale: string): scale is ContentLocationScaleId {
   return CONTENT_SET.has(scale);
@@ -37,6 +41,7 @@ export function getLocationScaleRank(scale: string): number {
   return locationScaleRank(scale);
 }
 
+/** True if `scale` is any persisted/API scale id (content + legacy map-zone-as-scale). */
 export function isValidLocationScaleId(scale: string): scale is LocationScaleId {
   return LEGACY_RANK.includes(scale);
 }

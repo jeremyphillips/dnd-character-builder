@@ -1,20 +1,14 @@
 export { LocationSummaryCard } from './cards'
 export type { LocationSummaryCardProps } from './cards'
 export { LocationGridAuthoringSection } from './workspace/LocationGridAuthoringSection'
-export { LocationCellAuthoringPanel } from './workspace/rightRail/panels'
-export type { LocationCellAuthoringPanelProps } from './workspace/rightRail/panels'
+export { CellSelectionInspector } from './workspace/rightRail/tabs/selection/inspectors/CellSelectionInspector'
+export type { CellSelectionInspectorProps } from './workspace/rightRail/tabs/selection/inspectors/CellSelectionInspector'
 export {
   LocationMapEditorToolbar,
   LocationMapEditorToolTrayShell,
   LocationMapEditorPaintTray,
   LocationMapEditorDrawTray,
 } from './workspace/leftTools'
-export {
-  LocationMapEditorPaintMapPanel,
-  LocationMapEditorDrawPanel,
-  LocationMapEditorPlacePanel,
-} from './workspace/rightRail/panels'
-export { LocationMapEditorLinkedLocationModal } from './workspace/rightRail/linkedLocation'
 export {
   INITIAL_LOCATION_GRID_DRAFT,
 } from './authoring/draft/locationGridDraft.types'
@@ -36,7 +30,7 @@ export {
   LocationEditorMapCanvasColumn,
   LocationEditorRightRail,
   LocationEditorRailSectionTabs,
-  LocationEditorSelectionPanel,
+  SelectionTab,
   LocationCreateSetupFormDialog,
   BuildingFloorStrip,
   LocationAncestryBreadcrumbs,
@@ -46,11 +40,8 @@ export {
 export type {
   LocationEditHomebrewWorkspaceProps,
   LocationEditSystemPatchWorkspaceProps,
+  SelectionTabProps,
   LocationEditorRailSection,
   LocationMapSelection,
 } from './workspace'
-export {
-  shouldAutoSwitchRailToMapForMode,
-  selectedCellIdForMapSelection,
-  mapSelectionEqual,
-} from './workspace'
+export { selectedCellIdForMapSelection, mapSelectionEqual } from './workspace';

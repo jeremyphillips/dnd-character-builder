@@ -4,11 +4,14 @@ import Box from '@mui/material/Box';
 import type {
   LocationMapActiveDrawSelection,
   LocationMapActivePaintSelection,
+  LocationMapActivePlaceSelection,
   LocationMapEditorMode,
   LocationMapPaintState,
   MapDrawPaletteItem,
-  MapPaintPaletteItem,
+  MapPaintPaletteSection,
+  MapPlacePaletteItem,
 } from '@/features/content/locations/domain/authoring/editor';
+import type { LocationMapRegionAuthoringEntry } from '@/shared/domain/locations';
 import type { ZoomControlProps } from '@/ui/patterns';
 import type { CanvasPoint, UseCanvasPanReturn } from '@/ui/hooks';
 
@@ -16,6 +19,7 @@ import { LocationEditorCanvas } from './LocationEditorCanvas';
 import {
   LocationMapEditorDrawTray,
   LocationMapEditorPaintTray,
+  LocationMapEditorPlaceTray,
   LocationMapEditorToolTrayShell,
   LocationMapEditorToolbar,
 } from '@/features/content/locations/components/workspace/leftTools';
@@ -25,11 +29,16 @@ export type LocationEditorMapCanvasColumnProps = {
   mode: LocationMapEditorMode;
   activePaint: LocationMapActivePaintSelection;
   activeDraw: LocationMapActiveDrawSelection;
-  paintPaletteItems: MapPaintPaletteItem[];
+  activePlace: LocationMapActivePlaceSelection;
+  paintPaletteSections: MapPaintPaletteSection[];
+  /** Region entries for tray swatch highlight when extending an existing region. */
+  regionEntries: readonly LocationMapRegionAuthoringEntry[];
   drawPaletteItems: MapDrawPaletteItem[];
+  placePaletteItems: MapPlacePaletteItem[];
   onPaintChange: (next: LocationMapPaintState) => void;
   onModeChange: (mode: LocationMapEditorMode) => void;
   onSelectDraw: (next: LocationMapActiveDrawSelection) => void;
+  onSelectPlace: (next: LocationMapActivePlaceSelection) => void;
   zoom: number;
   pan: CanvasPoint;
   panHandlers: UseCanvasPanReturn['pointerHandlers'];
@@ -48,11 +57,15 @@ export function LocationEditorMapCanvasColumn({
   mode,
   activePaint,
   activeDraw,
-  paintPaletteItems,
+  activePlace,
+  paintPaletteSections,
+  regionEntries,
   drawPaletteItems,
+  placePaletteItems,
   onPaintChange,
   onModeChange,
   onSelectDraw,
+  onSelectPlace,
   zoom,
   pan,
   panHandlers,
@@ -61,8 +74,9 @@ export function LocationEditorMapCanvasColumn({
   zoomControlProps,
   children,
 }: LocationEditorMapCanvasColumnProps) {
-  const showPaintTray = mode === 'paint' && activePaint && paintPaletteItems.length > 0;
+  const showPaintTray = mode === 'paint' && activePaint && paintPaletteSections.length > 0;
   const showDrawTray = mode === 'draw' && drawPaletteItems.length > 0;
+  const showPlaceTray = mode === 'place' && placePaletteItems.length > 0;
 
   return (
     <Box
@@ -95,8 +109,9 @@ export function LocationEditorMapCanvasColumn({
           {showPaintTray && (
             <LocationMapEditorToolTrayShell>
               <LocationMapEditorPaintTray
-                items={paintPaletteItems}
+                sections={paintPaletteSections}
                 activePaint={activePaint}
+                regionEntries={regionEntries}
                 onPaintChange={onPaintChange}
               />
             </LocationMapEditorToolTrayShell>
@@ -107,6 +122,15 @@ export function LocationEditorMapCanvasColumn({
                 items={drawPaletteItems}
                 activeDraw={activeDraw}
                 onSelectDraw={onSelectDraw}
+              />
+            </LocationMapEditorToolTrayShell>
+          )}
+          {showPlaceTray && (
+            <LocationMapEditorToolTrayShell>
+              <LocationMapEditorPlaceTray
+                items={placePaletteItems}
+                activePlace={activePlace}
+                onSelectPlace={onSelectPlace}
               />
             </LocationMapEditorToolTrayShell>
           )}

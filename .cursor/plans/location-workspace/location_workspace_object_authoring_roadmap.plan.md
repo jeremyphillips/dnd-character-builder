@@ -272,6 +272,17 @@ flowchart LR
 - A **complete geometry-system overhaul**
 - A **final UX spec** for every object type
 - A mandate to **implement every future object behavior** immediately
+- **Backward compatibility** for legacy map or workspace shapes **across child plans** unless a child plan **explicitly** scopes migration (e.g. the linked-place bugfix does **not** require migrating old modal-only link data).
+
+---
+
+## Deferred / known gaps (cross-child)
+
+Some child plans intentionally **defer** model work:
+
+| Topic | Notes |
+| ----- | ----- |
+| **Multiple objects per cell vs one `linkedLocationByCellId`** | `linkedLocationByCellId` is **per cell**, not per object. Distinct campaign links per object when a cell holds multiple markers is a **known gap** — see [location_workspace_linked_place_bugfix.plan.md](location_workspace_linked_place_bugfix.plan.md) § Known gap (deferred). |
 
 ---
 
@@ -297,6 +308,7 @@ This parent plan is **satisfied** when all of the following are true:
 | 2 — Variants           | [location_workspace_object_authoring_phase2_variants.plan.md](location_workspace_object_authoring_phase2_variants.plan.md)                     |
 | 3 — Edge placement     | [location_workspace_object_authoring_phase3_edge_placement.plan.md](location_workspace_object_authoring_phase3_edge_placement.plan.md)           |
 | 4 — Config / editing   | [location_workspace_object_authoring_phase4_config_editing.plan.md](location_workspace_object_authoring_phase4_config_editing.plan.md)         |
+| Bugfix — linked place (rail picker) | [location_workspace_linked_place_bugfix.plan.md](location_workspace_linked_place_bugfix.plan.md) — remove link modal; marker + `OptionPickerField` on **object inspector**; **no backward-compat** migration; defers per-object links when multiple markers/cell |
 
 ---
 

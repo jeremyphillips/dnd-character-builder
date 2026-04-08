@@ -1,15 +1,11 @@
 import type { MutableRefObject, ReactNode } from 'react';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 
 import type { PatchDriver } from '@/features/content/shared/editor/patchDriver';
 import type { ValidationError } from '@/features/content/shared/hooks/editRoute.types';
-import { ConditionalFormRenderer } from '@/ui/patterns';
 import type { FieldConfig } from '@/ui/patterns/form/form.types';
-import { AppBadge } from '@/ui/primitives';
 
 import type { LocationEditorRailSection } from './rightRail/types';
+import { SystemLocationTab } from './rightRail/tabs/location/SystemLocationTab';
 import { LocationEditorHeader } from './header/LocationEditorHeader';
 import { LocationEditorRailSectionTabs } from './rightRail/LocationEditorRailSectionTabs';
 import { LocationEditorRightRail } from './rightRail/LocationEditorRightRail';
@@ -38,7 +34,6 @@ export type LocationEditSystemPatchWorkspaceProps = {
   railSection: LocationEditorRailSection;
   onRailSectionChange: (section: LocationEditorRailSection) => void;
   mapCanvasColumn: ReactNode;
-  mapAuthoringPanel: ReactNode;
   selectionPanel: ReactNode;
 };
 
@@ -64,7 +59,6 @@ export function LocationEditSystemPatchWorkspace({
   railSection,
   onRailSectionChange,
   mapCanvasColumn,
-  mapAuthoringPanel,
   selectionPanel,
 }: LocationEditSystemPatchWorkspaceProps) {
   return (
@@ -93,38 +87,17 @@ export function LocationEditSystemPatchWorkspace({
             section={railSection}
             onSectionChange={onRailSectionChange}
             locationPanel={
-              <Stack spacing={2}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Patching: {locationName}
-                </Typography>
-                {locationPatched ? <AppBadge label="Patched" tone="warning" size="small" /> : null}
-                <ConditionalFormRenderer
-                  fields={fieldConfigs}
-                  driver={{
-                    kind: 'patch',
-                    getValue: patchDriver.getValue,
-                    setValue: patchDriver.setValue,
-                    unsetValue: patchDriver.unsetValue,
-                  }}
-                  onValidationApi={(api) => {
-                    validationApiRef.current = api;
-                  }}
-                />
-                {hasExistingPatch ? (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    onClick={onRemovePatch}
-                    disabled={saving}
-                    sx={{ alignSelf: 'flex-start' }}
-                  >
-                    Remove patch
-                  </Button>
-                ) : null}
-              </Stack>
+              <SystemLocationTab
+                locationName={locationName}
+                locationPatched={locationPatched}
+                fieldConfigs={fieldConfigs}
+                patchDriver={patchDriver}
+                validationApiRef={validationApiRef}
+                hasExistingPatch={hasExistingPatch}
+                onRemovePatch={onRemovePatch}
+                saving={saving}
+              />
             }
-            mapPanel={mapAuthoringPanel}
             selectionPanel={selectionPanel}
           />
         </LocationEditorRightRail>

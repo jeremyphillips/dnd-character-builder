@@ -6,9 +6,7 @@
  * {@link GridEditorProps} from `GridEditor` so the two can be swapped by
  * `LocationGridAuthoringSection` without changing callback shapes.
  *
- * Stroke is a ring between two clipped layers: `border` on the same node as
- * `clip-path` is laid out on the rectangle, so most of it is clipped away.
- * Outer button = stroke color; inner = fill, inset by stroke width, same path.
+ * Stroke is a ring between two clipped layers: outer ring color; inner = fill, inset by stroke width, same path.
  *
  * Advanced hex tooling (drag-paint, overlays, zoom calibration) is deferred.
  */
@@ -19,15 +17,17 @@ import {
   type ReactNode,
 } from 'react';
 import Box from '@mui/material/Box';
-import { colorPrimitives } from '@/app/theme/colorPrimitives';
 import { makeGridCellId } from '@/shared/domain/grid';
 import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
-import { gridCellPalette } from './gridCellStyles';
+import { shouldApplyCellSelectedChrome } from './mapGridCellVisualState';
 import {
-  isSelectHoverChromeSuppressed,
-  shouldApplyCellHoverChrome,
-  shouldApplyCellSelectedChrome,
-} from './mapGridCellVisualState';
+  buildHexAuthoringCellVisualParts,
+  GRID_CELL_AUTHORING_FILL_CLASS,
+  hexAuthoringCellVisualClassNames,
+} from './mapGridAuthoringCellVisual.builder';
+import type { AuthoringCellFillPresentation } from './mapGridAuthoringCellFill.types';
+import GridCellHost from './GridCellHost';
+import GridCellVisual from './GridCellVisual';
 
 export type HexGridCell = {
   cellId: string;
@@ -41,7 +41,7 @@ export type HexGridEditorProps = {
   selectedCellId?: string | null;
   excludedCellIds?: string[];
   onCellClick?: (cell: HexGridCell, event: ReactMouseEvent<HTMLElement>) => void;
-  getCellBackgroundColor?: (cell: HexGridCell) => string | undefined;
+  getCellFillPresentation?: (cell: HexGridCell) => AuthoringCellFillPresentation | undefined;
   onCellPointerDown?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
   onCellPointerEnter?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
   onCellPointerUp?: (e: ReactPointerEvent<HTMLElement>, cell: HexGridCell) => void;
@@ -64,7 +64,7 @@ export default function HexGridEditor({
   selectedCellId,
   excludedCellIds,
   onCellClick,
-  getCellBackgroundColor,
+  getCellFillPresentation,
   onCellPointerDown,
   onCellPointerEnter,
   onCellPointerUp,
@@ -124,31 +124,22 @@ export default function HexGridEditor({
 
         const strokePx = selected ? '2px' : '1px';
 
-        const outerRingColor = selected
-          ? gridCellPalette.border.selected
-          : excluded
-            ? gridCellPalette.border.excluded
-            : gridCellPalette.border.default;
+        const fillPresentation = getCellFillPresentation?.(cell);
 
-        const fillBg = getCellBackgroundColor?.(cell);
-        const innerFillColor = selected
-          ? gridCellPalette.background.selected
-          : excluded
-            ? gridCellPalette.background.excluded
-            : fillBg ?? gridCellPalette.background.default;
-
-        const allowHover = shouldApplyCellHoverChrome(cellId, selectHoverTargetProp);
-        const selectHoverChromeSuppressed = isSelectHoverChromeSuppressed(
+        const { outer, innerShell, fillLayer, hostHoverSx } = buildHexAuthoringCellVisualParts({
           cellId,
-          selectHoverTargetProp,
-          !!disabled,
-        );
+          selected,
+          excluded,
+          fillPresentation,
+          disabled: !!disabled,
+          selectHoverTarget: selectHoverTargetProp,
+          strokePx,
+        });
 
         return (
-          <Box
+          <GridCellHost
             key={cellId}
-            component="button"
-            type="button"
+            interactive
             role="gridcell"
             data-cell-id={cellId}
             aria-selected={selected}
@@ -177,91 +168,67 @@ export default function HexGridEditor({
               height: hexH,
               boxSizing: 'border-box',
               clipPath: CLIP_HEX,
-              border: 'none',
-              borderRadius: 0,
-              appearance: 'none',
-              WebkitAppearance: 'none',
-              p: 0,
-              m: 0,
               cursor: disabled ? 'default' : 'pointer',
-              fontSize: '0.6rem',
-              lineHeight: 1.2,
-              color: excluded ? 'rgba(0,0,0,0.45)' : colorPrimitives.black,
-              bgcolor: outerRingColor,
-              '&:hover:not(:disabled)':
-                disabled
-                  ? undefined
-                  : selectHoverTargetProp?.type === 'none'
-                    ? undefined
-                    : selectHoverChromeSuppressed
-                      ? { bgcolor: outerRingColor }
-                      : allowHover
-                        ? {
-                            bgcolor: selected
-                              ? gridCellPalette.border.selected
-                              : gridCellPalette.border.hover,
-                          }
-                        : undefined,
-              '&:hover:not(:disabled) .hex-inner':
-                disabled
-                  ? undefined
-                  : selectHoverTargetProp?.type === 'none'
-                    ? undefined
-                    : selectHoverChromeSuppressed
-                      ? { bgcolor: innerFillColor }
-                      : allowHover
-                        ? {
-                            bgcolor: selected
-                              ? gridCellPalette.background.selected
-                              : excluded
-                                ? gridCellPalette.background.excluded
-                                : fillBg ?? gridCellPalette.background.hover,
-                          }
-                        : undefined,
+              ...hostHoverSx,
             }}
           >
-            <Box
-              className="hex-inner"
-              sx={{
-                position: 'absolute',
-                inset: strokePx,
-                clipPath: CLIP_HEX,
-                bgcolor: innerFillColor,
-                backgroundImage: excluded
-                  ? 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04), rgba(0,0,0,0.04) 3px, transparent 3px, transparent 6px)'
-                  : undefined,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-              }}
+            {/* Outer ring is not `.grid-cell-visual` so host `:focus-visible` outlines the inner layer only. */}
+            <Box className={hexAuthoringCellVisualClassNames.outer} sx={outer} />
+            <GridCellVisual
+              omitLayoutFill
+              className={hexAuthoringCellVisualClassNames.inner}
+              sx={innerShell}
+              centerChildren={false}
             >
-              {custom != null && custom !== false ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    maxWidth: '70%',
-                    minHeight: 0,
-                  }}
-                >
-                  {custom}
-                </Box>
-              ) : label != null && label !== '' ? (
-                <Box
-                  component="span"
-                  sx={{
-                    textAlign: 'center',
-                    wordBreak: 'break-word',
-                    maxWidth: '70%',
-                  }}
-                >
-                  {label}
-                </Box>
-              ) : null}
-            </Box>
-          </Box>
+              <Box
+                className={GRID_CELL_AUTHORING_FILL_CLASS}
+                sx={fillLayer}
+                aria-hidden
+              />
+              <Box
+                sx={{
+                  position: 'relative',
+                  zIndex: 1,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 0,
+                  minWidth: 0,
+                }}
+              >
+                {custom != null && custom !== false ? (
+                  <Box
+                    sx={{
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      maxWidth: '70%',
+                      minWidth: 0,
+                      height: '100%',
+                      minHeight: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {custom}
+                  </Box>
+                ) : label != null && label !== '' ? (
+                  <Box
+                    component="span"
+                    sx={{
+                      alignSelf: 'center',
+                      textAlign: 'center',
+                      wordBreak: 'break-word',
+                      maxWidth: '70%',
+                    }}
+                  >
+                    {label}
+                  </Box>
+                ) : null}
+              </Box>
+            </GridCellVisual>
+          </GridCellHost>
         );
       })}
     </Box>

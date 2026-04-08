@@ -72,6 +72,93 @@ function edgeHitToSelection(
   return null;
 }
 
+function gridcellButtonForAnchorCellId(
+  anchorCellId: string,
+  scopeRoot: Document | HTMLElement,
+): HTMLElement | null {
+  if (typeof scopeRoot.querySelector !== 'function') {
+    return null;
+  }
+  /** Attribute selector value: escape `\` and `"` only (avoid CSS.escape — it targets identifiers, not arbitrary attribute values). */
+  const v = anchorCellId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return scopeRoot.querySelector(`[role="gridcell"][data-cell-id="${v}"]`);
+}
+
+/** Prefer the candidate that appears highest in the hit-test stack (smallest index = topmost). */
+function pickTopmostDomCandidate<T extends Element>(
+  candidates: readonly T[],
+  stack: Element[],
+): T | null {
+  let best: T | null = null;
+  let bestIdx = Infinity;
+  for (const el of candidates) {
+    const idx = stack.indexOf(el);
+    if (idx >= 0 && idx < bestIdx) {
+      bestIdx = idx;
+      best = el;
+    }
+  }
+  return best;
+}
+
+/**
+ * When SVG/overlay sits above icons, `closest` from the top hit never reaches in-cell icons.
+ * Scan all object/link rects under the scoped grid and break ties using the hit-test stack order.
+ */
+function pickObjectOrLinkedByGridWideRects(
+  gridRoot: HTMLElement,
+  clientX: number,
+  clientY: number,
+  stack: Element[],
+  anchorCellId: string,
+): LocationMapSelection | null {
+  const objectCandidates: HTMLElement[] = [];
+  const objectNodes = gridRoot.querySelectorAll('[data-map-object-id]');
+  for (let i = 0; i < objectNodes.length; i++) {
+    const el = objectNodes[i];
+    if (!(el instanceof HTMLElement)) continue;
+    const r = el.getBoundingClientRect();
+    if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) continue;
+    objectCandidates.push(el);
+  }
+  if (objectCandidates.length > 0) {
+    let chosen =
+      pickTopmostDomCandidate(objectCandidates, stack) ??
+      objectCandidates.find((c) => c.getAttribute('data-map-object-cell-id') === anchorCellId) ??
+      objectCandidates[0] ??
+      null;
+    if (chosen) {
+      const objectId = chosen.getAttribute('data-map-object-id');
+      const cellId = chosen.getAttribute('data-map-object-cell-id') ?? anchorCellId;
+      if (objectId) {
+        return { type: 'object', cellId, objectId };
+      }
+    }
+  }
+
+  const linkedCandidates: HTMLElement[] = [];
+  const linkedNodes = gridRoot.querySelectorAll('[data-map-linked-cell]');
+  for (let i = 0; i < linkedNodes.length; i++) {
+    const el = linkedNodes[i];
+    if (!(el instanceof HTMLElement)) continue;
+    const r = el.getBoundingClientRect();
+    if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) continue;
+    linkedCandidates.push(el);
+  }
+  if (linkedCandidates.length > 0) {
+    const chosen =
+      pickTopmostDomCandidate(linkedCandidates, stack) ??
+      linkedCandidates.find((c) => c.getAttribute('data-map-linked-cell') === anchorCellId) ??
+      linkedCandidates[0] ??
+      null;
+    if (chosen) {
+      const cellId = chosen.getAttribute('data-map-linked-cell') ?? anchorCellId;
+      return { type: 'cell', cellId };
+    }
+  }
+  return null;
+}
+
 function pickDomMapSelectionFromStack(
   clientX: number,
   clientY: number,
@@ -96,6 +183,57 @@ function pickDomMapSelectionFromStack(
     if (linkedWrap) {
       const cellId = linkedWrap.getAttribute('data-map-linked-cell') ?? anchorCellId;
       return { type: 'cell', cellId };
+    }
+  }
+  /**
+   * Hex (and some clip-path) cells: `elementsFromPoint` may list a grid container or other wrapper
+   * above the gridcell button, or omit icon nodes entirely. `Element.closest` only walks ancestors,
+   * so it never finds `[data-map-object-id]` on descendants of the cell button. Resolve by locating
+   * the anchor cell's gridcell and testing client coords against icon/link bounding rects.
+   *
+   * Prefer querying inside the `[role=grid]` from the hit stack (runtime evidence: top hit is often
+   * that grid div) so we do not match a gridcell from another map when multiple grids exist.
+   */
+  const gridRoot = stack.find(
+    (n): n is HTMLElement => n instanceof HTMLElement && n.getAttribute('role') === 'grid',
+  );
+  if (gridRoot) {
+    const gridWide = pickObjectOrLinkedByGridWideRects(
+      gridRoot,
+      clientX,
+      clientY,
+      stack,
+      anchorCellId,
+    );
+    if (gridWide) {
+      return gridWide;
+    }
+  }
+
+  let cellBtn = gridRoot ? gridcellButtonForAnchorCellId(anchorCellId, gridRoot) : null;
+  if (!cellBtn && typeof document !== 'undefined') {
+    cellBtn = gridcellButtonForAnchorCellId(anchorCellId, document);
+  }
+  if (cellBtn) {
+    const objectNodes = cellBtn.querySelectorAll('[data-map-object-id]');
+    for (let i = 0; i < objectNodes.length; i++) {
+      const el = objectNodes[i];
+      if (!(el instanceof HTMLElement)) continue;
+      const r = el.getBoundingClientRect();
+      if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) continue;
+      const objectId = el.getAttribute('data-map-object-id');
+      const cellId = el.getAttribute('data-map-object-cell-id') ?? anchorCellId;
+      if (objectId) {
+        return { type: 'object', cellId, objectId };
+      }
+    }
+    const linkedEl = cellBtn.querySelector('[data-map-linked-cell]');
+    if (linkedEl instanceof HTMLElement) {
+      const r = linkedEl.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+        const cellId = linkedEl.getAttribute('data-map-linked-cell') ?? anchorCellId;
+        return { type: 'cell', cellId };
+      }
     }
   }
   return null;

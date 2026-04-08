@@ -3,7 +3,7 @@
  * Field visibility and options derive from `LOCATION_SCALE_FIELD_POLICY` (shared).
  */
 import {
-  ALL_LOCATION_SCALE_IDS,
+  LOCATION_SCALE_IDS_WITH_LEGACY,
   getAllowedCategoryOptionsForScale,
   getAllowedCellUnitOptionsForScale,
   isCategoryFieldReadOnlyForScale,
@@ -13,7 +13,7 @@ import {
   shouldShowCategoryFieldForScale,
   shouldShowGridCellUnitFieldForScale,
   shouldShowParentFieldForScale,
-  SURFACE_LOCATION_CONTENT_SCALE_IDS,
+  SURFACE_CONTENT_LOCATION_SCALE_IDS,
 } from '@/shared/domain/locations';
 import {
   getAllowedParentLocationOptions,
@@ -25,19 +25,23 @@ import { getFilteredParentLocationsForChildScale } from './locationDependentFiel
 
 export type LocationFormUiMode = 'create' | 'edit';
 
-/** All scales that may appear on a location (content + legacy) — e.g. edit display. */
-export const ALL_LOCATION_SCALE_OPTIONS = ALL_LOCATION_SCALE_IDS.map((s) => ({
+/**
+ * Read-only scale options for **edit** display — derived from `LOCATION_SCALE_IDS_WITH_LEGACY` so legacy
+ * `region` / `subregion` / `district` rows still render. **Create** uses `getAllowedLocationScaleOptionsForCreate`
+ * (content/surface only).
+ */
+export const LOCATION_SCALE_OPTIONS_WITH_LEGACY = LOCATION_SCALE_IDS_WITH_LEGACY.map((s) => ({
   value: s,
   label: s,
 }));
 
 /**
  * Create flow: **surface** scales only (world, city, site, building) — no floor/room (building
- * interior) or legacy map-zone scales. Policy: `SURFACE_LOCATION_CONTENT_SCALE_IDS` +
+ * interior) or legacy map-zone scales. Policy: `SURFACE_CONTENT_LOCATION_SCALE_IDS` +
  * `locationScaleUi.policy.ts`.
  */
 export function getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation: boolean) {
-  return SURFACE_LOCATION_CONTENT_SCALE_IDS.filter(
+  return SURFACE_CONTENT_LOCATION_SCALE_IDS.filter(
     (s) => s !== 'world' || !campaignHasWorldLocation,
   ).map((s) => ({
     value: s,
@@ -47,7 +51,7 @@ export function getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation
 
 /** Edit: show full scale list for display; field is disabled so selection cannot change. */
 export function getLocationScaleOptionsForEditDisplay() {
-  return ALL_LOCATION_SCALE_OPTIONS;
+  return LOCATION_SCALE_OPTIONS_WITH_LEGACY;
 }
 
 export function canSelectWorldScale(campaignHasWorldLocation: boolean): boolean {

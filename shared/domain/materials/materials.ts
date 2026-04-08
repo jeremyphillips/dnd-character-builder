@@ -1,13 +1,13 @@
 /**
- * Cross-domain material identifiers, display labels, and optional **reaction** hints for future
- * environment/spell interaction. Domain features (e.g. locations) should take **subsets** of
- * {@link MaterialId} rather than redefining material spellings locally.
+ * Cross-domain material identifiers, display labels, and optional **reaction** / **structural** hints
+ * for future environment/spell interaction and breakage. Domain features (e.g. locations) should take
+ * **subsets** of {@link MaterialId} rather than redefining material spellings locally.
  */
 
 import type { ElementId } from '../elements/elements';
 
-/** Canonical material ids — single vocabulary for stone/wood/tile across domains. */
-export const MATERIAL_IDS = ['stone', 'wood', 'tile'] as const;
+/** Canonical material ids — single vocabulary across domains (surfaces, fixtures, props). */
+export const MATERIAL_IDS = ['stone', 'wood', 'tile', 'glass'] as const;
 
 export type MaterialId = (typeof MATERIAL_IDS)[number];
 
@@ -41,6 +41,21 @@ export type MaterialReactionProfile = {
   vulnerableTo?: readonly ElementId[];
 };
 
+/**
+ * Coarse structural behavior for future combat/object rules (shatter, sunder, environmental stress).
+ *
+ * @remarks **TODO:** not consumed by gameplay loops in this pass.
+ */
+export type MaterialBrittleness = 'low' | 'medium' | 'high';
+
+export type MaterialStructuralProfile = {
+  brittleness: MaterialBrittleness;
+  /**
+   * Whether the material can shatter into fragments (glass, brittle ceramic) vs crack/splinter only.
+   */
+  shatterable: boolean;
+};
+
 type MaterialEntry = {
   id: MaterialId;
   label: string;
@@ -49,11 +64,16 @@ type MaterialEntry = {
    * @remarks **TODO:** see {@link MaterialReactionProfile}; gameplay may ignore until systems land.
    */
   reactionProfile?: MaterialReactionProfile;
+  /**
+   * Future-facing structural hints (breakage, brittleness).
+   * @remarks **TODO:** see {@link MaterialStructuralProfile}; gameplay may ignore until systems land.
+   */
+  structuralProfile?: MaterialStructuralProfile;
 };
 
 /**
- * Human-readable labels and optional {@link MaterialReactionProfile} per {@link MaterialId}.
- * Ids are listed explicitly so they stay aligned with {@link MATERIAL_IDS}.
+ * Human-readable labels and optional {@link MaterialReactionProfile} / {@link MaterialStructuralProfile}
+ * per {@link MaterialId}. Ids are listed explicitly so they stay aligned with {@link MATERIAL_IDS}.
  */
 export const MATERIAL_META = {
   stone: {
@@ -76,6 +96,17 @@ export const MATERIAL_META = {
     label: 'Tile',
     reactionProfile: {
       flammable: false,
+    },
+  },
+  glass: {
+    id: 'glass',
+    label: 'Glass',
+    reactionProfile: {
+      flammable: false,
+    },
+    structuralProfile: {
+      brittleness: 'high',
+      shatterable: true,
     },
   },
 } as const satisfies Record<MaterialId, MaterialEntry>;

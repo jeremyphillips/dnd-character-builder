@@ -4,7 +4,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import {
   canApplyAnyPaintStroke,
   canApplyRegionPaint,
-  getActiveSurfaceFillKind,
+  getActiveSurfaceFillSelection,
   type LocationMapActivePaintSelection,
   type LocationMapEditorMode,
 } from '@/features/content/locations/domain/authoring/editor';
@@ -17,6 +17,8 @@ type UseLocationGridPaintStrokeParams = {
   activePaint: LocationMapActivePaintSelection | null;
   regionEntries: LocationGridDraftState['regionEntries'];
   setDraft: Dispatch<SetStateAction<LocationGridDraftState>>;
+  /** Region paint: create on first stroke + extend (workspace-owned). */
+  onRegionPaintCell?: (cellId: string) => void;
 };
 
 /**
@@ -29,6 +31,7 @@ export function useLocationGridPaintStroke({
   activePaint,
   regionEntries,
   setDraft,
+  onRegionPaintCell,
 }: UseLocationGridPaintStrokeParams) {
   const paintStrokeActive = useRef(false);
   const strokeSeen = useRef<Set<string>>(new Set());
@@ -38,21 +41,16 @@ export function useLocationGridPaintStroke({
       if (strokeSeen.current.has(cellId)) return;
       strokeSeen.current.add(cellId);
       if (mapEditorMode === 'paint') {
-        const surfaceFill = getActiveSurfaceFillKind(activePaint ?? null);
+        const surfaceFill = getActiveSurfaceFillSelection(activePaint ?? null);
         if (surfaceFill) {
           setDraft((d) => ({
             ...d,
-            cellFillByCellId: { ...d.cellFillByCellId, [cellId]: surfaceFill },
+            cellFillByCellId: { ...d.cellFillByCellId, [cellId]: { ...surfaceFill } },
           }));
           return;
         }
         if (canApplyRegionPaint(activePaint ?? null, regionEntries)) {
-          const paint = activePaint!;
-          const rid = paint.activeRegionId!.trim();
-          setDraft((prevDraft) => ({
-            ...prevDraft,
-            regionIdByCellId: { ...prevDraft.regionIdByCellId, [cellId]: rid },
-          }));
+          onRegionPaintCell?.(cellId);
         }
         return;
       }
@@ -66,7 +64,7 @@ export function useLocationGridPaintStroke({
         });
       }
     },
-    [activePaint, regionEntries, mapEditorMode, setDraft],
+    [activePaint, regionEntries, mapEditorMode, onRegionPaintCell, setDraft],
   );
 
   const endPaintStroke = useCallback(() => {

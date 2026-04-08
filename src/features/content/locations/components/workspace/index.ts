@@ -9,16 +9,15 @@ export type { LocationEditorMapCanvasColumnProps } from './canvas';
 export {
   LocationEditorRightRail,
   LocationEditorRailSectionTabs,
-  LocationEditorSelectionPanel,
+  SelectionTab,
 } from './rightRail';
 export type {
   LocationEditorRailSectionTabsProps,
-  LocationEditorSelectionPanelProps,
+  SelectionTabProps,
   LocationEditorRailSection,
   LocationMapSelection,
 } from './rightRail';
 export {
-  shouldAutoSwitchRailToMapForMode,
   selectedCellIdForMapSelection,
   mapSelectionEqual,
 } from './rightRail';

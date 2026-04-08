@@ -1,12 +1,16 @@
 /**
- * Combat/runtime defaults for {@link LocationPlacedObjectKindId} — movement, line-of-sight, cover, movability,
+ * Combat/runtime defaults for {@link LocationPlacedObjectKindId} — movement, line-of-sight, tactical combat cover (`combatCoverKind`), movability,
  * plus optional {@link resolveLocationPlacedObjectKindInteraction} for transition/interaction hints.
  *
  * **Source of truth:** {@link ./locationPlacedObject.registry} — do not duplicate behavior keys elsewhere.
  */
 
+import type { AuthoredDoorState } from '@/shared/domain/locations';
+import { sanitizeAuthoredDoorState } from '@/shared/domain/locations';
+
 import type {
   AuthoredPlacedObjectInteraction,
+  AuthoredPlacedObjectRuntimeFields,
   LocationPlacedObjectKindId,
   LocationPlacedObjectKindRuntimeDefaults,
 } from './locationPlacedObject.registry';
@@ -31,6 +35,25 @@ export function resolveLocationPlacedObjectKindRuntimeDefaults(
   kind: LocationPlacedObjectKindId,
 ): LocationPlacedObjectKindRuntimeDefaults {
   return getPlacedObjectRuntimeDefaults(kind);
+}
+
+/**
+ * Effective door family runtime from registry baseline + authored instance {@link AuthoredDoorState}.
+ * Open doors do not block movement or line of sight; lock state does not affect blocking in this pass.
+ */
+export function resolveDoorRuntimeFromState(
+  baseRuntime: AuthoredPlacedObjectRuntimeFields,
+  doorState: AuthoredDoorState | undefined,
+): AuthoredPlacedObjectRuntimeFields {
+  const effective = sanitizeAuthoredDoorState(doorState);
+  if (effective.openState === 'open') {
+    return {
+      ...baseRuntime,
+      blocksMovement: false,
+      blocksLineOfSight: false,
+    };
+  }
+  return baseRuntime;
 }
 
 export type { AuthoredPlacedObjectInteraction } from './locationPlacedObject.registry';

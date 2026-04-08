@@ -60,12 +60,20 @@ const mapRegionEntrySchema = new Schema(
   { _id: false },
 );
 
+const mapCellFillSchema = new Schema(
+  {
+    familyId: { type: String, required: true },
+    variantId: { type: String, required: true },
+  },
+  { _id: false },
+);
+
 const mapCellAuthoringEntrySchema = new Schema(
   {
     cellId: { type: String, required: true },
     linkedLocationId: { type: String },
     objects: { type: [mapCellObjectEntrySchema], default: undefined },
-    cellFillKind: { type: String },
+    cellFill: { type: mapCellFillSchema, required: false },
     regionId: { type: String },
   },
   { _id: false },
@@ -84,6 +92,10 @@ const mapEdgeEntrySchema = new Schema(
   {
     edgeId: { type: String, required: true },
     kind: { type: String, required: true },
+    authoredPlaceKindId: { type: String, required: false },
+    variantId: { type: String, required: false },
+    label: { type: String, required: false },
+    state: { type: Schema.Types.Mixed, required: false },
   },
   { _id: false },
 );

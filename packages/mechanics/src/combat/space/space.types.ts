@@ -1,6 +1,7 @@
 import type { AuthoredPlacedObjectInteraction } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.registry';
 import type { LocationPlacedObjectKindId } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types';
+import type { ResolvedAuthoredDoorState } from '@/shared/domain/locations/map/locationMapDoorAuthoring.helpers';
 
 export type EncounterSpaceMode =
   | 'zone-grid'
@@ -13,9 +14,14 @@ export type EncounterSpaceScale =
   | { kind: 'grid'; cellFeet: 5 | 10 };
 
 /**
- * Cover from a placed object for attack targeting (first pass; full combat cover rules TBD).
+ * D&D-style tactical combat cover granted by a grid object when used as cover (half / three-quarters / none).
+ * Does **not** control movement blocking or line of sight — use {@link GridObject.blocksMovement} and
+ * {@link GridObject.blocksLineOfSight} for those concerns.
  */
-export type GridObjectCoverKind = 'none' | 'half' | 'three-quarters';
+export type CombatCoverKind = 'none' | 'half' | 'three-quarters';
+
+/** @deprecated Use {@link CombatCoverKind}. */
+export type GridObjectCoverKind = CombatCoverKind;
 
 /**
  * Runtime record for a placed map object on the tactical grid (single-cell footprint today).
@@ -25,15 +31,25 @@ export type GridObjectCoverKind = 'none' | 'half' | 'three-quarters';
  * `authoredPlaceKindId` identifies the palette/registry kind; runtime fields must match
  * `resolveLocationPlacedObjectKindRuntimeDefaults(authoredPlaceKindId)` at hydration time.
  *
+ * **Spatial vs cover:** `blocksMovement` and `blocksLineOfSight` drive encounter movement and sight checks.
+ * `combatCoverKind` is **only** for attack/cover when the object is used as **tactical cover** — it does not replace
+ * or duplicate the two boolean fields above.
+ *
  * **`interaction`:** Optional transition/interaction hint from the registry — not implied by `blocksMovement`
  * alone. TODO: extend for ladders, portals, hatches; not all kinds populate this field yet.
  */
 export type GridObject = {
   id: string;
   cellId: string;
+  /** Traversal / collision for this object’s footprint. */
   blocksMovement: boolean;
+  /** Line-of-sight blocking for encounter resolution (not the same as `combatCoverKind`). */
   blocksLineOfSight: boolean;
-  coverKind: GridObjectCoverKind;
+  /**
+   * Tactical combat cover when used as cover (half / three-quarters / none). Does not control movement or LoS;
+   * see `blocksMovement` and `blocksLineOfSight`.
+   */
+  combatCoverKind: CombatCoverKind;
   /** Whether the object can be repositioned by combat rules (e.g. shove); not “structural immovability”. */
   isMovable: boolean;
   /** Palette / registry kind from authored map placement (`LocationPlacedObjectKindId`). */
@@ -53,8 +69,8 @@ export type GridObjectAuthoredKindId = LocationPlacedObjectKindId;
 export type EncounterAuthoringPresentation = {
   edgeEntries: Array<{ edgeId: string; kind: 'wall' | 'door' | 'window' }>;
   pathEntries: Array<{ id: string; kind: string; cellIds: string[] }>;
-  /** Combat cell id (`c-x-y`) → sparse cell fill kind id from location map authoring. */
-  cellFillByCombatCellId: Record<string, string>;
+  /** Combat cell id (`c-x-y`) → sparse authored cell fill (family + variant). */
+  cellFillByCombatCellId: Record<string, { familyId: string; variantId: string }>;
   /** Combat cell id → region color key (e.g. `regionRed`) for semi-transparent overlay. */
   regionColorKeyByCombatCellId?: Record<string, string>;
   /**
@@ -116,6 +132,15 @@ export type EncounterEdge = {
   movementCost?: number;
   blocksMovement?: boolean;
   blocksSight?: boolean;
+  /**
+   * Stable id from location map `edgeEntries[].edgeId` when this segment was hydrated from authoring.
+   * Preferred identity for future door-edge intents (open/close/unlock).
+   */
+  mapEdgeId?: string;
+  /** Optional override for Pick Lock DC on this edge (default 15 when omitted). */
+  lockPickDc?: number;
+  /** Sanitized open/lock snapshot for door segments; drives Phase 1 open interaction (runtime only). */
+  doorState?: ResolvedAuthoredDoorState;
 };
 
 export type EncounterFeature = {

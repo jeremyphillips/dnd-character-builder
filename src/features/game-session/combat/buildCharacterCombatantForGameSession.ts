@@ -21,6 +21,7 @@ import { getAbilityScoreValue } from '@/features/mechanics/domain/character/abil
 import { getAbilityModifier } from '@/features/mechanics/domain/abilities/getAbilityModifier'
 import type { CampaignCatalogAdmin } from '@/features/mechanics/domain/rulesets/campaign/buildCatalog'
 import type { RulesetLike } from '@/features/mechanics/domain/rulesets/types/ruleset.types'
+import { DEFAULT_PICK_LOCK_COMBAT_ACTION } from '@/features/mechanics/domain/combat/resolution/combat-action.types'
 import type { CombatantInstance, CombatantSide } from '@/features/mechanics/domain/combat'
 import type { Spell } from '@/features/content/spells/domain/types/spell.types'
 import {
@@ -29,6 +30,11 @@ import {
   DEFAULT_MONSTER_RUNTIME_CONTEXT_FOR_ENCOUNTER,
 } from '@/features/mechanics/domain/combat/runtime/monster-runtime'
 
+/**
+ * Single assembly path for playable PC/NPC combatants: spells, skill affordances, shared extras
+ * (e.g. Pick Lock), then {@link buildCharacterCombatantInstance}. Used by game-session startup,
+ * server persistence, and encounter simulator roster preview — keep in sync by editing here only.
+ */
 export function buildCharacterCombatantForGameSession(args: {
   character: CharacterDetailDto
   catalog: CampaignCatalogAdmin
@@ -76,7 +82,7 @@ export function buildCharacterCombatantForGameSession(args: {
     character,
     combatStats,
     attacks,
-    extraActions: [...spellActions, ...skillAffordanceActions],
+    extraActions: [...spellActions, ...skillAffordanceActions, DEFAULT_PICK_LOCK_COMBAT_ACTION],
     turnHooks,
   })
 }

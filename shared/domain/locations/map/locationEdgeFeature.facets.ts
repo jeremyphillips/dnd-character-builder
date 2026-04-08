@@ -5,8 +5,8 @@
  * future variation (material, style, lock state, …) without exploding ids like `wall_stone`.
  *
  * @remarks **TODO (broader wiring):** authoring UI, validation, rendering, and combat/simulation
- * do **not** yet read or persist per-edge facet instances. `LOCATION_EDGE_FEATURE_KIND_META`
- * declares **supported** values per base kind as scaffolding only.
+ * do **not** yet read or persist per-edge facet instances. Door/window variant lists live in the
+ * authored-object registry; coarse edge-kind copy for tools is in `LOCATION_EDGE_FEATURE_KIND_META`.
  */
 
 import type { MaterialId } from '@/shared/domain/materials';

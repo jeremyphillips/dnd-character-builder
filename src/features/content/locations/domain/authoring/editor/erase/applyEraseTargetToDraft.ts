@@ -1,5 +1,11 @@
 import { removePathChainSegment } from '@/shared/domain/locations/map/locationMapPathAuthoring.helpers';
-import type { LocationMapPathAuthoringEntry } from '@/shared/domain/locations';
+import type {
+  LocationMapCellFillSelection,
+  LocationMapCellObjectEntry,
+  LocationMapPathAuthoringEntry,
+} from '@/shared/domain/locations';
+
+import { cellObjectAnchorsCellLinkedLocation } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.selectors';
 
 import type { EraseTarget } from './resolveEraseTarget';
 
@@ -10,9 +16,9 @@ import type { EraseTarget } from './resolveEraseTarget';
 export type ErasableMapDraft = {
   pathEntries: readonly LocationMapPathAuthoringEntry[];
   edgeEntries: ReadonlyArray<{ edgeId: string }>;
-  objectsByCellId: Record<string, { id: string }[] | undefined>;
+  objectsByCellId: Record<string, LocationMapCellObjectEntry[] | undefined>;
   linkedLocationByCellId: Record<string, string | undefined>;
-  cellFillByCellId: Record<string, string | undefined>;
+  cellFillByCellId: Record<string, LocationMapCellFillSelection | undefined>;
   regionIdByCellId: Record<string, string | undefined>;
 };
 
@@ -36,11 +42,17 @@ export function applyEraseTargetToDraft<D extends ErasableMapDraft>(
   }
   if (target.type === 'object') {
     const objs = prev.objectsByCellId[target.cellId] ?? [];
+    const removed = objs.find((o) => o.id === target.objectId);
     const nextObjs = objs.filter((o) => o.id !== target.objectId);
     const nextMap = { ...prev.objectsByCellId };
     if (nextObjs.length === 0) delete nextMap[target.cellId];
     else nextMap[target.cellId] = nextObjs;
-    return { ...prev, objectsByCellId: nextMap };
+    let nextLinked = prev.linkedLocationByCellId;
+    if (removed && cellObjectAnchorsCellLinkedLocation(removed)) {
+      nextLinked = { ...prev.linkedLocationByCellId };
+      delete nextLinked[target.cellId];
+    }
+    return { ...prev, objectsByCellId: nextMap, linkedLocationByCellId: nextLinked };
   }
   if (target.type === 'path') {
     return {

@@ -1,37 +1,138 @@
 import {
-  getAllowedCellFillKindsForScale,
+  AUTHORED_CELL_FILL_DEFINITIONS,
+  getAuthoredCellFillFamilyDefinition,
+  isCellFillFamilyAllowedOnScale,
+  resolveCellFillVariant,
+  type LocationCellFillFamilyId,
+} from '@/features/content/locations/domain/model/map/locationCellFill.types';
+import {
+  getAllowedCellFillFamiliesForScale,
   getAllowedEdgeKindsForScale,
   getAllowedPathKindsForScale,
 } from '@/features/content/locations/domain/model/policies/locationScaleMapContent.policy';
-import { LOCATION_CELL_FILL_KIND_META } from '@/features/content/locations/domain/model/map/locationCellFill.types';
+import type {
+  LocationCellFillCategory,
+  LocationCellFillFamily,
+} from '@/features/content/locations/domain/model/map/locationCellFill.types';
 import { LOCATION_EDGE_FEATURE_KIND_META } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 import { LOCATION_PATH_FEATURE_KIND_META } from '@/features/content/locations/domain/model/map/locationPathFeature.types';
-import { getPlacedObjectPaletteOptionsForScale } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
+import {
+  comparePlacedObjectPaletteCategories,
+  getPlacedObjectPaletteOptionsForScale,
+} from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 import type { LocationScaleId } from '@/shared/domain/locations';
 
 import type {
   MapDrawPaletteItem,
+  MapPaintPaletteFamilyRow,
   MapPaintPaletteItem,
+  MapPaintPaletteSection,
   MapPlacePaletteItem,
 } from '../types/locationMapEditor.types';
 
 /**
- * Paint palette rows for surface fills — label + swatch from concrete fill meta.
- *
- * @remarks **TODO:** does not yet group/order by fill facets (`category`, `family`, …); policy +
- * flat id list only.
+ * Tray section titles (terrain vs interior surfaces).
+ * @internal Exported for tests / UI parity with place palette.
+ */
+export const PAINT_PALETTE_SECTION_LABELS: Record<LocationCellFillCategory, string> = {
+  terrain: 'Terrains',
+  surface: 'Surfaces',
+};
+
+const PAINT_FAMILY_TRAY_LABELS: Record<LocationCellFillFamily, string> = {
+  mountains: 'Mountains',
+  plains: 'Plains',
+  forest: 'Forest',
+  swamp: 'Swamp',
+  desert: 'Desert',
+  water: 'Water',
+  floor: 'Floor',
+};
+
+function familiesForScale(scale: LocationScaleId): LocationCellFillFamilyId[] {
+  const allowed = getAllowedCellFillFamiliesForScale(scale);
+  return allowed.filter((fid) => isCellFillFamilyAllowedOnScale(fid, scale));
+}
+
+/**
+ * Flat list of paint variants allowed on this scale (policy ∩ registry `allowedScales`).
  */
 export function getPaintPaletteItemsForScale(scale: LocationScaleId): MapPaintPaletteItem[] {
-  const kinds = getAllowedCellFillKindsForScale(scale);
-  return kinds.map((fillKind) => {
-    const meta = LOCATION_CELL_FILL_KIND_META[fillKind];
-    return {
-      fillKind,
-      label: meta.label,
-      description: meta.description,
-      swatchColorKey: meta.swatchColorKey,
-    };
-  });
+  const rows: MapPaintPaletteItem[] = [];
+  for (const familyId of familiesForScale(scale)) {
+    const fam = getAuthoredCellFillFamilyDefinition(familyId);
+    for (const variantId of Object.keys(fam.variants)) {
+      const v = resolveCellFillVariant(familyId, variantId).variant;
+      rows.push({
+        familyId,
+        variantId,
+        label: v.label,
+        description: v.description,
+        swatchColorKey: v.swatchColorKey,
+      });
+    }
+  }
+  rows.sort((a, b) => a.label.localeCompare(b.label));
+  return rows;
+}
+
+/**
+ * Grouped paint palette: **category** → **family** → variants.
+ */
+export function getPaintPaletteSectionsForScale(scale: LocationScaleId): MapPaintPaletteSection[] {
+  const byCategory = new Map<LocationCellFillCategory, Map<LocationCellFillFamily, MapPaintPaletteItem[]>>();
+
+  for (const familyId of familiesForScale(scale)) {
+    const fam = AUTHORED_CELL_FILL_DEFINITIONS[familyId];
+    const cat = fam.category;
+    const bucket = byCategory.get(cat) ?? new Map<LocationCellFillFamily, MapPaintPaletteItem[]>();
+    const list: MapPaintPaletteItem[] = [];
+    for (const variantId of Object.keys(fam.variants)) {
+      const v = resolveCellFillVariant(familyId, variantId).variant;
+      list.push({
+        familyId,
+        variantId,
+        label: v.label,
+        description: v.description,
+        swatchColorKey: v.swatchColorKey,
+      });
+    }
+    list.sort((a, b) => a.label.localeCompare(b.label));
+    bucket.set(familyId, list);
+    byCategory.set(cat, bucket);
+  }
+
+  function buildFamilies(
+    bucket: Map<LocationCellFillFamily, MapPaintPaletteItem[]>,
+  ): MapPaintPaletteFamilyRow[] {
+    const rows: MapPaintPaletteFamilyRow[] = [];
+    for (const [familyId, variants] of bucket) {
+      const fam = getAuthoredCellFillFamilyDefinition(familyId);
+      const sorted = [...variants];
+      const defaultVariantId = fam.defaultVariantId;
+      rows.push({
+        familyId,
+        label: PAINT_FAMILY_TRAY_LABELS[familyId],
+        variants: sorted,
+        defaultVariantId,
+      });
+    }
+    rows.sort((a, b) => a.label.localeCompare(b.label));
+    return rows;
+  }
+
+  const sectionOrder: LocationCellFillCategory[] = ['terrain', 'surface'];
+  const out: MapPaintPaletteSection[] = [];
+  for (const sectionId of sectionOrder) {
+    const bucket = byCategory.get(sectionId);
+    if (!bucket || bucket.size === 0) continue;
+    out.push({
+      sectionId,
+      label: PAINT_PALETTE_SECTION_LABELS[sectionId],
+      families: buildFamilies(bucket),
+    });
+  }
+  return out;
 }
 
 /**
@@ -39,11 +140,16 @@ export function getPaintPaletteItemsForScale(scale: LocationScaleId): MapPaintPa
  */
 export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePaletteItem[] {
   const options = getPlacedObjectPaletteOptionsForScale(scale);
-  return options.map((opt) => {
+  const items = options.map((opt) => {
     if (opt.linkedScale) {
       return {
         category: 'linked-content' as const,
         kind: opt.kind,
+        familyId: opt.kind,
+        variantId: opt.defaultVariantId,
+        defaultVariantId: opt.defaultVariantId,
+        variantCount: opt.variantCount,
+        paletteCategory: opt.paletteCategory,
         label: opt.label,
         description: opt.description,
         iconName: opt.iconName,
@@ -53,10 +159,20 @@ export function getPlacePaletteItemsForScale(scale: LocationScaleId): MapPlacePa
     return {
       category: 'map-object' as const,
       kind: opt.kind,
+      familyId: opt.kind,
+      variantId: opt.defaultVariantId,
+      defaultVariantId: opt.defaultVariantId,
+      variantCount: opt.variantCount,
+      paletteCategory: opt.paletteCategory,
       label: opt.label,
       description: opt.description,
       iconName: opt.iconName,
     };
+  });
+  return [...items].sort((a, b) => {
+    const byCat = comparePlacedObjectPaletteCategories(a.paletteCategory, b.paletteCategory);
+    if (byCat !== 0) return byCat;
+    return a.label.localeCompare(b.label);
   });
 }
 
@@ -75,8 +191,6 @@ export function getDrawPathPaletteItemsForScale(scale: LocationScaleId): MapDraw
 
 /**
  * Edge draw palette — label/description from {@link LOCATION_EDGE_FEATURE_KIND_META} only.
- *
- * @remarks **TODO:** does not surface facet options (`supportedMaterials`, etc.); base `kind` selection only.
  */
 export function getDrawEdgePaletteItemsForScale(scale: LocationScaleId): MapDrawPaletteItem[] {
   const kinds = getAllowedEdgeKindsForScale(scale);

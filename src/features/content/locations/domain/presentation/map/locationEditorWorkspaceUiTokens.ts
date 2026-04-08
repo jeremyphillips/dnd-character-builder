@@ -7,7 +7,7 @@ export const locationEditorWorkspaceUiTokens = {
   rightRailWidthPx: 380,
   mapToolbarWidthPx: 50,
   /** Unified width for paint / draw tool palettes beside the map toolbar. */
-  mapToolTrayWidthPx: 110,
+  mapToolTrayWidthPx: 200,
 } as const;
 
 export type LocationEditorWorkspaceUiTokens = typeof locationEditorWorkspaceUiTokens;

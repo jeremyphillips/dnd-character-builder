@@ -1,6 +1,9 @@
 /**
  * Square grid only: authored edge entries → boundary segment geometry in pixel space.
  * Hex edge boundaries are not modeled here.
+ *
+ * **Coarse consumer:** uses `edgeId` + `kind` only for segment identity — not `variantId` / authored registry fields.
+ * See `src/features/content/locations/domain/authoring/map/locationMapEdgeAuthoring.policy.md`.
  */
 import type { LocationMapEdgeAuthoringEntry } from './locationMap.types';
 import type { EdgeSegmentGeometry, LineSegment2D } from './locationMapGeometry.types';

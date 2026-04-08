@@ -3,32 +3,69 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getPaintPaletteItemsForScale,
-  getPlacePaletteItemsForScale,
+  getPaintPaletteSectionsForScale,
+  PAINT_PALETTE_SECTION_LABELS,
 } from '../../palette';
+import { getPlacePaletteItemsForScale } from '../../palette';
 
 describe('locationMapEditorPalette.helpers', () => {
-  it('getPaintPaletteItemsForScale maps policy + cell-fill meta', () => {
+  it('getPaintPaletteItemsForScale maps policy + cell-fill registry variants', () => {
     const items = getPaintPaletteItemsForScale('world');
-    expect(items.map((i) => i.fillKind)).toEqual([
-      'mountains',
-      'plains',
-      'forest_light',
-      'forest_heavy',
-      'swamp',
-      'desert',
-      'water',
-    ]);
-    expect(items[0].label).toBe('Mountains');
-    expect(items[0].swatchColorKey).toBe('cellFillMountains');
+    expect(items.length).toBe(8);
+    const keys = new Set(items.map((i) => `${i.familyId}:${i.variantId}`));
+    expect(keys.has('mountains:rocky')).toBe(true);
+    expect(keys.has('forest:temperate_open')).toBe(true);
+    expect(keys.has('water:deep')).toBe(true);
+    const mountains = items.find((i) => i.familyId === 'mountains');
+    expect(mountains?.label).toBe('Mountains');
+    expect(mountains?.swatchColorKey).toBe('cellFillMountains');
+  });
+
+  it('getPaintPaletteSectionsForScale groups by category and family', () => {
+    const world = getPaintPaletteSectionsForScale('world');
+    expect(world.map((s) => s.sectionId)).toEqual(['terrain']);
+    expect(world[0].label).toBe(PAINT_PALETTE_SECTION_LABELS.terrain);
+    const terrainFamilies = world[0].families.map((f) => f.familyId);
+    expect(terrainFamilies).toContain('forest');
+    const forest = world[0].families.find((f) => f.familyId === 'forest');
+    expect(forest?.variants.length).toBe(2);
+    expect(forest?.defaultVariantId).toBe('temperate_open');
+
+    const floor = getPaintPaletteSectionsForScale('floor');
+    expect(floor.map((s) => s.sectionId)).toEqual(['surface']);
+    expect(floor[0].families.map((f) => f.familyId)).toEqual(['floor']);
+    expect(floor[0].families[0].variants).toHaveLength(2);
   });
 
   it('getPlacePaletteItemsForScale maps policy + linked-content vs map-object', () => {
     const items = getPlacePaletteItemsForScale('world');
-    expect(items.map((i) => i.kind)).toEqual(['city']);
-    expect(items[0].label).toBe('City');
-    expect(items[0].category).toBe('linked-content');
-    if (items[0].category === 'linked-content') {
-      expect(items[0].linkedScale).toBe('city');
+    expect(items.map((i) => i.kind)).toEqual(['building', 'city', 'tree']);
+    const city = items.find((i) => i.kind === 'city');
+    expect(city?.label).toBe('City');
+    expect(city?.category).toBe('linked-content');
+    expect(city?.familyId).toBe('city');
+    expect(city?.variantId).toBe('default');
+    expect(city?.defaultVariantId).toBe('default');
+    expect(city?.variantCount).toBe(1);
+    expect(city?.paletteCategory).toBe('structure');
+    if (city?.category === 'linked-content') {
+      expect(city.linkedScale).toBe('city');
+    }
+    const building = items.find((i) => i.kind === 'building');
+    expect(building?.category).toBe('map-object');
+    if (building?.category === 'map-object') {
+      expect(building.defaultVariantId).toBe('residential');
+      expect(building.variantCount).toBe(2);
+    }
+  });
+
+  it('floor map-object families expose variantCount from registry (table has multiple variants)', () => {
+    const floor = getPlacePaletteItemsForScale('floor');
+    const table = floor.find((i) => i.kind === 'table');
+    expect(table?.category).toBe('map-object');
+    if (table?.category === 'map-object') {
+      expect(table.variantCount).toBe(2);
+      expect(table.defaultVariantId).toBe('rect_wood');
     }
   });
 });

@@ -3,12 +3,16 @@ import {
   LOCATION_MAP_OBJECT_KIND_IDS,
 } from './locationMap.constants';
 import type { LocationCellUnitId } from './locationMap.constants';
-import type { LocationMapCellFillKindId } from './locationMapCellFill.constants';
+import type { LocationCellFillFamilyId } from './authoredCellFillDefinitions';
 import type { LocationMapRegionColorKey } from './locationMapRegion.constants';
 import type { LocationMapEdgeKindId } from './locationMapEdgeFeature.constants';
 import type { LocationMapPathKindId } from './locationMapPathFeature.constants';
 import type { LocationMapStairEndpointAuthoring } from './locationMapStairEndpoint.types';
+import type { AuthoredDoorState } from './locationMapDoorAuthoring.types';
+import type { LocationMapEdgeAuthoringState } from './locationMapEdgeAuthoring.types';
 import type { GridGeometryId } from '../../grid/gridGeometry';
+
+export type { LocationMapEdgeAuthoringState } from './locationMapEdgeAuthoring.types';
 
 export type { LocationCellUnitId };
 
@@ -42,6 +46,12 @@ export type LocationMapCell = {
 };
 
 /** Authoring payload for a single grid cell (map-owned; persisted on LocationMap). */
+/** Persisted whole-cell terrain / surface fill — family-scoped variant id. */
+export type LocationMapCellFillSelection = {
+  familyId: LocationCellFillFamilyId;
+  variantId: string;
+};
+
 export type LocationMapCellObjectEntry = {
   id: string;
   kind: LocationMapObjectKindId;
@@ -64,7 +74,7 @@ export type LocationMapCellAuthoringEntry = {
   linkedLocationId?: string;
   objects?: LocationMapCellObjectEntry[];
   /** Whole-cell terrain / surface fill (authored map content). */
-  cellFillKind?: LocationMapCellFillKindId;
+  cellFill?: LocationMapCellFillSelection;
   /** Membership in an authored map region (overlay; not terrain). */
   regionId?: string;
 };
@@ -85,15 +95,36 @@ export type LocationMapPathAuthoringEntry = {
   id: string;
   kind: LocationMapPathKindId;
   cellIds: string[];
+  /** Optional display name (roads, rivers). */
+  name?: string;
+  /** Optional longer description. */
+  description?: string;
 };
 
 /**
  * One authored feature on a cell boundary segment. `edgeId` is canonical:
  * interior `between:cellA|cellB`, or outer map edge `perimeter:cellId|N|E|S|W`.
+ *
+ * - **`kind`** — required coarse category for compatibility (render, combat, tooling). **Walls** stay coarse-only.
+ * - **Door/window** — may persist registry **`authoredPlaceKindId`** + **`variantId`** together (save normalizes
+ *   all-or-nothing for openings; see app `locationMapEdgeAuthoring.policy.md`).
+ * - **`label`** — optional placard (parity with cell object `label`).
+ *
+ * **Consumers:** coarse readers (`edgeId` + `kind` only) vs authored-identity (`resolveAuthoredEdgeInstance` in the
+ * locations feature) — see `locationMapEdgeAuthoring.policy.md` next to the normalizer in that package.
  */
 export type LocationMapEdgeAuthoringEntry = {
   edgeId: string;
   kind: LocationMapEdgeKindId;
+  /** Registry family id (`door`, `window`, …) when persisted from the place tool or editor. */
+  authoredPlaceKindId?: string;
+  /** Family-scoped variant id when persisted. */
+  variantId?: string;
+  label?: string;
+  /** Typed instance overrides — discriminated; optional until edited. */
+  state?: LocationMapEdgeAuthoringState;
+  /** Door-only authored behavior (open/lock). Ignored when the row is not a door instance. */
+  doorState?: AuthoredDoorState;
 };
 
 /** Sparse map-level authored content split by primitive. */

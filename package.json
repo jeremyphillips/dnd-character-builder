@@ -22,6 +22,7 @@
     "audit:spells-willing": "tsx scripts/audit-spell-touch-willing.ts",
     "build:location-objects-manifest": "tsx scripts/location-objects-assets/generateLocationObjectsManifest.ts",
     "validate:location-objects-manifest": "tsx scripts/location-objects-assets/validateLocationObjectsManifest.ts",
+    "validate:location-objects": "npm run validate:location-objects-manifest && vitest run src/features/content/locations/domain/model/placedObjects/__tests__/locationObjectsRegistryManifest.crossReference.test.ts",
     "build:location-objects": "npm run build:location-objects-manifest && npm run validate:location-objects-manifest"
   },
   "dependencies": {

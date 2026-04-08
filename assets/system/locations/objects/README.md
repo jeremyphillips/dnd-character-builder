@@ -21,6 +21,7 @@
 | `npm run build:location-objects-manifest` | Regenerate `location-objects.manifest.json` from `*.png` files. |
 | `npm run validate:location-objects-manifest` | Assert manifest + `variantToAssetId.json` consistency. |
 | `npm run build:location-objects` | Generate then validate (runs on `npm run build`). |
+| `npm run validate:location-objects` | **Phase 7:** manifest + `variantToAssetId.json` validation **and** Vitest registry ↔ manifest cross-reference (all non-placeholder `assetId`s). Run in CI before merge. |
 
 After adding or replacing a PNG, run **`build:location-objects-manifest`** and commit the updated manifest (`contentSha256`, trim, and **`inputFingerprint`** change when bytes change).
 
@@ -40,4 +41,15 @@ After adding or replacing a PNG, run **`build:location-objects-manifest`** and c
 
 - **Footprint box** comes from Phase 3 registry **`footprint`** (feet) + grid **`cellUnit`** → pixel layout (`resolvePlacedObjectFootprintLayoutPx`).
 - **In-map raster** is drawn with **`object-fit: contain`** (`PLACED_OBJECT_MAP_SPRITE_OBJECT_FIT` in `placedObjectMapSprite.constants.ts`) inside that box so **art is never non-uniformly stretched**. If aspect ratios differ, letterboxing is expected—**do not** “fix” by stretching; add or swap PNGs and keep **one variant = one `assetId` + footprint** (e.g. 10×4 ft table uses `table_rect_wood_10x4`, not a scaled 5×3 asset).
-- **CI:** `locationObjectsTableRegistryManifest.crossReference.test.ts` asserts every **`table`** variant `assetId` (except the shared placeholder) has **`map`** + **`preview`** in `location-objects.manifest.json`.
+- **CI:** `locationObjectsRegistryManifest.crossReference.test.ts` asserts **every** family variant with a non-placeholder `assetId` resolves in the manifest with correct **cell** (`map` + `preview`) vs **edge** (`preview` only) roles.
+
+## Phase 7 (workflow hardening — no atlas required)
+
+- **Quality gate:** `npm run validate:location-objects` — runs `validateLocationObjectsManifest.ts` **and** the registry cross-reference test. Use locally after registry or PNG changes; wire the same command in CI.
+- **Build pipeline:** `npm run build` runs `build:location-objects` first so the committed manifest matches PNGs before `tsc` / Vite. **Vite** bundles PNGs with **content-hashed URLs** (`import.meta.glob` + `?url`); the JSON manifest’s **`contentSha256`** is for integrity and deterministic regeneration, not runtime atlas packing.
+- **Texture atlas:** optional future optimization; **single-file PNG workflow** remains the source of truth (see migration plan Phase 7).
+- **Artist checklist**
+  - **Naming:** drop files as `kebab-case.png` under this folder; **`assetId`** = snake_case stem (`fileStemToAssetId` in the generator).
+  - **Transparency:** export **32-bit PNG with alpha** where the map/tray should show the grid or cell fill through — opaque white in the file reads as white in-app.
+  - **Registry:** add or point **`assetId`** in `AUTHORED_PLACED_OBJECT_DEFINITIONS` (and **`variantToAssetId.json`** when using that map); run **`npm run validate:location-objects`** before PR.
+  - **Do not** hand-edit `location-objects.manifest.json`; regenerate with **`npm run build:location-objects-manifest`**.

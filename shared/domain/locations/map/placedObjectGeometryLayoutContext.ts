@@ -41,7 +41,8 @@ export function buildPlacedObjectGeometryLayoutContextFromAuthoring(args: {
 }
 
 /**
- * Encounter / tactical grid: fixed cell size, encounter `cellFeet`, no anchor offset; resolver uses gapPx 0 for anchor math.
+ * Encounter / tactical grid: `cellFeet` from the grid view model is **5** for supported grid spaces
+ * today; no anchor offset; resolver uses gapPx 0 for anchor math.
  */
 export function buildPlacedObjectGeometryLayoutContextFromEncounter(args: {
   cellFeet: number;

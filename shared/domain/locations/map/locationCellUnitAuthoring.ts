@@ -2,8 +2,9 @@ import { LOCATION_CELL_UNIT_IDS, type LocationCellUnitId } from './locationMap.c
 
 /**
  * Authoring-time resolution: **one cell edge** length in **feet** for the current map `grid.cellUnit`.
- * Used with {@link resolvePlacedObjectFootprintLayoutPx}. Combat uses `cellUnitToCombatCellFeet`
- * (`locationCellUnitCombat.ts`) — a different mapping; see `placed-objects-flow.md` (parity section).
+ * Used with {@link resolvePlacedObjectFootprintLayoutPx}. Encounter tactical uses a fixed
+ * **5 ft/cell** scale (`locationMapCombat.constants.ts`); `cellUnitToCombatCellFeet` only validates
+ * which authored `grid.cellUnit` values may convert — see `placed-objects-flow.md` (parity section).
  *
  * **Unsupported** `cellUnit` values (unknown strings, numeric legacy, `mile`-scale detail) return `unsupported`
  * so callers can fall back to fixed icon sizing instead of silent wrong scaling.

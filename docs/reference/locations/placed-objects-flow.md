@@ -103,18 +103,17 @@ The resolver is deterministic: **same** `PlacedObjectGeometryLayoutContext` → 
 
 | Concern | Workspace (authoring) | Encounter / combat |
 |--------|------------------------|---------------------|
-| **Feet per cell** | `resolveAuthoringCellUnitFeetPerCell` (`locationCellUnitAuthoring.ts`) — full `grid.cellUnit` table (e.g. `5ft` → 5, `25ft` → 25). | From location map: `cellUnitToCombatCellFeet` (`locationCellUnitCombat.ts`) → **only 5 or 10**, coarse heuristic for `EncounterSpace` / `grid.cellFeet`. |
+| **Feet per cell** | `resolveAuthoringCellUnitFeetPerCell` (`locationCellUnitAuthoring.ts`) — full `grid.cellUnit` table (e.g. `5ft` → 5, `25ft` → 25). | **Always** `ENCOUNTER_TACTICAL_CELL_FEET` (**5** ft/cell) on the tactical grid (`locationMapCombat.constants.ts`). `cellUnitToCombatCellFeet` only **validates** `grid.cellUnit` for encounter conversion (`5ft` / `25ft`); it does **not** vary tactical cell size. **10 ft tactical cells are not implemented** until product needs them. |
 | **`cellPx`** | Responsive `squareCellPx` / `squareGridGeometry.cellPx` (`useLocationAuthoringGridLayout`). | Fixed tactical size `BASE_CELL_SIZE` in `CombatGrid.tsx`. |
 
-**Examples (same `grid.cellUnit` string):**
+**Examples (same `grid.cellUnit` string on an encounter-grid map):**
 
-| `grid.cellUnit` | Authoring `feetPerCell` | Combat `cellFeet` |
-|-----------------|-------------------------|---------------------|
+| `grid.cellUnit` | Authoring `feetPerCell` (editor layout) | `grid.cellFeet` / placed-object context in combat |
+|-----------------|----------------------------------------|---------------------------------------------------|
 | `5ft` | 5 | 5 |
-| `25ft` | 25 | 10 |
-| `100ft` | 100 | 5 |
+| `25ft` | 25 | **5** (tactical scale is always 5 ft/cell) |
 
-**Caveat:** `cellUnitToCombatCellFeet` uses a substring check (`includes('25')`) for the 10 ft branch (e.g. `25ft`). Other units such as `100ft` fall through to **5** in combat while authoring may use **100** ft/cell. Treat combat feet as **mechanics-scale**, not a guarantee of pixel parity with the editor.
+**Unsupported for encounter conversion:** `grid.cellUnit` values not in `ENCOUNTER_MAP_CELL_UNITS_SUPPORTED` (e.g. `100ft`) **throw** when building encounter space from a map — they are not silently mapped to another tactical size.
 
 ---
 
@@ -171,7 +170,7 @@ Registry **footprint** (feet) maps to a pixel layout box via **`computePlacedObj
 | Render items | `shared/domain/locations/map/locationMapAuthoredObjectRender.helpers.ts` |
 | Resolve visual | `domain/presentation/map/resolvePlacedObjectCellVisual.ts`, `PlacedObjectCellVisualDisplay.tsx` |
 | Geometry context (factories) | `shared/domain/locations/map/placedObjectGeometryLayoutContext.ts` |
-| Combat feet from `grid.cellUnit` | `shared/domain/locations/map/locationCellUnitCombat.ts` |
+| Combat feet from `grid.cellUnit` | `locationCellUnitCombat.ts`, `locationMapCombat.constants.ts` |
 | Authoring vs combat feet parity tests | `shared/domain/locations/map/__tests__/locationCellUnitCombat.parity.test.ts` |
 | Resolver geometry tests | `domain/presentation/map/__tests__/resolvePlacedObjectCellVisual.geometry.test.ts` |
 | Editor overlay | `components/mapGrid/LocationMapCellAuthoringOverlay.tsx` |

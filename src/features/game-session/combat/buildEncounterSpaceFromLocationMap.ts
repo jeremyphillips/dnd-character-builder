@@ -85,12 +85,13 @@ export function buildEncounterSpaceFromLocationMap(
   const { mapHostLocationId, map } = opts
   const { width: columns, height: rows, cellUnit } = map.grid
 
+  void cellUnitToCombatCellFeet(cellUnit)
+
   const base = createSquareGridSpace({
     id: map.id,
     name: map.name,
     columns,
     rows,
-    cellFeet: cellUnitToCombatCellFeet(cellUnit),
     locationId: mapHostLocationId,
   })
 

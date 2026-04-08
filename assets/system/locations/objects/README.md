@@ -12,7 +12,7 @@
 ## Author mapping
 
 - [`variantToAssetId.json`](variantToAssetId.json) maps **registry family** `{family}.{variant}` → **`assetId`** or `null` when art is not yet available.
-- **Unregistered** manifest ids (e.g. `table_rect_wood_10x4` for a future registry variant) are listed under `unregisteredAssetIds` so validation keeps them accounted for.
+- **`unregisteredAssetIds`:** optional list of manifest **`assetId`** keys not yet tied to a registry variant (keep empty when everything is mapped).
 
 ## Commands
 
@@ -35,3 +35,9 @@ After adding or replacing a PNG, run **`build:location-objects-manifest`** and c
 - **Registry** (`AUTHORED_PLACED_OBJECT_DEFINITIONS`) uses **`assetId`** per variant (no `iconName`).
 - **Runtime resolution:** `src/features/content/locations/domain/model/placedObjects/locationPlacedObjectRasterAssets.ts` — Vite `import.meta.glob` of `*.png` + manifest for preview/map URLs.
 - **Place palette / tray:** `previewImageUrl` on palette items; **in-map cell objects:** `<img>` via `resolvePlacedObjectCellVisual` + `PlacedObjectCellVisualDisplay`. **Edge** doors/windows still draw as vector segments on the map; tray uses preview PNGs only.
+
+## Phase 4 (table pilot — sprite fit)
+
+- **Footprint box** comes from Phase 3 registry **`footprint`** (feet) + grid **`cellUnit`** → pixel layout (`resolvePlacedObjectFootprintLayoutPx`).
+- **In-map raster** is drawn with **`object-fit: contain`** (`PLACED_OBJECT_MAP_SPRITE_OBJECT_FIT` in `placedObjectMapSprite.constants.ts`) inside that box so **art is never non-uniformly stretched**. If aspect ratios differ, letterboxing is expected—**do not** “fix” by stretching; add or swap PNGs and keep **one variant = one `assetId` + footprint** (e.g. 10×4 ft table uses `table_rect_wood_10x4`, not a scaled 5×3 asset).
+- **CI:** `locationObjectsTableRegistryManifest.crossReference.test.ts` asserts every **`table`** variant `assetId` (except the shared placeholder) has **`map`** + **`preview`** in `location-objects.manifest.json`.

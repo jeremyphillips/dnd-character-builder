@@ -60,7 +60,7 @@ describe('locationMapEditorPalette.helpers', () => {
     const table = floor.find((i) => i.kind === 'table');
     expect(table?.category).toBe('map-object');
     if (table?.category === 'map-object') {
-      expect(table.variantCount).toBe(2);
+      expect(table.variantCount).toBe(3);
       expect(table.defaultVariantId).toBe('rect_wood');
     }
   });

@@ -302,6 +302,17 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
           shape: 'rectangle',
         },
       },
+      /** 10×4 ft variant — distinct `assetId` + footprint (Phase 4); do not stretch the 5×3 art. */
+      rect_wood_10x4: {
+        label: 'Large Table',
+        description: 'Rectangular wood table (10×4 ft).',
+        assetId: 'table_rect_wood_10x4',
+        footprint: { kind: 'rect', widthFt: 10, depthFt: 4 },
+        presentation: {
+          material: 'wood',
+          shape: 'rectangle',
+        },
+      },
       circle_wood: {
         label: 'Round Table (wood)',
         description: 'Round wood table.',

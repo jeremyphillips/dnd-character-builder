@@ -58,4 +58,21 @@ describe('resolvePlacedObjectCellVisualFromRenderItem', () => {
     expect(v.layoutWidthPx).toBeCloseTo(50);
     expect(v.layoutHeightPx).toBeCloseTo(30);
   });
+
+  it('uses distinct footprint for large table variant (Phase 4)', () => {
+    const v = resolvePlacedObjectCellVisualFromRenderItem(
+      {
+        id: '1',
+        authorCellId: '0,0',
+        combatCellId: 'c-0-0',
+        kind: 'table',
+        authoredPlaceKindId: 'table',
+        variantId: 'rect_wood_10x4',
+      },
+      { feetPerCell: 5, cellPx: 50 },
+    );
+    // 10×4 ft spans two cells wide — uniform scale clamps to cellPx; differs from 5×3 rect (50×30).
+    expect(v.layoutWidthPx).toBeCloseTo(50);
+    expect(v.layoutHeightPx).toBeCloseTo(20);
+  });
 });

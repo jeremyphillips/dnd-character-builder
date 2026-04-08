@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import type { LocationMapUiResolvedStyles } from './locationMapUiStyles';
+import { PLACED_OBJECT_MAP_SPRITE_OBJECT_FIT } from './placedObjectMapSprite.constants';
 import type { PlacedObjectCellVisual } from './resolvePlacedObjectCellVisual';
 
 export type PlacedObjectCellVisualDisplayProps = {
@@ -27,7 +28,7 @@ export function PlacedObjectCellVisualDisplay({ visual, variant, mapUi }: Placed
         sx={{
           width: w,
           height: h,
-          objectFit: 'contain',
+          objectFit: PLACED_OBJECT_MAP_SPRITE_OBJECT_FIT,
           display: st.icon.display,
           userSelect: 'none',
           pointerEvents: 'none',

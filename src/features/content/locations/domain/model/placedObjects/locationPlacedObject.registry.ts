@@ -264,6 +264,8 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         label: 'Tree',
         description: 'Broad-canopy deciduous tree.',
         assetId: 'placeholder_no_art',
+        /** Phase 6: canonical canopy span in feet until dedicated vegetation art lands. */
+        footprint: { kind: 'circle', diameterFt: 12 },
         presentation: {
           type: 'deciduous',
           size: 'medium',
@@ -273,6 +275,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         label: 'Pine Tree',
         description: 'Conifer or pine-like tree.',
         assetId: 'placeholder_no_art',
+        footprint: { kind: 'circle', diameterFt: 10 },
         presentation: {
           type: 'conifer',
           size: 'medium',
@@ -344,6 +347,8 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         label: 'Stairs',
         description: 'Straight stair run for vertical circulation between levels.',
         assetId: 'stairs_straight',
+        /** Phase 6: long run along one axis; layout clamps to cell / overlaps neighbors visually (not tactical multi-cell). */
+        footprint: { kind: 'rect', widthFt: 4, depthFt: 8 },
         presentation: {
           form: 'straight',
         },
@@ -352,6 +357,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         label: 'Spiral Stairs',
         description: 'Compact spiral stair for vertical circulation between levels.',
         assetId: 'stairs_spiral',
+        footprint: { kind: 'circle', diameterFt: 6 },
         presentation: {
           form: 'spiral',
         },
@@ -374,6 +380,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         label: 'Treasure Chest',
         description: 'Chest, coffer, or locked loot container.',
         assetId: 'treasure_chest',
+        footprint: { kind: 'rect', widthFt: 3, depthFt: 2 },
         presentation: {
           form: 'chest',
         },

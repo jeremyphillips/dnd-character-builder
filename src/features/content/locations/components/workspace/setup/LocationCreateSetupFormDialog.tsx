@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import type { UseFormReturn } from 'react-hook-form';
@@ -12,18 +12,28 @@ import {
   shouldShowCellUnitChoiceInLocationSetup,
   shouldShowParentFieldForScale,
 } from '@/features/content/locations/domain';
+import { getAllowedLocationBuildingPrimarySubtypesForType } from '@/features/content/locations/domain/model/building/locationBuilding.policy';
+import {
+  LOCATION_BUILDING_FUNCTION_META,
+  LOCATION_BUILDING_PRIMARY_SUBTYPE_META,
+  LOCATION_BUILDING_PRIMARY_TYPE_META,
+} from '@/features/content/locations/domain/model/building/locationBuilding.meta';
 import type { LocationCreateSetupDraft } from '@/features/content/locations/domain/forms/setup/locationCreateSetupForm';
 import {
   getAllowedCategoryOptionsForScale,
   getAllowedCellUnitOptionsForScale,
   getDefaultCellUnitForScalePolicy,
+  LOCATION_BUILDING_FUNCTION_IDS,
+  LOCATION_BUILDING_PRIMARY_TYPE_IDS,
   normalizeCategoryForScale,
   normalizeGridCellUnitForScale,
+  type LocationBuildingInteriorBootstrapPresetId,
 } from '@/shared/domain/locations';
 import type { GridSizePreset } from '@/shared/domain/grid/gridPresets';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import { AppModal } from '@/ui/patterns';
-import { AppForm, FormSelectField, FormTextField } from '@/ui/patterns/form';
+import { AppForm, FormCheckboxField, FormSelectField, FormTextField } from '@/ui/patterns/form';
+import FormOptionPickerField from '@/ui/patterns/form/FormOptionPickerField';
 
 const FORM_ID = 'location-create-setup-form';
 
@@ -37,6 +47,25 @@ const PRESET_MENU: { value: GridSizePreset; label: string }[] = (
   label: `${key} (${v.columns}×${v.rows})`,
 }));
 
+const BUILDING_TYPE_OPTIONS = LOCATION_BUILDING_PRIMARY_TYPE_IDS.map((id) => ({
+  value: id,
+  label: LOCATION_BUILDING_PRIMARY_TYPE_META[id].label,
+}));
+
+const BUILDING_FUNCTION_OPTIONS = LOCATION_BUILDING_FUNCTION_IDS.map((id) => ({
+  value: id,
+  label: LOCATION_BUILDING_FUNCTION_META[id].label,
+}));
+
+const INTERIOR_PRESET_MENU: {
+  value: LocationBuildingInteriorBootstrapPresetId;
+  label: string;
+}[] = [
+  { value: 'compact', label: 'Compact interior' },
+  { value: 'standard', label: 'Standard interior' },
+  { value: 'large', label: 'Large interior' },
+];
+
 function emptyDraft(): LocationCreateSetupDraft {
   return {
     name: '',
@@ -45,6 +74,11 @@ function emptyDraft(): LocationCreateSetupDraft {
     category: '',
     gridCellUnit: '',
     gridPresetKey: 'medium',
+    buildingPrimaryType: '',
+    buildingPrimarySubtype: '',
+    buildingFunctions: [],
+    buildingIsPublicStorefront: false,
+    interiorPresetKey: 'standard',
   };
 }
 
@@ -65,12 +99,29 @@ function draftAfterScaleChange(
     gridCellUnit = getDefaultCellUnitForScalePolicy(nextScale);
   }
 
-  return {
+  const base: LocationCreateSetupDraft = {
     ...prev,
     scale: nextScale,
     parentId: '',
     category,
     gridCellUnit,
+  };
+
+  if (nextScale !== 'building') {
+    return {
+      ...base,
+      buildingPrimaryType: '',
+      buildingPrimarySubtype: '',
+      buildingFunctions: [],
+      buildingIsPublicStorefront: false,
+      interiorPresetKey: undefined,
+    };
+  }
+
+  return {
+    ...base,
+    interiorPresetKey: prev.interiorPresetKey ?? 'standard',
+    buildingFunctions: prev.buildingFunctions ?? [],
   };
 }
 
@@ -106,6 +157,15 @@ function LocationCreateSetupFormFields({
 }: SetupFormFieldsProps) {
   const { reset, setValue, getValues, watch } = methods;
   const scale = watch('scale');
+  const buildingPrimaryType = watch('buildingPrimaryType');
+
+  const buildingSubtypeOptions = useMemo(() => {
+    if (!buildingPrimaryType) return [];
+    return getAllowedLocationBuildingPrimarySubtypesForType(buildingPrimaryType).map((id) => ({
+      value: id,
+      label: LOCATION_BUILDING_PRIMARY_SUBTYPE_META[id].label,
+    }));
+  }, [buildingPrimaryType]);
 
   useEffect(() => {
     if (!open) {
@@ -154,6 +214,13 @@ function LocationCreateSetupFormFields({
       setValue('parentId', next.parentId, { shouldDirty: true });
       setValue('category', next.category, { shouldDirty: true });
       setValue('gridCellUnit', next.gridCellUnit, { shouldDirty: true });
+      setValue('buildingPrimaryType', next.buildingPrimaryType ?? '', { shouldDirty: true });
+      setValue('buildingPrimarySubtype', next.buildingPrimarySubtype ?? '', { shouldDirty: true });
+      setValue('buildingFunctions', next.buildingFunctions ?? [], { shouldDirty: true });
+      setValue('buildingIsPublicStorefront', next.buildingIsPublicStorefront ?? false, {
+        shouldDirty: true,
+      });
+      setValue('interiorPresetKey', next.interiorPresetKey ?? 'standard', { shouldDirty: true });
     },
     [getValues, setValue],
   );
@@ -202,13 +269,64 @@ function LocationCreateSetupFormFields({
         />
       )}
 
-      <FormSelectField
-        name="gridPresetKey"
-        label="Grid size"
-        options={PRESET_MENU}
-        required
-        disabled={formDisabled}
-      />
+      {scale === 'building' ? (
+        <>
+          <FormSelectField
+            name="buildingPrimaryType"
+            label="Building type"
+            options={BUILDING_TYPE_OPTIONS}
+            placeholder="Select type"
+            required
+            disabled={formDisabled}
+          />
+          {buildingPrimaryType ? (
+            <FormSelectField
+              name="buildingPrimarySubtype"
+              label="Building subtype"
+              options={buildingSubtypeOptions}
+              placeholder="Optional"
+              disabled={formDisabled || buildingSubtypeOptions.length === 0}
+            />
+          ) : null}
+          <FormOptionPickerField
+            name="buildingFunctions"
+            label="Additional functions"
+            options={BUILDING_FUNCTION_OPTIONS}
+            valueMode="array"
+            renderSelectedAs="chip"
+            placeholder="Add functions…"
+            disabled={formDisabled}
+            helperText="Optional. Mixed-use roles such as trade, lodging, or worship."
+          />
+          <FormCheckboxField
+            name="buildingIsPublicStorefront"
+            label="Open to the public"
+            disabled={formDisabled}
+            helperText="Shops, temples, guild halls, inns, and similar when visitors are welcome."
+          />
+          <FormSelectField
+            name="interiorPresetKey"
+            label="Interior layout"
+            options={INTERIOR_PRESET_MENU}
+            required
+            disabled={formDisabled}
+          />
+          <Typography variant="caption" color="text.secondary" display="block">
+            Sets the first interior map grid size. City placement and building markers are chosen later on the
+            city map.
+          </Typography>
+        </>
+      ) : null}
+
+      {scale && scale !== 'building' ? (
+        <FormSelectField
+          name="gridPresetKey"
+          label="Grid size"
+          options={PRESET_MENU}
+          required
+          disabled={formDisabled}
+        />
+      ) : null}
 
       <Box>
         <Typography variant="caption" color="text.secondary" display="block">
@@ -232,6 +350,8 @@ export function LocationCreateSetupFormDialog({
   onCancel,
   onComplete,
 }: LocationCreateSetupFormDialogProps) {
+  const [localValidationError, setLocalValidationError] = useState<string | null>(null);
+
   const scaleOptions = useMemo(
     () => getAllowedLocationScaleOptionsForCreate(campaignHasWorldLocation),
     [campaignHasWorldLocation],
@@ -247,17 +367,33 @@ export function LocationCreateSetupFormDialog({
 
   const handleFormSubmit = useCallback(
     async (data: LocationCreateSetupDraft) => {
+      setLocalValidationError(null);
+      if (data.scale === 'building') {
+        if (!data.buildingPrimaryType?.trim()) {
+          setLocalValidationError('Please select a building type.');
+          return;
+        }
+        if (!data.interiorPresetKey) {
+          setLocalValidationError('Please select an interior layout.');
+          return;
+        }
+      }
       const normalized: LocationCreateSetupDraft = {
         ...data,
         name: data.name.trim(),
         category: normalizeCategoryForScale(data.category, data.scale),
         gridCellUnit: normalizeGridCellUnitForScale(data.gridCellUnit, data.scale),
         parentId: data.parentId.trim(),
+        buildingPrimaryType: data.buildingPrimaryType?.trim(),
+        buildingPrimarySubtype: data.buildingPrimarySubtype?.trim(),
+        buildingFunctions: data.buildingFunctions ?? [],
       };
       await onComplete(normalized);
     },
     [onComplete],
   );
+
+  const combinedError = submitError ?? localValidationError;
 
   const requestSubmit = useCallback(() => {
     (document.getElementById(FORM_ID) as HTMLFormElement)?.requestSubmit();
@@ -268,7 +404,7 @@ export function LocationCreateSetupFormDialog({
       open={open}
       onClose={onCancel}
       headline="Set up location"
-      subheadline="Choose the initial name, scale, optional parent, and grid size. Continue creates the location and takes you to the editor."
+      subheadline="Choose name, scale, optional parent, and grid or building details. Continue creates the location and takes you to the editor."
       description={
         locationsLoading
           ? undefined
@@ -281,8 +417,8 @@ export function LocationCreateSetupFormDialog({
       size="standard"
       footerNote={footerNote}
       alert={
-        submitError
-          ? { severity: 'error', message: submitError }
+        combinedError
+          ? { severity: 'error', message: combinedError }
           : undefined
       }
       secondaryAction={{

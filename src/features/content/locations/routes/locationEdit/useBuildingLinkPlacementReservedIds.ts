@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Location } from '@/features/content/locations/domain/model/location';
 import {
   collectBuildingLocationIdsLinkedElsewhere,
+  collectBuildingLocationIdsLinkedOnMaps,
   isLocationMapHostScaleForBuildingLink,
 } from '@/features/content/locations/domain/authoring/editor/buildingLinkPlacement';
 import { listLocationMaps } from '@/features/content/locations/domain/repo/locationMapRepo';
@@ -19,7 +20,7 @@ type Args = {
 
 /**
  * Loads maps for all city/site campaign locations and returns building ids already linked on another cell,
- * excluding `(currentMap for mapHostLocationId, currentCellId)`.
+ * excluding `(currentMap for mapHostLocationId, currentCellId)`, plus index sets for linkage UX.
  */
 export function useBuildingLinkPlacementReservedIds({
   campaignId,
@@ -28,8 +29,21 @@ export function useBuildingLinkPlacementReservedIds({
   mapHostScale,
   currentCellId,
   enabled,
-}: Args): { reservedBuildingIds: Set<string>; isLoading: boolean } {
+}: Args): {
+  reservedBuildingIds: Set<string>;
+  /** Building ids linked on any cell of maps for `mapHostLocationId` */
+  linkedOnCurrentHostBuildingIds: Set<string>;
+  /** Building ids linked on any city/site map cell in the campaign */
+  linkedAnywhereBuildingIds: Set<string>;
+  isLoading: boolean;
+} {
   const [reservedBuildingIds, setReservedBuildingIds] = useState<Set<string>>(new Set());
+  const [linkedOnCurrentHostBuildingIds, setLinkedOnCurrentHostBuildingIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [linkedAnywhereBuildingIds, setLinkedAnywhereBuildingIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const campaignLocations = useMemo(
@@ -58,6 +72,8 @@ export function useBuildingLinkPlacementReservedIds({
       !currentCellId.trim()
     ) {
       setReservedBuildingIds(new Set());
+      setLinkedOnCurrentHostBuildingIds(new Set());
+      setLinkedAnywhereBuildingIds(new Set());
       setIsLoading(false);
       return;
     }
@@ -72,6 +88,13 @@ export function useBuildingLinkPlacementReservedIds({
         );
         if (cancelled) return;
         const allMaps = mapLists.flat();
+        setLinkedAnywhereBuildingIds(collectBuildingLocationIdsLinkedOnMaps(allMaps, locationsById));
+
+        const hostIdx = mapHostIdsToScan.indexOf(mapHostLocationId);
+        const hostMaps = hostIdx >= 0 ? mapLists[hostIdx] ?? [] : [];
+        setLinkedOnCurrentHostBuildingIds(
+          collectBuildingLocationIdsLinkedOnMaps(hostMaps, locationsById),
+        );
 
         const currentMaps = await listLocationMaps(campaignId, mapHostLocationId);
         if (cancelled) return;
@@ -106,5 +129,10 @@ export function useBuildingLinkPlacementReservedIds({
     locationsById,
   ]);
 
-  return { reservedBuildingIds, isLoading };
+  return {
+    reservedBuildingIds,
+    linkedOnCurrentHostBuildingIds,
+    linkedAnywhereBuildingIds,
+    isLoading,
+  };
 }

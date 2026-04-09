@@ -82,6 +82,12 @@ export const LOCATION_BUILDING_FUNCTION_IDS = [
 export type LocationBuildingFunctionId = (typeof LOCATION_BUILDING_FUNCTION_IDS)[number];
 
 /**
+ * Create-time interior bootstrap only (drives first-floor grid sizing). Not persisted on `buildingStructure`
+ * until server merge can preserve `verticalConnections`.
+ */
+export type LocationBuildingInteriorBootstrapPresetId = 'compact' | 'standard' | 'large';
+
+/**
  * Identity / function — persisted under `buildingMeta`.
  * Does not include interior topology (stairs, etc.).
  */

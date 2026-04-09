@@ -20,7 +20,12 @@ import {
 import { buildLinkedLocationPickerOptions } from '@/features/content/locations/domain/authoring/editor';
 import { getDefaultVariantPresentationForKind } from '@/features/content/locations/domain/model/placedObjects/locationPlacedObject.types';
 
-import { deriveLocationMapStairEndpointLinkStatus, resolveStairEndpointPairing } from '@/shared/domain/locations';
+import {
+  deriveBuildingCityLinkStatusForPicker,
+  deriveLocationMapStairEndpointLinkStatus,
+  resolveStairEndpointPairing,
+  sortBuildingPickerOptionsByLinkStatus,
+} from '@/shared/domain/locations';
 
 import type { LocationCellObjectDraft } from '../../../../../authoring/draft/locationGridDraft.types';
 
@@ -109,34 +114,60 @@ export function LocationMapObjectInspector({
   const buildingLinkPrefetchEnabled =
     linkedScaleTarget === 'building' && Boolean(campaignId);
 
-  const { reservedBuildingIds, isLoading: buildingLinkPlacementLoading } =
-    useBuildingLinkPlacementReservedIds({
-      campaignId,
-      locations,
-      mapHostLocationId,
-      mapHostScale,
-      currentCellId: cellId,
-      enabled: buildingLinkPrefetchEnabled,
-    });
+  const {
+    reservedBuildingIds,
+    linkedOnCurrentHostBuildingIds,
+    linkedAnywhereBuildingIds,
+    isLoading: buildingLinkPlacementLoading,
+  } = useBuildingLinkPlacementReservedIds({
+    campaignId,
+    locations,
+    mapHostLocationId,
+    mapHostScale,
+    currentCellId: cellId,
+    enabled: buildingLinkPrefetchEnabled,
+  });
 
   const linkedPickerOptions = useMemo(() => {
     if (linkedScaleTarget !== 'building') return baseLinkedPickerOptions;
-    return baseLinkedPickerOptions.map((o) => {
-      const disabled =
-        reservedBuildingIds.has(o.value) && o.value !== linkedLocationId?.trim();
-      return {
-        ...o,
-        disabled: disabled || o.disabled,
-        description:
-          disabled && !o.description
-            ? 'Already linked on another map cell'
-            : o.description,
-      };
+    const hostId = mapHostLocationId.trim();
+    const cur = linkedLocationId?.trim();
+    const statusById = new Map<
+      string,
+      ReturnType<typeof deriveBuildingCityLinkStatusForPicker>
+    >();
+    const rows = baseLinkedPickerOptions.map((o) => {
+      const b = locationById.get(o.value);
+      const reservedElsewhere =
+        reservedBuildingIds.has(o.value) && o.value !== cur;
+      if (!b) {
+        return { ...o, disabled: Boolean(o.disabled) };
+      }
+      const st = deriveBuildingCityLinkStatusForPicker({
+        cityHostLocationId: hostId,
+        building: b,
+        reservedForAnotherCell: reservedElsewhere,
+        linkedOnThisCityHost: linkedOnCurrentHostBuildingIds,
+        linkedAnywhereInCampaign: linkedAnywhereBuildingIds,
+        isCurrentCellSelection: cur === o.value,
+      });
+      statusById.set(o.value, st);
+      const disabled = !st.selectable || o.disabled;
+      const description =
+        st.status !== 'ready' && st.status !== 'linkedHere'
+          ? st.message ?? st.label
+          : o.description;
+      return { ...o, disabled, description };
     });
+    return sortBuildingPickerOptionsByLinkStatus(rows, statusById);
   }, [
     baseLinkedPickerOptions,
     linkedScaleTarget,
+    locationById,
+    mapHostLocationId,
     reservedBuildingIds,
+    linkedOnCurrentHostBuildingIds,
+    linkedAnywhereBuildingIds,
     linkedLocationId,
   ]);
 

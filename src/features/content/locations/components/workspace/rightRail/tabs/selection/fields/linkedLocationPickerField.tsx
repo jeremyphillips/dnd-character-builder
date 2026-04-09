@@ -1,9 +1,14 @@
+import { useMemo } from 'react';
+
 import OptionPickerField from '@/ui/patterns/form/OptionPickerField';
 import type { PickerOption } from '@/ui/patterns/form/OptionPickerField';
 
 import type { LocationScaleId } from '@/shared/domain/locations';
 
-import { linkedTargetPickerFieldLabel } from './linkedLocationPickerFieldLabel';
+import {
+  editLinkLabelForLinkedScale,
+  linkedTargetPickerFieldLabel,
+} from './linkedLocationPickerFieldLabel';
 
 export type LinkedLocationPickerFieldProps = {
   linkedScale: LocationScaleId;
@@ -34,10 +39,33 @@ export function LinkedLocationPickerField({
         ? 'No locations match this link type for the current map.'
         : undefined);
 
+  const optionsWithEditLinks: PickerOption[] = useMemo(() => {
+    if (!campaignId?.trim() || hostEditLocationSource !== 'campaign') return options;
+    const linkLabel = editLinkLabelForLinkedScale(linkedScale);
+    const cid = campaignId.trim();
+    const hrefFor = (locationId: string) =>
+      `/campaigns/${encodeURIComponent(cid)}/world/locations/${encodeURIComponent(locationId)}/edit`;
+    const base = options.map((o) => ({
+      ...o,
+      link: hrefFor(o.value),
+      linkLabel,
+    }));
+    const vid = value?.trim();
+    if (vid && !base.some((o) => o.value === vid)) {
+      base.push({
+        value: vid,
+        label: vid,
+        link: hrefFor(vid),
+        linkLabel,
+      });
+    }
+    return base;
+  }, [options, campaignId, hostEditLocationSource, linkedScale, value]);
+
   return (
     <OptionPickerField
       label={linkedTargetPickerFieldLabel(linkedScale)}
-      options={options}
+      options={optionsWithEditLinks}
       value={value ? [value] : []}
       onChange={(next) => {
         onChange(next[0]);

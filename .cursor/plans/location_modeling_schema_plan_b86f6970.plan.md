@@ -1,6 +1,6 @@
 ---
 name: Location modeling schema plan
-overview: Modeling-first plan separating building identity (buildingMeta), urban placement (city map–authoritative), and interior topology (buildingStructure), with a single city↔building link invariant, a manual migration script deliverable, explicit compatibility-removal exit gate, and reference documentation—implementation deferred until execution.
+overview: Modeling-first plan separating building identity (buildingMeta), urban placement (city map–authoritative), and interior topology (buildingStructure). Phases through compatibility-removal and reference docs are done; **next:** placement backpointer (§16), then street transitions.
 todos:
   - id: split-types
     content: Split shared types — building identity vs buildingStructure; remove stairConnections from profile type
@@ -9,7 +9,7 @@ todos:
     content: "CampaignLocation — explicit buildingMeta + buildingStructure subdocs; remove buildingProfile Mixed end state"
     status: completed
   - id: placement-backpointer
-    content: "City map cellEntries — placementId + authoritative placement fields; building cityPlacementRef denormalized only"
+    content: "placementId on map cellEntries; cityLocationId + cityPlacementRef on building; server sync + migration backfill (see §16)"
     status: pending
   - id: single-link-invariant
     content: Enforce one building↔one city placement in server validation, editor save, and migration verification
@@ -24,7 +24,7 @@ todos:
     content: Add docs/reference/locations/location-map-schema-relations.md per Docs recommendation
     status: completed
   - id: street-transitions
-    content: Building↔street via CampaignLocationTransition; optional buildingStructure.entrances
+    content: "Building↔street via CampaignLocationTransition; optional buildingStructure.entrances — after placement backpointer (see §16)"
     status: pending
 isProject: false
 ---
@@ -313,6 +313,42 @@ See **§9**. **Create** [`docs/reference/locations/location-map-schema-relations
 ### Migration script requirements
 
 See **§13**. Includes **dry-run / apply**, **duplicate detection**, **backfill**, **stair migration**, **verification output**, **backup**.
+
+---
+
+## 16. Build continuation (next execution)
+
+**Current codebase snapshot:** `CampaignLocation` has **`buildingMeta`** / **`buildingStructure`** (no `cityLocationId` / `cityPlacementRef` yet). `CampaignLocationMap` **`cellEntries`** use **`cellId` + `linkedLocationId`** (no **`placementId`** yet). Single-link validation exists in the map service; the editor prefetches “already linked” buildings on city/site maps (UX only; server remains authoritative — see `docs/reference/locations/location-map-schema-relations.md`).
+
+**Shipped vs still open (YAML todos):**
+
+| Todo | Status |
+|------|--------|
+| `placement-backpointer` | **Pending** — not in DB/types yet |
+| `street-transitions` | **Pending** — defer until placement ids/refs exist |
+
+**§13 script note:** `scripts/migrateLocationBuildingProfile.ts` migrates **legacy `buildingProfile` → `buildingMeta`/`buildingStructure`** and reports duplicate building links; it does **not** backfill **`placementId`** or **`cityPlacementRef`**. Treat **placement backfill** as a **separate** migration (or extend the script in a follow-on PR) once schema + write paths exist.
+
+### Phase A — Placement backpointer (do first)
+
+Ordered checklist:
+
+1. **Shared + Mongoose:** Add **`placementId`** (string uuid) to **`mapCellAuthoringEntry`** / `cellEntries` rows; add **`cityLocationId`** and **`cityPlacementRef`: `{ mapId, placementId }`** on **building** `CampaignLocation` (optional **`cachedCellId`** if you adopt cache-only-on-server rules from §5–6).
+2. **Authoring client:** Generate or preserve **`placementId`** when creating a placement row; thread through grid draft → save payload.
+3. **Server map save:** On create/update of a cell entry that links a building: ensure **`placementId`** exists; **upsert** building **`cityLocationId`** + **`cityPlacementRef`** from the authoritative map row; clear stale refs when link removed or building moved (same transaction / ordering as existing invariant validation).
+4. **Server building save:** Reject or ignore client attempts to edit placement fields outside allowlist; optionally recompute denormalized fields from resolved map.
+5. **Migration:** New or extended **`--dry-run` / `--apply`** pass: backfill **`placementId`** on existing rows; set **`cityPlacementRef`** / **`cityLocationId`** per §13; verify counts and duplicates per §11.
+6. **Docs:** Extend **`location-map-schema-relations.md`** with concrete field names once stored.
+
+### Phase B — Street transitions (after Phase A)
+
+1. **Product/API:** Define how **building ↔ street** (or **site ↔ street**) edges are authored — **`CampaignLocationTransition`** rows with `fromMapId` + `fromCellId` → target location/map (align with existing transition model).
+2. **Optional:** **`buildingStructure.entrances`** — stable ids/refs to transition rows for authoring and combat routing.
+3. **Editor:** Surface transition authoring where it fits the location workspace (may depend on map/rail plans already in `.cursor/plans/`).
+
+### Dependency rule
+
+Do **not** implement **Phase B** until **placementId + cityPlacementRef** are persisted and migration story is clear; otherwise street ingress may reference brittle **cellId-only** joins.
 
 ---
 

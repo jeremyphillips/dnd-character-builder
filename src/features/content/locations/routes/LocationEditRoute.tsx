@@ -19,6 +19,7 @@ import {
   LocationEditorMapCanvasColumn,
   LocationAncestryBreadcrumbs,
 } from '@/features/content/locations/components';
+import { CityBuildingLinkagePanel } from '@/features/content/locations/components/workspace/rightRail/tabs/location/CityBuildingLinkagePanel';
 
 import {
   floorTabLabelFromIndex,
@@ -27,6 +28,7 @@ import {
 } from '@/features/content/locations/domain/model/building/buildingWorkspaceFloors';
 
 import { LocationEditWorkspaceSelectionRailPanel } from './locationEdit/locationEditWorkspaceRailPanels';
+import { useCityWorkspaceBuildingLinkage } from './locationEdit/useCityWorkspaceBuildingLinkage';
 import { useLocationEditWorkspaceModel } from './locationEdit';
 
 const FORM_ID = 'location-edit-form';
@@ -101,6 +103,13 @@ export default function LocationEditRoute() {
     loc: loc ?? null,
   });
 
+  const cityLinkage = useCityWorkspaceBuildingLinkage({
+    campaignId: campaignId ?? undefined,
+    cityLocationId: locationId,
+    locations: model.locations,
+    enabled: Boolean(loc?.scale === 'city' && campaignId && locationId),
+  });
+
   const {
     flushDebouncedPersistableFieldsRef,
     handleHomebrewFormSaveClick,
@@ -131,6 +140,16 @@ export default function LocationEditRoute() {
   if (error || notFound || !loc) {
     return <AppAlert tone="danger">{error ?? 'Location not found.'}</AppAlert>;
   }
+
+  const cityLinkagePanel =
+    loc.scale === 'city' ? (
+      <CityBuildingLinkagePanel
+        loading={cityLinkage.loading}
+        rows={cityLinkage.rows}
+        warningSummaries={cityLinkage.warningSummaries}
+        hasAnyBuildingChild={cityLinkage.hasAnyBuildingChild}
+      />
+    ) : null;
 
   const {
     methods,
@@ -435,6 +454,7 @@ export default function LocationEditRoute() {
           />
         ) : null
       }
+      cityLinkagePanel={cityLinkagePanel}
       selectionPanel={selectionPanel}
       deleteConfirm={{
         open: deleteConfirmOpen,

@@ -47,6 +47,8 @@ export type LocationEditHomebrewWorkspaceProps = {
   showFloorRailHint: boolean;
   floorRailHintLabel?: string | null;
   policyPanel: ReactNode | null;
+  /** When editing a city, linkage health for child buildings (Location tab). */
+  cityLinkagePanel?: ReactNode | null;
   selectionPanel: ReactNode;
   deleteConfirm: {
     open: boolean;
@@ -84,6 +86,7 @@ export function LocationEditHomebrewWorkspace({
   showFloorRailHint,
   floorRailHintLabel,
   policyPanel,
+  cityLinkagePanel,
   selectionPanel,
   deleteConfirm,
 }: LocationEditHomebrewWorkspaceProps) {
@@ -165,6 +168,7 @@ export function LocationEditHomebrewWorkspace({
                   showFloorRailHint={showFloorRailHint}
                   floorRailHintLabel={floorRailHintLabel}
                   policyPanel={policyPanel}
+                  cityLinkagePanel={cityLinkagePanel}
                 />
               }
               selectionPanel={selectionPanel}

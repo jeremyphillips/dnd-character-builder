@@ -36,3 +36,21 @@ export function collectBuildingLocationIdsLinkedElsewhere(
   }
   return taken;
 }
+
+/** Building ids linked on any cell in `maps` (only counts targets whose `Location.scale === 'building'`). */
+export function collectBuildingLocationIdsLinkedOnMaps(
+  maps: Array<Pick<LocationMapBase, 'cellEntries'>>,
+  locationsById: Map<string, Location>,
+): Set<string> {
+  const out = new Set<string>();
+  for (const m of maps) {
+    for (const row of m.cellEntries ?? []) {
+      const lid = row.linkedLocationId?.trim();
+      if (!lid) continue;
+      const loc = locationsById.get(lid);
+      if (!loc || loc.scale !== 'building') continue;
+      out.add(lid);
+    }
+  }
+  return out;
+}

@@ -11,6 +11,9 @@ import { resolvePlacedObjectCellVisualFromRenderItem } from '@/features/content/
 import type { PlacedObjectGeometryLayoutContext } from '@/shared/domain/locations/map/placedObjectGeometryLayoutContext';
 import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types';
 import { squareCellCenterPx } from '@/shared/domain/grid/squareGridOverlayGeometry';
+import { hexCellCenterPx } from '@/features/content/locations/components/authoring/geometry/hexGridMapOverlayGeometry';
+import { colorPrimitives } from '@/app/theme/colorPrimitives';
+import type { LocationMapSelection } from '@/features/content/locations/components/workspace/rightRail/types';
 
 function groupByAuthorCellId(
   items: readonly LocationMapAuthoredObjectRenderItem[],
@@ -154,6 +157,101 @@ export function LocationMapAuthoredObjectIconsLayer({
                         lineHeight: 0,
                         pointerEvents: 'auto',
                         cursor: 'default',
+                      }}
+                    >
+                      <PlacedObjectCellVisualDisplay visual={visual} variant="overlay" mapUi={mapUi} />
+                    </Box>
+                  </Tooltip>
+                );
+              })}
+            </PlacedObjectAuthoredIconRowStack>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+export type LocationMapHexAuthoredObjectIconsLayerProps = {
+  items: readonly LocationMapAuthoredObjectRenderItem[];
+  hexSize: number;
+  mapUi: LocationMapUiResolvedStyles;
+  footprintLayout?: PlacedObjectGeometryLayoutContext | null;
+  selectHoverTarget: LocationMapSelection;
+};
+
+/**
+ * Hex map: same cell-anchored object glyphs as {@link LocationMapAuthoredObjectIconsLayer}, positioned
+ * with {@link hexCellCenterPx}. Intended for a **global** layer above path SVG (z-index) so objects
+ * paint over roads/rivers.
+ */
+export function LocationMapHexAuthoredObjectIconsLayer({
+  items,
+  hexSize,
+  mapUi,
+  footprintLayout,
+  selectHoverTarget,
+}: LocationMapHexAuthoredObjectIconsLayerProps) {
+  if (items.length === 0) return null;
+  const groups = groupByAuthorCellId(items);
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+      }}
+      aria-hidden
+    >
+      {Array.from(groups.entries()).map(([authorCellId, cellItems]) => {
+        const p = hexCellCenterPx(authorCellId, hexSize);
+        if (!p) return null;
+        const singleVisual =
+          cellItems.length === 1
+            ? resolvePlacedObjectCellVisualFromRenderItem(cellItems[0]!, footprintLayout ?? undefined)
+            : null;
+        const rowMaxWidthPx = resolvePlacedObjectAuthoredIconRowStackMaxWidthPx({
+          cellPx: hexSize,
+          multiItemRow: cellItems.length > 1,
+          singleObjectLayoutWidthPx: singleVisual?.layoutWidthPx,
+        });
+        return (
+          <Box
+            key={authorCellId}
+            sx={{
+              position: 'absolute',
+              left: p.cx,
+              top: p.cy,
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+            }}
+          >
+            <PlacedObjectAuthoredIconRowStack cellPx={hexSize} maxWidthPx={rowMaxWidthPx}>
+              {cellItems.map((o, i) => {
+                const visual =
+                  singleVisual != null && i === 0
+                    ? singleVisual
+                    : resolvePlacedObjectCellVisualFromRenderItem(o, footprintLayout ?? undefined);
+                const isPreview = o.id === '__place_preview__';
+                return (
+                  <Tooltip key={`${o.id}-${i}`} title={visual.tooltip} placement="top" arrow>
+                    <Box
+                      component="span"
+                      data-map-object-id={o.id}
+                      data-map-object-cell-id={authorCellId}
+                      sx={{
+                        display: 'inline-flex',
+                        lineHeight: 0,
+                        outline:
+                          selectHoverTarget.type === 'object' &&
+                          selectHoverTarget.cellId === authorCellId &&
+                          selectHoverTarget.objectId === o.id
+                            ? `2px solid ${colorPrimitives.blue[300]}`
+                            : 'none',
+                        outlineOffset: 2,
+                        borderRadius: 0.5,
+                        ...(isPreview ? { opacity: 0.45, pointerEvents: 'none' } : { pointerEvents: 'auto' }),
+                        ...(!isPreview ? { cursor: 'default' } : {}),
                       }}
                     >
                       <PlacedObjectCellVisualDisplay visual={visual} variant="overlay" mapUi={mapUi} />

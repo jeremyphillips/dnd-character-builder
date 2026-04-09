@@ -8,20 +8,41 @@ import type {
   LineSegment2D,
 } from '@/shared/domain/locations/map/locationMapGeometry.types';
 
-import { HexMapAuthoringSvgOverlay } from '../mapGrid/authoring/HexMapAuthoringSvgOverlay';
+import {
+  HexMapAuthoringPathSvgOverlay,
+  HexMapAuthoringRegionSvgOverlay,
+} from '../mapGrid/authoring/HexMapAuthoringSvgOverlay';
 import { SquareMapAuthoringSvgOverlay } from '../mapGrid/authoring/SquareMapAuthoringSvgOverlay';
 import type { LocationGridPathSvgPreviewItem } from './locationGridAuthoringPathSvgPreview';
+import { LocationMapHexAuthoredObjectIconsLayer } from '../mapGrid/LocationMapAuthoredObjectIconsLayer';
+import type { LocationMapAuthoredObjectRenderItem } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.types';
+
+/** Below grid: paths + edges (placed objects and cell chrome stack above). */
+const Z_MAP_PATH_EDGE_UNDER_GRID = 0;
+/** Above paths: cell grid + per-cell overlays (fills, objects, linked icons). */
+const Z_MAP_CELL_GRID = 1;
+/**
+ * Hex path splines **above** the cell grid. Unlike square maps, hex cells tessellate with no
+ * inter-cell gap — roads/rivers drawn under the grid would be fully covered. Square keeps paths
+ * {@link Z_MAP_PATH_EDGE_UNDER_GRID} so strokes show in gaps and objects stay above paths.
+ */
+const Z_MAP_HEX_PATH_OVER_GRID = 2;
+/** Above hex paths: placed-object glyphs (global layer; cell overlay suppresses duplicates). */
+const Z_MAP_HEX_PLACED_OBJECTS = 3;
+/** Above placed objects: region hull outlines (selection UX). */
+const Z_MAP_HEX_REGION_OUTLINES = 4;
 
 type SquareGeom = { width: number; height: number; cellPx: number };
 type HexGeom = { width: number; height: number };
 
 /**
- * Absolutely positioned square overlay host (paths, edges, boundary paint) above the cell grid.
+ * Absolutely positioned square overlay (paths, edges, boundary paint) **below** the interactive cell grid.
  */
 export function LocationGridAuthoringSquareMapOverlayLayer(props: {
   visible: boolean;
   squareGridGeometry: SquareGeom | null;
   mapUi: LocationMapUiResolvedStyles;
+  hostScale: string;
   pathSvgData: readonly LocationGridPathSvgPreviewItem[];
   mapSelection: LocationMapSelection;
   selectHoverTarget: LocationMapSelection;
@@ -34,6 +55,7 @@ export function LocationGridAuthoringSquareMapOverlayLayer(props: {
     visible,
     squareGridGeometry,
     mapUi,
+    hostScale,
     pathSvgData,
     mapSelection,
     selectHoverTarget,
@@ -53,7 +75,7 @@ export function LocationGridAuthoringSquareMapOverlayLayer(props: {
         top: 0,
         width: squareGridGeometry.width,
         height: squareGridGeometry.height,
-        zIndex: 2,
+        zIndex: Z_MAP_PATH_EDGE_UNDER_GRID,
         pointerEvents: 'none',
       }}
     >
@@ -62,6 +84,7 @@ export function LocationGridAuthoringSquareMapOverlayLayer(props: {
         height={squareGridGeometry.height}
         cellPx={squareGridGeometry.cellPx}
         mapUi={mapUi}
+        hostScale={hostScale}
         pathSvgData={[...pathSvgData]}
         mapSelection={mapSelection}
         selectHoverTarget={selectHoverTarget}
@@ -75,13 +98,99 @@ export function LocationGridAuthoringSquareMapOverlayLayer(props: {
 }
 
 /**
- * Absolutely positioned hex overlay host (paths + region outlines) above the cell grid.
+ * Hex path splines only — **below** the cell grid so markers/objects paint above roads/rivers.
  */
-export function LocationGridAuthoringHexMapOverlayLayer(props: {
+export function LocationGridAuthoringHexMapPathOverlayLayer(props: {
   visible: boolean;
   hexGridGeometry: HexGeom | null;
   mapUi: LocationMapUiResolvedStyles;
+  hostScale: string;
   pathSvgData: readonly LocationGridPathSvgPreviewItem[];
+  mapSelection: LocationMapSelection;
+  selectHoverTarget: LocationMapSelection;
+}) {
+  const {
+    visible,
+    hexGridGeometry,
+    mapUi,
+    hostScale,
+    pathSvgData,
+    mapSelection,
+    selectHoverTarget,
+  } = props;
+
+  if (!visible || !hexGridGeometry) return null;
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: hexGridGeometry.width,
+        height: hexGridGeometry.height,
+        zIndex: Z_MAP_HEX_PATH_OVER_GRID,
+        pointerEvents: 'none',
+      }}
+    >
+      <HexMapAuthoringPathSvgOverlay
+        width={hexGridGeometry.width}
+        height={hexGridGeometry.height}
+        mapUi={mapUi}
+        hostScale={hostScale}
+        pathSvgData={[...pathSvgData]}
+        mapSelection={mapSelection}
+        selectHoverTarget={selectHoverTarget}
+      />
+    </Box>
+  );
+}
+
+/**
+ * Hex placed-object + place-preview glyphs — **above** path SVG, **below** region hull outlines.
+ */
+export function LocationGridAuthoringHexMapPlacedObjectsOverlayLayer(props: {
+  visible: boolean;
+  hexGridGeometry: HexGeom | null;
+  mapUi: LocationMapUiResolvedStyles;
+  selectHoverTarget: LocationMapSelection;
+  items: readonly LocationMapAuthoredObjectRenderItem[];
+  hexSize: number;
+}) {
+  const { visible, hexGridGeometry, mapUi, selectHoverTarget, items, hexSize } = props;
+
+  if (!visible || !hexGridGeometry || items.length === 0) return null;
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: hexGridGeometry.width,
+        height: hexGridGeometry.height,
+        zIndex: Z_MAP_HEX_PLACED_OBJECTS,
+        pointerEvents: 'none',
+      }}
+    >
+      <LocationMapHexAuthoredObjectIconsLayer
+        items={items}
+        hexSize={hexSize}
+        mapUi={mapUi}
+        footprintLayout={null}
+        selectHoverTarget={selectHoverTarget}
+      />
+    </Box>
+  );
+}
+
+/**
+ * Hex region hull outlines — **above** paths and placed-object glyphs (selection UX).
+ */
+export function LocationGridAuthoringHexMapRegionOverlayLayer(props: {
+  visible: boolean;
+  hexGridGeometry: HexGeom | null;
+  mapUi: LocationMapUiResolvedStyles;
   mapSelection: LocationMapSelection;
   selectHoverTarget: LocationMapSelection;
   hexSelectedRegionBoundarySegments: LineSegment2D[];
@@ -91,7 +200,6 @@ export function LocationGridAuthoringHexMapOverlayLayer(props: {
     visible,
     hexGridGeometry,
     mapUi,
-    pathSvgData,
     mapSelection,
     selectHoverTarget,
     hexSelectedRegionBoundarySegments,
@@ -108,15 +216,14 @@ export function LocationGridAuthoringHexMapOverlayLayer(props: {
         top: 0,
         width: hexGridGeometry.width,
         height: hexGridGeometry.height,
-        zIndex: 2,
+        zIndex: Z_MAP_HEX_REGION_OUTLINES,
         pointerEvents: 'none',
       }}
     >
-      <HexMapAuthoringSvgOverlay
+      <HexMapAuthoringRegionSvgOverlay
         width={hexGridGeometry.width}
         height={hexGridGeometry.height}
         mapUi={mapUi}
-        pathSvgData={[...pathSvgData]}
         mapSelection={mapSelection}
         selectHoverTarget={selectHoverTarget}
         hexSelectedRegionBoundarySegments={hexSelectedRegionBoundarySegments}
@@ -125,3 +232,5 @@ export function LocationGridAuthoringHexMapOverlayLayer(props: {
     </Box>
   );
 }
+
+export { Z_MAP_CELL_GRID };

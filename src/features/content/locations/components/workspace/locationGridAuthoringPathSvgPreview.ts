@@ -6,7 +6,7 @@ import { pathEntryToPolylineGeometry } from '@/shared/domain/locations/map/locat
 
 import { polylinePoint2DToSmoothSvgPath } from '../authoring/geometry/pathOverlayRendering';
 
-/** Path overlay items for {@link SquareMapAuthoringSvgOverlay} / {@link HexMapAuthoringSvgOverlay} (placement preview + committed chains). */
+/** Path overlay items for {@link SquareMapAuthoringSvgOverlay} / {@link HexMapAuthoringPathSvgOverlay} (placement preview + committed chains). */
 export type LocationGridPathSvgPreviewItem = {
   pathId: string;
   kind: LocationMapPathKindId;

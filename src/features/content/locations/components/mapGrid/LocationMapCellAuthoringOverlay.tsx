@@ -44,6 +44,11 @@ type LocationMapCellAuthoringOverlayProps = {
   squareCellPx?: number;
   /** Place-mode hover ghost for cell-anchored map objects (semi-transparent). */
   placePreviewItem?: LocationMapAuthoredObjectRenderItem | null;
+  /**
+   * When true (hex maps with a global object layer above paths), skip object + place-preview glyphs
+   * in this cell — they render in {@link LocationMapHexAuthoredObjectIconsLayer} instead.
+   */
+  suppressPlacedObjectGlyphs?: boolean;
 };
 
 export function LocationMapCellAuthoringOverlay({
@@ -56,6 +61,7 @@ export function LocationMapCellAuthoringOverlay({
   gridCellUnit,
   squareCellPx,
   placePreviewItem,
+  suppressPlacedObjectGlyphs = false,
 }: LocationMapCellAuthoringOverlayProps) {
   const rid = draft.regionIdByCellId[cell.cellId]?.trim();
   const regionEntry = rid ? draft.regionEntries.find((r) => r.id === rid) : undefined;
@@ -103,10 +109,12 @@ export function LocationMapCellAuthoringOverlay({
   const linked = linkId ? locationById.get(linkId) : undefined;
   const hasLinkedPlaceObject = objs?.some((o) => cellObjectAnchorsCellLinkedLocation(o)) ?? false;
   const showStandaloneLinkedIcon = Boolean(linked && !hasLinkedPlaceObject);
-  const hasIcons = Boolean(showStandaloneLinkedIcon || (objs && objs.length > 0));
   const showPlacePreview =
     placePreviewItem != null && placePreviewItem.authorCellId.trim() === cell.cellId.trim();
-  if (!overlay && !hasIcons && !showPlacePreview) {
+  const showObjectStackInCell =
+    !suppressPlacedObjectGlyphs && (Boolean(objs?.length) || showPlacePreview);
+  const hasIcons = Boolean(showStandaloneLinkedIcon || showObjectStackInCell);
+  if (!overlay && !hasIcons) {
     return null;
   }
   const footprintLayout = buildPlacedObjectGeometryLayoutContextFromAuthoring({
@@ -116,7 +124,9 @@ export function LocationMapCellAuthoringOverlay({
   });
   const objectCount = objs?.length ?? 0;
   const rowChildCount =
-    (showStandaloneLinkedIcon ? 1 : 0) + objectCount + (showPlacePreview ? 1 : 0);
+    (showStandaloneLinkedIcon ? 1 : 0) +
+    (suppressPlacedObjectGlyphs ? 0 : objectCount) +
+    (suppressPlacedObjectGlyphs ? 0 : showPlacePreview ? 1 : 0);
   const multiItemRow = rowChildCount > 1;
   let singleObjectLayoutWidthPx: number | null | undefined;
   if (!multiItemRow && squareCellPx != null) {
@@ -156,14 +166,14 @@ export function LocationMapCellAuthoringOverlay({
       }}
     >
       {overlay}
-      {hasIcons || showPlacePreview ? (
+      {showStandaloneLinkedIcon || showObjectStackInCell ? (
         <PlacedObjectAuthoredIconRowStack
           cellPx={squareCellPx}
           maxWidthPx={rowMaxWidthPx}
           sx={{
             position: 'relative',
             zIndex: 1,
-            pointerEvents: hasIcons ? 'auto' : 'none',
+            pointerEvents: showStandaloneLinkedIcon || showObjectStackInCell ? 'auto' : 'none',
           }}
         >
           {showStandaloneLinkedIcon && linked ? (
@@ -178,34 +188,39 @@ export function LocationMapCellAuthoringOverlay({
               })}
             </Box>
           ) : null}
-          {objs?.map((o) => {
-            const item = mapCellObjectEntryToAuthoredRenderItem(cell.cellId, o);
-            const visual = resolvePlacedObjectCellVisualFromRenderItem(item, footprintLayout ?? undefined);
-            return (
-              <Tooltip key={o.id} title={visual.tooltip} placement="top" arrow>
-                <Box
-                  component="span"
-                  data-map-object-id={o.id}
-                  data-map-object-cell-id={cell.cellId}
-                  sx={{
-                    display: 'inline-flex',
-                    lineHeight: 0,
-                    outline:
-                      selectHoverTarget.type === 'object' &&
-                      selectHoverTarget.cellId === cell.cellId &&
-                      selectHoverTarget.objectId === o.id
-                        ? `2px solid ${colorPrimitives.blue[300]}`
-                        : 'none',
-                    outlineOffset: 2,
-                    borderRadius: 0.5,
-                  }}
-                >
-                  <PlacedObjectCellVisualDisplay visual={visual} variant="overlay" mapUi={mapUi} />
-                </Box>
-              </Tooltip>
-            );
-          })}
-          {showPlacePreview && placePreviewItem ? (
+          {!suppressPlacedObjectGlyphs
+            ? objs?.map((o) => {
+                const item = mapCellObjectEntryToAuthoredRenderItem(cell.cellId, o);
+                const visual = resolvePlacedObjectCellVisualFromRenderItem(
+                  item,
+                  footprintLayout ?? undefined,
+                );
+                return (
+                  <Tooltip key={o.id} title={visual.tooltip} placement="top" arrow>
+                    <Box
+                      component="span"
+                      data-map-object-id={o.id}
+                      data-map-object-cell-id={cell.cellId}
+                      sx={{
+                        display: 'inline-flex',
+                        lineHeight: 0,
+                        outline:
+                          selectHoverTarget.type === 'object' &&
+                          selectHoverTarget.cellId === cell.cellId &&
+                          selectHoverTarget.objectId === o.id
+                            ? `2px solid ${colorPrimitives.blue[300]}`
+                            : 'none',
+                        outlineOffset: 2,
+                        borderRadius: 0.5,
+                      }}
+                    >
+                      <PlacedObjectCellVisualDisplay visual={visual} variant="overlay" mapUi={mapUi} />
+                    </Box>
+                  </Tooltip>
+                );
+              })
+            : null}
+          {!suppressPlacedObjectGlyphs && showPlacePreview && placePreviewItem ? (
             <Box
               sx={{
                 display: 'inline-flex',

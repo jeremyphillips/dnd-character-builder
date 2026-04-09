@@ -350,7 +350,7 @@ export const AUTHORED_PLACED_OBJECT_DEFINITIONS = {
         description: 'Straight stair run for vertical circulation between levels.',
         assetId: 'stairs_straight',
         /** Phase 6: long run along one axis; layout clamps to cell / overlaps neighbors visually (not tactical multi-cell). */
-        footprint: { kind: 'rect', widthFt: 4, depthFt: 8 },
+        footprint: { kind: 'rect', widthFt: 5, depthFt: 5 },
         presentation: {
           form: 'straight',
         },

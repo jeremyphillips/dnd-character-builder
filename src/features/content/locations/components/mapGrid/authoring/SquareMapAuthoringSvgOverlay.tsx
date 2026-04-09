@@ -16,6 +16,7 @@ export type SquareMapAuthoringSvgOverlayProps = {
   height: number;
   cellPx: number;
   mapUi: LocationMapUiResolvedStyles;
+  hostScale: string;
   pathSvgData: PathSvgItem[];
   mapSelection: LocationMapSelection;
   selectHoverTarget: LocationMapSelection;
@@ -27,14 +28,15 @@ export type SquareMapAuthoringSvgOverlayProps = {
 
 /**
  * Square grid: path splines, committed edges, boundary-paint preview stroke, and hover edge dash.
- * Pointer-events none; parent stacks **above** the cell grid so strokes/paths paint over terrain fill
- * (cells remain interactive; hit-testing targets elements under this SVG).
+ * Pointer-events none; parent wrapper stacks **below** the cell grid (`z-index`) so terrain fill and
+ * placed objects paint above paths/edges (cells remain interactive; hit-testing targets cells under this SVG).
  */
 export function SquareMapAuthoringSvgOverlay({
   width,
   height,
   cellPx,
   mapUi,
+  hostScale,
   pathSvgData,
   mapSelection,
   selectHoverTarget,
@@ -101,6 +103,7 @@ export function SquareMapAuthoringSvgOverlay({
       <LocationMapPathSvgPaths
         pathSvgData={pathSvgData}
         mapUi={mapUi}
+        hostScale={hostScale}
         mapSelection={mapSelection}
         selectHoverTarget={selectHoverTarget}
       />

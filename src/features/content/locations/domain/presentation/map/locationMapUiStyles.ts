@@ -1,6 +1,7 @@
 import { alpha, type Theme } from '@mui/material/styles';
 
 import { colorPrimitives } from '@/app/theme/colorPrimitives';
+import { pathStrokeForKind, pathWidthsForHostScale } from './pathMapStyles';
 import type { LocationEdgeFeatureKindId } from '@/features/content/locations/domain/model/map/locationEdgeFeature.types';
 
 // ---------------------------------------------------------------------------
@@ -26,10 +27,6 @@ export const locationMapUiStyleTokens = {
     /** Hex: SVG hull stroke for selected region (not used for per-cell inset on hex). */
     selectedBoundaryStrokeWidthPx: 2,
     hoverBorderWidthPx: 2,
-  },
-  path: {
-    defaultStrokeWidthPx: 2.5,
-    selectedStrokeWidthPx: 4.5,
   },
   edge: {
     committedStrokeWidthPx: 15,
@@ -93,9 +90,9 @@ export type LocationMapUiResolvedStyles = {
   tokens: LocationMapUiStyleTokens;
   region: LocationMapUiStyleTokens['region'];
   path: {
-    stroke: string;
-    defaultStrokeWidthPx: number;
-    selectedStrokeWidthPx: number;
+    strokeForKind: (kind: string) => string;
+    defaultStrokeWidthPxForHost: (hostScale: string) => number;
+    selectedStrokeWidthPxForHost: (hostScale: string) => number;
   };
   edgeCommittedStrokeByKind: Record<
     LocationEdgeFeatureKindId,
@@ -142,12 +139,12 @@ function resolveRegionStyles(
 
 function resolvePathStyles(
   _theme: Theme,
-  tokens: LocationMapUiStyleTokens,
+  _tokens: LocationMapUiStyleTokens,
 ): LocationMapUiResolvedStyles['path'] {
   return {
-    stroke: colorPrimitives.blue[300],
-    defaultStrokeWidthPx: tokens.path.defaultStrokeWidthPx,
-    selectedStrokeWidthPx: tokens.path.selectedStrokeWidthPx,
+    strokeForKind: (kind) => pathStrokeForKind(kind),
+    defaultStrokeWidthPxForHost: (hostScale) => pathWidthsForHostScale(hostScale).default,
+    selectedStrokeWidthPxForHost: (hostScale) => pathWidthsForHostScale(hostScale).selected,
   };
 }
 

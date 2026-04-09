@@ -1,5 +1,6 @@
 import type { LocationScaleId } from '@/shared/domain/locations';
 
+import { getCellFillFamiliesForScale } from '@/shared/domain/locations/map/authoredCellFillDefinitions';
 import type { LocationCellFillFamilyId } from '../map/locationCellFill.types';
 import type { LocationEdgeFeatureKindId } from '../map/locationEdgeFeature.types';
 import type { LocationPathFeatureKindId } from '../map/locationPathFeature.types';
@@ -17,6 +18,11 @@ import { getPlacedObjectKindsForScale } from '../placedObjects/locationPlacedObj
  * Separate from `LOCATION_SCALE_FIELD_POLICY` (form/setup: categories, cell units, geometry).
  * Separate from `locationMapPlacement.policy.ts` (which legacy cell-object kinds may appear on cells).
  *
+ * **Cell-fill paint:** `supportsCellFillPainting` gates whether the surface exposes paint tools at all; when true,
+ * allowed families per scale come from {@link AUTHORED_CELL_FILL_DEFINITIONS} `allowedScales` via
+ * {@link getCellFillFamiliesForScale} (no duplicate per-scale family lists). A future thin
+ * denylist/visibility override could filter that derived list without reintroducing a second family enum.
+ *
  * First-pass focus: **world**, **city**, and **floor**; other scales use empty lists until extended.
  *
  * Future tools (not implemented here):
@@ -25,15 +31,18 @@ import { getPlacedObjectKindsForScale } from '../placedObjects/locationPlacedObj
  * - **Place** → placed objects
  */
 export type LocationScaleMapContentPolicy = {
-  /** Allowed cell-fill **family** ids; all variants in a family are available unless filtered elsewhere. */
-  cellFillFamilies: readonly LocationCellFillFamilyId[];
+  /**
+   * When true, paint palette membership is all families in {@link AUTHORED_CELL_FILL_DEFINITIONS} whose
+   * `allowedScales` includes this map host scale. When false, no cell-fill tools (legacy zone scales, etc.).
+   */
+  supportsCellFillPainting: boolean;
   pathKinds: readonly LocationPathFeatureKindId[];
   edgeKinds: readonly LocationEdgeFeatureKindId[];
   objectKinds: readonly LocationPlacedObjectKindId[];
 };
 
 const EMPTY_LOCATION_SCALE_MAP_CONTENT_POLICY: LocationScaleMapContentPolicy = {
-  cellFillFamilies: [],
+  supportsCellFillPainting: false,
   pathKinds: [],
   edgeKinds: [],
   objectKinds: [],
@@ -44,19 +53,19 @@ export const LOCATION_SCALE_MAP_CONTENT_POLICY: Record<
   LocationScaleMapContentPolicy
 > = {
   world: {
-    cellFillFamilies: ['mountains', 'plains', 'forest', 'swamp', 'desert', 'water'],
+    supportsCellFillPainting: true,
     pathKinds: ['road', 'river'],
     edgeKinds: [],
     objectKinds: [...getPlacedObjectKindsForScale('world')],
   },
   city: {
-    cellFillFamilies: [],
+    supportsCellFillPainting: true,
     pathKinds: ['road'],
     edgeKinds: [],
     objectKinds: [...getPlacedObjectKindsForScale('city')],
   },
   floor: {
-    cellFillFamilies: ['floor'],
+    supportsCellFillPainting: true,
     pathKinds: [],
     /** Draw tool: wall boundary-paint only — doors/windows use Place (`placementMode: 'edge'`) on the same `edgeEntries` wire. */
     edgeKinds: ['wall'],
@@ -79,7 +88,10 @@ export function getLocationScaleMapContentPolicy(
 export function getAllowedCellFillFamiliesForScale(
   scale: LocationScaleId,
 ): readonly LocationCellFillFamilyId[] {
-  return getLocationScaleMapContentPolicy(scale).cellFillFamilies;
+  if (!getLocationScaleMapContentPolicy(scale).supportsCellFillPainting) {
+    return [];
+  }
+  return getCellFillFamiliesForScale(scale);
 }
 
 export function getAllowedPathKindsForScale(

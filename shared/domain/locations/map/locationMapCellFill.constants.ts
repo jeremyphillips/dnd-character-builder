@@ -8,6 +8,7 @@ export {
   AUTHORED_CELL_FILL_SWATCH_KEYS,
   LOCATION_CELL_FILL_FAMILY_IDS,
   getAuthoredCellFillFamilyDefinition,
+  getCellFillFamiliesForScale,
   isCellFillFamilyAllowedOnScale,
   resolveCellFillVariant,
   type AuthoredCellFillFamilyDefinition,

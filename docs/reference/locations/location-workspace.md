@@ -24,7 +24,7 @@ Location create and edit routes render inside a full-width workspace via `AuthMa
 
 - **Wire shape:** each authored cell may carry **`cellFill: { familyId, variantId }`** (no legacy flat fill ids). Validation rejects stray `cellFillKind` payloads.
 - **Canonical definitions:** `AUTHORED_CELL_FILL_DEFINITIONS` in `shared/domain/locations/map/authoredCellFillDefinitions.ts` — families, default variants, labels, and `swatchColorKey` → theme (`src/app/theme/mapColors.ts` via `resolveCellFillVariant`).
-- **Scale policy:** `LOCATION_SCALE_MAP_CONTENT_POLICY` / `getAllowedCellFillFamiliesForScale` in `domain/model/policies/locationScaleMapContent.policy.ts` — e.g. **world** maps allow terrain families; **floor** maps allow the **floor** family only.
+- **Scale policy:** `LOCATION_SCALE_MAP_CONTENT_POLICY.supportsCellFillPainting` gates paint tools per map host scale; when true, `getAllowedCellFillFamiliesForScale` delegates to `getCellFillFamiliesForScale` (registry `allowedScales`, same pattern as placed objects). See `locationScaleMapContent.policy.ts` and `authoredCellFillDefinitions.ts`.
 
 **Derived vs persisted**
 
@@ -548,6 +548,6 @@ Both hooks are used at the route level; derived values are passed down to canvas
 17. **Shared materials:** canonical **`MaterialId`** / **`MATERIAL_META`** — `shared/domain/materials/materials.ts` (reaction + structural profiles). Registry **`AuthoredObjectMaterial`** extends **`MaterialId`** with **`metal`** until/if `metal` joins the canonical list.
 18. **Orchestration cleanup (optional):** colocated extractions and non-blocking follow-ups — **Maintenance — orchestration cleanup** above; plan [.cursor/plans/location_workspace_cleanup_94269d45.plan.md](../../../.cursor/plans/location_workspace_cleanup_94269d45.plan.md).
 19. **Imports and barrels:** **Contributor rules → Imports and barrels**; `rightRail/types` is types-only, helpers in `rightRail/locationEditorRail.helpers.ts`.
-20. **Paint / cell fills:** wire shape **`cellFill: { familyId, variantId }`** on `cellEntries` and matching draft **`cellFillByCellId`**; canonical registry **`AUTHORED_CELL_FILL_DEFINITIONS`** (`shared/domain/locations/map/authoredCellFillDefinitions.ts`); palette **`getPaintPaletteItemsForScale`** (`domain/authoring/editor/palette/locationMapEditorPalette.helpers.ts`); scale policy **`getAllowedCellFillFamiliesForScale`** (`locationScaleMapContent.policy.ts`). See **Cell fill registry** under *Location map authored model*.
+20. **Paint / cell fills:** wire shape **`cellFill: { familyId, variantId }`** on `cellEntries` and matching draft **`cellFillByCellId`**; canonical registry **`AUTHORED_CELL_FILL_DEFINITIONS`** + **`getCellFillFamiliesForScale`** (`shared/domain/locations/map/authoredCellFillDefinitions.ts`); palette **`getPaintPaletteItemsForScale`** (`domain/authoring/editor/palette/locationMapEditorPalette.helpers.ts`); capability gate + **`getAllowedCellFillFamiliesForScale`** (`locationScaleMapContent.policy.ts`). See **Cell fill registry** under *Location map authored model*.
 
 For domain, map policy, transitions, grid geometry policy, and hex rendering math, see [domain.md](./domain.md) (section *Pointers for the next agent*).

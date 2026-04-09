@@ -12,6 +12,7 @@ import { resolveFamilyVariant } from '@/shared/domain/registry/familyVariantReso
 
 import type { LocationCellFillCategory } from './locationMapCellFill.facets';
 import type { LocationScaleId } from '../location.types';
+import { isValidLocationScaleId } from '../scale/locationScale.rules';
 
 /** All swatch keys used by cell-fill variants (theme: `mapColors.baseMapSwatchColors`). */
 export const AUTHORED_CELL_FILL_SWATCH_KEYS = [
@@ -53,7 +54,7 @@ export type AuthoredCellFillFamilyDefinition = {
 export const AUTHORED_CELL_FILL_DEFINITIONS = {
   plains: {
     category: 'terrain',
-    allowedScales: ['world'],
+    allowedScales: ['world', 'city'],
     defaultVariantId: 'temperate_open',
     variants: {
       temperate_open: {
@@ -66,7 +67,7 @@ export const AUTHORED_CELL_FILL_DEFINITIONS = {
   },
   forest: {
     category: 'terrain',
-    allowedScales: ['world'],
+    allowedScales: ['world', 'city'],
     defaultVariantId: 'temperate_open',
     variants: {
       temperate_open: {
@@ -85,7 +86,7 @@ export const AUTHORED_CELL_FILL_DEFINITIONS = {
   },
   mountains: {
     category: 'terrain',
-    allowedScales: ['world'],
+    allowedScales: ['world', 'city'],
     defaultVariantId: 'rocky',
     variants: {
       rocky: {
@@ -98,7 +99,7 @@ export const AUTHORED_CELL_FILL_DEFINITIONS = {
   },
   swamp: {
     category: 'terrain',
-    allowedScales: ['world'],
+    allowedScales: ['world', 'city'],
     defaultVariantId: 'marsh',
     variants: {
       marsh: {
@@ -110,7 +111,7 @@ export const AUTHORED_CELL_FILL_DEFINITIONS = {
   },
   desert: {
     category: 'terrain',
-    allowedScales: ['world'],
+    allowedScales: ['world', 'city'],
     defaultVariantId: 'sand',
     variants: {
       sand: {
@@ -142,7 +143,7 @@ export const AUTHORED_CELL_FILL_DEFINITIONS = {
   },
   floor: {
     category: 'surface',
-    allowedScales: ['floor'],
+    allowedScales: ['floor', 'city'],
     defaultVariantId: 'stone',
     variants: {
       stone: {
@@ -168,6 +169,25 @@ export type LocationCellFillFamilyId = keyof typeof AUTHORED_CELL_FILL_DEFINITIO
 const FAMILY_IDS = Object.keys(AUTHORED_CELL_FILL_DEFINITIONS) as LocationCellFillFamilyId[];
 
 export const LOCATION_CELL_FILL_FAMILY_IDS: readonly LocationCellFillFamilyId[] = FAMILY_IDS;
+
+/**
+ * Cell-fill families whose registry `allowedScales` includes `scale` (same idea as
+ * {@link getPlacedObjectKindsForScale} for placed objects). Order: alphabetical by `familyId`.
+ *
+ * Visual tokens (swatch keys, textures) remain separate — this only gates palette membership by scale.
+ */
+export function getCellFillFamiliesForScale(scale: LocationScaleId): readonly LocationCellFillFamilyId[] {
+  if (!isValidLocationScaleId(scale)) return [];
+  const out: LocationCellFillFamilyId[] = [];
+  for (const id of LOCATION_CELL_FILL_FAMILY_IDS) {
+    const allowed = AUTHORED_CELL_FILL_DEFINITIONS[id].allowedScales as readonly LocationScaleId[];
+    if (allowed.includes(scale)) {
+      out.push(id);
+    }
+  }
+  out.sort((a, b) => a.localeCompare(b));
+  return out;
+}
 
 export function getAuthoredCellFillFamilyDefinition(
   familyId: LocationCellFillFamilyId,

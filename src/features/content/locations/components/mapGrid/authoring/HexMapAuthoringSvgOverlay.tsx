@@ -6,31 +6,30 @@ import { LocationMapPathSvgPaths } from '@/features/content/locations/components
 
 type PathSvgItem = { pathId: string; kind: string; d: string };
 
-export type HexMapAuthoringSvgOverlayProps = {
+export type HexMapAuthoringPathSvgOverlayProps = {
   width: number;
   height: number;
   mapUi: LocationMapUiResolvedStyles;
+  hostScale: string;
   pathSvgData: PathSvgItem[];
   mapSelection: LocationMapSelection;
   selectHoverTarget: LocationMapSelection;
-  hexSelectedRegionBoundarySegments: LineSegment2D[];
-  hexHoverRegionBoundarySegments: LineSegment2D[];
 };
 
 /**
- * Hex grid: path splines and region boundary outlines (selection + hover).
- * Pointer-events none; rendered above the cell grid.
+ * Hex grid: path splines only. Parent wrapper uses `MAP_AUTHORING_LAYER_Z.hexPathsOverGrid`
+ * (`mapAuthoringLayerZ.ts` / `locationGridAuthoringMapOverlayLayers`) so strokes stay above
+ * tessellated cells — hex has no inter-cell gaps unlike square maps.
  */
-export function HexMapAuthoringSvgOverlay({
+export function HexMapAuthoringPathSvgOverlay({
   width,
   height,
   mapUi,
+  hostScale,
   pathSvgData,
   mapSelection,
   selectHoverTarget,
-  hexSelectedRegionBoundarySegments,
-  hexHoverRegionBoundarySegments,
-}: HexMapAuthoringSvgOverlayProps) {
+}: HexMapAuthoringPathSvgOverlayProps) {
   return (
     <svg
       width={width}
@@ -40,7 +39,6 @@ export function HexMapAuthoringSvgOverlay({
         left: 0,
         top: 0,
         pointerEvents: 'none',
-        zIndex: 2,
         display: 'block',
       }}
       aria-hidden
@@ -48,9 +46,49 @@ export function HexMapAuthoringSvgOverlay({
       <LocationMapPathSvgPaths
         pathSvgData={pathSvgData}
         mapUi={mapUi}
+        hostScale={hostScale}
         mapSelection={mapSelection}
         selectHoverTarget={selectHoverTarget}
       />
+    </svg>
+  );
+}
+
+export type HexMapAuthoringRegionSvgOverlayProps = {
+  width: number;
+  height: number;
+  mapUi: LocationMapUiResolvedStyles;
+  mapSelection: LocationMapSelection;
+  selectHoverTarget: LocationMapSelection;
+  hexSelectedRegionBoundarySegments: LineSegment2D[];
+  hexHoverRegionBoundarySegments: LineSegment2D[];
+};
+
+/**
+ * Hex grid: region hull outlines (selection + hover). Stacks **above** the cell grid so boundaries stay readable.
+ */
+export function HexMapAuthoringRegionSvgOverlay({
+  width,
+  height,
+  mapUi,
+  mapSelection,
+  selectHoverTarget,
+  hexSelectedRegionBoundarySegments,
+  hexHoverRegionBoundarySegments,
+}: HexMapAuthoringRegionSvgOverlayProps) {
+  return (
+    <svg
+      width={width}
+      height={height}
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        pointerEvents: 'none',
+        display: 'block',
+      }}
+      aria-hidden
+    >
       {mapSelection.type === 'region' &&
         hexSelectedRegionBoundarySegments.map((seg, i) => (
           <line

@@ -10,6 +10,8 @@ type PathSvgItem = {
 type LocationMapPathSvgPathsProps = {
   pathSvgData: PathSvgItem[];
   mapUi: LocationMapUiResolvedStyles;
+  /** Host location scale (e.g. world vs city) — drives stroke width; defaults to fallback widths when omitted. */
+  hostScale?: string;
   mapSelection: LocationMapSelection;
   selectHoverTarget: LocationMapSelection;
 };
@@ -17,6 +19,7 @@ type LocationMapPathSvgPathsProps = {
 export function LocationMapPathSvgPaths({
   pathSvgData,
   mapUi,
+  hostScale = '',
   mapSelection,
   selectHoverTarget,
 }: LocationMapPathSvgPathsProps) {
@@ -28,13 +31,13 @@ export function LocationMapPathSvgPaths({
           d={p.d}
           fill="none"
           pointerEvents="none"
-          stroke={mapUi.path.stroke}
+          stroke={mapUi.path.strokeForKind(p.kind)}
           strokeWidth={
             p.pathId !== '__preview__' &&
             ((mapSelection.type === 'path' && mapSelection.pathId === p.pathId) ||
               (selectHoverTarget.type === 'path' && selectHoverTarget.pathId === p.pathId))
-              ? mapUi.path.selectedStrokeWidthPx
-              : mapUi.path.defaultStrokeWidthPx
+              ? mapUi.path.selectedStrokeWidthPxForHost(hostScale)
+              : mapUi.path.defaultStrokeWidthPxForHost(hostScale)
           }
           strokeLinecap="round"
           strokeLinejoin="round"

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { getCellFillFamiliesForScale } from '@/shared/domain/locations/map/authoredCellFillDefinitions';
 import {
   getAllowedCellFillFamiliesForScale,
   getAllowedEdgeKindsForScale,
@@ -10,28 +11,28 @@ import {
 } from '../locationScaleMapContent.policy';
 
 describe('locationScaleMapContent.policy', () => {
-  it('maps world / city / floor as specified; other scales are empty', () => {
+  it('maps world / city / floor with cell-fill capability flag; legacy zone scales disable paint', () => {
     expect(LOCATION_SCALE_MAP_CONTENT_POLICY.world).toEqual({
-      cellFillFamilies: ['mountains', 'plains', 'forest', 'swamp', 'desert', 'water'],
+      supportsCellFillPainting: true,
       pathKinds: ['road', 'river'],
       edgeKinds: [],
       /** Derived from registry `allowedScales` — only `city` is offered at world scale today. */
       objectKinds: ['city'],
     });
     expect(LOCATION_SCALE_MAP_CONTENT_POLICY.city).toEqual({
-      cellFillFamilies: [],
+      supportsCellFillPainting: true,
       pathKinds: ['road'],
       edgeKinds: [],
       objectKinds: ['city', 'building', 'site', 'tree'],
     });
     expect(LOCATION_SCALE_MAP_CONTENT_POLICY.floor).toEqual({
-      cellFillFamilies: ['floor'],
+      supportsCellFillPainting: true,
       pathKinds: [],
       edgeKinds: ['wall'],
       objectKinds: ['table', 'stairs', 'treasure', 'door', 'window'],
     });
     expect(LOCATION_SCALE_MAP_CONTENT_POLICY.region).toEqual({
-      cellFillFamilies: [],
+      supportsCellFillPainting: false,
       pathKinds: [],
       edgeKinds: [],
       objectKinds: [],
@@ -40,9 +41,16 @@ describe('locationScaleMapContent.policy', () => {
 
   it('helpers delegate to the policy map', () => {
     expect(getLocationScaleMapContentPolicy('world')).toBe(LOCATION_SCALE_MAP_CONTENT_POLICY.world);
-    expect(getAllowedCellFillFamiliesForScale('floor')).toEqual(['floor']);
     expect(getAllowedPathKindsForScale('city')).toEqual(['road']);
     expect(getAllowedEdgeKindsForScale('floor')).toEqual(['wall']);
     expect(getAllowedPlacedObjectKindsForScale('city')).toEqual(['city', 'building', 'site', 'tree']);
+  });
+
+  it('getAllowedCellFillFamiliesForScale derives from registry when supportsCellFillPainting; else empty', () => {
+    expect(getAllowedCellFillFamiliesForScale('world')).toEqual(getCellFillFamiliesForScale('world'));
+    expect(getAllowedCellFillFamiliesForScale('city')).toEqual(getCellFillFamiliesForScale('city'));
+    expect(getAllowedCellFillFamiliesForScale('floor')).toEqual(getCellFillFamiliesForScale('floor'));
+    expect(getAllowedCellFillFamiliesForScale('region')).toEqual([]);
+    expect(getAllowedCellFillFamiliesForScale('building')).toEqual([]);
   });
 });

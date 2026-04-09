@@ -26,6 +26,7 @@ export {
   AUTHORED_CELL_FILL_DEFINITIONS,
   LOCATION_CELL_FILL_FAMILY_IDS,
   getAuthoredCellFillFamilyDefinition,
+  getCellFillFamiliesForScale,
   isCellFillFamilyAllowedOnScale,
   resolveCellFillVariant,
 } from '@/shared/domain/locations/map/authoredCellFillDefinitions';

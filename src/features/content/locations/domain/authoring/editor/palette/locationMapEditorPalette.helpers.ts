@@ -1,7 +1,6 @@
 import {
   AUTHORED_CELL_FILL_DEFINITIONS,
   getAuthoredCellFillFamilyDefinition,
-  isCellFillFamilyAllowedOnScale,
   resolveCellFillVariant,
   type LocationCellFillFamilyId,
 } from '@/features/content/locations/domain/model/map/locationCellFill.types';
@@ -49,9 +48,8 @@ const PAINT_FAMILY_TRAY_LABELS: Record<LocationCellFillFamily, string> = {
   floor: 'Floor',
 };
 
-function familiesForScale(scale: LocationScaleId): LocationCellFillFamilyId[] {
-  const allowed = getAllowedCellFillFamiliesForScale(scale);
-  return allowed.filter((fid) => isCellFillFamilyAllowedOnScale(fid, scale));
+function familiesForScale(scale: LocationScaleId): readonly LocationCellFillFamilyId[] {
+  return getAllowedCellFillFamiliesForScale(scale);
 }
 
 /**

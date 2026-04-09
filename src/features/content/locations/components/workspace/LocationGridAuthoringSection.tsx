@@ -35,9 +35,14 @@ import type { Location } from '@/features/content/locations/domain/model/locatio
 import { useLocationAuthoringGridLayout } from '@/features/content/locations/hooks/useLocationAuthoringGridLayout';
 import { usePruneGridDraftOnDimensionChange } from '@/features/content/locations/hooks/usePruneGridDraftOnDimensionChange';
 import {
-  LocationGridAuthoringHexMapOverlayLayer,
+  LocationGridAuthoringHexMapPathOverlayLayer,
+  LocationGridAuthoringHexMapPlacedObjectsOverlayLayer,
+  LocationGridAuthoringHexMapRegionOverlayLayer,
   LocationGridAuthoringSquareMapOverlayLayer,
+  LocationGridAuthoringSquareMapPlacedObjectsOverlayLayer,
+  LocationGridAuthoringSquareTerrainLayer,
 } from './locationGridAuthoringMapOverlayLayers';
+import { MAP_AUTHORING_LAYER_Z } from './mapAuthoringLayerZ';
 import { useSquareEdgeBoundaryPaint } from '../mapGrid/authoring/useSquareEdgeBoundaryPaint';
 import { LocationMapCellAuthoringOverlay } from '../mapGrid/LocationMapCellAuthoringOverlay';
 
@@ -52,6 +57,8 @@ import { resolveNearestHexCell } from '../authoring/geometry/hexGridMapOverlayGe
 import type { LocationMapPathKindId } from '@/shared/domain/locations/map/locationMapPathFeature.constants';
 import { buildHexAuthoringRegionBoundarySegments } from './locationGridAuthoringHexRegionOverlays';
 import { buildLocationGridPathSvgPreviewData } from './locationGridAuthoringPathSvgPreview';
+import { deriveLocationMapAuthoredObjectRenderItemsFromObjectsByCellId } from '@/shared/domain/locations/map/locationMapAuthoredObjectRender.helpers';
+import { buildPlacedObjectGeometryLayoutContextFromAuthoring } from '@/shared/domain/locations/map/placedObjectGeometryLayoutContext';
 import { useLocationGridAuthoringCellPointers } from './useLocationGridAuthoringCellPointers';
 import { useLocationGridPaintStroke } from './useLocationGridPaintStroke';
 import { useLocationGridSelectMode } from './useLocationGridSelectMode';
@@ -150,6 +157,7 @@ export function LocationGridAuthoringSection({
   void hostName;
   const theme = useTheme();
   const [placeHoverCellId, setPlaceHoverCellId] = useState<string | null>(null);
+  const [squareAuthoringHoverCellId, setSquareAuthoringHoverCellId] = useState<string | null>(null);
   const cols = Number(gridColumns);
   const rows = Number(gridRows);
   const validPreview = useMemo(
@@ -390,7 +398,12 @@ export function LocationGridAuthoringSection({
 
   const placeMapObjectCellHover = useMemo(() => {
     if (mapEditorMode !== 'place') return false;
-    if (!activePlace || activePlace.category !== 'map-object') return false;
+    if (
+      !activePlace ||
+      (activePlace.category !== 'map-object' && activePlace.category !== 'linked-content')
+    ) {
+      return false;
+    }
     if (getPlacementModeForFamily(activePlace.kind) !== 'cell') return false;
     if (placeEdgeAuthoringActive) return false;
     return true;
@@ -488,6 +501,21 @@ export function LocationGridAuthoringSection({
     ],
   );
 
+  const globalPlacedObjectRenderItems = useMemo(() => {
+    const base = deriveLocationMapAuthoredObjectRenderItemsFromObjectsByCellId(draft.objectsByCellId);
+    return placePreviewItem ? [...base, placePreviewItem] : base;
+  }, [draft.objectsByCellId, placePreviewItem]);
+
+  const squarePlacedObjectFootprintLayout = useMemo(
+    () =>
+      buildPlacedObjectGeometryLayoutContextFromAuthoring({
+        gridKind: 'square',
+        gridCellUnit,
+        squareCellPx: squareGridGeometry?.cellPx,
+      }),
+    [gridCellUnit, squareGridGeometry?.cellPx],
+  );
+
   const renderMapCellIcons = (cell: GridCell) => (
     <LocationMapCellAuthoringOverlay
       cell={cell}
@@ -499,6 +527,7 @@ export function LocationGridAuthoringSection({
       gridCellUnit={gridCellUnit}
       squareCellPx={!isHex ? squareGridGeometry?.cellPx : undefined}
       placePreviewItem={placePreviewItem}
+      suppressPlacedObjectGlyphs={isHex || globalPlacedObjectRenderItems.length > 0}
     />
   );
 
@@ -616,6 +645,19 @@ export function LocationGridAuthoringSection({
           if (mapEditorMode === 'select') clearSelectHoverTarget();
         }}
       >
+        <LocationGridAuthoringSquareTerrainLayer
+          visible={!!squareGridGeometry && !isHex}
+          squareGridGeometry={squareGridGeometry}
+          columns={cols}
+          rows={rows}
+          getCellFillPresentation={getCellFillPresentation}
+          selectedCellId={sharedGridProps.selectedCellId}
+          excludedCellIds={draft.excludedCellIds}
+          selectHoverTarget={
+            mapEditorMode === 'select' ? selectHoverTarget : undefined
+          }
+          pointerHoverCellId={squareAuthoringHoverCellId}
+        />
         <LocationGridAuthoringSquareMapOverlayLayer
           visible={
             !!squareGridGeometry &&
@@ -627,6 +669,7 @@ export function LocationGridAuthoringSection({
           }
           squareGridGeometry={squareGridGeometry}
           mapUi={mapUi}
+          hostScale={hostScale}
           pathSvgData={pathSvgData}
           mapSelection={draft.mapSelection}
           selectHoverTarget={selectHoverTarget}
@@ -635,23 +678,16 @@ export function LocationGridAuthoringSection({
           edgeEraseActive={edgeEraseActive}
           committedEdgeSegmentGeometry={committedEdgeSegmentGeometry}
         />
-        <LocationGridAuthoringHexMapOverlayLayer
-          visible={
-            !!hexGridGeometry &&
-            isHex &&
-            (pathSvgData.length > 0 ||
-              hexSelectedRegionBoundarySegments.length > 0 ||
-              hexHoverRegionBoundarySegments.length > 0)
-          }
+        <LocationGridAuthoringHexMapPathOverlayLayer
+          visible={!!hexGridGeometry && isHex && pathSvgData.length > 0}
           hexGridGeometry={hexGridGeometry}
           mapUi={mapUi}
+          hostScale={hostScale}
           pathSvgData={pathSvgData}
           mapSelection={draft.mapSelection}
           selectHoverTarget={selectHoverTarget}
-          hexSelectedRegionBoundarySegments={hexSelectedRegionBoundarySegments}
-          hexHoverRegionBoundarySegments={hexHoverRegionBoundarySegments}
         />
-        <Box sx={{ position: 'relative', zIndex: 0 }}>
+        <Box sx={{ position: 'relative', zIndex: MAP_AUTHORING_LAYER_Z.cellGrid }}>
           {isHex ? (
             <HexGridEditor
               {...sharedGridProps}
@@ -661,9 +697,46 @@ export function LocationGridAuthoringSection({
             <GridEditor
               {...sharedGridProps}
               selectModeCursor={mapEditorMode === 'select'}
+              omitTerrainFill
+              onAuthoringCellHoverChange={setSquareAuthoringHoverCellId}
             />
           )}
         </Box>
+        <LocationGridAuthoringSquareMapPlacedObjectsOverlayLayer
+          visible={
+            !!squareGridGeometry &&
+            !isHex &&
+            globalPlacedObjectRenderItems.length > 0
+          }
+          squareGridGeometry={squareGridGeometry}
+          mapUi={mapUi}
+          selectHoverTarget={selectHoverTarget}
+          items={globalPlacedObjectRenderItems}
+          cellPx={squareGridGeometry?.cellPx ?? 0}
+          gapPx={SQUARE_GRID_GAP_PX}
+          footprintLayout={squarePlacedObjectFootprintLayout}
+        />
+        <LocationGridAuthoringHexMapPlacedObjectsOverlayLayer
+          visible={!!hexGridGeometry && isHex && globalPlacedObjectRenderItems.length > 0}
+          hexGridGeometry={hexGridGeometry}
+          mapUi={mapUi}
+          selectHoverTarget={selectHoverTarget}
+          items={globalPlacedObjectRenderItems}
+          hexSize={gridSizePx.hexCellPx ?? 48}
+        />
+        <LocationGridAuthoringHexMapRegionOverlayLayer
+          visible={
+            !!hexGridGeometry &&
+            isHex &&
+            (hexSelectedRegionBoundarySegments.length > 0 || hexHoverRegionBoundarySegments.length > 0)
+          }
+          hexGridGeometry={hexGridGeometry}
+          mapUi={mapUi}
+          mapSelection={draft.mapSelection}
+          selectHoverTarget={selectHoverTarget}
+          hexSelectedRegionBoundarySegments={hexSelectedRegionBoundarySegments}
+          hexHoverRegionBoundarySegments={hexHoverRegionBoundarySegments}
+        />
       </Box>
     </Paper>
   );

@@ -12,7 +12,7 @@ This folder holds **topic-focused** docs that complement the top-level reference
 
 | Document | Purpose |
 |----------|---------|
-| [**placed-objects-flow.md**](./placed-objects-flow.md) | **End-to-end placed objects:** registry → manifest → URLs → persistence → `deriveLocationMapAuthoredObjectRenderItems` → `resolvePlacedObjectCellVisual` → authoring + combat rendering. |
+| [**placed-objects-flow.md**](./placed-objects-flow.md) | **End-to-end placed objects:** registry → manifest → URLs → persistence → `deriveLocationMapAuthoredObjectRenderItems` → `resolvePlacedObjectCellVisual` → authoring + combat rendering. **§9** links future follow-ups for building form / map footprint to the [building form map variants plan](../../../.cursor/plans/building_form_map_variants_b471881f.plan.md). |
 
 **Assets / pipeline (commands, manifests, artist checklist):** [`assets/system/locations/objects/README.md`](../../assets/system/locations/objects/README.md) — canonical for **generated** JSON and `npm run validate:location-objects`.
 

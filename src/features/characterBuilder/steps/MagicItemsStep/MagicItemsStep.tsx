@@ -245,10 +245,10 @@ const MagicItemsStep = () => {
   const allMagicItems = useMemo(() => {
     const items = Object.values(catalog.magicItemsById) as MagicItem[]
     if (!budgetTier?.maxRarity) return items
-    const maxIdx = MAGIC_ITEM_RARITY_OPTIONS.findIndex(option => option.value === budgetTier.maxRarity)
+    const maxIdx = MAGIC_ITEM_RARITY_OPTIONS.findIndex(option => option.id === budgetTier.maxRarity)
     return items.filter(item => {
       if (!item.rarity) return true
-      return MAGIC_ITEM_RARITY_OPTIONS.findIndex(option => option.value === item.rarity) <= maxIdx
+      return MAGIC_ITEM_RARITY_OPTIONS.findIndex(option => option.id === item.rarity) <= maxIdx
     })
   }, [catalog.magicItemsById, budgetTier])
 

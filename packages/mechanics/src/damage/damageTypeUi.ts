@@ -6,9 +6,9 @@ import { ENERGY_DAMAGE_TYPES } from './energyDamageTypes'
  * Order: bludgeoning, piercing, slashing, then elemental, then planar (see elemental/planar modules).
  */
 export const DAMAGE_TYPE_ROWS = [
-  ...WEAPON_DAMAGE_TYPE_OPTIONS.filter((o) => o.value !== 'none').map((o) => ({
-    id: o.value,
-    name: o.label,
+  ...WEAPON_DAMAGE_TYPE_OPTIONS.filter((o) => o.id !== 'none').map((o) => ({
+    id: o.id,
+    name: o.name,
   })),
   ...ENERGY_DAMAGE_TYPES,
 ] as const

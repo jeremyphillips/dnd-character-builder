@@ -26,8 +26,8 @@ export type DefensePreviewChipOptions = {
 
 const DAMAGE_TYPE_DISPLAY_NAME = new Map<string, string>([
   ...ENERGY_DAMAGE_TYPES.map((r) => [r.id, r.name] as const),
-  ...WEAPON_DAMAGE_TYPE_OPTIONS.filter((r) => r.value !== 'none').map(
-    (r) => [r.value, r.label] as const,
+  ...WEAPON_DAMAGE_TYPE_OPTIONS.filter((r) => r.id !== 'none').map(
+    (r) => [r.id, r.name] as const,
   ),
 ])
 

@@ -2,16 +2,21 @@
  * Spell form field registry — single source of truth for config + mapping.
  */
 import type { CharacterClass } from '@/features/content/classes/domain/types';
-import type { Spell, SpellInput } from '@/features/content/spells/domain/types';
+import type { Spell, SpellInput, SpellLevel } from '@/features/content/spells/domain/types';
 import { SPELL_LEVELS } from '@/features/content/spells/domain/types/spell.types';
 import { getBaseContentFieldSpecs } from '@/features/content/shared/forms/baseFieldSpecs';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab';
-import { numberRange, type FieldSpec } from '@/features/content/shared/forms/registry';
+import { type FieldSpec } from '@/features/content/shared/forms/registry';
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes';
 import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
 import type { SpellFormValues } from '../types/spellForm.types';
-import { SPELL_CORE_UI } from '../../spellPresentation';
+import { formatSpellLevelShort, SPELL_CORE_UI } from '../../spellPresentation';
+
+const SPELL_LEVEL_SELECT_OPTIONS = SPELL_LEVELS.map((lvl) => ({
+  value: String(lvl),
+  label: formatSpellLevelShort(lvl),
+}));
 
 export type SpellFormFieldsOptions = {
   /**
@@ -48,11 +53,6 @@ export function buildSpellClassCheckboxOptions(
   };
 }
 
-const numOrUndefined = (v: unknown): number | undefined => {
-  if (v === '' || v == null) return undefined;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-};
 const numToStr = (v: unknown): string =>
   v != null && Number.isFinite(Number(v)) ? String(v) : '';
 
@@ -109,16 +109,18 @@ export function getSpellFormFields(
     {
       name: SPELL_CORE_UI.level.key,
       label: SPELL_CORE_UI.level.label,
-      kind: 'numberText' as const,
+      kind: 'select' as const,
       required: true,
-      placeholder: `${SPELL_LEVELS[0]}–${SPELL_LEVELS[SPELL_LEVELS.length - 1]} (${SPELL_LEVELS[0]} = cantrip)`,
+      options: SPELL_LEVEL_SELECT_OPTIONS,
+      placeholder: 'Select level',
       defaultValue: String(SPELL_LEVELS[0]) as SpellFormValues['level'],
-      validation: numberRange(
-        SPELL_LEVELS[0],
-        SPELL_LEVELS[SPELL_LEVELS.length - 1],
-        { integer: true },
-      ),
-      parse: (v: unknown) => numOrUndefined(v),
+      parse: (v: unknown) => {
+        if (v === '' || v == null) return undefined;
+        const n = Number(v);
+        return SPELL_LEVELS.includes(n as SpellLevel)
+          ? (n as SpellInput['level'])
+          : undefined;
+      },
       format: (v: unknown) => numToStr(v),
     },
     {

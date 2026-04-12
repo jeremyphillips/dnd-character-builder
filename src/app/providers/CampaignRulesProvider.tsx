@@ -113,6 +113,7 @@ const SAFE_CATALOG_KEYS = [
   'enhancementsById',
   'spellsById',
   'skillProficienciesById',
+  'skillProficiencyIds',
   'monstersById',
 ] as const;
 

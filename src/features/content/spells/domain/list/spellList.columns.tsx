@@ -1,7 +1,6 @@
 import type { AppDataGridColumn } from '@/ui/patterns';
 // import { makeBooleanGlyphColumn } from '@/features/content/shared/components';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab/magicSchools.vocab';
-import { filterAllowedIds } from '@/features/content/shared/domain/utils';
 import { getSpellResolutionStatus } from '@/features/content/spells/domain/types';
 import type { SpellListRow } from './spellList.types';
 
@@ -40,11 +39,10 @@ export function buildSpellCustomColumns(
       flex: 1,
       minWidth: 180,
       accessor: (row) => {
-        const allowed = filterAllowedIds(row.classes, classesById ?? {});
-        if (!allowed?.length) return EMPTY_PLACEHOLDER;
-        return allowed
-          .map((id) => classesById?.[id]?.name ?? id)
-          .join(', ');
+        const byId = classesById ?? {};
+        const allowed = (row.classes ?? []).filter((id) => id in byId);
+        if (!allowed.length) return EMPTY_PLACEHOLDER;
+        return allowed.map((id) => byId[id]?.name ?? id).join(', ');
       },
       valueFormatter: (v) => (v != null && v !== '' ? String(v) : EMPTY_PLACEHOLDER),
     },

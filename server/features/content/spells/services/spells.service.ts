@@ -1,6 +1,7 @@
 import { CampaignSpell } from '../../../../shared/models/CampaignSpell.model';
 import type { AccessPolicy, AccessPolicyScope } from '../../../../../shared/domain/accessPolicy';
 import { MAGIC_SCHOOL_OPTIONS } from '../../../../../src/features/content/shared/domain/vocab/magicSchools.vocab';
+import { resolveCampaignCatalogForCampaign } from '../../../campaign/services/resolveCampaignCatalog.server';
 
 const VALID_SCOPES: AccessPolicyScope[] = ['public', 'dm', 'restricted'];
 const VALID_SCHOOLS = MAGIC_SCHOOL_OPTIONS.map((o) => o.id);
@@ -103,14 +104,36 @@ function generateSpellId(name: string): string {
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+/** Keeps only class ids present in the campaign-allowed class catalog (buildCampaignCatalog). */
+function sanitizeSpellClasses(
+  classIds: string[],
+  classesById: Record<string, unknown>,
+): string[] {
+  return classIds.filter((id) => id in classesById);
+}
+
 export async function listByCampaign(campaignId: string): Promise<CampaignSpellDoc[]> {
   const docs = await CampaignSpell.find({ campaignId }).sort({ name: 1 }).lean();
-  return docs.map((d) => toDoc(d as Record<string, unknown>));
+  const { catalog } = await resolveCampaignCatalogForCampaign(campaignId);
+  const allowedClasses = catalog.classesById as Record<string, unknown>;
+  return docs.map((d) => {
+    const row = toDoc(d as Record<string, unknown>);
+    return {
+      ...row,
+      classes: sanitizeSpellClasses(row.classes, allowedClasses),
+    };
+  });
 }
 
 export async function getById(campaignId: string, spellId: string): Promise<CampaignSpellDoc | null> {
   const doc = await CampaignSpell.findOne({ campaignId, spellId }).lean();
-  return doc ? toDoc(doc as Record<string, unknown>) : null;
+  if (!doc) return null;
+  const { catalog } = await resolveCampaignCatalogForCampaign(campaignId);
+  const row = toDoc(doc as Record<string, unknown>);
+  return {
+    ...row,
+    classes: sanitizeSpellClasses(row.classes, catalog.classesById as Record<string, unknown>),
+  };
 }
 
 export async function create(
@@ -120,13 +143,19 @@ export async function create(
   const errors = validateInput(body);
   if (errors.length > 0) return { errors };
 
+  const { catalog } = await resolveCampaignCatalogForCampaign(campaignId);
+  const allowedClasses = catalog.classesById as Record<string, unknown>;
+
   const name = (body.name as string).trim();
   const spellId = (body.spellId as string | undefined)?.trim() || generateSpellId(name);
   const description = ((body.description as string) ?? '').trim();
   const imageKey = ((body.imageKey as string) ?? '').trim();
   const school = body.school as string;
   const level = Number(body.level);
-  const classes = Array.isArray(body.classes) ? (body.classes as string[]) : [];
+  const classes = sanitizeSpellClasses(
+    Array.isArray(body.classes) ? (body.classes as string[]) : [],
+    allowedClasses,
+  );
   const ritual = Boolean(body.ritual);
   const concentration = Boolean(body.concentration);
   const effects = Array.isArray(body.effects) ? body.effects : [];
@@ -153,7 +182,8 @@ export async function create(
     effects,
     accessPolicy,
   });
-  return { spell: toDoc(doc.toObject()) };
+  const spell = toDoc(doc.toObject());
+  return { spell: { ...spell, classes: sanitizeSpellClasses(spell.classes, allowedClasses) } };
 }
 
 export async function update(
@@ -164,12 +194,21 @@ export async function update(
   const errors = validateInput({ ...body, spellId });
   if (errors.length > 0) return { errors };
 
+  const { catalog } = await resolveCampaignCatalogForCampaign(campaignId);
+  const allowedClasses = catalog.classesById as Record<string, unknown>;
+
   const name = (body.name as string).trim();
   const description = ((body.description as string) ?? '').trim();
   const imageKey = ((body.imageKey as string) ?? '').trim();
   const school = body.school as string;
   const level = Number(body.level);
-  const classes = Array.isArray(body.classes) ? (body.classes as string[]) : undefined;
+  const classes =
+    body.classes !== undefined
+      ? sanitizeSpellClasses(
+          Array.isArray(body.classes) ? (body.classes as string[]) : [],
+          allowedClasses,
+        )
+      : undefined;
   const ritual = body.ritual as boolean | undefined;
   const concentration = body.concentration as boolean | undefined;
   const effects = Array.isArray(body.effects) ? body.effects : undefined;
@@ -188,7 +227,11 @@ export async function update(
     { new: true, lean: true },
   );
 
-  return doc ? { spell: toDoc(doc as Record<string, unknown>) } : null;
+  if (!doc) return null;
+  const spell = toDoc(doc as Record<string, unknown>);
+  return {
+    spell: { ...spell, classes: sanitizeSpellClasses(spell.classes, allowedClasses) },
+  };
 }
 
 export async function remove(campaignId: string, spellId: string): Promise<boolean> {

@@ -9,7 +9,6 @@ import { numberRange, type FieldSpec } from '@/features/content/shared/forms/reg
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes';
 import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
-import { filterAllowedIds } from '@/features/content/shared/domain/utils';
 import type { SpellFormValues } from '../types/spellForm.types';
 
 export type SpellFormFieldsOptions = {
@@ -124,10 +123,10 @@ export function getSpellFormFields(
       defaultValue: [] as SpellFormValues['classes'],
       parse: (v: unknown) =>
         Array.isArray(v)
-          ? (filterAllowedIds(v as string[], allowedById) as SpellInput['classes'])
+          ? ((v as string[]).filter((id) => id in allowedById) as SpellInput['classes'])
           : undefined,
       format: (v: unknown) =>
-        filterAllowedIds(arrOrEmpty(v), allowedById) as SpellInput['classes'],
+        arrOrEmpty(v).filter((id) => id in allowedById) as SpellInput['classes'],
     },
     // {
     //   name: 'ritual',

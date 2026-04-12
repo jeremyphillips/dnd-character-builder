@@ -2,6 +2,7 @@ import type { Spell } from '@/features/content/spells/domain/types';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
 import { formatSpellRangeAreaDisplay } from './spellRangeAreaText';
 import { renderSpellComponentsDisplay } from './spellComponentsDisplay';
+import { renderSpellDurationDetailDisplay } from './spellDurationDetail';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab';
 import { classIdToName } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
@@ -30,18 +31,12 @@ export const SPELL_DETAIL_SPECS: DetailSpec<Spell, unknown>[] = [
     order: 20,
     render: (spell) => formatSpellRangeAreaDisplay(spell),
   },
-  // {
-  //   key: 'ritual',
-  //   label: 'Ritual',
-  //   order: 40,
-  //   render: (spell) => (spell.ritual ? 'Yes' : 'No'),
-  // },
-  // {
-  //   key: 'concentration',
-  //   label: 'Concentration',
-  //   order: 50,
-  //   render: (spell) => (spell.concentration ? 'Yes' : 'No'),
-  // },
+  {
+    key: 'duration',
+    label: 'Duration',
+    order: 24,
+    render: (spell) => renderSpellDurationDetailDisplay(spell),
+  },
   {
     key: 'components',
     label: 'Components',

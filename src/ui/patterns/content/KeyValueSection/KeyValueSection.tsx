@@ -13,7 +13,7 @@ export type KeyValueItem = {
 export interface KeyValueSectionProps {
   title?: ReactNode;
   items: KeyValueItem[];
-  columns?: 1 | 2;
+  columns?: 1 | 2 | 3;
   emptyValue?: ReactNode;
   dense?: boolean;
   showDividers?: boolean;
@@ -26,7 +26,7 @@ const isEmptyValue = (value: ReactNode): boolean =>
 const KeyValueSection = ({
   title,
   items,
-  columns = 2,
+  columns = 3,
   emptyValue = '—',
   dense = false,
   showDividers = false,
@@ -50,7 +50,13 @@ const KeyValueSection = ({
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            md: columns === 2 ? '1fr 1fr' : '1fr',
+            ...(columns === 3 && { sm: 'repeat(2, minmax(0, 1fr))' }),
+            md:
+              columns === 3
+                ? 'repeat(3, minmax(0, 1fr))'
+                : columns === 2
+                  ? 'repeat(2, minmax(0, 1fr))'
+                  : '1fr',
           },
           gap,
         }}

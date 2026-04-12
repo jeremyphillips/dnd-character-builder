@@ -626,7 +626,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'Sense traps in range. Learn danger type, not location.',
     },
   },
-{
+  {
     id: 'flame-blade',
     name: 'Flame Blade',
     school: 'evocation',
@@ -657,7 +657,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
       summary: 'Fiery blade: melee spell attack 3d6+mod fire. Damage scales with slot.',
     },
   },
-{
+  {
     id: 'flaming-sphere',
     name: 'Flaming Sphere',
     school: 'conjuration',

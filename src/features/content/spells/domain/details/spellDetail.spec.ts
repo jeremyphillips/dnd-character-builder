@@ -2,6 +2,8 @@ import type { Spell } from '@/features/content/spells/domain/types';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
 import { formatSpellRangeAreaDisplay } from './spellRangeAreaText';
 import { renderSpellComponentsDisplay } from './spellComponentsDisplay';
+import { renderSpellAttackSaveDetailDisplay } from './spellAttackSaveDisplay';
+import { renderSpellCastingTimeDetailDisplay } from './spellCastingTimeDetail';
 import { renderSpellDurationDetailDisplay } from './spellDurationDetail';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab';
 import { classIdToName } from '@/features/mechanics/domain/rulesets/system/classes';
@@ -32,6 +34,12 @@ export const SPELL_DETAIL_SPECS: DetailSpec<Spell, unknown>[] = [
     render: (spell) => formatSpellRangeAreaDisplay(spell),
   },
   {
+    key: 'castingTime',
+    label: 'Casting Time',
+    order: 21,
+    render: (spell) => renderSpellCastingTimeDetailDisplay(spell),
+  },
+  {
     key: 'duration',
     label: 'Duration',
     order: 24,
@@ -42,6 +50,12 @@ export const SPELL_DETAIL_SPECS: DetailSpec<Spell, unknown>[] = [
     label: 'Components',
     order: 25,
     render: (spell) => renderSpellComponentsDisplay(spell),
+  },
+  {
+    key: 'attack-save',
+    label: 'Attack/Save',
+    order: 26,
+    render: (spell) => renderSpellAttackSaveDetailDisplay(spell),
   },
   {
     key: 'classes',

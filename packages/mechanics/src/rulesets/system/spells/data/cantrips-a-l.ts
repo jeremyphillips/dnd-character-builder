@@ -243,7 +243,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
       summary: 'Minor elemental control: beckon air/earth/fire/water or sculpt element.',
     },
   },
-{
+  {
     id: 'fire-bolt',
     name: 'Fire Bolt',
     school: 'evocation',
@@ -282,7 +282,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
       summary: 'Ranged spell attack dealing 1d10 fire damage; flammable objects start burning.',
     },
   },
-{
+  {
     id: 'guidance',
     name: 'Guidance',
     school: 'divination',

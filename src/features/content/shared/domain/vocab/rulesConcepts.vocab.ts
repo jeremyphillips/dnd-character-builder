@@ -10,6 +10,12 @@ export const RULES_CONCEPT_DEFINITIONS = [
       'Some spells require you to maintain concentration in order to keep their magic active. If you cast another spell that requires concentration, your concentration on the first effect ends. You can end concentration at any time (no action required). Taking damage can interrupt concentration: make a Constitution saving throw (DC 10 or half the damage taken, whichever is higher). Being incapacitated or dying also ends your concentration.',
   },
   {
+    id: 'ritual',
+    name: 'Ritual',
+    rulesText:
+      'Certain spells can be cast as rituals. A ritual version takes 10 minutes longer to cast than the spell’s normal casting time, unless the spell already has a longer casting time (such as 1 hour). Whether ritual casting expends a spell slot depends on your class’s ritual casting feature; you must still provide any material components and follow any concentration requirements.',
+  },
+  {
     id: 'difficult-terrain',
     name: 'Difficult terrain',
     rulesText:

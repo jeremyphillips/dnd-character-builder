@@ -66,7 +66,7 @@ export default function SpellDetailRoute() {
         title="Spell Details"
         items={items}
         columns={3}
-        sx={{ mt: 2 }}
+        sx={{ mt: 2, mb: 8 }}
       />
 
       {spell.description.full && (

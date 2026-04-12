@@ -1,5 +1,6 @@
 import type { Spell } from '@/features/content/spells/domain/types';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
+import { formatSpellRangeAreaDisplay } from './spellRangeAreaText';
 import { MAGIC_SCHOOL_OPTIONS } from '@/features/content/shared/domain/vocab';
 import { classIdToName } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
@@ -24,9 +25,9 @@ export const SPELL_DETAIL_SPECS: DetailSpec<Spell, unknown>[] = [
   },
   {
     key: 'range',
-    label: 'Range',
+    label: 'Range/Area',
     order: 20,
-    render: (spell) => ''
+    render: (spell) => formatSpellRangeAreaDisplay(spell),
   },
   // {
   //   key: 'ritual',

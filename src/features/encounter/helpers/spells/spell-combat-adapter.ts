@@ -1,4 +1,5 @@
 import type { Spell, SpellDuration, SpellRange } from '@/features/content/spells/domain/types/spell.types'
+import { formatSpellRange } from '@/features/content/spells/domain/details/spellRangeFormat'
 import type { EffectDuration } from '@/features/mechanics/domain/effects/timing.types'
 import type { Effect } from '@/features/mechanics/domain/effects/effects.types'
 import type {
@@ -8,6 +9,8 @@ import type {
 } from '@/features/mechanics/domain/combat'
 import { classifySpellResolutionMode } from './spell-resolution-classifier'
 import { deriveSpellHostility, spellHostilityToHostileApplication } from './spell-hostility'
+
+export { formatSpellRange }
 
 function spellHasEmanationEffect(spell: Spell): boolean {
   return (spell.effects ?? []).some((e) => e.kind === 'emanation')
@@ -39,17 +42,6 @@ function deriveSpellRangeFt(range: SpellRange | undefined): number | undefined {
     case 'unlimited':
     case 'special':
       return undefined
-  }
-}
-
-export function formatSpellRange(range: SpellRange): string {
-  switch (range.kind) {
-    case 'self': return 'Self'
-    case 'touch': return 'Touch'
-    case 'sight': return 'Sight'
-    case 'unlimited': return 'Unlimited'
-    case 'special': return range.description
-    case 'distance': return `${range.value.value}${range.value.unit}`
   }
 }
 

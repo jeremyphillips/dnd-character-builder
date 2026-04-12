@@ -5,11 +5,13 @@
 import type { FieldConfig } from '@/ui/patterns';
 import { buildDefaultValues, DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import { buildFieldConfigs } from '@/features/content/shared/forms/registry';
-import { SPELL_FORM_FIELDS } from '../registry/spellForm.registry';
+import { getSpellFormFields } from '../registry/spellForm.registry';
 import type { SpellFormValues } from '../types/spellForm.types';
 
 export type GetSpellFieldConfigsOptions = {
   policyCharacters?: { id: string; name: string }[];
+  /** Campaign catalog class map — limits class checkboxes to allowed classes. */
+  classesById?: Record<string, { name?: string }> | undefined;
 };
 
 /**
@@ -17,7 +19,10 @@ export type GetSpellFieldConfigsOptions = {
  */
 export const getSpellFieldConfigs = (
   options: GetSpellFieldConfigsOptions = {}
-): FieldConfig[] => buildFieldConfigs(SPELL_FORM_FIELDS, options);
+): FieldConfig[] => {
+  const { policyCharacters = [], classesById } = options;
+  return buildFieldConfigs(getSpellFormFields({ classesById }), { policyCharacters });
+};
 
 /**
  * Default values for spell forms (RHF defaultValues).

@@ -8,12 +8,44 @@ import { numberRange, type FieldSpec } from '@/features/content/shared/forms/reg
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes';
 import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
+import { filterAllowedIds } from '@/features/content/shared/domain/utils';
 import type { SpellFormValues } from '../types/spellForm.types';
 
-const SPELL_CLASS_OPTIONS = getSpellcastingClasses([...getSystemClasses(DEFAULT_SYSTEM_RULESET_ID)]).map((c) => ({
-  value: c.id,
-  label: c.name,
-}));
+export type SpellFormFieldsOptions = {
+  /**
+   * Campaign catalog `classesById` (allowed classes only). When omitted, uses the full system
+   * spellcasting class list — e.g. before catalog load or for non-campaign tooling.
+   */
+  classesById?: Record<string, { name?: string }> | undefined;
+};
+
+/**
+ * Checkbox options + allowed-id map for the classes field, aligned with campaign-allowed classes.
+ */
+export function buildSpellClassCheckboxOptions(
+  classesById: Record<string, { name?: string }> | undefined,
+): { options: { value: string; label: string }[]; allowedById: Record<string, unknown> } {
+  const spellcasting = getSpellcastingClasses([...getSystemClasses(DEFAULT_SYSTEM_RULESET_ID)]);
+  if (classesById == null) {
+    const options = spellcasting.map((c) => ({ value: c.id, label: c.name }));
+    return {
+      options,
+      allowedById: Object.fromEntries(options.map((o) => [o.value, true])),
+    };
+  }
+  const allowedIds = new Set(Object.keys(classesById));
+  const options = spellcasting
+    .filter((c) => allowedIds.has(c.id))
+    .map((c) => ({
+      value: c.id,
+      label: classesById[c.id]?.name ?? c.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return {
+    options,
+    allowedById: Object.fromEntries(options.map((o) => [o.value, true])),
+  };
+}
 
 const numOrUndefined = (v: unknown): number | undefined => {
   if (v === '' || v == null) return undefined;
@@ -45,79 +77,95 @@ const formatEffectsJson = (v: unknown): string => {
   }
 };
 
-export const SPELL_FORM_FIELDS = [
-  ...getBaseContentFieldSpecs<
-    SpellFormValues,
-    Omit<SpellInput, 'description'> & Record<string, unknown>,
-    Spell & Record<string, unknown>
-  >(),
-  {
-    name: 'school',
-    label: 'School',
-    kind: 'select' as const,
-    required: true,
-    options: MAGIC_SCHOOL_OPTIONS.map((o) => ({ value: o.id, label: o.name })),
-    placeholder: 'Select school',
-    defaultValue: '' as SpellFormValues['school'],
-    parse: (v: unknown) => (v ? (v as SpellInput['school']) : undefined),
-    format: (v: unknown) => (v ?? '') as SpellFormValues['school'],
-  },
-  {
-    name: 'level',
-    label: 'Level',
-    kind: 'numberText' as const,
-    required: true,
-    placeholder: '0–9 (0 = cantrip)',
-    defaultValue: '0' as SpellFormValues['level'],
-    validation: numberRange(0, 9, { integer: true }),
-    parse: (v: unknown) => numOrUndefined(v),
-    format: (v: unknown) => numToStr(v),
-  },
-  {
-    name: 'classes',
-    label: 'Classes',
-    kind: 'checkboxGroup' as const,
-    options: SPELL_CLASS_OPTIONS,
-    defaultValue: [] as SpellFormValues['classes'],
-    parse: (v: unknown) => (Array.isArray(v) ? (v as SpellInput['classes']) : undefined),
-    format: (v: unknown) => arrOrEmpty(v) as SpellInput['classes'],
-  },
-  // {
-  //   name: 'ritual',
-  //   label: 'Ritual',
-  //   kind: 'checkbox' as const,
-  //   defaultValue: false as SpellFormValues['ritual'],
-  //   parse: (v: unknown) => Boolean(v),
-  //   format: (v: unknown) => Boolean(v ?? false),
-  //   formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
-  // },
-  // {
-  //   name: 'concentration',
-  //   label: 'Concentration',
-  //   kind: 'checkbox' as const,
-  //   defaultValue: false as SpellFormValues['concentration'],
-  //   parse: (v: unknown) => Boolean(v),
-  //   format: (v: unknown) => Boolean(v ?? false),
-  //   formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
-  // },
-  {
-    name: 'effects',
-    label: 'Effects',
-    kind: 'json' as const,
-    placeholder: '[{ "kind": "note", "text": "..." }]',
-    helperText: 'Canonical effect objects with kind (e.g. note, modifier, grant, condition, save, activation).',
-    minRows: 4,
-    maxRows: 16,
-    defaultValue: '[]' as SpellFormValues['effects'],
-    parse: (v: unknown) => parseEffectsJson(v),
-    format: (v: unknown) => formatEffectsJson(v),
-    formatForDisplay: (v: unknown) => {
-      const arr = Array.isArray(v) ? v : [];
-      return arr.length > 0 ? `${arr.length} effect(s)` : '—';
-    },
-  },
-] as const satisfies readonly FieldSpec<
+export function getSpellFormFields(
+  options?: SpellFormFieldsOptions,
+): FieldSpec<
   SpellFormValues,
   SpellInput & Record<string, unknown>,
   Spell & Record<string, unknown>
->[];
+>[] {
+  const { options: classOptions, allowedById } = buildSpellClassCheckboxOptions(
+    options?.classesById,
+  );
+
+  return [
+    ...getBaseContentFieldSpecs<
+      SpellFormValues,
+      Omit<SpellInput, 'description'> & Record<string, unknown>,
+      Spell & Record<string, unknown>
+    >(),
+    {
+      name: 'school',
+      label: 'School',
+      kind: 'select' as const,
+      required: true,
+      options: MAGIC_SCHOOL_OPTIONS.map((o) => ({ value: o.id, label: o.name })),
+      placeholder: 'Select school',
+      defaultValue: '' as SpellFormValues['school'],
+      parse: (v: unknown) => (v ? (v as SpellInput['school']) : undefined),
+      format: (v: unknown) => (v ?? '') as SpellFormValues['school'],
+    },
+    {
+      name: 'level',
+      label: 'Level',
+      kind: 'numberText' as const,
+      required: true,
+      placeholder: '0–9 (0 = cantrip)',
+      defaultValue: '0' as SpellFormValues['level'],
+      validation: numberRange(0, 9, { integer: true }),
+      parse: (v: unknown) => numOrUndefined(v),
+      format: (v: unknown) => numToStr(v),
+    },
+    {
+      name: 'classes',
+      label: 'Classes',
+      kind: 'checkboxGroup' as const,
+      options: classOptions,
+      defaultValue: [] as SpellFormValues['classes'],
+      parse: (v: unknown) =>
+        Array.isArray(v)
+          ? (filterAllowedIds(v as string[], allowedById) as SpellInput['classes'])
+          : undefined,
+      format: (v: unknown) =>
+        filterAllowedIds(arrOrEmpty(v), allowedById) as SpellInput['classes'],
+    },
+    // {
+    //   name: 'ritual',
+    //   label: 'Ritual',
+    //   kind: 'checkbox' as const,
+    //   defaultValue: false as SpellFormValues['ritual'],
+    //   parse: (v: unknown) => Boolean(v),
+    //   format: (v: unknown) => Boolean(v ?? false),
+    //   formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
+    // },
+    // {
+    //   name: 'concentration',
+    //   label: 'Concentration',
+    //   kind: 'checkbox' as const,
+    //   defaultValue: false as SpellFormValues['concentration'],
+    //   parse: (v: unknown) => Boolean(v),
+    //   format: (v: unknown) => Boolean(v ?? false),
+    //   formatForDisplay: (v: unknown) => (v ? 'Yes' : 'No'),
+    // },
+    {
+      name: 'effects',
+      label: 'Effects',
+      kind: 'json' as const,
+      placeholder: '[{ "kind": "note", "text": "..." }]',
+      helperText:
+        'Canonical effect objects with kind (e.g. note, modifier, grant, condition, save, activation).',
+      minRows: 4,
+      maxRows: 16,
+      defaultValue: '[]' as SpellFormValues['effects'],
+      parse: (v: unknown) => parseEffectsJson(v),
+      format: (v: unknown) => formatEffectsJson(v),
+      formatForDisplay: (v: unknown) => {
+        const arr = Array.isArray(v) ? v : [];
+        return arr.length > 0 ? `${arr.length} effect(s)` : '—';
+      },
+    },
+  ];
+}
+
+/** Default field specs (full system spellcasting list). */
+export const SPELL_FORM_FIELDS = getSpellFormFields();

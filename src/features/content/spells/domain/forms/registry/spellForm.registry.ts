@@ -130,7 +130,7 @@ export function getSpellSimpleFieldSpecs(
     },
     {
       name: SPELL_CORE_UI.school.key,
-      label: SPELL_CORE_UI.school.label,
+      label: 'School',
       kind: 'select' as const,
       required: true,
       options: SPELL_SCHOOL_SELECT_OPTIONS,
@@ -138,15 +138,22 @@ export function getSpellSimpleFieldSpecs(
       defaultValue: '' as SpellFormValues['school'],
       parse: (v: unknown) => (v ? (v as SpellInput['school']) : undefined),
       format: (v: unknown) => (v ?? '') as SpellFormValues['school'],
+      group: {
+        id: 'spellSchoolLevel',
+        label: 'School & level',
+        direction: 'row',
+        spacing: 2,
+      },
+      width: 6,
     },
     {
       name: SPELL_CORE_UI.level.key,
-      label: SPELL_CORE_UI.level.label,
+      label: 'Level',
       kind: 'select' as const,
       required: true,
       options: SPELL_LEVEL_SELECT_OPTIONS,
       placeholder: 'Select level',
-      defaultValue: String(SPELL_LEVELS[0]) as SpellFormValues['level'],
+      // defaultValue: String(SPELL_LEVELS[0]) as SpellFormValues['level'],
       parse: (v: unknown) => {
         if (v === '' || v == null) return undefined;
         const n = Number(v);
@@ -155,6 +162,12 @@ export function getSpellSimpleFieldSpecs(
           : undefined;
       },
       format: (v: unknown) => numToStr(v),
+      group: {
+        id: 'spellSchoolLevel',
+        direction: 'row',
+        spacing: 2,
+      },
+      width: 6,
     },
     {
       name: SPELL_CORE_UI.classes.key,
@@ -189,6 +202,41 @@ export function getSpellSimpleFieldSpecs(
   ];
 }
 
+const GROUP_CASTING = {
+  id: 'castingTime',
+  label: 'Casting time',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
+const GROUP_DURATION = {
+  id: 'duration',
+  label: 'Duration',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
+const GROUP_RANGE = {
+  id: 'spellRange',
+  label: 'Range',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
+const GROUP_TURN_BOUNDARY = {
+  id: 'durationTurnBoundary',
+  label: 'Turn boundary',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
+const GROUP_MATERIAL = {
+  id: 'material',
+  label: 'Material',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
 function compositeFieldSpecs(): FieldSpec<
   SpellFormValues,
   SpellInput & Record<string, unknown>,
@@ -197,36 +245,49 @@ function compositeFieldSpecs(): FieldSpec<
   return [
     {
       name: 'descriptionFull',
-      label: 'Description (full)',
+      label: 'Full',
       kind: 'textarea' as const,
       placeholder: 'Full spell description',
       defaultValue: '' as SpellFormValues['descriptionFull'],
+      group: {
+        id: 'spellDescription',
+        label: 'Description',
+        direction: 'column',
+        spacing: 2,
+      },
     },
     {
       name: 'descriptionSummary',
-      label: 'Description (short)',
+      label: 'Short',
       kind: 'textarea' as const,
       placeholder: 'Short summary',
       defaultValue: '' as SpellFormValues['descriptionSummary'],
+      group: { id: 'spellDescription', direction: 'column', spacing: 2 },
     },
     {
       name: 'castingTimeUnit',
-      label: 'Casting time',
+      label: 'Unit',
+      placeholder: 'Select unit',
       kind: 'select' as const,
       required: true,
       options: SPELL_CASTING_TIME_UNIT_OPTIONS,
+      //defaultValue: '',
       defaultValue: 'action' as SpellFormValues['castingTimeUnit'],
+      group: GROUP_CASTING,
+      width: 4,
     },
     {
       name: 'castingTimeValue',
-      label: 'Casting time (value)',
+      label: 'Value',
       kind: 'numberText' as const,
-      helperText: 'Used for minute / hour casts',
+      helperText: 'Minute / hour casts',
       defaultValue: '1' as SpellFormValues['castingTimeValue'],
       visibleWhen: when.or(
         when.eq('castingTimeUnit', 'minute'),
         when.eq('castingTimeUnit', 'hour'),
       ),
+      group: GROUP_CASTING,
+      width: 2,
     },
     {
       name: 'castingTimeTrigger',
@@ -236,35 +297,45 @@ function compositeFieldSpecs(): FieldSpec<
       placeholder: 'Select trigger',
       defaultValue: '' as SpellFormValues['castingTimeTrigger'],
       visibleWhen: when.eq('castingTimeUnit', 'reaction'),
+      group: GROUP_CASTING,
+      width: 4,
     },
     {
       name: 'castingTimeCanRitual',
-      label: 'Can be cast as ritual',
+      label: 'Ritual',
       kind: 'checkbox' as const,
       defaultValue: false as SpellFormValues['castingTimeCanRitual'],
+      group: GROUP_CASTING,
+      width: 4,
     },
     {
       name: 'durationKind',
-      label: 'Duration',
+      label: 'Kind',
       kind: 'select' as const,
       required: true,
       options: SPELL_DURATION_KIND_SELECT_OPTIONS,
       defaultValue: 'instantaneous' as SpellFormValues['durationKind'],
+      group: GROUP_DURATION,
+      width: 4,
     },
     {
       name: 'durationTimedValue',
-      label: 'Duration value',
+      label: 'Value',
       kind: 'numberText' as const,
       defaultValue: '1' as SpellFormValues['durationTimedValue'],
       visibleWhen: when.eq('durationKind', 'timed'),
+      group: GROUP_DURATION,
+      width: 2,
     },
     {
       name: 'durationTimedUnit',
-      label: 'Duration unit',
+      label: 'Unit',
       kind: 'select' as const,
       options: SPELL_TIME_UNIT_OPTIONS,
       defaultValue: 'minute' as SpellFormValues['durationTimedUnit'],
       visibleWhen: when.eq('durationKind', 'timed'),
+      group: GROUP_DURATION,
+      width: 2,
     },
     {
       name: 'durationTimedUpTo',
@@ -272,6 +343,17 @@ function compositeFieldSpecs(): FieldSpec<
       kind: 'checkbox' as const,
       defaultValue: false as SpellFormValues['durationTimedUpTo'],
       visibleWhen: when.eq('durationKind', 'timed'),
+      group: GROUP_DURATION,
+      width: 2,
+    },
+    {
+      name: 'durationConcentration',
+      label: 'Concentration',
+      kind: 'checkbox' as const,
+      defaultValue: false as SpellFormValues['durationConcentration'],
+      visibleWhen: when.neq('durationKind', 'instantaneous'),
+      group: GROUP_DURATION,
+      width: 12,
     },
     {
       name: 'durationSpecialText',
@@ -289,7 +371,7 @@ function compositeFieldSpecs(): FieldSpec<
     },
     {
       name: 'durationTurnBoundarySubject',
-      label: 'Turn boundary — subject',
+      label: 'Subject',
       kind: 'select' as const,
       options: [
         { value: 'self', label: 'Self' },
@@ -298,10 +380,12 @@ function compositeFieldSpecs(): FieldSpec<
       ],
       defaultValue: 'self' as SpellFormValues['durationTurnBoundarySubject'],
       visibleWhen: when.eq('durationKind', 'until-turn-boundary'),
+      group: GROUP_TURN_BOUNDARY,
+      width: 4,
     },
     {
       name: 'durationTurnBoundaryTurn',
-      label: 'Turn boundary — turn',
+      label: 'Turn',
       kind: 'select' as const,
       options: [
         { value: 'current', label: 'Current' },
@@ -309,10 +393,12 @@ function compositeFieldSpecs(): FieldSpec<
       ],
       defaultValue: 'current' as SpellFormValues['durationTurnBoundaryTurn'],
       visibleWhen: when.eq('durationKind', 'until-turn-boundary'),
+      group: GROUP_TURN_BOUNDARY,
+      width: 4,
     },
     {
       name: 'durationTurnBoundaryBoundary',
-      label: 'Turn boundary — boundary',
+      label: 'Boundary',
       kind: 'select' as const,
       options: [
         { value: 'start', label: 'Start' },
@@ -320,43 +406,46 @@ function compositeFieldSpecs(): FieldSpec<
       ],
       defaultValue: 'end' as SpellFormValues['durationTurnBoundaryBoundary'],
       visibleWhen: when.eq('durationKind', 'until-turn-boundary'),
-    },
-    {
-      name: 'durationConcentration',
-      label: 'Concentration',
-      kind: 'checkbox' as const,
-      defaultValue: false as SpellFormValues['durationConcentration'],
-      visibleWhen: when.neq('durationKind', 'instantaneous'),
+      group: GROUP_TURN_BOUNDARY,
+      width: 4,
     },
     {
       name: 'rangeKind',
-      label: 'Range',
+      label: 'Kind',
       kind: 'select' as const,
       required: true,
       options: SPELL_RANGE_KIND_SELECT_OPTIONS,
       defaultValue: 'self' as SpellFormValues['rangeKind'],
+      group: GROUP_RANGE,
+      width: 4,
     },
     {
       name: 'rangeDistanceValue',
-      label: 'Range distance',
+      label: 'Distance',
       kind: 'numberText' as const,
       defaultValue: '30' as SpellFormValues['rangeDistanceValue'],
       visibleWhen: when.eq('rangeKind', 'distance'),
+      group: GROUP_RANGE,
+      width: 2,
     },
     {
       name: 'rangeDistanceUnit',
-      label: 'Distance unit',
+      label: 'Unit',
       kind: 'select' as const,
       options: SPELL_DISTANCE_UNIT_OPTIONS,
       defaultValue: 'ft' as SpellFormValues['rangeDistanceUnit'],
       visibleWhen: when.eq('rangeKind', 'distance'),
+      group: GROUP_RANGE,
+      width: 2,
     },
     {
       name: 'rangeSpecialDescription',
-      label: 'Special range description',
+      label: 'Special',
       kind: 'text' as const,
       defaultValue: '' as SpellFormValues['rangeSpecialDescription'],
       visibleWhen: when.eq('rangeKind', 'special'),
+      group: GROUP_RANGE,
+      width: 8,
     },
     {
       name: 'componentIds',
@@ -367,32 +456,40 @@ function compositeFieldSpecs(): FieldSpec<
     },
     {
       name: 'materialDescription',
-      label: 'Material (description)',
+      label: 'Description',
       kind: 'text' as const,
       defaultValue: '' as SpellFormValues['materialDescription'],
       visibleWhen: when.contains('componentIds', 'material'),
+      group: GROUP_MATERIAL,
+      width: 4,
     },
     {
       name: 'materialCostValue',
-      label: 'Material cost (value)',
+      label: 'Cost',
       kind: 'numberText' as const,
       defaultValue: '' as SpellFormValues['materialCostValue'],
       visibleWhen: when.contains('componentIds', 'material'),
+      group: GROUP_MATERIAL,
+      width: 2,
     },
     {
       name: 'materialCostUnit',
-      label: 'Material cost (coin)',
+      label: 'Coin',
       kind: 'select' as const,
       options: SPELL_MATERIAL_COIN_OPTIONS,
       defaultValue: 'gp' as SpellFormValues['materialCostUnit'],
       visibleWhen: when.contains('componentIds', 'material'),
+      group: GROUP_MATERIAL,
+      width: 2,
     },
     {
       name: 'materialConsumed',
-      label: 'Material consumed',
+      label: 'Consumed',
       kind: 'checkbox' as const,
       defaultValue: false as SpellFormValues['materialConsumed'],
       visibleWhen: when.contains('componentIds', 'material'),
+      group: GROUP_MATERIAL,
+      width: 4,
     },
   ];
 }

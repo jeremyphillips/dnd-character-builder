@@ -138,12 +138,17 @@ export default function DynamicFormRenderer({
             </Grid>
           );
         const hasHeader = (label != null && label !== '') || (helperText != null && helperText !== '');
+        const hasGroupHelper = helperText != null && helperText !== '';
         return (
           <Box key={groupKey}>
             {hasHeader && (
               <Box sx={{ mb: 1 }}>
                 {label != null && label !== '' && (
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: hasGroupHelper ? 0.5 : 2 }}
+                  >
                     {label}
                   </Typography>
                 )}

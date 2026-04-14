@@ -202,6 +202,31 @@ export function getSpellSimpleFieldSpecs(
   ];
 }
 
+function pickSpellFieldsByName(
+  specs: FieldSpec<
+    SpellFormValues,
+    SpellInput & Record<string, unknown>,
+    Spell & Record<string, unknown>
+  >[],
+  names: readonly string[],
+): FieldSpec<
+  SpellFormValues,
+  SpellInput & Record<string, unknown>,
+  Spell & Record<string, unknown>
+>[] {
+  return names
+    .map((n) => specs.find((f) => f.name === n))
+    .filter(
+      (
+        f,
+      ): f is FieldSpec<
+        SpellFormValues,
+        SpellInput & Record<string, unknown>,
+        Spell & Record<string, unknown>
+      > => f != null,
+    );
+}
+
 const GROUP_CASTING = {
   id: 'castingTime',
   label: 'Casting time',
@@ -243,27 +268,6 @@ function compositeFieldSpecs(): FieldSpec<
   Spell & Record<string, unknown>
 >[] {
   return [
-    {
-      name: 'descriptionFull',
-      label: 'Full',
-      kind: 'textarea' as const,
-      placeholder: 'Full spell description',
-      defaultValue: '' as SpellFormValues['descriptionFull'],
-      group: {
-        id: 'spellDescription',
-        label: 'Description',
-        direction: 'column',
-        spacing: 2,
-      },
-    },
-    {
-      name: 'descriptionSummary',
-      label: 'Short',
-      kind: 'textarea' as const,
-      placeholder: 'Short summary',
-      defaultValue: '' as SpellFormValues['descriptionSummary'],
-      group: { id: 'spellDescription', direction: 'column', spacing: 2 },
-    },
     {
       name: 'castingTimeUnit',
       label: 'Unit',
@@ -423,7 +427,7 @@ function compositeFieldSpecs(): FieldSpec<
       name: 'rangeDistanceValue',
       label: 'Distance',
       kind: 'numberText' as const,
-      defaultValue: '30' as SpellFormValues['rangeDistanceValue'],
+      defaultValue: '' as SpellFormValues['rangeDistanceValue'],
       visibleWhen: when.eq('rangeKind', 'distance'),
       group: GROUP_RANGE,
       width: 2,
@@ -453,6 +457,27 @@ function compositeFieldSpecs(): FieldSpec<
       kind: 'checkboxGroup' as const,
       options: SPELL_COMPONENT_CHECKBOX_OPTIONS,
       defaultValue: [] as SpellFormValues['componentIds'],
+    },
+    {
+      name: 'descriptionFull',
+      label: 'Full',
+      kind: 'textarea' as const,
+      placeholder: 'Full spell description',
+      defaultValue: '' as SpellFormValues['descriptionFull'],
+      group: {
+        id: 'spellDescription',
+        label: 'Description',
+        direction: 'column',
+        spacing: 2,
+      },
+    },
+    {
+      name: 'descriptionSummary',
+      label: 'Short',
+      kind: 'text' as const,
+      placeholder: 'Short summary',
+      defaultValue: '' as SpellFormValues['descriptionSummary'],
+      group: { id: 'spellDescription', direction: 'column', spacing: 2 },
     },
     {
       name: 'materialDescription',
@@ -501,7 +526,20 @@ export function getSpellFormFields(
   SpellInput & Record<string, unknown>,
   Spell & Record<string, unknown>
 >[] {
-  return [...getSpellSimpleFieldSpecs(options), ...compositeFieldSpecs()];
+  const simple = getSpellSimpleFieldSpecs(options);
+  const composite = compositeFieldSpecs();
+
+  /** Top: identity + school/level + visibility + classes; bottom: effects then image (after composite blocks). */
+  const headNames = [
+    'name',
+    SPELL_CORE_UI.school.key,
+    SPELL_CORE_UI.level.key,
+    'accessPolicy',
+    SPELL_CORE_UI.classes.key,
+  ] as const;
+  const tailNames = ['effects', 'imageKey'] as const;
+
+  return [...pickSpellFieldsByName(simple, headNames), ...composite, ...pickSpellFieldsByName(simple, tailNames)];
 }
 
 export const SPELL_FORM_FIELDS = getSpellFormFields();

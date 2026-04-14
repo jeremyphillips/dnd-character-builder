@@ -36,14 +36,24 @@ function campaignSpellDocToSpell(d: spellsService.CampaignSpellDoc): Spell {
     id: d.spellId,
     name: d.name,
     description: d.description,
-    imageKey: d.imageKey,
-    school: d.school,
+    imageKey: d.imageKey || undefined,
+    school: d.school as Spell['school'],
     level: d.level,
     classes: d.classes,
-    ritual: d.ritual,
-    concentration: d.concentration,
+    castingTime: d.castingTime,
+    range: d.range,
+    duration: d.duration,
+    components: d.components,
     effects: d.effects as Spell['effects'],
-  } as Spell
+    ...(d.scaling !== undefined && { scaling: d.scaling as Spell['scaling'] }),
+    ...(d.resolution !== undefined && { resolution: d.resolution as Spell['resolution'] }),
+    ...(d.deliveryMethod !== undefined && {
+      deliveryMethod: d.deliveryMethod as Spell['deliveryMethod'],
+    }),
+    source: 'campaign',
+    campaignId: d.campaignId,
+    accessPolicy: d.accessPolicy as Spell['accessPolicy'],
+  }
 }
 
 /**

@@ -7,7 +7,19 @@
  * 3) Raw system entry
  */
 import { apiFetch, ApiError } from '@/app/api';
-import type { Spell, SpellCastingTime, SpellComponents, SpellDuration, SpellEffects, SpellInput, SpellLevel, SpellRange, SpellScalingRule } from '@/features/content/spells/domain/types';
+import type {
+  Spell,
+  SpellCastingTime,
+  SpellComponents,
+  SpellDeliveryMethod,
+  SpellDuration,
+  SpellEffects,
+  SpellInput,
+  SpellLevel,
+  SpellRange,
+  SpellResolutionMeta,
+  SpellScalingRule,
+} from '@/features/content/spells/domain/types';
 import type { SystemRulesetId } from '@/features/mechanics/domain/rulesets';
 import { getSystemSpells, getSystemSpell } from '@/features/mechanics/domain/rulesets/system/spells';
 import { getContentPatch } from '@/features/content/shared/domain/contentPatchRepo';
@@ -21,6 +33,7 @@ import type { AccessPolicy } from '@/shared/domain/accessPolicy';
 // API response shapes
 // ---------------------------------------------------------------------------
 
+/** Mirrors server [`CampaignSpellDoc`](server/features/content/spells/services/spells.service.ts) JSON. */
 type CampaignSpellDto = {
   _id: string;
   campaignId: string;
@@ -39,6 +52,8 @@ type CampaignSpellDto = {
   duration: SpellDuration;
   components: SpellComponents;
   scaling?: SpellScalingRule[];
+  resolution?: SpellResolutionMeta;
+  deliveryMethod?: SpellDeliveryMethod;
   castingTime: SpellCastingTime;
   range: SpellRange;
   createdAt: string;
@@ -69,6 +84,8 @@ function toSpell(dto: CampaignSpellDto): Spell {
     duration: dto.duration,
     components: dto.components,
     scaling: dto.scaling,
+    resolution: dto.resolution,
+    deliveryMethod: dto.deliveryMethod,
     effects: dto.effects as Spell['effects'],
     source: 'campaign',
     campaignId: dto.campaignId,

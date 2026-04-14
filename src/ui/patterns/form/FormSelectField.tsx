@@ -7,6 +7,7 @@ import Select from '@mui/material/Select';
 import { useId, useState, type FocusEvent, type Ref } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { ControllerFieldState } from 'react-hook-form';
+import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 
 export type SelectOption = {
   label: string;
@@ -20,7 +21,7 @@ type FormSelectFieldProps = {
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
-  /** Passed to MUI `FormControl` / `Select`. */
+  /** Passed to MUI `FormControl` / `Select`. Default `medium` matches `FormTextField`; theme sets `MuiSelect` to `small`. */
   size?: 'small' | 'medium';
   /** Fires after the field value updates (e.g. action selects without submitting a form). */
   onAfterChange?: (value: string) => void;
@@ -66,6 +67,7 @@ function FormSelectFieldInner({
 }: InnerProps) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const stretch = useFormLayoutStretch();
 
   const hasValue = field.value !== '' && field.value != null;
   const showPlaceholder = Boolean(placeholder) && !hasValue;
@@ -78,6 +80,7 @@ function FormSelectFieldInner({
       error={!!fieldState.error}
       disabled={disabled}
       variant="outlined"
+      sx={stretch ? formGridStretchOutlinedSx : undefined}
     >
       <InputLabel id={labelId} shrink={shrink}>
         {label}
@@ -139,7 +142,7 @@ export default function FormSelectField({
   required,
   disabled,
   placeholder,
-  size,
+  size = 'medium',
   onAfterChange,
 }: FormSelectFieldProps) {
   const { control } = useFormContext();

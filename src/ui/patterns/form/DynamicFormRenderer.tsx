@@ -7,6 +7,7 @@ import type { FieldConfig } from './form.types';
 import DynamicField from './DynamicField';
 import DriverField from './DriverField';
 import type { PatchDriver } from './DriverField';
+import { FormLayoutStretchProvider } from './FormLayoutStretchContext';
 
 export type FormDriver =
   | { kind: 'rhf' }
@@ -93,6 +94,27 @@ function renderField(
   );
 }
 
+/** Fills the grid cell so nested `FieldWithDescription` + outlined fields can stretch to row height. */
+function GridFieldCell({
+  field,
+  usePatchDriver,
+  patchDriver,
+}: {
+  field: FieldConfig;
+  usePatchDriver: boolean;
+  patchDriver: PatchDriver | null;
+}) {
+  const content =
+    usePatchDriver && patchDriver ? (
+      <DriverField field={field} driver={patchDriver} />
+    ) : (
+      <DynamicField field={field} />
+    );
+  return (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{content}</Box>
+  );
+}
+
 /**
  * Pure rendering layer: takes a FieldConfig[] and renders the
  * correct field primitive for each entry. No business logic,
@@ -126,16 +148,22 @@ export default function DynamicFormRenderer({
               {groupFields.map((f) => renderField(f, !!usePatchDriver, patchDriver))}
             </Stack>
           ) : (
-            <Grid container spacing={spacingVal}>
-              {groupFields.map((f) => {
-                const width = f.width ?? getAutoGroupWidth(groupFields.length);
-                return (
-                  <Grid key={f.name} size={{ xs: width }}>
-                    {renderField(f, !!usePatchDriver, patchDriver)}
-                  </Grid>
-                );
-              })}
-            </Grid>
+            <FormLayoutStretchProvider value>
+              <Grid container spacing={spacingVal} sx={{ alignItems: 'stretch' }}>
+                {groupFields.map((f) => {
+                  const width = f.width ?? getAutoGroupWidth(groupFields.length);
+                  return (
+                    <Grid
+                      key={f.name}
+                      size={{ xs: width }}
+                      sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                    >
+                      <GridFieldCell field={f} usePatchDriver={!!usePatchDriver} patchDriver={patchDriver} />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </FormLayoutStretchProvider>
           );
         const hasHeader = (label != null && label !== '') || (helperText != null && helperText !== '');
         const hasGroupHelper = helperText != null && helperText !== '';

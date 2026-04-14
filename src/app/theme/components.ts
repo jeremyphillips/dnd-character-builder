@@ -34,9 +34,20 @@ export const components: Components<Theme> = {
       size: 'small',
     },
   },
+  /** Match default `TextField` / `Select` medium density (~56px outlined control). */
   MuiSelect: {
     defaultProps: {
-      size: 'small',
+      size: 'medium',
+    },
+  },
+  MuiOutlinedInput: {
+    styleOverrides: {
+      root: ({ ownerState }) => {
+        if (ownerState.multiline || ownerState.size === 'small') {
+          return {};
+        }
+        return { minHeight: 56 };
+      },
     },
   },
   MuiCard: {

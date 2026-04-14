@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import type { FieldConfig } from './form.types';
 import type { Visibility } from '@/shared/types/visibility';
+import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 import { usePatchValidation } from './validation/PatchValidationContext';
 import ImageUploadField from './ImageUploadField';
 import JsonPreviewField from './JsonPreviewField';
@@ -77,6 +78,10 @@ function usePatchValue(
 }
 
 export default function DriverField({ field, driver }: DriverFieldProps) {
+  const stretch = useFormLayoutStretch();
+  const stretchColumnSx = stretch
+    ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' as const }
+    : undefined;
   const path = getPath(field);
   const patchValidation = usePatchValidation();
   const errorMessage = patchValidation?.getError(field.name);
@@ -117,10 +122,11 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
   switch (field.type) {
     case 'text':
       return (
-        <Box>
+        <Box sx={stretchColumnSx}>
           <TextField
           label={field.label}
           fullWidth
+          sx={stretch && !field.multiline ? formGridStretchOutlinedSx : undefined}
           value={String(displayValue ?? '')}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
@@ -160,8 +166,14 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
 
     case 'select':
       return (
-        <Box>
-          <FormControl fullWidth disabled={field.disabled} required={field.required} error={hasError}>
+        <Box sx={stretchColumnSx}>
+          <FormControl
+            fullWidth
+            disabled={field.disabled}
+            required={field.required}
+            error={hasError}
+            sx={stretch ? formGridStretchOutlinedSx : undefined}
+          >
             <InputLabel>{field.label}</InputLabel>
             <Select
               label={field.label}

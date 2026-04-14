@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldConfig } from './form.types';
+import { useFormLayoutStretch } from './FormLayoutStretchContext';
 import FormTextField from './FormTextField';
 import FormSelectField from './FormSelectField'
 import FormRadioField from './FormRadioField'
@@ -44,8 +45,15 @@ function FieldWithDescription({
   field: FieldConfig;
   children: React.ReactNode;
 }) {
+  const stretch = useFormLayoutStretch();
   return (
-    <Box>
+    <Box
+      sx={
+        stretch
+          ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }
+          : undefined
+      }
+    >
       {children}
       {field.fieldDescription && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

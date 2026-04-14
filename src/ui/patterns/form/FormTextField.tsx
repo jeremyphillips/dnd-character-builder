@@ -1,6 +1,7 @@
 import { TextField } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { RegisterOptions } from 'react-hook-form';
+import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 
 type FormTextFieldProps = {
   name: string;
@@ -31,6 +32,7 @@ export default function FormTextField({
   onAfterChange,
 }: FormTextFieldProps) {
   const { control } = useFormContext();
+  const stretch = useFormLayoutStretch();
 
   return (
     <Controller
@@ -51,6 +53,7 @@ export default function FormTextField({
           label={label}
           required={required}
           fullWidth
+          sx={stretch && !multiline ? formGridStretchOutlinedSx : undefined}
           size={size}
           multiline={multiline}
           rows={multiline ? rows : undefined}

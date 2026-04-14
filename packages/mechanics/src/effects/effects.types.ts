@@ -12,6 +12,7 @@ import type {
   EffectConditionId,
 } from '../conditions/effect-condition-definitions';
 import type { MonsterSizeCategory, MonsterType } from '@/features/content/monsters/domain/vocab/monster.vocab';
+import type { ActionEconomyKind } from '@/features/content/shared/domain/vocab/actionEconomy.vocab';
 import type { EffectNoteCategory } from '@/features/mechanics/domain/resolution/content-resolution.types';
 import type { AreaOfEffectTemplate } from './area.types';
 import type { TargetingEffectTarget } from './targeting.types';
@@ -39,7 +40,8 @@ export type ResourceCost = {
   amount: number;
 };
 
-export type ActivationKind = 'action' | 'bonus-action' | 'reaction' | 'special';
+/** Effect activation cost; aligned with shared action-economy vocabulary. */
+export type ActivationKind = ActionEconomyKind;
 export type SaveDcSpec = number | { kind: '5-plus-damage-taken' };
 
 export type EffectMode = 'add' | 'set' | 'multiply';

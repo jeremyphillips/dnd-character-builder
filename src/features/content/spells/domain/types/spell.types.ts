@@ -1,5 +1,9 @@
 import type { ClassId } from '@/shared/types/ruleset';
-import type { MagicSchool, SpellRangeKind } from '@/features/content/shared/domain/vocab';
+import type {
+  ActionEconomyKind,
+  MagicSchool,
+  SpellRangeKind,
+} from '@/features/content/shared/domain/vocab';
 import type { DamageType } from '@/features/mechanics/domain/damage/damage.types';
 import type { Effect, EffectConditionId } from '@/features/mechanics/domain/effects/effects.types';
 import type { SpellFunctionTag } from '../vocab/spellFunctionTags.vocab';
@@ -9,7 +13,7 @@ import type { Visibility } from '@/shared/types/visibility';
 import type { ContentItem } from '@/features/content/shared/domain/types/content.types';
 import type { Distance } from '@/shared/domain/distance';
 import type { Coin } from '@/shared/money/types';
-import type { TimeUnit } from '@/shared/domain/time';
+import type { SpellCastingTimeDurationUnit, TimeUnit } from '@/shared/domain/time';
 import type { DiceOrFlat } from '@/features/mechanics/domain/dice'
 import type { ContentResolutionMeta } from '@/features/mechanics/domain/resolution/content-resolution.types';
 import type { CasterOptionField } from '@/features/mechanics/domain/spells/caster-options';
@@ -36,12 +40,8 @@ export type SpellRange =
   | { kind: Extract<SpellRangeKind, 'unlimited'> }
   | { kind: Extract<SpellRangeKind, 'special'>; description: string };
 
-export type CastingTimeUnit =
-  | 'action'
-  | 'bonus-action'
-  | 'reaction'
-  | 'minute'
-  | 'hour';
+/** Spell casting time unit: action economy (incl. special) or long-cast duration units from shared time. */
+export type CastingTimeUnit = ActionEconomyKind | SpellCastingTimeDurationUnit;
 
 export type SpellCastingTimeMode = {
   value: number;

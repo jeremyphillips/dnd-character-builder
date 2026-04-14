@@ -16,6 +16,9 @@ export function formatCastingTimeMode(mode: SpellCastingTimeMode): string {
     case 'reaction':
       s = `${value} ${value === 1 ? 'reaction' : 'reactions'}`;
       break;
+    case 'special':
+      s = value === 1 ? 'Special' : `${value} special`;
+      break;
     case 'minute':
       s = `${value} ${value === 1 ? 'minute' : 'minutes'}`;
       break;

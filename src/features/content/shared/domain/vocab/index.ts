@@ -1,3 +1,4 @@
+export * from './actionEconomy.vocab';
 export * from './alignment.vocab';
 export * from './areaOfEffect.vocab';
 export * from './effectConditions.vocab';

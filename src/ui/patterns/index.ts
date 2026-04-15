@@ -99,9 +99,9 @@ export {
   type AppFormSelectProps,
 } from './form/AppFormSelect'
 export {
-  default as AppFormMultiSelectField,
-  type AppFormMultiSelectFieldProps,
-} from './form/AppFormMultiSelectField'
+  default as AppFormMultiSelectCheckbox,
+  type AppFormMultiSelectCheckboxProps,
+} from './form/AppFormMultiSelectCheckbox'
 export {
   default as AppFormRadioGroup,
   type AppFormRadioGroupProps,

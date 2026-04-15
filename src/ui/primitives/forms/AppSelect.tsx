@@ -7,6 +7,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import type { SelectChangeEvent, SelectProps } from '@mui/material/Select';
 import type { SxProps, Theme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
@@ -25,11 +26,8 @@ export type SelectOption = {
   disabled?: boolean;
 };
 
-export type AppSelectProps = {
+type AppSelectBase = {
   label: string;
-  options: SelectOption[];
-  value: unknown;
-  onChange: (value: string) => void;
   onBlur?: (e: FocusEvent<HTMLElement>) => void;
   name?: string;
   /** For RHF / Controller: forwarded to the underlying `Select`. */
@@ -38,9 +36,6 @@ export type AppSelectProps = {
   helperText?: string;
   disabled?: boolean;
   required?: boolean;
-  placeholder?: string;
-  /** When set with `placeholder`, the empty option is display-only (not selectable). */
-  emptyMenuItemDisabled?: boolean;
   size?: 'small' | 'medium';
   fullWidth?: boolean;
   /** Applied to `FormControl` (e.g. grid stretch from form layout context). */
@@ -49,8 +44,120 @@ export type AppSelectProps = {
   labelEndAdornment?: ReactNode;
 };
 
+export type AppSelectSingleProps = AppSelectBase & {
+  multiple?: false;
+  options: SelectOption[];
+  value: unknown;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  /** When set with `placeholder`, the empty option is display-only (not selectable). */
+  emptyMenuItemDisabled?: boolean;
+};
+
+export type AppSelectMultiProps = AppSelectBase & {
+  multiple: true;
+  value: string[];
+  onChange: (value: string[]) => void;
+  /** Closed-field display (e.g. summary or chips). */
+  renderValue: () => ReactNode;
+  /** Typically `MenuItem` rows (e.g. with checkboxes). */
+  children: ReactNode;
+  placeholder?: string;
+  /** When true (default), `InputLabel` stays shrunk when the selection is empty but `renderValue` still shows text. */
+  shrinkWhenEmpty?: boolean;
+  MenuProps?: SelectProps<string[]>['MenuProps'];
+};
+
+export type AppSelectProps = AppSelectSingleProps | AppSelectMultiProps;
+
 /** Outlined select; see file-level contract. For RHF see `AppFormSelect`. */
-export function AppSelect({
+export function AppSelect(props: AppSelectProps) {
+  if (props.multiple === true) {
+    return <AppSelectMulti {...props} />;
+  }
+  return <AppSelectSingle {...props} />;
+}
+
+function AppSelectMulti({
+  label,
+  value,
+  onChange,
+  renderValue,
+  children,
+  onBlur,
+  name,
+  inputRef,
+  error,
+  helperText,
+  disabled,
+  required,
+  placeholder,
+  shrinkWhenEmpty = true,
+  size = 'medium',
+  fullWidth = true,
+  sx,
+  labelEndAdornment,
+  MenuProps,
+}: AppSelectMultiProps) {
+  const labelId = useId();
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+
+  const shrink =
+    open || focused || value.length > 0 || Boolean(placeholder) || shrinkWhenEmpty;
+
+  return (
+    <FormControl
+      fullWidth={fullWidth}
+      size={size}
+      error={error}
+      disabled={disabled}
+      required={required}
+      variant="outlined"
+      sx={sx}
+    >
+      <InputLabel id={labelId} shrink={shrink}>
+        {labelEndAdornment ? (
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <span>{label}</span>
+            {labelEndAdornment}
+          </Box>
+        ) : (
+          label
+        )}
+      </InputLabel>
+      <Select<string[]>
+        inputRef={inputRef}
+        name={name}
+        size={size}
+        multiple
+        labelId={labelId}
+        label={label}
+        value={value}
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+        displayEmpty
+        renderValue={renderValue}
+        onChange={(e: SelectChangeEvent<string[]>) => {
+          const v = e.target.value;
+          onChange(typeof v === 'string' ? v.split(',') : v);
+        }}
+        MenuProps={MenuProps}
+      >
+        {children}
+      </Select>
+      {helperText ? <FormHelperText>{helperText}</FormHelperText> : null}
+    </FormControl>
+  );
+}
+
+function AppSelectSingle({
   label,
   options,
   value,
@@ -68,7 +175,7 @@ export function AppSelect({
   fullWidth = true,
   sx,
   labelEndAdornment,
-}: AppSelectProps) {
+}: AppSelectSingleProps) {
   const labelId = useId();
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);

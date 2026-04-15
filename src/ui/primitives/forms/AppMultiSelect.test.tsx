@@ -5,8 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { FormProvider, useForm } from 'react-hook-form';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-import { AppMultiSelectField } from './AppMultiSelectField';
-import AppFormMultiSelectField from '@/ui/patterns/form/AppFormMultiSelectField';
+import { AppMultiSelect } from './AppMultiSelect';
+import { AppMultiSelectCheckbox } from './AppMultiSelectCheckbox';
+import AppFormMultiSelectCheckbox from '@/ui/patterns/form/AppFormMultiSelectCheckbox';
 
 const theme = createTheme();
 
@@ -20,42 +21,30 @@ function renderWithTheme(ui: ReactElement) {
   return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
 }
 
-describe('AppMultiSelectField', () => {
+describe('AppMultiSelect (Autocomplete)', () => {
   it('summary mode: shows None selected, 1 selected, N selected', () => {
     const { rerender } = renderWithTheme(
-      <AppMultiSelectField
-        label="Pick"
-        options={OPTIONS}
-        value={[]}
-        onChange={() => {}}
-      />,
+      <AppMultiSelect label="Pick" options={OPTIONS} value={[]} onChange={() => {}} />,
     );
     expect(screen.getByText('None selected')).toBeInTheDocument();
 
     rerender(
       <ThemeProvider theme={theme}>
-        <AppMultiSelectField label="Pick" options={OPTIONS} value={['a']} onChange={() => {}} />
+        <AppMultiSelect label="Pick" options={OPTIONS} value={['a']} onChange={() => {}} />
       </ThemeProvider>,
     );
     expect(screen.getByText('1 selected')).toBeInTheDocument();
 
     rerender(
       <ThemeProvider theme={theme}>
-        <AppMultiSelectField
-          label="Pick"
-          options={OPTIONS}
-          value={['a', 'b', 'c']}
-          onChange={() => {}}
-        />
+        <AppMultiSelect label="Pick" options={OPTIONS} value={['a', 'b', 'c']} onChange={() => {}} />
       </ThemeProvider>,
     );
     expect(screen.getByText('3 selected')).toBeInTheDocument();
   });
 
   it('summary text does not repeat the field label', () => {
-    renderWithTheme(
-      <AppMultiSelectField label="Classes" options={OPTIONS} value={['a']} onChange={() => {}} />,
-    );
+    renderWithTheme(<AppMultiSelect label="Classes" options={OPTIONS} value={['a']} onChange={() => {}} />);
     const summary = screen.getByText('1 selected');
     expect(summary.textContent).not.toMatch(/Classes/i);
   });
@@ -63,7 +52,7 @@ describe('AppMultiSelectField', () => {
   it('chips mode: shows option labels instead of count summary', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <AppMultiSelectField
+      <AppMultiSelect
         label="Pick"
         options={OPTIONS}
         value={['a', 'b']}
@@ -85,9 +74,7 @@ describe('AppMultiSelectField', () => {
   it('calls onChange when toggling options', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    renderWithTheme(
-      <AppMultiSelectField label="Pick" options={OPTIONS} value={[]} onChange={onChange} />,
-    );
+    renderWithTheme(<AppMultiSelect label="Pick" options={OPTIONS} value={[]} onChange={onChange} />);
     await user.click(screen.getByRole('combobox'));
     const listbox = await screen.findByRole('listbox');
     await user.click(within(listbox).getByRole('option', { name: /Alpha/i }));
@@ -95,21 +82,60 @@ describe('AppMultiSelectField', () => {
   });
 });
 
-describe('AppFormMultiSelectField', () => {
+describe('AppMultiSelectCheckbox (Select)', () => {
+  it('summary mode: shows None selected, 1 selected, N selected', () => {
+    const { rerender } = renderWithTheme(
+      <AppMultiSelectCheckbox label="Pick" options={OPTIONS} value={[]} onChange={() => {}} />,
+    );
+    expect(screen.getByText('None selected')).toBeInTheDocument();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <AppMultiSelectCheckbox label="Pick" options={OPTIONS} value={['a']} onChange={() => {}} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <AppMultiSelectCheckbox label="Pick" options={OPTIONS} value={['a', 'b', 'c']} onChange={() => {}} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText('3 selected')).toBeInTheDocument();
+  });
+
+  it('chips mode: shows option labels', () => {
+    renderWithTheme(
+      <AppMultiSelectCheckbox
+        label="Pick"
+        options={OPTIONS}
+        value={['a', 'b']}
+        onChange={() => {}}
+        displayMode="chips"
+      />,
+    );
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Bravo')).toBeInTheDocument();
+  });
+
+  it('calls onChange when toggling options', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithTheme(<AppMultiSelectCheckbox label="Pick" options={OPTIONS} value={[]} onChange={onChange} />);
+    await user.click(screen.getByRole('combobox'));
+    const listbox = await screen.findByRole('listbox');
+    await user.click(within(listbox).getByRole('option', { name: /Alpha/i }));
+    expect(onChange).toHaveBeenCalledWith(['a']);
+  });
+});
+
+describe('AppFormMultiSelectCheckbox', () => {
   function FormTest({ required = false }: { required?: boolean }) {
     const methods = useForm<{ items: string[] }>({ defaultValues: { items: [] } });
     return (
       <FormProvider {...methods}>
-        <form
-          noValidate
-          onSubmit={methods.handleSubmit(() => {})}
-        >
-          <AppFormMultiSelectField
-            name="items"
-            label="Items"
-            options={OPTIONS}
-            required={required}
-          />
+        <form noValidate onSubmit={methods.handleSubmit(() => {})}>
+          <AppFormMultiSelectCheckbox name="items" label="Items" options={OPTIONS} required={required} />
           <button type="submit">Submit</button>
         </form>
       </FormProvider>
@@ -128,6 +154,7 @@ describe('AppFormMultiSelectField', () => {
     renderWithTheme(<FormTest required />);
     await user.click(screen.getByRole('combobox'));
     await user.click(within(await screen.findByRole('listbox')).getByRole('option', { name: /Alpha/i }));
+    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: 'Submit' }));
     expect(screen.queryByText('Items is required')).not.toBeInTheDocument();
   });

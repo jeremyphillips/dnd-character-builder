@@ -12,15 +12,18 @@ import Typography from '@mui/material/Typography';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
-export type MultiSelectOption<TValue extends string = string> = {
-  value: TValue;
-  label: string;
-  disabled?: boolean;
-};
+import {
+  defaultMultiSelectSummary,
+  getSelectedMultiSelectOptions,
+  type MultiSelectFieldDisplayMode,
+  type MultiSelectOption,
+} from './multiSelectFieldShared';
 
-export type AppMultiSelectFieldDisplayMode = 'summary' | 'chips';
+export type { MultiSelectOption, MultiSelectFieldDisplayMode };
 
-export type AppMultiSelectFieldProps<TValue extends string = string> = {
+export type AppMultiSelectDisplayMode = MultiSelectFieldDisplayMode;
+
+export type AppMultiSelectProps<TValue extends string = string> = {
   label: string;
   options: MultiSelectOption<TValue>[];
   value: TValue[];
@@ -31,7 +34,7 @@ export type AppMultiSelectFieldProps<TValue extends string = string> = {
   error?: boolean;
   helperText?: string;
   /** Default `summary`: compact count text; `chips` shows selected options as chips (MUI Chip, outlined/small to match `AppBadge`). */
-  displayMode?: AppMultiSelectFieldDisplayMode;
+  displayMode?: MultiSelectFieldDisplayMode;
   /** Override default summary (`None selected` / `1 selected` / `N selected`). Do not include the field `label` here — it is shown by the floating label. */
   summaryText?: (selectedOptions: MultiSelectOption<TValue>[]) => string;
   size?: 'small' | 'medium';
@@ -45,14 +48,11 @@ export type AppMultiSelectFieldProps<TValue extends string = string> = {
   labelEndAdornment?: ReactNode;
 };
 
-function defaultSummary<TValue extends string>(selected: MultiSelectOption<TValue>[]) {
-  const n = selected.length;
-  if (n === 0) return 'None selected';
-  if (n === 1) return '1 selected';
-  return `${n} selected`;
-}
-
-export function AppMultiSelectField<TValue extends string = string>({
+/**
+ * Multi-select built on MUI **Autocomplete** (`multiple`, `disableCloseOnSelect`), with checkbox-style options.
+ * Prefer {@link AppMultiSelectCheckbox} for bounded lists where search/combobox typing is not desired.
+ */
+export function AppMultiSelect<TValue extends string = string>({
   label,
   options,
   value,
@@ -71,27 +71,15 @@ export function AppMultiSelectField<TValue extends string = string>({
   onBlur,
   sx,
   labelEndAdornment,
-}: AppMultiSelectFieldProps<TValue>) {
-  const optionByValue = useMemo(() => {
-    const m = new Map<TValue, MultiSelectOption<TValue>>();
-    for (const o of options) {
-      m.set(o.value, o);
-    }
-    return m;
-  }, [options]);
-
-  const selectedOptions = useMemo(() => {
-    const out: MultiSelectOption<TValue>[] = [];
-    for (const v of value) {
-      const o = optionByValue.get(v);
-      if (o) out.push(o);
-    }
-    return out;
-  }, [value, optionByValue]);
+}: AppMultiSelectProps<TValue>) {
+  const selectedOptions = useMemo(
+    () => getSelectedMultiSelectOptions(value, options),
+    [value, options],
+  );
 
   const summaryString = summaryText
     ? summaryText(selectedOptions)
-    : defaultSummary(selectedOptions);
+    : defaultMultiSelectSummary(selectedOptions);
 
   const renderInput = (params: AutocompleteRenderInputParams) => (
     <TextField

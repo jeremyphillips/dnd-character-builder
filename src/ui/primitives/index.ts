@@ -35,13 +35,26 @@ export {
   AppImageUploadField,
   type AppImageUploadFieldProps,
 } from './forms/AppImageUploadField'
-export { AppSelect, type AppSelectProps, type SelectOption } from './forms/AppSelect'
 export {
-  AppMultiSelectField,
-  type AppMultiSelectFieldProps,
+  AppSelect,
+  type AppSelectProps,
+  type AppSelectSingleProps,
+  type AppSelectMultiProps,
+  type SelectOption,
+} from './forms/AppSelect'
+export {
+  AppMultiSelect,
+  type AppMultiSelectProps,
+  type AppMultiSelectDisplayMode,
+} from './forms/AppMultiSelect'
+export {
+  AppMultiSelectCheckbox,
+  type AppMultiSelectCheckboxProps,
+} from './forms/AppMultiSelectCheckbox'
+export {
   type MultiSelectOption,
-  type AppMultiSelectFieldDisplayMode,
-} from './forms/AppMultiSelectField'
+  type MultiSelectFieldDisplayMode,
+} from './forms/multiSelectFieldShared'
 export {
   AppJsonPreviewField,
   type AppJsonPreviewFieldProps,

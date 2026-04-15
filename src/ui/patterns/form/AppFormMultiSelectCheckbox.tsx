@@ -1,20 +1,20 @@
 import { Controller, useFormContext } from 'react-hook-form';
 
 import {
-  AppMultiSelectField,
+  AppMultiSelectCheckbox,
+  type MultiSelectFieldDisplayMode,
   type MultiSelectOption,
-  type AppMultiSelectFieldDisplayMode,
 } from '@/ui/primitives';
 import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 
-export type AppFormMultiSelectFieldProps<TValue extends string = string> = {
+export type AppFormMultiSelectCheckboxProps<TValue extends string = string> = {
   name: string;
   label: string;
   options: MultiSelectOption<TValue>[];
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
-  displayMode?: AppMultiSelectFieldDisplayMode;
+  displayMode?: MultiSelectFieldDisplayMode;
   summaryText?: (selectedOptions: MultiSelectOption<TValue>[]) => string;
   size?: 'small' | 'medium';
   /** Fires after the field value updates. */
@@ -22,10 +22,10 @@ export type AppFormMultiSelectFieldProps<TValue extends string = string> = {
 };
 
 /**
- * react-hook-form adapter: binds {@link AppMultiSelectField} via `Controller` + `useFormContext`.
+ * react-hook-form adapter: binds {@link AppMultiSelectCheckbox} via `Controller` + `useFormContext`.
  * Must render under `FormProvider`.
  */
-export default function AppFormMultiSelectField<TValue extends string = string>({
+export default function AppFormMultiSelectCheckbox<TValue extends string = string>({
   name,
   label,
   options,
@@ -36,7 +36,7 @@ export default function AppFormMultiSelectField<TValue extends string = string>(
   summaryText,
   size = 'medium',
   onAfterChange,
-}: AppFormMultiSelectFieldProps<TValue>) {
+}: AppFormMultiSelectCheckboxProps<TValue>) {
   const { control } = useFormContext();
   const stretch = useFormLayoutStretch();
 
@@ -52,7 +52,7 @@ export default function AppFormMultiSelectField<TValue extends string = string>(
         },
       }}
       render={({ field, fieldState }) => (
-        <AppMultiSelectField<TValue>
+        <AppMultiSelectCheckbox<TValue>
           label={label}
           options={options}
           value={Array.isArray(field.value) ? (field.value as TValue[]) : []}

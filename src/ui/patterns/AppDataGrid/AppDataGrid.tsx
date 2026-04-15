@@ -14,7 +14,7 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
-import { AppBadge, AppMultiSelectField, AppSelect, AppTextField, AppTooltip } from '@/ui/primitives'
+import { AppBadge, AppMultiSelectCheckbox, AppSelect, AppTextField, AppTooltip } from '@/ui/primitives'
 import InputAdornment from '@mui/material/InputAdornment'
 import Typography from '@mui/material/Typography'
 import MuiLink from '@mui/material/Link'
@@ -544,7 +544,7 @@ export default function AppDataGrid<T>({
         }
         case 'multiSelect':
           return (
-            <AppMultiSelectField
+            <AppMultiSelectCheckbox
               label={f.label}
               labelEndAdornment={labelEndAdornment}
               options={f.options}

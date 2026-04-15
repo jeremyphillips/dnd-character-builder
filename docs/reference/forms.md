@@ -8,8 +8,8 @@ This document describes how declarative and custom forms are structured in the a
 
 ### Use primitives and patterns for field UI
 
-- **`@/ui/primitives`** — Presentational controls only (for example **`AppTextField`**, **`AppSelect`**, **`AppMultiSelectField`**, **`AppCheckbox`**, **`AppRadioGroup`**, **`AppDateTimePicker`**, **`AppJsonPreviewField`**, **`AppImageUploadField`**). These components know nothing about react-hook-form; they are controlled via props (`value`, `onChange`, `label`, errors, and so on).
-- **`@/ui/patterns/form`** — RHF adapters (names prefixed with **`AppForm…`**, for example **`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectField`**, **`AppFormActions`**) plus layout helpers (**`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`AppForm`**).
+- **`@/ui/primitives`** — Presentational controls only (for example **`AppTextField`**, **`AppSelect`**, **`AppMultiSelectCheckbox`**, **`AppMultiSelect`**, **`AppCheckbox`**, **`AppRadioGroup`**, **`AppDateTimePicker`**, **`AppJsonPreviewField`**, **`AppImageUploadField`**). These components know nothing about react-hook-form; they are controlled via props (`value`, `onChange`, `label`, errors, and so on).
+- **`@/ui/patterns/form`** — RHF adapters (names prefixed with **`AppForm…`**, for example **`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectCheckbox`**, **`AppFormActions`**) plus layout helpers (**`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`AppForm`**).
 - **Feature code** should compose forms from these modules. Avoid ad‑hoc MUI **`TextField`** / **`Select`** / raw **`<input>`** for product forms when an **`App*`** or **`AppForm*`** equivalent exists, so behavior and accessibility stay aligned.
 
 Custom screens that are not driven by **`FieldConfig`** still wrap content in **`AppForm`** (or **`FormProvider`** + **`useForm`** when you need full control) and should use **`AppForm*`** field components or primitives plus **`Controller`** where appropriate.
@@ -94,19 +94,27 @@ Outlined **MUI `Select`** with a floating **`InputLabel`**.
 
 **RHF:** use **`AppFormSelect`** (`src/ui/patterns/form/AppFormSelect.tsx`).
 
-### `AppMultiSelectField`
+### `AppMultiSelectCheckbox`
 
-**Path:** `src/ui/primitives/forms/AppMultiSelectField.tsx`
+**Path:** `src/ui/primitives/forms/AppMultiSelectCheckbox.tsx`
 
-Multi-select built on MUI **`Autocomplete`** (**`multiple`**, **`disableCloseOnSelect`**), with **checkbox-style** options.
+Multi-select using MUI **`Select`** (**`multiple`**) with **checkbox** menu rows — no searchable combobox input. Prefer this for compact filters and bounded option lists.
 
 - **`displayMode`:** **`summary`** (default) shows compact text (**`None selected`**, **`1 selected`**, **`N selected`**) without repeating the field label; **`chips`** shows selected values as small outlined chips.
-- Summary text is rendered in the input’s **`startAdornment`** so it is visible even when nothing is selected (MUI **`renderTags`** alone does not cover the empty case cleanly).
 - Defaults **`fullWidth={true}`**; for compact toolbars, pass **`fullWidth={false}`** and constrain with **`sx`** as needed.
 
-**RHF:** use **`AppFormMultiSelectField`** (`src/ui/patterns/form/AppFormMultiSelectField.tsx`). Required validation uses a **non-empty array** rule. Must render under **`FormProvider`** (typically via **`AppForm`**).
+**RHF:** use **`AppFormMultiSelectCheckbox`** (`src/ui/patterns/form/AppFormMultiSelectCheckbox.tsx`). Required validation uses a **non-empty array** rule. Must render under **`FormProvider`** (typically via **`AppForm`**).
 
-**Note:** **`FieldConfig`** / **`DynamicFormRenderer`** do not yet expose a dedicated **`multiSelect`** type; wire **`AppFormMultiSelectField`** manually where needed.
+**Note:** **`FieldConfig`** / **`DynamicFormRenderer`** do not yet expose a dedicated **`multiSelect`** type; wire **`AppFormMultiSelectCheckbox`** manually where needed.
+
+### `AppMultiSelect`
+
+**Path:** `src/ui/primitives/forms/AppMultiSelect.tsx`
+
+Multi-select built on MUI **`Autocomplete`** (**`multiple`**, **`disableCloseOnSelect`**), with **checkbox-style** options and a text input (search / combobox behavior). Use when users need to type to find options in a long list.
+
+- Same **`displayMode`** / summary behavior as **`AppMultiSelectCheckbox`** (summary uses the input’s **`startAdornment`** so empty state is visible).
+- **`RHF`:** bind with **`Controller`** / **`AppForm*`** patterns if you need this control in a form; there is no dedicated **`AppFormMultiSelect`** wrapper yet — compose **`AppMultiSelect`** or add a thin adapter alongside **`AppFormMultiSelectCheckbox`** when needed.
 
 ---
 
@@ -114,7 +122,7 @@ Multi-select built on MUI **`Autocomplete`** (**`multiple`**, **`disableCloseOnS
 
 **Path:** `src/ui/patterns/AppDataGrid/AppDataGrid.tsx`
 
-Typed **`filters`** render with **`AppSelect`** (**`select`**, **`boolean`**) and **`AppMultiSelectField`** (**`multiSelect`**), not **`TextField`** + **`select`**. Search uses **`AppTextField`**.
+Typed **`filters`** render with **`AppSelect`** (**`select`**, **`boolean`**) and **`AppMultiSelectCheckbox`** (**`multiSelect`**), not **`TextField`** + **`select`**. Search uses **`AppTextField`**.
 
 - **`toolbarFieldSize`:** **`'small'` | `'medium'`** (default **`small`**) — single prop controlling MUI **`size`** for the search field and all filter controls.
 - Selects with an **`value: ''`** “All”-style row pass **`placeholder`** from that option’s label; **`AppSelect`** dedupes the empty menu row (see above).
@@ -167,7 +175,7 @@ When fields sit in a **horizontal group** (**`group.direction === 'row'`**), **`
 
 The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** with flex alignment so **selected value / placeholder text** stays **vertically centered** when the outlined root is stretched tall (for example next to a multiline field).
 
-**`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectField`**, and similar components merge this **`sx`** onto their underlying **`FormControl`** / **`TextField`** / **`Autocomplete`** when stretch is active.
+**`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectCheckbox`**, and similar components merge this **`sx`** onto their underlying **`FormControl`** / **`TextField`** / **`Select`** / **`Autocomplete`** when stretch is active.
 
 ### `FieldWithDescription` and group chrome
 
@@ -196,9 +204,9 @@ The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** 
 | **`AppForm`** | `@/ui/patterns/form` or `@/ui/patterns` |
 | **`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`FormDriver`** | `@/ui/patterns/form` |
 | **`AppForm*`** field adapters | `@/ui/patterns/form` / `@/ui/patterns` |
-| **`AppFormMultiSelectField`** | `@/ui/patterns/form` / `@/ui/patterns` |
+| **`AppFormMultiSelectCheckbox`** | `@/ui/patterns/form` / `@/ui/patterns` |
 | **`App*`** primitives | `@/ui/primitives` |
-| **`AppMultiSelectField`** | `@/ui/primitives` |
+| **`AppMultiSelectCheckbox`**, **`AppMultiSelect`** | `@/ui/primitives` |
 | **`AppDataGrid`** (toolbar filters) | `@/ui/patterns` |
 | **`filterAppDataGridFiltersForViewer`**, **`AppDataGridFilterVisibility`**, **`AppDataGridToolbarLayout`**, **`indexAppDataGridFiltersById`** | `@/ui/patterns` |
 | **`FieldConfig`**, **`FormLayoutNode`** | `@/ui/patterns/form` (re-exported from **`form.types`**) |

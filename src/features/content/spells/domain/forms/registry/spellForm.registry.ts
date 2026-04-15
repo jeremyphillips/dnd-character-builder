@@ -14,11 +14,17 @@ import {
   TARGET_ELIGIBILITY_DEFINITIONS,
   TARGET_SELECTION_DEFINITIONS,
 } from '@/features/content/shared/domain/vocab/spellTargeting.vocab';
-import { getAuthorableEffectKindSelectOptions } from '@/features/content/shared/domain/vocab/effectKinds.vocab';
 import { getSpellcastingClasses } from '@/features/mechanics/domain/classes';
 import { getSystemClasses } from '@/features/mechanics/domain/rulesets/system/classes';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
 import type { SpellFormValues } from '../types/spellForm.types';
+import {
+  createDefaultSpellEffectFormRow,
+  spellEffectGroupsDomainToForm,
+  spellEffectGroupsFormToDomain,
+} from '../assembly/spellEffectRow.assembly';
+import { getSpellEffectKindPhase1SelectOptions } from '../options/spellEffectKinds.phase1';
+import { spellEffectPayloadFormNode } from './spellEffectGroups.formNodes';
 import { spellComponentsPatchBindings } from '../spellComponentsPatchBinding';
 import {
   formatSpellLevelShort,
@@ -82,12 +88,12 @@ const trimOrNull = (v: unknown): string | null => (trim(v) ? trim(v) : null);
 const parseEffectGroupsForInput = (v: unknown): SpellInput['effectGroups'] | undefined => {
   if (v == null) return undefined;
   if (!Array.isArray(v)) return undefined;
-  return v as SpellInput['effectGroups'];
+  return spellEffectGroupsFormToDomain(v as SpellFormValues['effectGroups']);
 };
 
 const formatEffectGroupsForForm = (v: unknown): SpellFormValues['effectGroups'] => {
   if (v == null || !Array.isArray(v)) return [];
-  return v as SpellFormValues['effectGroups'];
+  return spellEffectGroupsDomainToForm(v as SpellInput['effectGroups']);
 };
 
 const GROUP_EFFECT_TARGETING = {
@@ -147,15 +153,17 @@ function buildSpellEffectGroupsFormNode(): RepeatableGroupSpec<
         name: 'effects',
         label: 'Effects',
         itemLabel: 'Effect',
+        defaultItem: createDefaultSpellEffectFormRow() as Record<string, unknown>,
         children: [
           {
             name: 'kind',
             label: 'Kind',
             kind: 'select',
-            options: getAuthorableEffectKindSelectOptions(),
+            options: getSpellEffectKindPhase1SelectOptions(),
             defaultFromOptions: 'first',
             placeholder: 'Kind',
           },
+          spellEffectPayloadFormNode,
         ],
       },
     ],

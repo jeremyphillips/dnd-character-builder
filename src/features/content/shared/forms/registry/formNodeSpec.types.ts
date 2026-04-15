@@ -1,4 +1,23 @@
+import type { ReactNode } from 'react';
+import type { PatchDriver } from '@/ui/patterns/form/patchDriver.types';
 import type { FieldSpec } from './fieldSpec.types';
+
+export type CustomFormNodeSpecContext = {
+  rowPrefix: string;
+  usePatchDriver: boolean;
+  patchDriver: PatchDriver | null;
+};
+
+export type CustomFormNodeSpec<
+  FormValues extends Record<string, unknown>,
+  InputShape extends Record<string, unknown> = Record<string, unknown>,
+  ItemShape extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  kind: 'custom';
+  /** Stable key for layout chunking / React keys */
+  key: string;
+  render: (ctx: CustomFormNodeSpecContext) => ReactNode;
+};
 
 /**
  * Leaf field inside a repeatable group — `name` is relative to each row (e.g. `targeting.selection`, `kind`).
@@ -36,7 +55,8 @@ export type FormNodeSpec<
 > =
   | FieldSpec<FormValues, InputShape, ItemShape>
   | NestedFieldSpec<FormValues, InputShape, ItemShape>
-  | RepeatableGroupSpec<FormValues, InputShape, ItemShape>;
+  | RepeatableGroupSpec<FormValues, InputShape, ItemShape>
+  | CustomFormNodeSpec<FormValues, InputShape, ItemShape>;
 
 export function isRepeatableGroupSpec<
   FormValues extends Record<string, unknown>,
@@ -46,4 +66,14 @@ export function isRepeatableGroupSpec<
   spec: FormNodeSpec<FormValues, InputShape, ItemShape>,
 ): spec is RepeatableGroupSpec<FormValues, InputShape, ItemShape> {
   return (spec as RepeatableGroupSpec<FormValues, InputShape, ItemShape>).kind === 'repeatable-group';
+}
+
+export function isCustomFormNodeSpec<
+  FormValues extends Record<string, unknown>,
+  InputShape extends Record<string, unknown>,
+  ItemShape extends Record<string, unknown>,
+>(
+  spec: FormNodeSpec<FormValues, InputShape, ItemShape>,
+): spec is CustomFormNodeSpec<FormValues, InputShape, ItemShape> {
+  return (spec as CustomFormNodeSpec<FormValues, InputShape, ItemShape>).kind === 'custom';
 }

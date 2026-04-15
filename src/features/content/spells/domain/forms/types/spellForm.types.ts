@@ -4,20 +4,40 @@
  */
 import type { ContentFormValues } from '@/features/content/shared/domain/types';
 import type { MagicSchool } from '@/features/content/shared/domain/vocab';
-import type { AuthorableEffectKind } from '@/features/content/shared/domain/vocab/effectKinds.vocab';
+import type { EffectConditionId } from '@/features/content/shared/domain/vocab/effectConditions.vocab';
 import type {
   TargetEligibilityKind,
   TargetSelectionKind,
 } from '@/features/content/shared/domain/vocab/spellTargeting.vocab';
+import type { ResourceRechargeKind } from '@/features/content/shared/domain/vocab/resourceRecharge.vocab';
 import type { ClassId } from '@/shared/types/ruleset';
+import type { SpellEffectPhase1Kind } from '../options/spellEffectKinds.phase1';
 
-/** Prototype authoring row; maps to domain `effectGroups` via mapper (minimal effect payloads). */
+/**
+ * One nested `effects[]` row — flat draft keys + `kind` (Phase 1 spell picker is narrower than global authorable).
+ */
+export type SpellEffectFormRow = {
+  kind: SpellEffectPhase1Kind | '';
+  noteText: string;
+  /** Reserved if we wire `EffectNoteCategory` later */
+  noteCategory: string;
+  damageValue: string;
+  damageType: string;
+  conditionId: EffectConditionId | '';
+  moveDistance: string;
+  moveForced: boolean;
+  resourceId: string;
+  resourceMax: string;
+  resourceRecharge: ResourceRechargeKind;
+};
+
+/** Prototype authoring row; maps to domain `effectGroups` via mapper. */
 export type SpellEffectGroupFormRow = {
   targeting: {
     selection: TargetSelectionKind | '';
     targetType: TargetEligibilityKind | '';
   };
-  effects: { kind: AuthorableEffectKind | '' }[];
+  effects: SpellEffectFormRow[];
 };
 
 export type SpellFormValues = Omit<ContentFormValues, 'description'> & {

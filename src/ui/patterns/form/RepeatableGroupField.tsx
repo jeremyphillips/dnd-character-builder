@@ -25,6 +25,9 @@ function prefixFieldConfig(field: FieldConfig, rowPrefix: string): FieldConfig {
 export function buildDefaultRowFromLayout(children: FormLayoutNode[]): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   for (const child of children) {
+    if ('type' in child && child.type === 'custom') {
+      continue;
+    }
     if ('type' in child && child.type === 'repeatable-group') {
       row[child.name] = [];
       continue;
@@ -279,6 +282,17 @@ function FormLayoutRow({
   return (
     <Stack spacing={2}>
       {chunks.map((chunk, chunkIdx) => {
+        if (chunk.type === 'custom') {
+          return (
+            <Box key={`${chunk.node.key}-${chunkIdx}`}>
+              {chunk.node.render({
+                rowPrefix,
+                usePatchDriver,
+                patchDriver,
+              })}
+            </Box>
+          );
+        }
         if (chunk.type === 'repeatable') {
           const nestedPath = joinFieldPrefix(rowPrefix, chunk.group.name);
           return (

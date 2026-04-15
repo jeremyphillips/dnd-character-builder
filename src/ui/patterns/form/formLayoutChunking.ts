@@ -10,7 +10,8 @@ export type FormLayoutChunk =
       helperText?: string;
       spacing?: number;
     }
-  | { type: 'repeatable'; group: Extract<FormLayoutNode, { type: 'repeatable-group' }> };
+  | { type: 'repeatable'; group: Extract<FormLayoutNode, { type: 'repeatable-group' }> }
+  | { type: 'custom'; node: Extract<FormLayoutNode, { type: 'custom' }> };
 
 export function getAutoGroupWidth(count: number): number {
   if (count <= 1) return 12;
@@ -25,6 +26,11 @@ export function chunkFormLayoutNodes(fields: FormLayoutNode[]): FormLayoutChunk[
   let i = 0;
   while (i < fields.length) {
     const f = fields[i];
+    if ('type' in f && f.type === 'custom') {
+      chunks.push({ type: 'custom', node: f });
+      i++;
+      continue;
+    }
     if ('type' in f && f.type === 'repeatable-group') {
       chunks.push({ type: 'repeatable', group: f });
       i++;

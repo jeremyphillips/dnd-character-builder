@@ -1,7 +1,7 @@
 import type { FormLayoutNode, RepeatableGroupLayoutConfig } from '@/ui/patterns';
 import type { FieldSpec } from './fieldSpec.types';
 import type { FormNodeSpec, RepeatableGroupSpec } from './formNodeSpec.types';
-import { isRepeatableGroupSpec } from './formNodeSpec.types';
+import { isCustomFormNodeSpec, isRepeatableGroupSpec } from './formNodeSpec.types';
 import { fieldSpecToFieldConfig, type BuildFieldConfigsOptions } from './buildFieldConfigs';
 
 function mapRepeatableSpec<
@@ -39,6 +39,14 @@ export function buildFormLayout<
   for (const spec of specs) {
     if (isRepeatableGroupSpec(spec)) {
       out.push(mapRepeatableSpec(spec, options));
+      continue;
+    }
+    if (isCustomFormNodeSpec(spec)) {
+      out.push({
+        type: 'custom',
+        key: spec.key,
+        render: spec.render,
+      });
       continue;
     }
     const fc = fieldSpecToFieldConfig(spec as FieldSpec<FormValues, InputShape, ItemShape>, options);

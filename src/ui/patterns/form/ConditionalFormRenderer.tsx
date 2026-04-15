@@ -12,7 +12,9 @@ import { PatchValidationProvider } from './validation/PatchValidationContext';
 import DynamicFormRenderer from './DynamicFormRenderer';
 
 function isLeafFieldConfig(n: FormLayoutNode): n is FieldConfig {
-  return !('type' in n && n.type === 'repeatable-group');
+  if ('type' in n && n.type === 'repeatable-group') return false;
+  if ('type' in n && n.type === 'custom') return false;
+  return true;
 }
 
 /**

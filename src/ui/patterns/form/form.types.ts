@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import type { RegisterOptions } from 'react-hook-form';
 import type { Condition } from './conditions';
+import type { PatchDriver } from './patchDriver.types';
 import type { PickerOption } from './OptionPickerField';
 
 export type { PickerOption } from './OptionPickerField';
@@ -19,7 +21,7 @@ type BaseFieldConfig = {
   /** Helper text shown below the field */
   helperText?: string
   /** UI-only description shown below the field (separate from helperText/validation) */
-  fieldDescription?: React.ReactNode
+  fieldDescription?: ReactNode
   /** Default value for initial form state / RHF defaultValues */
   defaultValue?: unknown
   /** For option-based fields: use first option's value as default */
@@ -140,4 +142,14 @@ export type RepeatableGroupLayoutConfig = {
   children: FormLayoutNode[];
 };
 
-export type FormLayoutNode = FieldConfig | RepeatableGroupLayoutConfig;
+export type CustomLayoutNode = {
+  type: 'custom';
+  key: string;
+  render: (ctx: {
+    rowPrefix: string;
+    usePatchDriver: boolean;
+    patchDriver: PatchDriver | null;
+  }) => ReactNode;
+};
+
+export type FormLayoutNode = FieldConfig | RepeatableGroupLayoutConfig | CustomLayoutNode;

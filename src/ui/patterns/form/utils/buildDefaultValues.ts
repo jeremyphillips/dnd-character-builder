@@ -10,6 +10,10 @@ function isRepeatableGroup(
   return 'type' in n && n.type === 'repeatable-group';
 }
 
+function isCustomNode(n: FormLayoutNode): n is Extract<FormLayoutNode, { type: 'custom' }> {
+  return 'type' in n && n.type === 'custom';
+}
+
 export function buildDefaultValues<T extends Record<string, unknown>>(
   fields: FormLayoutNode[],
   overrides?: Partial<T>,
@@ -17,6 +21,9 @@ export function buildDefaultValues<T extends Record<string, unknown>>(
   const out: Record<string, unknown> = {};
 
   for (const field of fields) {
+    if (isCustomNode(field)) {
+      continue;
+    }
     if (isRepeatableGroup(field)) {
       out[field.name] = [];
       continue;

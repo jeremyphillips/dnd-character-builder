@@ -3,7 +3,7 @@
  */
 import type { FieldSpec } from './fieldSpec.types';
 import type { FormNodeSpec } from './formNodeSpec.types';
-import { isRepeatableGroupSpec } from './formNodeSpec.types';
+import { isCustomFormNodeSpec, isRepeatableGroupSpec } from './formNodeSpec.types';
 
 /**
  * Builds default form values from specs (for initial state / fallbacks).
@@ -36,6 +36,9 @@ export const buildDefaultFormValuesFromFormNodes = <
 ): Partial<FormValues> => {
   const out: Record<string, unknown> = {};
   for (const spec of specs) {
+    if (isCustomFormNodeSpec(spec)) {
+      continue;
+    }
     if (isRepeatableGroupSpec(spec)) {
       out[spec.name] = [];
       continue;

@@ -28,12 +28,9 @@ import JsonPreviewField from './JsonPreviewField';
 import VisibilityField from './VisibilityField';
 import OptionPickerField from './OptionPickerField';
 import { pickerArrayToFormValue, pickerValueToArray } from './optionPickerBridge';
+import type { PatchDriver } from './patchDriver.types';
 
-export type PatchDriver = {
-  getValue(path: string): unknown;
-  setValue(path: string, value: unknown): void;
-  unsetValue?(path: string): void;
-};
+export type { PatchDriver } from './patchDriver.types';
 
 type DriverFieldProps = {
   field: FieldConfig;

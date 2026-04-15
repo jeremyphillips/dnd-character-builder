@@ -6,11 +6,13 @@ export type {
   ValidationSpec,
 } from './fieldSpec.types';
 export type {
+  CustomFormNodeSpec,
+  CustomFormNodeSpecContext,
   FormNodeSpec,
   NestedFieldSpec,
   RepeatableGroupSpec,
 } from './formNodeSpec.types';
-export { isRepeatableGroupSpec } from './formNodeSpec.types';
+export { isCustomFormNodeSpec, isRepeatableGroupSpec } from './formNodeSpec.types';
 export { numberRange } from '@/ui/patterns';
 export type { DetailSpec } from './detailSpec.types';
 export {

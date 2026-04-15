@@ -93,6 +93,17 @@ export default function DynamicFormRenderer({
   return (
     <Stack spacing={spacing}>
       {chunks.map((chunk) => {
+        if (chunk.type === 'custom') {
+          return (
+            <Box key={chunk.node.key}>
+              {chunk.node.render({
+                rowPrefix: '',
+                usePatchDriver: !!usePatchDriver,
+                patchDriver,
+              })}
+            </Box>
+          );
+        }
         if (chunk.type === 'repeatable') {
           return (
             <RepeatableGroupField

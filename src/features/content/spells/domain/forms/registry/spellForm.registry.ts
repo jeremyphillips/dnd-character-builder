@@ -94,6 +94,13 @@ const formatEffectGroupsForForm = (v: unknown): SpellFormValues['effectGroups'] 
   return v as SpellFormValues['effectGroups'];
 };
 
+const GROUP_EFFECT_TARGETING = {
+  id: 'spellEffectGroupTargeting',
+  label: 'Targeting',
+  direction: 'row' as const,
+  spacing: 2,
+};
+
 function buildSpellEffectGroupsFormNode(): RepeatableGroupSpec<
   SpellFormValues,
   SpellInput & Record<string, unknown>,
@@ -126,6 +133,8 @@ function buildSpellEffectGroupsFormNode(): RepeatableGroupSpec<
         options: selectionOptions,
         defaultFromOptions: 'first',
         placeholder: 'Selection',
+        group: GROUP_EFFECT_TARGETING,
+        width: 6,
       },
       {
         name: 'targeting.targetType',
@@ -134,6 +143,8 @@ function buildSpellEffectGroupsFormNode(): RepeatableGroupSpec<
         options: eligibilityOptions,
         defaultFromOptions: 'first',
         placeholder: 'Target type',
+        group: GROUP_EFFECT_TARGETING,
+        width: 6,
       },
       {
         kind: 'repeatable-group',

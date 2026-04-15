@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import FormHelperText from '@mui/material/FormHelperText';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useFieldArray, useFormContext } from 'react-hook-form';
@@ -7,6 +10,8 @@ import type { FieldConfig, FormLayoutNode, RepeatableGroupLayoutConfig } from '.
 import DynamicField from './DynamicField';
 import DriverField from './DriverField';
 import type { PatchDriver } from './DriverField';
+import { FormLayoutStretchProvider } from './FormLayoutStretchContext';
+import { chunkFormLayoutNodes, getAutoGroupWidth } from './formLayoutChunking';
 
 function joinFieldPrefix(rowPrefix: string, fieldName: string): string {
   return `${rowPrefix}.${fieldName}`;
@@ -213,6 +218,51 @@ function RepeatableGroupFieldPatch({
   );
 }
 
+function GridFieldCell({
+  field,
+  usePatchDriver,
+  patchDriver,
+}: {
+  field: FieldConfig;
+  usePatchDriver: boolean;
+  patchDriver: PatchDriver | null;
+}) {
+  const content =
+    usePatchDriver && patchDriver ? (
+      <DriverField field={field} driver={patchDriver} />
+    ) : (
+      <DynamicField field={field} />
+    );
+  return (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{content}</Box>
+  );
+}
+
+function renderLeafField(
+  field: FieldConfig,
+  usePatchDriver: boolean,
+  patchDriver: PatchDriver | null,
+): ReactNode {
+  if (field.type === 'hidden') {
+    return usePatchDriver && patchDriver ? (
+      <DriverField key={field.name} field={field} driver={patchDriver} />
+    ) : (
+      <DynamicField key={field.name} field={field} />
+    );
+  }
+  const content =
+    usePatchDriver && patchDriver ? (
+      <DriverField field={field} driver={patchDriver} />
+    ) : (
+      <DynamicField field={field} />
+    );
+  return (
+    <Box key={field.name}>
+      {content}
+    </Box>
+  );
+}
+
 function FormLayoutRow({
   childrenNodes,
   rowPrefix,
@@ -224,29 +274,75 @@ function FormLayoutRow({
   usePatchDriver: boolean;
   patchDriver: PatchDriver | null;
 }) {
+  const chunks = chunkFormLayoutNodes(childrenNodes);
+
   return (
     <Stack spacing={2}>
-      {childrenNodes.map((child, childIdx) => {
-        if ('type' in child && child.type === 'repeatable-group') {
-          const nestedPath = joinFieldPrefix(rowPrefix, child.name);
+      {chunks.map((chunk, chunkIdx) => {
+        if (chunk.type === 'repeatable') {
+          const nestedPath = joinFieldPrefix(rowPrefix, chunk.group.name);
           return (
             <RepeatableGroupField
-              key={`${nestedPath}-rg-${childIdx}`}
-              config={child}
+              key={`${nestedPath}-rg-${chunkIdx}`}
+              config={chunk.group}
               arrayPath={nestedPath}
               usePatchDriver={usePatchDriver}
               patchDriver={patchDriver}
             />
           );
         }
-        const field = prefixFieldConfig(child as FieldConfig, rowPrefix);
+        if (chunk.type === 'single') {
+          const field = prefixFieldConfig(chunk.field, rowPrefix);
+          return renderLeafField(field, usePatchDriver, patchDriver);
+        }
+        const { fields: groupFields, direction, label, helperText, spacing: groupSpacing } = chunk;
+        const groupKey = groupFields[0].group!.id;
+        const spacingVal = groupSpacing ?? 2;
+        const prefixed = groupFields.map((f) => prefixFieldConfig(f, rowPrefix));
+        const groupContent =
+          direction === 'column' ? (
+            <Stack direction="column" spacing={spacingVal}>
+              {prefixed.map((f) => renderLeafField(f, usePatchDriver, patchDriver))}
+            </Stack>
+          ) : (
+            <FormLayoutStretchProvider value>
+              <Grid container spacing={spacingVal} sx={{ alignItems: 'stretch' }}>
+                {prefixed.map((f) => {
+                  const width = f.width ?? getAutoGroupWidth(prefixed.length);
+                  return (
+                    <Grid
+                      key={f.name}
+                      size={{ xs: width }}
+                      sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                    >
+                      <GridFieldCell field={f} usePatchDriver={usePatchDriver} patchDriver={patchDriver} />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </FormLayoutStretchProvider>
+          );
+        const hasHeader = (label != null && label !== '') || (helperText != null && helperText !== '');
+        const hasGroupHelper = helperText != null && helperText !== '';
         return (
-          <Box key={field.name}>
-            {usePatchDriver && patchDriver ? (
-              <DriverField field={field} driver={patchDriver} />
-            ) : (
-              <DynamicField field={field} />
+          <Box key={`${groupKey}-${chunkIdx}`}>
+            {hasHeader && (
+              <Box sx={{ mb: 1 }}>
+                {label != null && label !== '' && (
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: hasGroupHelper ? 0.5 : 2 }}
+                  >
+                    {label}
+                  </Typography>
+                )}
+                {helperText != null && helperText !== '' && (
+                  <FormHelperText sx={{ mt: 0 }}>{helperText}</FormHelperText>
+                )}
+              </Box>
             )}
+            {groupContent}
           </Box>
         );
       })}

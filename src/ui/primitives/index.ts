@@ -17,6 +17,9 @@ export type { AppAlertProps, AppAlertTone } from './AppAlert/AppAlert'
 
 export { mapAppAlertToneToMuiSeverity } from './appTone'
 
+export { default as AppContainer } from './AppContainer'
+export type { AppContainerProps } from './AppContainer'
+
 export { default as AppToast } from './AppToast/AppToast'
 export type { AppToastProps } from './AppToast/AppToast'
 

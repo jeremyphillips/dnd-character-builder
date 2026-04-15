@@ -35,29 +35,31 @@ function TestWrapper({
 }
 
 describe('SpellEffectPayloadFields', () => {
-  it('shows dice-mode damage fields by default (Damage Format, Dice Count, Die Face, Modifier)', () => {
+  it('shows dice-mode damage fields under Damage with short labels', () => {
     render(
       <TestWrapper kind="damage">
         {(prefix) => <SpellEffectPayloadFields namePrefix={prefix} patchDriver={null} />}
       </TestWrapper>,
     );
-    expect(screen.getByLabelText(/^Damage Format$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Dice Count$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Die Face$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Damage$/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Format$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Count$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Face$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Modifier$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Damage Value$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Value$/i)).not.toBeInTheDocument();
   });
 
-  it('shows flat damage value when Damage Format is flat', () => {
+  it('shows Value in flat mode under Damage', () => {
     render(
       <TestWrapper kind="damage" rowOverrides={{ damageFormat: 'flat' }}>
         {(prefix) => <SpellEffectPayloadFields namePrefix={prefix} patchDriver={null} />}
       </TestWrapper>,
     );
-    expect(screen.getByLabelText(/^Damage Format$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Damage Value$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Dice Count$/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Die Face$/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Damage$/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Format$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Value$/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Count$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Face$/i)).not.toBeInTheDocument();
   });
 
   it('shows note field when kind is note', () => {

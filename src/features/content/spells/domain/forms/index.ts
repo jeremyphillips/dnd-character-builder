@@ -1,5 +1,9 @@
 export type { SpellFormValues } from './types/spellForm.types';
 export {
+  buildSpellPatchDriverBase,
+  normalizeSpellPatchInitialPatch,
+} from './patch/spellPatchDriverBase';
+export {
   getSpellFieldConfigs,
   SPELL_FORM_DEFAULTS,
   type GetSpellFieldConfigsOptions,

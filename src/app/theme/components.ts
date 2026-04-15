@@ -31,7 +31,7 @@ export const components: Components<Theme> = {
   MuiTextField: {
     defaultProps: {
       variant: 'outlined',
-      size: 'small',
+      size: 'medium',
     },
   },
   /** Match default `TextField` / `Select` medium density (~56px outlined control). */

@@ -25,6 +25,8 @@ import {
   SPELL_FORM_DEFAULTS,
   spellToFormValues,
   toSpellInput,
+  buildSpellPatchDriverBase,
+  normalizeSpellPatchInitialPatch,
 } from '@/features/content/spells/domain';
 import type { Spell } from '@/features/content/spells/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
@@ -109,9 +111,19 @@ export default function SpellEditRoute() {
 
   const { policyValue, handlePolicyChange } = useAccessPolicyField<SpellFormValues>(watch, setValue);
 
+  const patchDriverBase = useMemo(
+    () => (spell ? buildSpellPatchDriverBase(spell) : null),
+    [spell],
+  );
+
+  const patchInitialForDriver = useMemo(
+    () => normalizeSpellPatchInitialPatch(initialPatch),
+    [initialPatch],
+  );
+
   const driver = usePatchDriverState(
-    spell ? (spell as unknown as Record<string, unknown>) : null,
-    initialPatch,
+    patchDriverBase,
+    patchInitialForDriver,
     onPatchChange,
     clearFeedback
   );

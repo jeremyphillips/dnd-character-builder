@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, useMatch, Link } from 'react-router-dom'
 import Button from '@mui/material/Button'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
-
+import { AppContainer } from '@/ui/primitives'
 import { apiFetch } from '@/app/api'
 import { ROUTES } from '@/app/routes'
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -117,6 +117,7 @@ export default function CampaignRoute() {
         image={activeCampaign.identity?.imageUrl}
       />
 
+      <AppContainer>
       <h3>Campaign</h3>
 
       {isOwner && (
@@ -171,6 +172,7 @@ export default function CampaignRoute() {
         confirmColor="warning"
         loading={confirming}
       />
+      </AppContainer>
     </div>
   )
 }

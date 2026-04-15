@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { useWatch } from 'react-hook-form';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
-import type { FieldConfig } from '@/ui/patterns';
+import { DynamicFormRenderer, type FieldConfig } from '@/ui/patterns';
 import DynamicField from '@/ui/patterns/form/DynamicField';
 import DriverField from '@/ui/patterns/form/DriverField';
 import type { PatchDriver } from '@/ui/patterns/form/patchDriver.types';
@@ -18,6 +18,17 @@ const DAMAGE_FORMAT_OPTIONS = [
   { value: 'dice', label: 'Dice' },
   { value: 'flat', label: 'Flat' },
 ] as const;
+
+/**
+ * Matches spell form registry pattern (e.g. GROUP_RANGE). `width` on fields only applies when
+ * `direction` is `row` — DynamicFormRenderer uses Grid for row groups, Stack (full width) for column.
+ */
+const GROUP_SPELL_EFFECT_DAMAGE = {
+  id: 'spellEffectDamage',
+  label: 'Damage',
+  direction: 'row' as const,
+  spacing: 2,
+};
 
 function joinPrefix(prefix: string, name: string): string {
   return `${prefix}.${name}`;
@@ -57,138 +68,144 @@ function PrefixedDriverField({
   return <DriverField field={full} driver={driver} />;
 }
 
-type RenderFieldFn = (relativeName: string, field: FieldConfig) => ReactElement;
+function buildSpellDamageFormFields(
+  namePrefix: string,
+  fmt: string,
+  damageTypeOptions: { value: string; label: string }[],
+): FieldConfig[] {
+  const fieldName = (relativeName: string): string => joinPrefix(namePrefix, relativeName);
+  const g = GROUP_SPELL_EFFECT_DAMAGE;
+
+  const damageTypeField: FieldConfig = {
+    name: fieldName('damageType'),
+    label: 'Damage type',
+    type: 'select',
+    options: damageTypeOptions,
+    placeholder: 'Optional',
+    group: g,
+    /** Full row under format/dice controls (Grid wraps after 12 columns). */
+    width: 3,
+  };
+
+  const formatField: FieldConfig = {
+    name: fieldName('damageFormat'),
+    label: 'Format',
+    type: 'select',
+    options: [...DAMAGE_FORMAT_OPTIONS],
+    defaultFromOptions: 'first',
+    group: g,
+  };
+
+  if (fmt === 'flat') {
+    return [
+      { ...formatField, width: 2 },
+      {
+        name: fieldName('damageFlatValue'),
+        label: 'Value',
+        type: 'text',
+        inputType: 'number',
+        placeholder: 'e.g. 8',
+        group: g,
+        width: 1,
+      },
+      damageTypeField,
+    ];
+  }
+
+  return [
+    { ...formatField, width: 2 },
+    {
+      name: fieldName('damageDiceCount'),
+      label: 'Count',
+      type: 'text',
+      inputType: 'number',
+      placeholder: 'e.g. 1',
+      group: g,
+      width: 1,
+    },
+    {
+      name: fieldName('damageDieFace'),
+      label: 'Face',
+      type: 'select',
+      options: [...DIE_FACE_OPTIONS],
+      defaultFromOptions: 'first',
+      placeholder: 'Die',
+      group: g,
+      width: 1,
+    },
+    {
+      name: fieldName('damageModifier'),
+      label: 'Modifier',
+      type: 'text',
+      placeholder: '1',
+      helperText: '',
+      // helperText: 'Optional; added to the roll (e.g. 2 or -1)',
+      group: g,
+      width: 1,
+    },
+    damageTypeField,
+  ];
+}
+
+function SpellDamagePayloadFieldsBody({
+  namePrefix,
+  fmt,
+  damageTypeOptions,
+  patchDriver,
+}: {
+  namePrefix: string;
+  fmt: string;
+  damageTypeOptions: { value: string; label: string }[];
+  patchDriver: PatchDriver | null;
+}): ReactElement {
+  const fields = buildSpellDamageFormFields(namePrefix, fmt, damageTypeOptions);
+  return (
+    <DynamicFormRenderer
+      fields={fields}
+      spacing={2}
+      driver={patchDriver ? { kind: 'patch', ...patchDriver } : undefined}
+    />
+  );
+}
 
 function SpellDamagePayloadFieldsRhf({
   namePrefix,
-  renderField,
   damageTypeOptions,
 }: {
   namePrefix: string;
-  renderField: RenderFieldFn;
   damageTypeOptions: { value: string; label: string }[];
 }): ReactElement {
   const fmt =
     (useWatch({ name: `${namePrefix}.damageFormat` }) as string | undefined | null) ?? 'dice';
 
   return (
-    <Stack spacing={2}>
-      {renderField('damageFormat', {
-        name: 'damageFormat',
-        label: 'Damage Format',
-        type: 'select',
-        options: [...DAMAGE_FORMAT_OPTIONS],
-        defaultFromOptions: 'first',
-      })}
-      {fmt === 'flat'
-        ? renderField('damageFlatValue', {
-            name: 'damageFlatValue',
-            label: 'Damage Value',
-            type: 'text',
-            inputType: 'number',
-            placeholder: 'e.g. 8',
-          })
-        : (
-            <Stack spacing={2}>
-              {renderField('damageDiceCount', {
-                name: 'damageDiceCount',
-                label: 'Dice Count',
-                type: 'text',
-                inputType: 'number',
-                placeholder: 'e.g. 1',
-              })}
-              {renderField('damageDieFace', {
-                name: 'damageDieFace',
-                label: 'Die Face',
-                type: 'select',
-                options: [...DIE_FACE_OPTIONS],
-                defaultFromOptions: 'first',
-                placeholder: 'Die',
-              })}
-              {renderField('damageModifier', {
-                name: 'damageModifier',
-                label: 'Modifier',
-                type: 'text',
-                placeholder: '0',
-                helperText: 'Optional; added to the roll (e.g. 2 or -1)',
-              })}
-            </Stack>
-          )}
-      {renderField('damageType', {
-        name: 'damageType',
-        label: 'Damage type',
-        type: 'select',
-        options: damageTypeOptions,
-        placeholder: 'Optional',
-      })}
-    </Stack>
+    <SpellDamagePayloadFieldsBody
+      namePrefix={namePrefix}
+      fmt={fmt}
+      damageTypeOptions={damageTypeOptions}
+      patchDriver={null}
+    />
   );
 }
 
 function SpellDamagePayloadFieldsPatch({
   namePrefix,
   patchDriver,
-  renderField,
   damageTypeOptions,
 }: {
   namePrefix: string;
   patchDriver: PatchDriver;
-  renderField: RenderFieldFn;
   damageTypeOptions: { value: string; label: string }[];
 }): ReactElement {
   const fmt = String(patchDriver.getValue(`${namePrefix}.damageFormat`) ?? 'dice');
 
   return (
-    <Stack spacing={2}>
-      {renderField('damageFormat', {
-        name: 'damageFormat',
-        label: 'Damage Format',
-        type: 'select',
-        options: [...DAMAGE_FORMAT_OPTIONS],
-        defaultFromOptions: 'first',
-      })}
-      {fmt === 'flat'
-        ? renderField('damageFlatValue', {
-            name: 'damageFlatValue',
-            label: 'Damage Value',
-            type: 'text',
-            inputType: 'number',
-            placeholder: 'e.g. 8',
-          })
-        : (
-            <Stack spacing={2}>
-              {renderField('damageDiceCount', {
-                name: 'damageDiceCount',
-                label: 'Dice Count',
-                type: 'text',
-                inputType: 'number',
-                placeholder: 'e.g. 1',
-              })}
-              {renderField('damageDieFace', {
-                name: 'damageDieFace',
-                label: 'Die Face',
-                type: 'select',
-                options: [...DIE_FACE_OPTIONS],
-                defaultFromOptions: 'first',
-                placeholder: 'Die',
-              })}
-              {renderField('damageModifier', {
-                name: 'damageModifier',
-                label: 'Modifier',
-                type: 'text',
-                placeholder: '0',
-                helperText: 'Optional; added to the roll (e.g. 2 or -1)',
-              })}
-            </Stack>
-          )}
-      {renderField('damageType', {
-        name: 'damageType',
-        label: 'Damage type',
-        type: 'select',
-        options: damageTypeOptions,
-        placeholder: 'Optional',
-      })}
-    </Stack>
+    <SpellDamagePayloadFieldsBody
+      namePrefix={namePrefix}
+      fmt={fmt}
+      damageTypeOptions={damageTypeOptions}
+      patchDriver={patchDriver}
+    />
   );
 }
 
@@ -251,17 +268,12 @@ function PayloadByKind({
           <SpellDamagePayloadFieldsPatch
             namePrefix={namePrefix}
             patchDriver={patchDriver}
-            renderField={renderField}
             damageTypeOptions={damageTypeOptions}
           />
         );
       }
       return (
-        <SpellDamagePayloadFieldsRhf
-          namePrefix={namePrefix}
-          renderField={renderField}
-          damageTypeOptions={damageTypeOptions}
-        />
+        <SpellDamagePayloadFieldsRhf namePrefix={namePrefix} damageTypeOptions={damageTypeOptions} />
       );
     case 'condition':
       return (

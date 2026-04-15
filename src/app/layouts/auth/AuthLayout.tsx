@@ -29,8 +29,8 @@ import { AuthDrawer } from './drawer/AuthDrawer'
 
 const CHROME_MAIN_SX: SxProps<Theme> = {
   flex: 1,
-  p: 4,
-  pt: 3,
+  // p: 4,
+  // pt: 3,
   overflow: 'auto',
   bgcolor: 'var(--mui-palette-background-default)',
 }

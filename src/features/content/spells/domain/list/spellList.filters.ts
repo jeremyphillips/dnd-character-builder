@@ -50,6 +50,7 @@ export function buildSpellCustomFilters(
         { label: 'Full', value: 'full' },
       ],
       accessor: (r) => getSpellResolutionStatus(r),
+      visibility: { platformAdminOnly: true },
     },
   ];
 }

@@ -6,6 +6,7 @@ export {
 export {
   buildCampaignContentColumns,
   buildCampaignContentFilters,
+  CAMPAIGN_ALLOWED_IN_CAMPAIGN_COLUMN_HEADER_HELPER_TEXT,
   makePreColumns,
   makePostColumns,
   makePostFilters,

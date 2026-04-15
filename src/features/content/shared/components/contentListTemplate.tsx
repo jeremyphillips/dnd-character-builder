@@ -22,6 +22,10 @@ import {
   getSourceColumnDisplay,
 } from '@/features/content/shared/domain/sourceLabels';
 
+/** Default column header helper for the Allowed-in-campaign column (all campaign content lists). */
+export const CAMPAIGN_ALLOWED_IN_CAMPAIGN_COLUMN_HEADER_HELPER_TEXT =
+  'Whether this entry is usable in play for this campaign. Disallowed rows may appear muted; use Hide disallowed to remove them from the list while browsing.';
+
 // ---------------------------------------------------------------------------
 // Visibility icon spec (for Name column)
 // ---------------------------------------------------------------------------
@@ -203,6 +207,8 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
   allowedField?: keyof T;
   /** When false, hide Source column (no campaign items). Default: true. */
   hasCampaignSources?: boolean;
+  /** Overrides {@link CAMPAIGN_ALLOWED_IN_CAMPAIGN_COLUMN_HEADER_HELPER_TEXT} for the Allowed column. */
+  allowedColumnHeaderHelperText?: string;
 }): AppDataGridColumn<T>[] {
   const {
     ownedIds,
@@ -210,7 +216,11 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
     onToggleAllowedInCampaign,
     allowedField = 'allowedInCampaign' as keyof T,
     hasCampaignSources = true,
+    allowedColumnHeaderHelperText,
   } = params;
+
+  const resolvedAllowedColumnHeaderHelperText =
+    allowedColumnHeaderHelperText ?? CAMPAIGN_ALLOWED_IN_CAMPAIGN_COLUMN_HEADER_HELPER_TEXT;
 
   const cols: AppDataGridColumn<T>[] = [];
 
@@ -241,8 +251,10 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
     cols.push({
       field: 'allowedInCampaign',
       headerName: 'Allowed',
+      columnHeaderHelperText: resolvedAllowedColumnHeaderHelperText,
       width: 100,
       switchColumn: true,
+      sortable: false,
       accessor: (row) => (row as Record<string, unknown>)[allowedField as string] as boolean,
       onSwitchChange: (row, checked) => onToggleAllowedInCampaign(row.id, checked),
     });
@@ -260,6 +272,8 @@ export function buildCampaignContentColumns<T extends CampaignContentListRow>(pa
   allowedField?: keyof T;
   /** When false, hide Source column (no campaign items). Default: true. */
   hasCampaignSources?: boolean;
+  /** Overrides default Allowed column header helper text. */
+  allowedColumnHeaderHelperText?: string;
 }): AppDataGridColumn<T>[] {
   const { customColumns = [] } = params;
   const pre = makePreColumns<T>({

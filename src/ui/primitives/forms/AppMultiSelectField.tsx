@@ -1,7 +1,8 @@
-import type { FocusEvent, Ref } from 'react';
+import type { FocusEvent, ReactNode, Ref } from 'react';
 import { useMemo } from 'react';
 
 import Autocomplete from '@mui/material/Autocomplete';
+import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
@@ -40,6 +41,8 @@ export type AppMultiSelectFieldProps<TValue extends string = string> = {
   name?: string;
   onBlur?: (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   sx?: SxProps<Theme>;
+  /** Renders after the field label (e.g. info icon). */
+  labelEndAdornment?: ReactNode;
 };
 
 function defaultSummary<TValue extends string>(selected: MultiSelectOption<TValue>[]) {
@@ -67,6 +70,7 @@ export function AppMultiSelectField<TValue extends string = string>({
   name,
   onBlur,
   sx,
+  labelEndAdornment,
 }: AppMultiSelectFieldProps<TValue>) {
   const optionByValue = useMemo(() => {
     const m = new Map<TValue, MultiSelectOption<TValue>>();
@@ -95,10 +99,19 @@ export function AppMultiSelectField<TValue extends string = string>({
       name={name}
       inputRef={inputRef}
       onBlur={(e) => {
-        params.inputProps?.onBlur?.(e);
+        params.inputProps?.onBlur?.(e as FocusEvent<HTMLInputElement>);
         onBlur?.(e);
       }}
-      label={label}
+      label={
+        labelEndAdornment ? (
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <span>{label}</span>
+            {labelEndAdornment}
+          </Box>
+        ) : (
+          label
+        )
+      }
       placeholder={placeholder}
       error={error}
       helperText={helperText}

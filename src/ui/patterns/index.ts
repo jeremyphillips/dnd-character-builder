@@ -5,8 +5,20 @@ export type { BreadcrumbsProps } from './Breadcrumbs/Breadcrumbs'
 export { default as AppHero } from './AppHero/AppHero'
 
 export { default as AppDataGrid } from './AppDataGrid/AppDataGrid'
+export { filterAppDataGridFiltersForViewer } from './AppDataGrid/filterAppDataGridFiltersForViewer'
 export { makeOwnedColumn, makeOwnedFilter } from './AppDataGrid/helpers/ownership'
-export type { AppDataGridProps, AppDataGridColumn, AppDataGridFilter, FilterOption } from './AppDataGrid/AppDataGrid'
+export type {
+  AppDataGridProps,
+  AppDataGridColumn,
+  AppDataGridFilter,
+  AppDataGridFilterVisibility,
+  FilterOption,
+  AppDataGridActiveChipFormatContext,
+  AppDataGridToolbarLayout,
+  AppDataGridToolbarUtility,
+} from './AppDataGrid/AppDataGrid'
+export { indexAppDataGridFiltersById } from './AppDataGrid/indexAppDataGridFiltersById'
+export { APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID } from './AppDataGrid/appDataGridToolbar.types'
 
 export { default as KeyValueSection } from './content/KeyValueSection/KeyValueSection'
 export type { KeyValueSectionProps, KeyValueItem } from './content/KeyValueSection/KeyValueSection'

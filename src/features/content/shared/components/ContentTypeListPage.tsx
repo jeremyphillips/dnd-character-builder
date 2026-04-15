@@ -15,6 +15,7 @@ import { AppDataGrid } from '@/ui/patterns';
 import type {
   AppDataGridColumn,
   AppDataGridFilter,
+  AppDataGridToolbarLayout,
 } from '@/ui/patterns';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { AppPageHeader } from '@/ui/patterns';
@@ -58,6 +59,10 @@ export interface ContentTypeListPageProps<T> {
   height?: number | string;
   /** Optional row class name (e.g. for muted allowedInCampaign=false rows) */
   getRowClassName?: (params: GridRowClassNameParams) => string;
+  /**
+   * When set, {@link AppDataGrid} renders filters in row order by id (not array order) and shows an active-filter badge row.
+   */
+  toolbarLayout?: AppDataGridToolbarLayout;
 }
 
 const ContentTypeListPage = <T,>({
@@ -81,6 +86,7 @@ const ContentTypeListPage = <T,>({
   density = 'compact',
   height = 500,
   getRowClassName,
+  toolbarLayout,
 }: ContentTypeListPageProps<T>) => {
   const defaultBreadcrumbs = useBreadcrumbs();
   const resolvedBreadcrumbs = breadcrumbData ?? defaultBreadcrumbs;
@@ -123,6 +129,7 @@ const ContentTypeListPage = <T,>({
         density={density}
         height={height}
         getRowClassName={getRowClassName}
+        toolbarLayout={toolbarLayout}
       />
     </Box>
   );

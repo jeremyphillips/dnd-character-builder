@@ -8,16 +8,32 @@ import {
   type GridRowClassNameParams,
 } from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import GlobalStyles from '@mui/material/GlobalStyles'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
-import { AppMultiSelectField, AppSelect, AppTextField } from '@/ui/primitives'
+import Switch from '@mui/material/Switch'
+import { AppMultiSelectField, AppSelect, AppTextField, AppTooltip } from '@/ui/primitives'
 import InputAdornment from '@mui/material/InputAdornment'
 import Typography from '@mui/material/Typography'
 import MuiLink from '@mui/material/Link'
-import Switch from '@mui/material/Switch'
 import Avatar from '@mui/material/Avatar'
 
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import SearchIcon from '@mui/icons-material/Search'
+
+import type { AppDataGridFilter, FilterOption } from './appDataGridFilter.types'
+import {
+  getFilterDefault,
+  formatDefaultActiveChipValue,
+} from './appDataGridFilter.utils'
+import { indexAppDataGridFiltersById } from './indexAppDataGridFiltersById'
+import {
+  APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID,
+  type AppDataGridToolbarLayout,
+} from './appDataGridToolbar.types'
 
 import { resolveImageUrl } from '@/shared/lib/media'
 
@@ -41,7 +57,7 @@ import { resolveImageUrl } from '@/shared/lib/media'
 // 2. Replace direct row[field] usage with accessor where needed
 // 3. Update renderCell to (row, value) signature
 //
-// ContentTypeListPage still uses legacy API and should NOT be updated yet.
+// ContentTypeListPage: pass `filters` + optional `toolbarLayout` for row-based toolbars.
 //
 // ---------------------------------------------------------------------------
 // COLUMN SPECIAL BEHAVIORS (applied in order, later wins):
@@ -59,11 +75,6 @@ import { resolveImageUrl } from '@/shared/lib/media'
 // Types
 // ---------------------------------------------------------------------------
 
-export interface FilterOption {
-  value: string
-  label: string
-}
-
 export interface AppDataGridColumn<T> {
   /**
    * Field key used as the MUI DataGrid column identifier.
@@ -72,6 +83,11 @@ export interface AppDataGridColumn<T> {
   field: string
   /** Column header label */
   headerName: string
+  /**
+   * Optional helper for the column header: info icon + tooltip beside `headerName`.
+   * Uses a custom header renderer and disables sorting for this column.
+   */
+  columnHeaderHelperText?: string
   /**
    * Compute a derived cell value from the row instead of reading row[field].
    * When present, MUI valueGetter delegates to this function and the result
@@ -134,34 +150,15 @@ export interface AppDataGridColumn<T> {
   sortable?: boolean
 }
 
-// ── Filter types ──────────────────────────────────────────────────────────
+export type {
+  AppDataGridActiveChipFormatContext,
+  AppDataGridFilter,
+  AppDataGridFilterVisibility,
+  FilterOption,
+} from './appDataGridFilter.types'
 
-export type AppDataGridFilter<T> =
-  | {
-      id: string
-      label: string
-      type: 'select'
-      options: FilterOption[]
-      accessor: (row: T) => string | null | undefined
-      defaultValue?: string
-    }
-  | {
-      id: string
-      label: string
-      type: 'multiSelect'
-      options: FilterOption[]
-      accessor: (row: T) => string[]
-      defaultValue?: string[]
-    }
-  | {
-      id: string
-      label: string
-      type: 'boolean'
-      trueLabel?: string
-      falseLabel?: string
-      accessor: (row: T) => boolean
-      defaultValue?: 'all' | 'true' | 'false'
-    }
+export type { AppDataGridToolbarLayout, AppDataGridToolbarUtility } from './appDataGridToolbar.types'
+export { APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID } from './appDataGridToolbar.types'
 
 export interface AppDataGridProps<T> {
   /** Data rows */
@@ -204,6 +201,8 @@ export interface AppDataGridProps<T> {
   searchPlaceholder?: string
   /** Columns to search across (defaults to all columns) */
   searchColumns?: string[]
+  /** MUI `size` for toolbar search + filter controls (default `small` for dense toolbars). */
+  toolbarFieldSize?: 'small' | 'medium'
   /** Show a loading overlay */
   loading?: boolean
   /** Message displayed when there are no rows */
@@ -218,13 +217,19 @@ export interface AppDataGridProps<T> {
   height?: number | string
   /** Optional function to add CSS class names to rows (e.g. for muted styling) */
   getRowClassName?: (params: GridRowClassNameParams) => string
+  /**
+   * When set, toolbar renders in row order by filter id (not array order) and shows an active-filter badge row.
+   * When omitted, legacy single-row toolbar in `filters` declaration order.
+   */
+  toolbarLayout?: AppDataGridToolbarLayout
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const APP_DATA_GRID_FILTER_FIELD_SX = { minWidth: 160 }
+/** Inline toolbar filters: primitives default `fullWidth`; keep shrink-to-min in horizontal `Stack`. */
+const APP_DATA_GRID_FILTER_FIELD_SX = { minWidth: 160, width: 'auto', flex: '0 1 auto' }
 
 /** When options include `value: ''` (e.g. "All"), pass label as placeholder for AppSelect empty state. */
 function selectPlaceholderForFilterOptions(options: FilterOption[]): string | undefined {
@@ -232,16 +237,22 @@ function selectPlaceholderForFilterOptions(options: FilterOption[]): string | un
   return empty?.label
 }
 
-function getFilterDefault<T>(f: AppDataGridFilter<T>): unknown {
-  if (f.defaultValue !== undefined) return f.defaultValue
-  switch (f.type) {
-    case 'select':
-      return f.options[0]?.value ?? ''
-    case 'multiSelect':
-      return []
-    case 'boolean':
-      return 'all'
+function isFilterValueActive<T>(f: AppDataGridFilter<T>, value: unknown): boolean {
+  const def = getFilterDefault(f)
+  if (f.type === 'multiSelect') {
+    const selected = (value as string[]) ?? []
+    return selected.length > 0
   }
+  if (f.type === 'boolean') {
+    return value !== 'all'
+  }
+  return value !== def
+}
+
+function truncateSearchChip(text: string, max = 40): string {
+  const t = text.trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max - 1)}…`
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +272,7 @@ export default function AppDataGrid<T>({
   searchable = false,
   searchPlaceholder = 'Search…',
   searchColumns,
+  toolbarFieldSize = 'small',
   loading = false,
   emptyMessage = 'No data.',
   pageSizeOptions = [10, 25, 50],
@@ -268,6 +280,7 @@ export default function AppDataGrid<T>({
   toolbar,
   height = 400,
   getRowClassName,
+  toolbarLayout,
 }: AppDataGridProps<T>) {
   const [search, setSearch] = useState('')
   const [filterValues, setFilterValues] = useState<Record<string, unknown>>({})
@@ -449,91 +462,310 @@ export default function AppDataGrid<T>({
         }
       }
 
+      if (col.columnHeaderHelperText) {
+        const helperText = col.columnHeaderHelperText
+        const headerLabel = col.headerName
+        def.renderHeader = () => (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              width: '100%',
+              minWidth: 0,
+              px: 0.5,
+            }}
+          >
+            <Typography
+              component="span"
+              variant="body2"
+              fontWeight={600}
+              noWrap
+              sx={{ flex: 1, minWidth: 0 }}
+            >
+              {headerLabel}
+            </Typography>
+            <AppTooltip title={helperText}>
+              <IconButton size="small" aria-label="Column info" sx={{ p: 0.25, flexShrink: 0 }}>
+                <InfoOutlinedIcon fontSize="inherit" />
+              </IconButton>
+            </AppTooltip>
+          </Box>
+        )
+        def.sortable = false
+      }
+
       return def
     })
   }, [columns, getDetailLink])
 
+  const filterById = useMemo(
+    () => indexAppDataGridFiltersById(resolvedFilters),
+    [resolvedFilters],
+  )
+
+  const hasActiveToolbarState = useMemo(() => {
+    if (search.trim()) return true
+    return resolvedFilters.some((f) => {
+      const cur = filterValues[f.id] ?? getFilterDefault(f)
+      return isFilterValueActive(f, cur)
+    })
+  }, [filterValues, resolvedFilters, search])
+
+  const resetToolbar = useCallback(() => {
+    setSearch('')
+    setFilterValues({})
+  }, [])
+
+  const renderFilterControl = useCallback(
+    (f: AppDataGridFilter<T>) => {
+      const labelEndAdornment = f.description ? (
+        <AppTooltip title={f.description}>
+          <IconButton size="small" aria-label="Filter info" sx={{ p: 0.25 }}>
+            <InfoOutlinedIcon fontSize="inherit" />
+          </IconButton>
+        </AppTooltip>
+      ) : undefined
+      switch (f.type) {
+        case 'select': {
+          const placeholder = selectPlaceholderForFilterOptions(f.options)
+          return (
+            <AppSelect
+              label={f.label}
+              labelEndAdornment={labelEndAdornment}
+              options={f.options}
+              value={getFilterValue(f) as string}
+              onChange={(v) => setFilterValue(f.id, v)}
+              size={toolbarFieldSize}
+              fullWidth={false}
+              sx={APP_DATA_GRID_FILTER_FIELD_SX}
+              placeholder={placeholder}
+            />
+          )
+        }
+        case 'multiSelect':
+          return (
+            <AppMultiSelectField
+              label={f.label}
+              labelEndAdornment={labelEndAdornment}
+              options={f.options}
+              value={(getFilterValue(f) as string[]) ?? []}
+              onChange={(v) => setFilterValue(f.id, v)}
+              size={toolbarFieldSize}
+              fullWidth={false}
+              displayMode="summary"
+              sx={APP_DATA_GRID_FILTER_FIELD_SX}
+            />
+          )
+        case 'boolean':
+          return (
+            <AppSelect
+              label={f.label}
+              labelEndAdornment={labelEndAdornment}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'true', label: f.trueLabel ?? 'Yes' },
+                { value: 'false', label: f.falseLabel ?? 'No' },
+              ]}
+              value={getFilterValue(f) as string}
+              onChange={(v) => setFilterValue(f.id, v)}
+              size={toolbarFieldSize}
+              fullWidth={false}
+              sx={APP_DATA_GRID_FILTER_FIELD_SX}
+            />
+          )
+      }
+    },
+    [getFilterValue, setFilterValue, toolbarFieldSize],
+  )
+
+  const renderFilterById = useCallback(
+    (id: string) => {
+      const f = filterById.get(id)
+      if (!f) return null
+      return renderFilterControl(f)
+    },
+    [filterById, renderFilterControl],
+  )
+
+  const badgeChipElements = useMemo(() => {
+    if (!toolbarLayout) return []
+    const out: ReactNode[] = []
+    if (search.trim()) {
+      out.push(
+        <Chip
+          key="search"
+          size="small"
+          variant="outlined"
+          label={`Search: ${truncateSearchChip(search)}`}
+          onDelete={() => setSearch('')}
+        />,
+      )
+    }
+    for (const f of resolvedFilters) {
+      const cur = filterValues[f.id] ?? getFilterDefault(f)
+      if (!isFilterValueActive(f, cur)) continue
+      const chipText = f.formatActiveChipValue
+        ? f.formatActiveChipValue({ value: cur, filter: f })
+        : formatDefaultActiveChipValue(f, cur)
+      out.push(
+        <Chip
+          key={`filter-${f.id}`}
+          size="small"
+          variant="outlined"
+          label={`${f.label}: ${chipText}`}
+          onDelete={() => setFilterValue(f.id, getFilterDefault(f))}
+        />,
+      )
+    }
+    return out
+  }, [toolbarLayout, search, filterValues, resolvedFilters, setFilterValue])
+
+  const gap = toolbarFieldSize === 'small' ? 1.5 : 3
+  const row1Ids = toolbarLayout?.rows[0] ?? []
+  const row2Ids = toolbarLayout?.rows[1] ?? []
+
+  const allowedFilter = filterById.get(APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID)
+  const allowedValue = allowedFilter
+    ? (getFilterValue(allowedFilter) as string)
+    : 'all'
+  const showHideDisallowedUtility =
+    Boolean(toolbarLayout?.utilities?.includes('hideDisallowed')) &&
+    allowedFilter?.type === 'boolean' &&
+    allowedValue !== 'false'
+
+  const hideDisallowedChecked = allowedValue === 'true'
+
   // ── Render ────────────────────────────────────────────────────────
-  const showToolbar = toolbar || searchable || resolvedFilters.length > 0
+  const showToolbar =
+    toolbar || searchable || resolvedFilters.length > 0 || Boolean(toolbarLayout)
 
   return (
     <Box>
       {showToolbar && (
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{ mb: 2, alignItems: 'center', flexWrap: 'wrap' }}
-        >
-          {searchable && (
-            <AppTextField
-              size="small"
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
+        <>
+          {toolbarLayout ? (
+            <Stack spacing={2} sx={{ mb: 3 }}>
+              <Stack
+                direction="row"
+                flexWrap="wrap"
+                alignItems="center"
+                gap={gap}
+                sx={{ width: '100%' }}
+              >
+                {searchable && (
+                  <AppTextField
+                    size={toolbarFieldSize}
+                    placeholder={searchPlaceholder}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    sx={{ minWidth: 260 }}
+                  />
+                )}
+                {row1Ids.map((id) => {
+                  const el = renderFilterById(id)
+                  return el ? <Box key={id}>{el}</Box> : null
+                })}
+                {toolbar && <Box sx={{ ml: 'auto' }}>{toolbar}</Box>}
+              </Stack>
+
+              {(row2Ids.length > 0 || showHideDisallowedUtility) && (
+                <Stack
+                  direction="row"
+                  flexWrap="wrap"
+                  alignItems="center"
+                  justifyContent={showHideDisallowedUtility ? 'space-between' : 'flex-start'}
+                  gap={gap}
+                  sx={{ width: '100%' }}
+                >
+                  <Stack direction="row" flexWrap="wrap" alignItems="center" gap={gap}>
+                    {row2Ids.map((id) => {
+                      const el = renderFilterById(id)
+                      return el ? <Box key={id}>{el}</Box> : null
+                    })}
+                  </Stack>
+                  {showHideDisallowedUtility && (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={hideDisallowedChecked}
+                          onChange={(_e, checked) =>
+                            setFilterValue(
+                              APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID,
+                              checked ? 'true' : 'all',
+                            )
+                          }
+                          size="small"
+                        />
+                      }
+                      label="Hide disallowed"
+                      sx={{ flexShrink: 0 }}
+                    />
+                  )}
+                </Stack>
+              )}
+
+              {hasActiveToolbarState && (
+                <Stack
+                  direction="row"
+                  flexWrap="wrap"
+                  alignItems="center"
+                  gap={1}
+                  sx={{ rowGap: 1 }}
+                >
+                  {badgeChipElements}
+                  <Button size="small" variant="text" onClick={resetToolbar}>
+                    Reset
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          ) : (
+            <Stack
+              direction="row"
+              sx={{
+                mb: 3,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: toolbarFieldSize === 'small' ? 1.5 : 3,
               }}
-              sx={{ minWidth: 260 }}
-            />
+            >
+              {searchable && (
+                <AppTextField
+                  size={toolbarFieldSize}
+                  placeholder={searchPlaceholder}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={{ minWidth: 260 }}
+                />
+              )}
+
+              {resolvedFilters.map((f) => (
+                <Box key={f.id}>{renderFilterControl(f)}</Box>
+              ))}
+
+              {toolbar && <Box sx={{ ml: 'auto' }}>{toolbar}</Box>}
+            </Stack>
           )}
-
-          {resolvedFilters.map((f) => {
-            switch (f.type) {
-              case 'select': {
-                const placeholder = selectPlaceholderForFilterOptions(f.options)
-                return (
-                  <AppSelect
-                    key={f.id}
-                    label={f.label}
-                    options={f.options}
-                    value={getFilterValue(f) as string}
-                    onChange={(v) => setFilterValue(f.id, v)}
-                    size="small"
-                    sx={APP_DATA_GRID_FILTER_FIELD_SX}
-                    placeholder={placeholder}
-                  />
-                )
-              }
-              case 'multiSelect':
-                return (
-                  <AppMultiSelectField
-                    key={f.id}
-                    label={f.label}
-                    options={f.options}
-                    value={(getFilterValue(f) as string[]) ?? []}
-                    onChange={(v) => setFilterValue(f.id, v)}
-                    size="small"
-                    displayMode="summary"
-                    sx={APP_DATA_GRID_FILTER_FIELD_SX}
-                  />
-                )
-              case 'boolean':
-                return (
-                  <AppSelect
-                    key={f.id}
-                    label={f.label}
-                    options={[
-                      { value: 'all', label: 'All' },
-                      { value: 'true', label: f.trueLabel ?? 'Yes' },
-                      { value: 'false', label: f.falseLabel ?? 'No' },
-                    ]}
-                    value={getFilterValue(f) as string}
-                    onChange={(v) => setFilterValue(f.id, v)}
-                    size="small"
-                    sx={APP_DATA_GRID_FILTER_FIELD_SX}
-                  />
-                )
-            }
-          })}
-
-          {toolbar && <Box sx={{ ml: 'auto' }}>{toolbar}</Box>}
-        </Stack>
+        </>
       )}
 
       <GlobalStyles

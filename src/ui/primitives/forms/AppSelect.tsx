@@ -1,9 +1,10 @@
-import type { FocusEvent, Ref } from 'react';
+import type { FocusEvent, ReactNode, Ref } from 'react';
 import { useId, useState } from 'react';
 
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
+import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -44,6 +45,8 @@ export type AppSelectProps = {
   fullWidth?: boolean;
   /** Applied to `FormControl` (e.g. grid stretch from form layout context). */
   sx?: SxProps<Theme>;
+  /** Renders after the label text inside `InputLabel` (e.g. info icon). */
+  labelEndAdornment?: ReactNode;
 };
 
 /** Outlined select; see file-level contract. For RHF see `AppFormSelect`. */
@@ -64,6 +67,7 @@ export function AppSelect({
   size = 'medium',
   fullWidth = true,
   sx,
+  labelEndAdornment,
 }: AppSelectProps) {
   const labelId = useId();
   const [open, setOpen] = useState(false);
@@ -84,11 +88,19 @@ export function AppSelect({
       sx={sx}
     >
       <InputLabel id={labelId} shrink={shrink}>
-        {label}
+        {labelEndAdornment ? (
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <span>{label}</span>
+            {labelEndAdornment}
+          </Box>
+        ) : (
+          label
+        )}
       </InputLabel>
       <Select
         ref={inputRef}
         name={name}
+        size={size}
         value={value ?? ''}
         labelId={labelId}
         label={label}
@@ -122,7 +134,8 @@ export function AppSelect({
             <em>{placeholder}</em>
           </MenuItem>
         )}
-        {options.map((opt) => (
+        {/* Skip `value: ''` in the list when placeholder supplies the empty row (avoids duplicate "All"). */}
+        {(placeholder ? options.filter((o) => o.value !== '') : options).map((opt) => (
           <MenuItem key={opt.value} value={opt.value} disabled={opt.disabled}>
             {opt.label}
           </MenuItem>

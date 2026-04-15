@@ -27,12 +27,14 @@ import {
   validateSpellChange,
   buildSpellCustomColumns,
   buildSpellCustomFilters,
+  SPELL_LIST_TOOLBAR_LAYOUT,
   type SpellListRow,
 } from '@/features/content/spells/domain';
 import type { ContentSummary } from '@/features/content/shared/domain/types';
 import type { SystemRulesetId } from '@/features/mechanics/domain/rulesets';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
+import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
@@ -45,6 +47,10 @@ export default function SpellListRoute() {
   const ctx = toViewerContext(campaign?.viewer);
   const canManage = canManageContent(ctx);
   const viewerCharacterIds = campaign?.members?.viewerCharacterIds ?? [];
+  const viewerContext = useMemo(
+    () => toViewerContext(campaign?.viewer, viewerCharacterIds),
+    [campaign?.viewer, viewerCharacterIds],
+  );
 
   const ownedIds = useViewerSpells();
   const hasViewer = ownedIds.size > 0;
@@ -112,14 +118,25 @@ export default function SpellListRoute() {
 
   const filters = useMemo(
     () =>
-      buildCampaignContentFilters<SpellListRow>({
-        canManage,
-        onToggleAllowedInCampaign: handleToggleAllowed,
-        ownedIds: hasViewer ? ownedIds : undefined,
-        customFilters,
-        hasCampaignSources,
-      }),
-    [canManage, handleToggleAllowed, hasViewer, ownedIds, customFilters, hasCampaignSources],
+      filterAppDataGridFiltersForViewer(
+        buildCampaignContentFilters<SpellListRow>({
+          canManage,
+          onToggleAllowedInCampaign: handleToggleAllowed,
+          ownedIds: hasViewer ? ownedIds : undefined,
+          customFilters,
+          hasCampaignSources,
+        }),
+        viewerContext,
+      ),
+    [
+      canManage,
+      handleToggleAllowed,
+      hasViewer,
+      ownedIds,
+      customFilters,
+      hasCampaignSources,
+      viewerContext,
+    ],
   );
 
   if (controller.loading) {
@@ -155,15 +172,16 @@ export default function SpellListRoute() {
         headline="Spells"
         breadcrumbData={breadcrumbs}
         actions={[
-          <Button
-            key="back"
-            component={Link}
-            to={`/campaigns/${campaignId}/world`}
-            size="small"
-            startIcon={<ArrowBackIcon />}
-          >
-            World
-          </Button>,
+          canManage ? (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={controller.onAdd}
+            >
+              Add Spell
+            </Button>
+          ) : undefined
         ]}
         rows={items}
         columns={columns}
@@ -180,22 +198,11 @@ export default function SpellListRoute() {
         }
         loading={controller.loading}
         error={controller.error}
-        toolbar={
-          canManage ? (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={controller.onAdd}
-            >
-              Add Spell
-            </Button>
-          ) : undefined
-        }
         searchPlaceholder="Search spells…"
         emptyMessage="No spells found."
         density="compact"
         height={560}
+        toolbarLayout={SPELL_LIST_TOOLBAR_LAYOUT}
       />
     </Stack>
   );

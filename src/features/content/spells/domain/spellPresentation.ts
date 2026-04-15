@@ -7,7 +7,7 @@ export const SPELL_CORE_UI = {
   classes: {
     key: 'classes' as const,
     label: 'Classes' as const,
-    listFilterLabel: 'Class' as const,
+    listFilterLabel: 'Classes' as const,
   },
 } as const;
 

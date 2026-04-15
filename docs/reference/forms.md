@@ -8,8 +8,8 @@ This document describes how declarative and custom forms are structured in the a
 
 ### Use primitives and patterns for field UI
 
-- **`@/ui/primitives`** — Presentational controls only (for example **`AppTextField`**, **`AppSelect`**, **`AppCheckbox`**, **`AppRadioGroup`**, **`AppDateTimePicker`**, **`AppJsonPreviewField`**, **`AppImageUploadField`**). These components know nothing about react-hook-form; they are controlled via props (`value`, `onChange`, `label`, errors, and so on).
-- **`@/ui/patterns/form`** — RHF adapters (names prefixed with **`AppForm…`**, for example **`AppFormTextField`**, **`AppFormSelect`**, **`AppFormActions`**) plus layout helpers (**`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`AppForm`**).
+- **`@/ui/primitives`** — Presentational controls only (for example **`AppTextField`**, **`AppSelect`**, **`AppMultiSelectField`**, **`AppCheckbox`**, **`AppRadioGroup`**, **`AppDateTimePicker`**, **`AppJsonPreviewField`**, **`AppImageUploadField`**). These components know nothing about react-hook-form; they are controlled via props (`value`, `onChange`, `label`, errors, and so on).
+- **`@/ui/patterns/form`** — RHF adapters (names prefixed with **`AppForm…`**, for example **`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectField`**, **`AppFormActions`**) plus layout helpers (**`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`AppForm`**).
 - **Feature code** should compose forms from these modules. Avoid ad‑hoc MUI **`TextField`** / **`Select`** / raw **`<input>`** for product forms when an **`App*`** or **`AppForm*`** equivalent exists, so behavior and accessibility stay aligned.
 
 Custom screens that are not driven by **`FieldConfig`** still wrap content in **`AppForm`** (or **`FormProvider`** + **`useForm`** when you need full control) and should use **`AppForm*`** field components or primitives plus **`Controller`** where appropriate.
@@ -79,6 +79,82 @@ Re-renders use **`useWatch`** (RHF) or **`driver.getValue`** (patch) to evaluate
 
 ---
 
+## Field primitives (outlined controls)
+
+### `AppSelect`
+
+**Path:** `src/ui/primitives/forms/AppSelect.tsx`
+
+Outlined **MUI `Select`** with a floating **`InputLabel`**.
+
+- **With `placeholder`:** uses **`displayEmpty`** and a single **`renderValue`** path for the empty value; the label shrinks while the placeholder is visible. Pass **`placeholder`** when you need an “unset” row (for example **“All”** with **`value: ''`**).
+- **Without `placeholder`:** no custom **`renderValue`**; empty value follows standard outlined behavior (label may sit in-field until focus/open).
+- **`size`** is applied to both **`FormControl`** and **`Select`** (default **`medium`**) so density matches theme and **`MuiOutlinedInput`** overrides.
+- **Duplicate empty options:** if **`placeholder`** is set and **`options`** also contains **`{ value: '' }`**, the list filters out that row so the empty choice appears once (placeholder row only). Option lists can still include **`value: ''`** for defaults and filter logic.
+
+**RHF:** use **`AppFormSelect`** (`src/ui/patterns/form/AppFormSelect.tsx`).
+
+### `AppMultiSelectField`
+
+**Path:** `src/ui/primitives/forms/AppMultiSelectField.tsx`
+
+Multi-select built on MUI **`Autocomplete`** (**`multiple`**, **`disableCloseOnSelect`**), with **checkbox-style** options.
+
+- **`displayMode`:** **`summary`** (default) shows compact text (**`None selected`**, **`1 selected`**, **`N selected`**) without repeating the field label; **`chips`** shows selected values as small outlined chips.
+- Summary text is rendered in the input’s **`startAdornment`** so it is visible even when nothing is selected (MUI **`renderTags`** alone does not cover the empty case cleanly).
+- Defaults **`fullWidth={true}`**; for compact toolbars, pass **`fullWidth={false}`** and constrain with **`sx`** as needed.
+
+**RHF:** use **`AppFormMultiSelectField`** (`src/ui/patterns/form/AppFormMultiSelectField.tsx`). Required validation uses a **non-empty array** rule. Must render under **`FormProvider`** (typically via **`AppForm`**).
+
+**Note:** **`FieldConfig`** / **`DynamicFormRenderer`** do not yet expose a dedicated **`multiSelect`** type; wire **`AppFormMultiSelectField`** manually where needed.
+
+---
+
+## `AppDataGrid` toolbar filters
+
+**Path:** `src/ui/patterns/AppDataGrid/AppDataGrid.tsx`
+
+Typed **`filters`** render with **`AppSelect`** (**`select`**, **`boolean`**) and **`AppMultiSelectField`** (**`multiSelect`**), not **`TextField`** + **`select`**. Search uses **`AppTextField`**.
+
+- **`toolbarFieldSize`:** **`'small'` | `'medium'`** (default **`small`**) — single prop controlling MUI **`size`** for the search field and all filter controls.
+- Selects with an **`value: ''`** “All”-style row pass **`placeholder`** from that option’s label; **`AppSelect`** dedupes the empty menu row (see above).
+- Toolbar controls use **`fullWidth={false}`** and shared **`sx`** so filters stay inline in a horizontal **`Stack`** (not full-width).
+
+### Filter visibility (viewer)
+
+**Types:** **`AppDataGridFilterVisibility`**, optional **`visibility`** on each **`AppDataGridFilter`** (same object as **`id`** / **`options`**).
+
+- **`platformAdminOnly`:** if **`true`**, the filter is shown only when **`viewer.isPlatformAdmin`** is true. Omit **`visibility`** (or leave flags unset) so everyone sees the filter.
+
+**Helper:** **`filterAppDataGridFiltersForViewer(filters, viewer)`** (`src/ui/patterns/AppDataGrid/filterAppDataGridFiltersForViewer.ts`) — pass a **`ViewerContext`** from **`toViewerContext(campaign?.viewer, characterIds)`** after composing filters, then pass the result to **`AppDataGrid`**. Row filtering uses only filters still in the array; hidden filters are not applied.
+
+### Toolbar layout (optional)
+
+**Types:** **`AppDataGridToolbarLayout`**, optional **`toolbarLayout`** on **`AppDataGrid`** (and **`ContentTypeListPage`**).
+
+- **`rows`:** each entry is an array of **filter `id` strings** for one horizontal row. **`AppDataGrid`** indexes the composed **`filters`** array by id; ids missing after viewer filtering are skipped.
+- **`utilities`:** non-filter controls (for example **`hideDisallowed`**) that read/write existing filter state only (same **`allowedInCampaign`** value as the Allowed dropdown).
+- When **`toolbarLayout`** is omitted, the toolbar stays a **single wrapping row** in **`filters` declaration order** (legacy behavior).
+
+**Helpers:** **`indexAppDataGridFiltersById(filters)`** (`src/ui/patterns/AppDataGrid/indexAppDataGridFiltersById.ts`) — builds a **`Map`** by id (warns in dev on duplicate ids).
+
+### Filter metadata (badges and tooltips)
+
+Optional on each **`AppDataGridFilter`**:
+
+- **`description`:** short help text next to the label (info icon).
+- **`formatActiveChipValue`:** override text for the active-filter badge chip.
+
+When **`toolbarLayout`** is set, search and non-default filters produce a **badge row** with per-chip delete and a **Reset** control that clears search and all filter values.
+
+### Column header helper (optional)
+
+On **`AppDataGridColumn`**, optional **`columnHeaderHelperText`:** renders an info icon + tooltip next to **`headerName`**. Sorting is disabled for that column (custom header).
+
+Campaign content lists default the **Allowed** column helper via **`CAMPAIGN_ALLOWED_IN_CAMPAIGN_COLUMN_HEADER_HELPER_TEXT`**; override with **`buildCampaignContentColumns({ allowedColumnHeaderHelperText })`**.
+
+---
+
 ## UI styling
 
 Styling is **MUI-first** and shared through a small set of layout primitives so grid rows align and theme tokens stay consistent.
@@ -89,7 +165,9 @@ Styling is **MUI-first** and shared through a small set of layout primitives so 
 
 When fields sit in a **horizontal group** (**`group.direction === 'row'`**), **`DynamicFormRenderer`** wraps the group in **`FormLayoutStretchProvider`** with **`value={true}`**. Descendants call **`useFormLayoutStretch()`**; when **`true`**, outlined inputs are given **`formGridStretchOutlinedSx`** so shorter controls (for example **`Select`**) **stretch vertically** to match taller neighbors (for example multiline or number fields) in the same row.
 
-**`AppFormTextField`**, **`AppFormSelect`**, and similar components merge this **`sx`** onto their underlying **`FormControl`** / **`TextField`** when stretch is active.
+The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** with flex alignment so **selected value / placeholder text** stays **vertically centered** when the outlined root is stretched tall (for example next to a multiline field).
+
+**`AppFormTextField`**, **`AppFormSelect`**, **`AppFormMultiSelectField`**, and similar components merge this **`sx`** onto their underlying **`FormControl`** / **`TextField`** / **`Autocomplete`** when stretch is active.
 
 ### `FieldWithDescription` and group chrome
 
@@ -101,8 +179,12 @@ When fields sit in a **horizontal group** (**`group.direction === 'row'`**), **`
 
 ### Theme and density
 
+**Path:** `src/app/theme/components.ts`
+
 - Global MUI theme (component defaults, palette) applies to all **`App*`** / MUI usage.
-- Many form controls default to **`size="small"`** where set in primitives or adapters (for example **`AppSelect`**, **`DateTimePicker`** **`textField`** slot) for density; **`AppForm`** uses **`Stack`** spacing **`3`** by default.
+- **`MuiTextField`** and **`MuiSelect`** default **`size: 'medium'`**; outlined **`MuiOutlinedInput`** applies **`minHeight: 56`** for **non-small**, non-multiline inputs so medium density aligns across text fields and selects.
+- Primitives such as **`AppSelect`** default **`size`** to **`medium`** unless a screen overrides it (for example **`AppDataGrid`** **`toolbarFieldSize`**).
+- Many form controls use **`size="small"`** where set explicitly for density; **`AppForm`** uses **`Stack`** spacing **`3`** by default.
 - Prefer **`sx`** with theme callbacks (**`(theme) => ({ … })`**) when you need palette-aware borders or spacing, consistent with existing form code.
 
 ---
@@ -114,7 +196,11 @@ When fields sit in a **horizontal group** (**`group.direction === 'row'`**), **`
 | **`AppForm`** | `@/ui/patterns/form` or `@/ui/patterns` |
 | **`DynamicFormRenderer`**, **`ConditionalFormRenderer`**, **`FormDriver`** | `@/ui/patterns/form` |
 | **`AppForm*`** field adapters | `@/ui/patterns/form` / `@/ui/patterns` |
+| **`AppFormMultiSelectField`** | `@/ui/patterns/form` / `@/ui/patterns` |
 | **`App*`** primitives | `@/ui/primitives` |
+| **`AppMultiSelectField`** | `@/ui/primitives` |
+| **`AppDataGrid`** (toolbar filters) | `@/ui/patterns` |
+| **`filterAppDataGridFiltersForViewer`**, **`AppDataGridFilterVisibility`**, **`AppDataGridToolbarLayout`**, **`indexAppDataGridFiltersById`** | `@/ui/patterns` |
 | **`FieldConfig`**, **`FormLayoutNode`** | `@/ui/patterns/form` (re-exported from **`form.types`**) |
 
 For inline editing outside full-page forms, **`src/ui/patterns/form/editable/`** exposes **`EditableTextField`**, **`EditableSelect`**, and similar pattern components (local state / save callbacks rather than **`AppForm`**).

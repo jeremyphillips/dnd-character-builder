@@ -5,7 +5,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldConfig } from './form.types';
 import { useFormLayoutStretch } from './FormLayoutStretchContext';
 import AppFormTextField from './AppFormTextField';
-import FormSelectField from './FormSelectField'
+import AppFormSelect from './AppFormSelect'
 import AppFormRadioGroup from './AppFormRadioGroup'
 import AppFormCheckbox from './AppFormCheckbox'
 import AppFormImageUploadField from './AppFormImageUploadField'
@@ -102,7 +102,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'select':
       return (
         <FieldWithDescription field={field}>
-          <FormSelectField
+          <AppFormSelect
             name={field.name}
             label={field.label}
             options={field.options}

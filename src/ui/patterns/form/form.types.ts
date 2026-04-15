@@ -3,13 +3,10 @@ import type { RegisterOptions } from 'react-hook-form';
 import type { Condition } from './conditions';
 import type { PatchDriver } from './patchDriver.types';
 import type { PickerOption } from './OptionPickerField';
+import type { SelectOption } from '@/ui/primitives';
 
 export type { PickerOption } from './OptionPickerField';
-
-export type SelectOption = {
-  label: string
-  value: string
-}
+export type { SelectOption };
 
 type BaseFieldConfig = {
   name: string

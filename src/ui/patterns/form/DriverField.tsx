@@ -11,14 +11,11 @@ import {
   FormGroup,
   FormHelperText,
   FormLabel,
-  InputLabel,
-  MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Typography,
 } from '@mui/material';
-import { AppTextField } from '@/ui/primitives';
+import { AppSelect, AppTextField } from '@/ui/primitives';
 import type { FieldConfig } from './form.types';
 import type { Visibility } from '@/shared/types/visibility';
 import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
@@ -164,36 +161,21 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
     case 'select':
       return (
         <Box sx={stretchColumnSx}>
-          <FormControl
-            fullWidth
+          <AppSelect
+            label={field.label}
+            options={field.options}
+            value={String(displayValue ?? '')}
+            onChange={(v) => handleChange(v)}
+            onBlur={handleBlur}
             disabled={field.disabled}
             required={field.required}
+            placeholder={field.placeholder}
+            emptyMenuItemDisabled={Boolean(field.placeholder)}
             error={hasError}
+            helperText={helperText || undefined}
+            size="medium"
             sx={stretch ? formGridStretchOutlinedSx : undefined}
-          >
-            <InputLabel>{field.label}</InputLabel>
-            <Select
-              label={field.label}
-              value={String(displayValue ?? '')}
-              onChange={(e) => handleChange(e.target.value)}
-              onBlur={handleBlur}
-              displayEmpty
-            >
-              {field.placeholder && (
-                <MenuItem value="" disabled>
-                  {field.placeholder}
-                </MenuItem>
-              )}
-              {field.options.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-            {(helperText || hasError) && (
-              <FormHelperText error={hasError}>{helperText}</FormHelperText>
-            )}
-          </FormControl>
+          />
           {FieldDescription}
         </Box>
       );

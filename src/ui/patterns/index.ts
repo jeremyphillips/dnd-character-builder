@@ -82,7 +82,10 @@ export {
   default as AppFormTextField,
   type AppFormTextFieldProps,
 } from './form/AppFormTextField'
-export { default as FormSelectField } from './form/FormSelectField'
+export {
+  default as AppFormSelect,
+  type AppFormSelectProps,
+} from './form/AppFormSelect'
 export {
   default as AppFormRadioGroup,
   type AppFormRadioGroupProps,
@@ -126,6 +129,8 @@ export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'
 export {
   AppImageUploadField,
   type AppImageUploadFieldProps,
+  AppSelect,
+  type AppSelectProps,
 } from '@/ui/primitives'
 
 export { default as FormActions } from './form/FormActions'

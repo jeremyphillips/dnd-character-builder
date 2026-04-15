@@ -35,6 +35,7 @@ export {
   AppImageUploadField,
   type AppImageUploadFieldProps,
 } from './forms/AppImageUploadField'
+export { AppSelect, type AppSelectProps, type SelectOption } from './forms/AppSelect'
 
 export { default as AppToast } from './AppToast/AppToast'
 export type { AppToastProps } from './AppToast/AppToast'

@@ -25,7 +25,7 @@ import type { Location } from '@/features/content/locations/domain/model/locatio
 import type { GameSessionPatch } from '../api/gameSessionApi'
 import type { GameSession, GameSessionStatus } from '../domain/game-session.types'
 import FormDateTimeField from '@/ui/patterns/form/FormDateTimeField'
-import FormSelectField from '@/ui/patterns/form/FormSelectField'
+import AppFormSelect from '@/ui/patterns/form/AppFormSelect'
 import AppFormTextField from '@/ui/patterns/form/AppFormTextField'
 import {
   ConfirmModal,
@@ -430,7 +430,7 @@ function GameSessionSetupFormFields({
               canEdit={canEdit}
             />
             {isBuildingLocation && (
-              <FormSelectField
+              <AppFormSelect
                 name="floorId"
                 label="Floor"
                 options={floorOptions}

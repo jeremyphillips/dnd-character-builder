@@ -3,7 +3,10 @@ export {
   default as AppFormTextField,
   type AppFormTextFieldProps,
 } from './AppFormTextField'
-export { default as FormSelectField } from './FormSelectField'
+export {
+  default as AppFormSelect,
+  type AppFormSelectProps,
+} from './AppFormSelect'
 export {
   default as AppFormRadioGroup,
   type AppFormRadioGroupProps,

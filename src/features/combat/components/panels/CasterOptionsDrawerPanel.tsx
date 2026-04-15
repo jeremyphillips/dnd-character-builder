@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography'
 import {
   AppFormCheckbox,
   AppFormRadioGroup,
-  FormSelectField,
+  AppFormSelect,
 } from '@/ui/patterns'
 import {
   buildDefaultCasterOptions,
@@ -101,7 +101,7 @@ function CasterOptionsDrawerPanelInner({
         <Stack spacing={2} sx={{ pt: 0.5 }}>
           {fields.map((field) =>
             field.kind === 'ability' ? (
-              <FormSelectField
+              <AppFormSelect
                 key={field.id}
                 name={field.id}
                 label={field.label}

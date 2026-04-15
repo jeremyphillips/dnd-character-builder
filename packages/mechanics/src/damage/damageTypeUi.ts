@@ -15,7 +15,7 @@ export const DAMAGE_TYPE_ROWS = [
 
 export type DamageTypeRowId = (typeof DAMAGE_TYPE_ROWS)[number]['id']
 
-/** For FormSelectField / MUI: `value` + `label`. */
+/** For AppFormSelect / MUI: `value` + `label`. */
 export const DAMAGE_TYPE_SELECT_OPTIONS: { value: string; label: string }[] = DAMAGE_TYPE_ROWS.map((r) => ({
   value: r.id,
   label: r.name,

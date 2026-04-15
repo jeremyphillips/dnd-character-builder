@@ -21,7 +21,7 @@ import type { Visibility } from '@/shared/types/visibility';
 import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 import { usePatchValidation } from './validation/PatchValidationContext';
 import { AppImageUploadField } from '@/ui/primitives';
-import JsonPreviewField from './JsonPreviewField';
+import { AppJsonPreviewField } from '@/ui/primitives';
 import VisibilityField from './VisibilityField';
 import OptionPickerField from './OptionPickerField';
 import { pickerArrayToFormValue, pickerValueToArray } from './optionPickerBridge';
@@ -445,7 +445,7 @@ function DriverJsonField({
       const parsed = JSON.parse(next);
       driver.setValue(path, parsed);
     } catch {
-      // Invalid JSON: do not commit. JsonPreviewField shows inline error.
+      // Invalid JSON: do not commit. AppJsonPreviewField shows inline error.
     }
   };
 
@@ -453,7 +453,7 @@ function DriverJsonField({
 
   return (
     <Box>
-      <JsonPreviewField
+      <AppJsonPreviewField
         label={field.label}
         value={text}
         onChange={handleChange}

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { AppTextField } from '@/ui/primitives';
 
-type JsonPreviewFieldProps = {
+import { AppTextField } from './AppTextField';
+
+export type AppJsonPreviewFieldProps = {
   label: string;
   value: string;
   onChange: (next: string) => void;
@@ -19,7 +21,8 @@ type JsonPreviewFieldProps = {
   error?: boolean;
 };
 
-const JsonPreviewField = ({
+/** Multiline JSON editor with parse validation and optional insert-example button; for RHF see `AppFormJsonPreviewField`. */
+export function AppJsonPreviewField({
   label,
   value,
   onChange,
@@ -33,7 +36,7 @@ const JsonPreviewField = ({
   insertExampleLabel = 'Insert example',
   required = false,
   error = false,
-}: JsonPreviewFieldProps) => {
+}: AppJsonPreviewFieldProps) {
   const [jsonError, setJsonError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,7 +68,7 @@ const JsonPreviewField = ({
         placeholder={placeholder}
         value={value}
         disabled={disabled}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         error={error || !!jsonError}
         helperText={jsonError ?? helperText}
         slotProps={{ input: { sx: { fontFamily: 'monospace', fontSize: 13 } } }}
@@ -83,6 +86,4 @@ const JsonPreviewField = ({
       )}
     </Box>
   );
-};
-
-export default JsonPreviewField;
+}

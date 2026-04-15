@@ -9,9 +9,9 @@ import AppFormSelect from './AppFormSelect'
 import AppFormRadioGroup from './AppFormRadioGroup'
 import AppFormCheckbox from './AppFormCheckbox'
 import AppFormImageUploadField from './AppFormImageUploadField'
-import FormDateTimeField from './FormDateTimeField'
+import AppFormDateTimePicker from './AppFormDateTimePicker'
 import FormVisibilityField from './FormVisibilityField'
-import FormJsonField from './FormJsonField'
+import AppFormJsonPreviewField from './AppFormJsonPreviewField'
 import FormOptionPickerField from './FormOptionPickerField'
 
 type DynamicFieldProps = {
@@ -171,7 +171,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'datetime':
       return (
         <FieldWithDescription field={field}>
-          <FormDateTimeField
+          <AppFormDateTimePicker
             name={field.name}
             label={field.label}
             required={field.required}
@@ -196,7 +196,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'json':
       return (
         <FieldWithDescription field={field}>
-          <FormJsonField
+          <AppFormJsonPreviewField
             name={field.name}
             label={field.label}
             required={field.required}

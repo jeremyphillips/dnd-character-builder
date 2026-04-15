@@ -20,9 +20,15 @@ export {
   default as AppFormImageUploadField,
   type AppFormImageUploadFieldProps,
 } from './AppFormImageUploadField'
-export { default as FormDateTimeField } from './FormDateTimeField'
+export {
+  default as AppFormDateTimePicker,
+  type AppFormDateTimePickerProps,
+} from './AppFormDateTimePicker'
 export { default as FormVisibilityField } from './FormVisibilityField'
-export { default as FormJsonField } from './FormJsonField'
+export {
+  default as AppFormJsonPreviewField,
+  type AppFormJsonPreviewFieldProps,
+} from './AppFormJsonPreviewField'
 export { default as OptionPickerField } from './OptionPickerField'
 export type {
   PickerOption,
@@ -37,7 +43,7 @@ export {
 export { default as RepeatableGroupField } from './RepeatableGroupField'
 export { default as ConditionalFormRenderer } from './ConditionalFormRenderer'
 export { default as TabbedFormLayout } from './TabbedFormLayout'
-export { default as JsonPreviewField } from './JsonPreviewField'
+export { AppJsonPreviewField, type AppJsonPreviewFieldProps } from '@/ui/primitives'
 export type {
   FieldConfig,
   FormLayoutNode,

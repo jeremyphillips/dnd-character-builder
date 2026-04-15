@@ -13,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import { AppTextField } from '@/ui/primitives';
 
-import { JsonPreviewField } from '@/ui/patterns';
+import { AppJsonPreviewField } from '@/ui/primitives';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import {
   getCampaignRulesetPatch,
@@ -505,7 +505,7 @@ export default function CampaignRulesetEditorRoute() {
 
             <Divider />
 
-            <JsonPreviewField
+            <AppJsonPreviewField
               label="Entry Requirements by Target Class (JSON)"
               value={entryReqsJson}
               onChange={(next) => { setEntryReqsJson(next); setSuccess(false); setValidationErrors([]); }}

@@ -99,6 +99,14 @@ export {
   default as AppFormImageUploadField,
   type AppFormImageUploadFieldProps,
 } from './form/AppFormImageUploadField'
+export {
+  default as AppFormJsonPreviewField,
+  type AppFormJsonPreviewFieldProps,
+} from './form/AppFormJsonPreviewField'
+export {
+  default as AppFormDateTimePicker,
+  type AppFormDateTimePickerProps,
+} from './form/AppFormDateTimePicker'
 export { default as DynamicField } from './form/DynamicField'
 export {
   default as DynamicFormRenderer,
@@ -106,7 +114,12 @@ export {
 } from './form/DynamicFormRenderer'
 export { default as ConditionalFormRenderer } from './form/ConditionalFormRenderer'
 export { default as TabbedFormLayout } from './form/TabbedFormLayout'
-export { default as JsonPreviewField } from './form/JsonPreviewField'
+export {
+  AppJsonPreviewField,
+  type AppJsonPreviewFieldProps,
+  AppDateTimePicker,
+  type AppDateTimePickerProps,
+} from '@/ui/primitives'
 export type {
   FieldConfig,
   FormLayoutNode,

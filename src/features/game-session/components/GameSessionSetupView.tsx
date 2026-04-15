@@ -24,7 +24,7 @@ import { LocationSummaryCard } from '@/features/content/locations/components'
 import type { Location } from '@/features/content/locations/domain/model/location'
 import type { GameSessionPatch } from '../api/gameSessionApi'
 import type { GameSession, GameSessionStatus } from '../domain/game-session.types'
-import FormDateTimeField from '@/ui/patterns/form/FormDateTimeField'
+import AppFormDateTimePicker from '@/ui/patterns/form/AppFormDateTimePicker'
 import AppFormSelect from '@/ui/patterns/form/AppFormSelect'
 import AppFormTextField from '@/ui/patterns/form/AppFormTextField'
 import {
@@ -70,7 +70,7 @@ function statusChipColor(
 /** Form fields only — lifecycle `status` is set by Save draft / Schedule session / Open now actions. */
 type FormValues = {
   title: string
-  /** ISO string from FormDateTimeField, or null when cleared */
+  /** ISO string from AppFormDateTimePicker, or null when cleared */
   scheduledFor: string | null
   locationIds: string[]
   floorId: string
@@ -408,7 +408,7 @@ function GameSessionSetupFormFields({
       </Typography>
 
       <AppFormTextField name="title" label="Session title" required size="small" disabled={!canEdit} />
-      <FormDateTimeField name="scheduledFor" label="Scheduled start" disabled={!canEdit} />
+      <AppFormDateTimePicker name="scheduledFor" label="Scheduled start" disabled={!canEdit} />
       <Typography variant="caption" color="text.secondary" display="block">
         Planned start is for display and planning only. The lobby does not open automatically at this
         time — use Open now when you are ready to gather players.

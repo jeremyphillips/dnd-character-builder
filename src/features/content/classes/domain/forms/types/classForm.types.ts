@@ -7,15 +7,15 @@ import type { Visibility } from '@/shared/types/visibility';
 
 export type ClassFormValues = Pick<CharacterClass, 'name' | 'description'> & {
   accessPolicy?: Visibility;
-  /** JSON string for FormJsonField. */
+  /** JSON string for AppFormJsonPreviewField. */
   generation: string;
-  /** JSON string for FormJsonField. */
+  /** JSON string for AppFormJsonPreviewField. */
   proficiencies: string;
-  /** JSON string for FormJsonField. */
+  /** JSON string for AppFormJsonPreviewField. */
   progression: string;
-  /** JSON string for FormJsonField. */
+  /** JSON string for AppFormJsonPreviewField. */
   definitions: string;
-  /** JSON string for FormJsonField. */
+  /** JSON string for AppFormJsonPreviewField. */
   requirements: string;
 };
 

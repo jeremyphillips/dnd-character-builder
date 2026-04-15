@@ -1,7 +1,7 @@
 /**
  * Skill Proficiency form field registry — single source of truth for config + mapping.
- * JSON fields (examples, tags, suggestedClasses) use placeholders that FormJsonField
- * renders as "Insert example" in JsonPreviewField.
+ * JSON fields (examples, tags, suggestedClasses) use placeholders that AppFormJsonPreviewField
+ * renders as "Insert example" in AppJsonPreviewField.
  */
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
 import type { SkillProficiency } from '@/features/content/skillProficiencies/domain/types';
@@ -32,17 +32,17 @@ const formatJsonArray = (v: unknown): string => {
   }
 };
 
-/** Example for suggestedClasses — used as placeholder in FormJsonField. */
+/** Example for suggestedClasses — used as placeholder in AppFormJsonPreviewField. */
 const SUGGESTED_CLASSES_EXAMPLE = '["barbarian", "fighter", "paladin"]';
 
-/** Example for examples — used as placeholder in FormJsonField. */
+/** Example for examples — used as placeholder in AppFormJsonPreviewField. */
 const EXAMPLES_EXAMPLE = [
   'Climbing a sheer cliff or scaling a castle wall',
   'Swimming across a rushing river or escaping a whirlpool',
   'Grappling an opponent or breaking free from restraints',
 ];
 
-/** Example for tags — used as placeholder in FormJsonField. */
+/** Example for tags — used as placeholder in AppFormJsonPreviewField. */
 const TAGS_EXAMPLE = ['physical', 'strength', 'climbing', 'swimming', 'grappling', 'athletic'];
 
 export const SKILL_PROFICIENCY_FORM_FIELDS = [

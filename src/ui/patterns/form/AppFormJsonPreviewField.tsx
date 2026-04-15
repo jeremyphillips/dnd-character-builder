@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import JsonPreviewField from './JsonPreviewField';
 
-type FormJsonFieldProps = {
+import { AppJsonPreviewField } from '@/ui/primitives';
+
+export type AppFormJsonPreviewFieldProps = {
   name: string;
   label: string;
   required?: boolean;
@@ -20,7 +21,11 @@ const stringify = (v: unknown): string =>
       ? v
       : '';
 
-export default function FormJsonField({
+/**
+ * react-hook-form adapter: JSON value in form state with string editing + parse in `AppJsonPreviewField`.
+ * Must render under `FormProvider`.
+ */
+export default function AppFormJsonPreviewField({
   name,
   label,
   required,
@@ -29,7 +34,7 @@ export default function FormJsonField({
   helperText,
   minRows = 4,
   maxRows = 16,
-}: FormJsonFieldProps) {
+}: AppFormJsonPreviewFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -45,7 +50,7 @@ export default function FormJsonField({
         },
       }}
       render={({ field, fieldState }) => (
-        <FormJsonFieldInner
+        <AppFormJsonPreviewFieldInner
           field={field}
           fieldState={fieldState}
           label={label}
@@ -60,7 +65,7 @@ export default function FormJsonField({
   );
 }
 
-function FormJsonFieldInner({
+function AppFormJsonPreviewFieldInner({
   field,
   fieldState,
   label,
@@ -94,12 +99,12 @@ function FormJsonFieldInner({
     try {
       field.onChange(JSON.parse(next));
     } catch {
-      // Invalid JSON: do not commit. JsonPreviewField shows inline error.
+      // Invalid JSON: do not commit. AppJsonPreviewField shows inline error.
     }
   };
 
   return (
-    <JsonPreviewField
+    <AppJsonPreviewField
       label={label}
       value={text}
       onChange={handleChange}

@@ -87,8 +87,11 @@ export {
   default as AppFormRadioGroup,
   type AppFormRadioGroupProps,
 } from './form/AppFormRadioGroup'
-export type { RadioOption } from '@/ui/primitives'
-export { default as FormCheckboxField } from './form/FormCheckboxField'
+export type { RadioOption, CheckboxOption } from '@/ui/primitives'
+export {
+  default as AppFormCheckbox,
+  type AppFormCheckboxProps,
+} from './form/AppFormCheckbox'
 export { default as DynamicField } from './form/DynamicField'
 export {
   default as DynamicFormRenderer,

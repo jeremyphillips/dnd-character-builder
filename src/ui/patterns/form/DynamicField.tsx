@@ -7,7 +7,7 @@ import { useFormLayoutStretch } from './FormLayoutStretchContext';
 import AppFormTextField from './AppFormTextField';
 import FormSelectField from './FormSelectField'
 import AppFormRadioGroup from './AppFormRadioGroup'
-import FormCheckboxField from './FormCheckboxField'
+import AppFormCheckbox from './AppFormCheckbox'
 import FormImageUploadField from './FormImageUploadField'
 import FormDateTimeField from './FormDateTimeField'
 import FormVisibilityField from './FormVisibilityField'
@@ -130,7 +130,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'checkbox':
       return (
         <FieldWithDescription field={field}>
-          <FormCheckboxField
+          <AppFormCheckbox
             name={field.name}
             label={field.label}
             required={field.required}
@@ -143,7 +143,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'checkboxGroup':
       return (
         <FieldWithDescription field={field}>
-          <FormCheckboxField
+          <AppFormCheckbox
             name={field.name}
             label={field.label}
             options={field.options}

@@ -34,7 +34,7 @@ import {
 import type { GridSizePreset } from '@/shared/domain/grid/gridPresets';
 import { GRID_SIZE_PRESETS } from '@/shared/domain/grid/gridPresets';
 import { AppModal } from '@/ui/patterns';
-import { AppForm, AppFormTextField, FormCheckboxField, FormSelectField } from '@/ui/patterns/form';
+import { AppForm, AppFormCheckbox, AppFormTextField, FormSelectField } from '@/ui/patterns/form';
 import FormOptionPickerField from '@/ui/patterns/form/FormOptionPickerField';
 
 const FORM_ID = 'location-create-setup-form';
@@ -310,7 +310,7 @@ function LocationCreateSetupFormFields({
             disabled={formDisabled}
             helperText="Optional. Mixed-use roles such as trade, lodging, or worship."
           />
-          <FormCheckboxField
+          <AppFormCheckbox
             name="buildingIsPublicStorefront"
             label="Open to the public"
             disabled={formDisabled}

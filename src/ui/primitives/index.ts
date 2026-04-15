@@ -26,6 +26,11 @@ export {
   type AppRadioGroupProps,
   type RadioOption,
 } from './forms/AppRadioGroup'
+export {
+  AppCheckbox,
+  type AppCheckboxProps,
+  type CheckboxOption,
+} from './forms/AppCheckbox'
 
 export { default as AppToast } from './AppToast/AppToast'
 export type { AppToastProps } from './AppToast/AppToast'

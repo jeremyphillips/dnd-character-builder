@@ -3,7 +3,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import { FormCheckboxField, FormSelectField } from '@/ui/patterns'
+import { AppFormCheckbox, FormSelectField } from '@/ui/patterns'
 import {
   buildDefaultCasterOptions,
   parseEnumMultiStored,
@@ -79,7 +79,7 @@ function CasterOptionsFieldsInner({ fields, value, onChange }: Omit<CasterOption
               required
             />
           ) : field.kind === 'enum-multi' ? (
-            <FormCheckboxField
+            <AppFormCheckbox
               key={field.id}
               name={field.id}
               label={field.label}

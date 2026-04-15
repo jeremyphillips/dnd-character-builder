@@ -6,8 +6,8 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import {
+  AppFormCheckbox,
   AppFormRadioGroup,
-  FormCheckboxField,
   FormSelectField,
 } from '@/ui/patterns'
 import {
@@ -109,7 +109,7 @@ function CasterOptionsDrawerPanelInner({
                 required
               />
             ) : field.kind === 'enum-multi' ? (
-              <FormCheckboxField
+              <AppFormCheckbox
                 key={field.id}
                 name={field.id}
                 label={field.label}

@@ -8,8 +8,11 @@ export {
   default as AppFormRadioGroup,
   type AppFormRadioGroupProps,
 } from './AppFormRadioGroup'
-export type { RadioOption } from '@/ui/primitives'
-export { default as FormCheckboxField } from './FormCheckboxField'
+export type { RadioOption, CheckboxOption } from '@/ui/primitives'
+export {
+  default as AppFormCheckbox,
+  type AppFormCheckboxProps,
+} from './AppFormCheckbox'
 export { default as FormImageUploadField } from './FormImageUploadField'
 export { default as FormDateTimeField } from './FormDateTimeField'
 export { default as FormVisibilityField } from './FormVisibilityField'

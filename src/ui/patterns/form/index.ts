@@ -13,7 +13,10 @@ export {
   default as AppFormCheckbox,
   type AppFormCheckboxProps,
 } from './AppFormCheckbox'
-export { default as FormImageUploadField } from './FormImageUploadField'
+export {
+  default as AppFormImageUploadField,
+  type AppFormImageUploadFieldProps,
+} from './AppFormImageUploadField'
 export { default as FormDateTimeField } from './FormDateTimeField'
 export { default as FormVisibilityField } from './FormVisibilityField'
 export { default as FormJsonField } from './FormJsonField'
@@ -45,8 +48,6 @@ export { when, evaluateCondition, type Condition } from './conditions'
 export { default as VisibilityField } from './VisibilityField'
 export { default as VisibilityBadge } from '../status/VisibilityBadge'
 export { DEFAULT_VISIBILITY_PUBLIC } from './VisibilityField'
-
-export { default as ImageUploadField } from './ImageUploadField'
 
 export {
   EditableField,

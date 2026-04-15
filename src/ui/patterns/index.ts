@@ -92,6 +92,10 @@ export {
   default as AppFormCheckbox,
   type AppFormCheckboxProps,
 } from './form/AppFormCheckbox'
+export {
+  default as AppFormImageUploadField,
+  type AppFormImageUploadFieldProps,
+} from './form/AppFormImageUploadField'
 export { default as DynamicField } from './form/DynamicField'
 export {
   default as DynamicFormRenderer,
@@ -119,7 +123,10 @@ export {
 export { default as VisibilityField } from './form/VisibilityField'
 export { DEFAULT_VISIBILITY_PUBLIC } from './form/VisibilityField'
 
-export { default as ImageUploadField } from './form/ImageUploadField'
+export {
+  AppImageUploadField,
+  type AppImageUploadFieldProps,
+} from '@/ui/primitives'
 
 export { default as FormActions } from './form/FormActions'
 

@@ -8,7 +8,7 @@ import AppFormTextField from './AppFormTextField';
 import FormSelectField from './FormSelectField'
 import AppFormRadioGroup from './AppFormRadioGroup'
 import AppFormCheckbox from './AppFormCheckbox'
-import FormImageUploadField from './FormImageUploadField'
+import AppFormImageUploadField from './AppFormImageUploadField'
 import FormDateTimeField from './FormDateTimeField'
 import FormVisibilityField from './FormVisibilityField'
 import FormJsonField from './FormJsonField'
@@ -158,7 +158,7 @@ export default function DynamicField({ field }: DynamicFieldProps) {
     case 'imageUpload':
       return (
         <FieldWithDescription field={field}>
-          <FormImageUploadField
+          <AppFormImageUploadField
             name={field.name}
             label={field.label}
             required={field.required}

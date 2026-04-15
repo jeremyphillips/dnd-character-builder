@@ -1,123 +1,121 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, type ChangeEvent, type DragEvent } from 'react';
 
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import Typography from '@mui/material/Typography'
-import CircularProgress from '@mui/material/CircularProgress'
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'
-import DeleteIcon from '@mui/icons-material/Delete'
-import ImageIcon from '@mui/icons-material/Image'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ImageIcon from '@mui/icons-material/Image';
 
-import { Lightbox } from '@/ui/patterns'
-import { resolveImageUrl } from '@/shared/lib/media'
-import { AppAlert } from '@/ui/primitives'
+import Lightbox from '@/ui/patterns/Lightbox/Lightbox';
+import { resolveImageUrl } from '@/shared/lib/media';
+import { AppAlert } from '../AppAlert/AppAlert';
 
-interface ImageUploadFieldProps {
+export type AppImageUploadFieldProps = {
   /** Current storage key or legacy URL */
-  value?: string | null
+  value?: string | null;
   /** Called with the storage key from the upload endpoint (or null on remove) */
-  onChange: (key: string | null) => void
+  onChange: (key: string | null) => void;
   /** Label shown above the field */
-  label?: string
+  label?: string;
   /** Whether the user can interact with the field */
-  disabled?: boolean
+  disabled?: boolean;
   /** Max height for the image preview */
-  maxHeight?: number
+  maxHeight?: number;
   /** Show required indicator on label */
-  required?: boolean
-}
+  required?: boolean;
+};
 
 /**
- * Reusable drag-and-drop image upload field.
- *
- * - No image: shows drag-and-drop upload zone
- * - Has image: shows preview with Replace / Remove buttons
- * - Click image: opens full-size lightbox modal
- *
- * Stores the raw storage key via onChange; resolves to a display URL internally.
+ * Drag-and-drop image upload with replace/remove and lightbox preview.
+ * Stores the raw storage key via `onChange`; resolves display URL internally.
+ * For react-hook-form, see `AppFormImageUploadField`.
  */
-export default function ImageUploadField({
+export function AppImageUploadField({
   value,
   onChange,
   label = 'Image',
   disabled = false,
   maxHeight = 280,
   required = false,
-}: ImageUploadFieldProps) {
-  const [dragActive, setDragActive] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+}: AppImageUploadFieldProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const displayUrl = useMemo(() => resolveImageUrl(value), [value])
+  const displayUrl = useMemo(() => resolveImageUrl(value), [value]);
 
   const uploadFile = useCallback(
     async (file: File) => {
-      setUploading(true)
-      setUploadError(null)
+      setUploading(true);
+      setUploadError(null);
       try {
         const res = await fetch('/api/uploads', {
           method: 'POST',
           headers: { 'Content-Type': file.type },
           credentials: 'include',
           body: file,
-        })
+        });
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          const message = body.error ?? `Upload failed (${res.status})`
-          setUploadError(message)
-          return
+          const body = await res.json().catch(() => ({}));
+          const message = body.error ?? `Upload failed (${res.status})`;
+          setUploadError(message);
+          return;
         }
-        const data = await res.json()
-        onChange(data.key)
+        const data = await res.json();
+        onChange(data.key);
       } catch {
-        setUploadError('Upload failed. Please check your connection and try again.')
+        setUploadError('Upload failed. Please check your connection and try again.');
       } finally {
-        setUploading(false)
+        setUploading(false);
       }
     },
-    [onChange]
-  )
+    [onChange],
+  );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!disabled) setDragActive(true)
-  }, [disabled])
+  const handleDragOver = useCallback(
+    (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) setDragActive(true);
+    },
+    [disabled],
+  );
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-  }, [])
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setDragActive(false)
-      if (disabled) return
+    (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+      if (disabled) return;
       const file = Array.from(e.dataTransfer.files).find((f) =>
-        f.type.startsWith('image/')
-      )
-      if (file) uploadFile(file)
+        f.type.startsWith('image/'),
+      );
+      if (file) uploadFile(file);
     },
-    [disabled, uploadFile]
-  )
+    [disabled, uploadFile],
+  );
 
   const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) uploadFile(file)
-      e.target.value = ''
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) uploadFile(file);
+      e.target.value = '';
     },
-    [uploadFile]
-  )
+    [uploadFile],
+  );
 
-  // ── Has image ──────────────────────────────────────────────────────────
   if (displayUrl) {
     return (
       <Box>
@@ -134,7 +132,6 @@ export default function ImageUploadField({
           </AppAlert>
         )}
 
-        {/* Clickable image preview */}
         <Box
           component="img"
           src={displayUrl}
@@ -152,7 +149,6 @@ export default function ImageUploadField({
           }}
         />
 
-        {/* Replace / Remove buttons */}
         {!disabled && (
           <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
             <Button
@@ -182,7 +178,6 @@ export default function ImageUploadField({
           </Box>
         )}
 
-        {/* Lightbox modal */}
         <Lightbox
           open={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
@@ -190,10 +185,9 @@ export default function ImageUploadField({
           alt={label}
         />
       </Box>
-    )
+    );
   }
 
-  // ── No image: upload zone ──────────────────────────────────────────────
   return (
     <Box>
       {label && (
@@ -271,5 +265,5 @@ export default function ImageUploadField({
         />
       </Card>
     </Box>
-  )
+  );
 }

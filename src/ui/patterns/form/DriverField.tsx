@@ -23,7 +23,7 @@ import type { FieldConfig } from './form.types';
 import type { Visibility } from '@/shared/types/visibility';
 import { formGridStretchOutlinedSx, useFormLayoutStretch } from './FormLayoutStretchContext';
 import { usePatchValidation } from './validation/PatchValidationContext';
-import ImageUploadField from './ImageUploadField';
+import { AppImageUploadField } from '@/ui/primitives';
 import JsonPreviewField from './JsonPreviewField';
 import VisibilityField from './VisibilityField';
 import OptionPickerField from './OptionPickerField';
@@ -288,7 +288,7 @@ export default function DriverField({ field, driver }: DriverFieldProps) {
     case 'imageUpload':
       return (
         <Box>
-          <ImageUploadField
+          <AppImageUploadField
             value={displayValue as string | null | undefined}
             onChange={(v) => handleChange(v)}
             label={field.label}

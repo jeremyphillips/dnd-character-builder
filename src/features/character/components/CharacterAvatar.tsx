@@ -6,7 +6,7 @@ interface CharacterAvatarProps {
   name?: string
   /** Resolved URL from API (optional if `imageKey` is set). */
   imageUrl?: string
-  /** Storage key or path; resolved the same way as `ImageUploadField` / IdentityBanner. */
+  /** Storage key or path; resolved the same way as `AppImageUploadField` / IdentityBanner. */
   imageKey?: string | null
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }

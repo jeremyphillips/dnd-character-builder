@@ -31,6 +31,10 @@ export {
   type AppCheckboxProps,
   type CheckboxOption,
 } from './forms/AppCheckbox'
+export {
+  AppImageUploadField,
+  type AppImageUploadFieldProps,
+} from './forms/AppImageUploadField'
 
 export { default as AppToast } from './AppToast/AppToast'
 export type { AppToastProps } from './AppToast/AppToast'

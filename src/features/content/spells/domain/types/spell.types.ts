@@ -24,7 +24,7 @@ export type { SpellLevel };
 /** Authored spell outcomes — never `kind: 'targeting'` (targeting lives on the group). */
 export type SpellEffect = Exclude<Effect, { kind: 'targeting' }>;
 
-/** Targeting context for a spell effect group (same payload as legacy `TargetingEffect` minus `kind`). */
+/** Targeting context for a spell effect group (same payload as `TargetingEffect` minus `kind`: `selection`, `targetType`, optional `area`, etc.). */
 export type SpellEffectTargeting = Omit<Extract<Effect, { kind: 'targeting' }>, 'kind'>;
 
 export type SpellEffectGroup = {

@@ -54,7 +54,7 @@ export const SPELLS_LEVEL_9_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'note',

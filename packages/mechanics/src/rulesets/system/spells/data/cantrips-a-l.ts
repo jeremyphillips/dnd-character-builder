@@ -33,8 +33,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 5 }
                 },
                 effects: [
@@ -85,7 +84,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -193,8 +192,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     canSelectSameTargetMultipleTimes: true
                 },
                 effects: [
@@ -286,7 +284,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -328,7 +326,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'note',
@@ -364,8 +362,7 @@ export const SPELLS_LEVEL_0_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-creature',
-                    targetType: 'creature'
+                    selection: 'one', targetType: 'creature',
                 },
                 effects: [
                     {

@@ -56,8 +56,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 10 }
                 },
                 effects: [
@@ -158,7 +157,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -248,7 +247,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
                 effects: [
                     {
                         kind: 'save',
@@ -374,7 +373,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -485,7 +484,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
+                targeting: { selection: 'one', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
                 effects: [
                     {
                         kind: 'save',
@@ -554,7 +553,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 10 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cylinder', size: 10 } },
                 effects: [
                     {
                         kind: 'save',
@@ -594,7 +593,7 @@ export const SPELLS_LEVEL_5_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
                     {

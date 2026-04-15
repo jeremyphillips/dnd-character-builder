@@ -20,8 +20,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-dead-creature',
-                    targetType: 'creature',
+                    selection: 'one', targetType: 'dead-creature',
                     creatureTypeFilter: ['humanoid']
                 },
                 effects: [
@@ -94,7 +93,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -148,7 +147,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
                 effects: [
                     {
                         kind: 'save',
@@ -200,7 +199,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', area: { kind: 'sphere', size: 10 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
                 effects: [
                     { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '3d10', damageType: 'slashing' }] },
                     { kind: 'roll-modifier', appliesTo: 'saving-throws', modifier: 'advantage', text: 'Advantage on Str saves while within 5ft of pack.' },
@@ -341,7 +340,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a white feather' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 30 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cone', size: 30 } },
                 effects: [
                     {
                         kind: 'save',
@@ -371,8 +370,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     rangeFeet: 150,
                     area: {
                         kind: 'sphere',
@@ -416,7 +414,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -454,7 +452,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'state', stateId: 'gaseous-form', notes: 'Misty cloud. Fly 10ft, hover. Can pass through openings as small as 1 inch.' },
                     { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as ModifierValue },
@@ -514,7 +512,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a shaving of licorice root' } },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 },
                     { kind: 'roll-modifier', appliesTo: 'dexterity-saves', modifier: 'advantage' },
@@ -540,7 +538,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { somatic: true, material: { description: 'a pinch of confetti' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 30 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 30 } },
                 effects: [
                     {
                         kind: 'save',
@@ -572,7 +570,7 @@ export const SPELLS_LEVEL_3_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a bit of fur and a crystal rod' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'line', size: 100 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'line', size: 100 } },
                 effects: [
                     {
                         kind: 'save',

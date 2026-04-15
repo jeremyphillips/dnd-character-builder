@@ -201,7 +201,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -298,7 +298,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a moonseed leaf' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 5 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cylinder', size: 5 } },
                 effects: [
                     {
                         kind: 'interval',
@@ -342,8 +342,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 30 }
                 },
                 effects: [
@@ -535,8 +534,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     canSelectSameTargetMultipleTimes: true
                 },
                 effects: [
@@ -598,7 +596,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a chip of mica' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
                 effects: [
                     {
                         kind: 'save',
@@ -640,7 +638,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'damage', damage: '2d6', damageType: 'radiant' },
                     {
@@ -675,8 +673,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 20 }
                 },
                 effects: [
@@ -710,7 +707,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -801,7 +798,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         components: { verbal: true, material: { description: 'a drop of honey' } },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
                     { kind: 'note', text: 'Charmed target pursues a suggested course of activity (25 words or fewer). Must sound achievable, not obviously harmful. Ends if caster or allies damage target.', category: 'flavor' as const }
@@ -826,7 +823,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'cube', size: 20 }
                 },
                 effects: [
@@ -873,7 +870,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'note',
@@ -900,7 +897,7 @@ export const SPELLS_LEVEL_2_G_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', area: { kind: 'sphere', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
                 effects: [
                     { kind: 'save', save: { ability: 'cha' }, onFail: [{ kind: 'state', stateId: 'zone-of-truth', notes: 'Cannot speak a deliberate lie while in the radius.' }] },
                     { kind: 'note', text: 'Caster knows whether each creature succeeds or fails. Affected creatures are aware and can avoid answering.', category: 'flavor' as const }

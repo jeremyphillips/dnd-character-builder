@@ -91,7 +91,7 @@ export const MONSTERS_G_I: readonly MonsterCatalogEntry[] = [
           name: 'Engulf',
           description:
             'The cube moves up to its Speed without provoking opportunity attacks and can enter the spaces of Large or smaller creatures if it has room to contain them.',
-          target: 'creatures-entered-during-move',
+          target: { selection: 'entered-during-move', targetType: 'creature' },
           movement: {
             upToSpeed: true,
             noOpportunityAttacks: true,

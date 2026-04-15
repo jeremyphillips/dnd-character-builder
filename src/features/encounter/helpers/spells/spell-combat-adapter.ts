@@ -138,7 +138,7 @@ function deriveAttachedEmanation(spell: Spell): CombatActionDefinition['attached
 function deriveCombatAreaTemplate(spell: Spell): CombatActionAreaTemplate | undefined {
   const t = getPrimarySpellTargeting(spell)
   if (!t?.area) return undefined
-  if (t.target !== 'creatures-in-area') return undefined
+  if (t.selection !== 'in-area') return undefined
   if (t.area.kind === 'sphere') return { kind: 'sphere', radiusFt: t.area.size }
   if (t.area.kind === 'cube') return { kind: 'cube', edgeFt: t.area.size }
   return undefined
@@ -172,7 +172,7 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   const rangeField = rangeFt != null ? { rangeFt } : {}
   const effects = flattenSpellEffects(spell)
   const hasDeadCreatureTargeting =
-    spell.effectGroups?.some((g) => g.targeting?.target === 'one-dead-creature') ?? false
+    spell.effectGroups?.some((g) => g.targeting?.targetType === 'dead-creature') ?? false
   if (hasDeadCreatureTargeting) {
     const creatureTypeFilter = getSpellCreatureTypeFilter(spell)
     return { kind: 'dead-creature', creatureTypeFilter, ...sight, ...rangeField }
@@ -206,8 +206,8 @@ function buildSpellTargeting(spell: Spell): CombatActionTargetingProfile {
   }
 
   const primaryTargeting = getPrimarySpellTargeting(spell)
-  if (primaryTargeting && (primaryTargeting.area != null || primaryTargeting.target === 'creatures-in-area')) {
-    /** Self-centered attached auras (e.g. buffs) use `creatures-in-area` for geometry only — not hostile pick-all-enemies. */
+  if (primaryTargeting && (primaryTargeting.area != null || primaryTargeting.selection === 'in-area')) {
+    /** Self-centered attached auras (e.g. buffs) use in-area targeting for geometry only — not hostile pick-all-enemies. */
     if (spellHasEmanationEffect(spell) && deriveSpellHostility(spell) !== 'hostile') {
       return { kind: 'self', ...sight }
     }

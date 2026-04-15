@@ -58,7 +58,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -150,7 +150,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'condition', conditionId: 'invisible' },
                     { kind: 'roll-modifier', appliesTo: 'attack-rolls', modifier: 'advantage' },
@@ -242,7 +242,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cylinder', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cylinder', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -311,7 +311,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -349,7 +349,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -519,7 +519,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'modifier', target: 'resistance', mode: 'add', value: 'bludgeoning' as ModifierValue },
                     { kind: 'modifier', target: 'resistance', mode: 'add', value: 'piercing' as ModifierValue },
@@ -549,7 +549,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -588,7 +588,7 @@ export const SPELLS_LEVEL_4_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature' },
+                targeting: { selection: 'in-area', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',

@@ -294,7 +294,7 @@ export const MONSTERS_M_O: readonly MonsterCatalogEntry[] = [
           effects: [
             {
               kind: "targeting",
-              target: "one-creature",
+              selection: "one",
               targetType: "creature",
               rangeFeet: 60,
               requiresSight: true,

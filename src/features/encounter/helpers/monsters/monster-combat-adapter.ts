@@ -338,11 +338,11 @@ function buildMonsterActionDefinition(
         ? { kind: 'single-target', rangeFt: action.reach ?? 5 }
         : attachedEmanation?.anchorMode === 'object'
           ? { kind: 'none' }
-          : action.target === 'creatures-in-area'
-          ? { kind: 'all-enemies', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
-          : action.target === 'creatures-entered-during-move'
-            ? { kind: 'entered-during-move' }
-            : { kind: 'single-target', rangeFt: action.reach ?? 5 }
+          : action.target?.selection === 'in-area'
+            ? { kind: 'all-enemies', ...(action.reach != null ? { rangeFt: action.reach } : {}) }
+            : action.target?.selection === 'entered-during-move'
+              ? { kind: 'entered-during-move' }
+              : { kind: 'single-target', rangeFt: action.reach ?? 5 }
 
   return {
     id: `${monster.id}-special-${index}-${cost.bonusAction ? 'bonus' : 'action'}`,

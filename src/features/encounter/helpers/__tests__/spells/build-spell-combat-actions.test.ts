@@ -60,7 +60,7 @@ describe('buildSpellCombatActions', () => {
       id: 'sacred-flame',
       name: 'Sacred Flame',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         {
           kind: 'save',
           save: { ability: 'dex' },
@@ -178,7 +178,7 @@ describe('buildSpellCombatActions', () => {
       id: 'charm-person',
       name: 'Charm Person',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         {
           kind: 'save',
           save: { ability: 'wis' },
@@ -206,7 +206,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Fire Bolt',
       deliveryMethod: 'ranged-spell-attack',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         { kind: 'damage', damage: '1d10', damageType: 'fire' },
       ],
     })
@@ -231,7 +231,7 @@ describe('buildSpellCombatActions', () => {
       level: 2,
       deliveryMethod: 'ranged-spell-attack',
       effects: [
-        { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature' },
+        { kind: 'targeting', selection: 'chosen', targetType: 'creature' },
         { kind: 'damage', damage: '2d6', damageType: 'fire', instances: { count: 3, canSplitTargets: true, canStackOnSingleTarget: true } },
       ],
     })
@@ -256,7 +256,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Eldritch Blast',
       deliveryMethod: 'ranged-spell-attack',
       effects: [
-        { kind: 'targeting', target: 'chosen-creatures', targetType: 'creature' },
+        { kind: 'targeting', selection: 'chosen', targetType: 'creature' },
         {
           kind: 'damage',
           damage: '1d10',
@@ -307,7 +307,7 @@ describe('buildSpellCombatActions', () => {
     const spell = makeSpell({
       id: 'target-only',
       name: 'Target Only',
-      effects: [{ kind: 'targeting', target: 'one-creature', targetType: 'creature' }],
+      effects: [{ kind: 'targeting', selection: 'one', targetType: 'creature' }],
     })
 
     const actions = buildSpellCombatActions({
@@ -325,7 +325,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Magic Missile Test',
       level: 1,
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         { kind: 'damage', damage: '1d4+1', damageType: 'force' },
       ],
     })
@@ -347,7 +347,7 @@ describe('buildSpellCombatActions', () => {
       level: 1,
       range: { kind: 'touch' },
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         {
           kind: 'roll-modifier',
           appliesTo: 'attack-rolls',
@@ -371,7 +371,7 @@ describe('buildSpellCombatActions', () => {
       id: 'condition-only',
       name: 'Condition Only',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         { kind: 'condition', conditionId: 'prone' },
       ],
     })
@@ -411,8 +411,7 @@ describe('buildSpellCombatActions', () => {
       effects: [
         {
           kind: 'targeting',
-          target: 'chosen-creatures',
-          targetType: 'creature',
+          selection: 'chosen', targetType: 'creature',
           count: 3,
           canSelectSameTargetMultipleTimes: true,
         },
@@ -456,7 +455,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Power Word Kill',
       level: 9,
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         { kind: 'damage', damage: '100', damageType: 'psychic' },
       ],
       resolution: {
@@ -524,8 +523,7 @@ describe('buildSpellCombatActions', () => {
       effects: [
         {
           kind: 'targeting',
-          target: 'one-creature',
-          targetType: 'creature',
+          selection: 'one', targetType: 'creature',
           requiresSight: true,
           condition: { kind: 'creature-type', target: 'target', creatureTypes: ['humanoid'] },
         },
@@ -554,8 +552,7 @@ describe('buildSpellCombatActions', () => {
       effects: [
         {
           kind: 'targeting',
-          target: 'one-creature',
-          targetType: 'creature',
+          selection: 'one', targetType: 'creature',
           creatureTypeFilter: ['humanoid'],
         },
         {
@@ -581,7 +578,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Fireball',
       level: 3,
       effects: [
-        { kind: 'targeting', target: 'creatures-in-area', area: { kind: 'sphere', size: 20 } },
+        { kind: 'targeting', selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
         { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '8d6', damageType: 'fire' }], onSuccess: [{ kind: 'damage', damage: '4d6', damageType: 'fire' }] },
       ],
     })
@@ -604,7 +601,7 @@ describe('buildSpellCombatActions', () => {
       level: 1,
       range: { kind: 'self' },
       effects: [
-        { kind: 'targeting', target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 15 } },
+        { kind: 'targeting', selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 15 } },
         {
           kind: 'save',
           save: { ability: 'con' },
@@ -630,7 +627,7 @@ describe('buildSpellCombatActions', () => {
       id: 'sacred-flame',
       name: 'Sacred Flame',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         { kind: 'save', save: { ability: 'dex' }, onFail: [{ kind: 'damage', damage: '1d8', damageType: 'radiant' }] },
       ],
     })
@@ -710,7 +707,7 @@ describe('buildSpellCombatActions', () => {
       name: 'Mage Armor',
       range: { kind: 'touch' },
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+        { kind: 'targeting', selection: 'one', targetType: 'creature', requiresWilling: true },
         { kind: 'modifier', target: 'armor_class', mode: 'set', value: 13 },
       ],
       description: {
@@ -760,7 +757,7 @@ describe('buildSpellCombatActions', () => {
       id: 'inv',
       name: 'Invisibility',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature', requiresWilling: true },
+        { kind: 'targeting', selection: 'one', targetType: 'creature', requiresWilling: true },
         { kind: 'condition', conditionId: 'invisible' },
       ],
     })
@@ -772,7 +769,7 @@ describe('buildSpellCombatActions', () => {
       id: 'sacred-flame',
       name: 'Sacred Flame',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         {
           kind: 'save',
           save: { ability: 'dex' },

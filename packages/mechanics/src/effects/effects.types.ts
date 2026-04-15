@@ -15,12 +15,16 @@ import type { MonsterSizeCategory, MonsterType } from '@/features/content/monste
 import type { ActionEconomyKind } from '@/features/content/shared/domain/vocab/actionEconomy.vocab';
 import type { EffectNoteCategory } from '@/features/mechanics/domain/resolution/content-resolution.types';
 import type { AreaOfEffectTemplate } from './area.types';
-import type { TargetingEffectTarget } from './targeting.types';
+import type {
+  TargetEligibilityKind,
+  TargetSelectionKind,
+} from '@/features/content/shared/domain/vocab/spellTargeting.vocab';
 import type { AttachedEnvironmentZoneProfile } from '../environment/environment.types';
 
 export type { FormulaDefinition, FormulaEffect } from '../resolution/engines/formula.engine';
 export type { AreaOfEffectTemplate } from './area.types';
-export type { TargetingEffectTarget, MonsterSpecialActionTarget } from './targeting.types';
+export type { MonsterSpecialActionTarget } from './targeting.types';
+export type { TargetEligibilityKind, TargetSelectionKind } from '@/features/content/shared/domain/vocab/spellTargeting.vocab';
 export type { DamageType, EnergyDamageType } from '../damage/damage.types';
 export type { EffectConditionId, ConditionImmunityId, ConditionImmunityOnlyId } from '../conditions/effect-condition-definitions';
 export {
@@ -279,8 +283,9 @@ export type StateEffect = EffectBase<'state'> & {
 };
 
 export type TargetingEffect = EffectBase<'targeting'> & {
-  target: TargetingEffectTarget;
-  targetType?: 'creature';
+  selection: TargetSelectionKind;
+  /** What may be targeted (creature, dead creature, object). */
+  targetType: TargetEligibilityKind;
   /**
    * Touch-style buffs ("willing creature"): combat maps to same-side targets only (caster + allies).
    * Willing is approximated as allies until explicit consent is modeled.

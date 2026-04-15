@@ -505,7 +505,7 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
           description:
             'Dexterity Saving Throw: DC 14, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 49 (14d6) Acid damage. Success: Half damage.',
           save: { ability: 'dex', dc: 14 },
-          target: 'creatures-in-area',
+          target: { selection: 'in-area', targetType: 'creature' },
           area: { kind: 'line', size: 30 },
           damage: '14d6',
           damageType: 'acid',
@@ -582,7 +582,7 @@ export const MONSTERS_V_Z: readonly MonsterCatalogEntry[] = [
           damageType: "fire",
           halfDamageOnSave: true,
           area: { kind: "cone", size: 30 },
-          target: "creatures-in-area",
+          target: { selection: 'in-area', targetType: 'creature' },
           recharge: { min: 5, max: 6 }
         }
       ],

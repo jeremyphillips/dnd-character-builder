@@ -52,8 +52,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 30 }
                 },
                 effects: [
@@ -90,7 +89,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', creatureTypeFilter: [...EXTRAPLANAR_CREATURE_TYPE_IDS] },
+                targeting: { selection: 'one', targetType: 'creature', creatureTypeFilter: [...EXTRAPLANAR_CREATURE_TYPE_IDS] },
                 effects: [
                     {
                         kind: 'save',
@@ -132,7 +131,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'square', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'square', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -177,7 +176,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -212,7 +211,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -250,7 +249,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'chosen', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
                     { kind: 'note', text: 'Bonus Action each turn: designate horizontal direction. Charmed targets must move that way. Target repeats save after moving (not a standard turn-boundary save).', category: 'under-modeled' as const }
@@ -279,7 +278,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 10 } },
                 effects: [
                     {
                         kind: 'save',
@@ -576,7 +575,7 @@ export const SPELLS_LEVEL_4_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',

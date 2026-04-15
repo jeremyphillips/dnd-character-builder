@@ -12,7 +12,7 @@ describe('spellEffectGroups helpers', () => {
     const spell: Pick<SpellBase, 'effectGroups'> = {
       effectGroups: [
         {
-          targeting: { target: 'one-creature', targetType: 'creature' },
+          targeting: { selection: 'one', targetType: 'creature' },
           effects: [{ kind: 'damage', damage: '1d4', damageType: 'fire' }],
         },
         {
@@ -26,7 +26,7 @@ describe('spellEffectGroups helpers', () => {
   it('getPrimarySpellTargeting returns first group targeting', () => {
     const spell: Pick<SpellBase, 'effectGroups'> = {
       effectGroups: [
-        { targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'square', size: 20 } }, effects: [] },
+        { targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'square', size: 20 } }, effects: [] },
       ],
     };
     expect(getPrimarySpellTargeting(spell)?.area?.kind).toBe('square');
@@ -35,8 +35,8 @@ describe('spellEffectGroups helpers', () => {
   it('findSpellTargetingWithArea picks first group with an area', () => {
     const spell: Pick<SpellBase, 'effectGroups'> = {
       effectGroups: [
-        { targeting: { target: 'one-creature', targetType: 'creature' }, effects: [] },
-        { targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } }, effects: [] },
+        { targeting: { selection: 'one', targetType: 'creature' }, effects: [] },
+        { targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } }, effects: [] },
       ],
     };
     expect(findSpellTargetingWithArea(spell)?.area?.kind).toBe('sphere');
@@ -47,7 +47,7 @@ describe('spellEffectGroups helpers', () => {
       effectGroups: [
         {
           targeting: {
-            target: 'creatures-in-area',
+            selection: 'in-area',
             targetType: 'creature',
             area: { kind: 'square', size: 20 },
           },
@@ -64,7 +64,7 @@ describe('spellEffectGroups helpers', () => {
         },
       ],
     };
-    expect(getPrimarySpellTargeting(spell)?.target).toBe('creatures-in-area');
+    expect(getPrimarySpellTargeting(spell)?.selection).toBe('in-area');
     const flat = flattenSpellEffects(spell);
     expect(flat[0]?.kind).toBe('save');
     if (flat[0]?.kind === 'save') {

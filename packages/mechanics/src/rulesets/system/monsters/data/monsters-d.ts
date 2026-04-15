@@ -192,7 +192,7 @@ export const MONSTERS_D: readonly MonsterCatalogEntry[] = [
             'Dexterity Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: The target has the Blinded condition until the end of the mephit’s next turn.',
           save: { ability: 'dex', dc: 10 },
           area: { kind: 'cone', size: 15 },
-          target: 'creatures-in-area',
+          target: { selection: 'in-area', targetType: 'creature' },
           recharge: { min: 6, max: 6 },
           onFail: [{ kind: 'condition', conditionId: 'blinded' }],
           resolution: {

@@ -25,7 +25,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'damage', damage: '4d4', damageType: 'acid' },
                     {
@@ -60,8 +60,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 3
                 },
                 effects: [
@@ -253,8 +252,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-creature',
-                    targetType: 'creature',
+                    selection: 'one', targetType: 'creature',
                     requiresWilling: true
                 },
                 effects: [
@@ -279,7 +277,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         components: { verbal: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -340,7 +338,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 }, creatureTypeFilter: ['humanoid'] },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 }, creatureTypeFilter: ['humanoid'] },
                 effects: [
                     { kind: 'save', save: { ability: 'cha' }, onFail: [{ kind: 'state', stateId: 'calmed', notes: 'Suppress Charmed/Frightened conditions, or become Indifferent toward chosen Hostile creatures.' }] },
                     { kind: 'note', text: 'Indifference ends if target takes damage or witnesses allies taking damage.', category: 'flavor' as const }
@@ -414,7 +412,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
                 effects: [
                     {
                         kind: 'emanation',
@@ -459,7 +457,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -528,7 +526,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -632,7 +630,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'chosen', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'enthralled', notes: '-10 to Wisdom (Perception) checks and Passive Perception.' }] },
                     { kind: 'note', text: 'Creatures you or companions are fighting automatically succeed.', category: 'flavor' as const }
@@ -725,7 +723,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'damage', damage: '3d6', damageType: 'fire' },
                     {
@@ -754,7 +752,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a ball of wax' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 5 } },
                 effects: [
                     {
                         kind: 'interval',
@@ -854,8 +852,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-creature',
-                    targetType: 'creature',
+                    selection: 'one', targetType: 'creature',
                     requiresSight: true,
                     condition: { kind: 'creature-type', target: 'target', creatureTypes: ['humanoid'] }
                 },
@@ -897,8 +894,7 @@ export const SPELLS_LEVEL_2_A_F: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-creature',
-                    targetType: 'creature',
+                    selection: 'one', targetType: 'creature',
                     requiresWilling: true
                 },
                 effects: [

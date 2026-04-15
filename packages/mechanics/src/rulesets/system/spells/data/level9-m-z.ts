@@ -23,7 +23,7 @@ export const SPELLS_LEVEL_9_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'chosen', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 700 },
                     { kind: 'note', text: 'Up to 700 HP divided among chosen creatures. Also ends Blinded, Deafened, and Poisoned conditions.', category: 'under-modeled' as const }
@@ -52,7 +52,7 @@ export const SPELLS_LEVEL_9_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 40 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 40 } },
                 effects: [
                     {
                         kind: 'save',
@@ -93,7 +93,7 @@ export const SPELLS_LEVEL_9_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'note', text: 'Target regains all HP. Ends Charmed, Frightened, Paralyzed, Poisoned, and Stunned conditions. Prone target can use Reaction to stand.', category: 'under-modeled' as const }
                 ]
@@ -116,7 +116,7 @@ export const SPELLS_LEVEL_9_M_Z: readonly SpellEntry[] = [
         components: { verbal: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     // Overkill damage when at/below threshold — instant death for typical encounter HP (does not model “die regardless of HP” verbatim).
                     { kind: 'damage', damage: '5000', damageType: 'psychic' }
@@ -340,7 +340,7 @@ export const SPELLS_LEVEL_9_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 30 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 30 } },
                 effects: [
                     {
                         kind: 'save',

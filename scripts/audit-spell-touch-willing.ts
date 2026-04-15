@@ -1,5 +1,5 @@
 /**
- * Audit touch-range spells whose root `targeting` is `one-creature` without
+ * Audit touch-range spells whose root `targeting` is single creature (`selection: 'one'`, `targetType: 'creature'`) without
  * `requiresWilling`, while `deriveSpellHostility` is still `unknown`.
  *
  * Those spells map to hostile `single-target` in encounter by default (same-side
@@ -18,7 +18,7 @@
 
 /** Reviewed: not an error for this heuristic (see comments). */
 const AUDIT_ALLOWLIST = new Set<string>([
-  // Authored as one-creature; RAW targets an object. Revisit if object targeting is added.
+  // Authored as single creature; RAW targets an object. Revisit if object targeting is added.
   'light',
   // RAW: "You touch a creature" — not willing-only; ally buff may need resolution.hostileIntent instead.
   'longstrider',
@@ -37,7 +37,7 @@ function findSuspiciousTouchSpells(spells: readonly Spell[]): Spell[] {
     if (spell.range?.kind !== 'touch') continue
     const targeting = getPrimarySpellTargeting(spell)
     if (!targeting) continue
-    if (targeting.target !== 'one-creature') continue
+    if (targeting.selection !== 'one' || targeting.targetType !== 'creature') continue
     if (targeting.requiresWilling) continue
     if (deriveSpellHostility(spell) !== 'unknown') continue
     out.push(spell)

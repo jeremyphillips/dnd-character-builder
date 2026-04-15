@@ -56,8 +56,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'cube', size: 10 }
                 },
                 effects: [
@@ -92,7 +91,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         deliveryMethod: 'ranged-spell-attack',
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'damage', damage: '4d6', damageType: 'radiant' },
                     { kind: 'roll-modifier', appliesTo: 'incoming-attacks', modifier: 'advantage', duration: { kind: 'until-turn-boundary', subject: 'source', turn: 'next', boundary: 'end' } }
@@ -117,7 +116,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: '2d4', abilityModifier: true }
                 ]
@@ -154,7 +153,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -188,7 +187,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'grant',
@@ -229,7 +228,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'state',
@@ -266,7 +265,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -307,7 +306,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'state',
@@ -345,7 +344,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'damage', damage: '1d10', damageType: 'piercing' },
                     {
@@ -436,7 +435,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -470,7 +469,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'state',
@@ -498,7 +497,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a pinch of dirt' } },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'modifier', target: 'speed', mode: 'add', value: 10 }
                 ]
@@ -527,7 +526,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'modifier',
@@ -567,8 +566,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     rangeFeet: 120,
                     requiresSight: true,
                     count: 3,
@@ -612,8 +610,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'one-creature',
-                    targetType: 'creature',
+                    selection: 'one', targetType: 'creature',
                     requiresWilling: true
                 },
                 effects: [
@@ -697,7 +694,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'damage', damage: '2d8', damageType: 'poison' },
                     {
@@ -731,7 +728,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'note',
@@ -770,7 +767,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'damage', damage: '1d6', damageType: 'fire' },
                     {
@@ -851,7 +848,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'modifier', target: 'armor_class', mode: 'add', value: 2 }
                 ]
@@ -913,8 +910,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'sphere', size: 5 }
                 },
                 effects: [
@@ -982,7 +978,7 @@ export const SPELLS_LEVEL_1_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 15 } },
                 effects: [
                     {
                         kind: 'save',

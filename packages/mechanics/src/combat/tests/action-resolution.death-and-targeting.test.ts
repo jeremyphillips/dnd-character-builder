@@ -269,7 +269,7 @@ describe('resolveCombatAction — death, resurrection, spawns, and targeting fla
       cost: { action: true },
       resolutionMode: 'effects',
       effects: [
-        { kind: 'targeting', target: 'one-creature', targetType: 'creature' },
+        { kind: 'targeting', selection: 'one', targetType: 'creature' },
         {
           kind: 'save',
           save: { ability: 'dex', dc: 15 },

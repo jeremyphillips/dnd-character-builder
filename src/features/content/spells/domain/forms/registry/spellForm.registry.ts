@@ -189,9 +189,10 @@ export function getSpellSimpleFieldSpecs(
       name: 'effectGroups',
       label: 'Effect groups',
       kind: 'json' as const,
-      placeholder: '[{ "targeting": { ... }, "effects": [{ "kind": "note", "text": "..." }] }]',
+      placeholder:
+        '[{ "targeting": { "selection": "one", "targetType": "creature" }, "effects": [...] }]',
       helperText:
-        'Array of effect groups: optional targeting per group plus canonical effect objects (note, save, damage, …).',
+        'Effect groups: optional targeting per group (`selection`, `targetType`, optional `area`, `requiresSight`, …) plus canonical effect rows (note, save, damage, …).',
       minRows: 4,
       maxRows: 16,
       defaultValue: '[]' as SpellFormValues['effectGroups'],

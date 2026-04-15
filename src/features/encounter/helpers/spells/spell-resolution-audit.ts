@@ -69,8 +69,8 @@ export function computeSpellTargetingAuditFlags(spell: Spell): SpellTargetingAud
   for (const g of spell.effectGroups ?? []) {
     const t = g.targeting
     if (!t) continue
-    if (t.target === 'chosen-creatures') hasChosenCreatures = true
-    if (t.target === 'creatures-in-area') hasCreaturesInArea = true
+    if (t.selection === 'chosen') hasChosenCreatures = true
+    if (t.selection === 'in-area') hasCreaturesInArea = true
     if (t.area) hasAreaOnTargeting = true
     if (typeof t.count === 'number') maxCount = Math.max(maxCount, t.count)
     if (t.canSelectSameTargetMultipleTimes) canRepeatTarget = true
@@ -84,10 +84,10 @@ export function computeSpellTargetingAuditFlags(spell: Spell): SpellTargetingAud
     spell.effectGroups?.some(
       (g) =>
         g.targeting &&
-        (g.targeting.target === 'one-creature' ||
-          g.targeting.target === 'one-dead-creature' ||
-          g.targeting.target === 'chosen-creatures' ||
-          g.targeting.target === 'creatures-in-area'),
+        (g.targeting.selection === 'one' ||
+          g.targeting.selection === 'chosen' ||
+          g.targeting.selection === 'in-area' ||
+          g.targeting.targetType === 'dead-creature')
     ) ?? false
 
   const requiresTargetSelection =

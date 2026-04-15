@@ -54,7 +54,7 @@ export const SPELLS_LEVEL_8_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'note',
@@ -97,7 +97,7 @@ export const SPELLS_LEVEL_8_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'condition', conditionId: 'stunned', repeatSave: { ability: 'con', timing: 'turn-end' } }
                 ]
@@ -125,7 +125,7 @@ export const SPELLS_LEVEL_8_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 60 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 60 } },
                 effects: [
                     {
                         kind: 'save',

@@ -24,8 +24,7 @@ export const SPELLS_LEVEL_7_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 8,
                     requiresWilling: true
                 },
@@ -56,7 +55,7 @@ export const SPELLS_LEVEL_7_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cone', size: 60 } },
                 effects: [
                     {
                         kind: 'save',
@@ -121,7 +120,7 @@ export const SPELLS_LEVEL_7_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: '4d8+15' },
                     { kind: 'interval', stateId: 'regeneration', every: { value: 1, unit: 'turn' }, effects: [{ kind: 'hit-points', mode: 'heal', value: 1 }] },
@@ -151,7 +150,7 @@ export const SPELLS_LEVEL_7_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-dead-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'dead-creature' },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 1 },
                     { kind: 'note', text: 'Revives to full HP. Not dead >100 years, not old age, not Undead. Neutralizes poisons, closes wounds, restores body parts. -4 penalty to d20 tests, reduced by 1 per Long Rest. If dead 365+ days, caster cannot cast spells and has Disadvantage on d20 tests until Long Rest.', category: 'flavor' as const }
@@ -320,8 +319,7 @@ export const SPELLS_LEVEL_7_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 8,
                     requiresSight: true,
                     requiresWilling: true

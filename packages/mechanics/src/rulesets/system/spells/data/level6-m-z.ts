@@ -24,7 +24,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 70 },
                     { kind: 'note', text: 'Also ends Blinded, Deafened, and Poisoned conditions on the target.', category: 'flavor' as const }
@@ -116,7 +116,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -183,7 +183,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', requiresSight: true, count: 12 },
+                targeting: { selection: 'chosen', targetType: 'creature', requiresSight: true, count: 12 },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
                     { kind: 'note', text: 'Charmed targets pursue suggested course (25 words or fewer). Must sound achievable, not obviously harmful. Ends if caster or allies damage target.', category: 'flavor' as const }
@@ -308,7 +308,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'line', size: 60 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'line', size: 60 } },
                 effects: [
                     {
                         kind: 'save',
@@ -373,7 +373,7 @@ export const SPELLS_LEVEL_6_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'state', stateId: 'true-seeing', notes: 'Truesight with a range of 120 feet.' }
                 ]

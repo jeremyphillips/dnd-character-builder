@@ -23,7 +23,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', count: 6, requiresSight: true },
+                targeting: { selection: 'chosen', targetType: 'creature', count: 6, requiresSight: true },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: '2d4', abilityModifier: true }
                 ]
@@ -177,7 +177,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     { kind: 'modifier', target: 'resistance', mode: 'add', value: 'fire' as const },
                     { kind: 'note', text: 'Caster chooses damage type at cast time: Acid, Cold, Fire, Lightning, or Thunder. Modeled as Fire by default.', category: 'flavor' as const }
@@ -234,7 +234,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         resolution: {},
         effectGroups: [
             {
-                targeting: { target: 'one-dead-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'dead-creature' },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 1 },
                     { kind: 'note', text: "Must have died within the last minute. Can't revive creatures that died of old age. Does not restore missing body parts.", category: 'flavor' as const }
@@ -295,8 +295,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'creatures-in-area',
-                    targetType: 'creature',
+                    selection: 'in-area', targetType: 'creature',
                     area: { kind: 'cylinder', size: 20 }
                 },
                 effects: [
@@ -326,7 +325,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a drop of molasses' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 40 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 40 } },
                 effects: [
                     {
                         kind: 'save',
@@ -418,7 +417,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a prayer scroll' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 15 } },
                 effects: [
                     {
                         kind: 'emanation',
@@ -463,7 +462,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a rotten egg' } },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
                 effects: [
                     {
                         kind: 'emanation',
@@ -535,7 +534,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'state', stateId: 'tongues', notes: 'Target understands any spoken or signed language. When target speaks/signs, any creature knowing a language understands.' }
                 ]
@@ -564,7 +563,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'damage', damage: '3d6', damageType: 'necrotic' },
                     {
@@ -599,8 +598,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 10,
                     requiresSight: true,
                     requiresWilling: true
@@ -637,8 +635,7 @@ export const SPELLS_LEVEL_3_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 10,
                     requiresSight: true,
                     requiresWilling: true

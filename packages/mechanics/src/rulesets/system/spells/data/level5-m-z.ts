@@ -23,7 +23,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -118,7 +118,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -154,7 +154,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', count: 6, area: { kind: 'sphere', size: 30 } },
+                targeting: { selection: 'chosen', targetType: 'creature', count: 6, area: { kind: 'sphere', size: 30 } },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: '5d8', abilityModifier: true }
                 ]
@@ -279,7 +279,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-dead-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'dead-creature' },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 1 },
                     {
@@ -312,7 +312,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-dead-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
+                targeting: { selection: 'one', targetType: 'dead-creature', creatureTypeFilter: ['humanoid'] },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: 1 },
                     {
@@ -345,7 +345,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'scried', notes: 'Invisible sensor within 10ft. Caster sees and hears through sensor.' }] },
                     { kind: 'note', text: 'Save DC modified by familiarity and physical connection. On success, cannot target again for 24h. Can target a location instead (no save, sensor stays in place).', category: 'flavor' as const }
@@ -468,8 +468,7 @@ export const SPELLS_LEVEL_5_M_Z: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 8,
                     requiresSight: true,
                     requiresWilling: true

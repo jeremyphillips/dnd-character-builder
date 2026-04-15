@@ -20,7 +20,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         deliveryMethod: 'ranged-spell-attack',
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -99,7 +99,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         deliveryMethod: 'ranged-spell-attack',
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -145,7 +145,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresWilling: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresWilling: true },
                 effects: [
                     {
                         kind: 'note',
@@ -172,7 +172,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -234,7 +234,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         deliveryMethod: 'melee-spell-attack',
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -274,7 +274,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -312,7 +312,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-dead-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'dead-creature' },
                 effects: [
                     {
                         kind: 'note',
@@ -340,7 +340,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         deliveryMethod: 'ranged-spell-attack',
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -429,7 +429,7 @@ export const SPELLS_LEVEL_0_M_Z: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',

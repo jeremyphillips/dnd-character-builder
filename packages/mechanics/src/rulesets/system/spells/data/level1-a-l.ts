@@ -75,7 +75,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true, creatureTypeFilter: ['beast'] },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true, creatureTypeFilter: ['beast'] },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'condition', conditionId: 'charmed' }] },
                     { kind: 'note', text: 'Ends if you or allies deal damage to the target.', category: 'flavor' as const }
@@ -99,7 +99,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a drop of blood' } },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', count: 3, requiresSight: true },
+                targeting: { selection: 'chosen', targetType: 'creature', count: 3, requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -129,7 +129,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true, material: { description: 'a Holy Symbol worth 5+ GP', cost: { value: 5, unit: 'gp', atLeast: true } } },
         effectGroups: [
             {
-                targeting: { target: 'chosen-creatures', targetType: 'creature', count: 3 },
+                targeting: { selection: 'chosen', targetType: 'creature', count: 3 },
                 effects: [
                     { kind: 'state', stateId: 'blessed', notes: 'Add 1d4 to attack rolls and saving throws.' }
                 ]
@@ -153,7 +153,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
                 effects: [
                     {
                         kind: 'save',
@@ -188,7 +188,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
+                targeting: { selection: 'one', targetType: 'creature', creatureTypeFilter: ['humanoid'] },
                 effects: [
                     {
                         kind: 'save',
@@ -236,7 +236,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -274,7 +274,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cone', size: 15 } },
                 effects: [
                     {
                         kind: 'save',
@@ -306,7 +306,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     { kind: 'save', save: { ability: 'wis' }, onFail: [{ kind: 'state', stateId: 'commanded', notes: 'Target follows one-word command on its next turn: Approach, Drop, Flee, Grovel, or Halt.' }] },
                     { kind: 'note', text: 'Specific command behavior (Approach, Drop, Flee, Grovel, Halt) varies by DM ruling.', category: 'flavor' as const }
@@ -384,7 +384,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true, somatic: true },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     { kind: 'hit-points', mode: 'heal', value: '2d8', abilityModifier: true }
                 ]
@@ -524,7 +524,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature', requiresSight: true },
+                targeting: { selection: 'one', targetType: 'creature', requiresSight: true },
                 effects: [
                     {
                         kind: 'save',
@@ -606,7 +606,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'damage',
@@ -644,7 +644,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'one-creature', targetType: 'creature' },
+                targeting: { selection: 'one', targetType: 'creature' },
                 effects: [
                     {
                         kind: 'save',
@@ -682,7 +682,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -737,7 +737,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         components: { verbal: true },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'cube', size: 20 } },
                 effects: [
                     {
                         kind: 'save',
@@ -804,8 +804,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         effectGroups: [
             {
                 targeting: {
-                    target: 'chosen-creatures',
-                    targetType: 'creature',
+                    selection: 'chosen', targetType: 'creature',
                     count: 5
                 },
                 effects: [
@@ -902,7 +901,7 @@ export const SPELLS_LEVEL_1_A_L: readonly SpellEntry[] = [
         },
         effectGroups: [
             {
-                targeting: { target: 'creatures-in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
+                targeting: { selection: 'in-area', targetType: 'creature', area: { kind: 'sphere', size: 20 } },
                 effects: [
                     {
                         kind: 'emanation',

@@ -18,6 +18,10 @@ export type {
   AppDataGridToolbarUtility,
 } from './AppDataGrid/AppDataGrid'
 export { indexAppDataGridFiltersById } from './AppDataGrid/indexAppDataGridFiltersById'
+export {
+  getActiveFilterBadgeSegments,
+  type AppDataGridBadgeSegment,
+} from './AppDataGrid/appDataGridFilter.utils'
 export { APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID } from './AppDataGrid/appDataGridToolbar.types'
 
 export { default as KeyValueSection } from './content/KeyValueSection/KeyValueSection'

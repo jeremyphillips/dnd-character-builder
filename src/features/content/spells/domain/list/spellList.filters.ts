@@ -7,7 +7,7 @@ import {
   buildLevelOptions,
   buildClassOptions,
 } from './spellList.options';
-import { SPELL_CORE_UI } from '../spellPresentation';
+import { SPELL_CORE_UI, formatSpellLevelName, isSpellLevel } from '../spellPresentation';
 
 export function buildSpellCustomFilters(
   items: SpellSummary[],
@@ -31,6 +31,13 @@ export function buildSpellCustomFilters(
       type: 'select' as const,
       options: levelOptions,
       accessor: (r) => String(r.level),
+      formatActiveChipValue: ({ value }) => {
+        const v = String(value ?? '');
+        if (v === '') return '';
+        const n = Number(v);
+        if (!isSpellLevel(n)) return v;
+        return formatSpellLevelName(n);
+      },
     },
     {
       id: SPELL_CORE_UI.classes.key,

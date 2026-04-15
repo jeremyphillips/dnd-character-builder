@@ -20,11 +20,19 @@ export type AppDataGridFilterVisibility = {
 type AppDataGridFilterMeta<T> = {
   /** Shown next to the label (e.g. info icon + tooltip). */
   description?: string
-  /** Override badge chip text for this filter when active. */
+  /**
+   * When true, badge text is `${label}: ${value}`. When false/omitted (default), badge shows the value
+   * segment only (e.g. `Wizard` instead of `Classes: Wizard`).
+   */
+  badgePrefixFilterLabel?: boolean
+  /**
+   * Override badge text for this filter when active. Return a string for one badge, or string[] for
+   * multi-select (one badge per entry; order should match selected values when per-badge delete applies).
+   */
   formatActiveChipValue?: (ctx: {
     value: unknown
     filter: AppDataGridFilter<T>
-  }) => string
+  }) => string | string[]
 }
 
 export type AppDataGridFilter<T> =

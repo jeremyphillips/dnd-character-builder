@@ -151,9 +151,10 @@ Typed **`filters`** render with **`AppSelect`** (**`select`**, **`boolean`**) an
 Optional on each **`AppDataGridFilter`**:
 
 - **`description`:** short help text next to the label (info icon).
-- **`formatActiveChipValue`:** override text for the active-filter badge chip.
+- **`badgePrefixFilterLabel`:** when **`true`**, badge text is **`${label}: ${value}`**; when omitted or **`false`** (default), badges show the value segment only (for example **`Wizard`** instead of **`Classes: Wizard`**).
+- **`formatActiveChipValue`:** override badge text. Return a **`string`** for one badge, or **`string[]`** for **`multiSelect`** (one badge per entry; order should align with the selected value ids for per-badge delete). For **`select`**, use this to customize wording (for example spell level as **`1st Level`**).
 
-When **`toolbarLayout`** is set, a **badge strip** is always reserved (**`minHeight`** 30px); when search or filters are active, it shows dismissible **`AppBadge`** items and a **Reset** control so the layout does not jump when the first badge appears.
+When **`toolbarLayout`** is set, a **badge strip** is always reserved (**`minHeight`** 30px); when search or filters are active, it shows dismissible **`AppBadge`** items and a **Reset** control so the layout does not jump when the first badge appears. **`multiSelect`** filters emit **one badge per selected option**; deleting a badge removes only that value from the selection. Search continues to use **`Search: …`** for the search chip.
 
 ### Column header helper (optional)
 

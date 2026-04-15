@@ -24,10 +24,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import SearchIcon from '@mui/icons-material/Search'
 
 import type { AppDataGridFilter, FilterOption } from './appDataGridFilter.types'
-import {
-  getFilterDefault,
-  formatDefaultActiveChipValue,
-} from './appDataGridFilter.utils'
+import { getFilterDefault, getActiveFilterBadgeSegments } from './appDataGridFilter.utils'
 import { indexAppDataGridFiltersById } from './indexAppDataGridFiltersById'
 import {
   APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID,
@@ -604,18 +601,28 @@ export default function AppDataGrid<T>({
     for (const f of resolvedFilters) {
       const cur = filterValues[f.id] ?? getFilterDefault(f)
       if (!isFilterValueActive(f, cur)) continue
-      const chipText = f.formatActiveChipValue
-        ? f.formatActiveChipValue({ value: cur, filter: f })
-        : formatDefaultActiveChipValue(f, cur)
-      out.push(
-        <AppBadge
-          key={`filter-${f.id}`}
-          size="small"
-          variant="outlined"
-          label={`${f.label}: ${chipText}`}
-          onDelete={() => setFilterValue(f.id, getFilterDefault(f))}
-        />,
-      )
+      const segments = getActiveFilterBadgeSegments(f, cur).filter((s) => s.label.trim() !== '')
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]!
+        const showPrefix = Boolean(f.badgePrefixFilterLabel)
+        const badgeLabel = showPrefix ? `${f.label}: ${seg.label}` : seg.label
+        out.push(
+          <AppBadge
+            key={`filter-${f.id}-${seg.removeValue ?? i}`}
+            size="small"
+            variant="outlined"
+            label={badgeLabel}
+            onDelete={() => {
+              if (seg.removeValue !== undefined && f.type === 'multiSelect') {
+                const arr = ((cur as string[]) ?? []).filter((v) => v !== seg.removeValue)
+                setFilterValue(f.id, arr)
+              } else {
+                setFilterValue(f.id, getFilterDefault(f))
+              }
+            }}
+          />,
+        )
+      }
     }
     return out
   }, [toolbarLayout, search, filterValues, resolvedFilters, setFilterValue])

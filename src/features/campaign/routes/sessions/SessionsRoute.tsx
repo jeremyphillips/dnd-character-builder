@@ -10,8 +10,7 @@ import { Breadcrumbs } from '@/ui/patterns'
 import { useBreadcrumbs } from '@/app/navigation'
 import { FormModal } from '@/ui/patterns'
 import { AppDataGrid } from '@/ui/patterns'
-import type { AppDataGridColumn } from '@/ui/patterns'
-import type { FilterOption } from '@/ui/patterns'
+import type { AppDataGridColumn, AppDataGridFilter, FilterOption } from '@/ui/patterns'
 import type { FieldConfig } from '@/ui/patterns'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -100,6 +99,17 @@ export default function SessionsRoute() {
     { value: 'cancelled', label: 'Cancelled' },
   ]
 
+  const statusFilters: AppDataGridFilter<Session>[] = [
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: statusFilterOptions,
+      accessor: (row) => String(row.status ?? ''),
+      defaultValue: statusFilterOptions[0]?.value,
+    },
+  ]
+
   return (
     <Box>
       <Breadcrumbs items={breadcrumbs} />
@@ -111,9 +121,7 @@ export default function SessionsRoute() {
         getDetailLink={(row) =>
           ROUTES.SESSION.replace(':id', campaignId!).replace(':sessionId', row.id)
         }
-        filterColumn="status"
-        filterOptions={statusFilterOptions}
-        filterLabel="Status"
+        filters={statusFilters}
         searchable
         searchPlaceholder="Search sessions…"
         searchColumns={['title']}

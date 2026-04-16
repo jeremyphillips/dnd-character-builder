@@ -41,27 +41,6 @@ import { resolveImageUrl } from '@/shared/lib/media'
 
 
 // ---------------------------------------------------------------------------
-// MIGRATION NOTES
-// ---------------------------------------------------------------------------
-// Legacy props:
-// - filterColumn
-// - filterOptions
-// - filterLabel
-//
-// These are deprecated and will be removed in a future refactor.
-//
-// New API:
-// - filters: AppDataGridFilter<T>[]
-// - columns[].accessor for computed values
-//
-// Migration strategy:
-// 1. Replace filterColumn/filterOptions with filters[]
-// 2. Replace direct row[field] usage with accessor where needed
-// 3. Update renderCell to (row, value) signature
-//
-// ContentTypeListPage: pass `filters` + optional `toolbarLayout` for row-based toolbars.
-//
-// ---------------------------------------------------------------------------
 // COLUMN SPECIAL BEHAVIORS (applied in order, later wins):
 // ---------------------------------------------------------------------------
 // 1. renderCell    — custom cell renderer (baseline)
@@ -172,23 +151,7 @@ export interface AppDataGridProps<T> {
   /** Build the detail route link for a row (used by linkColumn) */
   getDetailLink?: (row: T) => string
 
-  /**
-   * @deprecated Use `filters` instead.
-   * Column field to use for dropdown filtering.
-   */
-  filterColumn?: string
-  /**
-   * @deprecated Use `filters` instead.
-   * Options for the filter dropdown.
-   */
-  filterOptions?: FilterOption[]
-  /**
-   * @deprecated Use `filters` instead.
-   * Label shown on the filter dropdown.
-   */
-  filterLabel?: string
-
-  /** Typed filter definitions. Supersedes filterColumn / filterOptions / filterLabel. */
+  /** Toolbar filter definitions (select / multiSelect / boolean / range). */
   filters?: AppDataGridFilter<T>[]
 
   /**
@@ -285,9 +248,6 @@ export default function AppDataGrid<T>({
   columns,
   getRowId,
   getDetailLink,
-  filterColumn,
-  filterOptions,
-  filterLabel,
   filters,
   multiSelect = false,
   searchable = false,
@@ -319,25 +279,7 @@ export default function AppDataGrid<T>({
     [onFilterValueChange],
   )
 
-  // ── Normalise filters (new API or legacy shim) ────────────────────
-  const resolvedFilters = useMemo<AppDataGridFilter<T>[]>(() => {
-    if (filters) return filters
-    if (filterColumn && filterOptions && filterOptions.length > 0) {
-      const col = filterColumn
-      return [
-        {
-          id: '__legacy__',
-          label: filterLabel ?? '',
-          type: 'select' as const,
-          options: filterOptions,
-          accessor: (row: T) =>
-            String((row as Record<string, unknown>)[col] ?? ''),
-          defaultValue: filterOptions[0]?.value,
-        },
-      ]
-    }
-    return []
-  }, [filters, filterColumn, filterOptions, filterLabel])
+  const resolvedFilters = useMemo<AppDataGridFilter<T>[]>(() => filters ?? [], [filters])
 
   const getFilterValue = useCallback(
     (f: AppDataGridFilter<T>): unknown =>

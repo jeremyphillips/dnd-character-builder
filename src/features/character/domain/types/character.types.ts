@@ -144,3 +144,30 @@ export type NonPlayerCharacter = Character & {
 export type CharacterSheet = Omit<Partial<Character>, 'classes'> & {
   classes: CharacterClassInfo[]
 }
+
+/** Fields accepted by PATCH /api/characters/:id (Mongo document subset). GET returns CharacterDetailDto with resolved names. */
+export type CharacterPatchFields = Pick<
+  Character,
+  | 'name'
+  | 'alignment'
+  | 'race'
+  | 'classes'
+  | 'xp'
+  | 'totalLevel'
+  | 'levelUpPending'
+  | 'pendingLevel'
+  | 'abilityScores'
+  | 'hitPoints'
+  | 'combat'
+  | 'proficiencies'
+  | 'feats'
+  | 'spells'
+  | 'equipment'
+  | 'wealth'
+  | 'narrative'
+> & {
+  imageKey?: string | null
+  /** Sent when completing level-up subclass selection */
+  subclassId?: string
+  armorClass?: ArmorClass
+}

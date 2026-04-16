@@ -135,11 +135,19 @@ export type AppDataGridToolbarConfig<T> = {
 
 export type AppDataGridSelectionConfig = {
   /**
-   * Enable row multi-select (checkbox column).
-   * TODO: expose onSelectionChange callback and selectedIds controlled prop
-   * for bulk actions (delete, export, etc.).
+   * Enable row multi-select (checkbox column). Uses MUI Data Grid row selection (`GridRowSelectionModel`).
    */
   enabled?: boolean
+  /**
+   * Controlled selection: row ids that appear selected (must match {@link AppDataGridProps.getRowId}).
+   * When set, pair with {@link onSelectionChange} so the parent can update in response to user interaction.
+   */
+  selectedRowIds?: string[]
+  /**
+   * Called when selection changes. Receives ids of selected rows **within the current filtered row set**
+   * (same order as visible rows for `exclude`-style “select all” semantics).
+   */
+  onSelectionChange?: (selectedRowIds: string[]) => void
 }
 
 export type AppDataGridPresentationConfig = {

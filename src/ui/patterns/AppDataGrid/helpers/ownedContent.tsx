@@ -1,3 +1,7 @@
+/**
+ * Campaign-content helpers for “owned by viewing character” columns and filters.
+ * They depend on content-feature column helpers; keep usage to campaign content lists — see `docs/reference/appdatagrid.md`.
+ */
 import { Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import type { AppDataGridColumn, AppDataGridFilter } from '../types';

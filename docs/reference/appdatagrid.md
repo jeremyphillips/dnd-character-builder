@@ -78,14 +78,30 @@ These are **guidelines**, not hard caps: profile with realistic data and devices
 The following are **explicitly out of scope** for the shared `AppDataGrid` primitive until requirements are clear:
 
 - Server-driven or **indexed** full-text search wired into the same toolbar
-- **Controlled selection** API and callbacks for bulk operations
+- **Bulk action** toolbars (delete/export) wired to selection — **`onSelectionChange`** is available; product flows stay feature-owned
 - Generalized **toolbar plugin** system
 - Splitting helpers into many tiny files **before** module boundaries stabilize
+
+---
+
+## Row selection (checkbox column)
+
+When **`selection.enabled`** is true, MUI Data Grid shows checkboxes. Optional:
+
+- **`selection.selectedRowIds`** — controlled selection (string ids from **`getRowId`**).
+- **`selection.onSelectionChange`** — called with the selected ids for the **current filtered rows** (toolbar search + filters). Supports MUI’s `include` and `exclude` selection models via [`appDataGridRowSelection.ts`](../../src/ui/patterns/AppDataGrid/core/appDataGridRowSelection.ts).
+
+Use **`onSelectionChange`** without **`selectedRowIds`** for uncontrolled selection with notifications. Pair **`selectedRowIds`** with **`onSelectionChange`** for controlled selection.
 
 ---
 
 ## Related code
 
 - [`src/ui/patterns/AppDataGrid/core/appDataGridFiltering.ts`](../../src/ui/patterns/AppDataGrid/core/appDataGridFiltering.ts) — row filtering and default search matching
-- [`src/ui/patterns/AppDataGrid/types/appDataGrid.types.ts`](../../src/ui/patterns/AppDataGrid/types/appDataGrid.types.ts) — props and selection TODO
+- [`src/ui/patterns/AppDataGrid/core/appDataGridRowSelection.ts`](../../src/ui/patterns/AppDataGrid/core/appDataGridRowSelection.ts) — `GridRowSelectionModel` ↔ string id list
+- [`src/ui/patterns/AppDataGrid/types/appDataGrid.types.ts`](../../src/ui/patterns/AppDataGrid/types/appDataGrid.types.ts) — props and `AppDataGridSelectionConfig`
 - [`src/features/content/shared/components/ContentTypeListPage.tsx`](../../src/features/content/shared/components/ContentTypeListPage.tsx) — campaign content list wrapper
+
+### Owned column / filter helpers
+
+[`makeOwnedColumn`](../../src/ui/patterns/AppDataGrid/helpers/ownedContent.tsx) and **`makeOwnedFilter`** live under **`ui/patterns/AppDataGrid/helpers`** for discoverability next to the grid, but they **compose campaign-content UI** (e.g. **`makeBooleanGlyphColumn`** from the content feature). Treat them as **campaign list utilities**, not generic `ui` primitives.

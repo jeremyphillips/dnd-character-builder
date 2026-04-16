@@ -7,14 +7,19 @@ import {
   type AppDataGridFilter,
   type AppDataGridProps,
 } from '../types'
-import { getFilterDefault, indexFiltersById } from '../filters'
+import { indexFiltersById } from '../filters'
 import { buildMuiColumns } from './appDataGridColumns'
 import { filterRows } from './appDataGridFiltering'
+import {
+  rowSelectionModelToSelectedRowIds,
+  selectedRowIdsToRowSelectionModel,
+} from './appDataGridRowSelection'
 import { useAppDataGridToolbarState } from './useAppDataGridToolbarState'
 import { useAppDataGridToolbarBadges } from './useAppDataGridToolbarBadges'
 import { renderAppDataGridFilterControl } from './appDataGridToolbarFilterControl'
 import AppDataGridToolbar from './AppDataGridToolbar'
 import AppDataGridGridPresentation from './AppDataGridGridPresentation'
+import type { GridRowSelectionModel } from '@mui/x-data-grid'
 import type { MuiTextFieldSize } from '@/ui/sizes'
 
 // ---------------------------------------------------------------------------
@@ -63,6 +68,8 @@ export default function AppDataGrid<T>({
   const getRowClassName = pres?.getRowClassName
 
   const multiSelect = selection?.enabled ?? false
+  const selectedRowIdsControlled = selection?.selectedRowIds
+  const onSelectionChange = selection?.onSelectionChange
 
   const resolvedFilters = useMemo<AppDataGridFilter<T>[]>(
     () => filterBundle?.definitions ?? [],
@@ -96,6 +103,23 @@ export default function AppDataGrid<T>({
         searchColumns,
       }),
     [rows, columns, resolvedFilters, filterValues, searchable, search, searchRowMatch, searchColumns],
+  )
+
+  const visibleRowIds = useMemo(
+    () => filteredRows.map((row) => getRowId(row)),
+    [filteredRows, getRowId],
+  )
+
+  const rowSelectionModel = useMemo((): GridRowSelectionModel | undefined => {
+    if (!multiSelect || selectedRowIdsControlled === undefined) return undefined
+    return selectedRowIdsToRowSelectionModel(selectedRowIdsControlled)
+  }, [multiSelect, selectedRowIdsControlled])
+
+  const handleRowSelectionModelChange = useCallback(
+    (model: GridRowSelectionModel) => {
+      onSelectionChange?.(rowSelectionModelToSelectedRowIds(model, visibleRowIds))
+    },
+    [onSelectionChange, visibleRowIds],
   )
 
   const muiColumns = useMemo(
@@ -186,6 +210,10 @@ export default function AppDataGrid<T>({
         height={height}
         emptyMessage={emptyMessage}
         multiSelect={multiSelect}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={
+          multiSelect && onSelectionChange ? handleRowSelectionModelChange : undefined
+        }
       />
     </Box>
   )

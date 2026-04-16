@@ -1,5 +1,10 @@
 import { DataGrid } from '@mui/x-data-grid'
-import type { GridColDef, GridRowClassNameParams } from '@mui/x-data-grid'
+import type {
+  GridCallbackDetails,
+  GridColDef,
+  GridRowClassNameParams,
+  GridRowSelectionModel,
+} from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
 import GlobalStyles from '@mui/material/GlobalStyles'
 import Typography from '@mui/material/Typography'
@@ -15,6 +20,11 @@ type AppDataGridGridPresentationProps<T> = {
   height: number | string
   emptyMessage: string
   multiSelect: boolean
+  rowSelectionModel?: GridRowSelectionModel
+  onRowSelectionModelChange?: (
+    model: GridRowSelectionModel,
+    details: GridCallbackDetails,
+  ) => void
 }
 
 export default function AppDataGridGridPresentation<T>({
@@ -28,6 +38,8 @@ export default function AppDataGridGridPresentation<T>({
   height,
   emptyMessage,
   multiSelect,
+  rowSelectionModel,
+  onRowSelectionModelChange,
 }: AppDataGridGridPresentationProps<T>) {
   return (
     <>
@@ -55,6 +67,8 @@ export default function AppDataGridGridPresentation<T>({
           density={density}
           checkboxSelection={multiSelect}
           disableRowSelectionOnClick={!multiSelect}
+          rowSelectionModel={rowSelectionModel}
+          onRowSelectionModelChange={onRowSelectionModelChange}
           disableColumnFilter
           disableColumnMenu
           slots={{

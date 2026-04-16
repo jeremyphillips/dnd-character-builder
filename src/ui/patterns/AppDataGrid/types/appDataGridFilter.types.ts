@@ -29,6 +29,15 @@ type AppDataGridFilterMeta<T> = {
    * Override badge text for this filter when active. Return a string for one badge, or string[] for
    * multi-select (one badge per entry; order should match selected values when per-badge delete applies).
    */
+  formatActiveBadgeValue?: (ctx: {
+    value: unknown
+    filter: AppDataGridFilter<T>
+  }) => string | string[]
+  /**
+   * @deprecated Use `formatActiveBadgeValue` instead.
+   * Override badge text for this filter when active. Return a string for one badge, or string[] for
+   * multi-select (one badge per entry; order should match selected values when per-badge delete applies).
+   */
   formatActiveChipValue?: (ctx: {
     value: unknown
     filter: AppDataGridFilter<T>
@@ -77,7 +86,10 @@ export type AppDataGridFilter<T> =
       visibility?: AppDataGridFilterVisibility
     } & AppDataGridFilterMeta<T>)
 
-export type AppDataGridActiveChipFormatContext<T> = {
+export type AppDataGridActiveBadgeFormatContext<T> = {
   value: unknown
   filter: AppDataGridFilter<T>
 }
+
+/** @deprecated Use `AppDataGridActiveBadgeFormatContext` instead. */
+export type AppDataGridActiveChipFormatContext<T> = AppDataGridActiveBadgeFormatContext<T>

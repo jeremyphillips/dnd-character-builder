@@ -36,7 +36,7 @@ export function buildSpellCustomFilters(
       type: 'select' as const,
       options: levelOptions,
       accessor: (r) => String(r.level),
-      formatActiveChipValue: ({ value }) => {
+      formatActiveBadgeValue: ({ value }) => {
         const v = String(value ?? '');
         if (v === '') return '';
         const n = Number(v);

@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 
-import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
+import { DataGrid } from '@mui/x-data-grid'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import GlobalStyles from '@mui/material/GlobalStyles'
@@ -12,8 +11,6 @@ import Switch from '@mui/material/Switch'
 import { AppBadge, AppMultiSelectCheckbox, AppSelect, AppTextField, AppTooltip } from '@/ui/primitives'
 import InputAdornment from '@mui/material/InputAdornment'
 import Typography from '@mui/material/Typography'
-import MuiLink from '@mui/material/Link'
-import Avatar from '@mui/material/Avatar'
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import SearchIcon from '@mui/icons-material/Search'
@@ -30,11 +27,15 @@ import {
   getFilterDefault,
   getActiveFilterBadgeSegments,
   getClampedRangeFilterValue,
-} from '../filters/toolbarFilters'
-import { mapFiltersById } from '../filters/mapFiltersById'
-
-import { resolveImageUrl } from '@/shared/lib/media'
+  indexFiltersById,
+} from '../filters'
 import type { MuiDenseInputSize, MuiTextFieldSize } from '@/ui/sizes'
+import { buildMuiColumns } from './appDataGridColumns'
+import {
+  filterRows,
+  isFilterValueActive,
+  truncateToolbarSearchLabel,
+} from './appDataGridFiltering'
 
 
 // ---------------------------------------------------------------------------
@@ -60,28 +61,6 @@ const APP_DATA_GRID_FILTER_FIELD_SX = { minWidth: 160, width: 'auto', flex: '0 1
 function selectPlaceholderForFilterOptions(options: FilterOption[]): string | undefined {
   const empty = options.find((o) => o.value === '')
   return empty?.label
-}
-
-function isFilterValueActive<T>(f: AppDataGridFilter<T>, value: unknown): boolean {
-  const def = getFilterDefault(f)
-  if (f.type === 'multiSelect') {
-    const selected = (value as string[]) ?? []
-    return selected.length > 0
-  }
-  if (f.type === 'boolean') {
-    return value !== 'all'
-  }
-  if (f.type === 'range') {
-    const cur = getClampedRangeFilterValue(f, value)
-    return cur.min !== f.defaultValue.min || cur.max !== f.defaultValue.max
-  }
-  return value !== def
-}
-
-function truncateSearchChip(text: string, max = 40): string {
-  const t = text.trim()
-  if (t.length <= max) return t
-  return `${t.slice(0, max - 1)}…`
 }
 
 // ---------------------------------------------------------------------------
@@ -148,197 +127,29 @@ export default function AppDataGrid<T>({
   )
 
   // ── Filtering & searching ─────────────────────────────────────────
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const passesFilters = resolvedFilters.every((f) => {
-        const current = filterValues[f.id] ?? getFilterDefault(f)
-
-        switch (f.type) {
-          case 'select': {
-            const defaultVal = f.defaultValue ?? f.options[0]?.value
-            if (current === defaultVal) return true
-            return String(f.accessor(row) ?? '') === current
-          }
-          case 'multiSelect': {
-            const selected = current as string[]
-            if (!selected || selected.length === 0) return true
-            const rowValues = f.accessor(row)
-            return selected.some((v) => rowValues.includes(v))
-          }
-          case 'boolean': {
-            if (current === 'all') return true
-            const rowValue = f.accessor(row)
-            return current === 'true' ? rowValue === true : rowValue === false
-          }
-          case 'range': {
-            const span = getClampedRangeFilterValue(f, current)
-            const v = f.accessor(row)
-            return v >= span.min && v <= span.max
-          }
-        }
-      })
-
-      if (!passesFilters) return false
-
-      if (searchable && search) {
-        if (searchRowMatch) return searchRowMatch(row, search)
-        const lowerSearch = search.toLowerCase()
-        const colsToSearch = searchColumns ?? columns.map((c) => c.field)
-        return colsToSearch.some((fieldKey) => {
-          const col = columns.find((c) => c.field === fieldKey)
-          const val = col?.accessor
-            ? col.accessor(row)
-            : (row as Record<string, unknown>)[fieldKey]
-          return val != null && String(val).toLowerCase().includes(lowerSearch)
-        })
-      }
-
-      return true
-    })
-  }, [rows, resolvedFilters, filterValues, searchable, search, searchRowMatch, searchColumns, columns])
+  const filteredRows = useMemo(
+    () =>
+      filterRows({
+        rows,
+        columns,
+        filters: resolvedFilters,
+        filterValues,
+        searchable,
+        search,
+        searchRowMatch,
+        searchColumns,
+      }),
+    [rows, columns, resolvedFilters, filterValues, searchable, search, searchRowMatch, searchColumns],
+  )
 
   // ── Map AppDataGridColumn → MUI GridColDef ────────────────────────
-  const muiColumns: GridColDef[] = useMemo(() => {
-    return columns.map((col) => {
-      const def: GridColDef = {
-        field: col.field,
-        headerName: col.headerName,
-        width: col.width,
-        flex: col.flex,
-        minWidth: col.minWidth,
-        type: col.type as GridColDef['type'],
-        ...(col.sortable === false ? { sortable: false } : {}),
-      }
-
-      if (col.accessor) {
-        def.valueGetter = (_value: unknown, row: unknown) =>
-          col.accessor!(row as T)
-      }
-
-      if (col.valueFormatter) {
-        def.valueFormatter = (value: unknown, row: unknown) =>
-          col.valueFormatter!(value, row as T)
-      }
-
-      if (col.renderCell) {
-        def.renderCell = col.renderCell
-      }
-
-      if (col.imageColumn) {
-        def.sortable = false
-        def.renderCell = (params: GridRenderCellParams) => {
-          const row = params.row as T
-          const rec = row as Record<string, unknown>
-          const keyField = col.imageKeyField ?? col.field
-          const imageKey = rec[keyField] as string | null | undefined
-          const src = resolveImageUrl(imageKey)
-
-          const altField =
-            col.imageAltField ?? ('name' in rec ? 'name' : undefined)
-          const alt = altField ? String(rec[altField] ?? '') : ''
-
-          const size = col.imageSize ?? 32
-          const variant =
-            col.imageShape === 'circle' ? 'circular' : 'rounded'
-
-          const fallback =
-            col.imageFallback ??
-            (alt ? alt.charAt(0).toUpperCase() : '?')
-
-          return (
-            <Avatar
-              src={src}
-              alt={alt}
-              variant={variant}
-              sx={{ width: size, height: size, fontSize: size * 0.45 }}
-            >
-              {src ? undefined : fallback}
-            </Avatar>
-          )
-        }
-      }
-
-      if (col.linkColumn && getDetailLink) {
-        const innerRender = def.renderCell
-        def.renderCell = (params: GridRenderCellParams) => {
-          const row = params.row as T
-          const content = innerRender
-            ? innerRender(params)
-            : (params.value as string)
-
-          return (
-            <MuiLink
-              component={Link}
-              to={getDetailLink(row)}
-              underline="hover"
-              color="inherit"
-              fontWeight={600}
-              sx={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {content}
-            </MuiLink>
-          )
-        }
-      }
-
-      if (col.switchColumn) {
-        def.renderCell = (params: GridRenderCellParams) => {
-          const row = params.row as T
-          return (
-            <Switch
-              checked={Boolean(params.value)}
-              disabled={col.isSwitchDisabled?.(row)}
-              onChange={(_e, checked) => col.onSwitchChange?.(row, checked)}
-              size="small"
-            />
-          )
-        }
-      }
-
-      if (col.columnHeaderHelperText) {
-        const helperText = col.columnHeaderHelperText
-        const headerLabel = col.headerName
-        def.renderHeader = () => (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              width: '100%',
-              minWidth: 0,
-              px: 0.5,
-            }}
-          >
-            <Typography
-              component="span"
-              variant="body2"
-              fontWeight={600}
-              noWrap
-              sx={{ flex: 1, minWidth: 0 }}
-            >
-              {headerLabel}
-            </Typography>
-            <AppTooltip title={helperText}>
-              <IconButton size="small" aria-label="Column info" sx={{ p: 0.25, flexShrink: 0 }}>
-                <InfoOutlinedIcon fontSize="inherit" />
-              </IconButton>
-            </AppTooltip>
-          </Box>
-        )
-        def.sortable = false
-      }
-
-      return def
-    })
-  }, [columns, getDetailLink])
+  const muiColumns = useMemo(
+    () => buildMuiColumns({ columns, getDetailLink }),
+    [columns, getDetailLink],
+  )
 
   const filterById = useMemo(
-    () => mapFiltersById(resolvedFilters),
+    () => indexFiltersById(resolvedFilters),
     [resolvedFilters],
   )
 
@@ -450,7 +261,7 @@ export default function AppDataGrid<T>({
           key="search"
           size="small"
           variant="outlined"
-          label={`Search: ${truncateSearchChip(search)}`}
+          label={`Search: ${truncateToolbarSearchLabel(search)}`}
           onDelete={() => setSearch('')}
         />,
       )

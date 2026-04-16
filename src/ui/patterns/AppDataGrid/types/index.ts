@@ -2,6 +2,7 @@ export type {
   FilterOption,
   AppDataGridFilterVisibility,
   AppDataGridFilter,
+  AppDataGridActiveBadgeFormatContext,
   AppDataGridActiveChipFormatContext,
 } from './appDataGridFilter.types'
 

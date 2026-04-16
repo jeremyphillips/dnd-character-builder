@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppDataGridFilter } from '../types';
-import { getActiveFilterBadgeSegments } from '../filters/toolbarFilters';
+import { getActiveFilterBadgeSegments } from '../filters/filterBadges';
 
 type Row = { id: string };
 
@@ -25,10 +25,10 @@ describe('getActiveFilterBadgeSegments', () => {
     ]);
   });
 
-  it('multiSelect: formatActiveChipValue string[] zips removeValue with selected order', () => {
+  it('multiSelect: formatActiveBadgeValue string[] zips removeValue with selected order', () => {
     const f: AppDataGridFilter<Row> = {
       ...baseMulti,
-      formatActiveChipValue: () => ['A', 'B'],
+      formatActiveBadgeValue: () => ['A', 'B'],
     };
     const segs = getActiveFilterBadgeSegments(f, ['w', 'f']);
     expect(segs).toEqual([
@@ -51,7 +51,7 @@ describe('getActiveFilterBadgeSegments', () => {
     expect(getActiveFilterBadgeSegments(f, '1')).toEqual([{ label: '1st' }]);
   });
 
-  it('range: formatActiveChipValue controls badge text', () => {
+  it('range: formatActiveBadgeValue controls badge text', () => {
     const f: AppDataGridFilter<Row> = {
       id: 'cr',
       label: 'CR',
@@ -60,7 +60,7 @@ describe('getActiveFilterBadgeSegments', () => {
       accessor: () => 1,
       defaultValue: { min: 0.25, max: 5 },
       formatStepValue: (n) => String(n),
-      formatActiveChipValue: () => 'CR: 1/4–1',
+      formatActiveBadgeValue: () => 'CR: 1/4–1',
     };
     expect(getActiveFilterBadgeSegments(f, { min: 1, max: 1 })).toEqual([
       { label: 'CR: 1/4–1' },

@@ -53,7 +53,7 @@ export function buildMonsterCustomFilters(params: {
       accessor: (row) => row.lore.challengeRating,
       defaultValue: { min: minCr, max: maxCr },
       formatStepValue: formatChallengeRatingDisplay,
-      formatActiveChipValue: ({ value }) => {
+      formatActiveBadgeValue: ({ value }) => {
         const v = value as { min: number; max: number };
         return `CR: ${formatChallengeRatingDisplay(v.min)}\u2013${formatChallengeRatingDisplay(v.max)}`;
       },

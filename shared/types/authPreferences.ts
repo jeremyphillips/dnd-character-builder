@@ -18,7 +18,9 @@ export type AuthUserPreferences = {
   ui?: {
     contentLists?: {
       spells?: ContentListUiPreferences
+      races?: ContentListUiPreferences
       monsters?: ContentListUiPreferences
+      locations?: ContentListUiPreferences
       skillProficiencies?: ContentListUiPreferences
       armor?: ContentListUiPreferences
       gear?: ContentListUiPreferences

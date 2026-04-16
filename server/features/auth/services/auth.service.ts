@@ -197,6 +197,18 @@ function applyPreferencesPatch(
   if (hideSpells !== undefined) {
     $set['preferences.ui.contentLists.spells.hideDisallowed'] = hideSpells
   }
+  const hideRaces = preferences.ui?.contentLists?.races?.hideDisallowed
+  if (hideRaces !== undefined) {
+    $set['preferences.ui.contentLists.races.hideDisallowed'] = hideRaces
+  }
+  const hideMonsters = preferences.ui?.contentLists?.monsters?.hideDisallowed
+  if (hideMonsters !== undefined) {
+    $set['preferences.ui.contentLists.monsters.hideDisallowed'] = hideMonsters
+  }
+  const hideLocations = preferences.ui?.contentLists?.locations?.hideDisallowed
+  if (hideLocations !== undefined) {
+    $set['preferences.ui.contentLists.locations.hideDisallowed'] = hideLocations
+  }
   const hideSkillProficiencies = preferences.ui?.contentLists?.skillProficiencies?.hideDisallowed
   if (hideSkillProficiencies !== undefined) {
     $set['preferences.ui.contentLists.skillProficiencies.hideDisallowed'] = hideSkillProficiencies

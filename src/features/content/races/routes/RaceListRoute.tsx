@@ -3,6 +3,8 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 
+import { apiFetch } from '@/app/api';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider';
 import {
@@ -22,14 +24,20 @@ import {
   validateRaceChange,
   buildRaceCustomColumns,
   buildRaceCustomFilters,
+  RACE_LIST_TOOLBAR_LAYOUT,
   type RaceListRow,
 } from '@/features/content/races/domain';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
+import {
+  APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID,
+  filterAppDataGridFiltersForViewer,
+} from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
 export default function RaceListRoute() {
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { campaign, campaignId } = useActiveCampaign();
   const { catalog } = useCampaignRules();
   const breadcrumbs = useBreadcrumbs();
@@ -38,6 +46,10 @@ export default function RaceListRoute() {
   const ctx = toViewerContext(campaign?.viewer);
   const canManage = canManageContent(ctx);
   const viewerCharacterIds = campaign?.members?.viewerCharacterIds ?? [];
+  const viewerContext = useMemo(
+    () => toViewerContext(campaign?.viewer, viewerCharacterIds),
+    [campaign?.viewer, viewerCharacterIds],
+  );
 
   const listSummaries = useCallback(
     (cid: string, sid: string) =>
@@ -94,16 +106,53 @@ export default function RaceListRoute() {
 
   const filters = useMemo(
     () =>
-      buildCampaignContentFilters<RaceListRow>({
-        canManage,
-        onToggleAllowedInCampaign: handleToggleAllowed,
-        customFilters,
-        hasCampaignSources,
-      }),
-    [canManage, handleToggleAllowed, customFilters, hasCampaignSources],
+      filterAppDataGridFiltersForViewer(
+        buildCampaignContentFilters<RaceListRow>({
+          canManage,
+          onToggleAllowedInCampaign: handleToggleAllowed,
+          customFilters,
+          hasCampaignSources,
+        }),
+        viewerContext,
+      ),
+    [canManage, handleToggleAllowed, customFilters, hasCampaignSources, viewerContext],
   );
 
-  if (controller.loading) {
+  const initialFilterValues = useMemo(() => {
+    if (!canManage) return undefined;
+    const hide = user?.preferences?.ui?.contentLists?.races?.hideDisallowed;
+    return {
+      allowedInCampaign: hide ? 'true' : 'all',
+    };
+  }, [canManage, user?.preferences?.ui?.contentLists?.races?.hideDisallowed]);
+
+  const handleFilterValueChange = useCallback(
+    async (filterId: string, value: unknown) => {
+      if (filterId !== APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID) return;
+      const allowed = String(value);
+      const hideDisallowed = allowed === 'true';
+      try {
+        await apiFetch('/api/auth/me', {
+          method: 'PATCH',
+          body: {
+            preferences: {
+              ui: {
+                contentLists: {
+                  races: { hideDisallowed },
+                },
+              },
+            },
+          },
+        });
+        await refreshUser();
+      } catch {
+        // Runtime filter still applies; preference may not persist.
+      }
+    },
+    [refreshUser],
+  );
+
+  if (controller.loading || authLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
         <CircularProgress />
@@ -131,33 +180,36 @@ export default function RaceListRoute() {
         )
       )}
       <ContentTypeListPage<RaceListRow>
-      typeLabel="Race"
-      typeLabelPlural="Races"
-      headline="Races"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Race"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={
-        canManage
-          ? (params: GridRowClassNameParams) =>
-              (params.row as RaceListRow).allowedInCampaign === false
-                ? 'AppDataGrid-row--disabled'
-                : ''
-          : undefined
-      }
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search races…"
-      emptyMessage="No races found."
-      density="compact"
-      height={560}
-    />
+        typeLabel="Race"
+        typeLabelPlural="Races"
+        headline="Races"
+        breadcrumbData={breadcrumbs}
+        canManage={canManage}
+        onAdd={controller.onAdd}
+        addButtonLabel="Add Race"
+        rows={items}
+        columns={columns}
+        filters={filters}
+        getRowId={(r) => r.id}
+        getDetailLink={controller.getDetailLink}
+        getRowClassName={
+          canManage
+            ? (params: GridRowClassNameParams) =>
+                (params.row as RaceListRow).allowedInCampaign === false
+                  ? 'AppDataGrid-row--disabled'
+                  : ''
+            : undefined
+        }
+        loading={controller.loading}
+        error={controller.error}
+        searchPlaceholder="Search races…"
+        emptyMessage="No races found."
+        density="compact"
+        height={560}
+        toolbarLayout={RACE_LIST_TOOLBAR_LAYOUT}
+        initialFilterValues={initialFilterValues}
+        onFilterValueChange={handleFilterValueChange}
+      />
     </Stack>
   );
 }

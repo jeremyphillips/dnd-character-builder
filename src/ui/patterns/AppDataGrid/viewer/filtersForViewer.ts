@@ -1,6 +1,7 @@
 import type { ViewerContext } from '@/shared/domain/capabilities';
 
 import type { AppDataGridFilter } from '../types';
+import { isAppDataGridVisibleToViewer } from './visibilityForViewer';
 
 /**
  * Drops filters the current viewer is not allowed to see (see `visibility` on {@link AppDataGridFilter}).
@@ -13,9 +14,5 @@ export function filterAppDataGridFiltersForViewer<T>(
   filters: AppDataGridFilter<T>[],
   viewer: ViewerContext | undefined,
 ): AppDataGridFilter<T>[] {
-  return filters.filter((f) => {
-    const vis = f.visibility;
-    if (!vis?.platformAdminOnly) return true;
-    return Boolean(viewer?.isPlatformAdmin);
-  });
+  return filters.filter((filter) => isAppDataGridVisibleToViewer(filter.visibility, viewer));
 }

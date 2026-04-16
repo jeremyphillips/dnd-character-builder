@@ -1,3 +1,5 @@
+import type { AppDataGridVisibility } from './appDataGridVisibility.types'
+
 /**
  * Toolbar filter definitions for `AppDataGrid` (shared with builders and layout helpers).
  */
@@ -5,15 +7,6 @@
 export interface FilterOption {
   value: string
   label: string
-}
-
-/**
- * Optional toolbar visibility (defaults: everyone sees the filter).
- * Co-locate on the same object as `id` / `options` so rules stay next to the filter definition.
- */
-export type AppDataGridFilterVisibility = {
-  /** If true, filter is shown only when `viewer.isPlatformAdmin` is true. */
-  platformAdminOnly?: boolean
 }
 
 /** Optional metadata shared by all filter variants. */
@@ -52,7 +45,7 @@ export type AppDataGridFilter<T> =
       options: FilterOption[]
       accessor: (row: T) => string | null | undefined
       defaultValue?: string
-      visibility?: AppDataGridFilterVisibility
+      visibility?: AppDataGridVisibility
     } & AppDataGridFilterMeta<T>)
   | ({
       id: string
@@ -61,7 +54,7 @@ export type AppDataGridFilter<T> =
       options: FilterOption[]
       accessor: (row: T) => string[]
       defaultValue?: string[]
-      visibility?: AppDataGridFilterVisibility
+      visibility?: AppDataGridVisibility
     } & AppDataGridFilterMeta<T>)
   | ({
       id: string
@@ -71,7 +64,7 @@ export type AppDataGridFilter<T> =
       falseLabel?: string
       accessor: (row: T) => boolean
       defaultValue?: 'all' | 'true' | 'false'
-      visibility?: AppDataGridFilterVisibility
+      visibility?: AppDataGridVisibility
     } & AppDataGridFilterMeta<T>)
   | ({
       id: string
@@ -83,7 +76,7 @@ export type AppDataGridFilter<T> =
       defaultValue: { min: number; max: number }
       /** Thumb labels and trigger summary for numeric step values. */
       formatStepValue: (n: number) => string
-      visibility?: AppDataGridFilterVisibility
+      visibility?: AppDataGridVisibility
     } & AppDataGridFilterMeta<T>)
 
 export type AppDataGridActiveBadgeFormatContext<T> = {

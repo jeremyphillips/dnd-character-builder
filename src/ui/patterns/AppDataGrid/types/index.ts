@@ -1,10 +1,13 @@
 export type {
   FilterOption,
-  AppDataGridFilterVisibility,
   AppDataGridFilter,
   AppDataGridActiveBadgeFormatContext,
   AppDataGridActiveChipFormatContext,
 } from './appDataGridFilter.types'
+export type {
+  AppDataGridVisibility,
+  AppDataGridFilterVisibility,
+} from './appDataGridVisibility.types'
 
 export {
   APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID,

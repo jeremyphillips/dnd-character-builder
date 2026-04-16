@@ -1,10 +1,10 @@
-import type { AppDataGridFilterVisibility } from '@/ui/patterns';
+import type { AppDataGridVisibility } from '@/ui/patterns';
 
 /**
  * Shared spell field UI metadata (labels, visibility). Keys align with form fields, list filters,
  * columns, and detail specs where applicable.
  */
-export type SpellFieldUiVisibility = AppDataGridFilterVisibility & {
+export type SpellFieldUiVisibility = AppDataGridVisibility & {
   dmOnly?: boolean;
 };
 

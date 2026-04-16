@@ -3,8 +3,9 @@ import type { GridRenderCellParams, GridRowClassNameParams } from '@mui/x-data-g
 
 import type { AppDataGridToolbarFieldSizes } from '@/ui/sizes'
 
-import type { AppDataGridFilter, AppDataGridFilterVisibility } from './appDataGridFilter.types'
+import type { AppDataGridFilter } from './appDataGridFilter.types'
 import type { AppDataGridToolbarLayout } from './appDataGridToolbar.types'
+import type { AppDataGridVisibility } from './appDataGridVisibility.types'
 
 export interface AppDataGridColumn<T> {
   /**
@@ -83,7 +84,7 @@ export interface AppDataGridColumn<T> {
    * Optional visibility: when `platformAdminOnly` is true, hide this column for non–platform admins.
    * Filter columns with `filterAppDataGridColumnsForViewer` before passing them to the grid.
    */
-  visibility?: AppDataGridFilterVisibility
+  visibility?: AppDataGridVisibility
 }
 
 export type AppDataGridToolbarSearchConfig<T> = {

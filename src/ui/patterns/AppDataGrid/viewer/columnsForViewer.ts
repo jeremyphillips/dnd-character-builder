@@ -1,6 +1,6 @@
 import type { ViewerContext } from '@/shared/domain/capabilities';
 
-import type { AppDataGridColumn } from './types';
+import type { AppDataGridColumn } from '../types';
 
 /**
  * Drops columns the current viewer is not allowed to see (see `visibility` on {@link AppDataGridColumn}).

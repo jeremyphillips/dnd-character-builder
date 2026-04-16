@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppDataGridFilter } from '../types';
-import { filterAppDataGridFiltersForViewer } from '../filterAppDataGridFiltersForViewer';
+import { filterAppDataGridFiltersForViewer } from '../viewer/filtersForViewer';
 
 type Row = { id: string };
 

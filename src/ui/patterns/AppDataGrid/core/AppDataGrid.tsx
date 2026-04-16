@@ -25,13 +25,13 @@ import {
   type AppDataGridFilter,
   type AppDataGridProps,
   type FilterOption,
-} from './types'
+} from '../types'
 import {
   getFilterDefault,
   getActiveFilterBadgeSegments,
   getClampedRangeFilterValue,
-} from './appDataGridFilter.utils'
-import { indexAppDataGridFiltersById } from './indexAppDataGridFiltersById'
+} from '../filters/toolbarFilters'
+import { mapFiltersById } from '../filters/mapFiltersById'
 
 import { resolveImageUrl } from '@/shared/lib/media'
 import type { MuiDenseInputSize, MuiTextFieldSize } from '@/ui/sizes'
@@ -338,7 +338,7 @@ export default function AppDataGrid<T>({
   }, [columns, getDetailLink])
 
   const filterById = useMemo(
-    () => indexAppDataGridFiltersById(resolvedFilters),
+    () => mapFiltersById(resolvedFilters),
     [resolvedFilters],
   )
 

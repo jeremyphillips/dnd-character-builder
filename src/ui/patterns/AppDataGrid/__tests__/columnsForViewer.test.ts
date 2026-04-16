@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppDataGridColumn } from '../types';
-import { filterAppDataGridColumnsForViewer } from '../filterAppDataGridColumnsForViewer';
+import { filterAppDataGridColumnsForViewer } from '../viewer/columnsForViewer';
 
 type Row = { id: string };
 

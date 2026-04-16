@@ -4,10 +4,20 @@ export type { BreadcrumbItem } from './Breadcrumbs/Breadcrumbs'
 export type { BreadcrumbsProps } from './Breadcrumbs/Breadcrumbs'
 export { default as AppHero } from './AppHero/AppHero'
 
-export { default as AppDataGrid } from './AppDataGrid/AppDataGrid'
-export { filterAppDataGridFiltersForViewer } from './AppDataGrid/filterAppDataGridFiltersForViewer'
-export { filterAppDataGridColumnsForViewer } from './AppDataGrid/filterAppDataGridColumnsForViewer'
-export { makeOwnedColumn, makeOwnedFilter } from './AppDataGrid/helpers/ownership'
+export {
+  default as AppDataGrid,
+  filterAppDataGridFiltersForViewer,
+  filterAppDataGridColumnsForViewer,
+  makeOwnedColumn,
+  makeOwnedFilter,
+  indexAppDataGridFiltersById,
+  mapFiltersById,
+  getActiveFilterBadgeSegments,
+  getClampedRangeFilterValue,
+  getFilterDefault,
+  formatDefaultActiveChipValue,
+  type AppDataGridBadgeSegment,
+} from './AppDataGrid'
 export type {
   AppDataGridProps,
   AppDataGridColumn,
@@ -24,12 +34,6 @@ export type {
   AppDataGridPresentationConfig,
 } from './AppDataGrid/types'
 export type { AppDataGridToolbarFieldSizes } from '@/ui/sizes'
-export { indexAppDataGridFiltersById } from './AppDataGrid/indexAppDataGridFiltersById'
-export {
-  getActiveFilterBadgeSegments,
-  getClampedRangeFilterValue,
-  type AppDataGridBadgeSegment,
-} from './AppDataGrid/appDataGridFilter.utils'
 export { APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID } from './AppDataGrid/types'
 
 export { default as KeyValueSection } from './content/KeyValueSection/KeyValueSection'

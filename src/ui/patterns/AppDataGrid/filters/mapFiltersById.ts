@@ -1,11 +1,9 @@
-import type { AppDataGridFilter } from './types'
+import type { AppDataGridFilter } from '../types'
 
 /**
  * Index filters by `id` for toolbar layout resolution. Warns in dev on duplicate ids.
  */
-export function indexAppDataGridFiltersById<T>(
-  filters: AppDataGridFilter<T>[],
-): Map<string, AppDataGridFilter<T>> {
+export function mapFiltersById<T>(filters: AppDataGridFilter<T>[]): Map<string, AppDataGridFilter<T>> {
   const map = new Map<string, AppDataGridFilter<T>>()
   for (const f of filters) {
     if (map.has(f.id)) {

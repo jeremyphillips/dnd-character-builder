@@ -1,3 +1,10 @@
+/**
+ * Row filtering and default toolbar search for `AppDataGrid`.
+ *
+ * This module implements a **client-side** pipeline suitable for modest lists. For row-count
+ * guidelines, UX signals that suggest server-side or indexed search, and deferred extensions
+ * (bulk selection, plugins), see `docs/reference/appdatagrid.md`.
+ */
 import type { AppDataGridColumn, AppDataGridFilter } from '../types'
 import { getClampedRangeFilterValue, getFilterDefault } from '../filters'
 
@@ -28,6 +35,8 @@ export function filterRows<T>(params: {
   searchColumns?: string[]
 }): T[] {
   const { rows, columns, filters, filterValues, searchable, search, searchRowMatch, searchColumns } = params
+
+  const columnByField = new Map(columns.map((c) => [c.field, c]))
 
   return rows.filter((row) => {
     const passesFilters = filters.every((filter) => {
@@ -65,7 +74,7 @@ export function filterRows<T>(params: {
       const lowerSearch = search.toLowerCase()
       const searchableFields = searchColumns ?? columns.map((column) => column.field)
       return searchableFields.some((fieldKey) => {
-        const column = columns.find((candidate) => candidate.field === fieldKey)
+        const column = columnByField.get(fieldKey)
         const value = column?.accessor
           ? column.accessor(row)
           : (row as Record<string, unknown>)[fieldKey]

@@ -6,6 +6,7 @@ export { default as AppHero } from './AppHero/AppHero'
 
 export {
   default as AppDataGrid,
+  AppToolbarDiscreteRangeField,
   filterAppDataGridFiltersByVisibility,
   filterAppDataGridFiltersForViewer,
   filterAppDataGridColumnsByVisibility,
@@ -40,6 +41,7 @@ export type {
   AppDataGridSelectionConfig,
   AppDataGridPresentationConfig,
 } from './AppDataGrid/types'
+export type { AppToolbarDiscreteRangeFieldProps } from './AppDataGrid'
 export type { AppDataGridToolbarFieldSizes } from '@/ui/sizes'
 export { APP_DATA_GRID_ALLOWED_IN_CAMPAIGN_FILTER_ID } from './AppDataGrid/types'
 

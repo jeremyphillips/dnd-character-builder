@@ -203,6 +203,8 @@ The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** 
 
 ---
 
+Deeper **`AppDataGrid`** topics (imports, badge vs chip aliases, scale thresholds, deferred features): [appdatagrid.md](./appdatagrid.md).
+
 ## Related entry points
 
 | Export | Typical import |
@@ -213,7 +215,7 @@ The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** 
 | **`AppFormMultiSelectCheckbox`** | `@/ui/patterns/form` / `@/ui/patterns` |
 | **`App*`** primitives | `@/ui/primitives` |
 | **`AppMultiSelectCheckbox`**, **`AppMultiSelect`** | `@/ui/primitives` |
-| **`AppDataGrid`** (toolbar filters) | `@/ui/patterns` |
+| **`AppDataGrid`**, **`AppToolbarDiscreteRangeField`** (toolbar filters) | `@/ui/patterns` |
 | **`filterAppDataGridFiltersByVisibility`**, **`filterAppDataGridColumnsByVisibility`**, **`AppDataGridVisibility`**, **`AppDataGridToolbarLayout`**, **`indexFiltersById`** | `@/ui/patterns` |
 | **`FieldConfig`**, **`FormLayoutNode`** | `@/ui/patterns/form` (re-exported from **`form.types`**) |
 

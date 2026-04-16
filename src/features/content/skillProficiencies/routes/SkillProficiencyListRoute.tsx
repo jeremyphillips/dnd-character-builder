@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import {
@@ -152,17 +148,9 @@ export default function SkillProficiencyListRoute() {
         typeLabelPlural="Skill Proficiencies"
         headline="Skill Proficiencies"
         breadcrumbData={breadcrumbs}
-        actions={[
-          <Button
-            key="back"
-            component={Link}
-            to={`/campaigns/${campaignId}/world`}
-            size="small"
-            startIcon={<ArrowBackIcon />}
-          >
-            World
-          </Button>,
-        ]}
+        canManage={canManage}
+        onAdd={controller.onAdd}
+        addButtonLabel="Add Skill Proficiency"
         rows={items}
         columns={columns}
         filters={filters}
@@ -178,18 +166,6 @@ export default function SkillProficiencyListRoute() {
         }
         loading={controller.loading}
         error={controller.error}
-        toolbar={
-          canManage ? (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={controller.onAdd}
-            >
-              Add New
-            </Button>
-          ) : undefined
-        }
         searchPlaceholder="Search skills…"
         emptyMessage="No skill proficiencies found."
         density="compact"

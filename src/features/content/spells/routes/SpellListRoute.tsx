@@ -1,9 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import AddIcon from '@mui/icons-material/Add';
 
 import { apiFetch } from '@/app/api';
 import { useAuth } from '@/app/providers/AuthProvider';
@@ -209,18 +207,9 @@ export default function SpellListRoute() {
         typeLabelPlural="Spells"
         headline="Spells"
         breadcrumbData={breadcrumbs}
-        actions={[
-          canManage ? (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={controller.onAdd}
-            >
-              Add Spell
-            </Button>
-          ) : undefined
-        ]}
+        canManage={canManage}
+        onAdd={controller.onAdd}
+        addButtonLabel="Add Spell"
         rows={items}
         columns={columns}
         filters={filters}

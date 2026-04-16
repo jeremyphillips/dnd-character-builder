@@ -6,7 +6,7 @@
  * them via buildCampaignContentColumns / buildCampaignContentFilters or
  * custom definitions.
  */
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
@@ -41,6 +41,10 @@ export interface ContentTypeListPageProps<T> {
   /** Defaults to useBreadcrumbs() when not provided */
   breadcrumbData?: BreadcrumbItem[];
   actions?: ReactNode[];
+  /** When set with `onAdd`, renders a primary Add button in the page header. */
+  canManage?: boolean;
+  /** Label for the header Add button (requires {@link canManage} and {@link onAdd}). */
+  addButtonLabel?: string;
   rows: T[];
   columns: AppDataGridColumn<T>[];
   filters?: AppDataGridFilter<T>[];
@@ -50,7 +54,10 @@ export interface ContentTypeListPageProps<T> {
   error?: string | null;
   /** Rendered in toolbar slot (e.g. Add button). Combined with filters. */
   toolbar?: ReactNode;
-  /** Shorthand: when provided with typeLabel, renders "Add Custom {typeLabel}" button */
+  /**
+   * Add handler. With {@link addButtonLabel} and {@link canManage}, the button is shown in the page header.
+   * Without {@link addButtonLabel}, renders "Add Custom {typeLabel}" in the grid toolbar (legacy).
+   */
   onAdd?: () => void;
   searchPlaceholder?: string;
   searchColumns?: string[];
@@ -75,6 +82,8 @@ const ContentTypeListPage = <T,>({
   headline,
   breadcrumbData,
   actions,
+  canManage = false,
+  addButtonLabel,
   rows,
   columns,
   filters = [],
@@ -101,9 +110,27 @@ const ContentTypeListPage = <T,>({
   const resolvedSearchPlaceholder = searchPlaceholder ?? `Search ${typeLabelPlural.toLowerCase()}…`;
   const resolvedEmptyMessage = emptyMessage ?? `No ${typeLabelPlural.toLowerCase()} found.`;
 
+  const headerActions = useMemo(() => {
+    const base = (actions ?? []).filter(Boolean) as ReactNode[];
+    if (canManage && onAdd && addButtonLabel) {
+      base.push(
+        <Button
+          key="add"
+          variant="contained"
+          size="small"
+          startIcon={<AddIcon />}
+          onClick={onAdd}
+        >
+          {addButtonLabel}
+        </Button>,
+      );
+    }
+    return base;
+  }, [actions, addButtonLabel, canManage, onAdd]);
+
   const toolbarNode =
     toolbar ??
-    (onAdd ? (
+    (onAdd && !addButtonLabel ? (
       <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={onAdd}>
         Add Custom {typeLabel}
       </Button>
@@ -118,7 +145,7 @@ const ContentTypeListPage = <T,>({
       <AppPageHeader
         headline={resolvedHeadline}
         breadcrumbData={resolvedBreadcrumbs}
-        actions={actions ?? []}
+        actions={headerActions}
       />
       <AppDataGrid
         rows={rows}

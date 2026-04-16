@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider';
@@ -139,17 +135,9 @@ export default function RaceListRoute() {
       typeLabelPlural="Races"
       headline="Races"
       breadcrumbData={breadcrumbs}
-      actions={[
-        <Button
-          key="back"
-          component={Link}
-          to={`/campaigns/${campaignId}/world`}
-          size="small"
-          startIcon={<ArrowBackIcon />}
-        >
-          World
-        </Button>,
-      ]}
+      canManage={canManage}
+      onAdd={controller.onAdd}
+      addButtonLabel="Add Race"
       rows={items}
       columns={columns}
       filters={filters}
@@ -165,18 +153,6 @@ export default function RaceListRoute() {
       }
       loading={controller.loading}
       error={controller.error}
-      toolbar={
-        canManage ? (
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={controller.onAdd}
-          >
-            Add Race
-          </Button>
-        ) : undefined
-      }
       searchPlaceholder="Search races…"
       emptyMessage="No races found."
       density="compact"

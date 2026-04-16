@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useViewerEquipment } from '@/features/campaign/hooks';
@@ -158,17 +154,9 @@ export default function ArmorListRoute() {
         typeLabelPlural="Armor"
         headline="Armor"
         breadcrumbData={breadcrumbs}
-        actions={[
-          <Button
-            key="back"
-            component={Link}
-            to={`/campaigns/${campaignId}/world/equipment`}
-            size="small"
-            startIcon={<ArrowBackIcon />}
-          >
-            Equipment
-          </Button>,
-        ]}
+        canManage={canManage}
+        onAdd={controller.onAdd}
+        addButtonLabel="Add Armor"
         rows={items}
         columns={columns}
         filters={filters}
@@ -184,18 +172,6 @@ export default function ArmorListRoute() {
         }
         loading={controller.loading}
         error={controller.error}
-        toolbar={
-          canManage ? (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={controller.onAdd}
-            >
-              Add Armor
-            </Button>
-          ) : undefined
-        }
         searchPlaceholder="Search armor…"
         emptyMessage="No armor found."
         density="compact"

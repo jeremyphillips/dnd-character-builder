@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 
+import { useAuth } from '@/app/providers/AuthProvider';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import {
   ContentTypeListPage,
@@ -16,21 +17,25 @@ import {
   type ValidationBlockedState,
 } from '@/features/content/shared/hooks/useValidatedAllowedToggle';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/shared/hooks/useCampaignPartyCharacterNameMap';
+import { useContentListPreferences } from '@/features/content/shared/hooks/useContentListPreferences';
 import {
   classRepo,
   validateClassChange,
   buildClassCustomColumns,
   buildClassListFilters,
+  CLASS_LIST_TOOLBAR_LAYOUT,
   type ClassListRow,
   type ClassSummary,
 } from '@/features/content/classes/domain';
 import type { ContentSummary } from '@/features/content/shared/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
+import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
 export default function ClassListRoute() {
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { campaign, campaignId } = useActiveCampaign();
   const breadcrumbs = useBreadcrumbs();
   const basePath = `/campaigns/${campaignId}/world/classes`;
@@ -38,6 +43,10 @@ export default function ClassListRoute() {
   const ctx = toViewerContext(campaign?.viewer);
   const canManage = canManageContent(ctx);
   const viewerCharacterIds = campaign?.members?.viewerCharacterIds ?? [];
+  const viewerContext = useMemo(
+    () => toViewerContext(campaign?.viewer, viewerCharacterIds),
+    [campaign?.viewer, viewerCharacterIds],
+  );
 
   const listSummaries = useCallback(
     (cid: string, sid: string) =>
@@ -97,16 +106,26 @@ export default function ClassListRoute() {
 
   const filters = useMemo(
     () =>
-      buildCampaignContentFilters<ClassListRow>({
-        canManage,
-        onToggleAllowedInCampaign: handleToggleAllowed,
-        customFilters,
-        hasCampaignSources,
-      }),
-    [canManage, handleToggleAllowed, customFilters, hasCampaignSources],
+      filterAppDataGridFiltersForViewer(
+        buildCampaignContentFilters<ClassListRow>({
+          canManage,
+          onToggleAllowedInCampaign: handleToggleAllowed,
+          customFilters,
+          hasCampaignSources,
+        }),
+        viewerContext,
+      ),
+    [canManage, handleToggleAllowed, customFilters, hasCampaignSources, viewerContext],
   );
 
-  if (controller.loading) {
+  const { initialFilterValues, onFilterValueChange } = useContentListPreferences({
+    canManage,
+    user,
+    refreshUser,
+    contentListKey: 'classes',
+  });
+
+  if (controller.loading || authLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
         <CircularProgress />
@@ -160,6 +179,9 @@ export default function ClassListRoute() {
         emptyMessage="No classes found."
         density="compact"
         height={560}
+        toolbarLayout={CLASS_LIST_TOOLBAR_LAYOUT}
+        initialFilterValues={initialFilterValues}
+        onFilterValueChange={onFilterValueChange}
       />
     </Stack>
   );

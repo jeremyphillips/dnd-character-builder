@@ -197,6 +197,10 @@ function applyPreferencesPatch(
   if (hideSpells !== undefined) {
     $set['preferences.ui.contentLists.spells.hideDisallowed'] = hideSpells
   }
+  const hideClasses = preferences.ui?.contentLists?.classes?.hideDisallowed
+  if (hideClasses !== undefined) {
+    $set['preferences.ui.contentLists.classes.hideDisallowed'] = hideClasses
+  }
   const hideRaces = preferences.ui?.contentLists?.races?.hideDisallowed
   if (hideRaces !== undefined) {
     $set['preferences.ui.contentLists.races.hideDisallowed'] = hideRaces

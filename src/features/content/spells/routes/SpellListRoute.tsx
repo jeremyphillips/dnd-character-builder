@@ -7,7 +7,6 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignViewerCharacterIds } from '@/app/providers/useActiveCampaignViewerCharacterIds';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider';
-import { useViewerCharacterQuery } from '@/features/campaign/hooks';
 import {
   ContentTypeListPage,
   buildCampaignContentColumns,
@@ -15,7 +14,9 @@ import {
   getMutedRowClassNameForDisallowedCampaignContent,
   ValidationBlockedAlert,
 } from '@/features/content/shared/components';
+import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
@@ -43,7 +44,14 @@ export default function SpellListRoute() {
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
 
-  const { mergedContext: viewerCtx, ready: viewerQueryReady } = useViewerCharacterQuery();
+  const {
+    mergedContext: viewerCtx,
+    ready: viewerQueryReady,
+    showOwnershipScopePicker,
+    ownershipScope,
+    setOwnershipScope,
+    ownershipScopeOptions,
+  } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
   const ownedIds = viewerCtx.spells.knownSpellIds;
 
   const listSummaries = useCallback(
@@ -149,6 +157,16 @@ export default function SpellListRoute() {
         typeLabelPlural: 'Spells',
         headline: 'Spells',
         breadcrumbData: breadcrumbs,
+        actions: showOwnershipScopePicker
+          ? [
+              <ViewerOwnedCharacterScopeSelect
+                key="viewer-owned-scope"
+                value={ownershipScope}
+                onChange={setOwnershipScope}
+                characterOptions={ownershipScopeOptions}
+              />,
+            ]
+          : undefined,
         canManage,
         onAdd: controller.onAdd,
         addButtonLabel: 'Add Spell',

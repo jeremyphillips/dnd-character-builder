@@ -13,13 +13,14 @@ import {
   getMutedRowClassNameForDisallowedCampaignContent,
   ValidationBlockedAlert,
 } from '@/features/content/shared/components';
+import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
 } from '@/features/content/shared/hooks/useValidatedAllowedToggle';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/shared/hooks/useCampaignPartyCharacterNameMap';
-import { useViewerCharacterQuery } from '@/features/campaign/hooks';
 import {
   skillProficiencyRepo,
   validateSkillProficiencyChange,
@@ -42,7 +43,14 @@ export default function SkillProficiencyListRoute() {
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
 
-  const { mergedContext: viewerCtx, ready: viewerQueryReady } = useViewerCharacterQuery();
+  const {
+    mergedContext: viewerCtx,
+    ready: viewerQueryReady,
+    showOwnershipScopePicker,
+    ownershipScope,
+    setOwnershipScope,
+    ownershipScopeOptions,
+  } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
   const ownedIds = viewerCtx.proficiencies.skillIds;
 
   const listSummaries = useCallback(
@@ -148,6 +156,16 @@ export default function SkillProficiencyListRoute() {
         typeLabelPlural: 'Skill Proficiencies',
         headline: 'Skill Proficiencies',
         breadcrumbData: breadcrumbs,
+        actions: showOwnershipScopePicker
+          ? [
+              <ViewerOwnedCharacterScopeSelect
+                key="viewer-owned-scope"
+                value={ownershipScope}
+                onChange={setOwnershipScope}
+                characterOptions={ownershipScopeOptions}
+              />,
+            ]
+          : undefined,
         canManage,
         onAdd: controller.onAdd,
         addButtonLabel: 'Add Skill Proficiency',

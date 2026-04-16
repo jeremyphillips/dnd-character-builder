@@ -84,6 +84,10 @@ Features should be explicit about **which** context they use:
 
 The hook layer should expose **`contextsById`** and optional **`mergedContext`** so callers do not bake “always merged” as the only API.
 
+### Viewer ownership scope (campaign content lists)
+
+When a user has **more than one** viewer character, equipment/spell/skill list routes use **`useCampaignViewerOwnedCharacterQuery`**, which wires **`useViewerOwnedCharacterQueryPreference`** (per-campaign localStorage: merged union vs one `characterId`) into **`useViewerCharacterQuery`**. The page header includes an **Owned as** control: **All my characters** or a specific PC by name. With **one** viewer PC, the control is hidden and that character is always used.
+
 ---
 
 ## Readiness model
@@ -157,6 +161,7 @@ Keep the **shape stable**; add fields deliberately when multiple features need t
 |-------|----------|
 | Types + builder + merge | [`src/features/character/domain/query/`](../../src/features/character/domain/query/) |
 | Viewer hook | [`useViewerCharacterQuery.ts`](../../src/features/campaign/hooks/useViewerCharacterQuery.ts) |
+| List route scope + preference | [`useCampaignViewerOwnedCharacterQuery.ts`](../../src/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery.ts), [`useViewerOwnedCharacterQueryPreference.ts`](../../src/app/providers/useViewerOwnedCharacterQueryPreference.ts) |
 | DTO → engine character | [`toCharacterForEngine`](../../src/features/character/read-model/character-read.mappers.ts) |
 
 For campaign content list composition (toolbar, filters), see [appdatagrid.md](./appdatagrid.md) and [forms.md](./forms.md).

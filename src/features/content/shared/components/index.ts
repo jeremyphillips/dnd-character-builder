@@ -34,6 +34,11 @@ export {
   type BlockingEntity,
 } from './EntryEditorLayout';
 export { default as ValidationBlockedAlert } from './ValidationBlockedAlert';
+export { default as ViewerOwnedCharacterScopeSelect } from './ViewerOwnedCharacterScopeSelect';
+export type {
+  ViewerOwnedCharacterScopeSelectProps,
+  ViewerOwnedCharacterScopeOption,
+} from './ViewerOwnedCharacterScopeSelect';
 export { default as ContentDetailScaffold } from './ContentDetailScaffold';
 export { DetailInlineTooltip, type DetailInlineTooltipProps } from './DetailInlineTooltip';
 export {

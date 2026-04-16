@@ -6,7 +6,6 @@ import { useAuth } from '@/app/providers/AuthProvider';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignViewerCharacterIds } from '@/app/providers/useActiveCampaignViewerCharacterIds';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { useViewerCharacterQuery } from '@/features/campaign/hooks';
 import {
   ContentTypeListPage,
   buildCampaignContentColumns,
@@ -14,7 +13,9 @@ import {
   getMutedRowClassNameForDisallowedCampaignContent,
   ValidationBlockedAlert,
 } from '@/features/content/shared/components';
+import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
@@ -40,7 +41,14 @@ export default function MagicItemsListRoute() {
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
 
-  const { mergedContext: viewerCtx, ready: viewerQueryReady } = useViewerCharacterQuery();
+  const {
+    mergedContext: viewerCtx,
+    ready: viewerQueryReady,
+    showOwnershipScopePicker,
+    ownershipScope,
+    setOwnershipScope,
+    ownershipScopeOptions,
+  } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
   const ownedIds = viewerCtx.inventory.magicItemIds;
 
   const listSummaries = useCallback(
@@ -145,6 +153,16 @@ export default function MagicItemsListRoute() {
         typeLabelPlural: 'Magic Items',
         headline: 'Magic Items',
         breadcrumbData: breadcrumbs,
+        actions: showOwnershipScopePicker
+          ? [
+              <ViewerOwnedCharacterScopeSelect
+                key="viewer-owned-scope"
+                value={ownershipScope}
+                onChange={setOwnershipScope}
+                characterOptions={ownershipScopeOptions}
+              />,
+            ]
+          : undefined,
         canManage,
         onAdd: controller.onAdd,
         addButtonLabel: 'Add Magic Item',

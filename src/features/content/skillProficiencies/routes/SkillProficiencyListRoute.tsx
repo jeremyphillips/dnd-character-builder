@@ -135,45 +135,48 @@ export default function SkillProficiencyListRoute() {
 
   return (
     <ContentTypeListPage<SkillProficiencyListRow>
-      typeLabel="Skill Proficiency"
-      typeLabelPlural="Skill Proficiencies"
-      headline="Skill Proficiencies"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Skill Proficiency"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<SkillProficiencyListRow>(
+      page={{
+        typeLabel: 'Skill Proficiency',
+        typeLabelPlural: 'Skill Proficiencies',
+        headline: 'Skill Proficiencies',
+        breadcrumbData: breadcrumbs,
         canManage,
-      )}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search skills…"
-      emptyMessage="No skill proficiencies found."
-      density="compact"
-      height={560}
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Skill Proficiency',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="skill proficiency"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this skill proficiency.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<SkillProficiencyListRow>(
+          canManage,
+        ),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search skills…',
+        emptyMessage: 'No skill proficiencies found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'skillProficiencies' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="skillProficiencies"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="skill proficiency"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this skill proficiency.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

@@ -138,11 +138,11 @@ Loading, empty message, density, height, and row class names use optional **`pre
 
 **Helpers:** **`filterAppDataGridFiltersByVisibility(filters, viewer)`** and **`filterAppDataGridColumnsByVisibility(columns, viewer)`** — use these when you compose **`AppDataGrid`** directly and need to drop hidden schema entries yourself. The older **`filterAppDataGridFiltersForViewer`** / **`filterAppDataGridColumnsForViewer`** names remain as compatibility aliases.
 
-**Content lists:** **`ContentTypeListPage`** now applies AppDataGrid `visibility` rules internally. Pass **`viewerContext`** and provide raw **`columns`** / **`filters`**; routes no longer need to remember to pre-filter them before rendering the page wrapper. Campaign list routes can pass **`contentListPreferencesKey`** (matching `preferences.ui.contentLists` in auth prefs) so **`useContentListPreferences`** runs inside the page; use **`topBanner`** for validation alerts above the header. Muted disallowed rows use **`getMutedRowClassNameForDisallowedCampaignContent`** from **`contentListTemplate`** / the shared components barrel.
+**Content lists:** **`ContentTypeListPage`** groups props into **`page`** (header, **`page.topBanner`**, add/manage), **`grid`** (rows, columns, filters, presentation, optional **`grid.toolbarLayout`**), optional **`preferences`** (e.g. **`preferences.contentListPreferencesKey`** matching `preferences.ui.contentLists` in auth prefs so **`useContentListPreferences`** runs inside the page), and top-level **`viewerContext`**. It applies AppDataGrid `visibility` rules internally: pass **`viewerContext`** and provide raw **`columns`** / **`filters`**; routes do not need to pre-filter them before rendering the page wrapper. Muted disallowed rows use **`getMutedRowClassNameForDisallowedCampaignContent`** from **`contentListTemplate`** / the shared components barrel.
 
 ### Toolbar layout (optional)
 
-**Types:** **`AppDataGridToolbarLayout`**, optional **`toolbarConfig.layout`** on **`AppDataGrid`** (and **`toolbarLayout`** on **`ContentTypeListPage`**, which maps into **`toolbarConfig`**).
+**Types:** **`AppDataGridToolbarLayout`**, optional **`toolbarConfig.layout`** on **`AppDataGrid`** (and **`grid.toolbarLayout`** on **`ContentTypeListPage`**, which maps into **`toolbarConfig`**).
 
 - **`primary`:** filter **`id`** strings for the first horizontal row (search and actions also render on this row).
 - **`secondary`:** optional second row of filter **`id`** strings.

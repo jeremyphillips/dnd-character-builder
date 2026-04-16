@@ -2,6 +2,10 @@ export {
   default as ContentTypeListPage,
   type ContentListItem,
   type ContentViewerContext,
+  type ContentTypeListPageProps,
+  type ContentTypeListPagePageConfig,
+  type ContentTypeListPageGridConfig,
+  type ContentTypeListPagePreferencesConfig,
 } from './ContentTypeListPage';
 export {
   CAMPAIGN_CONTENT_LIST_TOOLBAR_LAYOUT_BY_PREFS_KEY,

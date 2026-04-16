@@ -117,43 +117,46 @@ export default function ClassListRoute() {
 
   return (
     <ContentTypeListPage<ClassSummary>
-      typeLabel="Class"
-      typeLabelPlural="Classes"
-      headline="Classes"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Class"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<ClassListRow>(canManage)}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search classes…"
-      emptyMessage="No classes found."
-      density="compact"
-      height={560}
+      page={{
+        typeLabel: 'Class',
+        typeLabelPlural: 'Classes',
+        headline: 'Classes',
+        breadcrumbData: breadcrumbs,
+        canManage,
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Class',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="class"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this class.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<ClassListRow>(canManage),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search classes…',
+        emptyMessage: 'No classes found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'classes' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="classes"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="class"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this class.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

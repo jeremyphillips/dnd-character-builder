@@ -140,43 +140,46 @@ export default function MagicItemsListRoute() {
 
   return (
     <ContentTypeListPage<MagicItemListRow>
-      typeLabel="Magic Item"
-      typeLabelPlural="Magic Items"
-      headline="Magic Items"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Magic Item"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<MagicItemListRow>(canManage)}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search magic items…"
-      emptyMessage="No magic items found."
-      density="compact"
-      height={560}
+      page={{
+        typeLabel: 'Magic Item',
+        typeLabelPlural: 'Magic Items',
+        headline: 'Magic Items',
+        breadcrumbData: breadcrumbs,
+        canManage,
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Magic Item',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="magic item"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this magic item.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<MagicItemListRow>(canManage),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search magic items…',
+        emptyMessage: 'No magic items found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'magicItems' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="magicItems"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="magic item"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this magic item.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

@@ -144,43 +144,46 @@ export default function SpellListRoute() {
 
   return (
     <ContentTypeListPage<SpellListRow>
-      typeLabel="Spell"
-      typeLabelPlural="Spells"
-      headline="Spells"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Spell"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<SpellListRow>(canManage)}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search spells…"
-      emptyMessage="No spells found."
-      density="compact"
-      height={560}
+      page={{
+        typeLabel: 'Spell',
+        typeLabelPlural: 'Spells',
+        headline: 'Spells',
+        breadcrumbData: breadcrumbs,
+        canManage,
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Spell',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="spell"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this spell.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<SpellListRow>(canManage),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search spells…',
+        emptyMessage: 'No spells found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'spells' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="spells"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="spell"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this spell.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

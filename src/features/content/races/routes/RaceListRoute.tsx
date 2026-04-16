@@ -114,43 +114,46 @@ export default function RaceListRoute() {
 
   return (
     <ContentTypeListPage<RaceListRow>
-      typeLabel="Race"
-      typeLabelPlural="Races"
-      headline="Races"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Race"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<RaceListRow>(canManage)}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search races…"
-      emptyMessage="No races found."
-      density="compact"
-      height={560}
+      page={{
+        typeLabel: 'Race',
+        typeLabelPlural: 'Races',
+        headline: 'Races',
+        breadcrumbData: breadcrumbs,
+        canManage,
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Race',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="race"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this race.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<RaceListRow>(canManage),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search races…',
+        emptyMessage: 'No races found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'races' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="races"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="race"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this race.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

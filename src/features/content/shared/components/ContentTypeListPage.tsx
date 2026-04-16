@@ -7,7 +7,7 @@
  * custom definitions.
  *
  * **Search:** toolbar search uses {@link createContentSearchMatcher} with {@link DEFAULT_CONTENT_SEARCH_NAME_ONLY}
- * unless `contentSearch` overrides it — same normalization path any screen should use for “content list” search UX.
+ * unless `grid.contentSearch` overrides it — same normalization path any screen should use for “content list” search UX.
  * Direct `AppDataGrid` usage should pass `search.rowMatch` explicitly when diverging from this behavior.
  */
 import { useEffect, useMemo, type ReactNode } from 'react';
@@ -52,7 +52,8 @@ export type ContentListItem = {
 
 export type ContentViewerContext = import('@/shared/domain/capabilities').ViewerContext;
 
-export interface ContentTypeListPageProps<T> {
+/** Page shell: header labels, breadcrumbs, optional banner, and add/manage affordances. */
+export type ContentTypeListPagePageConfig = {
   typeLabel: string;
   typeLabelPlural: string;
   /** Defaults to typeLabelPlural */
@@ -60,30 +61,36 @@ export interface ContentTypeListPageProps<T> {
   /** Defaults to useBreadcrumbs() when not provided */
   breadcrumbData?: BreadcrumbItem[];
   actions?: ReactNode[];
+  /** Optional banner above the page header (e.g. validation blocked alerts). */
+  topBanner?: ReactNode;
   /** When set with `onAdd`, renders a primary Add button in the page header. */
   canManage?: boolean;
   /** Label for the header Add button (requires {@link canManage} and {@link onAdd}). */
   addButtonLabel?: string;
-  rows: T[];
-  columns: AppDataGridColumn<T>[];
-  filters?: AppDataGridFilter<T>[];
-  getRowId: (row: T) => string;
-  getDetailLink: (row: T) => string;
-  loading?: boolean;
-  error?: string | null;
-  /** Rendered in toolbar slot (e.g. Add button). Combined with filters. */
-  toolbar?: ReactNode;
   /**
    * Add handler. With {@link addButtonLabel} and {@link canManage}, the button is shown in the page header.
    * Without {@link addButtonLabel}, renders "Add Custom {typeLabel}" in the grid toolbar (legacy).
    */
   onAdd?: () => void;
+};
+
+/** Grid: data, columns, filters, toolbar passthrough, and presentation defaults. */
+export type ContentTypeListPageGridConfig<T> = {
+  rows: T[];
+  columns: AppDataGridColumn<T>[];
+  filters?: AppDataGridFilter<T>[];
+  getRowId: (row: T) => string;
+  getDetailLink: (row: T) => string;
+  /** Rendered in toolbar slot (e.g. Add button). Combined with filters. */
+  toolbar?: ReactNode;
   searchPlaceholder?: string;
   /**
    * Which row fields participate in toolbar search (shared normalization).
    * Defaults to {@link DEFAULT_CONTENT_SEARCH_NAME_ONLY} (name only).
    */
   contentSearch?: ContentSearchConfig<T>;
+  loading?: boolean;
+  error?: string | null;
   emptyMessage?: string;
   density?: 'compact' | 'standard' | 'comfortable';
   height?: number | string;
@@ -91,55 +98,71 @@ export interface ContentTypeListPageProps<T> {
   getRowClassName?: (params: GridRowClassNameParams) => string;
   /**
    * When set, {@link AppDataGrid} renders filters in row order by id (not array order) and shows an active-filter badge row.
-   * When {@link contentListPreferencesKey} is set and this is omitted, the layout is taken from
+   * When {@link ContentTypeListPagePreferencesConfig.contentListPreferencesKey} is set and this is omitted, the layout is taken from
    * {@link CAMPAIGN_CONTENT_LIST_TOOLBAR_LAYOUT_BY_PREFS_KEY} so filter ids stay aligned with prefs.
    */
   toolbarLayout?: AppDataGridToolbarLayout;
-  /** Initial session filter state (passed through to `AppDataGrid`). */
-  initialFilterValues?: Record<string, unknown>;
-  /** Persist or react to filter changes (passed through to `AppDataGrid`). */
-  onFilterValueChange?: (filterId: string, value: unknown) => void;
-  /** Viewer used to apply AppDataGrid `visibility` rules before rendering. */
-  viewerContext: ContentViewerContext | undefined;
+};
+
+/** Persisted list prefs and explicit filter overrides (merged with auth prefs when key is set). */
+export type ContentTypeListPagePreferencesConfig = {
   /**
    * When set, persists toolbar list preferences (e.g. hide disallowed) via {@link useContentListPreferences}.
    * Omit when the list does not use persisted campaign content list prefs.
    */
   contentListPreferencesKey?: ContentListPreferencesKey;
-  /** Optional banner above the page header (e.g. validation blocked alerts). */
-  topBanner?: ReactNode;
+  /** Initial session filter state (passed through to `AppDataGrid`). */
+  initialFilterValues?: Record<string, unknown>;
+  /** Persist or react to filter changes (passed through to `AppDataGrid`). */
+  onFilterValueChange?: (filterId: string, value: unknown) => void;
+};
+
+export interface ContentTypeListPageProps<T> {
+  page: ContentTypeListPagePageConfig;
+  grid: ContentTypeListPageGridConfig<T>;
+  preferences?: ContentTypeListPagePreferencesConfig;
+  /** Viewer used to apply AppDataGrid `visibility` rules before rendering. */
+  viewerContext: ContentViewerContext | undefined;
 }
 
 const ContentTypeListPage = <T,>({
-  typeLabel,
-  typeLabelPlural,
-  headline,
-  breadcrumbData,
-  actions,
-  canManage = false,
-  addButtonLabel,
-  rows,
-  columns,
-  filters = [],
-  getRowId,
-  getDetailLink,
-  loading = false,
-  error,
-  toolbar,
-  onAdd,
-  searchPlaceholder,
-  contentSearch,
-  emptyMessage,
-  density = 'compact',
-  height = 500,
-  getRowClassName,
-  toolbarLayout,
-  initialFilterValues,
-  onFilterValueChange,
+  page,
+  grid,
+  preferences = {},
   viewerContext,
-  contentListPreferencesKey,
-  topBanner,
 }: ContentTypeListPageProps<T>) => {
+  const {
+    typeLabel,
+    typeLabelPlural,
+    headline,
+    breadcrumbData,
+    actions,
+    topBanner,
+    canManage = false,
+    addButtonLabel,
+    onAdd,
+  } = page;
+
+  const {
+    rows,
+    columns,
+    filters = [],
+    getRowId,
+    getDetailLink,
+    toolbar,
+    searchPlaceholder,
+    contentSearch,
+    loading = false,
+    error,
+    emptyMessage,
+    density = 'compact',
+    height = 500,
+    getRowClassName,
+    toolbarLayout,
+  } = grid;
+
+  const { contentListPreferencesKey, initialFilterValues, onFilterValueChange } = preferences;
+
   const { user, refreshUser } = useAuth();
   const prefsFromAuth = useContentListPreferences({
     canManage,

@@ -136,43 +136,46 @@ export default function GearListRoute() {
 
   return (
     <ContentTypeListPage<GearListRow>
-      typeLabel="Gear"
-      typeLabelPlural="Gear"
-      headline="Gear"
-      breadcrumbData={breadcrumbs}
-      canManage={canManage}
-      onAdd={controller.onAdd}
-      addButtonLabel="Add Gear"
-      rows={items}
-      columns={columns}
-      filters={filters}
-      getRowId={(r) => r.id}
-      getDetailLink={controller.getDetailLink}
-      getRowClassName={getMutedRowClassNameForDisallowedCampaignContent<GearListRow>(canManage)}
-      loading={controller.loading}
-      error={controller.error}
-      searchPlaceholder="Search gear…"
-      emptyMessage="No gear found."
-      density="compact"
-      height={560}
+      page={{
+        typeLabel: 'Gear',
+        typeLabelPlural: 'Gear',
+        headline: 'Gear',
+        breadcrumbData: breadcrumbs,
+        canManage,
+        onAdd: controller.onAdd,
+        addButtonLabel: 'Add Gear',
+        topBanner:
+          validationBlocked ? (
+            validationBlocked.blockingEntities.length > 0 ? (
+              <ValidationBlockedAlert
+                contentType="gear"
+                mode="disallow"
+                blockingEntities={validationBlocked.blockingEntities}
+                onClose={() => setValidationBlocked(null)}
+              />
+            ) : (
+              <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
+                {validationBlocked.message ?? 'Cannot disable this gear.'}
+              </AppAlert>
+            )
+          ) : undefined,
+      }}
+      grid={{
+        rows: items,
+        columns,
+        filters,
+        getRowId: (r) => r.id,
+        getDetailLink: controller.getDetailLink,
+        getRowClassName: getMutedRowClassNameForDisallowedCampaignContent<GearListRow>(canManage),
+        loading: controller.loading,
+        error: controller.error,
+        searchPlaceholder: 'Search gear…',
+        emptyMessage: 'No gear found.',
+        density: 'compact',
+        height: 560,
+      }}
+      preferences={{ contentListPreferencesKey: 'gear' }}
       viewerContext={controller.viewerContext}
-      contentListPreferencesKey="gear"
-      topBanner={
-        validationBlocked ? (
-          validationBlocked.blockingEntities.length > 0 ? (
-            <ValidationBlockedAlert
-              contentType="gear"
-              mode="disallow"
-              blockingEntities={validationBlocked.blockingEntities}
-              onClose={() => setValidationBlocked(null)}
-            />
-          ) : (
-            <AppAlert tone="warning" onClose={() => setValidationBlocked(null)}>
-              {validationBlocked.message ?? 'Cannot disable this gear.'}
-            </AppAlert>
-          )
-        ) : undefined
-      }
     />
   );
 }

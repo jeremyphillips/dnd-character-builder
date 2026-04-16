@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppDataGridFilter } from '../types';
-import { filterAppDataGridFiltersForViewer } from '../viewer/filtersForViewer';
+import { filterAppDataGridFiltersByVisibility } from '../viewer/filtersForViewer';
 
 type Row = { id: string };
 
@@ -34,15 +34,15 @@ const filtersWithAdminOnly: AppDataGridFilter<Row>[] = [
   },
 ];
 
-describe('filterAppDataGridFiltersForViewer', () => {
+describe('filterAppDataGridFiltersByVisibility', () => {
   it('keeps all filters when no visibility flags', () => {
     const viewer = { campaignRole: null, isOwner: false, isPlatformAdmin: false, characterIds: [] };
-    expect(filterAppDataGridFiltersForViewer(filtersNoVisibility, viewer)).toHaveLength(2);
+    expect(filterAppDataGridFiltersByVisibility(filtersNoVisibility, viewer)).toHaveLength(2);
   });
 
   it('hides platformAdminOnly when viewer is not platform admin', () => {
     const viewer = { campaignRole: null, isOwner: false, isPlatformAdmin: false, characterIds: [] };
-    expect(filterAppDataGridFiltersForViewer(filtersWithAdminOnly, viewer).map((f) => f.id)).toEqual([
+    expect(filterAppDataGridFiltersByVisibility(filtersWithAdminOnly, viewer).map((f) => f.id)).toEqual([
       'a',
       'c',
     ]);
@@ -50,11 +50,11 @@ describe('filterAppDataGridFiltersForViewer', () => {
 
   it('shows platformAdminOnly when viewer is platform admin', () => {
     const viewer = { campaignRole: null, isOwner: false, isPlatformAdmin: true, characterIds: [] };
-    expect(filterAppDataGridFiltersForViewer(filtersWithAdminOnly, viewer)).toHaveLength(3);
+    expect(filterAppDataGridFiltersByVisibility(filtersWithAdminOnly, viewer)).toHaveLength(3);
   });
 
   it('hides platformAdminOnly when viewer is undefined', () => {
-    expect(filterAppDataGridFiltersForViewer(filtersWithAdminOnly, undefined).map((f) => f.id)).toEqual([
+    expect(filterAppDataGridFiltersByVisibility(filtersWithAdminOnly, undefined).map((f) => f.id)).toEqual([
       'a',
       'c',
     ]);

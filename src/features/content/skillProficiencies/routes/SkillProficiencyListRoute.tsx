@@ -30,7 +30,7 @@ import {
 import type { SkillProficiencySummary } from '@/features/content/skillProficiencies/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
-import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
+import { filterAppDataGridFiltersByVisibility } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider';
@@ -116,7 +116,7 @@ export default function SkillProficiencyListRoute() {
 
   const filters = useMemo(
     () =>
-      filterAppDataGridFiltersForViewer(
+      filterAppDataGridFiltersByVisibility(
         buildCampaignContentFilters<SkillProficiencyListRow>({
           canManage,
           onToggleAllowedInCampaign: handleToggleAllowed,

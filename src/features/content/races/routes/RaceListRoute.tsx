@@ -29,7 +29,7 @@ import {
 } from '@/features/content/races/domain';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
-import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
+import { filterAppDataGridFiltersByVisibility } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
@@ -103,7 +103,7 @@ export default function RaceListRoute() {
 
   const filters = useMemo(
     () =>
-      filterAppDataGridFiltersForViewer(
+      filterAppDataGridFiltersByVisibility(
         buildCampaignContentFilters<RaceListRow>({
           canManage,
           onToggleAllowedInCampaign: handleToggleAllowed,

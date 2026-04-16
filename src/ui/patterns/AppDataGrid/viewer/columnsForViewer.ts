@@ -9,9 +9,12 @@ import { isAppDataGridVisibleToViewer } from './visibilityForViewer';
  *
  * When `viewer` is undefined, **platformAdminOnly** columns are hidden.
  */
-export function filterAppDataGridColumnsForViewer<T>(
+export function filterAppDataGridColumnsByVisibility<T>(
   columns: AppDataGridColumn<T>[],
   viewer: ViewerContext | undefined,
 ): AppDataGridColumn<T>[] {
   return columns.filter((column) => isAppDataGridVisibleToViewer(column.visibility, viewer));
 }
+
+/** @deprecated Use `filterAppDataGridColumnsByVisibility` instead. */
+export const filterAppDataGridColumnsForViewer = filterAppDataGridColumnsByVisibility;

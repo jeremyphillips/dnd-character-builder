@@ -31,7 +31,7 @@ import {
 import type { CreatureArmorCatalogEntry } from '@/features/mechanics/domain/equipment/armorClass';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
-import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
+import { filterAppDataGridFiltersByVisibility } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
@@ -113,7 +113,7 @@ export default function MonsterListRoute() {
 
   const filters = useMemo(
     () =>
-      filterAppDataGridFiltersForViewer(
+      filterAppDataGridFiltersByVisibility(
         buildCampaignContentFilters<MonsterListRow>({
           canManage,
           onToggleAllowedInCampaign: handleToggleAllowed,

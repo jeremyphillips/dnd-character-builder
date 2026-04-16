@@ -82,7 +82,7 @@ export interface AppDataGridColumn<T> {
   sortable?: boolean
   /**
    * Optional visibility: when `platformAdminOnly` is true, hide this column for non–platform admins.
-   * Filter columns with `filterAppDataGridColumnsForViewer` before passing them to the grid.
+   * Filter columns with `filterAppDataGridColumnsByVisibility` before passing them to the grid.
    */
   visibility?: AppDataGridVisibility
 }

@@ -30,7 +30,7 @@ import {
 import type { ContentSummary } from '@/features/content/shared/domain/types';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
-import { filterAppDataGridFiltersForViewer } from '@/ui/patterns';
+import { filterAppDataGridFiltersByVisibility } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
@@ -106,7 +106,7 @@ export default function ClassListRoute() {
 
   const filters = useMemo(
     () =>
-      filterAppDataGridFiltersForViewer(
+      filterAppDataGridFiltersByVisibility(
         buildCampaignContentFilters<ClassListRow>({
           canManage,
           onToggleAllowedInCampaign: handleToggleAllowed,

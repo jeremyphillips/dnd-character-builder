@@ -32,7 +32,7 @@ import type { ContentSummary } from '@/features/content/shared/domain/types';
 import type { SystemRulesetId } from '@/features/mechanics/domain/rulesets';
 import type { GridRowClassNameParams } from '@mui/x-data-grid';
 import { useBreadcrumbs } from '@/app/navigation';
-import { filterAppDataGridColumnsForViewer, filterAppDataGridFiltersForViewer } from '@/ui/patterns';
+import { filterAppDataGridColumnsByVisibility, filterAppDataGridFiltersByVisibility } from '@/ui/patterns';
 import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 import { AppAlert } from '@/ui/primitives';
 
@@ -104,7 +104,7 @@ export default function SpellListRoute() {
 
   const columns = useMemo(
     () =>
-      filterAppDataGridColumnsForViewer(
+      filterAppDataGridColumnsByVisibility(
         buildCampaignContentColumns<SpellListRow>({
           canManage,
           characterNameById: canManage ? characterNameById : undefined,
@@ -129,7 +129,7 @@ export default function SpellListRoute() {
 
   const filters = useMemo(
     () =>
-      filterAppDataGridFiltersForViewer(
+      filterAppDataGridFiltersByVisibility(
         buildCampaignContentFilters<SpellListRow>({
           canManage,
           onToggleAllowedInCampaign: handleToggleAllowed,

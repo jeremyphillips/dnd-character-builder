@@ -10,9 +10,12 @@ import { isAppDataGridVisibleToViewer } from './visibilityForViewer';
  *
  * When `viewer` is undefined, **platformAdminOnly** filters are hidden.
  */
-export function filterAppDataGridFiltersForViewer<T>(
+export function filterAppDataGridFiltersByVisibility<T>(
   filters: AppDataGridFilter<T>[],
   viewer: ViewerContext | undefined,
 ): AppDataGridFilter<T>[] {
   return filters.filter((filter) => isAppDataGridVisibleToViewer(filter.visibility, viewer));
 }
+
+/** @deprecated Use `filterAppDataGridFiltersByVisibility` instead. */
+export const filterAppDataGridFiltersForViewer = filterAppDataGridFiltersByVisibility;

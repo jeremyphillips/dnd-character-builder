@@ -132,11 +132,11 @@ Loading, empty message, density, height, and row class names use optional **`pre
 
 ### Filter visibility (viewer)
 
-**Types:** **`AppDataGridFilterVisibility`**, optional **`visibility`** on each **`AppDataGridFilter`** (same object as **`id`** / **`options`**).
+**Types:** **`AppDataGridVisibility`** (with deprecated **`AppDataGridFilterVisibility`** alias), optional **`visibility`** on each **`AppDataGridFilter`** (same object as **`id`** / **`options`**).
 
 - **`platformAdminOnly`:** if **`true`**, the filter is shown only when **`viewer.isPlatformAdmin`** is true. Omit **`visibility`** (or leave flags unset) so everyone sees the filter.
 
-**Helper:** **`filterAppDataGridFiltersForViewer(filters, viewer)`** (`src/ui/patterns/AppDataGrid/filterAppDataGridFiltersForViewer.ts`) — pass a **`ViewerContext`** from **`toViewerContext(campaign?.viewer, characterIds)`** after composing filters, then pass the filtered array as **`toolbarConfig.filters.definitions`** on **`AppDataGrid`**. Row filtering uses only filters still in the array; hidden filters are not applied.
+**Helper:** **`filterAppDataGridFiltersByVisibility(filters, viewer)`** — pass a **`ViewerContext`** from **`toViewerContext(campaign?.viewer, characterIds)`** after composing filters, then pass the filtered array as **`toolbarConfig.filters.definitions`** on **`AppDataGrid`**. Row filtering uses only filters still in the array; hidden filters are not applied. The older **`filterAppDataGridFiltersForViewer`** name remains as a compatibility alias.
 
 ### Toolbar layout (optional)
 
@@ -212,7 +212,7 @@ The shared **`sx`** also targets **`.MuiOutlinedInput-root .MuiSelect-select`** 
 | **`App*`** primitives | `@/ui/primitives` |
 | **`AppMultiSelectCheckbox`**, **`AppMultiSelect`** | `@/ui/primitives` |
 | **`AppDataGrid`** (toolbar filters) | `@/ui/patterns` |
-| **`filterAppDataGridFiltersForViewer`**, **`AppDataGridFilterVisibility`**, **`AppDataGridToolbarLayout`**, **`indexAppDataGridFiltersById`** | `@/ui/patterns` |
+| **`filterAppDataGridFiltersByVisibility`**, **`AppDataGridVisibility`**, **`AppDataGridToolbarLayout`**, **`indexFiltersById`** | `@/ui/patterns` |
 | **`FieldConfig`**, **`FormLayoutNode`** | `@/ui/patterns/form` (re-exported from **`form.types`**) |
 
 For inline editing outside full-page forms, **`src/ui/patterns/form/editable/`** exposes **`EditableTextField`**, **`EditableSelect`**, and similar pattern components (local state / save callbacks rather than **`AppForm`**).

@@ -6,7 +6,9 @@ export { default as AppHero } from './AppHero/AppHero'
 
 export {
   default as AppDataGrid,
+  filterAppDataGridFiltersByVisibility,
   filterAppDataGridFiltersForViewer,
+  filterAppDataGridColumnsByVisibility,
   filterAppDataGridColumnsForViewer,
   isAppDataGridVisibleToViewer,
   makeOwnedColumn,

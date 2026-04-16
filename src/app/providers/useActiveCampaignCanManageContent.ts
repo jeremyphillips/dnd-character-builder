@@ -1,8 +1,8 @@
-import { canManageContent, toViewerContext } from '@/shared/domain/capabilities'
+import { canManageContent } from '@/shared/domain/capabilities'
 
-import { useActiveCampaign } from './ActiveCampaignProvider'
+import { useActiveCampaignViewerContext } from './useActiveCampaignViewerContext'
 
 export function useActiveCampaignCanManageContent(): boolean {
-  const { campaign } = useActiveCampaign()
-  return canManageContent(toViewerContext(campaign?.viewer))
+  const viewerContext = useActiveCampaignViewerContext()
+  return viewerContext ? canManageContent(viewerContext) : false
 }

@@ -12,7 +12,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useActiveCampaign } from './ActiveCampaignProvider';
-import { useActiveCampaignViewerCharacterIds } from './useActiveCampaignViewerCharacterIds';
+import { useActiveCampaignCanManageContent } from './useActiveCampaignCanManageContent';
 import {
   resolveCampaignRulesContext,
   type CampaignRulesContext,
@@ -29,7 +29,6 @@ import {
 import { loadCampaignCatalogOverrides } from '@/features/mechanics/domain/rulesets/campaign/patch/loadOverrides';
 import type { Ruleset } from '@/shared/types/ruleset';
 import { DEFAULT_SYSTEM_RULESET_ID } from '@/features/mechanics/domain/rulesets/ids/systemIds';
-import { toViewerContext, canManageContent } from '@/shared/domain/capabilities';
 
 // ---------------------------------------------------------------------------
 // Context
@@ -38,8 +37,8 @@ import { toViewerContext, canManageContent } from '@/shared/domain/capabilities'
 const CampaignRulesCtx = createContext<CampaignRulesContext | undefined>(undefined);
 
 export const CampaignRulesProvider = ({ children }: { children: ReactNode }) => {
-  const { campaign, campaignId } = useActiveCampaign();
-  const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
+  const { campaignId } = useActiveCampaign();
+  const canManage = useActiveCampaignCanManageContent();
 
   const [dbRuleset, setDbRuleset] = useState<Ruleset | null>(null);
   const [campaignContent, setCampaignContent] = useState<Partial<CampaignCatalog>>({});
@@ -72,9 +71,6 @@ export const CampaignRulesProvider = ({ children }: { children: ReactNode }) => 
   }, [campaignId]);
 
   const value = useMemo<CampaignRulesContext>(() => {
-    const ctx = toViewerContext(campaign?.viewer, viewerCharacterIds);
-    const canManage = canManageContent(ctx);
-
     const { ruleset } = resolveCampaignRulesContext({
       ruleset: dbRuleset,
       fallbackSystemId: DEFAULT_SYSTEM_RULESET_ID,
@@ -86,7 +82,7 @@ export const CampaignRulesProvider = ({ children }: { children: ReactNode }) => 
       catalog: buildCampaignCatalog(systemCatalog, campaignContent, ruleset),
       canManage,
     };
-  }, [campaign, dbRuleset, campaignContent, viewerCharacterIds]);
+  }, [dbRuleset, campaignContent, canManage]);
 
   return (
     <CampaignRulesCtx.Provider value={value}>

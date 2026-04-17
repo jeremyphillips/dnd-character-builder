@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
 import { AppTooltip } from '@/ui/primitives'
-import { resolveImageUrl } from '@/shared/lib/media'
+import { resolveContentImageUrl } from '@/shared/lib/media'
 
 import type { AppDataGridColumn } from '../types'
 
@@ -47,13 +47,17 @@ export function buildMuiColumns<T>(params: {
     }
 
     if (column.imageColumn) {
+      if (!column.imageContentType) {
+        throw new Error('AppDataGridColumn: imageContentType is required when imageColumn is true')
+      }
+      const imageContentType = column.imageContentType
       definition.sortable = false
       definition.renderCell = (params: GridRenderCellParams) => {
         const row = params.row as T
         const record = row as Record<string, unknown>
         const keyField = column.imageKeyField ?? column.field
         const imageKey = record[keyField] as string | null | undefined
-        const src = resolveImageUrl(imageKey)
+        const src = resolveContentImageUrl(imageContentType, imageKey)
 
         const altField =
           column.imageAltField ?? ('name' in record ? 'name' : undefined)

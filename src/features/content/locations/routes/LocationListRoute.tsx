@@ -90,6 +90,7 @@ export default function LocationListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<LocationListRow>({
+        imageContentType: 'location',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import { spellRepo } from '@/features/content/spells/domain';
 import type { Spell } from '@/features/content/spells/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
@@ -58,14 +58,16 @@ export default function SpellDetailRoute() {
         </Box>
       )}
 
-      <KeyValueSection
-        items={items}
-        columns={4}
-        sx={{ mt: 2, mb: 8 }}
-      />
+      <ContentDetailImageKeyValueGrid
+        imageContentType="spell"
+        imageKey={spell.imageKey}
+        alt={spell.name}
+      >
+        <KeyValueSection items={items} columns={4} sx={{ mb: 0 }} />
+      </ContentDetailImageKeyValueGrid>
 
       {spell.description.full && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {spell.description.full}
         </Typography>
       )}

@@ -6,13 +6,12 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import type { LocationContentItem } from '@/features/content/locations/domain';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
 import { locationRepo, listLocationMaps, LOCATION_DETAIL_SPECS } from '@/features/content/locations/domain';
 
@@ -87,24 +86,19 @@ export default function LocationDetailRoute() {
         </Box>
       )}
 
-      {loc.imageKey && (
-        <Box sx={{ mb: 2 }}>
-          <img src={resolveImageUrl(loc.imageKey)} alt={loc.name} style={{ maxHeight: 500 }} />
-        </Box>
-      )}
+      <ContentDetailImageKeyValueGrid
+        imageContentType="location"
+        imageKey={loc.imageKey}
+        alt={loc.name}
+      >
+        <KeyValueSection title="Location details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
 
       {loc.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {loc.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Location details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

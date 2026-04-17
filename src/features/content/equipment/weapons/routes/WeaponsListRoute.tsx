@@ -106,6 +106,7 @@ export default function WeaponsListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<WeaponListRow>({
+        imageContentType: 'weapon',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

@@ -87,6 +87,7 @@ export default function ClassListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<ClassListRow>({
+        imageContentType: 'class',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

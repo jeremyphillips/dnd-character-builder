@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import {
   skillProficiencyRepo,
   SKILL_PROFICIENCY_DETAIL_SPECS,
@@ -60,18 +60,19 @@ export default function SkillProficiencyDetailRoute() {
         </Box>
       )}
 
+      <ContentDetailImageKeyValueGrid
+        imageContentType="skillProficiencies"
+        imageKey={skillProficiency.imageKey}
+        alt={skillProficiency.name}
+      >
+        <KeyValueSection title="Skill Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
+
       {skillProficiency.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {skillProficiency.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Skill Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

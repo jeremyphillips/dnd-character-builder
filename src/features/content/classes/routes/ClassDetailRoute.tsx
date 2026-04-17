@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import { classRepo, type ClassContentItem } from '@/features/content/classes/domain';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
@@ -59,18 +59,15 @@ export default function ClassDetailRoute() {
         </Box>
       )}
 
+      <ContentDetailImageKeyValueGrid imageContentType="class" alt={charClass.name}>
+        <KeyValueSection title="Class Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
+
       {charClass.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {charClass.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Class Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

@@ -5,14 +5,13 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import { weaponRepo } from '../domain/repo/weaponRepo';
 import type { Weapon } from '@/features/content/equipment/weapons/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
 import { WEAPON_DETAIL_SPECS } from '../domain/details/weaponDetail.spec';
 
@@ -56,24 +55,20 @@ export default function WeaponDetailRoute() {
         </Box>
       )}
 
-      {weapon.imageKey && (
-        <Box sx={{ mb: 2 }}>
-          <img src={resolveImageUrl(weapon.imageKey)} alt={weapon.name} style={{ maxHeight: 200 }} />
-        </Box>
-      )}
+      <ContentDetailImageKeyValueGrid
+        imageContentType="weapon"
+        imageKey={weapon.imageKey}
+        alt={weapon.name}
+        maxHeight={200}
+      >
+        <KeyValueSection title="Weapon Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
 
       {weapon.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {weapon.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Weapon Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

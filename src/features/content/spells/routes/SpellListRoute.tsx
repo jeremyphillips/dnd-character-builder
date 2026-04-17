@@ -114,6 +114,7 @@ export default function SpellListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<SpellListRow>({
+        imageContentType: 'spell',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

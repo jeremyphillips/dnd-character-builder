@@ -14,6 +14,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import type { AppDataGridColumn, AppDataGridFilter } from '@/ui/patterns';
 import { AppTooltip } from '@/ui/primitives';
+import type { ImageContentType } from '@/shared/lib/media';
 import type { Visibility } from '@/shared/types/visibility';
 import type { GridRenderCellParams, GridRowClassNameParams } from '@mui/x-data-grid';
 import { canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
@@ -157,13 +158,14 @@ const VISIBILITY_FILTER_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 export function makePreColumns<T extends CampaignContentListRow>(params: {
+  imageContentType: ImageContentType;
   canManage?: boolean;
   characterNameById?: Record<string, string>;
   /** When set with a PC viewer, shows an owned icon in the Name column (no owned column). */
   ownedIds?: ReadonlySet<string>;
   viewerContext?: ViewerContext;
 }): AppDataGridColumn<T>[] {
-  const { canManage = false, characterNameById, ownedIds, viewerContext } = params;
+  const { imageContentType, canManage = false, characterNameById, ownedIds, viewerContext } = params;
   const nameColumn: AppDataGridColumn<T> = {
     field: 'name',
     headerName: 'Name',
@@ -235,6 +237,7 @@ export function makePreColumns<T extends CampaignContentListRow>(params: {
       headerName: '',
       width: 56,
       imageColumn: true,
+      imageContentType,
       imageSize: 32,
       imageShape: 'rounded',
       imageAltField: 'name',
@@ -302,6 +305,7 @@ export function makePostColumns<T extends CampaignContentListRow>(params: {
 }
 
 export function buildCampaignContentColumns<T extends CampaignContentListRow>(params: {
+  imageContentType: ImageContentType;
   customColumns?: AppDataGridColumn<T>[];
   ownedIds?: ReadonlySet<string>;
   viewerContext?: ViewerContext;
@@ -316,6 +320,7 @@ export function buildCampaignContentColumns<T extends CampaignContentListRow>(pa
 }): AppDataGridColumn<T>[] {
   const { customColumns = [] } = params;
   const pre = makePreColumns<T>({
+    imageContentType: params.imageContentType,
     canManage: params.canManage,
     characterNameById: params.characterNameById,
     ownedIds: params.ownedIds,

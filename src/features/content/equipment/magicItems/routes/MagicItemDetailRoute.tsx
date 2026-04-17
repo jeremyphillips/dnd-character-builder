@@ -5,14 +5,13 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import { magicItemRepo } from '../domain/repo/magicItemRepo';
 import type { MagicItem } from '@/features/content/equipment/magicItems/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
 import { MAGIC_ITEM_DETAIL_SPECS } from '../domain/details/magicItemDetail.spec';
 
@@ -55,24 +54,20 @@ export default function MagicItemDetailRoute() {
         </Box>
       )}
 
-      {item.imageKey && (
-        <Box sx={{ mb: 2 }}>
-          <img src={resolveImageUrl(item.imageKey)} alt={item.name} style={{ maxHeight: 200 }} />
-        </Box>
-      )}
+      <ContentDetailImageKeyValueGrid
+        imageContentType="equipment"
+        imageKey={item.imageKey}
+        alt={item.name}
+        maxHeight={200}
+      >
+        <KeyValueSection title="Magic Item Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
 
       {item.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {item.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Magic Item Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
 
       {item.effects && item.effects.length > 0 && (
         <Box sx={{ mt: 3 }}>

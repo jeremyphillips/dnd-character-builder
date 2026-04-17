@@ -106,6 +106,7 @@ export default function GearListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<GearListRow>({
+        imageContentType: 'gear',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

@@ -94,6 +94,7 @@ export default function MonsterListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<MonsterListRow>({
+        imageContentType: 'monster',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

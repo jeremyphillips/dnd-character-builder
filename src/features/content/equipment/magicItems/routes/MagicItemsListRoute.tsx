@@ -110,6 +110,7 @@ export default function MagicItemsListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<MagicItemListRow>({
+        imageContentType: 'equipment',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

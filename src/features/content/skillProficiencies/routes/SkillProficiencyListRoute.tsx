@@ -113,6 +113,7 @@ export default function SkillProficiencyListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<SkillProficiencyListRow>({
+        imageContentType: 'skillProficiencies',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

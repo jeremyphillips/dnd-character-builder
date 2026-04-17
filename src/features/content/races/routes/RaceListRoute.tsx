@@ -84,6 +84,7 @@ export default function RaceListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<RaceListRow>({
+        imageContentType: 'race',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

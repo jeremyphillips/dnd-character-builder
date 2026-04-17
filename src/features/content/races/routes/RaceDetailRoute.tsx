@@ -5,13 +5,12 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import type { Race } from '@/features/content/races/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert, AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
 import { raceRepo, RACE_DETAIL_SPECS } from '@/features/content/races/domain';
 
@@ -58,24 +57,19 @@ export default function RaceDetailRoute() {
         </Box>
       )}
 
-      {race.imageKey && (
-        <Box sx={{ mb: 2 }}>
-          <img src={resolveImageUrl(race.imageKey)} alt={race.name} style={{ maxHeight: 500 }} />
-        </Box>
-      )}
+      <ContentDetailImageKeyValueGrid
+        imageContentType="race"
+        imageKey={race.imageKey}
+        alt={race.name}
+      >
+        <KeyValueSection title="Race Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
 
       {race.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {race.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Race Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

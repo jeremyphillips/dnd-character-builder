@@ -5,14 +5,13 @@ import Typography from '@mui/material/Typography';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
-import { ContentDetailScaffold } from '@/features/content/shared/components';
+import { ContentDetailImageKeyValueGrid, ContentDetailScaffold } from '@/features/content/shared/components';
 import { gearRepo } from '../domain/repo/gearRepo';
 import type { Gear } from '@/features/content/equipment/gear/domain/types';
 import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCampaignContentEntry';
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppBadge } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { resolveImageUrl } from '@/shared/lib/media';
 import { buildDetailItemsFromSpecs } from '@/features/content/shared/forms/registry';
 import { GEAR_DETAIL_SPECS } from '../domain/details/gearDetail.spec';
 import { AppAlert } from '@/ui/primitives';
@@ -56,24 +55,20 @@ export default function GearDetailRoute() {
         </Box>
       )}
 
-      {gear.imageKey && (
-        <Box sx={{ mb: 2 }}>
-          <img src={resolveImageUrl(gear.imageKey)} alt={gear.name} style={{ maxHeight: 200 }} />
-        </Box>
-      )}
+      <ContentDetailImageKeyValueGrid
+        imageContentType="gear"
+        imageKey={gear.imageKey}
+        alt={gear.name}
+        maxHeight={200}
+      >
+        <KeyValueSection title="Gear Details" items={items} columns={2} />
+      </ContentDetailImageKeyValueGrid>
 
       {gear.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
           {gear.description}
         </Typography>
       )}
-
-      <KeyValueSection
-        title="Gear Details"
-        items={items}
-        columns={2}
-        sx={{ mt: 2 }}
-      />
     </ContentDetailScaffold>
   );
 }

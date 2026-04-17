@@ -26,7 +26,7 @@ import type { MuiTextFieldSize } from '@/ui/sizes'
 // COLUMN SPECIAL BEHAVIORS (applied in order, later wins):
 // ---------------------------------------------------------------------------
 // 1. renderCell    — custom cell renderer (baseline)
-// 2. imageColumn   — renders an Avatar thumbnail via resolveImageUrl
+// 2. imageColumn   — renders an Avatar thumbnail via resolveContentImageUrl
 // 3. linkColumn    — wraps whatever is rendered above in a router Link
 // 4. switchColumn  — renders a toggle Switch; overrides everything above
 //

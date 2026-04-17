@@ -1,5 +1,5 @@
 import { AppAvatar } from '@/ui/primitives'
-import { resolveImageUrl } from '@/shared/lib/media'
+import { resolveContentImageUrl } from '@/shared/lib/media'
 
 interface CharacterAvatarProps {
   characterId?: string
@@ -12,7 +12,11 @@ interface CharacterAvatarProps {
 }
 
 const CharacterAvatar = ({ name, imageUrl, imageKey, size = 'md' }: CharacterAvatarProps) => (
-  <AppAvatar src={resolveImageUrl(imageKey ?? imageUrl)} name={name} size={size} />
+  <AppAvatar
+    src={resolveContentImageUrl('character', imageKey ?? imageUrl)}
+    name={name}
+    size={size}
+  />
 )
 
 export default CharacterAvatar

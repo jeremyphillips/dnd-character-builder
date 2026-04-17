@@ -106,6 +106,7 @@ export default function ArmorListRoute() {
   const columns = useMemo(
     () =>
       buildCampaignContentColumns<ArmorListRow>({
+        imageContentType: 'armor',
         canManage,
         characterNameById: canManage ? characterNameById : undefined,
         onToggleAllowedInCampaign: handleToggleAllowed,

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { GridRenderCellParams, GridRowClassNameParams } from '@mui/x-data-grid'
 
+import type { ImageContentType } from '@/shared/lib/media'
 import type { AppDataGridToolbarFieldSizes } from '@/ui/sizes'
 
 import type { AppDataGridFilter } from './appDataGridFilter.types'
@@ -47,7 +48,7 @@ export interface AppDataGridColumn<T> {
   /**
    * If true, renders a thumbnail Avatar in the cell.
    * The image key is read from `imageKeyField` (or `field` if not set) and
-   * resolved via `resolveImageUrl`.
+   * resolved via `resolveContentImageUrl` (requires {@link imageContentType}).
    *
    * Can be combined with `linkColumn` — the Avatar is wrapped in a Link.
    * `switchColumn` takes priority over `imageColumn` if both are set.
@@ -61,6 +62,10 @@ export interface AppDataGridColumn<T> {
    * ```
    */
   imageColumn?: boolean
+  /**
+   * Content category for empty-key fallback artwork. Required when `imageColumn` is true.
+   */
+  imageContentType?: ImageContentType
   /** Row field that holds the image storage key. Defaults to `field`. */
   imageKeyField?: string
   /** Row field used as alt text for the image. Defaults to 'name' if present. */

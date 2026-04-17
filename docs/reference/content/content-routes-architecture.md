@@ -86,7 +86,7 @@ For content types that use the shared detail layout:
   - **`placement`:** `meta` | `main` | `advanced` | `main-and-advanced` (legacy `both` is normalized to `main-and-advanced`).
   - **`metaAudience`:** who may see a meta row (`all` | `platformOwner` | `dm-or-platformOwner`). Evaluated only for `section: 'meta'` (DM/co-DM or platform admin for `dm-or-platformOwner`; see `canViewDetailMetaDmOrPlatformOwner` in shared capabilities).
   - **Dual presentation:** `getValue`, `renderFriendly`, optional `renderRaw`, **`rawAudience`** for `section: 'advanced'` (`all` | `platformOwner` — platform-admin-only raw JSON).
-- **Presets** (e.g. `metaAll`, `metaDmOrPlatformOwner`, `structuredMainAndAdvanced`) live in the shared forms registry for concise spec authoring.
+- **Presets** (e.g. `metaAll`, `metaDmOrPlatformOwner`, `structuredMainAndAdvanced`, `structuredAdvancedOnly`) live in the shared forms registry for concise spec authoring. Use **`structuredAdvancedOnly`** when a field should appear only in the platform-admin advanced section (raw JSON), not in main.
 - **Shared meta rows:** `contentDetailMetaSpecs()` in `@/features/content/shared/domain` (see `domain/details/contentDetailMetaSpecs.tsx`) returns the standard **Source** + **Visibility** meta entries for any `ContentBase` item so per-type `*Detail.spec.tsx` files do not duplicate them.
 
 ### 5.3 Surfaces: meta, main, advanced

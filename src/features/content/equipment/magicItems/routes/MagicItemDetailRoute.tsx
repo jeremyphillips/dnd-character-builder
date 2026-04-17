@@ -1,7 +1,11 @@
 import { useParams } from 'react-router-dom';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
@@ -43,12 +47,13 @@ export default function MagicItemDetailRoute() {
 
   const editPath = `/campaigns/${campaignId}/world/equipment/magic-items/${magicItemId}/edit`;
 
-  const { metaItems, mainItems } = buildContentDetailSectionsFromSpecs({
+  const { metaItems, mainItems, advancedItems, viewer } = buildContentDetailSectionsFromSpecs({
     specs: MAGIC_ITEM_DETAIL_SPECS,
     item,
     ctx: {},
     viewerContext,
   });
+  const showAdvancedSection = Boolean(viewer?.isPlatformAdmin) && advancedItems.length > 0;
 
   return (
     <ContentDetailScaffold
@@ -81,16 +86,18 @@ export default function MagicItemDetailRoute() {
         </Typography>
       )}
 
-      {item.effects && item.effects.length > 0 && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-            Effects
-          </Typography>
-          <Box component="pre" sx={{ fontFamily: 'monospace', fontSize: 13, bgcolor: 'grey.50', p: 2, borderRadius: 1, overflow: 'auto' }}>
-            {JSON.stringify(item.effects, null, 2)}
-          </Box>
-        </Box>
-      )}
+      {showAdvancedSection ? (
+        <Accordion defaultExpanded={false} disableGutters sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="magic-item-advanced-content" id="magic-item-advanced-header">
+            <Typography component="span" variant="subtitle1" fontWeight={600}>
+              Advanced
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <KeyValueSection title="Advanced magic item data" items={advancedItems} columns={1} dense />
+          </AccordionDetails>
+        </Accordion>
+      ) : null}
     </ContentDetailScaffold>
   );
 }

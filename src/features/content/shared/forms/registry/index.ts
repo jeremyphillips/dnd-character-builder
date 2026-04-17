@@ -26,6 +26,7 @@ export {
   metaDmOrPlatformOwner,
   mainOnly,
   structuredMainAndAdvanced,
+  structuredAdvancedOnly,
 } from './detailSpec.presets';
 export {
   isEmptyDetailValue,

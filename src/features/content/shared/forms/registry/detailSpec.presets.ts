@@ -30,3 +30,16 @@ export const structuredMainAndAdvanced = {
   DetailSpec<unknown, unknown>,
   'placement' | 'rawAudience' | 'hideIfEmpty' | 'isStructured'
 >;
+
+/**
+ * Raw JSON in advanced only (not shown in main). Platform-admin advanced section.
+ */
+export const structuredAdvancedOnly = {
+  placement: 'advanced' as const,
+  rawAudience: 'platformOwner' as const,
+  hideIfEmpty: true,
+  isStructured: true,
+} as const satisfies Pick<
+  DetailSpec<unknown, unknown>,
+  'placement' | 'rawAudience' | 'hideIfEmpty' | 'isStructured'
+>;

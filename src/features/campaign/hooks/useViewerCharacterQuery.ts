@@ -20,10 +20,21 @@ type CharacterResponse = { character: CharacterDetailDto }
 
 export type UseViewerCharacterQueryOptions = {
   /**
-   * When set, only this viewer character is loaded (must appear in campaign viewer ids).
-   * Invalid or missing ids are ignored and all viewer characters are fetched.
+   * When set, only this character is loaded when it appears in the fetch-eligible set
+   * (see {@link eligiblePartyCharacterIds} and campaign viewer character ids).
+   * When unset, all viewer campaign characters are fetched (existing PC merged/single behavior).
    */
   characterId?: string | null
+  /**
+   * Additional character ids eligible for fetch (e.g. approved party PCs for a DM-only list filter).
+   * Unioned with viewer character ids for eligibility and single-character fetch mode.
+   */
+  eligiblePartyCharacterIds?: readonly string[] | null
+  /**
+   * When false, skips network fetch and exposes empty contexts with `ready: true`.
+   * Use to disable a secondary query without duplicating another `useViewerCharacterQuery` instance.
+   */
+  enabled?: boolean
 }
 
 export function useViewerCharacterQuery(
@@ -37,14 +48,32 @@ export function useViewerCharacterQuery(
 } {
   const { viewerCharacterIds } = useCampaignMembers()
   const characterId = options?.characterId ?? null
+  const eligiblePartyCharacterIds = options?.eligiblePartyCharacterIds ?? null
+  const enabled = options?.enabled !== false
+
+  const eligibleIds = useMemo(() => {
+    const s = new Set<string>()
+    for (const id of viewerCharacterIds) {
+      s.add(id)
+    }
+    if (eligiblePartyCharacterIds) {
+      for (const id of eligiblePartyCharacterIds) {
+        s.add(id)
+      }
+    }
+    return s
+  }, [viewerCharacterIds, eligiblePartyCharacterIds])
 
   const fetchIds = useMemo(() => {
-    if (viewerCharacterIds.length === 0) return []
-    if (characterId && viewerCharacterIds.includes(characterId)) {
+    if (!enabled) return []
+    if (characterId && eligibleIds.has(characterId)) {
       return [characterId]
     }
-    return [...viewerCharacterIds]
-  }, [viewerCharacterIds, characterId])
+    if (viewerCharacterIds.length > 0) {
+      return [...viewerCharacterIds]
+    }
+    return []
+  }, [enabled, characterId, eligibleIds, viewerCharacterIds])
 
   const fetchKey = useMemo(() => fetchIds.slice().sort().join(','), [fetchIds])
 

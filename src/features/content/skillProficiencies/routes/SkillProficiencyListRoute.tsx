@@ -6,6 +6,8 @@ import { useAuth } from '@/app/providers/AuthProvider';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignViewerCharacterIds } from '@/app/providers/useActiveCampaignViewerCharacterIds';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
+import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers';
+import { getOwnedIdsForCampaignContentListKey } from '@/features/character/domain/query';
 import {
   ContentTypeListPage,
   buildCampaignContentColumns,
@@ -15,7 +17,10 @@ import {
 } from '@/features/content/shared/components';
 import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useDmPartyCharacterOwnedQuery } from '@/features/content/shared/hooks/useDmPartyCharacterOwnedQuery';
 import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
+import { campaignContentToolbarLayoutForRole } from '@/features/content/shared/toolbar/campaignContentListToolbarLayoutForRole';
+import { getCampaignContentListToolbarLayout } from '@/features/content/shared/toolbar/campaignContentListToolbarLayouts';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
@@ -42,6 +47,7 @@ export default function SkillProficiencyListRoute() {
 
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
+  const { approvedCharacters } = useCampaignMembers();
 
   const {
     mergedContext: viewerCtx,
@@ -51,7 +57,10 @@ export default function SkillProficiencyListRoute() {
     setOwnershipScope,
     ownershipScopeOptions,
   } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
-  const ownedIds = viewerCtx.proficiencies.skillIds;
+  const ownedIds = getOwnedIdsForCampaignContentListKey(viewerCtx, 'skillProficiencies');
+
+  const { dmOwnedByCharacterFilterConfig, onDmOwnedByCharacterFilterChange } =
+    useDmPartyCharacterOwnedQuery(canManage, approvedCharacters, 'skillProficiencies');
 
   const listSummaries = useCallback(
     (cid: string, sid: string) =>
@@ -131,6 +140,7 @@ export default function SkillProficiencyListRoute() {
         customFilters,
         ownedIds,
         hasCampaignSources,
+        dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
       }),
     [
       canManage,
@@ -138,7 +148,17 @@ export default function SkillProficiencyListRoute() {
       customFilters,
       ownedIds,
       hasCampaignSources,
+      dmOwnedByCharacterFilterConfig,
     ],
+  );
+
+  const toolbarLayout = useMemo(
+    () =>
+      campaignContentToolbarLayoutForRole(
+        getCampaignContentListToolbarLayout('skillProficiencies'),
+        canManage,
+      ),
+    [canManage],
   );
 
   if (controller.loading || authLoading || !viewerQueryReady) {
@@ -200,8 +220,12 @@ export default function SkillProficiencyListRoute() {
         emptyMessage: 'No skill proficiencies found.',
         density: 'compact',
         height: 560,
+        toolbarLayout,
       }}
-      preferences={{ contentListPreferencesKey: 'skillProficiencies' }}
+      preferences={{
+        contentListPreferencesKey: 'skillProficiencies',
+        onFilterValueChange: onDmOwnedByCharacterFilterChange,
+      }}
       viewerContext={controller.viewerContext}
     />
   );

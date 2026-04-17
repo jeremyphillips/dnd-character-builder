@@ -6,3 +6,7 @@ export {
 } from './buildCharacterQueryContext'
 export { mergeCharacterQueryContexts } from './mergeCharacterQueryContexts'
 export * from './selectors'
+export {
+  getOwnedIdsForCampaignContentListKey,
+  type CampaignContentListOwnershipKey,
+} from './ownedIdsForCampaignContentList'

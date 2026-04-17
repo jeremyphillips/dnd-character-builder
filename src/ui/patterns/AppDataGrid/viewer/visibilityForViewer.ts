@@ -12,5 +12,9 @@ export function isAppDataGridVisibleToViewer(
     if (!viewer) return false
     if (canManageContent(viewer)) return false
   }
+  if (visibility.dmViewerOnly) {
+    if (!viewer) return false
+    if (!canManageContent(viewer)) return false
+  }
   return true
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createEmptyCharacterQueryContext } from '../buildCharacterQueryContext'
+import { getOwnedIdsForCampaignContentListKey } from '../ownedIdsForCampaignContentList'
 import {
   canAffordCostCp,
   classLevel,
@@ -51,5 +52,14 @@ describe('character query selectors', () => {
     expect(isEquipped(ctx, 'w1')).toBe(true)
     expect(isEquipped(ctx, 'a1')).toBe(true)
     expect(getEquippedWeaponIds(ctx)).toEqual(['w1'])
+  })
+
+  it('getOwnedIdsForCampaignContentListKey maps list keys to context slices', () => {
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'spells')).toBe(ctx.spells.knownSpellIds)
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'skillProficiencies')).toBe(ctx.proficiencies.skillIds)
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'weapons')).toBe(ctx.inventory.weaponIds)
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'gear')).toBe(ctx.inventory.gearIds)
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'armor')).toBe(ctx.inventory.armorIds)
+    expect(getOwnedIdsForCampaignContentListKey(ctx, 'magicItems')).toBe(ctx.inventory.magicItemIds)
   })
 })

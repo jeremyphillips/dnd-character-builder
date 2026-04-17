@@ -6,6 +6,13 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const SPELL_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: ['school', 'level', 'classes'],
-  secondary: ['owned', 'resolutionStatus', 'source', 'visibility', 'allowedInCampaign'],
+  secondary: [
+    'owned',
+    'dmOwnedByCharacter',
+    'resolutionStatus',
+    'source',
+    'visibility',
+    'allowedInCampaign',
+  ],
   utilities: ['hideDisallowed'],
 };

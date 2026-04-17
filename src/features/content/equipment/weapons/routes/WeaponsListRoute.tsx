@@ -6,6 +6,8 @@ import { useAuth } from '@/app/providers/AuthProvider';
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignViewerCharacterIds } from '@/app/providers/useActiveCampaignViewerCharacterIds';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
+import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers';
+import { getOwnedIdsForCampaignContentListKey } from '@/features/character/domain/query';
 import {
   ContentTypeListPage,
   buildCampaignContentColumns,
@@ -15,7 +17,10 @@ import {
 } from '@/features/content/shared/components';
 import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useDmPartyCharacterOwnedQuery } from '@/features/content/shared/hooks/useDmPartyCharacterOwnedQuery';
 import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
+import { campaignContentToolbarLayoutForRole } from '@/features/content/shared/toolbar/campaignContentListToolbarLayoutForRole';
+import { getCampaignContentListToolbarLayout } from '@/features/content/shared/toolbar/campaignContentListToolbarLayouts';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
@@ -36,6 +41,7 @@ export default function WeaponsListRoute() {
 
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
+  const { approvedCharacters } = useCampaignMembers();
 
   const {
     mergedContext: viewerCtx,
@@ -45,7 +51,10 @@ export default function WeaponsListRoute() {
     setOwnershipScope,
     ownershipScopeOptions,
   } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
-  const ownedIds = viewerCtx.inventory.weaponIds;
+  const ownedIds = getOwnedIdsForCampaignContentListKey(viewerCtx, 'weapons');
+
+  const { dmOwnedByCharacterFilterConfig, onDmOwnedByCharacterFilterChange } =
+    useDmPartyCharacterOwnedQuery(canManage, approvedCharacters, 'weapons');
 
   const listSummaries = useCallback(
     (cid: string, sid: string) =>
@@ -124,6 +133,7 @@ export default function WeaponsListRoute() {
         ownedIds,
         customFilters,
         hasCampaignSources,
+        dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
       }),
     [
       canManage,
@@ -131,7 +141,13 @@ export default function WeaponsListRoute() {
       ownedIds,
       customFilters,
       hasCampaignSources,
+      dmOwnedByCharacterFilterConfig,
     ],
+  );
+
+  const toolbarLayout = useMemo(
+    () => campaignContentToolbarLayoutForRole(getCampaignContentListToolbarLayout('weapons'), canManage),
+    [canManage],
   );
 
   if (controller.loading || authLoading || !viewerQueryReady) {
@@ -191,8 +207,12 @@ export default function WeaponsListRoute() {
         emptyMessage: 'No weapons found.',
         density: 'compact',
         height: 560,
+        toolbarLayout,
       }}
-      preferences={{ contentListPreferencesKey: 'weapons' }}
+      preferences={{
+        contentListPreferencesKey: 'weapons',
+        onFilterValueChange: onDmOwnedByCharacterFilterChange,
+      }}
       viewerContext={controller.viewerContext}
     />
   );

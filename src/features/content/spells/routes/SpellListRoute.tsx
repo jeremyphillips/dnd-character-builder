@@ -7,6 +7,8 @@ import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignViewerCharacterIds } from '@/app/providers/useActiveCampaignViewerCharacterIds';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider';
+import { useCampaignMembers } from '@/features/campaign/hooks/useCampaignMembers';
+import { getOwnedIdsForCampaignContentListKey } from '@/features/character/domain/query';
 import {
   ContentTypeListPage,
   buildCampaignContentColumns,
@@ -16,12 +18,15 @@ import {
 } from '@/features/content/shared/components';
 import ViewerOwnedCharacterScopeSelect from '@/features/content/shared/components/ViewerOwnedCharacterScopeSelect';
 import { useCampaignContentListController } from '@/features/content/shared/hooks/useCampaignContentListController';
+import { useDmPartyCharacterOwnedQuery } from '@/features/content/shared/hooks/useDmPartyCharacterOwnedQuery';
 import { useCampaignViewerOwnedCharacterQuery } from '@/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery';
 import {
   useValidatedAllowedToggle,
   type ValidationBlockedState,
 } from '@/features/content/shared/hooks/useValidatedAllowedToggle';
 import { useCampaignPartyCharacterNameMap } from '@/features/content/shared/hooks/useCampaignPartyCharacterNameMap';
+import { campaignContentToolbarLayoutForRole } from '@/features/content/shared/toolbar/campaignContentListToolbarLayoutForRole';
+import { getCampaignContentListToolbarLayout } from '@/features/content/shared/toolbar/campaignContentListToolbarLayouts';
 import {
   spellRepo,
   validateSpellChange,
@@ -43,6 +48,7 @@ export default function SpellListRoute() {
 
   const canManage = useActiveCampaignCanManageContent();
   const viewerCharacterIds = useActiveCampaignViewerCharacterIds();
+  const { approvedCharacters } = useCampaignMembers();
 
   const {
     mergedContext: viewerCtx,
@@ -52,7 +58,10 @@ export default function SpellListRoute() {
     setOwnershipScope,
     ownershipScopeOptions,
   } = useCampaignViewerOwnedCharacterQuery(campaignId, viewerCharacterIds);
-  const ownedIds = viewerCtx.spells.knownSpellIds;
+  const ownedIds = getOwnedIdsForCampaignContentListKey(viewerCtx, 'spells');
+
+  const { dmOwnedByCharacterFilterConfig, onDmOwnedByCharacterFilterChange } =
+    useDmPartyCharacterOwnedQuery(canManage, approvedCharacters, 'spells');
 
   const listSummaries = useCallback(
     (cid: string, sid: string) =>
@@ -132,6 +141,7 @@ export default function SpellListRoute() {
         ownedIds,
         customFilters,
         hasCampaignSources,
+        dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
       }),
     [
       canManage,
@@ -139,7 +149,13 @@ export default function SpellListRoute() {
       ownedIds,
       customFilters,
       hasCampaignSources,
+      dmOwnedByCharacterFilterConfig,
     ],
+  );
+
+  const toolbarLayout = useMemo(
+    () => campaignContentToolbarLayoutForRole(getCampaignContentListToolbarLayout('spells'), canManage),
+    [canManage],
   );
 
   if (controller.loading || authLoading || !viewerQueryReady) {
@@ -199,8 +215,12 @@ export default function SpellListRoute() {
         emptyMessage: 'No spells found.',
         density: 'compact',
         height: 560,
+        toolbarLayout,
       }}
-      preferences={{ contentListPreferencesKey: 'spells' }}
+      preferences={{
+        contentListPreferencesKey: 'spells',
+        onFilterValueChange: onDmOwnedByCharacterFilterChange,
+      }}
       viewerContext={controller.viewerContext}
     />
   );

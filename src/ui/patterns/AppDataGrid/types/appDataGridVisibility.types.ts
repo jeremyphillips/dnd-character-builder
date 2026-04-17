@@ -10,6 +10,11 @@ export type AppDataGridVisibility = {
    * (`!canManageContent(viewer)` — typically PC / player-facing UI).
    */
   pcViewerOnly?: boolean
+  /**
+   * If true, show this item only for campaign content managers (DM-style —
+   * `canManageContent(viewer)`).
+   */
+  dmViewerOnly?: boolean
 }
 
 /** @deprecated Use `AppDataGridVisibility` instead. */

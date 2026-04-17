@@ -10,7 +10,7 @@
  * unless `grid.contentSearch` overrides it — same normalization path any screen should use for “content list” search UX.
  * Direct `AppDataGrid` usage should pass `search.rowMatch` explicitly when diverging from this behavior.
  */
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -202,8 +202,21 @@ const ContentTypeListPage = <T,>({
     warnToolbarLayoutFilterIdsInDev(resolvedToolbarLayout, resolvedFilters);
   }, [resolvedToolbarLayout, resolvedFilters]);
 
-  const mergedInitialFilterValues = initialFilterValues ?? prefsFromAuth.initialFilterValues;
-  const mergedOnFilterValueChange = onFilterValueChange ?? prefsFromAuth.onFilterValueChange;
+  const mergedInitialFilterValues = useMemo(
+    () => ({
+      ...(prefsFromAuth.initialFilterValues ?? {}),
+      ...(initialFilterValues ?? {}),
+    }),
+    [prefsFromAuth.initialFilterValues, initialFilterValues],
+  );
+
+  const mergedOnFilterValueChange = useCallback(
+    async (id: string, value: unknown) => {
+      await onFilterValueChange?.(id, value);
+      await prefsFromAuth.onFilterValueChange(id, value);
+    },
+    [onFilterValueChange, prefsFromAuth.onFilterValueChange],
+  );
 
   const headerActions = useMemo(() => {
     const base = (actions ?? []).filter(Boolean) as ReactNode[];

@@ -6,6 +6,6 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const ARMOR_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: ['category', 'stealth'],
-  secondary: ['owned', 'source', 'visibility', 'allowedInCampaign'],
+  secondary: ['owned', 'dmOwnedByCharacter', 'source', 'visibility', 'allowedInCampaign'],
   utilities: ['hideDisallowed'],
 };

@@ -109,3 +109,45 @@ describe('filter pcViewerOnly visibility', () => {
     ).not.toContain('owned');
   });
 });
+
+const dmOnlyFilter: AppDataGridFilter<{ id: string }> = {
+  id: 'dmOwnedByCharacter',
+  label: 'Owned by character',
+  type: 'select',
+  defaultValue: 'all',
+  options: [
+    { value: 'all', label: 'All' },
+    { value: 'c1', label: 'PC' },
+  ],
+  accessor: () => 'all',
+  visibility: { dmViewerOnly: true },
+};
+
+describe('filter dmViewerOnly visibility', () => {
+  const pcViewer = { campaignRole: 'pc' as const, isOwner: false, isPlatformAdmin: false, characterIds: ['c1'] };
+  const dmViewer = { campaignRole: 'dm' as const, isOwner: false, isPlatformAdmin: false, characterIds: [] };
+
+  it('isAppDataGridVisibleToViewer: shows dmViewerOnly for DMs', () => {
+    expect(isAppDataGridVisibleToViewer({ dmViewerOnly: true }, dmViewer)).toBe(true);
+  });
+
+  it('isAppDataGridVisibleToViewer: hides dmViewerOnly for non-managers', () => {
+    expect(isAppDataGridVisibleToViewer({ dmViewerOnly: true }, pcViewer)).toBe(false);
+  });
+
+  it('isAppDataGridVisibleToViewer: hides dmViewerOnly when viewer undefined', () => {
+    expect(isAppDataGridVisibleToViewer({ dmViewerOnly: true }, undefined)).toBe(false);
+  });
+
+  it('filterAppDataGridFiltersByVisibility keeps dm-only filter for DMs', () => {
+    expect(
+      filterAppDataGridFiltersByVisibility([...filtersNoVisibility, dmOnlyFilter], dmViewer).map((f) => f.id),
+    ).toContain('dmOwnedByCharacter');
+  });
+
+  it('filterAppDataGridFiltersByVisibility drops dm-only filter for PCs', () => {
+    expect(
+      filterAppDataGridFiltersByVisibility([...filtersNoVisibility, dmOnlyFilter], pcViewer).map((f) => f.id),
+    ).not.toContain('dmOwnedByCharacter');
+  });
+});

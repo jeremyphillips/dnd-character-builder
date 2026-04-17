@@ -22,6 +22,7 @@ import {
   getSourceColumnDisplay,
 } from '@/features/content/shared/domain/sourceLabels';
 import { createOwnedMembershipFilter } from '@/features/content/shared/domain/ownedMembershipFilter';
+import { createDmOwnedByCharacterFilter } from '@/features/content/shared/domain/dmOwnedByCharacterFilter';
 import { showPcOwnedNameIcon } from '@/features/content/shared/domain/ownedMembership';
 
 /** Default column header helper for the Allowed-in-campaign column (all campaign content lists). */
@@ -344,6 +345,15 @@ export function makePostFilters<T extends CampaignContentListRow>(params: {
   enablePrivateToMeFilter?: boolean;
   /** Required when enablePrivateToMeFilter is true. Used to determine restricted items visible to viewer. */
   viewerContext?: ViewerContext;
+  /**
+   * DM-only: filter by party character ownership. Omitted when not passed or when there are no party characters.
+   */
+  dmOwnedByCharacter?: {
+    selectedCharacterId: string;
+    ownedIds: ReadonlySet<string>;
+    queryReady: boolean;
+    partyCharacters: { id: string; name: string }[];
+  };
 }): AppDataGridFilter<T>[] {
   const {
     ownedIds,
@@ -352,12 +362,34 @@ export function makePostFilters<T extends CampaignContentListRow>(params: {
     hasCampaignSources = true,
     enablePrivateToMeFilter = false,
     viewerContext,
+    dmOwnedByCharacter,
   } = params;
 
   const filters: AppDataGridFilter<T>[] = [];
 
   if (ownedIds !== undefined) {
     filters.push(createOwnedMembershipFilter<T>(ownedIds));
+  }
+
+  if (
+    canManage &&
+    dmOwnedByCharacter &&
+    dmOwnedByCharacter.partyCharacters.length > 0
+  ) {
+    const nameById = new Map(dmOwnedByCharacter.partyCharacters.map((c) => [c.id, c.name]));
+    const partyOptions = dmOwnedByCharacter.partyCharacters.map((c) => ({
+      value: c.id,
+      label: c.name,
+    }));
+    filters.push(
+      createDmOwnedByCharacterFilter<T>({
+        selectedCharacterId: dmOwnedByCharacter.selectedCharacterId,
+        ownedIds: dmOwnedByCharacter.ownedIds,
+        queryReady: dmOwnedByCharacter.queryReady,
+        partyOptions,
+        nameById,
+      }),
+    );
   }
 
   if (enablePrivateToMeFilter && !canManage && viewerContext) {
@@ -427,6 +459,12 @@ export function buildCampaignContentFilters<T extends CampaignContentListRow>(pa
   enablePrivateToMeFilter?: boolean;
   /** Required when enablePrivateToMeFilter is true. */
   viewerContext?: ViewerContext;
+  dmOwnedByCharacter?: {
+    selectedCharacterId: string;
+    ownedIds: ReadonlySet<string>;
+    queryReady: boolean;
+    partyCharacters: { id: string; name: string }[];
+  };
 }): AppDataGridFilter<T>[] {
   const { customFilters = [] } = params;
   const post = makePostFilters<T>(params);

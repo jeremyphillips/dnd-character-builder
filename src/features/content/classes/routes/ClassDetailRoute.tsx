@@ -59,7 +59,11 @@ export default function ClassDetailRoute() {
         </Box>
       )}
 
-      <ContentDetailImageKeyValueGrid imageContentType="class" alt={charClass.name}>
+      <ContentDetailImageKeyValueGrid
+        imageContentType="class"
+        imageKey={charClass.imageKey}
+        alt={charClass.name}
+      >
         <KeyValueSection title="Class Details" items={items} columns={2} />
       </ContentDetailImageKeyValueGrid>
 

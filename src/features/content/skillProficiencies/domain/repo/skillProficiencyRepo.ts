@@ -32,6 +32,7 @@ type CampaignSkillProficiencyDto = {
   skillProficiencyId: string;
   name: string;
   description: string;
+  imageKey: string;
   ability: string;
   suggestedClasses: string[];
   examples: string[];
@@ -56,6 +57,7 @@ function toSkillProficiency(dto: CampaignSkillProficiencyDto): SkillProficiency 
     id: dto.skillProficiencyId,
     name: dto.name,
     description: dto.description,
+    imageKey: dto.imageKey || null,
     ability: dto.ability as SkillProficiency['ability'],
     suggestedClasses: dto.suggestedClasses ?? [],
     examples: dto.examples ?? [],
@@ -241,11 +243,12 @@ export const skillProficiencyRepo: CampaignContentRepo<
     campaignId: string,
     input: SkillProficiencyInput,
   ): Promise<SkillProficiency> {
-    const { name, description, ability, suggestedClasses, examples, tags, accessPolicy } =
+    const { name, description, imageKey, ability, suggestedClasses, examples, tags, accessPolicy } =
       input;
     const result = await createCampaignSkillProficiency(campaignId, {
       name,
       description: description ?? '',
+      imageKey,
       ability,
       suggestedClasses: suggestedClasses ?? [],
       examples: examples ?? [],
@@ -263,11 +266,12 @@ export const skillProficiencyRepo: CampaignContentRepo<
     id: string,
     input: SkillProficiencyInput,
   ): Promise<SkillProficiency> {
-    const { name, description, ability, suggestedClasses, examples, tags, accessPolicy } =
+    const { name, description, imageKey, ability, suggestedClasses, examples, tags, accessPolicy } =
       input;
     const result = await updateCampaignSkillProficiency(campaignId, id, {
       name,
       description: description ?? '',
+      imageKey,
       ability,
       suggestedClasses: suggestedClasses ?? [],
       examples: examples ?? [],

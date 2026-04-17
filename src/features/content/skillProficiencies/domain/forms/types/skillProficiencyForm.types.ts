@@ -7,6 +7,7 @@ import type { AbilityId } from '@/features/mechanics/domain/character';
 
 /** Form values shape — string for json fields (examples, tags, suggestedClasses). */
 export type SkillProficiencyFormValues = Pick<SkillProficiency, 'name' | 'description'> & {
+  imageKey: string;
   ability: AbilityId | '';
   /** JSON string for AppFormJsonPreviewField. */
   suggestedClasses: string;

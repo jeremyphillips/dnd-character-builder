@@ -6,6 +6,8 @@ import type { CharacterClass } from '@/features/content/classes/domain/types';
 import type { Visibility } from '@/shared/types/visibility';
 
 export type ClassFormValues = Pick<CharacterClass, 'name' | 'description'> & {
+  /** Form uses empty string when cleared; maps to null via field parse. */
+  imageKey: string;
   accessPolicy?: Visibility;
   /** JSON string for AppFormJsonPreviewField. */
   generation: string;

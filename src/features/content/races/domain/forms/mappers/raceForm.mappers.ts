@@ -22,7 +22,6 @@ const defaultFormValues = buildDefaultFormValues(RACE_FORM_FIELDS);
 export const raceToFormValues = (race: Race): RaceFormValues => ({
   ...(defaultFormValues as RaceFormValues),
   ...toFormValuesFromItem(race as Race & Record<string, unknown>),
-  imageKey: (race.imageKey ?? '') as RaceFormValues['imageKey'],
   accessPolicy: (race.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC) as RaceFormValues['accessPolicy'],
 });
 

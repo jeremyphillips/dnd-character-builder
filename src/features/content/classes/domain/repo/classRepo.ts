@@ -25,6 +25,7 @@ type CampaignClassDto = {
   classId: string;
   name: string;
   description: string;
+  imageKey: string;
   accessPolicy?: Visibility;
   data: Record<string, unknown>;
   createdAt: string;
@@ -63,6 +64,7 @@ function toCharacterClass(dto: CampaignClassDto): CharacterClass & { source: 'ca
     id: dto.classId,
     name: dto.name,
     description: dto.description,
+    imageKey: dto.imageKey || null,
     source: 'campaign',
     campaignId: dto.campaignId,
     accessPolicy: dto.accessPolicy,
@@ -244,6 +246,7 @@ export const classRepo = {
     const body: Record<string, unknown> = {
       name: input.name,
       description: input.description,
+      imageKey: input.imageKey,
       accessPolicy: input.accessPolicy,
       generation: input.generation,
       proficiencies: input.proficiencies,
@@ -268,6 +271,7 @@ export const classRepo = {
     const body: Record<string, unknown> = {
       name: input.name,
       description: input.description,
+      imageKey: input.imageKey,
       accessPolicy: input.accessPolicy,
       generation: input.generation,
       proficiencies: input.proficiencies,

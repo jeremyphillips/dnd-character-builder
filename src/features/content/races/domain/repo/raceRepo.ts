@@ -36,6 +36,7 @@ type CampaignRaceDto = {
   raceId: string;
   name: string;
   description: string;
+  imageKey: string;
   accessPolicy?: Visibility;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +57,7 @@ function toRace(dto: CampaignRaceDto): Race {
     id: dto.raceId,
     name: dto.name,
     description: dto.description,
+    imageKey: dto.imageKey || null,
     source: 'campaign' as const,
     campaignId: dto.campaignId,
     accessPolicy: dto.accessPolicy,

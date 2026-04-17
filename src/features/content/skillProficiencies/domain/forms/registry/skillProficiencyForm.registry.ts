@@ -12,6 +12,10 @@ import type { SkillProficiencyFormValues } from '../types/skillProficiencyForm.t
 
 const ABILITY_OPTIONS = ABILITIES.map((a) => ({ value: a.id, label: a.name }));
 
+const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+const trimOrNull = (v: unknown): string | null => (trim(v) ? trim(v) : null);
+const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
+
 const parseJsonArray = (v: unknown): string[] | undefined => {
   if (v == null || v === '') return undefined;
   if (typeof v !== 'string') return Array.isArray(v) ? (v as string[]) : undefined;
@@ -75,6 +79,15 @@ export const SKILL_PROFICIENCY_FORM_FIELDS = [
     defaultValue: '' as SkillProficiencyFormValues['description'],
     parse: (v: unknown) => (typeof v === 'string' ? v.trim() : undefined),
     format: (v: unknown) => (v != null ? String(v) : '') as SkillProficiencyFormValues['description'],
+  },
+  {
+    name: 'imageKey',
+    label: 'Image',
+    kind: 'imageUpload' as const,
+    helperText: '/assets/... or CDN key',
+    defaultValue: '' as SkillProficiencyFormValues['imageKey'],
+    parse: (v: unknown) => trimOrNull(v) as SkillProficiencyInput['imageKey'],
+    format: (v: unknown) => strOrEmpty(v) as SkillProficiencyFormValues['imageKey'],
   },
   {
     name: 'suggestedClasses',

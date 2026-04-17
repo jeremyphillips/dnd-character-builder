@@ -67,19 +67,15 @@ export function buildMuiColumns<T>(params: {
         const variant =
           column.imageShape === 'circle' ? 'circular' : 'rounded'
 
-        const fallback =
-          column.imageFallback ??
-          (alt ? alt.charAt(0).toUpperCase() : '?')
-
+        // Always use resolveContentImageUrl → non-empty src (asset fallback). Do not pass letter
+        // children: MUI Avatar shows them while loading and on img error, which flashes initials.
         return (
           <Avatar
             src={src}
             alt={alt}
             variant={variant}
             sx={{ width: size, height: size, fontSize: size * 0.45 }}
-          >
-            {src ? undefined : fallback}
-          </Avatar>
+          />
         )
       }
     }

@@ -64,7 +64,6 @@ export default function ArmorDetailRoute() {
         imageContentType="armor"
         imageKey={armor.imageKey}
         alt={armor.name}
-        maxHeight={200}
       >
         <KeyValueSection title="Armor Details" items={items} columns={2} />
       </ContentDetailImageKeyValueGrid>

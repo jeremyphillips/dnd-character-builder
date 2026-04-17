@@ -59,7 +59,6 @@ export default function WeaponDetailRoute() {
         imageContentType="weapon"
         imageKey={weapon.imageKey}
         alt={weapon.name}
-        maxHeight={200}
       >
         <KeyValueSection title="Weapon Details" items={items} columns={2} />
       </ContentDetailImageKeyValueGrid>

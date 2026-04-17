@@ -29,7 +29,7 @@ function toSystemRace(systemId: SystemRulesetId, raw: RaceFields): Race {
 }
 
 const RACES_RAW: readonly RaceFields[] = [
-  { id: 'human',      name: 'Human',      imageKey: '/assets/system/races/human.webp',      description: 'A versatile race that can be found in all corners of the world.' },
+  { id: 'human',      name: 'Human',      imageKey: '',                                     description: 'A versatile race that can be found in all corners of the world.' },
   { id: 'dwarf',      name: 'Dwarf',      imageKey: '/assets/system/races/dwarf.webp',      description: 'A race of short stature and long beards.' },
   { id: 'elf',        name: 'Elf',        imageKey: '/assets/system/races/elf.webp',        description: 'A race of graceful and elegant beings.' },
   { id: 'gnome',      name: 'Gnome',      imageKey: '/assets/system/races/gnome.webp',      description: 'A race of small and mischievous beings.' },

@@ -8,7 +8,7 @@ export const IMAGE_FALLBACK_URLS = {
   character: '/assets/system/fallbacks/character.png',
   race: '/assets/system/fallbacks/character.png',
   class: '/assets/system/fallbacks/character.png',
-  skillProficiencies: '/assets/system/fallbacks/character.png',
+  skillProficiencies: '/assets/system/fallbacks/generic.png',
   location: '/assets/system/fallbacks/generic.png',
   gear: '/assets/system/fallbacks/generic.png',
   armor: '/assets/system/fallbacks/generic.png',

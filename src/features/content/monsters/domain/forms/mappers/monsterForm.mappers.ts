@@ -46,6 +46,7 @@ export const monsterToFormValues = (monster: Monster): MonsterFormValues => {
     name: monster.name,
     type: monster.type ?? '',
     sizeCategory: monster.sizeCategory ?? '',
+    imageKey: (monster.imageKey ?? '') as MonsterFormValues['imageKey'],
     accessPolicy: (monster.accessPolicy ?? DEFAULT_VISIBILITY_PUBLIC) as MonsterFormValues['accessPolicy'],
     description: formatJson(monster.description),
     languages: formatJson(monster.languages),

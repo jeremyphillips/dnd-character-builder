@@ -58,7 +58,6 @@ export default function MagicItemDetailRoute() {
         imageContentType="equipment"
         imageKey={item.imageKey}
         alt={item.name}
-        maxHeight={200}
       >
         <KeyValueSection title="Magic Item Details" items={items} columns={2} />
       </ContentDetailImageKeyValueGrid>

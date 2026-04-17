@@ -9,7 +9,7 @@ export type ContentDetailImageKeyValueGridProps = {
   imageContentType: ImageContentType;
   imageKey?: string | null;
   alt: string;
-  /** Max height for the detail image (default 500; use 200 for equipment-style pages). */
+  /** Max height for the detail image in px (default 500). */
   maxHeight?: number;
   children: ReactNode;
 };

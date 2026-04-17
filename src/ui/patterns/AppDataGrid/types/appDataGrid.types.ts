@@ -74,7 +74,10 @@ export interface AppDataGridColumn<T> {
   imageSize?: number
   /** Avatar shape (default 'rounded'). */
   imageShape?: 'rounded' | 'circle'
-  /** Fallback content rendered inside the Avatar when no image is available. */
+  /**
+   * Custom Avatar children (e.g. initials). Ignored for `imageColumn` cells: thumbnails use
+   * `resolveContentImageUrl` (always a URL) and omit children to avoid initials flashing while loading.
+   */
   imageFallback?: ReactNode
 
   /** If true, renders a MUI Switch. The field value is read as a boolean. */

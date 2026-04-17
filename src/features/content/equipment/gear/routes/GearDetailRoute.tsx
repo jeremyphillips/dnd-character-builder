@@ -59,7 +59,6 @@ export default function GearDetailRoute() {
         imageContentType="gear"
         imageKey={gear.imageKey}
         alt={gear.name}
-        maxHeight={200}
       >
         <KeyValueSection title="Gear Details" items={items} columns={2} />
       </ContentDetailImageKeyValueGrid>

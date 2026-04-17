@@ -8,6 +8,10 @@ import type { Monster, MonsterInput } from '@/features/content/monsters/domain/t
 import type { MonsterFormValues } from '../types/monsterForm.types';
 import { MONSTER_TYPE_OPTIONS, MONSTER_SIZE_CATEGORY_OPTIONS } from '@/features/content/monsters/domain/vocab/monster.vocab';
 
+const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+const trimOrNull = (v: unknown): string | null => (trim(v) ? trim(v) : null);
+const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
+
 const parseJson = (v: unknown): unknown => {
   if (v == null || v === '') return undefined;
   if (typeof v !== 'string') return typeof v === 'object' && v !== null ? v : undefined;
@@ -78,6 +82,15 @@ export const MONSTER_FORM_FIELDS = [
     defaultValue: '' as MonsterFormValues['sizeCategory'],
     parse: (v: unknown) => (v ? (v as MonsterInput['sizeCategory']) : undefined),
     format: (v: unknown) => (v ?? '') as MonsterFormValues['sizeCategory'],
+  },
+  {
+    name: 'imageKey' as const,
+    label: 'Image',
+    kind: 'imageUpload' as const,
+    helperText: '/assets/... or CDN key',
+    defaultValue: '' as MonsterFormValues['imageKey'],
+    parse: (v: unknown) => trimOrNull(v) as MonsterInput['imageKey'],
+    format: (v: unknown) => strOrEmpty(v) as MonsterFormValues['imageKey'],
   },
   jsonField('description', 'Description', JSON.stringify({ short: '', long: '' }, null, 2), 3, 6),
   jsonField('languages', 'Languages', '[]', 2, 4),

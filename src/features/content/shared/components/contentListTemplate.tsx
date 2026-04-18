@@ -17,7 +17,11 @@ import { AppTooltip } from '@/ui/primitives';
 import type { ImageContentType } from '@/shared/lib/media';
 import type { Visibility } from '@/shared/types/visibility';
 import type { GridRenderCellParams, GridRowClassNameParams } from '@mui/x-data-grid';
-import { canViewContent, type ViewerContext } from '@/shared/domain/capabilities';
+import {
+  canViewContent,
+  canViewDetailMetaDmOrPlatformOwner,
+  type ViewerContext,
+} from '@/shared/domain/capabilities';
 import {
   SOURCE_FILTER_OPTIONS,
   getSourceColumnDisplay,
@@ -140,6 +144,7 @@ export type CampaignContentListRow = {
   imageKey?: string | null;
   source?: string | null;
   accessPolicy?: Visibility;
+  patched?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -442,6 +447,18 @@ export function makePostFilters<T extends CampaignContentListRow>(params: {
       trueLabel: 'Allowed',
       falseLabel: 'Not Allowed',
       accessor: (row) => Boolean((row as Record<string, unknown>)[allowedField as string]),
+    });
+  }
+
+  if (viewerContext && canViewDetailMetaDmOrPlatformOwner(viewerContext)) {
+    filters.push({
+      id: 'patched',
+      label: 'Patched',
+      type: 'boolean',
+      defaultValue: 'all',
+      trueLabel: 'Patched',
+      falseLabel: 'Not patched',
+      accessor: (row) => Boolean((row as CampaignContentListRow).patched),
     });
   }
 

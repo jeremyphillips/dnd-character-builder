@@ -193,10 +193,18 @@ export const raceRepo: CampaignContentRepo<Race, RaceSummary, RaceInput> = {
         return [];
       }
 
+      const contentPatch = await getContentPatch(campaignId);
+      const racePatches = contentPatch?.patches?.races ?? {};
+
       const treatAllAsAllowed = catalog.raceAllowedIds === undefined;
-      const results: RaceSummary[] = Object.values(racesById).map((race) =>
-        toSummary(race as Race, treatAllAsAllowed || allowedSet.has(race.id)),
-      );
+      const results: RaceSummary[] = Object.values(racesById).map((race) => {
+        const r = race as Race;
+        const patchedFromPatch = r.source === 'system' && Boolean(racePatches[r.id]);
+        return toSummary(
+          { ...r, patched: patchedFromPatch || Boolean(r.patched) },
+          treatAllAsAllowed || allowedSet.has(race.id),
+        );
+      });
 
       if (opts?.search) {
         return results.filter((r) => matchesSearch(r.name, opts.search!)).sort((a, b) => a.name.localeCompare(b.name));

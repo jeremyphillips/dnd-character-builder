@@ -142,6 +142,7 @@ export default function SkillProficiencyListRoute() {
         ownedIds,
         hasCampaignSources,
         dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
+        viewerContext: controller.viewerContext,
       }),
     [
       canManage,
@@ -150,6 +151,7 @@ export default function SkillProficiencyListRoute() {
       ownedIds,
       hasCampaignSources,
       dmOwnedByCharacterFilterConfig,
+      controller.viewerContext,
     ],
   );
 

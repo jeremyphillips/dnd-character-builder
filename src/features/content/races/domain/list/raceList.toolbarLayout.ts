@@ -5,6 +5,6 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const RACE_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: [],
-  secondary: ['source', 'visibility', 'allowedInCampaign'],
+  secondary: ['source', 'visibility', 'allowedInCampaign', 'patched'],
   utilities: ['hideDisallowed'],
 };

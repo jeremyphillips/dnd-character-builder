@@ -148,10 +148,19 @@ export const monsterRepo: CampaignContentRepo<Monster, MonsterSummary, MonsterIn
       const monstersById = catalog.monstersAllById;
       const allowedSet = new Set(catalog.monsterAllowedIds ?? []);
 
+      const contentPatch = await getContentPatch(campaignId);
+      const monsterPatches = contentPatch?.patches?.monsters ?? {};
+
       const treatAllAsAllowed = catalog.monsterAllowedIds === undefined;
-      const results: MonsterSummary[] = Object.values(monstersById).map((m) =>
-        toSummary(m, treatAllAsAllowed || allowedSet.has(m.id)),
-      );
+      const results: MonsterSummary[] = Object.values(monstersById).map((m) => {
+        const monster = m as Monster;
+        const patchedFromPatch =
+          monster.source === 'system' && Boolean(monsterPatches[monster.id]);
+        return toSummary(
+          { ...monster, patched: patchedFromPatch || Boolean(monster.patched) },
+          treatAllAsAllowed || allowedSet.has(m.id),
+        );
+      });
 
       if (opts?.search) {
         return results

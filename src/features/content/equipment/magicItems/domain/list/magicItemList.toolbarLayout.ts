@@ -6,6 +6,6 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const MAGIC_ITEM_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: ['slot', 'rarity', 'attunement'],
-  secondary: ['owned', 'dmOwnedByCharacter', 'source', 'visibility', 'allowedInCampaign'],
+  secondary: ['owned', 'dmOwnedByCharacter', 'source', 'visibility', 'allowedInCampaign', 'patched'],
   utilities: ['hideDisallowed'],
 };

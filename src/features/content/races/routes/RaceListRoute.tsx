@@ -101,8 +101,9 @@ export default function RaceListRoute() {
         onToggleAllowedInCampaign: handleToggleAllowed,
         customFilters,
         hasCampaignSources,
+        viewerContext: controller.viewerContext,
       }),
-    [canManage, handleToggleAllowed, customFilters, hasCampaignSources],
+    [canManage, handleToggleAllowed, customFilters, hasCampaignSources, controller.viewerContext],
   );
 
   if (controller.loading || authLoading) {

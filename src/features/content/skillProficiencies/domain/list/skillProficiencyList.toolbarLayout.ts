@@ -6,6 +6,6 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const SKILL_PROFICIENCY_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: ['ability', 'suggestedClasses', 'tags'],
-  secondary: ['owned', 'dmOwnedByCharacter', 'source', 'visibility', 'allowedInCampaign'],
+  secondary: ['owned', 'dmOwnedByCharacter', 'source', 'visibility', 'allowedInCampaign', 'patched'],
   utilities: ['hideDisallowed'],
 };

@@ -135,6 +135,7 @@ export default function WeaponsListRoute() {
         customFilters,
         hasCampaignSources,
         dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
+        viewerContext: controller.viewerContext,
       }),
     [
       canManage,
@@ -143,6 +144,7 @@ export default function WeaponsListRoute() {
       customFilters,
       hasCampaignSources,
       dmOwnedByCharacterFilterConfig,
+      controller.viewerContext,
     ],
   );
 

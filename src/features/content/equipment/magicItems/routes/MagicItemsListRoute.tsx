@@ -139,6 +139,7 @@ export default function MagicItemsListRoute() {
         customFilters,
         hasCampaignSources,
         dmOwnedByCharacter: dmOwnedByCharacterFilterConfig,
+        viewerContext: controller.viewerContext,
       }),
     [
       canManage,
@@ -147,6 +148,7 @@ export default function MagicItemsListRoute() {
       customFilters,
       hasCampaignSources,
       dmOwnedByCharacterFilterConfig,
+      controller.viewerContext,
     ],
   );
 

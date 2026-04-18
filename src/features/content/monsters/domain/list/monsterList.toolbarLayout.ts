@@ -5,6 +5,6 @@ import type { AppDataGridToolbarLayout } from '@/ui/patterns';
  */
 export const MONSTER_LIST_TOOLBAR_LAYOUT: AppDataGridToolbarLayout = {
   primary: ['monsterType', 'sizeCategory', 'challengeRating'],
-  secondary: ['source', 'visibility', 'allowedInCampaign'],
+  secondary: ['source', 'visibility', 'allowedInCampaign', 'patched'],
   utilities: ['hideDisallowed'],
 };

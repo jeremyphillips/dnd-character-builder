@@ -51,6 +51,7 @@ export function contentDetailMetaSpecs<
 
 /**
  * Meta row: system-patch indicator — badge only (no caption). Order 9 between source and visibility.
+ * Same meta audience as visibility ({@link metaDmOrPlatformOwner}): DM / co-DM or platform admin only.
  */
 export function contentDetailPatchedMetaSpecs<
   T extends Pick<ContentBase, 'patched'>,
@@ -63,7 +64,7 @@ export function contentDetailPatchedMetaSpecs<
       order: 9,
       hidden: (item) => !item.patched,
       render: () => <AppBadge label="Patched" tone="warning" size="small" />,
-      ...metaAll,
+      ...metaDmOrPlatformOwner,
     },
   ];
 }

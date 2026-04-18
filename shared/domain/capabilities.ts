@@ -108,14 +108,3 @@ export function canViewContent(
 export function canManageContent(ctx: ViewerContext): boolean {
   return ctx.isOwner || (ctx.campaignRole !== null && DM_LEVEL_ROLES.has(ctx.campaignRole));
 }
-
-/** @deprecated Use canManageContent instead. Will be removed in a future build. */
-export const canManageCampaignContent = canManageContent
-
-export function getCapabilities(ctx: ViewerContext) {
-  return {
-    canBypassVisibility: canBypassVisibility(ctx),
-    canViewDmScoped: canViewDmScoped(ctx),
-    canManageContent: canManageContent(ctx),
-  };
-}

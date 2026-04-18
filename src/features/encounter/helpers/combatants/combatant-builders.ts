@@ -1,4 +1,8 @@
 import type { useCombatStats } from '@/features/character/hooks'
+import {
+  buildCharacterQueryContextFromDetailDto,
+  isProficientInSkill,
+} from '@/features/character/domain/query'
 import type { CharacterDetailDto } from '@/features/character/read-model'
 import type { Monster } from '@/features/content/monsters/domain/types'
 import type { ImmunityType, CreatureResistanceDamageType } from '@/features/mechanics/domain/creatures/immunities.types'
@@ -89,14 +93,6 @@ function maxDarkvisionRangeFtFromMonsterSenses(monster: Monster): number | undef
   return max > 0 ? max : undefined
 }
 
-/** Detail DTO lists skill ids only; expertise (level 2) is not represented until the API carries it. */
-function skillProficiencyLevelFromCharacterDetail(
-  character: CharacterDetailDto,
-  skillId: string,
-): CombatantSkillProficiencyLevel {
-  return character.proficiencies.some((p) => p.id === skillId) ? 1 : 0
-}
-
 export function toSavingThrowModifier(score: number | null | undefined, proficiencyLevel = 0, proficiencyBonus = 2): number {
   return getAbilityModifier(score ?? 10) + resolveProficiencyContribution(proficiencyBonus, proficiencyLevel)
 }
@@ -163,13 +159,19 @@ export function buildCharacterCombatantInstance(args: {
 }): CombatantInstance {
   const { runtimeId, side, sourceKind, character, combatStats, attacks, extraActions = [], turnHooks } = args
 
+  const sheetCtx = buildCharacterQueryContextFromDetailDto(character)
+
   const hideEligibilityFromFeats = deriveHideEligibilityFeatureFlagsFromCharacterDetail(character)
 
   const grantedToolProficiencies = collectGrantedToolProficienciesFromClassLevels(
     character.classes.map((c) => ({ classId: c.classId, level: c.level })),
     DEFAULT_SYSTEM_RULESET_ID,
   )
-  const gearIds = character.equipment.gear.map((g) => g.id)
+  const gearIds = Array.from(sheetCtx.inventory.gearIds)
+
+  /** Detail DTO lists skill ids only; expertise (level 2) is not represented until the API carries it. */
+  const skillLevel = (skillId: string): CombatantSkillProficiencyLevel =>
+    isProficientInSkill(sheetCtx, skillId) ? 1 : 0
 
   return {
     instanceId: runtimeId,
@@ -199,8 +201,8 @@ export function buildCharacterCombatantInstance(args: {
       speeds: { ground: 30 },
       skillRuntime: {
         proficiencyBonus: combatStats.proficiencyBonus,
-        perceptionProficiencyLevel: skillProficiencyLevelFromCharacterDetail(character, 'perception'),
-        stealthProficiencyLevel: skillProficiencyLevelFromCharacterDetail(character, 'stealth'),
+        perceptionProficiencyLevel: skillLevel('perception'),
+        stealthProficiencyLevel: skillLevel('stealth'),
         ...(hideEligibilityFromFeats != null ? { hideEligibilityFeatureFlags: hideEligibilityFromFeats } : {}),
       },
     },

@@ -62,6 +62,10 @@ Typed snapshot: identity, progression, **inventory** (id sets by category), **pr
 
 Maps a **mechanics `Character`** (typically via `toCharacterForEngine` from a detail DTO) into [`CharacterQueryContext`](../../src/features/character/domain/query/buildCharacterQueryContext.ts). This is the single normalization boundary for “what’s on the sheet.”
 
+### `buildCharacterQueryContextFromDetailDto`
+
+Thin adapter: [`CharacterDetailDto`](../../src/features/character/read-model/character-read.types.ts) → `toCharacterForEngine` → `buildCharacterQueryContext`. Use wherever several call sites would otherwise repeat that chain for membership / id-set questions (e.g. character sheet, level-up, encounter combatant snapshot, [`useViewerCharacterQuery`](../../src/features/campaign/hooks/useViewerCharacterQuery.ts)). It does **not** add new membership semantics—only centralizes the conversion.
+
 ### Merge behavior
 
 [`mergeCharacterQueryContexts`](../../src/features/character/domain/query/mergeCharacterQueryContexts.ts) unions multiple contexts (e.g. all viewer PCs): inventory sets union, class levels max per class, etc. **Merged** is a **convenience** for “everything my characters own,” not the only valid mode—see **Scope model**.
@@ -136,6 +140,7 @@ Keep the **shape stable**; add fields deliberately when multiple features need t
 | **Future DM filter** | Pick `characterId` → use **`contextsById.get(characterId)`** (or fetch single) for membership—same model as PC. |
 | **Snapshots** | Any read-only “what does this character have?” summary can use the same builder + selectors. |
 | **Builder / loadout / affordability** | Should prefer `CharacterQueryContext` + selectors over re-reading raw equipment shapes where the same question is asked. |
+| **Content delete/disable validators** | Party reference checks (`validateWeaponChange`, armor/gear/magic item, spell, skill proficiency, class, race) use `buildCharacterQueryContext` + selectors so “in use” matches list membership semantics. |
 
 ---
 
@@ -163,5 +168,20 @@ Keep the **shape stable**; add fields deliberately when multiple features need t
 | Viewer hook | [`useViewerCharacterQuery.ts`](../../src/features/campaign/hooks/useViewerCharacterQuery.ts) |
 | List route scope + preference | [`useCampaignViewerOwnedCharacterQuery.ts`](../../src/features/content/shared/hooks/useCampaignViewerOwnedCharacterQuery.ts), [`useViewerOwnedCharacterQueryPreference.ts`](../../src/app/providers/useViewerOwnedCharacterQueryPreference.ts) |
 | DTO → engine character | [`toCharacterForEngine`](../../src/features/character/read-model/character-read.mappers.ts) |
+| DTO → query context (adapter) | [`buildCharacterQueryContextFromDetailDto`](../../src/features/character/domain/query/buildCharacterQueryContextFromDetailDto.ts) |
 
 For campaign content list composition (toolbar, filters), see [appdatagrid.md](./appdatagrid.md) and [forms.md](./forms.md).
+
+---
+
+## Remaining drift / cleanup later
+
+This section is a **living checklist** of areas that intentionally still bypass the query layer or deserve follow-up. It is **not** a commitment to finish everything immediately—refresh when items close.
+
+| Area | Status | Notes |
+|------|--------|--------|
+| **Mechanics engine** | Intentionally out of scope | [`useCombatStats`](../../src/features/character/hooks/useCombatStats.ts), loadout resolution, [`buildCharacterContext`](../../src/features/character/domain/engine/buildCharacterContext.ts) / `EvaluationContext` keep reading raw `Character` and equipment for **rules evaluation**—see [What it is not](#what-it-is-not). Do not route AC/HP/initiative math through `CharacterQueryContext`. |
+| **Character builder local state** | Intentionally out of scope | [`CharacterBuilderState`](../../src/features/characterBuilder/) step visibility and partial equipment checks are not full `Character` documents; adopting the query layer here needs a deliberate mapper/design, not an incremental copy-paste. |
+| **Class / race delete validators** | Aligned (when applicable) | [`validateClassChange`](../../src/features/content/classes/domain/validation/validateClassChange.ts) uses [`hasClass`](../../src/features/character/domain/query/selectors/progression.selectors.ts); [`validateRaceChange`](../../src/features/content/races/domain/validation/validateRaceChange.ts) compares `identity.raceId`. If API payloads ever diverge from `CharacterQuerySource`, document the gap here. |
+| **Encounter combatants** | Aligned for gear + skill membership | [`buildCharacterCombatantInstance`](../../src/features/encounter/helpers/combatants/combatant-builders.ts) builds one `CharacterQueryContext` from the detail DTO for `gearIds` and perception/stealth proficiency levels; combat math and `useCombatStats` are unchanged. |
+| **Payload-shape gaps** | Watch | If a future endpoint returns a partial character shape that cannot satisfy `buildCharacterQueryContext`, record the endpoint and fields here and add a narrow mapper or wait for API alignment. |

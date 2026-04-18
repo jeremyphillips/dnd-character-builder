@@ -4,6 +4,7 @@ export {
   createEmptyCharacterQueryContext,
   type CharacterQuerySource,
 } from './buildCharacterQueryContext'
+export { buildCharacterQueryContextFromDetailDto } from './buildCharacterQueryContextFromDetailDto'
 export { mergeCharacterQueryContexts } from './mergeCharacterQueryContexts'
 export * from './selectors'
 export {

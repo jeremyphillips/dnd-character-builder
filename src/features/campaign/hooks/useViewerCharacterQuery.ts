@@ -6,9 +6,8 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { apiFetch } from '@/app/api'
 import type { CharacterDetailDto } from '@/features/character/read-model'
-import { toCharacterForEngine } from '@/features/character/read-model'
 import {
-  buildCharacterQueryContext,
+  buildCharacterQueryContextFromDetailDto,
   createEmptyCharacterQueryContext,
   mergeCharacterQueryContexts,
   type CharacterQueryContext,
@@ -98,7 +97,7 @@ export function useViewerCharacterQuery(
     Promise.all(
       fetchIds.map((id) =>
         apiFetch<CharacterResponse>(`/api/characters/${id}`)
-          .then((d) => [id, buildCharacterQueryContext(toCharacterForEngine(d.character))] as const)
+          .then((d) => [id, buildCharacterQueryContextFromDetailDto(d.character)] as const)
           .catch(() => [id, createEmptyCharacterQueryContext()] as const),
       ),
     ).then((results) => {

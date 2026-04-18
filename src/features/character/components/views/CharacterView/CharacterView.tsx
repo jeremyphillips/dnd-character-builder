@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { buildCharacterQueryContextFromDetailDto } from '@/features/character/domain/query'
 import { type CharacterDetailDto, toCharacterForEngine } from '@/features/character/read-model'
 import { useCampaignRules } from '@/app/providers/CampaignRulesProvider'
 import { ROUTES } from '@/app/routes'
@@ -168,8 +169,16 @@ export default function CharacterView({
 
   const hasStats = character.abilityScores && Object.values(character.abilityScores).some(v => v != null)
 
-  // Magic items — resolved from the catalog
-  const charMagicItemIds = character.equipment?.magicItems ?? []
+  const sheetQueryContext = useMemo(
+    () => buildCharacterQueryContextFromDetailDto(character),
+    [character],
+  )
+
+  // Magic items — ids from query layer; resolved from the catalog for display
+  const charMagicItemIds = useMemo(
+    () => Array.from(sheetQueryContext.inventory.magicItemIds),
+    [sheetQueryContext],
+  )
   const resolvedMagicItems = charMagicItemIds
     .map(itemId => {
       const item = catalog.magicItemsById[itemId]

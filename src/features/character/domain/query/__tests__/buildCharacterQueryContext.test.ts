@@ -4,6 +4,7 @@ import type { CharacterDetailDto } from '@/features/character/read-model'
 import { toCharacterForEngine } from '@/features/character/read-model'
 
 import { buildCharacterQueryContext, createEmptyCharacterQueryContext } from '../buildCharacterQueryContext'
+import { buildCharacterQueryContextFromDetailDto } from '../buildCharacterQueryContextFromDetailDto'
 
 function minimalDto(overrides: Partial<CharacterDetailDto> = {}): CharacterDetailDto {
   return {
@@ -97,5 +98,16 @@ describe('buildCharacterQueryContext', () => {
     })
     const ctx = buildCharacterQueryContext(toCharacterForEngine(dto))
     expect(ctx.progression.classLevelsById.get('fighter')).toBe(2)
+  })
+})
+
+describe('buildCharacterQueryContextFromDetailDto', () => {
+  it('matches buildCharacterQueryContext(toCharacterForEngine(dto))', () => {
+    const dto = minimalDto()
+    const a = buildCharacterQueryContext(toCharacterForEngine(dto))
+    const b = buildCharacterQueryContextFromDetailDto(dto)
+    expect(b.identity).toEqual(a.identity)
+    expect(b.inventory.magicItemIds).toEqual(a.inventory.magicItemIds)
+    expect(b.spells.knownSpellIds).toEqual(a.spells.knownSpellIds)
   })
 })

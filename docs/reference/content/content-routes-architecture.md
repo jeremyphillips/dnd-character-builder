@@ -134,6 +134,8 @@ Dual **main + advanced** presentation is **rolled out per content type**. Types 
 
 **Spell:** Same shell; main section keeps the wider **`KeyValueSection`** column count (4) for the stat-block grid. Advanced **`spellRawRecord`** includes `effectGroups`, `resolution`, `scaling`, and full `description` object for platform admins.
 
+**Race / Class:** Same route shell. **Race** main is mostly **description** + optional **campaigns** legacy field; **class** main replaces prior raw **`JSON.stringify`** rows with short **proficiency / progression / requirements** summaries (full structure only in **`classRawRecord`** for platform admins).
+
 ---
 
 ## 6. Image handling architecture
@@ -175,8 +177,8 @@ Conservative snapshot of cross-cutting behavior. Update this table when a conten
 | **Magic item** | standardized | **reference (complete)** | standardized | standardized (`equipment`) | standardized | `MAGIC_ITEM_DETAIL_SPECS`; main shows friendly slot/rarity + **effects** summary (`text` / `kind`); single advanced JSON row (`magicItemRawRecord`). `imageContentType` remains **`equipment`** (shared fallback map). |
 | **Spell** | standardized | **reference (complete)** | standardized | standardized | standardized | `SPELL_DETAIL_SPECS`: shared meta/patched + existing display helpers for level/school/range/casting/duration/components/attack-save/damage/classes; **description** in main; `spellRawRecord` advanced JSON; route uses `toDetailSpecViewer`, collapsed accordion, `imageContentType="spell"`, main grid **`columns={4}`** preserved. |
 | **Equipment hub** | standardized | — | — | — | — | Campaign **equipment** landing groups weapon/armor/gear/magic-item list routes; each kind’s detail row above is the source of truth for that type’s shell. |
-| **Class** | standardized | standardized | standardized | partial | planned | — |
-| **Race** | standardized | standardized | standardized | partial | planned | — |
+| **Class** | standardized | **reference (complete)** | standardized | partial | standardized | `CLASS_DETAIL_SPECS`: friendly **proficiencies** / **progression** / **requirements** / **subclass** lines; **`classRawRecord`** advanced JSON; `imageContentType="class"`. |
+| **Race** | standardized | **reference (complete)** | standardized | partial | standardized | `RACE_DETAIL_SPECS`: **description** + optional **campaigns** in main; **`raceRawRecord`** advanced; `imageContentType="race"`. |
 | **Location** | standardized | standardized | standardized | partial | planned | Workspace flows are documented separately under [locations/](../locations/). |
 | **Skill proficiencies** | standardized | standardized | standardized | partial | planned | Narrower domain than full items. |
 | **Character / PC / NPC** | partial | partial | partial | partial | not applicable | **Not** the same module tree as `features/content/*` campaign lists; character builder and sheet UIs follow overlapping but separate patterns. |

@@ -1,7 +1,11 @@
 import { useParams } from 'react-router-dom';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useActiveCampaign } from '@/app/providers/ActiveCampaignProvider';
 import { useActiveCampaignCanManageContent } from '@/app/providers/useActiveCampaignCanManageContent';
@@ -16,7 +20,10 @@ import { useCampaignContentEntry } from '@/features/content/shared/hooks/useCamp
 import { useBreadcrumbs } from '@/app/navigation';
 import { AppAlert } from '@/ui/primitives';
 import { KeyValueSection } from '@/ui/patterns';
-import { buildContentDetailSectionsFromSpecs } from '@/features/content/shared/forms/registry';
+import {
+  buildContentDetailSectionsFromSpecs,
+  toDetailSpecViewer,
+} from '@/features/content/shared/forms/registry';
 import { CLASS_DETAIL_SPECS } from '@/features/content/classes/domain/forms';
 
 export default function ClassDetailRoute() {
@@ -46,12 +53,15 @@ export default function ClassDetailRoute() {
 
   const editPath = `/campaigns/${campaignId}/world/classes/${classId}/edit`;
 
-  const { metaItems, mainItems } = buildContentDetailSectionsFromSpecs({
+  const viewer = toDetailSpecViewer(viewerContext);
+  const { metaItems, mainItems, advancedItems } = buildContentDetailSectionsFromSpecs({
     specs: CLASS_DETAIL_SPECS,
     item: charClass,
     ctx: {},
-    viewerContext,
+    viewer,
   });
+
+  const showAdvancedSection = Boolean(viewer?.isPlatformAdmin) && advancedItems.length > 0;
 
   const source = charClass.source ?? 'system';
 
@@ -72,14 +82,29 @@ export default function ClassDetailRoute() {
         imageKey={charClass.imageKey}
         alt={charClass.name}
       >
-        <KeyValueSection title="Class Details" items={mainItems} columns={2} />
+        <KeyValueSection title="" items={mainItems} columns={2} />
       </ContentDetailImageKeyValueGrid>
 
-      {charClass.description && (
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 3, mt: 2 }}>
-          {charClass.description}
-        </Typography>
-      )}
+      {showAdvancedSection ? (
+        <Accordion
+          defaultExpanded={false}
+          disableGutters
+          sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="class-advanced-content"
+            id="class-advanced-header"
+          >
+            <Typography component="span" variant="subtitle1" fontWeight={600}>
+              Advanced
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <KeyValueSection title="Advanced class data" items={advancedItems} columns={1} dense />
+          </AccordionDetails>
+        </Accordion>
+      ) : null}
     </ContentDetailScaffold>
   );
 }

@@ -1,6 +1,6 @@
-import type { CreatureSense, CreatureSenses } from './creatureSenses.types'
-import { normalizeCreatureSenses } from './creatureSenses.selectors'
-import { getCreatureSenseTypeDisplayName } from './creatureSenses.vocab'
+import type { CreatureSense, CreatureSenses } from '../../vocab/creatureSenses.types'
+import { normalizeCreatureSenses } from '../../vocab/creatureSenses.selectors'
+import { getCreatureSenseTypeDisplayName } from '../../vocab/creatureSenses.vocab'
 
 /** Title-case fallback when `type` is not in {@link getCreatureSenseTypeDisplayName} (avoids importing monster-only utils). */
 function creatureSenseTypeLabelFallback(id: string): string {

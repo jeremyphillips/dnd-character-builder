@@ -69,9 +69,16 @@ const RACES_RAW: readonly RaceFields[] = [
     grants: { senses: [{ type: 'darkvision', range: 60 }] },
   },
   {
+    id: 'goliath',
+    name: 'Goliath',
+    imageKey: '',
+    description: '',
+    grants: {},
+  },
+  {
     id: 'orc',
     name: 'Orc',
-    imageKey: '/assets/system/races/half-orc.webp',
+    imageKey: '/assets/system/races/orc.webp',
     description: 'A race of powerful and muscular beings.',
     grants: { senses: [{ type: 'darkvision', range: 120 }] },
   },

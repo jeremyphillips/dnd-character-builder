@@ -1,5 +1,5 @@
 import type { Race } from '@/features/content/races/domain/types';
-import { formatCreatureSenseList } from '@/features/content/shared/domain/vocab/creatureSenses.format';
+import { formatCreatureSenseList } from '@/features/content/shared/domain/detail/display/creatureSenses.format';
 import { contentDetailMetaSpecs, contentDetailPatchedMetaSpecs } from '@/features/content/shared/domain';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
 

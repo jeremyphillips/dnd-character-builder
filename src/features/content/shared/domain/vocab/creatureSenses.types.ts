@@ -1,9 +1,6 @@
-export type CreatureSenseType =
-  | 'darkvision'
-  | 'blindsight'
-  | 'tremorsense'
-  | 'truesight'
-  | 'normal'
+import type { CreatureSenseType } from './creatureSenses.vocab'
+
+export type { CreatureSenseType }
 
 export type CreatureSenseSource = {
   kind: 'race' | 'monster' | 'class' | 'item' | 'trait' | 'effect' | 'manual'

@@ -1,4 +1,4 @@
-import { formatCreatureSensesLine } from '@/features/content/shared/domain/vocab/creatureSenses.format';
+import { formatCreatureSensesLine } from '@/features/content/shared/domain/detail/display/creatureSenses.format';
 import type { MonsterSenses } from '@/features/content/monsters/domain/types/monster-senses.types';
 
 /**

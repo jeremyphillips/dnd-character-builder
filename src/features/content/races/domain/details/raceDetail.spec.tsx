@@ -1,4 +1,5 @@
 import type { Race } from '@/features/content/races/domain/types';
+import { formatCreatureSenseList } from '@/features/content/shared/domain/vocab/creatureSenses.format';
 import { contentDetailMetaSpecs, contentDetailPatchedMetaSpecs } from '@/features/content/shared/domain';
 import type { DetailSpec } from '@/features/content/shared/forms/registry';
 
@@ -41,6 +42,15 @@ export const RACE_DETAIL_SPECS: DetailSpec<Race, RaceDetailCtx>[] = [
     order: 45,
     hidden: (race) => !race.campaigns?.length,
     render: (race) => race.campaigns?.join(', ') ?? '—',
+  },
+  {
+    key: 'senseGrants',
+    label: 'Senses',
+    order: 48,
+    hidden: (race) => !race.grants?.senses?.length,
+    render: (race) => (
+      <span style={{ whiteSpace: 'pre-line' }}>{formatCreatureSenseList(race.grants?.senses)}</span>
+    ),
   },
   {
     key: 'raceRawRecord',

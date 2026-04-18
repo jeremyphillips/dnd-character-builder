@@ -21,6 +21,8 @@ const CREATURE_SENSE_TYPE_BY_ID: ReadonlyMap<CreatureSenseTypeId, (typeof CREATU
 
 /** User-facing label for a creature sense type id; undefined if `id` is not known. */
 export function getCreatureSenseTypeDisplayName(id: string): string | undefined {
-  if (!(CREATURE_SENSE_TYPE_IDS as readonly string[]).includes(id)) return undefined
-  return CREATURE_SENSE_TYPE_BY_ID.get(id as CreatureSenseTypeId)?.name
+  // Legacy/alternate id in old data — prefer canonical truesight in types and authoring.
+  const canonical = id === 'truesense' ? 'truesight' : id
+  if (!(CREATURE_SENSE_TYPE_IDS as readonly string[]).includes(canonical)) return undefined
+  return CREATURE_SENSE_TYPE_BY_ID.get(canonical as CreatureSenseTypeId)?.name
 }

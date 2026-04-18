@@ -3,6 +3,7 @@ export * from './alignment.vocab';
 export * from './areaOfEffect.vocab';
 export * from './creatureSenses.types';
 export * from './creatureSenses.selectors';
+export * from './creatureSenses.format';
 export * from './creatureSenses.vocab';
 export * from './effectConditions.vocab';
 export * from './effectKinds.vocab';

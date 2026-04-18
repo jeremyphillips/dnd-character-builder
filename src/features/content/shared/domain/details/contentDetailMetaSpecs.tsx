@@ -60,7 +60,7 @@ export function contentDetailPatchedMetaSpecs<
   return [
     {
       key: 'patched',
-      label: 'Patched',
+      label: '',
       order: 9,
       hidden: (item) => !item.patched,
       render: () => <AppBadge label="Patched" tone="warning" size="small" />,

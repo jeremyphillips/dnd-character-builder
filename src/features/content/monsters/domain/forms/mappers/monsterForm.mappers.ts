@@ -7,6 +7,7 @@ import {
   buildToInput,
   buildDefaultFormValues,
 } from '@/features/content/shared/forms/registry';
+import { isProficiencyBonus } from '@/shared/domain/proficiency';
 import { MONSTER_FORM_FIELDS } from '../registry/monsterForm.registry';
 import type { MonsterFormValues } from '../types/monsterForm.types';
 
@@ -35,6 +36,15 @@ const parseJson = (v: unknown): unknown => {
   }
 };
 
+const numOrUndefined = (v: unknown): number | undefined => {
+  if (v === '' || v == null) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const numToStr = (v: unknown): string =>
+  v != null && Number.isFinite(Number(v)) ? String(v) : '';
+
 /**
  * Converts a Monster domain object to form values.
  */
@@ -60,11 +70,11 @@ export const monsterToFormValues = (monster: Monster): MonsterFormValues => {
     abilities: formatJson(m?.abilities),
     senses: formatJson(m?.senses),
     proficiencies: formatJson(m?.proficiencies),
-    proficiencyBonus: formatJson(m?.proficiencyBonus),
+    proficiencyBonus: numToStr(m?.proficiencyBonus),
     equipment: formatJson(m?.equipment),
     immunities: formatJson(m?.immunities),
     vulnerabilities: formatJson(m?.vulnerabilities),
-    alignment: formatJson(l?.alignment),
+    alignment: l?.alignment != null ? String(l.alignment) : '',
     challengeRating: formatJson(l?.challengeRating),
     xpValue: formatJson(l?.xpValue),
   };
@@ -98,8 +108,8 @@ export const toMonsterInput = (values: MonsterFormValues): MonsterInput => {
   if (sens !== undefined) mechanics.senses = sens;
   const prof = parseJson(values.proficiencies);
   if (prof !== undefined) mechanics.proficiencies = prof;
-  const pb = parseJson(values.proficiencyBonus);
-  if (pb !== undefined) mechanics.proficiencyBonus = pb;
+  const pb = numOrUndefined(values.proficiencyBonus);
+  if (pb !== undefined && isProficiencyBonus(pb)) mechanics.proficiencyBonus = pb;
   const eq = parseJson(values.equipment);
   if (eq !== undefined) mechanics.equipment = eq;
   const imm = parseJson(values.immunities);
@@ -107,8 +117,7 @@ export const toMonsterInput = (values: MonsterFormValues): MonsterInput => {
   const vuln = parseJson(values.vulnerabilities);
   if (vuln !== undefined) mechanics.vulnerabilities = vuln;
 
-  const align = parseJson(values.alignment);
-  if (align !== undefined) lore.alignment = align;
+  if (values.alignment) lore.alignment = values.alignment;
   const cr = parseJson(values.challengeRating);
   if (cr !== undefined) lore.challengeRating = cr;
   const xp = parseJson(values.xpValue);

@@ -6,6 +6,7 @@ import type {
   ContentInput,
 } from '@/features/content/shared/domain/types/content.types';
 import type { MonsterAbilityScoreMap, AbilityId } from '@/features/mechanics/domain/character';
+import type { ProficiencyBonus } from '@/shared/domain/proficiency';
 import type { AlignmentId } from "@/features/content/shared/domain/types";
 import type { MonsterType, MonsterSizeCategory } from "@/features/content/monsters/domain/vocab/monster.vocab";
 import type {
@@ -91,7 +92,7 @@ export interface MonsterFields {
     legendaryActions?: MonsterLegendaryActions;
     senses?: MonsterSenses;
     proficiencies?: MonsterProficiencies;
-    proficiencyBonus: number;
+    proficiencyBonus: ProficiencyBonus;
     equipment?: MonsterEquipment;
     immunities?: ImmunityType[];
     resistances?: CreatureResistanceDamageType[];

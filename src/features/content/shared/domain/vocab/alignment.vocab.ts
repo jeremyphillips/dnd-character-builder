@@ -42,3 +42,17 @@ export function getAlignmentDisplayName(id: string): string | undefined {
   if (!(ALIGNMENT_IDS as readonly string[]).includes(id)) return undefined;
   return ALIGNMENT_BY_ID.get(id);
 }
+
+/**
+ * `value` / `label` pairs for select fields (e.g. monster lore alignment).
+ * Order matches `ALIGNMENT_IDS` (nine-point, then five- and three-point–only ids).
+ */
+export function getAlignmentFormSelectOptions(): ReadonlyArray<{
+  value: string;
+  label: string;
+}> {
+  return ALIGNMENT_IDS.map((id) => ({
+    value: id,
+    label: getAlignmentDisplayName(id) ?? id,
+  }));
+}

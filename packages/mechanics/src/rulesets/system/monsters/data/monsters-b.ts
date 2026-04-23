@@ -454,7 +454,7 @@ export const MONSTERS_B: readonly MonsterCatalogEntry[] = [
         ],
         passivePerception: 27,
       },
-      proficiencyBonus: 7,
+      proficiencyBonus: 6,
       immunities: ['lightning'],
       traits: [
         {
@@ -724,7 +724,7 @@ export const MONSTERS_B: readonly MonsterCatalogEntry[] = [
         ],
         passivePerception: 27,
       },
-      proficiencyBonus: 7,
+      proficiencyBonus: 6,
       immunities: ['lightning'],
       traits: [
         {

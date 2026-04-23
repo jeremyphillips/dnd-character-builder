@@ -3,14 +3,30 @@
  * Standard fields (name, type, sizeCategory) + individual JSON fields for each mechanics/lore subfield.
  */
 import { DEFAULT_VISIBILITY_PUBLIC } from '@/ui/patterns';
-import type { FieldSpec } from '@/features/content/shared/forms/registry';
+import { numberRange, type FieldSpec } from '@/features/content/shared/forms/registry';
 import type { Monster, MonsterInput } from '@/features/content/monsters/domain/types';
 import type { MonsterFormValues } from '../types/monsterForm.types';
+import { getAlignmentFormSelectOptions } from '@/features/content/shared/domain/vocab/alignment.vocab';
+import type { AlignmentId } from '@/features/content/shared/domain/types';
+import {
+  PROFICIENCY_BONUS_MAX,
+  PROFICIENCY_BONUS_MIN,
+  isProficiencyBonus,
+} from '@/shared/domain/proficiency';
 import { MONSTER_TYPE_OPTIONS, MONSTER_SIZE_CATEGORY_OPTIONS } from '@/features/content/monsters/domain/vocab/monster.vocab';
 
 const trim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const trimOrNull = (v: unknown): string | null => (trim(v) ? trim(v) : null);
 const strOrEmpty = (v: unknown): string => (v != null ? String(v) : '');
+
+const numOrUndefined = (v: unknown): number | undefined => {
+  if (v === '' || v == null) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const numToStr = (v: unknown): string =>
+  v != null && Number.isFinite(Number(v)) ? String(v) : '';
 
 const parseJson = (v: unknown): unknown => {
   if (v == null || v === '') return undefined;
@@ -104,11 +120,34 @@ export const MONSTER_FORM_FIELDS = [
   jsonField('abilities', 'Abilities', '{}', 2, 6),
   jsonField('senses', 'Senses', '{}', 2, 4),
   jsonField('proficiencies', 'Proficiencies', '{}', 2, 6),
-  jsonField('proficiencyBonus', 'Proficiency Bonus', '2', 1, 2),
+  {
+    name: 'proficiencyBonus' as const,
+    label: 'Proficiency Bonus',
+    kind: 'numberText' as const,
+    placeholder: 'e.g. 2',
+    defaultValue: '' as MonsterFormValues['proficiencyBonus'],
+    required: true,
+    validation: numberRange(PROFICIENCY_BONUS_MIN, PROFICIENCY_BONUS_MAX, { integer: true }),
+    parse: (v: unknown) => {
+      const n = numOrUndefined(v);
+      if (n === undefined) return undefined;
+      return isProficiencyBonus(n) ? n : undefined;
+    },
+    format: (v: unknown) => numToStr(v) as MonsterFormValues['proficiencyBonus'],
+  },
   jsonField('equipment', 'Equipment', '{}', 2, 6),
   jsonField('immunities', 'Immunities', '[]', 2, 4),
   jsonField('vulnerabilities', 'Vulnerabilities', '[]', 2, 4),
-  jsonField('alignment', 'Alignment', '"n"', 1, 2),
+  {
+    name: 'alignment' as const,
+    label: 'Alignment',
+    kind: 'select' as const,
+    options: getAlignmentFormSelectOptions(),
+    placeholder: 'Select alignment',
+    defaultValue: '' as MonsterFormValues['alignment'],
+    parse: (v: unknown) => (v ? (v as AlignmentId) : undefined),
+    format: (v: unknown) => (v != null ? String(v) : '') as MonsterFormValues['alignment'],
+  },
   jsonField('challengeRating', 'Challenge Rating', '0.25', 1, 2),
   jsonField('xpValue', 'XP Value', '50', 1, 2),
   {

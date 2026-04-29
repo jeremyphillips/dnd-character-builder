@@ -7,7 +7,7 @@ import type { CampaignMemberView, CampaignMembersPayload } from '@/shared/types/
 
 export interface CampaignMembersResult {
   members: CampaignMemberView[]
-  viewerCharacterIds: string[]
+  viewerCharacterIds: readonly string[]
   counts: CampaignMembersPayload['counts'] | null
   /** Approved characters as { id, name } — convenience for policy / visibility pickers. */
   approvedCharacters: { id: string; name: string }[]

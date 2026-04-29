@@ -15,6 +15,8 @@ import {
 
 import { useCampaignMembers } from './useCampaignMembers'
 
+const EMPTY_CHARACTER_CONTEXT_MAP = new Map<string, CharacterQueryContext>()
+
 type CharacterResponse = { character: CharacterDetailDto }
 
 export type UseViewerCharacterQueryOptions = {
@@ -81,21 +83,21 @@ export function useViewerCharacterQuery(
   )
   const [completedForKey, setCompletedForKey] = useState<string | null>('')
 
-  const ready = completedForKey === fetchKey
-  const loading = fetchIds.length > 0 && !ready
+  /** When fetchKey is empty, nothing to wait for — avoid coupling to leftover completedForKey state. */
+  const ready =
+    fetchKey === '' ||
+    completedForKey === fetchKey
+  const loading = fetchKey !== '' && fetchIds.length > 0 && !ready
 
   useEffect(() => {
-    if (fetchIds.length === 0) {
-      setContextsById(new Map())
-      setCompletedForKey('')
-      return
-    }
+    if (!fetchKey) return
 
-    setCompletedForKey(null)
+    const idsForFetch = fetchKey.split(',')
+
     let cancelled = false
 
     Promise.all(
-      fetchIds.map((id) =>
+      idsForFetch.map((id) =>
         apiFetch<CharacterResponse>(`/api/characters/${id}`)
           .then((d) => [id, buildCharacterQueryContextFromDetailDto(d.character)] as const)
           .catch(() => [id, createEmptyCharacterQueryContext()] as const),
@@ -109,21 +111,23 @@ export function useViewerCharacterQuery(
     return () => {
       cancelled = true
     }
-  }, [fetchKey, fetchIds])
+  }, [fetchKey])
 
-  const mergedContext = useMemo(
-    () => mergeCharacterQueryContexts([...contextsById.values()]),
-    [contextsById],
-  )
+  const mergedContext = useMemo(() => {
+    if (!fetchKey) return mergeCharacterQueryContexts([])
+    return mergeCharacterQueryContexts([...contextsById.values()])
+  }, [fetchKey, contextsById])
+
+  const contextsByIdReturned = fetchKey === '' ? EMPTY_CHARACTER_CONTEXT_MAP : contextsById
 
   const activeContext = useMemo(() => {
-    if (!characterId) return null
+    if (!characterId || !fetchKey) return null
     return contextsById.get(characterId) ?? null
-  }, [characterId, contextsById])
+  }, [characterId, contextsById, fetchKey])
 
   return {
     mergedContext,
-    contextsById,
+    contextsById: contextsByIdReturned,
     loading,
     ready,
     activeContext,
